@@ -1,8 +1,15 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useCurrentUser } from '@/app/useSession';
-import { ChoiceField, ErrorState, FormPanel, problemOf, TextField, useToast } from '@/components';
-import type { ChoiceOption, FieldProblem, SaveFailure } from '@/components';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import type { ChoiceOption } from '@/ui/ChoiceField/ChoiceField';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { DATE_FORMATS } from '@/lib/format';
 import { useFormatters } from '@/lib/useFormatters';
 import { formFailure } from './feedback';

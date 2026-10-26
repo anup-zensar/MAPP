@@ -1,20 +1,18 @@
 import { FolderOpen, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { ApiError, resolvedMessage } from '@/api/errors';
-import type { components } from '@/api/schema';
-import {
-  ActionsMenu,
-  Button,
-  Card,
-  ConfirmDialog,
-  EmptyState,
-  ErrorState,
-  PageHeader,
-  Skeleton,
-  SummaryCard,
-  Tooltip,
-  useToast,
-} from '@/components';
+import type { components } from '@/api/generated/schema';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
+import { useToast } from '@/ui/Toast/useToast';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { useUndoableDelete } from '@/lib/useUndoableDelete';

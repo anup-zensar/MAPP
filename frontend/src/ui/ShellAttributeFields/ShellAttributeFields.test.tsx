@@ -1,7 +1,7 @@
 import { cleanup, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { activityForm, campaignForm, LUBRICANTS, MOBILITY, planForm } from '@/test/attributeForms';
 import { renderWithProviders } from '@/test/render';
 import { ShellAttributeFields } from './ShellAttributeFields';

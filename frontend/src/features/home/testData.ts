@@ -2,7 +2,7 @@
  * Answers of the Home endpoints for tests (feature 009). `HOME_ANSWERS` answers every request Home
  * makes with an empty dashboard, for tests of other parts of the app that land on Home.
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import type { MockAnswer } from '@/test/mockApi';
 import type {
   ActivityLogEntry,

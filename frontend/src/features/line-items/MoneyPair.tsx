@@ -1,4 +1,4 @@
-import { InfoTip } from '@/components';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { cx } from '@/lib/cx';
 import { useFormatters } from '@/lib/useFormatters';
 import { moneyText } from './lineItemMath';

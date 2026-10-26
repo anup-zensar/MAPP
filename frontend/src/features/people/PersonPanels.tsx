@@ -4,22 +4,21 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ApiError } from '@/api/errors';
 import { useCurrentUser } from '@/app/useSession';
-import {
-  ActionsMenu,
-  Avatar,
-  Button,
-  ErrorState,
-  FormPanel,
-  problemOf,
-  SearchField,
-  SidePanel,
-  Skeleton,
-  StatusChip,
-  TeamPills,
-  TextField,
-  useToast,
-} from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Avatar } from '@/ui/Avatar/Avatar';
+import { Button } from '@/ui/Button/Button';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { SearchField } from '@/ui/SearchField/SearchField';
+import { SidePanel } from '@/ui/SidePanel/SidePanel';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { TeamPills } from '@/ui/TeamPill/TeamPill';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { useFormatters } from '@/lib/useFormatters';
 import { formFailure } from './feedback';
 import { OwnerImpactDialog } from './OwnerImpactDialog';

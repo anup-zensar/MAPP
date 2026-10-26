@@ -1,7 +1,8 @@
 import { ChevronDown, LogOut, UserRound } from 'lucide-react';
 import { DropdownMenu } from 'radix-ui';
 import { Link } from 'react-router';
-import { Avatar, Tooltip } from '@/components';
+import { Avatar } from '@/ui/Avatar/Avatar';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import styles from './AccountMenu.module.css';
 import { MY_PROFILE } from './navigation';
 import { useCurrentUser, useSession } from './useSession';

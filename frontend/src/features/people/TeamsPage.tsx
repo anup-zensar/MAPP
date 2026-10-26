@@ -1,18 +1,16 @@
 import { Plus, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import {
-  ActionsMenu,
-  Avatar,
-  Button,
-  Card,
-  EmptyState,
-  ErrorState,
-  PageHeader,
-  Skeleton,
-  StatusChip,
-  TeamPill,
-} from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Avatar } from '@/ui/Avatar/Avatar';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { TeamPill } from '@/ui/TeamPill/TeamPill';
 import { ListToolbar } from '@/features/settings/shared/ListToolbar';
 import styles from '@/features/settings/shared/SettingsTable.module.css';
 import { filterRecords, useListFilters } from '@/features/settings/shared/useListFilters';

@@ -1,4 +1,4 @@
-import type { ActionsMenuItem } from '@/components';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import { availabilityProps, isShown } from '@/lib/access';
 import type { Availability } from '@/lib/access';
 

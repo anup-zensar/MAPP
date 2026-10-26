@@ -2,15 +2,13 @@ import { Pencil } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import {
-  ActionsMenu,
-  CompletenessChip,
-  LevelTag,
-  LinkButton,
-  PageHeader,
-  PersonLabel,
-} from '@/components';
-import type { ActionsMenuItem } from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { LinkButton } from '@/ui/Button/Button';
+import { CompletenessChip } from '@/ui/CompletenessChip/CompletenessChip';
+import { LevelTag } from '@/ui/LevelTag/LevelTag';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import type { ActivityApproval } from '@/features/approvals/approvalsApi';
 import type { ShowSubmitProblems } from '@/features/approvals/approvalTypes';
 import { DecisionButton } from '@/features/approvals/DecisionButton';

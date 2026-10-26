@@ -2,18 +2,15 @@ import { ClipboardList, SearchX } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ApiError } from '@/api/errors';
-import {
-  Button,
-  Card,
-  EmptyState,
-  ErrorState,
-  LinkButton,
-  PageHeader,
-  Tabs,
-  Skeleton,
-  useToast,
-} from '@/components';
-import type { TabItem } from '@/components';
+import { Button, LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { Tabs } from '@/ui/Tabs/Tabs';
+import { useToast } from '@/ui/Toast/useToast';
+import type { TabItem } from '@/ui/Tabs/Tabs';
 import { usePageTitle } from '@/lib/usePageTitle';
 import {
   useAllWork,

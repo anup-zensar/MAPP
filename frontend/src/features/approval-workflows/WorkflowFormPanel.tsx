@@ -3,17 +3,16 @@ import { Info } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { conflictMessage } from '@/api/errors';
-import {
-  CheckboxField,
-  DecimalField,
-  FormPanel,
-  FormSection,
-  problemOf,
-  TextAreaField,
-  TextField,
-  useToast,
-} from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
+import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
+import { DecimalField } from '@/ui/DecimalField/DecimalField';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { FormSection } from '@/ui/FormSection/FormSection';
+import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { asApiError, isSessionLost } from '@/features/approvals/messages';
 import { parseWholeInput } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';

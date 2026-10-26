@@ -3,7 +3,10 @@ import { useId, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { ApiError } from '@/api/errors';
-import { Button, ErrorState, InfoTip, Skeleton } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
 import {

@@ -4,10 +4,10 @@
  * count, a name or a time are made here, so they read the same everywhere.
  */
 import { ApiError } from '@/api/errors';
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { formatDate, formatTime, localDate } from '@/lib/format';
 import type { DateFormat } from '@/lib/format';
-import type { StatusTone } from '@/components';
+import type { StatusTone } from '@/ui/StatusChip/StatusChip';
 
 type ApprovalPerson = components['schemas']['ApprovalPerson'];
 type ActorRef = components['schemas']['ActorRef'];

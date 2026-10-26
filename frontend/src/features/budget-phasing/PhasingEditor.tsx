@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { ApiError, conflictMessage } from '@/api/errors';
-import {
-  Button,
-  FailureMessage,
-  FormDialog,
-  MoneyField,
-  SegmentedFilter,
-  useToast,
-} from '@/components';
-import type { SaveFailure } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { FailureMessage } from '@/ui/FormPanel/FormPanel';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
+import { useToast } from '@/ui/Toast/useToast';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { formatCents, formatMoneyText, toCents } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
 import { useSetPhasing } from './phasingApi';

@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { useFormatters } from '@/lib/useFormatters';
 import type { ApprovalRound } from './approvalsApi';
 import {

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { ApiError } from '@/api/errors';
-import { useToast } from '@/components';
-import type { ActionsMenuItem } from '@/components';
+import { useToast } from '@/ui/Toast/useToast';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import { useUndoableDelete } from '@/lib/useUndoableDelete';
 import { CopyPlanDialog } from './dialogs/CopyPlanDialog';
 import { gateItem } from './gateAction';

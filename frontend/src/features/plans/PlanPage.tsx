@@ -1,8 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, useOutlet, useParams, useSearchParams } from 'react-router';
 import { ApiError } from '@/api/errors';
-import { Button, ErrorState, Skeleton, Tabs, ViewOnlyNote } from '@/components';
-import type { ActionsMenuItem, TabItem } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { Tabs } from '@/ui/Tabs/Tabs';
+import { ViewOnlyNote } from '@/ui/ViewOnlyNote/ViewOnlyNote';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
+import type { TabItem } from '@/ui/Tabs/Tabs';
 import { HistorySection } from '@/features/activity-log/HistorySection';
 import { showHistory } from '@/features/activity-log/showHistory';
 import { BudgetByMonthCard } from '@/features/budget-phasing/BudgetByMonthCard';

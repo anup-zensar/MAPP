@@ -1,4 +1,5 @@
-import { ErrorState, Skeleton } from '@/components';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { PublicLayout } from './PublicLayout';
 import styles from './SessionCheckPage.module.css';

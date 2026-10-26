@@ -2,8 +2,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { QueryKey } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
 import { ApiError, resolvedMessage } from '@/api/errors';
-import type { components } from '@/api/schema';
-import { useToast } from '@/components';
+import type { components } from '@/api/generated/schema';
+import { useToast } from '@/ui/Toast/useToast';
 import { useFormatters } from './useFormatters';
 
 type DeleteResult = components['schemas']['DeleteResult'];

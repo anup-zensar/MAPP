@@ -1,15 +1,12 @@
 import { ExternalLink } from 'lucide-react';
 import { useId } from 'react';
 import { ApiError } from '@/api/errors';
-import {
-  Button,
-  CompletenessChip,
-  ErrorState,
-  LinkButton,
-  PersonLabel,
-  SidePanel,
-  Skeleton,
-} from '@/components';
+import { Button, LinkButton } from '@/ui/Button/Button';
+import { CompletenessChip } from '@/ui/CompletenessChip/CompletenessChip';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { SidePanel } from '@/ui/SidePanel/SidePanel';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { ActivityStatusChip } from '@/features/activities/ActivityStatusChip';
 import { activityStatusWord } from '@/features/activities/activityStatus';
 import { formatDate } from '@/lib/format';

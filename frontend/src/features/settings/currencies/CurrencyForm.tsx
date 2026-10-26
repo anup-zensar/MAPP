@@ -1,6 +1,12 @@
 import { useState } from 'react';
-import { DecimalField, FormPanel, LockedNote, problemOf, TextField, useToast } from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
+import { DecimalField } from '@/ui/DecimalField/DecimalField';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { LockedNote } from '@/ui/LockedNote/LockedNote';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { inverseRate, parseDecimalInput } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
 import { ImpactDialog } from '../shared/ImpactDialog';

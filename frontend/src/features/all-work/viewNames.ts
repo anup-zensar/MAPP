@@ -3,7 +3,7 @@
  * problems show at once; the API checks them again.
  */
 import { ApiError } from '@/api/errors';
-import type { FieldProblem } from '@/components';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SavedView } from './allWorkTypes';
 
 export const NAME_MAX = 60;

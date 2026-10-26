@@ -1,6 +1,11 @@
 import { History, SearchX } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router';
-import { Button, EmptyState, ErrorState, PageHeader, Skeleton, SummaryCard } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { formatWhole } from '@/lib/decimal';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { LOG_PAGE_SIZE, logEntriesKey, useLogEntries, useLogSummary } from './activityLogApi';

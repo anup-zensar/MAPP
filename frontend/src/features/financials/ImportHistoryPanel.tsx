@@ -1,6 +1,10 @@
 import { FileText } from 'lucide-react';
 import { ApiError } from '@/api/errors';
-import { Button, EmptyState, ErrorState, SidePanel, Skeleton } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { SidePanel } from '@/ui/SidePanel/SidePanel';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { useFormatters } from '@/lib/useFormatters';
 import { useFinancialImports } from './financialsApi';
 import type { FinancialImport } from './financialsApi';

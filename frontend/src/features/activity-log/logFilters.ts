@@ -12,8 +12,8 @@
  * | range=…, from=…, to=…           | from, to (UTC moments) |
  * | q=film                          | q                      |
  */
-import type { components, operations } from '@/api/schema';
-import type { FilterChip } from '@/components';
+import type { components, operations } from '@/api/generated/schema';
+import type { FilterChip } from '@/ui/FilterChips/FilterChips';
 import { ACTION_CHIPS, capitalise, planningLabel } from './logText';
 
 export type ActionFilter = components['schemas']['ActivityLogActionFilter'];

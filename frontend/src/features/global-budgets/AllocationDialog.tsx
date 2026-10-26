@@ -1,7 +1,12 @@
 import { CircleAlert } from 'lucide-react';
 import { useState } from 'react';
-import { ChoiceField, FormDialog, MoneyField, problemOf, Skeleton, useToast } from '@/components';
-import type { FieldProblem } from '@/components';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { formatAmount, parseMoneyInput } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
 import { useAllocate, useAllocationOptions, useUpdateAllocation } from './globalBudgetsApi';

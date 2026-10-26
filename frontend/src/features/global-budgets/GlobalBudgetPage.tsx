@@ -2,21 +2,18 @@ import { Landmark, Lock, Pencil, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { ApiError } from '@/api/errors';
-import {
-  ActionsMenu,
-  Button,
-  Card,
-  ConfirmDialog,
-  EmptyState,
-  ErrorState,
-  LinkButton,
-  PageHeader,
-  PersonLabel,
-  ProgressBar,
-  Skeleton,
-  TeamPills,
-  useToast,
-} from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button, LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { TeamPills } from '@/ui/TeamPill/TeamPill';
+import { useToast } from '@/ui/Toast/useToast';
 import { ScrollBox } from '@/features/financials/ScrollBox';
 import { PlanStatusChip } from '@/features/plans/PlanFacts';
 import { usePageTitle } from '@/lib/usePageTitle';

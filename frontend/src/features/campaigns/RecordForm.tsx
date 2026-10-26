@@ -1,14 +1,13 @@
 import { useId } from 'react';
-import {
-  DateRangeField,
-  FormSection,
-  MoneyField,
-  problemOf,
-  ShellAttributeFields,
-  TextAreaField,
-  TextField,
-} from '@/components';
-import type { AttributeForm, AttributeValues, FieldProblem } from '@/components';
+import { DateRangeField } from '@/ui/DateRangeField/DateRangeField';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { FormSection } from '@/ui/FormSection/FormSection';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import { ShellAttributeFields } from '@/ui/ShellAttributeFields/ShellAttributeFields';
+import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
+import { TextField } from '@/ui/TextField/TextField';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { AttributeForm, AttributeValues } from '@/ui/ShellAttributeFields/rules';
 import { PersonField } from '@/features/people';
 import { useFormatters } from '@/lib/useFormatters';
 import { PHASING_REMOVED } from '@/features/plans/planText';

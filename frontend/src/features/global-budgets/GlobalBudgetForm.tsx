@@ -1,15 +1,14 @@
 import { useState } from 'react';
-import {
-  ChoiceField,
-  FormPanel,
-  LockedNote,
-  MoneyField,
-  problemOf,
-  TextAreaField,
-  TextField,
-  useToast,
-} from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { LockedNote } from '@/ui/LockedNote/LockedNote';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { PersonField } from '@/features/people';
 import { formatAmount, parseMoneyInput } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';

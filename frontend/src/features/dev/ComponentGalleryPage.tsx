@@ -1,32 +1,31 @@
 import { ClipboardList, Copy, ListChecks, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { ApiError } from '@/api/errors';
-import {
-  ActionsMenu,
-  Avatar,
-  Button,
-  Card,
-  CompletenessChip,
-  ConfirmDialog,
-  DemoBanner,
-  EmptyState,
-  ErrorState,
-  FormErrorSummary,
-  InfoTip,
-  LinkButton,
-  LinkSummaryCard,
-  Logo,
-  PageHeader,
-  PasswordField,
-  SidePanel,
-  Skeleton,
-  StatusChip,
-  SummaryCard,
-  TextField,
-  Tooltip,
-  useToast,
-} from '@/components';
-import type { FieldProblem, MissingField, StatusTone } from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Avatar } from '@/ui/Avatar/Avatar';
+import { Button, LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { CompletenessChip } from '@/ui/CompletenessChip/CompletenessChip';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { DemoBanner } from '@/ui/DemoBanner/DemoBanner';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FormErrorSummary } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { Logo } from '@/ui/Logo/Logo';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { PasswordField } from '@/ui/PasswordField/PasswordField';
+import { SidePanel } from '@/ui/SidePanel/SidePanel';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { LinkSummaryCard } from '@/ui/SummaryCard/LinkSummaryCard';
+import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
+import type { MissingField } from '@/ui/CompletenessChip/CompletenessChip';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { StatusTone } from '@/ui/StatusChip/StatusChip';
 import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';
 import styles from './ComponentGalleryPage.module.css';

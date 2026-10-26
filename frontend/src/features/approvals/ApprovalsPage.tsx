@@ -1,21 +1,19 @@
 import { CircleCheckBig, SearchX, UserRoundCog } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import {
-  Button,
-  Card,
-  CountBadge,
-  EmptyState,
-  ErrorState,
-  FilterChips,
-  PageHeader,
-  Tabs,
-  SearchField,
-  Skeleton,
-  SummaryCard,
-} from '@/components';
-import type { TabItem } from '@/components';
-import type { components } from '@/api/schema';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { CountBadge } from '@/ui/CountBadge/CountBadge';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FilterChips } from '@/ui/FilterChips/FilterChips';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { SearchField } from '@/ui/SearchField/SearchField';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
+import { Tabs } from '@/ui/Tabs/Tabs';
+import type { TabItem } from '@/ui/Tabs/Tabs';
+import type { components } from '@/api/generated/schema';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { useFormatters } from '@/lib/useFormatters';
 import {

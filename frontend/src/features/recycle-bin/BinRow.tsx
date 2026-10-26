@@ -1,6 +1,12 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { ActionsMenu, Avatar, Button, LevelTag, StatusChip, Tooltip } from '@/components';
-import type { ActionsMenuItem, PlanningLevel } from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Avatar } from '@/ui/Avatar/Avatar';
+import { Button } from '@/ui/Button/Button';
+import { LevelTag } from '@/ui/LevelTag/LevelTag';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
+import type { PlanningLevel } from '@/ui/LevelTag/LevelTag';
 import { availabilityProps, isShown } from '@/lib/access';
 import { initialsOf } from '@/features/activity-log/logText';
 import { useFormatters } from '@/lib/useFormatters';

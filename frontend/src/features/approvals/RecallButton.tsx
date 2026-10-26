@@ -1,6 +1,6 @@
 import { Undo2 } from 'lucide-react';
 import { useState } from 'react';
-import { Button } from '@/components';
+import { Button } from '@/ui/Button/Button';
 import type { ActivityApproval } from './approvalsApi';
 import { RecallDialog } from './RecallDialog';
 

@@ -1,4 +1,5 @@
-import { ConfirmDialog, Skeleton } from '@/components';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { usePlan } from '../plansApi';
 import { contentsText } from '../planText';
 import styles from './dialogs.module.css';

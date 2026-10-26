@@ -2,7 +2,7 @@
  * Settings records for feature 002's page tests (only tests import this file): the demo models,
  * activity types and currencies as the API answers them, and the API's error answers.
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 
 type Model = components['schemas']['Model'];
 type ActivityType = components['schemas']['ActivityType'];

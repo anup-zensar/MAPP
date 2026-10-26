@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { ApiError } from '@/api/errors';
-import { useToast } from '@/components';
+import { useToast } from '@/ui/Toast/useToast';
 import { currencyLabel, useDisplayCurrencies } from '@/features/people';
 import type { DisplayCurrencyOption } from '@/features/people';
 import { useFormatters } from '@/lib/useFormatters';

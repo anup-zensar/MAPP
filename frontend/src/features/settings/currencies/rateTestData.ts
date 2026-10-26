@@ -2,7 +2,7 @@
  * Exchange rates, rate imports and a reviewed GSAP rate file for the tests of this folder, shaped
  * as the API answers them (backend/api/openapi.yaml, feature 016). Only the tests use them.
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import type {
   ExchangeRatePage,
   ExchangeRateRecord,

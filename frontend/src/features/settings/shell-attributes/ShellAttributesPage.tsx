@@ -1,19 +1,16 @@
 import { ArrowDown, ArrowUp, ListChecks, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import {
-  ActionsMenu,
-  Button,
-  Card,
-  EmptyState,
-  ErrorState,
-  LinkButton,
-  PageHeader,
-  SegmentedFilter,
-  Skeleton,
-  StatusChip,
-  Tooltip,
-} from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button, LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import { formatWhole } from '@/lib/decimal';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { ListToolbar } from '../shared/ListToolbar';

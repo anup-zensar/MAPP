@@ -2,24 +2,23 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { ApiError, conflictMessage } from '@/api/errors';
-import {
-  Button,
-  Card,
-  CheckboxField,
-  ErrorState,
-  FailureMessage,
-  FormErrorSummary,
-  FormFooter,
-  FormSection,
-  LockedNote,
-  PageHeader,
-  problemOf,
-  Skeleton,
-  TextAreaField,
-  TextField,
-  useToast,
-} from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FormErrorSummary } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { FormFooter } from '@/ui/FormFooter/FormFooter';
+import { FailureMessage } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { FormSection } from '@/ui/FormSection/FormSection';
+import { LockedNote } from '@/ui/LockedNote/LockedNote';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { useUnsavedChanges } from '@/lib/useUnsavedChanges';

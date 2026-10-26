@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint';
 
 export default defineConfig([
   // Generated or built files are never linted.
-  globalIgnores(['dist', 'coverage', 'test-results', 'playwright-report', 'src/api/schema.d.ts']),
+  globalIgnores(['dist', 'coverage', 'test-results', 'playwright-report', 'src/api/generated']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

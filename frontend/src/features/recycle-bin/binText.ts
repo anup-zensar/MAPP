@@ -5,7 +5,7 @@
  */
 import type { ApiError } from '@/api/errors';
 import { resolvedMessage } from '@/api/errors';
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { formatDate, formatTime, localDate } from '@/lib/format';
 import type { DateFormat } from '@/lib/format';
 import { recordHref } from '@/lib/recordLinks';

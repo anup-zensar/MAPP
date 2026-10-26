@@ -1,4 +1,6 @@
-import { ChoiceField, DecimalField, MoneyField } from '@/components';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { DecimalField } from '@/ui/DecimalField/DecimalField';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import type { WaterfallModel } from '@/lib/waterfall';
 import styles from './PlanForm.module.css';
 import { goalRows } from './goalWaterfall';

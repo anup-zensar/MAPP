@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import type { ActionsMenuItem } from '@/components';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import { gateItem } from '@/features/plans/gateAction';
 import type { RecordTarget } from './campaignRows';
 import { CopyDialog } from './CopyDialog';

@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { useActivityTypes } from '@/api/settingsQueries';
-import {
-  ChoiceField,
-  DecimalField,
-  ErrorState,
-  FormPanel,
-  MoneyField,
-  problemOf,
-  Skeleton,
-  TextField,
-  useToast,
-} from '@/components';
-import type { ChoiceOption, FieldProblem, SaveFailure } from '@/components';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { DecimalField } from '@/ui/DecimalField/DecimalField';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import type { ChoiceOption } from '@/ui/ChoiceField/ChoiceField';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import {
   formatAmount,
   parseDecimalInput,

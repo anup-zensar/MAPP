@@ -1,4 +1,4 @@
-import { Skeleton } from '@/components';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { formatWhole } from '@/lib/decimal';
 import styles from './SettingsCount.module.css';
 

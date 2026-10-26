@@ -3,7 +3,7 @@
  * Amounts stay text while typed; they are read only when sent. Text that can't be read as an amount
  * is sent as typed, so the API reports it together with every other problem (FR-010).
  */
-import type { AttributeValues } from '@/components';
+import type { AttributeValues } from '@/ui/ShellAttributeFields/rules';
 import { formatAmount, formatWhole, parseDecimalInput, parseMoneyInput } from '@/lib/decimal';
 import { planCurrencyOf, planTypeOf } from './planCurrency';
 import type { PlanType } from './planCurrency';

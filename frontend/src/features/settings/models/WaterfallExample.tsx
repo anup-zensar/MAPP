@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
-import { DecimalField, InfoTip } from '@/components';
+import { DecimalField } from '@/ui/DecimalField/DecimalField';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { formatAmount, formatWhole, parseWholeInput } from '@/lib/decimal';
 import { plural } from '@/lib/text';
 import { waterfall } from '@/lib/waterfall';

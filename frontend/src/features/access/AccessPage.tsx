@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router';
-import { PageHeader, Tabs } from '@/components';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Tabs } from '@/ui/Tabs/Tabs';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { PeopleAccessTab } from './PeopleAccessTab';
 import { RecentAccessChanges } from './RecentAccessChanges';

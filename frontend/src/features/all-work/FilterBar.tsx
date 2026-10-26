@@ -1,6 +1,8 @@
 import { SlidersHorizontal } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
-import { Button, FilterChips, SearchField } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { FilterChips } from '@/ui/FilterChips/FilterChips';
+import { SearchField } from '@/ui/SearchField/SearchField';
 import { cx } from '@/lib/cx';
 import { formatWhole } from '@/lib/decimal';
 import styles from './FilterBar.module.css';

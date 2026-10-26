@@ -3,24 +3,23 @@ import { Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { ApiError } from '@/api/errors';
-import {
-  ActionsMenu,
-  Button,
-  ChoiceField,
-  ConfirmDialog,
-  ErrorState,
-  FormPanel,
-  PersonLabel,
-  problemOf,
-  SearchField,
-  SidePanel,
-  Skeleton,
-  StatusChip,
-  TextAreaField,
-  TextField,
-  useToast,
-} from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button } from '@/ui/Button/Button';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { SearchField } from '@/ui/SearchField/SearchField';
+import { SidePanel } from '@/ui/SidePanel/SidePanel';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { useFormatters } from '@/lib/useFormatters';
 import { useUndoableDelete } from '@/lib/useUndoableDelete';
 import { formFailure, useShowFailure } from './feedback';

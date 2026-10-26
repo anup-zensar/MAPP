@@ -1,4 +1,4 @@
-import type { TabItem } from '@/components';
+import type { TabItem } from '@/ui/Tabs/Tabs';
 
 /**
  * The tabs of an activity's page (design system §2.4 B, plan decision 5): **Overview** (the

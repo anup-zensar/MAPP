@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { ApiError, conflictMessage } from '@/api/errors';
-import { FailureMessage, FormDialog, problemOf, TextField, useToast } from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
+import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { FailureMessage } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { plural } from '@/lib/text';
 import { useFormatters } from '@/lib/useFormatters';
 import { CONFLICT_NEXT_STEP } from '../shared/saveFailure';

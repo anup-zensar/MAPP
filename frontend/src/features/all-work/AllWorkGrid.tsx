@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-import { InfoTip } from '@/components';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { cx } from '@/lib/cx';
 import styles from './AllWorkGrid.module.css';
 import { COLUMN_TIPS, totalText } from './allWorkText';

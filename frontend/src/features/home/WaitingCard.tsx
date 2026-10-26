@@ -1,6 +1,9 @@
 import { Hourglass } from 'lucide-react';
 import { Link } from 'react-router';
-import { Card, EmptyState, LinkButton, Skeleton } from '@/components';
+import { LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
 import { useHomeWaiting } from './homeApi';

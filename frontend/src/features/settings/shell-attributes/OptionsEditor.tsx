@@ -1,9 +1,12 @@
 import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import type { components } from '@/api/schema';
-import { Button, problemOf, TextField, Tooltip } from '@/components';
-import type { FieldProblem } from '@/components';
+import type { components } from '@/api/generated/schema';
+import { Button } from '@/ui/Button/Button';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { TextField } from '@/ui/TextField/TextField';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { LinkedToField } from './LinkedToField';
 import styles from './ShellAttributes.module.css';
 

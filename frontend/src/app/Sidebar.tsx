@@ -1,7 +1,8 @@
 import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useId } from 'react';
 import { Link, useLocation, useMatch } from 'react-router';
-import { Logo, Tooltip } from '@/components';
+import { Logo } from '@/ui/Logo/Logo';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import { useAccess } from '@/lib/access';
 import { cx } from '@/lib/cx';
 import { itemsFor, MAIN_ITEMS, MORE_ITEMS } from './navigation';

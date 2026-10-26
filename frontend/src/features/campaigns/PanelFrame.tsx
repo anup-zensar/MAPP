@@ -2,15 +2,14 @@ import { CircleAlert } from 'lucide-react';
 import { useId } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import {
-  Button,
-  ErrorState,
-  FailureMessage,
-  FormErrorSummary,
-  SidePanel,
-  Skeleton,
-} from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FormErrorSummary } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { FailureMessage } from '@/ui/FormPanel/FormPanel';
+import { SidePanel } from '@/ui/SidePanel/SidePanel';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { ApiError } from '@/api/errors';
 import { useUnsavedChanges } from '@/lib/useUnsavedChanges';
 import styles from './PanelFrame.module.css';

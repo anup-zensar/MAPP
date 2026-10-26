@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { TreeTable } from '@/components';
-import type { TreeNode } from '@/components';
+import { TreeTable } from '@/ui/TreeTable/TreeTable';
+import type { TreeNode } from '@/ui/TreeTable/TreeTable';
 import { formatDateRange, formatMoney } from '@/lib/format';
 import type { Formatters } from '@/lib/useFormatters';
 import { renderWithProviders } from '@/test/render';

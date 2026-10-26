@@ -4,7 +4,7 @@
  * production" (46,000.00 EUR = 50,000.00 USD), its form options, the line-item Shell attributes
  * (Spend type → GL code) and the answers every form asks for.
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { attribute, option } from '@/test/attributeForms';
 import type { MockHandler } from '@/test/mockApi';
 

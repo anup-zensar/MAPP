@@ -1,5 +1,5 @@
 import { Navigate, useLocation, useParams } from 'react-router';
-import { PageHeader } from '@/components';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { useActivity } from './activitiesApi';
 import { LoadFailed, PageSkeleton } from './ActivityLoadStates';

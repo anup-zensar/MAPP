@@ -2,7 +2,7 @@
  * Every web text of the line-item screens (007 plan, "User-visible messages"): constants and small
  * functions for the texts built from data. Code and tests quote them from here.
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { plural } from '@/lib/text';
 import type { SpreadEffect, SpreadMethod } from './lineItemMath';
 

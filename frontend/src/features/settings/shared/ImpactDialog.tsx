@@ -1,5 +1,5 @@
-import type { components } from '@/api/schema';
-import { ConfirmDialog } from '@/components';
+import type { components } from '@/api/generated/schema';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { SETTING_NOUNS } from './settingsNouns';
 import type { SettingKind } from './settingsNouns';
 import styles from './SettingsTable.module.css';

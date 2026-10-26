@@ -1,4 +1,6 @@
-import { Card, ErrorState, Skeleton } from '@/components';
+import { Card } from '@/ui/Card/Card';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { formatWhole } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
 import settingsStyles from '../shared/SettingsTable.module.css';

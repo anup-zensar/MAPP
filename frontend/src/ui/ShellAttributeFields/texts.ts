@@ -2,7 +2,7 @@
  * The texts of Shell attributes on forms and details (feature 002 plan, "User-visible messages",
  * rows "Attribute fields on forms" and "Split editor"), and how a value reads.
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { formatPercent, formatWhole } from '@/lib/decimal';
 import { joinWithAnd, midSentence } from '@/lib/text';
 import { allAttributes, isEmptyValue } from './rules';

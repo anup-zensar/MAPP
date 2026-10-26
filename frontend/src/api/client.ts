@@ -1,15 +1,15 @@
 /**
  * The web app's only way to talk to MAPP's API (research R11, R15).
  *
- * `api` is typed from the contract (backend/api/openapi.yaml → schema.d.ts), so paths, parameters
- * and bodies are checked by TypeScript. Wrap every call in call(), which returns the data or throws
- * an ApiError:
+ * `api` is typed from the contract (backend/api/openapi.yaml → generated/schema.d.ts), so paths,
+ * parameters and bodies are checked by TypeScript. Wrap every call in call(), which returns the data
+ * or throws an ApiError:
  *
  *   const me = await call(api.GET('/api/v1/me'));
  */
 import createClient from 'openapi-fetch';
 import { ApiError } from './errors';
-import type { components, paths } from './schema';
+import type { components, paths } from './generated/schema';
 
 type ErrorBody = components['schemas']['Error'];
 

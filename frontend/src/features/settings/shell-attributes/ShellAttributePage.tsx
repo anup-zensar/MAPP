@@ -1,17 +1,15 @@
 import { Pencil } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router';
 import { ApiError } from '@/api/errors';
-import {
-  ActionsMenu,
-  Card,
-  ErrorState,
-  LevelTag,
-  LinkButton,
-  LockedNote,
-  PageHeader,
-  Skeleton,
-  StatusChip,
-} from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { LevelTag } from '@/ui/LevelTag/LevelTag';
+import { LockedNote } from '@/ui/LockedNote/LockedNote';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { localDate } from '@/lib/format';
 import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';

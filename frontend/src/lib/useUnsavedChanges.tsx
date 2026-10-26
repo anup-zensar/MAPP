@@ -5,7 +5,7 @@ import type { ReactElement } from 'react';
 import { useBlocker } from 'react-router';
 import { SESSION_KEY } from '@/app/useSession';
 import type { CurrentUser } from '@/app/useSession';
-import { ConfirmDialog } from '@/components';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 
 /** What useUnsavedChanges gives a form. */
 export interface UnsavedChanges {

@@ -5,7 +5,7 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import type { QueryKey } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import type { LogApiQuery } from './logFilters';
 
 type ActivityLogEntry = components['schemas']['ActivityLogEntry'];

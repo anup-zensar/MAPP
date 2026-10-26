@@ -10,7 +10,7 @@ import { expect } from 'vitest';
 import { SessionProvider } from '@/app/SessionProvider';
 import { SESSION_KEY } from '@/app/useSession';
 import type { CurrentUser } from '@/app/useSession';
-import { ToastProvider } from '@/components';
+import { ToastProvider } from '@/ui/Toast/Toast';
 
 export interface RenderOptions {
   /**

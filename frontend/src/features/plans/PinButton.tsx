@@ -1,5 +1,6 @@
 import { Star } from 'lucide-react';
-import { Button, Tooltip } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import { cx } from '@/lib/cx';
 import styles from './PinButton.module.css';
 

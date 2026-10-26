@@ -4,8 +4,8 @@
  * and count lines of the list. Pure functions, so the log page, the History sections and their
  * tests share one wording.
  */
-import type { components } from '@/api/schema';
-import type { StatusTone } from '@/components';
+import type { components } from '@/api/generated/schema';
+import type { StatusTone } from '@/ui/StatusChip/StatusChip';
 import { formatWhole } from '@/lib/decimal';
 import { formatWeekdayDate } from '@/lib/format';
 import { recordHref } from '@/lib/recordLinks';

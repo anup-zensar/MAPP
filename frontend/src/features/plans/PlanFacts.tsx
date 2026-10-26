@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router';
-import type { components } from '@/api/schema';
-import { StatusChip } from '@/components';
+import type { components } from '@/api/generated/schema';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { AttentionChip } from '@/features/campaigns/AttentionChip';
 import { completenessFieldHref } from '@/features/budget-phasing/phasingLinks';
 import { recordHref } from '@/lib/recordLinks';

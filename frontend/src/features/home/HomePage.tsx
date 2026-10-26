@@ -1,6 +1,7 @@
 import { useCurrentUser, useSession } from '@/app/useSession';
-import { PageHeader, SegmentedFilter } from '@/components';
-import type { SegmentedFilterOption } from '@/components';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
+import type { SegmentedFilterOption } from '@/ui/SegmentedFilter/SegmentedFilter';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { AttentionCard } from './AttentionCard';
 import { CurrencyPicker } from './CurrencyPicker';

@@ -1,8 +1,13 @@
 import { RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import { ApiError, conflictMessage } from '@/api/errors';
-import { Button, FormPanel, problemOf, TextAreaField, useToast } from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { useFormatters } from '@/lib/useFormatters';
 import { CONFLICT_NEXT_STEP } from '../shared/saveFailure';
 import { useCloseAfterSave } from '../shared/useCloseAfterSave';

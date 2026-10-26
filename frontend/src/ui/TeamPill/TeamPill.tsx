@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import styles from './TeamPill.module.css';
 
 /** A team as other records show it (contract TeamRef). */

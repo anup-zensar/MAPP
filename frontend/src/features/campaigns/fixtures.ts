@@ -2,7 +2,7 @@
  * Contract-shaped answers for this feature's tests (typed with the API schema, so a contract
  * change shows here first). Only test files import this file.
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import type {
   Campaign,
   Destination,

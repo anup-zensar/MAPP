@@ -1,5 +1,5 @@
-import type { components } from '@/api/schema';
-import { ConfirmDialog } from '@/components';
+import type { components } from '@/api/generated/schema';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { KEEP_EDITING, RESTART_CONFIRM, RESTART_TITLE, restartText } from './lineItemText';
 
 type ActivityStatus = components['schemas']['ActivityStatus'];

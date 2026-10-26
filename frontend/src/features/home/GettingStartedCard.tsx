@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { Card } from '@/components';
+import { Card } from '@/ui/Card/Card';
 import type { HomeSummary } from './homeApi';
 import styles from './GettingStartedCard.module.css';
 

@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import type { Theme } from './theme';
 
 /** The signed-in person with their preferences, as GET /api/v1/me answers. */

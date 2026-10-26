@@ -11,7 +11,9 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { Button, Skeleton, useToast } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { useToast } from '@/ui/Toast/useToast';
 import { asApiError, isSessionLost } from '@/features/approvals/messages';
 import { cx } from '@/lib/cx';
 import { recordHref } from '@/lib/recordLinks';

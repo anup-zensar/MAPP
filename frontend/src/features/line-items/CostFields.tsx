@@ -1,5 +1,8 @@
-import { ChoiceField, InfoTip, MoneyField, problemOf } from '@/components';
-import type { FieldProblem } from '@/components';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { formatRate } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
 import styles from './LineItemForm.module.css';

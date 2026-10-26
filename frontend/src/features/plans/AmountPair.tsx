@@ -1,4 +1,4 @@
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { formatMoneyText } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
 import styles from './AmountPair.module.css';

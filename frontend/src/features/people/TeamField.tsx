@@ -1,4 +1,4 @@
-import { TeamPicker } from '@/components';
+import { TeamPicker } from '@/ui/TeamPicker/TeamPicker';
 import type { ComponentProps } from 'react';
 import { FieldLoadFailed, FieldLoading } from './FieldLoadStates';
 import { useTeams } from './peopleApi';

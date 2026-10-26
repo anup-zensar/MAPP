@@ -1,18 +1,16 @@
 import { Download, Plus, Upload } from 'lucide-react';
 import { useState } from 'react';
-import {
-  ActionsMenu,
-  Button,
-  Card,
-  EmptyState,
-  ErrorState,
-  SearchField,
-  SegmentedFilter,
-  Skeleton,
-  StatusChip,
-  useToast,
-} from '@/components';
-import type { ActionsMenuItem } from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { SearchField } from '@/ui/SearchField/SearchField';
+import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { useToast } from '@/ui/Toast/useToast';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import { formatWhole } from '@/lib/decimal';
 import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
 import { ImportOptionsDialog } from './ImportOptionsDialog';

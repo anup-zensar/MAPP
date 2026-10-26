@@ -1,5 +1,5 @@
 import { LoaderCircle } from 'lucide-react';
-import { Button } from '@/components';
+import { Button } from '@/ui/Button/Button';
 import { localDate } from '@/lib/format';
 import { LogEntry } from './LogEntry';
 import { dayLabel, entriesText, loadedLine } from './logText';

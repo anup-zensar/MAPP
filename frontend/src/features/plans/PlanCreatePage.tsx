@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { ApiError } from '@/api/errors';
-import { ErrorState, PageHeader, useToast } from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { PlanForm, PlanFormSkeleton } from './PlanForm';
 import { answers016, toCreateBody, valuesFromDefaults } from './planFormValues';

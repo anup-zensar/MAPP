@@ -1,15 +1,13 @@
 import { SearchX, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
-import {
-  Button,
-  EmptyState,
-  ErrorState,
-  PageHeader,
-  SearchField,
-  SegmentedFilter,
-  Skeleton,
-} from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { SearchField } from '@/ui/SearchField/SearchField';
+import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { BinRow } from './BinRow';
 import {

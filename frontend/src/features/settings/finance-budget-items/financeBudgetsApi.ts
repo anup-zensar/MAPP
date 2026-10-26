@@ -6,7 +6,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { QueryKey } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { SETTINGS_KEYS } from '@/api/settingsQueries';
 
 export type FinanceBudget = components['schemas']['FinanceBudget'];

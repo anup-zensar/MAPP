@@ -6,21 +6,19 @@ import type { FormEvent } from 'react';
 import { Navigate, useLocation, useSearchParams } from 'react-router';
 import { api, call } from '@/api/client';
 import { ApiError } from '@/api/errors';
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { PublicLayout } from '@/app/PublicLayout';
 import { SessionCheckPage } from '@/app/SessionCheckPage';
 import { useSession } from '@/app/useSession';
 import type { SessionEnd } from '@/app/useSession';
-import {
-  Avatar,
-  Button,
-  ErrorState,
-  FormErrorSummary,
-  PasswordField,
-  Skeleton,
-  TextField,
-} from '@/components';
-import type { FieldProblem } from '@/components';
+import { Avatar } from '@/ui/Avatar/Avatar';
+import { Button } from '@/ui/Button/Button';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FormErrorSummary } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { PasswordField } from '@/ui/PasswordField/PasswordField';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { TextField } from '@/ui/TextField/TextField';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { safeNext } from '@/lib/safeNext';
 import { usePageTitle } from '@/lib/usePageTitle';
 import styles from './SignInPage.module.css';

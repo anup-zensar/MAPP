@@ -1,4 +1,4 @@
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { Combobox } from '../Combobox/Combobox';
 import type { ComboboxOption } from '../Combobox/Combobox';
 import type { FieldFrameProps } from '../FieldShell/FieldShell';

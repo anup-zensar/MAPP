@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ApiError, conflictMessage } from '@/api/errors';
-import { FailureMessage, FormDialog, useToast } from '@/components';
+import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { FailureMessage } from '@/ui/FormPanel/FormPanel';
+import { useToast } from '@/ui/Toast/useToast';
 import { recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
 import { useDestinations, useMoveRecord } from './campaignApi';

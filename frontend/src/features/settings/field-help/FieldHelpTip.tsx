@@ -1,4 +1,4 @@
-import { InfoTip } from '@/components';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { useFieldHelp } from './useFieldHelp';
 
 export interface FieldHelpTipProps {

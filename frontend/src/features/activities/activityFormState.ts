@@ -4,7 +4,8 @@
  * (all problems at once, the messages-table texts), the changes that restart approval, and the
  * request bodies. The API stays the judge: it checks everything again on save.
  */
-import type { AttributeValues, FieldProblem } from '@/components';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { AttributeValues } from '@/ui/ShellAttributeFields/rules';
 import {
   formatAmount,
   formatMoneyText,

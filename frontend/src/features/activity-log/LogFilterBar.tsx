@@ -2,8 +2,10 @@ import { Check, CircleAlert } from 'lucide-react';
 import { DropdownMenu } from 'radix-ui';
 import { useEffect, useEffectEvent, useId, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { components } from '@/api/schema';
-import { FilterChips, SearchField, SegmentedFilter } from '@/components';
+import type { components } from '@/api/generated/schema';
+import { FilterChips } from '@/ui/FilterChips/FilterChips';
+import { SearchField } from '@/ui/SearchField/SearchField';
+import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
 import { useFormatters } from '@/lib/useFormatters';
 import {
   ACTION_FILTERS,

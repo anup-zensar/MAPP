@@ -1,4 +1,4 @@
-import type { ActionsMenuItem } from '@/components';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import { formatRate } from '@/lib/decimal';
 import type { Currency } from './currenciesApi';
 

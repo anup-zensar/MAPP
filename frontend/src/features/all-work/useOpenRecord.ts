@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { ApiError } from '@/api/errors';
-import { useToast } from '@/components';
+import { useToast } from '@/ui/Toast/useToast';
 import { ALL_WORK_KEYS, locateRecord } from './allWorkApi';
 import type { AllWorkRow } from './allWorkTypes';
 import { rowHref } from './rowHref';

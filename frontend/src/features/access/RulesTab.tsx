@@ -1,18 +1,17 @@
 import { Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { ApiError, conflictMessage } from '@/api/errors';
-import {
-  Button,
-  Card,
-  CheckboxField,
-  ChoiceField,
-  ErrorState,
-  FormPanel,
-  problemOf,
-  Skeleton,
-  useToast,
-} from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import list from '@/features/settings/shared/SettingsTable.module.css';
 import { useFormatters } from '@/lib/useFormatters';
 import { useAccessRules, useRoles, useUpdateAccessRules } from './accessApi';

@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useCurrentUser } from '@/app/useSession';
-import { useToast } from '@/components';
+import { useToast } from '@/ui/Toast/useToast';
 import {
   fetchOptionsOf,
   useAllWorkOptions,

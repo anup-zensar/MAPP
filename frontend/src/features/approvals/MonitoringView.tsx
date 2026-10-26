@@ -1,5 +1,9 @@
 import { CircleCheckBig } from 'lucide-react';
-import { Card, EmptyState, ErrorState, Skeleton, SummaryCard } from '@/components';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { formatWaitingTime, localDate } from '@/lib/format';
 import { useFormatters } from '@/lib/useFormatters';
 import { AgeingBars } from './AgeingBars';

@@ -3,19 +3,17 @@ import { Plus, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useCurrentUser } from '@/app/useSession';
-import {
-  ActionsMenu,
-  Button,
-  Card,
-  EmptyState,
-  ErrorState,
-  PageHeader,
-  PersonLabel,
-  Skeleton,
-  StatusChip,
-  TeamPills,
-  useToast,
-} from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { TeamPills } from '@/ui/TeamPill/TeamPill';
+import { useToast } from '@/ui/Toast/useToast';
 import { ListToolbar } from '@/features/settings/shared/ListToolbar';
 import styles from '@/features/settings/shared/SettingsTable.module.css';
 import lists from './lists.module.css';

@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
-import type { components } from '@/api/schema';
-import { FormDialog } from '@/components';
+import type { components } from '@/api/generated/schema';
+import { FormDialog } from '@/ui/FormDialog/FormDialog';
 import { fieldHref } from '@/lib/recordLinks';
 import type { PlanningRecordType } from '@/lib/recordLinks';
 import { groupLabel } from '../planText';

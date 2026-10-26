@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router';
-import { PageHeader, Tabs } from '@/components';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Tabs } from '@/ui/Tabs/Tabs';
 import { HistorySection } from '@/features/activity-log/HistorySection';
 import { showHistory } from '@/features/activity-log/showHistory';
 import { ApprovalSection } from '@/features/approvals/ApprovalSection';

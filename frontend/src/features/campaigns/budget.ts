@@ -2,7 +2,7 @@
  * Budget arithmetic of the forms, exact to the cent with BigInt (FR-010, constitution VI). What it
  * computes is shown while typing; the API stays the judge of what is saved.
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { formatAmount, formatCents, parseMoneyInput, toCents } from '@/lib/decimal';
 
 type Money = components['schemas']['Money'];

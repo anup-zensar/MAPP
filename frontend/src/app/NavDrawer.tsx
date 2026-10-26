@@ -2,7 +2,8 @@ import { Menu, X } from 'lucide-react';
 import { Dialog } from 'radix-ui';
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router';
-import { Button, Tooltip } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import styles from './NavDrawer.module.css';
 import { Sidebar } from './Sidebar';
 

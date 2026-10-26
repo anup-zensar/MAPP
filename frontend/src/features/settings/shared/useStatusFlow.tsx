@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
-import { ConfirmDialog, useToast } from '@/components';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { useToast } from '@/ui/Toast/useToast';
 
 /** The record whose status changes, with the version people saw when they chose the action. */
 export interface StatusFlowRecord {

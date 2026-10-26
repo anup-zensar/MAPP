@@ -1,4 +1,4 @@
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 
 type AttributeForm = components['schemas']['AttributeForm'];
 type FormAttribute = components['schemas']['FormAttribute'];

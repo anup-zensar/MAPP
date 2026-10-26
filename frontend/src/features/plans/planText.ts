@@ -2,8 +2,8 @@
  * The words of plans on screen (plan "User-visible messages"): statuses, spreads, goal stages,
  * approval progress, counts and the plan's dates. Pages and tests quote these, never their own copies.
  */
-import type { components } from '@/api/schema';
-import type { StatusTone } from '@/components';
+import type { components } from '@/api/generated/schema';
+import type { StatusTone } from '@/ui/StatusChip/StatusChip';
 import { joinWithAnd, plural } from '@/lib/text';
 
 export type PlanStatus = components['schemas']['PlanStatus'];

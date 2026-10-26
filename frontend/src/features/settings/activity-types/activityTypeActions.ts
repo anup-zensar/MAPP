@@ -1,4 +1,4 @@
-import type { ActionsMenuItem } from '@/components';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import type { ActivityType } from './activityTypesApi';
 
 /** What people can do with an activity type, from its row or its details. */

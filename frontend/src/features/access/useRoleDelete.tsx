@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { ApiError } from '@/api/errors';
-import { ConfirmDialog, useToast } from '@/components';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { useToast } from '@/ui/Toast/useToast';
 import { useUndoableDelete } from '@/lib/useUndoableDelete';
 import { ROLES_KEY, useDeleteRole } from './accessApi';
 import type { Role } from './accessApi';

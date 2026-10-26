@@ -1,7 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Send } from 'lucide-react';
 import { useState } from 'react';
-import { Button, useToast } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { useToast } from '@/ui/Toast/useToast';
 import { useFormatters } from '@/lib/useFormatters';
 import { fetchSubmission, useSubmitActivity } from './approvalsApi';
 import type { ApprovalSubmission } from './approvalsApi';

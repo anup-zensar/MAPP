@@ -1,12 +1,10 @@
-import {
-  Card,
-  ErrorState,
-  InfoTip,
-  PersonLabel,
-  ShellAttributeValues,
-  Skeleton,
-} from '@/components';
-import type { AttributeForm } from '@/components';
+import { Card } from '@/ui/Card/Card';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { ShellAttributeValues } from '@/ui/ShellAttributeFields/ShellAttributeValues';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
 import { Detail, DetailsList } from '@/features/line-items/DetailsList';
 import { moneyText } from '@/features/line-items/lineItemMath';
 import { MoneyPair } from '@/features/line-items/MoneyPair';

@@ -1,5 +1,5 @@
 import { TriangleAlert } from 'lucide-react';
-import { SummaryCard } from '@/components';
+import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { cx } from '@/lib/cx';
 import { useFormatters } from '@/lib/useFormatters';
 import type { GlobalBudgetFigures } from './globalBudgetsApi';

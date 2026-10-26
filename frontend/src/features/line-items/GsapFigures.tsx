@@ -1,7 +1,8 @@
 import { CircleAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
-import { InfoTip, ProgressBar } from '@/components';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
 import { cx } from '@/lib/cx';
 import { recordHref } from '@/lib/recordLinks';
 import {

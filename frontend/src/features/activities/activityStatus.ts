@@ -3,8 +3,8 @@
  * and the colour family of each display status. Built with the shared foundation because feature
  * 008 (approvals) shows it too; feature 006 adds the banner texts here.
  */
-import type { components } from '@/api/schema';
-import type { StatusTone } from '@/components';
+import type { components } from '@/api/generated/schema';
+import type { StatusTone } from '@/ui/StatusChip/StatusChip';
 
 export type ActivityDisplayStatus = components['schemas']['ActivityDisplayStatus'];
 

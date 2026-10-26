@@ -1,8 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
 import type { QueryKey } from '@tanstack/react-query';
 import { ApiError, conflictMessage } from '@/api/errors';
-import type { components } from '@/api/schema';
-import { useToast } from '@/components';
+import type { components } from '@/api/generated/schema';
+import { useToast } from '@/ui/Toast/useToast';
 import { useFormatters } from '@/lib/useFormatters';
 import { SETTING_NOUNS } from './settingsNouns';
 import type { SettingKind } from './settingsNouns';

@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { useAttributeForm } from '@/api/settingsQueries';
-import { ErrorState, FormPanel, problemOf, Skeleton, TextField, useToast } from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { useFormatters } from '@/lib/useFormatters';
 import { saveFailureOf } from '../shared/saveFailure';
 import { findFormAttribute, linkOptionText } from './attributeWords';

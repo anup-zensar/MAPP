@@ -1,4 +1,4 @@
-import { StatusChip } from '@/components';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { activityStatusTone, activityStatusWord } from './activityStatus';
 import type { ActivityDisplayStatus } from './activityStatus';
 

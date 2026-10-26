@@ -2,7 +2,7 @@
  * Plans, people, teams and Settings for the plans tests, shaped like the API's answers and the demo
  * data (FY2026 Lubricants Europe, FY2026 Mobility China, FY2025 Lubricants Europe).
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { LUBRICANTS, MOBILITY, planForm } from '@/test/attributeForms';
 import type { MockHandler } from '@/test/mockApi';
 import type { Plan, PlanDefaults, PlanList, PlanSummary } from './plansApi';

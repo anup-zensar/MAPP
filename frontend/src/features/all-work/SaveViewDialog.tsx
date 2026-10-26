@@ -1,13 +1,11 @@
 import { useId, useState } from 'react';
-import {
-  CheckboxField,
-  ConfirmDialog,
-  FormDialog,
-  FormErrorSummary,
-  TextField,
-  useToast,
-} from '@/components';
-import type { FieldProblem } from '@/components';
+import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { FormErrorSummary } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { useCreateView, useUpdateView } from './allWorkApi';
 import type { SavedView, ViewState } from './allWorkTypes';
 import { useViewRefusal } from './useViewRefusal';

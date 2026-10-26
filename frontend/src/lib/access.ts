@@ -8,7 +8,7 @@
  * (consolidation D-298).
  */
 import { ApiError } from '@/api/errors';
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { useSession } from '@/app/useSession';
 
 /** One of the fixed permissions of 014 Table A, such as "plans.edit". */

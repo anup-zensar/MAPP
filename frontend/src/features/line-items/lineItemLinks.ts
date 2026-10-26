@@ -1,4 +1,4 @@
-import type { BreadcrumbItem } from '@/components';
+import type { BreadcrumbItem } from '@/ui/Breadcrumb/Breadcrumb';
 import { recordHref } from '@/lib/recordLinks';
 import type { PlanningRecordType } from '@/lib/recordLinks';
 import type { LineItemActivity } from './lineItemsApi';

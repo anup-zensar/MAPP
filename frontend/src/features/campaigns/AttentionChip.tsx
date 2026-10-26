@@ -2,7 +2,7 @@ import { ChevronDown } from 'lucide-react';
 import { Popover } from 'radix-ui';
 import { useRef, useState } from 'react';
 import { Link } from 'react-router';
-import type { ItemBelow, MissingField } from '@/components';
+import type { ItemBelow, MissingField } from '@/ui/CompletenessChip/CompletenessChip';
 import styles from './AttentionChip.module.css';
 
 export interface AttentionChipProps {

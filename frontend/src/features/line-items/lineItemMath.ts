@@ -5,7 +5,7 @@
  * everything on save, and its answer is what the pages show; the Go and TypeScript tests share one
  * example table.
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { formatAmount, formatCents, parseMoneyInput, toCents } from '@/lib/decimal';
 
 export type SpreadMethod = components['schemas']['SpreadMethod'];

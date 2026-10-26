@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import type { FieldProblem } from '@/components';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { mockApi } from '@/test/mockApi';
 import { renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';

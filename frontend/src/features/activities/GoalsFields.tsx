@@ -1,4 +1,8 @@
-import { CheckboxField, DecimalField, FormSection, InfoTip, MoneyField } from '@/components';
+import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
+import { DecimalField } from '@/ui/DecimalField/DecimalField';
+import { FormSection } from '@/ui/FormSection/FormSection';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import { formatAmount, formatWhole, parseWholeInput } from '@/lib/decimal';
 import { formatMoney } from '@/lib/format';
 import { waterfall } from '@/lib/waterfall';

@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { Logo } from '@/components';
+import { Logo } from '@/ui/Logo/Logo';
 import { AccountMenu } from './AccountMenu';
 import { NavDrawer } from './NavDrawer';
 import { NotificationBell } from './NotificationBell';

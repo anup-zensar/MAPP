@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ApiError } from '@/api/errors';
-import { ConfirmDialog, useToast } from '@/components';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { useToast } from '@/ui/Toast/useToast';
 import { emptiedMessage, emptyBinText } from './binText';
 import type { BinItem } from './binText';
 import { asApiError } from './dialogFailure';

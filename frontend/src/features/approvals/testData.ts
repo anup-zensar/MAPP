@@ -4,7 +4,7 @@
  *
  *   approvalOf({ status: 'declined', latestDecline: DECLINE })
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import type {
   ActivityApproval,
   ApprovalPerson,

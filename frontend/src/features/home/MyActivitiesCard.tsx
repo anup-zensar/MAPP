@@ -1,7 +1,11 @@
 import { ChevronRight, ListChecks } from 'lucide-react';
 import { useId, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { Button, Card, CompletenessChip, EmptyState, LinkButton, Skeleton } from '@/components';
+import { Button, LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { CompletenessChip } from '@/ui/CompletenessChip/CompletenessChip';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { ActivityStatusChip } from '@/features/activities/ActivityStatusChip';
 import { cx } from '@/lib/cx';
 import { formatWhole } from '@/lib/decimal';

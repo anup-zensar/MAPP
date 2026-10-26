@@ -2,19 +2,17 @@ import { CircleAlert, Plus, Workflow } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { conflictMessage } from '@/api/errors';
-import {
-  ActionsMenu,
-  Button,
-  Card,
-  ConfirmDialog,
-  EmptyState,
-  ErrorState,
-  PageHeader,
-  Skeleton,
-  StatusChip,
-  Tooltip,
-  useToast,
-} from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { useToast } from '@/ui/Toast/useToast';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import { asApiError, isSessionLost } from '@/features/approvals/messages';
 import { ListToolbar } from '@/features/settings/shared/ListToolbar';
 import list from '@/features/settings/shared/SettingsTable.module.css';

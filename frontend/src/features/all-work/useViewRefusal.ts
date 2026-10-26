@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { ApiError } from '@/api/errors';
-import { useToast } from '@/components';
-import type { FieldProblem } from '@/components';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { VIEW_GONE } from './allWorkText';
 import { problemsOf } from './viewNames';
 

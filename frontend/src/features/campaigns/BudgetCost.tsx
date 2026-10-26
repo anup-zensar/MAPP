@@ -1,5 +1,6 @@
-import { InfoTip, ProgressBar } from '@/components';
-import type { components } from '@/api/schema';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
+import type { components } from '@/api/generated/schema';
 import { formatMoneyText, formatWhole } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
 import { AmountPair } from '@/features/plans/AmountPair';

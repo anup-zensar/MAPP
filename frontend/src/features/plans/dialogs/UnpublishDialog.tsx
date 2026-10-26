@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { FormDialog, TextAreaField } from '@/components';
+import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 
 export interface UnpublishDialogProps {
   open: boolean;

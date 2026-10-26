@@ -1,5 +1,6 @@
-import { ChoiceField, problemOf } from '@/components';
-import type { FieldProblem } from '@/components';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { LineItemFormState } from './lineItemFormState';
 import type { FinanceBudgetItemRef, LineItemActivity } from './lineItemsApi';
 import {

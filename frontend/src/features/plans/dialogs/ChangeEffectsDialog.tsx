@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { ConfirmDialog } from '@/components';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { recordHref } from '@/lib/recordLinks';
 import { joinWithAnd } from '@/lib/text';
 import type { PlanChangeEffects } from '../plansApi';

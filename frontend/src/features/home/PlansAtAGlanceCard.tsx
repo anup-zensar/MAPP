@@ -1,17 +1,14 @@
 import { ClipboardList } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
-import {
-  Button,
-  Card,
-  EmptyState,
-  InfoTip,
-  LinkButton,
-  ProgressBar,
-  Skeleton,
-  StatusChip,
-  TeamPills,
-} from '@/components';
+import { Button, LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { TeamPills } from '@/ui/TeamPill/TeamPill';
 import { STATUS } from '@/features/plans/planText';
 import { cx } from '@/lib/cx';
 import { formatWhole } from '@/lib/decimal';

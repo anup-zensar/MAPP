@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { useModels } from '@/api/settingsQueries';
-import {
-  ChoiceField,
-  ErrorState,
-  FormPanel,
-  MoneyField,
-  problemOf,
-  Skeleton,
-  TextField,
-  useToast,
-} from '@/components';
-import type { ChoiceOption, FieldProblem, SaveFailure } from '@/components';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import type { ChoiceOption } from '@/ui/ChoiceField/ChoiceField';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { formatAmount, parseMoneyInput, toCents } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
 import { ImpactDialog } from '../shared/ImpactDialog';

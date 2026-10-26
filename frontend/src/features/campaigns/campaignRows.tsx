@@ -1,7 +1,9 @@
 import { Plus } from 'lucide-react';
 import type { NavigateFunction } from 'react-router';
-import { PersonLabel, Tooltip } from '@/components';
-import type { ActionsMenuItem, TreeNode, TreeTableFooter } from '@/components';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
+import type { TreeNode, TreeTableFooter } from '@/ui/TreeTable/TreeTable';
 import { AmountPair } from '@/features/plans/AmountPair';
 import { gateItem } from '@/features/plans/gateAction';
 import { completenessFieldHref } from '@/features/budget-phasing/phasingLinks';

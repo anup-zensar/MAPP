@@ -3,7 +3,7 @@ import { Popover } from 'radix-ui';
 import { useState } from 'react';
 import type { MouseEvent } from 'react';
 import { Link } from 'react-router';
-import { Button } from '@/components';
+import { Button } from '@/ui/Button/Button';
 import { cx } from '@/lib/cx';
 import { useFormatters } from '@/lib/useFormatters';
 import type { AllWorkResult, AllWorkRow } from './allWorkTypes';

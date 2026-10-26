@@ -5,7 +5,7 @@
  * bodies, and when a save needs "This activity will need approval again" first (FR-031, FR-032).
  */
 import { ApiError } from '@/api/errors';
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { parseMoneyInput, toCents } from '@/lib/decimal';
 import type {
   LineItem,

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { DemoBanner } from '@/components';
+import { DemoBanner } from '@/ui/DemoBanner/DemoBanner';
 import { cx } from '@/lib/cx';
 import styles from './AppLayout.module.css';
 import { Sidebar } from './Sidebar';

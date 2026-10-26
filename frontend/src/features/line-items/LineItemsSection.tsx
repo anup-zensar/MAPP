@@ -1,16 +1,14 @@
 import { CircleAlert, Plus, ReceiptText } from 'lucide-react';
 import { useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
-import {
-  ActionsMenu,
-  Card,
-  CompletenessChip,
-  EmptyState,
-  ErrorState,
-  LinkButton,
-  Skeleton,
-} from '@/components';
-import type { components } from '@/api/schema';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { CompletenessChip } from '@/ui/CompletenessChip/CompletenessChip';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import type { components } from '@/api/generated/schema';
 import { allows, gateItem } from '@/features/plans/gateAction';
 import { cx } from '@/lib/cx';
 import { fieldHref, recordHref } from '@/lib/recordLinks';

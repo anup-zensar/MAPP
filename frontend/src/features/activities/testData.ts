@@ -3,7 +3,7 @@
  * "FY2026 Lubricants Europe", the initiative "Digital & social" (Priya Raman, 1 Jan – 30 Jun 2026)
  * and the activity "Launch film" (A-1042).
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { attribute, LUBRICANTS, MOBILITY, option } from '@/test/attributeForms';
 import type {
   Activity,

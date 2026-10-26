@@ -1,5 +1,5 @@
 /** The contract's All work shapes under short names (backend/api/openapi.yaml, feature 010). */
-import type { components, operations } from '@/api/schema';
+import type { components, operations } from '@/api/generated/schema';
 
 type Schemas = components['schemas'];
 

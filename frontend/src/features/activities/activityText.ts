@@ -1,7 +1,7 @@
 /**
  * How activities read on screen (006 plan, "User-visible messages"), and their addresses.
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { formatMoneyText, formatPercent } from '@/lib/decimal';
 import { fieldHref, recordHref } from '@/lib/recordLinks';
 import { plural } from '@/lib/text';

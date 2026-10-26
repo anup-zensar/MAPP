@@ -1,7 +1,7 @@
 import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import type { CurrentUser } from '@/app/useSession';
 import { mockApi } from '@/test/mockApi';
 import { findMessages, renderWithProviders } from '@/test/render';

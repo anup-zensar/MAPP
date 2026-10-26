@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { SummaryCard } from '@/components';
+import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { amountText, moneyText } from '@/features/line-items/lineItemMath';
 import type { Money } from '@/features/line-items/lineItemsApi';
 import { RateTip } from '@/features/line-items/MoneyPair';

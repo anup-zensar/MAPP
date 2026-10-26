@@ -1,7 +1,10 @@
 import { TriangleAlert } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useLocation } from 'react-router';
-import { Button, ErrorState, SegmentedFilter, Skeleton } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { formatAmount, toCents } from '@/lib/decimal';
 import styles from './BudgetByMonth.module.css';
 import { useBudgetByMonth } from './phasingApi';

@@ -1,7 +1,9 @@
 import { Plus } from 'lucide-react';
 import { useId } from 'react';
-import { Button, MoneyField, problemOf } from '@/components';
-import type { FieldProblem } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { cx } from '@/lib/cx';
 import { monthFieldId } from './lineItemFormState';
 import type { CustomMonth } from './lineItemFormState';

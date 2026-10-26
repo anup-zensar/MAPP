@@ -1,19 +1,17 @@
 import { Info } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import {
-  ActionsMenu,
-  Button,
-  Card,
-  EmptyState,
-  ErrorState,
-  PageHeader,
-  SegmentedFilter,
-  Skeleton,
-  StatusChip,
-  Tabs,
-  useToast,
-} from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { Tabs } from '@/ui/Tabs/Tabs';
+import { useToast } from '@/ui/Toast/useToast';
 import { formatWhole } from '@/lib/decimal';
 import { localDate } from '@/lib/format';
 import { useFormatters } from '@/lib/useFormatters';

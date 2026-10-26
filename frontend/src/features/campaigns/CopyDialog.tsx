@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ApiError } from '@/api/errors';
-import { FailureMessage, FormDialog, TextField, problemOf, useToast } from '@/components';
-import type { FieldProblem } from '@/components';
+import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { FailureMessage } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { recordHref } from '@/lib/recordLinks';
 import { useCopyRecord, useDestinations } from './campaignApi';
 import type { DestinationList } from './campaignApi';

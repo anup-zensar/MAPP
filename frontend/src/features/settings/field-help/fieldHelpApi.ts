@@ -5,7 +5,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 
 export type FieldHelpEntry = components['schemas']['FieldHelpEntry'];
 export type FieldHelpLevel = components['schemas']['FieldHelpLevel'];

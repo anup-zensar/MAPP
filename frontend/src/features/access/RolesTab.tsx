@@ -1,15 +1,13 @@
 import { Plus, ShieldCheck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
-import {
-  ActionsMenu,
-  Card,
-  EmptyState,
-  ErrorState,
-  LinkButton,
-  Skeleton,
-  StatusChip,
-} from '@/components';
-import type { ActionsMenuItem } from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import list from '@/features/settings/shared/SettingsTable.module.css';
 import { formatWhole } from '@/lib/decimal';
 import { useRoles } from './accessApi';

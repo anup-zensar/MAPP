@@ -1,5 +1,5 @@
 import { ApiError, conflictMessage } from '@/api/errors';
-import { useToast } from '@/components';
+import { useToast } from '@/ui/Toast/useToast';
 import type { DateFormat } from '@/lib/format';
 import { useFormatters } from '@/lib/useFormatters';
 

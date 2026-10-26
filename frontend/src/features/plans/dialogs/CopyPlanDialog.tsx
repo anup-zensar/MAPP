@@ -1,17 +1,15 @@
 import { CircleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { ApiError } from '@/api/errors';
-import {
-  CheckboxField,
-  ErrorState,
-  FailureMessage,
-  FormDialog,
-  LockedNote,
-  Skeleton,
-  TextField,
-  problemOf,
-} from '@/components';
-import type { FieldProblem } from '@/components';
+import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { FailureMessage } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { LockedNote } from '@/ui/LockedNote/LockedNote';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { TextField } from '@/ui/TextField/TextField';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { useCopyOptions } from '../plansApi';
 import type { PlanCopyOptions, PlanCopyRequest } from '../plansApi';
 import { contentsText } from '../planText';

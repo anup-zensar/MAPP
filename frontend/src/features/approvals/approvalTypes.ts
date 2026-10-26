@@ -1,4 +1,4 @@
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 
 /**
  * What feature 006's activity page gives feature 008's approval parts about the activity (008

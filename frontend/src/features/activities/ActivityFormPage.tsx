@@ -3,18 +3,18 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { ApiError, conflictMessage } from '@/api/errors';
 import { useAttributeForm } from '@/api/settingsQueries';
-import {
-  Button,
-  ClearValuesDialog,
-  FailureMessage,
-  FormErrorSummary,
-  FormFooter,
-  LinkButton,
-  PageHeader,
-  useToast,
-  valuesToClear,
-} from '@/components';
-import type { BreadcrumbItem, ClearedValue, FieldProblem, SaveFailure } from '@/components';
+import { Button, LinkButton } from '@/ui/Button/Button';
+import { FormErrorSummary } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { FormFooter } from '@/ui/FormFooter/FormFooter';
+import { FailureMessage } from '@/ui/FormPanel/FormPanel';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { ClearValuesDialog } from '@/ui/ShellAttributeFields/ClearValuesDialog';
+import { valuesToClear } from '@/ui/ShellAttributeFields/rules';
+import { useToast } from '@/ui/Toast/useToast';
+import type { BreadcrumbItem } from '@/ui/Breadcrumb/Breadcrumb';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { ClearedValue } from '@/ui/ShellAttributeFields/rules';
 import { useSpreadEffectText } from '@/features/line-items/useSpreadEffectText';
 import { recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';

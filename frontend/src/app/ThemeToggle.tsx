@@ -1,5 +1,6 @@
 import { Moon, Sun } from 'lucide-react';
-import { Button, Tooltip } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import { useSession } from './useSession';
 
 /**

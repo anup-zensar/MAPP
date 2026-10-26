@@ -1,5 +1,5 @@
 import { useRouteError } from 'react-router';
-import { ErrorState } from '@/components';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { PublicLayout } from './PublicLayout';
 
 /**

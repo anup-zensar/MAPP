@@ -1,19 +1,17 @@
 import { Pencil } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router';
 import { useAttributeForm } from '@/api/settingsQueries';
-import {
-  ActionsMenu,
-  Card,
-  CompletenessChip,
-  ErrorState,
-  LevelTag,
-  LinkButton,
-  PageHeader,
-  PersonLabel,
-  ShellAttributeValues,
-  Skeleton,
-  SummaryCard,
-} from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { CompletenessChip } from '@/ui/CompletenessChip/CompletenessChip';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { LevelTag } from '@/ui/LevelTag/LevelTag';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { ShellAttributeValues } from '@/ui/ShellAttributeFields/ShellAttributeValues';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { HistorySection } from '@/features/activity-log/HistorySection';
 import { showHistory } from '@/features/activity-log/showHistory';
 import { allows, gateItem } from '@/features/plans/gateAction';

@@ -1,8 +1,12 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ApiError, conflictMessage } from '@/api/errors';
-import { FormPanel, problemOf, TextField, useToast } from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { useFormatters } from '@/lib/useFormatters';
 import { fetchLatestFolder, useAddNote, useCreateFolder, useRenameFolder } from './sampleApi';
 import type { SampleFolder } from './sampleApi';

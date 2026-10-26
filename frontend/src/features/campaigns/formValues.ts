@@ -2,7 +2,8 @@
  * The campaign and initiative forms' values (plan "Forms"): what the fields hold, what is sent,
  * and where each problem is shown.
  */
-import type { AttributeForm, AttributeValues, FieldProblem } from '@/components';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { AttributeForm, AttributeValues } from '@/ui/ShellAttributeFields/rules';
 import { BUDGET_CURRENCY, budgetInput, budgetText } from './budget';
 import type { Campaign, CampaignCreate, Initiative } from './campaignApi';
 import type { RecordLevel } from './texts';

@@ -3,7 +3,7 @@
  * Times are in UTC, as the tests run in UTC: "today" is 19 Oct 2026 when a test fixes the clock
  * at TODAY_NOON.
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 
 type ActivityLogEntry = components['schemas']['ActivityLogEntry'];
 type ActivityLogPage = components['schemas']['ActivityLogPage'];

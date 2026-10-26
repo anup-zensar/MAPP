@@ -1,5 +1,6 @@
 import { useCurrentUser } from '@/app/useSession';
-import { ProgressBar, Skeleton } from '@/components';
+import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { cx } from '@/lib/cx';
 import { formatWhole } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';

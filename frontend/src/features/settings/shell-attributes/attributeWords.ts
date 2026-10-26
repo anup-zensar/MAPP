@@ -3,7 +3,7 @@
  * list, Attribute words; data model §4) and the rules of FR-017 that decide what the editor
  * offers. The API stays the judge: these only shape what is offered.
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { midSentence } from '@/lib/text';
 
 export type AttributeLevel = components['schemas']['AttributeLevel'];

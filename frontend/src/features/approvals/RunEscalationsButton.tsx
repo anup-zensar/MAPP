@@ -1,6 +1,8 @@
 import { BellRing } from 'lucide-react';
 import { useState } from 'react';
-import { Button, ConfirmDialog, useToast } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { useToast } from '@/ui/Toast/useToast';
 import { useRunEscalations } from './approvalsApi';
 import { asApiError, escalationRunText, isSessionLost, notEscalatedText } from './messages';
 

@@ -1,6 +1,12 @@
 import { useState } from 'react';
-import { ChoiceField, FormPanel, LockedNote, problemOf, TextField, useToast } from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { LockedNote } from '@/ui/LockedNote/LockedNote';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { useFormatters } from '@/lib/useFormatters';
 import { saveFailureOf } from '../shared/saveFailure';
 import styles from '../shared/SettingsTable.module.css';

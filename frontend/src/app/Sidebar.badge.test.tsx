@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { CountBadge } from '@/components';
+import { CountBadge } from '@/ui/CountBadge/CountBadge';
 import { renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import { Sidebar } from './Sidebar';

@@ -2,15 +2,13 @@ import { CircleAlert } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ApiError, conflictMessage } from '@/api/errors';
-import {
-  ErrorState,
-  FailureMessage,
-  FormDialog,
-  MoneyField,
-  Skeleton,
-  TextField,
-  useToast,
-} from '@/components';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { FailureMessage } from '@/ui/FormPanel/FormPanel';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
 import { centsInput, moneyText } from '@/features/line-items/lineItemMath';
 import { parseMoneyInput, toCents } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';

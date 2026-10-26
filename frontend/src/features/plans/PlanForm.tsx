@@ -7,29 +7,31 @@ import {
   useFinanceBudgets,
   useModels,
 } from '@/api/settingsQueries';
+import { Button } from '@/ui/Button/Button';
+import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FormErrorSummary } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { FormFooter } from '@/ui/FormFooter/FormFooter';
+import { FailureMessage } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { FormSection } from '@/ui/FormSection/FormSection';
+import { LockedNote } from '@/ui/LockedNote/LockedNote';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import { ClearValuesDialog } from '@/ui/ShellAttributeFields/ClearValuesDialog';
+import { ShellAttributeFields } from '@/ui/ShellAttributeFields/ShellAttributeFields';
 import {
   businessUnitOf,
-  Button,
-  CheckboxField,
-  ChoiceField,
-  ClearValuesDialog,
-  ErrorState,
-  FailureMessage,
-  FormErrorSummary,
-  FormFooter,
-  FormSection,
-  LockedNote,
   missingAttributes,
-  MoneyField,
-  problemOf,
-  ShellAttributeFields,
-  Skeleton,
-  TextAreaField,
-  TextField,
   valuesToClear,
   visibleAttributes,
-} from '@/components';
-import type { AttributeForm, FieldProblem, SaveFailure } from '@/components';
+} from '@/ui/ShellAttributeFields/rules';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
+import { TextField } from '@/ui/TextField/TextField';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
 import { PersonField, TeamField, usePeople } from '@/features/people';
 import { formatAmount, formatMoneyText, formatPercent } from '@/lib/decimal';
 import { useUnsavedChanges } from '@/lib/useUnsavedChanges';

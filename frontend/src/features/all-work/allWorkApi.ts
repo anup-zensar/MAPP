@@ -9,7 +9,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
 import { api, call } from '@/api/client';
 import { ApiError } from '@/api/errors';
-import { useToast } from '@/components';
+import { useToast } from '@/ui/Toast/useToast';
 import type {
   AllWorkPreferences,
   AllWorkQuery,

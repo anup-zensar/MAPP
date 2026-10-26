@@ -1,4 +1,5 @@
-import { StatusChip, Tooltip } from '@/components';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import { cx } from '@/lib/cx';
 import { useFormatters } from '@/lib/useFormatters';
 import type { AllWorkCell } from './allWorkTypes';

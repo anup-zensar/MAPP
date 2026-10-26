@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { ApiError, conflictMessage } from '@/api/errors';
-import {
-  Button,
-  CheckboxField,
-  ConfirmDialog,
-  ErrorState,
-  FormPanel,
-  LockedNote,
-  problemOf,
-  SidePanel,
-  Skeleton,
-  TeamPicker,
-  useToast,
-} from '@/components';
-import type { FieldProblem, SaveFailure, TeamRef } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { LockedNote } from '@/ui/LockedNote/LockedNote';
+import { SidePanel } from '@/ui/SidePanel/SidePanel';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { TeamPicker } from '@/ui/TeamPicker/TeamPicker';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { TeamRef } from '@/ui/TeamPill/TeamPill';
 import { useTeams } from '@/features/people/peopleApi';
 import { firstName } from '@/features/people/texts';
 import { useCloseAfterSave } from '@/features/settings/shared/useCloseAfterSave';

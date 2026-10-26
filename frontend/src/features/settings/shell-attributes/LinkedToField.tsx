@@ -1,5 +1,5 @@
-import { ChoiceField } from '@/components';
-import type { components } from '@/api/schema';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import type { components } from '@/api/generated/schema';
 import { linkedToHint } from './attributeWords';
 
 type FormAttribute = components['schemas']['FormAttribute'];

@@ -2,17 +2,15 @@ import { Plus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAttributeForm } from '@/api/settingsQueries';
-import {
-  ActionsMenu,
-  ErrorState,
-  LevelTag,
-  LinkButton,
-  PersonLabel,
-  ShellAttributeValues,
-  SidePanel,
-  Skeleton,
-} from '@/components';
-import type { ActionsMenuItem } from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { LinkButton } from '@/ui/Button/Button';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { LevelTag } from '@/ui/LevelTag/LevelTag';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { ShellAttributeValues } from '@/ui/ShellAttributeFields/ShellAttributeValues';
+import { SidePanel } from '@/ui/SidePanel/SidePanel';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import { HistorySection } from '@/features/activity-log/HistorySection';
 import { BudgetByMonthCard } from '@/features/budget-phasing/BudgetByMonthCard';
 import { allows, gateItem } from '@/features/plans/gateAction';

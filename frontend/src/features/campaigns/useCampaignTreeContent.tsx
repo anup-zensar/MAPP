@@ -1,8 +1,9 @@
 import { Plus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { LinkButton } from '@/components';
-import type { ActionsMenuItem, TreeNode, TreeTableFooter } from '@/components';
+import { LinkButton } from '@/ui/Button/Button';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
+import type { TreeNode, TreeTableFooter } from '@/ui/TreeTable/TreeTable';
 import { allows, gateItem } from '@/features/plans/gateAction';
 import type { Availability } from '@/lib/access';
 import { useFormatters } from '@/lib/useFormatters';

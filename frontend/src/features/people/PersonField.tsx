@@ -1,6 +1,6 @@
 import { useCurrentUser } from '@/app/useSession';
-import { PersonPicker } from '@/components';
-import type { PersonPickerProps } from '@/components';
+import { PersonPicker } from '@/ui/PersonPicker/PersonPicker';
+import type { PersonPickerProps } from '@/ui/PersonPicker/PersonPicker';
 import { FieldLoadFailed, FieldLoading } from './FieldLoadStates';
 import { usePeople } from './peopleApi';
 

@@ -3,8 +3,9 @@
  * a failed status change as a message.
  */
 import { ApiError, conflictMessage } from '@/api/errors';
-import { useToast } from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import type { DateFormat } from '@/lib/format';
 import { useFormatters } from '@/lib/useFormatters';
 

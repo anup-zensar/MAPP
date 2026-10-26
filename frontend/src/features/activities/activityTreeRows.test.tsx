@@ -1,7 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { useNavigate } from 'react-router';
 import { describe, expect, it } from 'vitest';
-import { ActionsMenu, TreeTable } from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { TreeTable } from '@/ui/TreeTable/TreeTable';
 import { mockApi } from '@/test/mockApi';
 import { findMessages, renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';

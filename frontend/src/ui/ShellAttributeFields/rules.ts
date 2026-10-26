@@ -3,7 +3,7 @@
  * FR-027), mirrored from Go's settings form.go for instant feedback. The API stays the judge:
  * saving always goes through CheckAttributes on the server, with the same cases in form_test.go.
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { formatHundredths, toHundredths } from '@/lib/decimal';
 
 export type AttributeForm = components['schemas']['AttributeForm'];

@@ -1,7 +1,10 @@
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { MouseEvent, ReactNode } from 'react';
 import { Link } from 'react-router';
-import { InfoTip, LevelTag, StatusChip, Tooltip } from '@/components';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { LevelTag } from '@/ui/LevelTag/LevelTag';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import { CONTEXT_LABEL, CONTEXT_TIP } from './allWorkText';
 import type { AllWorkRow } from './allWorkTypes';
 import { Highlight } from './Highlight';

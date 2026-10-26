@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { recordHref } from '@/lib/recordLinks';
 import type { PlanningRecordType } from '@/lib/recordLinks';
 import styles from './SettingsTable.module.css';

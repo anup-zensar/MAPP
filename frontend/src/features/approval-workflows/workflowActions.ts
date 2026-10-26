@@ -1,4 +1,4 @@
-import type { ActionsMenuItem } from '@/components';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import type { ApprovalWorkflow } from './workflowsApi';
 
 /** What the list and the details panel let people do with a workflow. */

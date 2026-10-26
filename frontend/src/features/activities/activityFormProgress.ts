@@ -1,5 +1,5 @@
-import { missingAttributes, visibleAttributes } from '@/components';
-import type { AttributeForm } from '@/components';
+import { missingAttributes, visibleAttributes } from '@/ui/ShellAttributeFields/rules';
+import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
 import type { FormState } from './activityFormState';
 import { countFilled as count } from './formProgress';
 import type { RailSection } from './formProgress';

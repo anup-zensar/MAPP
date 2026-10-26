@@ -1,4 +1,4 @@
-import type { ActionsMenuItem } from '@/components';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import type { Person, PersonDetails } from './peopleApi';
 import { DEACTIVATE_TIP, SELF_DEACTIVATION } from './texts';
 

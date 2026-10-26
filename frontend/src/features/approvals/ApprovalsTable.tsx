@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { PersonLabel, StatusChip } from '@/components';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { ActivityStatusChip } from '@/features/activities/ActivityStatusChip';
 import { formatWaitingTime, localDate } from '@/lib/format';
 import { useFormatters } from '@/lib/useFormatters';

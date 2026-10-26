@@ -1,5 +1,5 @@
 import { CircleAlert, RotateCw } from 'lucide-react';
-import { Button } from '@/components';
+import { Button } from '@/ui/Button/Button';
 import { SECTION_FAILED } from './homeText';
 import styles from './SectionError.module.css';
 

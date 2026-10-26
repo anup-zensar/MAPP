@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 import { useCurrentUser } from '@/app/useSession';
-import { Card } from '@/components';
+import { Card } from '@/ui/Card/Card';
 import { ACCESS_PATH } from './accessPaths';
 import { assignmentText, orList, summariseAccess } from './accessWords';
 import styles from './access.module.css';

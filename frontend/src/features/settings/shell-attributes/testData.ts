@@ -2,7 +2,7 @@
  * Shell attributes and options for the tests of this folder, shaped as the API answers them
  * (backend/api/openapi.yaml). Only the tests use them.
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 
 type ShellAttribute = components['schemas']['ShellAttribute'];
 type ShellAttributeOption = components['schemas']['ShellAttributeOption'];

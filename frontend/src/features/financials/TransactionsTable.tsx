@@ -1,7 +1,7 @@
 import { ArrowDown, ArrowUp, ArrowUpDown, CircleAlert } from 'lucide-react';
 import { Link } from 'react-router';
-import { StatusChip } from '@/components';
-import type { StatusTone } from '@/components';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import type { StatusTone } from '@/ui/StatusChip/StatusChip';
 import { recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
 import type { FinancialTransactionRow, FinancialTransactionType } from './financialsApi';

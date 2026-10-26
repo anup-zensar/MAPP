@@ -1,6 +1,6 @@
 import { CircleCheck } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { FormSection } from '@/components';
+import { FormSection } from '@/ui/FormSection/FormSection';
 import { filledText } from './formProgress';
 import type { RailSection } from './formProgress';
 import styles from './FormRail.module.css';

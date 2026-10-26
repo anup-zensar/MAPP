@@ -1,4 +1,4 @@
-import { ConfirmDialog } from '@/components';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import type { ImpactWarning } from './peopleApi';
 import styles from './OwnerImpactDialog.module.css';
 

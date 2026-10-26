@@ -1,4 +1,4 @@
-import type { ActionsMenuItem } from '@/components';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import type { Model } from './modelsApi';
 
 /** What people can do with a model, from its row or its details. */

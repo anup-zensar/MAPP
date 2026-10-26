@@ -1,23 +1,22 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { ApiError, conflictMessage } from '@/api/errors';
-import type { components } from '@/api/schema';
-import {
-  Button,
-  CheckboxField,
-  FailureMessage,
-  FormErrorSummary,
-  FormFooter,
-  LinkButton,
-  MoneyField,
-  PageHeader,
-  problemOf,
-  ShellAttributeFields,
-  TextAreaField,
-  TextField,
-  valuesToClear,
-} from '@/components';
-import type { AttributeForm, FieldProblem, SaveFailure } from '@/components';
+import type { components } from '@/api/generated/schema';
+import { Button, LinkButton } from '@/ui/Button/Button';
+import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
+import { FormErrorSummary } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { FormFooter } from '@/ui/FormFooter/FormFooter';
+import { FailureMessage } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { ShellAttributeFields } from '@/ui/ShellAttributeFields/ShellAttributeFields';
+import { valuesToClear } from '@/ui/ShellAttributeFields/rules';
+import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
+import { TextField } from '@/ui/TextField/TextField';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
 import { FormCard, FormCardFrame, FormLayout } from '@/features/activities/FormRail';
 import { PersonField } from '@/features/people';
 import { toCents } from '@/lib/decimal';

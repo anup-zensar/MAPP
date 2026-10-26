@@ -1,7 +1,11 @@
 import { CircleAlert, CircleCheckBig } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { Button, Card, EmptyState, LevelTag, Skeleton } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { LevelTag } from '@/ui/LevelTag/LevelTag';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
 import styles from './AttentionCard.module.css';

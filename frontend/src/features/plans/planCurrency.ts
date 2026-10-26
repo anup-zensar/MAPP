@@ -1,4 +1,4 @@
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 
 type Money = components['schemas']['Money'];
 export type PlanType = components['schemas']['PlanType'];

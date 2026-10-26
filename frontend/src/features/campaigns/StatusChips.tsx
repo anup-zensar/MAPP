@@ -1,6 +1,7 @@
 import { TriangleAlert } from 'lucide-react';
-import { StatusChip, Tooltip } from '@/components';
-import type { components } from '@/api/schema';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
+import type { components } from '@/api/generated/schema';
 import styles from './StatusChips.module.css';
 import {
   activitiesApprovedOf,

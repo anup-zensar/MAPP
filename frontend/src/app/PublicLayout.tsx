@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { DemoBanner, Logo } from '@/components';
+import { DemoBanner } from '@/ui/DemoBanner/DemoBanner';
+import { Logo } from '@/ui/Logo/Logo';
 import styles from './PublicLayout.module.css';
 import { ThemeToggle } from './ThemeToggle';
 

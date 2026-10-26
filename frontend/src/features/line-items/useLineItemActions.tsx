@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { useNavigate } from 'react-router';
 import { ApiError } from '@/api/errors';
-import { useToast } from '@/components';
+import { useToast } from '@/ui/Toast/useToast';
 import { recordHref } from '@/lib/recordLinks';
 import { useUndoableDelete } from '@/lib/useUndoableDelete';
 import { DeleteLineItemDialog } from './DeleteLineItemDialog';

@@ -1,6 +1,10 @@
 import { ArrowDown, ArrowUp, CircleAlert, Plus, Trash2 } from 'lucide-react';
-import { Button, CheckboxField, ChoiceField, problemOf, TextField } from '@/components';
-import type { FieldProblem } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { TextField } from '@/ui/TextField/TextField';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { PersonField } from '@/features/people';
 import { emptyLevel, levelFieldName } from './levelDrafts';
 import type { ApproverType, LevelDraft, LevelField, LevelMode } from './levelDrafts';

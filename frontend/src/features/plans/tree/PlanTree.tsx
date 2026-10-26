@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import {
-  Button,
-  ErrorState,
-  filterTree,
-  PersonLabel,
-  SearchField,
-  Skeleton,
-  TreeTable,
-} from '@/components';
-import type { ActionsMenuItem, TreeNode, TreeTableColumn, TreeTableFooter } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { SearchField } from '@/ui/SearchField/SearchField';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { TreeTable } from '@/ui/TreeTable/TreeTable';
+import { filterTree } from '@/ui/TreeTable/filterTree';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
+import type { TreeNode, TreeTableColumn, TreeTableFooter } from '@/ui/TreeTable/TreeTable';
 import { BudgetCell, PlannedCostCell } from '@/features/campaigns/BudgetCost';
 import { useFormatters } from '@/lib/useFormatters';
 import { PlanCompleteness, PlanStatusChip } from '../PlanFacts';

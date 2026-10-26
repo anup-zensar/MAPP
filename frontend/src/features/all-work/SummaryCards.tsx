@@ -1,4 +1,5 @@
-import { Skeleton, SummaryCard } from '@/components';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { formatWhole } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
 import { negativeBalanceText } from './allWorkText';

@@ -1,7 +1,12 @@
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { ApiError } from '@/api/errors';
-import { ActionsMenu, Button, ErrorState, Skeleton, StatusChip, useToast } from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button } from '@/ui/Button/Button';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { useToast } from '@/ui/Toast/useToast';
 import { formatRate } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
 import { useUndoableDelete } from '@/lib/useUndoableDelete';

@@ -1,7 +1,7 @@
 import { ChevronRight } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { Link } from 'react-router';
-import { SummaryCard } from '@/components';
+import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import styles from './SummaryLinkCard.module.css';
 
 export interface SummaryLinkCardProps extends ComponentProps<typeof SummaryCard> {

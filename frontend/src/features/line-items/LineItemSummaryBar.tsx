@@ -1,4 +1,4 @@
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { cx } from '@/lib/cx';
 import { toCents } from '@/lib/decimal';
 import styles from './LineItemForm.module.css';

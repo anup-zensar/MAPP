@@ -1,17 +1,14 @@
 import { Plus, Upload } from 'lucide-react';
 import { useState } from 'react';
 import { useCurrencies } from '@/api/settingsQueries';
-import {
-  ActionsMenu,
-  Button,
-  Card,
-  ErrorState,
-  LinkButton,
-  PageHeader,
-  Skeleton,
-  StatusChip,
-  useToast,
-} from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button, LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { useToast } from '@/ui/Toast/useToast';
 import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { ListToolbar } from '../shared/ListToolbar';

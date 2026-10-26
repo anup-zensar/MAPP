@@ -5,7 +5,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { refreshPlanning } from '@/features/campaigns/campaignApi';
 
 export type BudgetByMonth = components['schemas']['BudgetByMonth'];

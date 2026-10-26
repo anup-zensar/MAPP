@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ViewOnlyNote } from '@/components';
+import { ViewOnlyNote } from '@/ui/ViewOnlyNote/ViewOnlyNote';
 import type { Permission } from '@/lib/access';
 import { useCanChange } from './useCanChange';
 

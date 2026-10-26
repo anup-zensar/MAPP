@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import type { components } from '@/api/schema';
-import { InfoTip, SegmentedFilter } from '@/components';
+import type { components } from '@/api/generated/schema';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
 import { cx } from '@/lib/cx';
 import { formatAmount } from '@/lib/decimal';
 import { monthColumns, quarterColumns } from './lineItemMath';

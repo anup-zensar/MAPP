@@ -1,15 +1,13 @@
 import { CircleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { ApiError, conflictMessage } from '@/api/errors';
-import {
-  ConfirmDialog,
-  DecimalField,
-  FormDialog,
-  LockedNote,
-  problemOf,
-  useToast,
-} from '@/components';
-import type { FieldProblem } from '@/components';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { DecimalField } from '@/ui/DecimalField/DecimalField';
+import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { LockedNote } from '@/ui/LockedNote/LockedNote';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { inverseRate, parseDecimalInput } from '@/lib/decimal';
 import { localDate } from '@/lib/format';
 import { useFormatters } from '@/lib/useFormatters';

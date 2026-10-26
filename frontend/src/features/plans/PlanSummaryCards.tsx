@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
-import type { components } from '@/api/schema';
-import { ProgressBar, SummaryCard } from '@/components';
+import type { components } from '@/api/generated/schema';
+import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
+import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { formatMoneyText } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
 import { differentCurrency } from './planCurrency';

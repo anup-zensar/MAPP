@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useToast } from '@/components';
+import { useToast } from '@/ui/Toast/useToast';
 import { useSavedViews, useUpdateView } from './allWorkApi';
 import type { SavedView, ViewState } from './allWorkTypes';
 import { ManageViewsPanel } from './ManageViewsPanel';

@@ -1,5 +1,7 @@
 import { KeyRound } from 'lucide-react';
-import { Card, EmptyState, LinkButton } from '@/components';
+import { LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
 import { NO_ROLE_TITLE, noRoleText } from './homeText';
 
 export interface NoRoleCardProps {

@@ -3,7 +3,7 @@
  * Tab, search, year, plan, record filter, sort and page are kept in it, so a link reproduces the
  * view (FR-021). financialsHref() builds those links for the Financials cards, Home and the log.
  */
-import type { operations } from '@/api/schema';
+import type { operations } from '@/api/generated/schema';
 
 /** The query of GET /api/v1/financials/transactions, as the contract types it. */
 export type TransactionsQuery = NonNullable<

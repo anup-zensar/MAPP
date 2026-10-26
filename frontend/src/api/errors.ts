@@ -5,7 +5,7 @@
  */
 import { formatDate, formatTime, localDate } from '@/lib/format';
 import type { DateFormat } from '@/lib/format';
-import type { components } from './schema';
+import type { components } from './generated/schema';
 
 type ErrorBody = components['schemas']['Error'];
 type ErrorDetail = components['schemas']['ErrorDetail'];

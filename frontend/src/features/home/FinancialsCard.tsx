@@ -1,7 +1,12 @@
 import { ChevronRight, ReceiptText, TriangleAlert, Unlink } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
-import { Card, EmptyState, InfoTip, LinkButton, ProgressBar, Skeleton } from '@/components';
+import { LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { cx } from '@/lib/cx';
 import { useFormatters } from '@/lib/useFormatters';
 import styles from './FinancialsCard.module.css';

@@ -1,5 +1,8 @@
 import { Pencil } from 'lucide-react';
-import { ActionsMenu, Button, SidePanel, StatusChip } from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button } from '@/ui/Button/Button';
+import { SidePanel } from '@/ui/SidePanel/SidePanel';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { formatPercent } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
 import { MetaLine } from '../shared/MetaLine';

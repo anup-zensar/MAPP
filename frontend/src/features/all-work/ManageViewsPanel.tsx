@@ -1,14 +1,12 @@
 import { useId, useState } from 'react';
-import {
-  Button,
-  ConfirmDialog,
-  FormDialog,
-  FormErrorSummary,
-  SidePanel,
-  TextField,
-  useToast,
-} from '@/components';
-import type { FieldProblem } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { FormErrorSummary } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { SidePanel } from '@/ui/SidePanel/SidePanel';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { useCreateView, useDeleteView, useUpdateView } from './allWorkApi';
 import type { SavedView } from './allWorkTypes';
 import styles from './ManageViewsPanel.module.css';

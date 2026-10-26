@@ -3,7 +3,7 @@
  * app on the tab's rows). Choices come from the rows themselves, so no filter offers a value that
  * matches nothing.
  */
-import type { ChoiceOption } from '@/components';
+import type { ChoiceOption } from '@/ui/ChoiceField/ChoiceField';
 import { localDate } from '@/lib/format';
 import type { ApprovalRow } from './approvalsApi';
 

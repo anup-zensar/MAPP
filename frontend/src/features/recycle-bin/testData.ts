@@ -2,7 +2,7 @@
  * Recycle-bin entries and restore previews for the tests of feature 011 (only tests import this
  * file): the seeded initiative "Trade shows" with one activity and one line item inside.
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 
 type BinItem = components['schemas']['RecycleBinListItem'];
 type RestorePreview = components['schemas']['RestorePreview'];

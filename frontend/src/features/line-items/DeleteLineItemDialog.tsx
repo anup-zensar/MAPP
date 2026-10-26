@@ -1,4 +1,4 @@
-import { ConfirmDialog } from '@/components';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { linkedTransactionsText, useFinancialRecord } from './gsapFinancials';
 import { moneyText } from './lineItemMath';
 import type { LineItem } from './lineItemsApi';

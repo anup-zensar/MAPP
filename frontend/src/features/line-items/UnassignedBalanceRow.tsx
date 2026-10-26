@@ -1,4 +1,5 @@
-import { InfoTip, ProgressBar } from '@/components';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
 import { cx } from '@/lib/cx';
 import { toCents } from '@/lib/decimal';
 import { amountText, centsInput } from './lineItemMath';

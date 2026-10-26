@@ -1,43 +1,42 @@
 import { useState } from 'react';
-import {
-  Breadcrumb,
-  Button,
-  Card,
-  CheckboxField,
-  ChoiceField,
-  ClearValuesDialog,
-  CompletenessChip,
-  CountBadge,
-  DateRangeField,
-  DecimalField,
-  FilterChips,
-  FormDialog,
-  FormFooter,
-  FormPanel,
-  FormSection,
-  LevelTag,
-  LockedNote,
-  MoneyField,
-  NoAccess,
-  PersonLabel,
-  PersonPicker,
-  Tabs,
-  ProgressBar,
-  SearchField,
-  SegmentedFilter,
-  ShellAttributeFields,
-  ShellAttributeValues,
-  SplitEditor,
-  SummaryCard,
-  TeamPicker,
-  TeamPills,
-  TextAreaField,
-  TextField,
-  TreeTable,
-  valuesToClear,
-  ViewOnlyNote,
-} from '@/components';
-import type { AttributeValues, SplitShare } from '@/components';
+import { Breadcrumb } from '@/ui/Breadcrumb/Breadcrumb';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { CompletenessChip } from '@/ui/CompletenessChip/CompletenessChip';
+import { CountBadge } from '@/ui/CountBadge/CountBadge';
+import { DateRangeField } from '@/ui/DateRangeField/DateRangeField';
+import { DecimalField } from '@/ui/DecimalField/DecimalField';
+import { FilterChips } from '@/ui/FilterChips/FilterChips';
+import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { FormFooter } from '@/ui/FormFooter/FormFooter';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { FormSection } from '@/ui/FormSection/FormSection';
+import { LevelTag } from '@/ui/LevelTag/LevelTag';
+import { LockedNote } from '@/ui/LockedNote/LockedNote';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import { NoAccess } from '@/ui/NoAccess/NoAccess';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { PersonPicker } from '@/ui/PersonPicker/PersonPicker';
+import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
+import { SearchField } from '@/ui/SearchField/SearchField';
+import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
+import { ClearValuesDialog } from '@/ui/ShellAttributeFields/ClearValuesDialog';
+import { ShellAttributeFields } from '@/ui/ShellAttributeFields/ShellAttributeFields';
+import { ShellAttributeValues } from '@/ui/ShellAttributeFields/ShellAttributeValues';
+import { valuesToClear } from '@/ui/ShellAttributeFields/rules';
+import { SplitEditor } from '@/ui/SplitEditor/SplitEditor';
+import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
+import { Tabs } from '@/ui/Tabs/Tabs';
+import { TeamPicker } from '@/ui/TeamPicker/TeamPicker';
+import { TeamPills } from '@/ui/TeamPill/TeamPill';
+import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
+import { TextField } from '@/ui/TextField/TextField';
+import { TreeTable } from '@/ui/TreeTable/TreeTable';
+import { ViewOnlyNote } from '@/ui/ViewOnlyNote/ViewOnlyNote';
+import type { AttributeValues } from '@/ui/ShellAttributeFields/rules';
+import type { SplitShare } from '@/ui/SplitEditor/SplitEditor';
 import { CAMPAIGN_FORM, COST_CENTRES, PEOPLE, PLAN_TREE, TEAMS } from './galleryData';
 import styles from './ComponentGalleryPage.module.css';
 

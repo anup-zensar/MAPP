@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useAttributeForm } from '@/api/settingsQueries';
-import { useToast } from '@/components';
+import { useToast } from '@/ui/Toast/useToast';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { LineItemForm } from './LineItemForm';
 import { newFormState } from './lineItemFormState';

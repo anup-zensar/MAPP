@@ -8,7 +8,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { api, call } from './client';
-import type { components } from './schema';
+import type { components } from './generated/schema';
 
 export type AttributeLevel = components['schemas']['AttributeLevel'];
 

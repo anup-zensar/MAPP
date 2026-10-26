@@ -2,20 +2,17 @@ import { ClipboardList, Plus, SearchX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { useCurrentUser, useSession } from '@/app/useSession';
-import {
-  Button,
-  EmptyState,
-  ErrorState,
-  FilterChips,
-  LinkButton,
-  PageHeader,
-  SearchField,
-  SegmentedFilter,
-  Skeleton,
-  SummaryCard,
-  useToast,
-} from '@/components';
-import type { FilterChip } from '@/components';
+import { Button, LinkButton } from '@/ui/Button/Button';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FilterChips } from '@/ui/FilterChips/FilterChips';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { SearchField } from '@/ui/SearchField/SearchField';
+import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FilterChip } from '@/ui/FilterChips/FilterChips';
 import { useAccess } from '@/lib/access';
 import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';

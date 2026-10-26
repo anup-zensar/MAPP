@@ -1,4 +1,5 @@
-import { Card, InfoTip } from '@/components';
+import { Card } from '@/ui/Card/Card';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { formatWhole } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
 import { goalRows } from './goalWaterfall';

@@ -1,4 +1,4 @@
-import { CountBadge } from '@/components';
+import { CountBadge } from '@/ui/CountBadge/CountBadge';
 import { cx } from '@/lib/cx';
 import { useApprovalSummary } from './useApprovalSummary';
 import styles from './ApprovalsNavBadge.module.css';

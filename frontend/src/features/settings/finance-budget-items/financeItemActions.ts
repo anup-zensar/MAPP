@@ -1,4 +1,4 @@
-import type { ActionsMenuItem } from '@/components';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import type { FinanceBudgetItem } from './financeBudgetsApi';
 
 /** What people can do with a finance budget item, from its row or its details. */

@@ -1,22 +1,21 @@
 import { TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
-import type { components } from '@/api/schema';
-import {
-  CheckboxField,
-  ErrorState,
-  ChoiceField,
-  ConfirmDialog,
-  DateRangeField,
-  LockedNote,
-  MoneyField,
-  problemOf,
-  ShellAttributeFields,
-  Skeleton,
-  TextAreaField,
-  TextField,
-} from '@/components';
-import type { AttributeForm, AttributeValues, FieldProblem } from '@/components';
+import type { components } from '@/api/generated/schema';
+import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { DateRangeField } from '@/ui/DateRangeField/DateRangeField';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { problemOf } from '@/ui/FormPanel/problemOf';
+import { LockedNote } from '@/ui/LockedNote/LockedNote';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import { ShellAttributeFields } from '@/ui/ShellAttributeFields/ShellAttributeFields';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
+import { TextField } from '@/ui/TextField/TextField';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { AttributeForm, AttributeValues } from '@/ui/ShellAttributeFields/rules';
 import { PersonField } from '@/features/people';
 import { SpreadEffectNote } from '@/features/line-items/SpreadEffectNote';
 import { formatAmount, formatMoneyText } from '@/lib/decimal';

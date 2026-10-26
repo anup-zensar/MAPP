@@ -1,5 +1,6 @@
-import { ChoiceField, MoneyField } from '@/components';
-import type { ChoiceOption } from '@/components';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import type { ChoiceOption } from '@/ui/ChoiceField/ChoiceField';
 import type { ConditionDraft } from './levelDrafts';
 import type { ApprovalRuleOptions } from './workflowsApi';
 import styles from './RuleConditionFields.module.css';

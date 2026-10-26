@@ -1,16 +1,14 @@
 import { Check, Minus, Pencil } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router';
 import { ApiError } from '@/api/errors';
-import {
-  Card,
-  ErrorState,
-  LinkButton,
-  LockedNote,
-  PageHeader,
-  PersonLabel,
-  Skeleton,
-  StatusChip,
-} from '@/components';
+import { LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { LockedNote } from '@/ui/LockedNote/LockedNote';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import list from '@/features/settings/shared/SettingsTable.module.css';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { usePermissionCatalogue, useRole } from './accessApi';

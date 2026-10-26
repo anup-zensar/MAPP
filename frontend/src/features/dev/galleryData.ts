@@ -2,7 +2,10 @@
  * Example data for the Plan-module cards of the component gallery: people, teams and a Shell
  * attribute form shaped like the demo Settings.
  */
-import type { AttributeForm, PickerPerson, TeamRef, TreeNode } from '@/components';
+import type { PickerPerson } from '@/ui/PersonPicker/PersonPicker';
+import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
+import type { TeamRef } from '@/ui/TeamPill/TeamPill';
+import type { TreeNode } from '@/ui/TreeTable/TreeTable';
 
 export const TEAMS: TeamRef[] = [
   { id: 'T-1001', name: 'Lubricants Europe', colour: 'blue', active: true },

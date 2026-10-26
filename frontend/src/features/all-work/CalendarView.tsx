@@ -1,7 +1,9 @@
 import { useId } from 'react';
 import type { ComponentProps, MouseEvent } from 'react';
 import { Link } from 'react-router';
-import { LevelTag, StatusChip, Tooltip } from '@/components';
+import { LevelTag } from '@/ui/LevelTag/LevelTag';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import { cx } from '@/lib/cx';
 import { useFormatters } from '@/lib/useFormatters';
 import gridStyles from './AllWorkGrid.module.css';

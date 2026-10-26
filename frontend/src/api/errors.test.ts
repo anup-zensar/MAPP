@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/test/mockApi';
 import { api, call, setSessionLostHandler } from './client';
 import { ApiError, conflictMessage, resolvedMessage } from './errors';
-import type { components } from './schema';
+import type { components } from './generated/schema';
 
 type ErrorBody = components['schemas']['Error'];
 type ErrorDetail = components['schemas']['ErrorDetail'];

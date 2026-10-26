@@ -1,4 +1,4 @@
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { localDate } from '@/lib/format';
 import { useFormatters } from '@/lib/useFormatters';
 import styles from './SettingsTable.module.css';

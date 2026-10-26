@@ -1,4 +1,4 @@
-import { ConfirmDialog } from '@/components';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import type { ReapprovalChange } from './activityFormState';
 import styles from './ReapprovalDialog.module.css';
 

@@ -3,15 +3,13 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { ApiError, conflictMessage } from '@/api/errors';
-import {
-  Button,
-  ConfirmDialog,
-  ErrorState,
-  SidePanel,
-  Skeleton,
-  StatusChip,
-  useToast,
-} from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { SidePanel } from '@/ui/SidePanel/SidePanel';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { useToast } from '@/ui/Toast/useToast';
 import { localDate } from '@/lib/format';
 import { recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';

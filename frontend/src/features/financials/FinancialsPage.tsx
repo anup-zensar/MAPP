@@ -2,18 +2,17 @@ import { History, Lock, ReceiptText, SearchX, Upload } from 'lucide-react';
 import { useEffect, useEffectEvent, useId, useState } from 'react';
 import { Outlet, useLocation, useSearchParams } from 'react-router';
 import { ApiError } from '@/api/errors';
-import {
-  Button,
-  EmptyState,
-  ErrorState,
-  FilterChips,
-  PageHeader,
-  SearchField,
-  Skeleton,
-  SummaryCard,
-  Tabs,
-} from '@/components';
-import type { FilterChip, TabItem } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FilterChips } from '@/ui/FilterChips/FilterChips';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { SearchField } from '@/ui/SearchField/SearchField';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
+import { Tabs } from '@/ui/Tabs/Tabs';
+import type { FilterChip } from '@/ui/FilterChips/FilterChips';
+import type { TabItem } from '@/ui/Tabs/Tabs';
 import { useAccess } from '@/lib/access';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { useFormatters } from '@/lib/useFormatters';

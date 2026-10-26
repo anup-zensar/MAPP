@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { NoAccess } from '@/components';
+import { NoAccess } from '@/ui/NoAccess/NoAccess';
 import { useAccess } from '@/lib/access';
 import type { Permission } from '@/lib/access';
 

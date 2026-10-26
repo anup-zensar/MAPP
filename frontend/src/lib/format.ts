@@ -3,7 +3,7 @@
  * format a person chose (feature 003, FR-024). Pages read the person's format through
  * useFormatters(); these functions default to "DD MMM YYYY" ("12 Mar 2026").
  */
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 
 /** How dates are shown and typed (feature 003, contract DateFormat). */
 export type DateFormat = components['schemas']['DateFormat'];

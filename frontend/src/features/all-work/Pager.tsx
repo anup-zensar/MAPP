@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { Button } from '@/components';
+import { Button } from '@/ui/Button/Button';
 import { formatWhole } from '@/lib/decimal';
 import styles from './Pager.module.css';
 import { PAGE_SIZES } from './viewState';

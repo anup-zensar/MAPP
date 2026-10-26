@@ -1,7 +1,9 @@
 import { CircleAlert, Download, FileText, LoaderCircle, RotateCcw } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
 import { ApiError } from '@/api/errors';
-import { Button, FormDialog, useToast } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { useToast } from '@/ui/Toast/useToast';
 import { downloadSampleFile, useCheckImport, useImportExtract } from './financialsApi';
 import type {
   FinancialImportCheck,

@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { useAttributeForm } from '@/api/settingsQueries';
-import { useToast } from '@/components';
-import type { AttributeForm, FieldProblem, SaveFailure } from '@/components';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
 import { recordHref } from '@/lib/recordLinks';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { planCurrencyOf } from '@/features/plans/planCurrency';

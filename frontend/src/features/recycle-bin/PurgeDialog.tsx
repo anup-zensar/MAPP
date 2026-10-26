@@ -1,7 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { ApiError } from '@/api/errors';
-import { ConfirmDialog, useToast } from '@/components';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { useToast } from '@/ui/Toast/useToast';
 import { useFormatters } from '@/lib/useFormatters';
 import { insideEntriesWarning, purgeContentsText, purgeTitle, purgedMessage } from './binText';
 import type { BinItem } from './binText';

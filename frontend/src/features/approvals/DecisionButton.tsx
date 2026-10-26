@@ -1,6 +1,6 @@
 import { Check, X } from 'lucide-react';
 import { useState } from 'react';
-import { Button } from '@/components';
+import { Button } from '@/ui/Button/Button';
 import type { ActivityApproval } from './approvalsApi';
 import { DecisionDialog } from './DecisionDialog';
 

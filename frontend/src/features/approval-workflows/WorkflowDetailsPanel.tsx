@@ -1,7 +1,12 @@
 import { Link } from 'react-router';
 import { ApiError } from '@/api/errors';
 import { Pencil } from 'lucide-react';
-import { ActionsMenu, Button, ErrorState, SidePanel, Skeleton, StatusChip } from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button } from '@/ui/Button/Button';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { SidePanel } from '@/ui/SidePanel/SidePanel';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { ApprovalAlert } from '@/features/approvals/ApprovalAlert';
 import { ActivityStatusChip } from '@/features/activities/ActivityStatusChip';
 import { ApprovalChain } from '@/features/approvals/ApprovalChain';

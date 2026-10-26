@@ -1,6 +1,11 @@
 import { History } from 'lucide-react';
 import { Link } from 'react-router';
-import { Avatar, Card, EmptyState, LinkButton, Skeleton, Tooltip } from '@/components';
+import { Avatar } from '@/ui/Avatar/Avatar';
+import { LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import { recordHref } from '@/lib/recordLinks';
 import type { PlanningRecordType } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';

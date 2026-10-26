@@ -1,6 +1,6 @@
-import type { components } from '@/api/schema';
-import { StatusChip } from '@/components';
-import type { StatusTone } from '@/components';
+import type { components } from '@/api/generated/schema';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import type { StatusTone } from '@/ui/StatusChip/StatusChip';
 import { SWBS_TEXT } from './lineItemText';
 
 type SwbsStatus = components['schemas']['SwbsStatus'];

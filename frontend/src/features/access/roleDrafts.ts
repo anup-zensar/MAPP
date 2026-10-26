@@ -3,7 +3,7 @@
  * roles are ticked and the scope of each, the body PUT and the impact check send, and the preview
  * of what the roles would allow together (merged as the server's authz.Grants does).
  */
-import type { TeamRef } from '@/components';
+import type { TeamRef } from '@/ui/TeamPill/TeamPill';
 import type {
   AccessScopeType,
   MyPermission,
