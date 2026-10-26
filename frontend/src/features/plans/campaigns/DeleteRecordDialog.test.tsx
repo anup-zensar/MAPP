@@ -8,7 +8,7 @@ import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { reply } from '@/testing/replies';
-import type { RecordTarget } from './campaign-rows';
+import type { RecordTarget } from './record-target';
 import { DeleteRecordDialog } from './DeleteRecordDialog';
 
 type DeleteResult = components['schemas']['DeleteResult'];

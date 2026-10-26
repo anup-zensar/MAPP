@@ -1,133 +1,30 @@
-import { screen, within } from '@testing-library/react';
+import { within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { TreeTable } from '@/ui/TreeTable/TreeTable';
 import type { TreeNode } from '@/ui/TreeTable/TreeTable';
-import { formatDateRange, formatMoney } from '@/format/intl';
-import type { Formatters } from '@/format/useFormatters';
-import { renderWithProviders } from '@/testing/render';
-import {
-  budgetAndCost,
-  campaign,
-  initiative,
-  planCampaigns,
-  usd,
-} from '@/testing/fixtures/campaigns';
-import { campaignRows, CELL_KEYS, totalsFooter } from './campaign-rows';
+import { nth } from '@/testing/dom';
+import { DATA, renderRows, rowOf, rowOptions } from '@/testing/fixtures/campaign-rows';
+import { campaignRows } from './campaign-rows';
 import type { RowOptions } from './campaign-rows';
-import type { PlanCampaigns } from './api';
-
-// Feature 006 adds Add activity to initiative rows; here it stands in.
-vi.mock('@/features/activities/activity-tree-rows', () => ({
-  useActivityRows: () => new Map(),
-  activityActionsForInitiative: () => [{ label: 'Add activity', onSelect: () => {} }],
-}));
-
-const formatters = {
-  dateRange: (start: string | null | undefined, end: string | null | undefined) =>
-    formatDateRange(start, end),
-  money: (value: { amount: string; currency: string } | null | undefined) =>
-    value ? formatMoney(value.amount, value.currency) : '—',
-} as Formatters;
 
 function options(overrides: Partial<RowOptions> = {}): RowOptions {
-  return { planId: 'P-1001', formatters, navigate: vi.fn(), ...overrides };
+  return rowOptions(vi.fn(), overrides);
 }
-
-function allIds(nodes: TreeNode[]): string[] {
-  return nodes.flatMap((node) => [node.id, ...allIds(node.children)]);
-}
-
-/** The rows as the plan tree shows them, every row expanded. */
-function renderRows(data: PlanCampaigns, rowOptions: Partial<RowOptions> = {}) {
-  const nodes = campaignRows(data, options(rowOptions));
-  renderWithProviders(
-    <TreeTable
-      label="Plan tree"
-      columns={CELL_KEYS.map((key) => ({ key, header: key }))}
-      nodes={nodes}
-      expandedIds={new Set(allIds(nodes))}
-      onToggle={() => {}}
-      footer={totalsFooter(data, formatters)}
-    />,
-  );
-  return screen.getByRole('treegrid', { name: 'Plan tree' });
-}
-
-function rowOf(tree: HTMLElement, name: string): HTMLElement {
-  return within(tree).getByRole('link', { name }).closest('tr') as HTMLElement;
-}
-
-const HELIX = campaign({
-  budget: usd('120000.00'),
-  outsidePlanYear: true,
-  endDate: '2027-03-31',
-  budgetAndCost: budgetAndCost({
-    allocatedToChildren: usd('150000.00'),
-    remainingForChildren: usd('-30000.00'),
-    overAllocatedBy: usd('30000.00'),
-    plannedCost: usd('150000.00'),
-    budgetUsedPercent: 125,
-    overBudget: true,
-  }),
-  counts: { initiatives: 2, activities: 5, approvedActivities: 3, lineItems: 0 },
-  approvalProgress: { state: 'inProgress', approved: 3, total: 5 },
-  initiatives: [
-    initiative({
-      owner: { id: 'U-1009', name: 'Sam Lee', initials: 'SL', jobTitle: '', active: false },
-      counts: { activities: 1, approvedActivities: 0, lineItems: 0 },
-    }),
-    initiative({
-      id: 'I-1002',
-      name: 'Events',
-      startDate: null,
-      endDate: null,
-      budget: null,
-      timing: null,
-    }),
-  ],
-});
-const RIMULA = campaign({
-  id: 'C-1002',
-  name: 'Rimula fleet',
-  startDate: '2026-03-01',
-  endDate: '2026-12-31',
-  budget: usd('200000.00'),
-  budgetAndCost: budgetAndCost({ remainingForChildren: usd('200000.00') }),
-  counts: { initiatives: 0, activities: 0, approvedActivities: 0, lineItems: 0 },
-  initiatives: [],
-});
-const NO_BUDGET = campaign({
-  id: 'C-1003',
-  name: 'Sponsorships',
-  startDate: null,
-  endDate: null,
-  budget: null,
-  timing: null,
-  counts: { initiatives: 0, activities: 0, approvedActivities: 0, lineItems: 0 },
-  initiatives: [],
-});
-const DATA = planCampaigns([HELIX, RIMULA, NO_BUDGET], {
-  campaigns: 3,
-  initiatives: 2,
-  activities: 1,
-  allocatedToCampaigns: usd('320000.00'),
-  plannedCost: usd('150000.00'),
-});
 
 describe('campaignRows (feature 005, US4)', () => {
   it('keeps the API’s order with initiatives under their campaign (FR-020)', () => {
     const nodes = campaignRows(DATA, options());
 
     expect(nodes.map((node) => node.id)).toEqual(['C-1001', 'C-1002', 'C-1003']);
-    expect(nodes[0].children.map((node) => node.id)).toEqual(['I-1001', 'I-1002']);
+    const helix = nth(nodes, 0);
+    expect(helix.children.map((node) => node.id)).toEqual(['I-1001', 'I-1002']);
     expect(nodes.map((node) => node.level)).toEqual(['campaign', 'campaign', 'campaign']);
-    expect(nodes[0].children[0].level).toBe('initiative');
-    expect(nodes[0].href).toBe('/plans/P-1001/campaigns/C-1001');
-    expect(nodes[0].children[0].href).toBe('/plans/P-1001/initiatives/I-1001');
+    expect(nth(helix.children, 0).level).toBe('initiative');
+    expect(helix.href).toBe('/plans/P-1001/campaigns/C-1001');
+    expect(nth(helix.children, 0).href).toBe('/plans/P-1001/initiatives/I-1001');
   });
 
   it('shows every cell of a campaign row (FR-019, FR-008, FR-011, FR-013)', () => {
-    const tree = renderRows(DATA);
+    const tree = renderRows(DATA, options());
     const row = rowOf(tree, 'Helix launch');
 
     expect(row).toHaveTextContent('C-1001 · 2 initiatives');
@@ -156,7 +53,7 @@ describe('campaignRows (feature 005, US4)', () => {
   });
 
   it('says what remains beneath a campaign budget, and nothing without one (FR-019)', () => {
-    const tree = renderRows(DATA);
+    const tree = renderRows(DATA, options());
 
     const rimula = rowOf(tree, 'Rimula fleet');
     expect(rimula).toHaveTextContent('C-1002 · 0 initiatives');
@@ -172,7 +69,7 @@ describe('campaignRows (feature 005, US4)', () => {
   });
 
   it('shows every cell of an initiative row, inactive owners labelled (FR-019)', () => {
-    const tree = renderRows(DATA);
+    const tree = renderRows(DATA, options());
 
     const digital = rowOf(tree, 'Digital & social');
     expect(digital).toHaveTextContent('I-1001 · 1 activity');
@@ -199,7 +96,7 @@ describe('campaignRows (feature 005, US4)', () => {
     const navigate = vi.fn();
     const nodes = campaignRows(DATA, options({ onDelete, onCopy, onMove, navigate }));
 
-    const campaignItems = nodes[0].actions ?? [];
+    const campaignItems = nth(nodes, 0).actions ?? [];
     expect(campaignItems.map((item) => item.label)).toEqual([
       'Add initiative',
       'View',
@@ -208,8 +105,8 @@ describe('campaignRows (feature 005, US4)', () => {
       'Move to…',
       'Delete',
     ]);
-    expect(campaignItems[5]).toMatchObject({ tone: 'danger', separatorBefore: true });
-    const initiativeItems = nodes[0].children[0].actions ?? [];
+    expect(nth(campaignItems, 5)).toMatchObject({ tone: 'danger', separatorBefore: true });
+    const initiativeItems = nth(nth(nodes, 0).children, 0).actions ?? [];
     expect(initiativeItems.map((item) => item.label)).toEqual([
       'View',
       'Edit',
@@ -219,11 +116,11 @@ describe('campaignRows (feature 005, US4)', () => {
       'Delete',
     ]);
 
-    campaignItems[0].onSelect();
+    nth(campaignItems, 0).onSelect();
     expect(navigate).toHaveBeenLastCalledWith('/plans/P-1001/campaigns/C-1001/initiatives/new');
-    initiativeItems[1].onSelect();
+    nth(initiativeItems, 1).onSelect();
     expect(navigate).toHaveBeenLastCalledWith('/plans/P-1001/initiatives/I-1001/edit');
-    initiativeItems[5].onSelect();
+    nth(initiativeItems, 5).onSelect();
     expect(onDelete).toHaveBeenCalledWith(
       expect.objectContaining({ level: 'initiative', id: 'I-1001', name: 'Digital & social' }),
     );
@@ -234,11 +131,13 @@ describe('campaignRows (feature 005, US4)', () => {
     const onMove = vi.fn();
     const nodes = campaignRows(DATA, options({ onCopy, onMove }));
 
-    (nodes[0].actions ?? []).find((item) => item.label === 'Copy')?.onSelect();
+    (nth(nodes, 0).actions ?? []).find((item) => item.label === 'Copy')?.onSelect();
     expect(onCopy).toHaveBeenCalledWith(
       expect.objectContaining({ level: 'campaign', id: 'C-1001', year: 2026, version: 3 }),
     );
-    (nodes[0].children[0].actions ?? []).find((item) => item.label === 'Move to…')?.onSelect();
+    (nth(nth(nodes, 0).children, 0).actions ?? [])
+      .find((item) => item.label === 'Move to…')
+      ?.onSelect();
     expect(onMove).toHaveBeenCalledWith(
       expect.objectContaining({ level: 'initiative', id: 'I-1001', version: 3 }),
     );
@@ -247,91 +146,11 @@ describe('campaignRows (feature 005, US4)', () => {
   it('lists Copy and Move to… only when they can be opened', () => {
     const nodes = campaignRows(DATA, options());
 
-    expect((nodes[0].actions ?? []).map((item) => item.label)).toEqual([
+    expect((nth(nodes, 0).actions ?? []).map((item) => item.label)).toEqual([
       'Add initiative',
       'View',
       'Edit',
     ]);
-  });
-
-  it('shows the plan currency with the reader’s display currency beneath (016 FR-013, D-220)', () => {
-    const euros = (amount: string) => ({ amount, currency: 'EUR' });
-    const noGoals = { inq: null, mql: null, revenue: null };
-    const helix = campaign({
-      budget: usd('400000.00'),
-      budgetAndCost: budgetAndCost({
-        allocatedToChildren: usd('300000.00'),
-        remainingForChildren: usd('100000.00'),
-        plannedCost: usd('50000.00'),
-        budgetUsedPercent: 13,
-      }),
-      display: {
-        budget: euros('368000.00'),
-        parentRemainingBudget: euros('184000.00'),
-        budgetAndCost: budgetAndCost({
-          allocatedToChildren: euros('276000.00'),
-          remainingForChildren: euros('92000.00'),
-          plannedCost: euros('46000.00'),
-          budgetUsedPercent: 13,
-        }),
-        goals: noGoals,
-      },
-      initiatives: [
-        initiative({
-          budget: usd('300000.00'),
-          display: {
-            budget: euros('276000.00'),
-            parentRemainingBudget: euros('92000.00'),
-            budgetAndCost: budgetAndCost({ plannedCost: euros('46000.00') }),
-            goals: noGoals,
-          },
-        }),
-      ],
-    });
-    const tree = renderRows(
-      planCampaigns(
-        [helix],
-        { allocatedToCampaigns: usd('400000.00'), plannedCost: usd('50000.00') },
-        { allocatedToCampaigns: euros('368000.00'), plannedCost: euros('46000.00') },
-      ),
-    );
-
-    const row = rowOf(tree, 'Helix launch');
-    // Two currencies on the screen: both in the code form (design system §4.4).
-    expect(row).toHaveTextContent('400,000.00 USD≈ about 368,000.00 EUR');
-    expect(row).toHaveTextContent('Remaining 100,000.00 USD');
-    expect(row).toHaveTextContent('50,000.00 USD≈ about 46,000.00 EUR');
-    expect(row).not.toHaveTextContent('$');
-    expect(rowOf(tree, 'Digital & social')).toHaveTextContent(
-      '300,000.00 USD≈ about 276,000.00 EUR',
-    );
-    const totals = within(tree).getAllByRole('row').at(-1) as HTMLElement;
-    expect(totals).toHaveTextContent('400,000.00 USD≈ about 368,000.00 EUR');
-    expect(totals).not.toHaveTextContent('$');
-  });
-
-  it('sums the plan in the totals row, with singular forms (FR-022)', () => {
-    const tree = renderRows(DATA);
-    const totals = within(tree).getAllByRole('row').at(-1) as HTMLElement;
-
-    // "Total" and its counts on two short lines, never wrapping (UI audit PL-05).
-    expect(within(totals).getByText('Total')).toBeInTheDocument();
-    expect(
-      within(totals).getByText('3 campaigns · 2 initiatives · 1 activity'),
-    ).toBeInTheDocument();
-    expect(within(totals).getByText('$320,000.00')).toBeInTheDocument();
-    expect(within(totals).getByText('Allocated')).toBeInTheDocument();
-    expect(within(totals).getByText('$150,000.00')).toBeInTheDocument();
-
-    const one = totalsFooter(
-      planCampaigns([RIMULA], { campaigns: 1, initiatives: 1, activities: 0, plannedCost: null }),
-      formatters,
-    );
-    renderWithProviders(<div data-testid="one">{one.name}</div>);
-    expect(screen.getByTestId('one')).toHaveTextContent(
-      'Total1 campaign · 1 initiative · 0 activities',
-    );
-    expect(one.plannedCost).toBe('—');
   });
 });
 

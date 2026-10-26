@@ -14,7 +14,7 @@ import {
   planDestination,
   usd,
 } from '@/testing/fixtures/campaigns';
-import type { RecordTarget } from './campaign-rows';
+import type { RecordTarget } from './record-target';
 import { MoveDialog } from './MoveDialog';
 
 const DIGITAL: RecordTarget = {

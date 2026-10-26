@@ -1,5 +1,6 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { parentOf } from '@/testing/dom';
 import { renderWithProviders } from '@/testing/render';
 import { ApprovalProgressChip, OutsideYearNote, TimingNote } from './StatusChips';
 
@@ -30,7 +31,7 @@ describe('StatusChips (feature 005, FR-013, FR-015)', () => {
     (progress, shown, heard) => {
       renderWithProviders(<ApprovalProgressChip progress={progress} />);
 
-      const chip = screen.getByText(shown).parentElement as HTMLElement;
+      const chip = parentOf(screen.getByText(shown));
       expect(chip.className).toContain('review');
       expect(chip).toHaveTextContent(heard);
       expect(screen.queryByText(/In progress/)).not.toBeInTheDocument();

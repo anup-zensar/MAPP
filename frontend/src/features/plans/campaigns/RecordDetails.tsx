@@ -78,7 +78,7 @@ export function RecordDetails({
   const planHref = `/plans/${planId}`;
   const close = () => void navigate(planHref);
   const isCampaign = 'initiatives' in record;
-  const initiative = isCampaign ? null : (record as Initiative);
+  const initiative = isCampaign ? null : record;
 
   const items: ActionsMenuItem[] = [
     ...(isCampaign
@@ -142,9 +142,7 @@ export function RecordDetails({
               />
             </span>
           </div>
-          {isCampaign && (record as Campaign).outsidePlanYear && (
-            <OutsideYearNote year={record.plan.year} />
-          )}
+          {isCampaign && record.outsidePlanYear && <OutsideYearNote year={record.plan.year} />}
           <Facts>
             <Fact label={ID}>{record.id}</Fact>
             <Fact label={PLAN}>
@@ -199,7 +197,7 @@ export function RecordDetails({
           </PanelSection>
           <AttributeValues level={level} record={record} planId={planId} />
           {isCampaign ? (
-            <CampaignInitiatives campaign={record as Campaign} planId={planId} />
+            <CampaignInitiatives campaign={record} planId={planId} />
           ) : (
             <>
               <p className={styles.text}>

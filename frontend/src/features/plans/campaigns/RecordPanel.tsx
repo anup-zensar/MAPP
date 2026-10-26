@@ -6,7 +6,7 @@ import { planCurrencyOf } from '../plan-currency';
 import { usePlan } from './api';
 import type { Campaign, Initiative } from './api';
 import { PanelFailure, PanelLoading, StatePanel } from './PanelFrame';
-import { targetOf } from './campaign-rows';
+import { targetOf } from './record-target';
 import { RecordDetails } from './RecordDetails';
 import { RecordEdit } from './RecordEdit';
 import { EDIT_CAMPAIGN, EDIT_INITIATIVE, LEVEL_WORD } from './texts';

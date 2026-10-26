@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { Outlet } from 'react-router';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { SessionProvider } from '@/session/SessionProvider';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
@@ -9,25 +9,10 @@ import { campaignForm } from '@/testing/fixtures/attribute-forms';
 import { mockApi } from '@/testing/mock-api';
 import { renderRoutes } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { reply } from '@/testing/replies';
+import { pending, reply } from '@/testing/replies';
+import { launchFilmRow } from '@/testing/fixtures/activities';
 import { initiative, PEOPLE, planAnswer, usd } from '@/testing/fixtures/campaigns';
 import { InitiativePanel } from './InitiativePanel';
-
-// Feature 006 fills the initiative's extension points; here they stand in.
-vi.mock('@/features/activities/activity-tree-rows', () => ({
-  useActivityRows: () => new Map(),
-  activityActionsForInitiative: (initiative: { id: string }, navigate: (to: string) => void) => [
-    {
-      label: 'Add activity',
-      onSelect: () => navigate(`/plans/P-1001/initiatives/${initiative.id}/activities/new`),
-    },
-  ],
-}));
-vi.mock('@/features/activities/InitiativeActivities', () => ({
-  InitiativeActivities: ({ initiativeId }: { initiativeId: string }) => (
-    <section aria-label="Activities">{`Activities of ${initiativeId}`}</section>
-  ),
-}));
 
 const DETAILS = '/plans/P-1001/initiatives/I-1001';
 
@@ -49,6 +34,8 @@ function renderPanel(route: string, answers: HttpHandler[] = []) {
       { level: 'initiative' },
     ),
     reply('GET /api/v1/people', { body: PEOPLE }),
+    // Feature 006's list of the initiative's activities stays loading unless a test answers it.
+    reply('GET /api/v1/plans/{planId}/activities', pending, { planId: 'P-1001' }),
     ...answers,
   ]);
   const rendered = renderRoutes(
@@ -98,6 +85,11 @@ describe('InitiativePanel (feature 005, US3)', () => {
         },
         { initiativeId: 'I-1001' },
       ),
+      reply(
+        'GET /api/v1/plans/{planId}/activities',
+        { body: { items: [launchFilmRow()], total: 1 } },
+        { planId: 'P-1001' },
+      ),
     ]);
     const panel = await screen.findByRole('dialog', { name: 'Digital & social' });
 
@@ -115,8 +107,10 @@ describe('InitiativePanel (feature 005, US3)', () => {
     expect(
       within(panel).getByText('Activities: 3 (1 approved) · Line items: 5'),
     ).toBeInTheDocument();
-    expect(within(panel).getByRole('region', { name: 'Activities' })).toHaveTextContent(
-      'Activities of I-1001',
+    await waitFor(() =>
+      expect(within(panel).getByRole('region', { name: 'Activities' })).toHaveTextContent(
+        launchFilmRow().name,
+      ),
     );
   });
 
