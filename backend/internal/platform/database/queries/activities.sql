@@ -76,3 +76,18 @@ INSERT INTO activities (
 -- name: DeleteActivities :exec
 DELETE FROM activities
 WHERE id = ANY (sqlc.arg(ids)::text[]);
+
+-- name: ListActivitiesInScopeOf :many
+SELECT id, initiative_id, name, external_name, activity_type_id, owner_id, start_date, end_date, ongoing,
+    planned_cost_minor, planned_cost_currency, approval_workflow_id, description, attributes, inq,
+    set_later_stages_myself, mql, revenue_minor, revenue_currency, status, split_from_id, version, created_at,
+    created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+FROM activities
+WHERE id = ANY (sqlc.arg(ids)::text[])
+    AND activity_in_scope(id, sqlc.arg(sees_everything)::boolean, sqlc.arg(viewer_id)::text,
+        sqlc.arg(views_plans)::boolean, sqlc.arg(viewer_team_ids)::text[])
+ORDER BY length(id), id COLLATE "C";
+
+-- name: ListActivityWorkflows :many
+SELECT id, coalesce(approval_workflow_id, '')::text AS approval_workflow_id
+FROM activities;

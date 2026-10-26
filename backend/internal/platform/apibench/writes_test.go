@@ -29,7 +29,7 @@ func BenchmarkChanges(b *testing.B) {
 		b.Run(size.name+"/restore", func(b *testing.B) { c.restore(b, size.copy.Plan) })
 		b.Run(size.name+"/delete permanently", func(b *testing.B) { c.purge(b, size.copy.Plan) })
 	}
-	b.Run("submit and recall", func(b *testing.B) { c.submitAndRecall(b, records.Template.Activity) })
+	b.Run("submit and recall", func(b *testing.B) { c.submitAndRecall(b, readyActivity(b, server, c.alex)) })
 	b.Run("approve", func(b *testing.B) { c.approve(b) })
 	b.Run("empty recycle bin", func(b *testing.B) { c.emptyBin(b, records.Template.Plan) })
 }

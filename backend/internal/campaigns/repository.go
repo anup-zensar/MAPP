@@ -20,6 +20,9 @@ type Repository interface {
 	// DeleteCampaign removes the campaign with id; removing one that does not exist changes nothing.
 	DeleteCampaign(ctx context.Context, id string) error
 
+	// CampaignsByIDs and InitiativesByIDs return the stored records among ids, at once, in the order of their ids.
+	CampaignsByIDs(ctx context.Context, ids []string) ([]Campaign, error)
+	InitiativesByIDs(ctx context.Context, ids []string) ([]Initiative, error)
 	// GetInitiative returns the initiative with id, and false when there is none.
 	GetInitiative(ctx context.Context, id string) (Initiative, bool, error)
 	// ListInitiatives returns every initiative of every campaign.
