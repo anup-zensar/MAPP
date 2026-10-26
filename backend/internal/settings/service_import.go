@@ -88,15 +88,8 @@ func (s *Service) Import(ctx context.Context, a actor.Actor, attributeID string,
 		for _, o := range f.options[attribute.ID] {
 			position = max(position, o.Position)
 		}
-		for _, o := range plan.add {
-			if o.ID, err = s.ids.Next(ctx, ids.PrefixShellOption); err != nil {
-				return err
-			}
-			position++
-			o.Position, o.Meta = position, record.NewMeta(a, s.now())
-			if err := s.repo.PutOption(ctx, o); err != nil {
-				return err
-			}
+		if err = s.addOptions(ctx, a, plan.add, position); err != nil {
+			return err
 		}
 		result = ImportResult{Added: len(plan.add), AlreadyPresent: len(plan.check.AlreadyPresent), Problems: len(plan.check.Problems)}
 		skipped := result.AlreadyPresent + result.Problems
@@ -108,6 +101,20 @@ func (s *Service) Import(ctx context.Context, a actor.Actor, attributeID string,
 		return err
 	})
 	return result, err
+}
+
+// addOptions stores new options all at once, numbered from after+1 in their order, with the next IDs.
+func (s *Service) addOptions(ctx context.Context, a actor.Actor, options []Option, after int) error {
+	newIDs, err := s.ids.NextIDs(ctx, ids.PrefixShellOption, len(options))
+	if err != nil {
+		return err
+	}
+	added := make([]Option, 0, len(options))
+	for i, o := range options {
+		o.ID, o.Position, o.Meta = newIDs[i], after+i+1, record.NewMeta(a, s.now())
+		added = append(added, o)
+	}
+	return s.repo.AddOptions(ctx, added)
 }
 
 // importTarget reads the options of every attribute and returns the attribute attributeID, which must be

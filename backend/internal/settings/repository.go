@@ -42,6 +42,9 @@ type Repository interface {
 	OptionsOf(ctx context.Context, attributeID string) ([]Option, error)
 	// PutOption saves o, replacing the option with the same id.
 	PutOption(ctx context.Context, o Option) error
+	// AddOptions saves new options, whose ids are not stored yet, all at once; DeleteOptions removes options.
+	AddOptions(ctx context.Context, options []Option) error
+	DeleteOptions(ctx context.Context, ids []string) error
 	// DeleteOption removes the option with id.
 	DeleteOption(ctx context.Context, id string) error
 
@@ -83,6 +86,8 @@ type Repository interface {
 	RatesOf(ctx context.Context, code string) ([]ExchangeRate, error)
 	// PutRate saves r, replacing the rate with the same id.
 	PutRate(ctx context.Context, r ExchangeRate) error
+	// PutRates saves rates, replacing those with the same id, all at once.
+	PutRates(ctx context.Context, rates []ExchangeRate) error
 	// DeleteRate removes the rate with id.
 	DeleteRate(ctx context.Context, id string) error
 
