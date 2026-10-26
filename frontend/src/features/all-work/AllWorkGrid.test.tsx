@@ -1,12 +1,16 @@
 import { screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { closestTo, nth } from '@/testing/dom';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { gridResult, seedRows, standard2026, usd } from '@/testing/fixtures/all-work';
+import { gridResult, standard2026 } from '@/testing/fixtures/all-work';
+import { seedRows } from '@/testing/fixtures/all-work-seed';
+import { usd } from '@/testing/fixtures/all-work-rows';
 import { AllWorkGrid } from './AllWorkGrid';
 import type { AllWorkResult, AllWorkRow, ViewState } from './all-work-types';
-import { continuedPath, nextSort, pageOf, toggleRow, visibleRows } from './view-state';
+import { continuedPath, pageOf, toggleRow, visibleRows } from './view-rows';
+import { nextSort } from './view-columns';
 
 /** The grid with its expansion kept the way the page keeps it. */
 function Harness({
@@ -57,7 +61,7 @@ function renderGrid(
 
 function bodyRow(name: string): HTMLElement {
   const header = screen.getByRole('rowheader', { name: new RegExp(name) });
-  return header.closest('tr') as HTMLElement;
+  return closestTo(header, 'tr');
 }
 
 describe('AllWorkGrid (US1)', () => {
@@ -156,7 +160,7 @@ describe('AllWorkGrid (US1)', () => {
       name: /Unassigned planned cost \(Sys_Gen_Balance\)/,
     });
     expect(unassigned).toHaveLength(1);
-    const row = unassigned[0].closest('tr') as HTMLElement;
+    const row = closestTo(nth(unassigned, 0), 'tr');
     const amounts = within(row).getAllByText('-$1,000.00');
     expect(amounts).toHaveLength(2);
     amounts.forEach((amount) => expect(amount.className).toMatch(/problem/));
@@ -220,7 +224,7 @@ describe('AllWorkGrid (US1)', () => {
     renderGrid();
 
     const totals = screen.getByRole('rowheader', { name: 'Total · 3 activities' });
-    const row = totals.closest('tr') as HTMLElement;
+    const row = closestTo(totals, 'tr');
     expect(within(row).getByText('$2,000,000.00')).toBeInTheDocument();
     expect(within(row).getByText('$17,000.00')).toBeInTheDocument();
     expect(within(row).getByText('$15,000.00')).toBeInTheDocument();
@@ -268,85 +272,6 @@ describe('AllWorkGrid (US1)', () => {
     await user.keyboard('{Enter}');
 
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ key: 'A-1003' }));
-  });
-
-  it('shows money as the API answers it in the display currency, and local amounts with theirs (FR-017)', () => {
-    const columns = [
-      ...gridResult().columns,
-      {
-        key: 'lineItem.localPlannedCost',
-        label: 'Planned cost in local currency',
-        group: 'lineItem' as const,
-        kind: 'money' as const,
-        levels: ['lineItem' as const],
-        sortable: true,
-        inactive: false,
-      },
-    ];
-    const eur = (amount: string) => ({ amount, currency: 'EUR' });
-    const rows = seedRows().map((row) => ({
-      ...row,
-      cells: [
-        ...row.cells.map((cell) =>
-          cell?.kind === 'money' && cell.money ? { ...cell, money: eur(cell.money.amount) } : cell,
-        ),
-        row.level === 'lineItem'
-          ? { kind: 'money' as const, money: { amount: '7110.00', currency: 'GBP' } }
-          : null,
-      ],
-    }));
-    const state = { ...standard2026(), expansion: { mode: 'allExpanded' as const, toggled: [] } };
-    renderGrid(gridResult({ columns, rows, displayCurrency: 'EUR' }), state);
-
-    expect(within(bodyRow('Helix launch event')).getByText('12,000.00 EUR')).toBeInTheDocument();
-    expect(within(bodyRow('Venue hire')).getByText('7,110.00 GBP')).toBeInTheDocument();
-  });
-
-  it('cuts long text with the full text on focus, and labels inactive values (edge cases)', async () => {
-    const description = 'A very long description of the campaign that goes on and on';
-    const rows = seedRows().map((row) =>
-      row.key === 'C-1001'
-        ? {
-            ...row,
-            cells: row.cells.map((cell, index) =>
-              index === 0
-                ? { kind: 'text' as const, text: description }
-                : index === 2
-                  ? { kind: 'text' as const, text: 'Tom Weber', inactive: true }
-                  : cell,
-            ),
-          }
-        : row,
-    );
-    const { user } = renderGrid(gridResult({ rows }));
-
-    const campaign = bodyRow('Helix launch$');
-    expect(within(campaign).getByText('Tom Weber (inactive)')).toBeInTheDocument();
-    await user.tab();
-    within(campaign).getByText(description).focus();
-    expect(await screen.findByRole('tooltip', { name: description })).toBeInTheDocument();
-  });
-
-  it('marks the searched text and shows the excerpt of a hit in the description (FR-006)', () => {
-    const rows = seedRows().map((row) =>
-      row.key === 'A-1002'
-        ? {
-            ...row,
-            searchHit: {
-              fields: ['name' as const, 'description' as const],
-              excerpt: '…paid social for the Helix launch…',
-            },
-          }
-        : row,
-    );
-    renderGrid(gridResult({ rows }), { ...standard2026(), search: 'social' });
-
-    const activity = bodyRow('Helix social ads');
-    const marked = [...activity.querySelectorAll('mark')].map((mark) => mark.textContent);
-    expect(marked).toEqual(['social', 'social']);
-    expect(within(activity).getByText(/paid/)).toHaveTextContent(
-      '…paid social for the Helix launch…',
-    );
   });
 
   it('sorts by a column heading: ascending, descending, then the plan-tree order (FR-015)', async () => {

@@ -1,11 +1,14 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { closestTo, nth, parentOf } from '@/testing/dom';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { calendarResult, standard2026, usd } from '@/testing/fixtures/all-work';
+import { calendarResult } from '@/testing/fixtures/all-work-budget';
+import { standard2026 } from '@/testing/fixtures/all-work';
+import { usd } from '@/testing/fixtures/all-work-rows';
 import type { AllWorkResult, AllWorkRow } from './all-work-types';
 import { CalendarView } from './CalendarView';
-import { visibleRows } from './view-state';
+import { visibleRows } from './view-rows';
 
 function renderCalendar(result: AllWorkResult = calendarResult()) {
   const onOpen = vi.fn();
@@ -26,8 +29,8 @@ function renderCalendar(result: AllWorkResult = calendarResult()) {
 /** The bar of a record: the link in the timeline cell of its row. */
 function barOf(name: RegExp): HTMLElement {
   const table = screen.getByRole('table', { name: /^Calendar 2026/ });
-  const [header] = within(table).getAllByRole('rowheader', { name });
-  const cell = within(header.closest('tr') as HTMLElement).getByRole('cell');
+  const header = nth(within(table).getAllByRole('rowheader', { name }), 0);
+  const cell = within(closestTo(header, 'tr')).getByRole('cell');
   return within(cell).getByRole('link');
 }
 
@@ -89,7 +92,7 @@ describe('CalendarView (US5)', () => {
     renderCalendar();
 
     expect(screen.getByText('Status')).toBeInTheDocument();
-    const legend = screen.getByText('Status').parentElement as HTMLElement;
+    const legend = parentOf(screen.getByText('Status'));
     // The approval roll-up of campaigns and initiatives reads "Partly approved": "In progress"
     // is only a running activity (functional review A-02).
     expect(
@@ -123,7 +126,7 @@ describe('CalendarView (US5)', () => {
     renderCalendar();
 
     const header = screen.getByRole('rowheader', { name: /FY2026 Lubricants Europe/ });
-    const cell = within(header.closest('tr') as HTMLElement).getByRole('cell');
+    const cell = within(closestTo(header, 'tr')).getByRole('cell');
     expect(within(cell).queryByRole('link')).not.toBeInTheDocument();
   });
 

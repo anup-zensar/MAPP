@@ -57,14 +57,18 @@ const PLANNING_TYPES: PlanningRecordType[] = [
   'lineItem',
 ];
 
+function isPlanningType(type: string): type is PlanningRecordType {
+  return PLANNING_TYPES.some((known) => known === type);
+}
+
 /** Where an entry's record is now: its page while it exists (D-194), otherwise no address. */
 function hrefOf(entry: ActivityLogEntry): string | null {
   const now = entry.recordNow;
   if (now && now.state !== 'exists') {
     return null;
   }
-  const type = entry.recordType as PlanningRecordType;
-  if (!PLANNING_TYPES.includes(type)) {
+  const type = entry.recordType;
+  if (!isPlanningType(type)) {
     return null;
   }
   const planId = (now?.path ?? entry.path).find((ancestor) => ancestor.type === 'plan')?.id;

@@ -1,16 +1,20 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { parentOf } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
-import type { LooseAnswer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { emptyOverview, overviewOf, usd } from '@/testing/fixtures/home';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
+import type { Answer } from '@/testing/replies';
 import { FinancialsCard } from './FinancialsCard';
 import type { FinancialOverview, HomeScope } from './api';
 
-function renderCard(answer: LooseAnswer = { body: overviewOf() }, scope: HomeScope = 'myTeams') {
-  const api = mockApi([looseReply('GET /api/v1/financials/overview', answer)]);
+function renderCard(
+  answer: Answer<'GET /api/v1/financials/overview'> = { body: overviewOf() },
+  scope: HomeScope = 'myTeams',
+) {
+  const api = mockApi([reply('GET /api/v1/financials/overview', answer)]);
   const rendered = renderWithProviders(<FinancialsCard scope={scope} />, {
     user: testUser(),
     path: '/',
@@ -20,7 +24,7 @@ function renderCard(answer: LooseAnswer = { body: overviewOf() }, scope: HomeSco
 
 function figureOf(label: string) {
   const term = screen.getByText(label, { selector: 'dt' });
-  return within(term.parentElement as HTMLElement);
+  return within(parentOf(term));
 }
 
 function overviewAbove(): FinancialOverview {
@@ -143,7 +147,10 @@ describe('FinancialsCard (015 US6, FR-025)', () => {
   });
 
   it('fails on its own with a retry (009 FR-022)', async () => {
-    renderCard({ status: 500, body: { error: { code: 'internal', message: 'Boom', fields: [] } } });
+    renderCard({
+      status: 500,
+      body: { error: { code: 'internal_error', message: 'Boom', fields: [] } },
+    });
 
     expect(await screen.findByText("This section couldn't load")).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Financials' })).toBeInTheDocument();

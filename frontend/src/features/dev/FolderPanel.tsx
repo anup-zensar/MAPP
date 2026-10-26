@@ -1,18 +1,24 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { ApiError, conflictMessage } from '@/api/errors';
+import { FormField } from '@/ui/FormField/FormField';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problem-of';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
-import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { useFormatters } from '@/format/useFormatters';
-import { fetchLatestFolder, useAddNote, useCreateFolder, useRenameFolder } from './api';
+import { fetchLatestFolder, useCreateFolder, useRenameFolder } from './api';
 import type { SampleFolder } from './api';
+import { folderSchema } from './schemas';
+import type { FolderValues } from './schemas';
 
 const CONFLICT_NEXT_STEP =
   'Your changes are still here. Save again to replace their changes, or Cancel to see theirs.';
+
+const FIELDS = ['name'] as const;
 
 export interface FolderPanelProps {
   /** The folder to rename; without one, the panel creates a new folder. */
@@ -32,18 +38,23 @@ export function FolderPanel({ folder, onClose }: FolderPanelProps) {
   const renameFolder = useRenameFolder();
   // The edit-form rule (plan "Shared hooks"): the folder, its version included, is copied into the
   // form once, when the panel opens. Later refreshes of the list never change the form.
-  const startName = folder?.name ?? '';
-  const [name, setName] = useState(startName);
-  const [version, setVersion] = useState(folder?.version ?? 0);
-  const [saving, setSaving] = useState(false);
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
+  const form = useForm<FolderValues>({
+    resolver: zodResolver(folderSchema),
+    defaultValues: { name: folder?.name ?? '' },
+    ...CHECK_ON_SAVE,
+  });
+  const version = useRef(folder?.version ?? 0);
+  const { problems, onInvalid, showServerProblems, clearProblems } = useFormProblems(form, FIELDS);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
 
-  async function save() {
-    setSaving(true);
+  async function saveFolder({ name }: FolderValues) {
     try {
       if (folder) {
-        const saved = await renameFolder.mutateAsync({ id: folder.id, name, version });
+        const saved = await renameFolder.mutateAsync({
+          id: folder.id,
+          name,
+          version: version.current,
+        });
         show({ message: `Sample folder '${saved.name}' saved` });
       } else {
         const created = await createFolder.mutateAsync(name);
@@ -52,26 +63,24 @@ export function FolderPanel({ folder, onClose }: FolderPanelProps) {
       onClose();
     } catch (error) {
       await showFailure(error);
-    } finally {
-      setSaving(false);
     }
   }
 
   async function showFailure(error: unknown) {
     const apiError = error instanceof ApiError ? error : new ApiError('other');
     if (apiError.kind === 'validation') {
-      setProblems(apiError.fields);
+      showServerProblems(apiError.fields);
       setFailure(null);
       return;
     }
-    setProblems([]);
+    clearProblems();
     if (apiError.kind === 'conflict' && folder) {
       // The typed name stays; the form takes the version that includes the other person's change,
       // so Save again replaces it on purpose (research R5). When the folders cannot be read now,
       // the form keeps its version and the next Save meets the conflict again.
       const latest = await fetchLatestFolder(queryClient, folder.id).catch(() => undefined);
       if (latest) {
-        setVersion(latest.version);
+        version.current = latest.version;
       }
       setFailure({
         message: conflictMessage(apiError, 'sample folder', dateFormat),
@@ -85,73 +94,17 @@ export function FolderPanel({ folder, onClose }: FolderPanelProps) {
   return (
     <FormPanel
       title={folder ? 'Edit sample folder' : 'New sample folder'}
-      isDirty={name !== startName}
-      saving={saving}
+      isDirty={form.formState.isDirty}
+      saving={form.formState.isSubmitting}
       problems={problems}
       failure={failure}
-      onSave={save}
+      onSave={() => void form.handleSubmit(saveFolder, onInvalid)()}
       onClose={onClose}
     >
-      <TextField
-        label="Name"
+      <FormField
+        control={form.control}
         name="name"
-        marking="Required"
-        value={name}
-        onChange={setName}
-        error={problemOf(problems, 'name')}
-      />
-    </FormPanel>
-  );
-}
-
-export interface NotePanelProps {
-  /** The folder the note goes in. */
-  folder: SampleFolder;
-  onClose: () => void;
-}
-
-/** "Add note" (plan "Developer pages"): the title of a new note in the folder. */
-export function NotePanel({ folder, onClose }: NotePanelProps) {
-  const { show } = useToast();
-  const addNote = useAddNote();
-  const [title, setTitle] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
-  const [failure, setFailure] = useState<SaveFailure | null>(null);
-
-  async function save() {
-    setSaving(true);
-    try {
-      const note = await addNote.mutateAsync({ folderId: folder.id, title });
-      show({ message: `Sample note '${note.title}' added` });
-      onClose();
-    } catch (error) {
-      const apiError = error instanceof ApiError ? error : new ApiError('other');
-      const isFieldProblem = apiError.kind === 'validation';
-      setProblems(isFieldProblem ? apiError.fields : []);
-      setFailure(isFieldProblem ? null : { message: apiError.message });
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <FormPanel
-      title="Add note"
-      isDirty={title !== ''}
-      saving={saving}
-      problems={problems}
-      failure={failure}
-      onSave={save}
-      onClose={onClose}
-    >
-      <TextField
-        label="Title"
-        name="title"
-        marking="Required"
-        value={title}
-        onChange={setTitle}
-        error={problemOf(problems, 'title')}
+        render={(field) => <TextField label="Name" marking="Required" {...field} />}
       />
     </FormPanel>
   );

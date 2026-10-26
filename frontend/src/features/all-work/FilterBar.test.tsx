@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
+import { nth } from '@/testing/dom';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { allWorkOptions, standard2026 } from '@/testing/fixtures/all-work';
@@ -117,7 +118,7 @@ describe('FilterBar (US2)', () => {
       'Global Marketing Ops',
       'Mobility China',
     ]);
-    await user.click(boxes[0]);
+    await user.click(nth(boxes, 0));
 
     expect(current().filters.teams).toEqual([{ id: 'T-1001', label: 'Lubricants Europe' }]);
   });

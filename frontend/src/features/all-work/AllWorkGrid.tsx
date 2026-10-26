@@ -8,7 +8,7 @@ import { CellValue } from './CellValue';
 import { isNumeric } from './cell-text';
 import { GridRow } from './GridRow';
 import { ScrollBox } from './ScrollBox';
-import type { VisibleRow } from './view-state';
+import type { VisibleRow } from './view-rows';
 
 export interface AllWorkGridProps {
   result: AllWorkResult;

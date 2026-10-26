@@ -7,15 +7,8 @@ import { FilterChips } from '@/ui/FilterChips/FilterChips';
 import { SearchField } from '@/ui/SearchField/SearchField';
 import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
 import { useFormatters } from '@/format/useFormatters';
-import {
-  ACTION_FILTERS,
-  DATE_RANGES,
-  NO_FILTERS,
-  customRangeError,
-  filterChips,
-  removeFilter,
-  typeLabel,
-} from './log-filters';
+import { filterChips, removeFilter, typeLabel } from './filter-chips';
+import { ACTION_FILTERS, DATE_RANGES, NO_FILTERS, customRangeError } from './log-filters';
 import type { ActionFilter, DateRangeKey, LogFilterState } from './log-filters';
 import styles from './LogFilterBar.module.css';
 

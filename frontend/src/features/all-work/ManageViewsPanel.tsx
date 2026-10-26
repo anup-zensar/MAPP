@@ -1,17 +1,13 @@
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/ui/Button/Button';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
-import { FormDialog } from '@/ui/FormDialog/FormDialog';
-import { FormErrorSummary } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { SidePanel } from '@/ui/SidePanel/SidePanel';
-import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
-import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { useCreateView, useDeleteView, useUpdateView } from './api';
 import type { SavedView } from './all-work-types';
 import styles from './ManageViewsPanel.module.css';
+import { RenameViewDialog } from './RenameViewDialog';
 import { useViewRefusal } from './useViewRefusal';
-import { nameProblem, nameTaken, viewNamed } from './view-names';
 
 export interface ManageViewsPanelProps {
   open: boolean;
@@ -127,68 +123,5 @@ export function ManageViewsPanel({ open, onOpenChange, views }: ManageViewsPanel
         </ConfirmDialog>
       )}
     </>
-  );
-}
-
-interface RenameViewDialogProps {
-  view: SavedView;
-  views: SavedView[];
-  onClose: () => void;
-}
-
-/** Rename view: the same name rules as saving; another view's name is refused (FR-029). */
-function RenameViewDialog({ view, views, onClose }: RenameViewDialogProps) {
-  const id = useId();
-  const nameField = `${id}-name`;
-  const [name, setName] = useState(view.name);
-  const [errors, setErrors] = useState<FieldProblem[]>([]);
-  const update = useUpdateView();
-  const refused = useViewRefusal();
-  const { show } = useToast();
-
-  function submit() {
-    const problem = nameProblem(name) ?? (viewNamed(views, name, view.id) ? nameTaken(name) : null);
-    if (problem) {
-      setErrors([{ field: nameField, message: problem }]);
-      return;
-    }
-    update.mutate(
-      { viewId: view.id, body: { name: name.trim() } },
-      {
-        onSuccess: (saved) => {
-          show({ message: `View '${saved.name}' renamed` });
-          onClose();
-        },
-        onError: (error) => {
-          const problems = refused(error, nameField);
-          if (problems.length > 0) {
-            setErrors(problems);
-          } else {
-            onClose();
-          }
-        },
-      },
-    );
-  }
-
-  return (
-    <FormDialog
-      open
-      onOpenChange={(isOpen) => !isOpen && onClose()}
-      title="Rename view"
-      submitLabel="Rename view"
-      onSubmit={submit}
-      busy={update.isPending}
-    >
-      <FormErrorSummary errors={errors} />
-      <TextField
-        label="Name"
-        name={nameField}
-        marking="Required"
-        value={name}
-        onChange={setName}
-        error={errors.find((error) => error.field === nameField)?.message}
-      />
-    </FormDialog>
   );
 }

@@ -6,6 +6,11 @@ import { formatWhole } from '@/format/decimal';
 import { plural } from '@/format/text';
 import type { FinanceFilter, Filters, PlanType } from './all-work-types';
 
+/** Whether a value is one of the keys of a list of labels: a type guard for its values. */
+export function isLabelled<T extends string>(labels: Record<T, string>) {
+  return (value: string): value is T => Object.hasOwn(labels, value);
+}
+
 /** The filters of the filter bar (FR-004), by their place in the filter set. */
 export const FILTER_LABELS = {
   year: 'Year',

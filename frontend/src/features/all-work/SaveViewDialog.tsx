@@ -1,16 +1,23 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useId, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { FormDialog } from '@/ui/FormDialog/FormDialog';
 import { FormErrorSummary } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { FormField } from '@/ui/FormField/FormField';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
-import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
 import { useCreateView, useUpdateView } from './api';
 import type { SavedView, ViewState } from './all-work-types';
+import { saveViewSchema } from './schemas';
+import type { SaveViewValues } from './schemas';
 import { useViewRefusal } from './useViewRefusal';
-import { nameProblem, viewNamed } from './view-names';
+import { viewNamed } from './view-names';
 import { savedStateOf } from './view-state';
+
+const FIELDS = ['name'] as const;
 
 export interface SaveViewDialogProps {
   onOpenChange: (open: boolean) => void;
@@ -30,9 +37,12 @@ export interface SaveViewDialogProps {
 export function SaveViewDialog({ onOpenChange, views, state, onSaved }: SaveViewDialogProps) {
   const id = useId();
   const nameField = `${id}-name`;
-  const [name, setName] = useState('');
-  const [isDefault, setIsDefault] = useState(false);
-  const [errors, setErrors] = useState<FieldProblem[]>([]);
+  const form = useForm<SaveViewValues>({
+    resolver: zodResolver(saveViewSchema),
+    defaultValues: { name: '', isDefault: false },
+    ...CHECK_ON_SAVE,
+  });
+  const { problems, onInvalid, showServerProblems, clearProblems } = useFormProblems(form, FIELDS);
   const [replacing, setReplacing] = useState<SavedView | null>(null);
   const create = useCreateView();
   const update = useUpdateView();
@@ -45,13 +55,8 @@ export function SaveViewDialog({ onOpenChange, views, state, onSaved }: SaveView
     onOpenChange(false);
   }
 
-  function submit() {
-    const problem = nameProblem(name);
-    if (problem) {
-      setErrors([{ field: nameField, message: problem }]);
-      return;
-    }
-    setErrors([]);
+  const submit = form.handleSubmit(({ name, isDefault }) => {
+    clearProblems();
     const existing = viewNamed(views, name);
     if (existing) {
       setReplacing(existing);
@@ -61,12 +66,13 @@ export function SaveViewDialog({ onOpenChange, views, state, onSaved }: SaveView
       { name: name.trim(), state: savedStateOf(state), isDefault },
       {
         onSuccess: (view) => done(view, 'saved'),
-        onError: (error) => setErrors(refused(error, nameField)),
+        onError: (error) => showServerProblems(refused(error, 'name')),
       },
     );
-  }
+  }, onInvalid);
 
   function replace(view: SavedView) {
+    const isDefault = form.getValues('isDefault');
     update.mutate(
       {
         viewId: view.id,
@@ -76,13 +82,11 @@ export function SaveViewDialog({ onOpenChange, views, state, onSaved }: SaveView
         onSuccess: (saved) => done(saved, 'updated'),
         onError: (error) => {
           setReplacing(null);
-          setErrors(refused(error, nameField));
+          showServerProblems(refused(error, 'name'));
         },
       },
     );
   }
-
-  const nameError = errors.find((error) => error.field === nameField)?.message;
 
   return (
     <>
@@ -91,23 +95,31 @@ export function SaveViewDialog({ onOpenChange, views, state, onSaved }: SaveView
         onOpenChange={onOpenChange}
         title="Save current view"
         submitLabel="Save view"
-        onSubmit={submit}
+        onSubmit={() => void submit()}
         busy={create.isPending}
       >
-        <FormErrorSummary errors={errors} />
-        <TextField
-          label="Name"
-          name={nameField}
-          marking="Required"
-          value={name}
-          onChange={setName}
-          error={nameError}
+        <FormErrorSummary
+          errors={problems}
+          fieldId={(field) => (field === 'name' ? nameField : field)}
         />
-        <CheckboxField
-          label="Use as my default view"
-          name={`${id}-default`}
-          checked={isDefault}
-          onChange={setIsDefault}
+        <FormField
+          control={form.control}
+          name="name"
+          render={(field) => (
+            <TextField label="Name" marking="Required" {...field} name={nameField} />
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="isDefault"
+          render={(field) => (
+            <CheckboxField
+              label="Use as my default view"
+              name={`${id}-default`}
+              checked={field.value}
+              onChange={field.onChange}
+            />
+          )}
         />
       </FormDialog>
       {replacing && (

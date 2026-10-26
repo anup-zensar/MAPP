@@ -1,11 +1,14 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { closestTo, htmlElement, nth } from '@/testing/dom';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { budgetResult, standard2026, usd } from '@/testing/fixtures/all-work';
+import { budgetResult } from '@/testing/fixtures/all-work-budget';
+import { standard2026 } from '@/testing/fixtures/all-work';
+import { usd } from '@/testing/fixtures/all-work-rows';
 import type { AllWorkResult } from './all-work-types';
 import { BudgetView } from './BudgetView';
-import { visibleRows } from './view-state';
+import { visibleRows } from './view-rows';
 
 const OPEN_ALL = { ...standard2026(), expansion: { mode: 'allExpanded' as const, toggled: [] } };
 
@@ -31,8 +34,8 @@ function cellsOf(name: string | RegExp): Record<string, string> {
   const headings = within(table)
     .getAllByRole('columnheader')
     .map((heading) => heading.textContent ?? '');
-  const [header] = within(table).getAllByRole('rowheader', { name });
-  const cells = within(header.closest('tr') as HTMLElement).getAllByRole('cell');
+  const header = nth(within(table).getAllByRole('rowheader', { name }), 0);
+  const cells = within(closestTo(header, 'tr')).getAllByRole('cell');
   return Object.fromEntries(cells.map((cell, index) => [headings[index + 1], cell.textContent]));
 }
 
@@ -101,8 +104,11 @@ describe('BudgetView (US4)', () => {
     const activity = screen.getByRole('rowheader', { name: /Helix social ads/ });
     const warning = within(activity).getByText('Line items exceed the planned cost by $1,000.00');
     expect(warning.className).toMatch(/exceeded/);
-    const unassigned = screen.getAllByRole('rowheader', { name: /^Unassigned planned cost/ })[1];
-    expect(within(unassigned.closest('tr') as HTMLElement).queryByText(/\$/)).toBeNull();
+    const unassigned = nth(
+      screen.getAllByRole('rowheader', { name: /^Unassigned planned cost/ }),
+      1,
+    );
+    expect(within(closestTo(unassigned, 'tr')).queryByText(/\$/)).toBeNull();
   });
 
   it('adds up containers per period, with the plan budget on container rows only (FR-024)', () => {
@@ -121,9 +127,7 @@ describe('BudgetView (US4)', () => {
   it('closes with the period totals, the grand total and the plans’ budget (FR-024)', () => {
     renderBudget();
 
-    const footer = screen
-      .getByRole('rowheader', { name: 'Total · 3 activities' })
-      .closest('tr') as HTMLElement;
+    const footer = closestTo(screen.getByRole('rowheader', { name: 'Total · 3 activities' }), 'tr');
     expect(
       within(footer)
         .getAllByRole('cell')
@@ -193,7 +197,7 @@ describe('BudgetView (US4)', () => {
     renderBudget(result);
 
     const phased = screen.getByRole('rowheader', { name: 'Phased budget of Helix launch' });
-    const cells = within(phased.closest('tr') as HTMLElement).getAllByRole('cell');
+    const cells = within(closestTo(phased, 'tr')).getAllByRole('cell');
     expect(cells.map((cell) => cell.textContent)).toEqual([
       '',
       '$3,000.00',
@@ -203,8 +207,9 @@ describe('BudgetView (US4)', () => {
       '',
     ]);
     // Q1's planned cost is above its phased budget: red, with a sign and words, not colour alone.
-    const campaign = phased.closest('tr')?.previousElementSibling as HTMLElement;
-    const [, q1, q2] = within(campaign).getAllByRole('cell');
+    const campaign = htmlElement(closestTo(phased, 'tr').previousElementSibling);
+    const campaignCells = within(campaign).getAllByRole('cell');
+    const [q1, q2] = [nth(campaignCells, 1), nth(campaignCells, 2)];
     expect(q1).toHaveTextContent('$4,000.00 (above the phased budget)');
     expect(q1.querySelector('svg')).not.toBeNull();
     expect(q2).not.toHaveTextContent('above the phased budget');
@@ -213,7 +218,7 @@ describe('BudgetView (US4)', () => {
   it('opens a row’s record (FR-024)', async () => {
     const { user, onOpen } = renderBudget();
 
-    await user.click(cellsOfRow(/Venue hire/)[3]);
+    await user.click(nth(cellsOfRow(/Venue hire/), 3));
 
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ key: 'L-1001' }));
   });
@@ -221,5 +226,5 @@ describe('BudgetView (US4)', () => {
 
 function cellsOfRow(name: RegExp): HTMLElement[] {
   const header = screen.getByRole('rowheader', { name });
-  return within(header.closest('tr') as HTMLElement).getAllByRole('cell');
+  return within(closestTo(header, 'tr')).getAllByRole('cell');
 }

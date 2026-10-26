@@ -7,7 +7,7 @@ import { SearchField } from '@/ui/SearchField/SearchField';
 import { SidePanel } from '@/ui/SidePanel/SidePanel';
 import type { AllWorkColumnGroup } from './all-work-types';
 import styles from './ColumnChooser.module.css';
-import { dropColumn, moveColumn } from './view-state';
+import { dropColumn, moveColumn } from './view-columns';
 
 export interface ColumnChooserProps {
   open: boolean;

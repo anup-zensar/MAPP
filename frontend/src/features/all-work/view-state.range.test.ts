@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { standard2026 } from '@/testing/fixtures/all-work';
 import type { ViewState } from './all-work-types';
+import { chipsOf, clearAll, removeChip } from './view-chips';
+import { fromAddress, hasAddressFilters } from './schemas';
 import {
-  chipsOf,
-  clearAll,
-  fromAddress,
-  hasAddressFilters,
-  removeChip,
   sameState,
   savedStateOf,
   toQueryParams,

@@ -1,5 +1,6 @@
 import { screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { closestTo, nth } from '@/testing/dom';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { TODAY_NOON, logEntry } from '@/testing/fixtures/activity-log';
@@ -46,7 +47,7 @@ describe('LogEntryList', () => {
       'Yesterday · 1 entry',
       'Monday 12 Oct 2026 · 1 entry',
     ]);
-    const today = headings[0].closest('section')!;
+    const today = closestTo(nth(headings, 0), 'section');
     expect(
       within(today)
         .getAllByRole('listitem')

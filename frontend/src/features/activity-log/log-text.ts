@@ -54,13 +54,12 @@ export function isPlanningType(type: string): type is PlanningRecordType {
 
 /** "PR" for Priya Raman: the first letters of the first and the last name (FR-005 avatar). */
 export function initialsOf(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) {
+  const [first, ...others] = name.trim().split(/\s+/).filter(Boolean);
+  if (first === undefined) {
     return '?';
   }
-  const first = words[0].charAt(0);
-  const last = words.length > 1 ? words[words.length - 1].charAt(0) : '';
-  return (first + last).toUpperCase();
+  const last = others.at(-1) ?? '';
+  return (first.charAt(0) + last.charAt(0)).toUpperCase();
 }
 
 /**
@@ -136,15 +135,16 @@ function renamed(entry: ActivityLogEntry): string {
 }
 
 /** The pages of records outside the plan tree: global budgets (014) and GSAP transactions (015). */
-const OTHER_PAGES: Record<string, (id: string) => string> = {
-  globalBudget: (id) => `/budgets/${encodeURIComponent(id)}`,
-  financialTransaction: (id) => `/financials/transactions/${encodeURIComponent(id)}`,
-};
+const OTHER_PAGES = new Map<string, (id: string) => string>([
+  ['globalBudget', (id) => `/budgets/${encodeURIComponent(id)}`],
+  ['financialTransaction', (id) => `/financials/transactions/${encodeURIComponent(id)}`],
+]);
 
 /** The page of a record; undefined for records without one or when its plan is unknown. */
 function pageOf(type: string, id: string, path: RecordRef[]): string | undefined {
-  if (Object.hasOwn(OTHER_PAGES, type)) {
-    return OTHER_PAGES[type](id);
+  const otherPage = OTHER_PAGES.get(type);
+  if (otherPage) {
+    return otherPage(id);
   }
   if (!isPlanningType(type)) {
     return undefined;

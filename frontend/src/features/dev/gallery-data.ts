@@ -7,31 +7,48 @@ import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
 import type { TeamRef } from '@/ui/TeamPill/TeamPill';
 import type { TreeNode } from '@/ui/TreeTable/TreeTable';
 
+const LUBRICANTS_EUROPE: TeamRef = {
+  id: 'T-1001',
+  name: 'Lubricants Europe',
+  colour: 'blue',
+  active: true,
+};
+const MOBILITY_CHINA: TeamRef = {
+  id: 'T-1002',
+  name: 'Mobility China',
+  colour: 'teal',
+  active: true,
+};
+
 export const TEAMS: TeamRef[] = [
-  { id: 'T-1001', name: 'Lubricants Europe', colour: 'blue', active: true },
-  { id: 'T-1002', name: 'Mobility China', colour: 'teal', active: true },
+  LUBRICANTS_EUROPE,
+  MOBILITY_CHINA,
   { id: 'T-1003', name: 'Fleet Americas', colour: 'gold', active: false },
 ];
 
+export const ALEX: PickerPerson = {
+  id: 'U-1001',
+  name: 'Alex Morgan',
+  email: 'alex.morgan@shell.com',
+  jobTitle: 'Head of marketing',
+  initials: 'AM',
+  active: true,
+  teams: [LUBRICANTS_EUROPE],
+};
+
+export const PRIYA: PickerPerson = {
+  id: 'U-1002',
+  name: 'Priya Raman',
+  email: 'priya.raman@shell.com',
+  jobTitle: 'Marketer',
+  initials: 'PR',
+  active: true,
+  teams: [LUBRICANTS_EUROPE],
+};
+
 export const PEOPLE: PickerPerson[] = [
-  {
-    id: 'U-1001',
-    name: 'Alex Morgan',
-    email: 'alex.morgan@shell.com',
-    jobTitle: 'Head of marketing',
-    initials: 'AM',
-    active: true,
-    teams: [TEAMS[0]],
-  },
-  {
-    id: 'U-1002',
-    name: 'Priya Raman',
-    email: 'priya.raman@shell.com',
-    jobTitle: 'Marketer',
-    initials: 'PR',
-    active: true,
-    teams: [TEAMS[0]],
-  },
+  ALEX,
+  PRIYA,
   {
     id: 'U-1004',
     name: 'Sara Novak',
@@ -39,7 +56,7 @@ export const PEOPLE: PickerPerson[] = [
     jobTitle: 'Finance partner',
     initials: 'SN',
     active: true,
-    teams: [TEAMS[1]],
+    teams: [MOBILITY_CHINA],
   },
 ];
 

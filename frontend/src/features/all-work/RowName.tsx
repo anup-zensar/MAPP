@@ -11,7 +11,7 @@ import { Highlight } from './Highlight';
 import { rowHref } from './row-href';
 import styles from './RowName.module.css';
 import { statusWord } from './status-words';
-import type { VisibleRow } from './view-state';
+import type { VisibleRow } from './view-rows';
 
 /** Names longer than this may end with an ellipsis; the full name shows on hover and focus. */
 const LONG_NAME = 36;

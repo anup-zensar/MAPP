@@ -22,9 +22,9 @@ import {
   financialsTitle,
   notLinkedText,
   ofPlannedText,
-  percentText,
   sourceText,
-} from './home-text';
+} from './financials-text';
+import { percentText } from './home-text';
 import { SectionError } from './SectionError';
 
 /**

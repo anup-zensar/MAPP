@@ -14,7 +14,6 @@ import { LogFilterBar } from './LogFilterBar';
 import {
   NO_FILTERS,
   apiQuery,
-  filtersFromParams,
   filtersToParams,
   isFiltered,
   todayStart,
@@ -22,6 +21,7 @@ import {
 } from './log-filters';
 import type { LogFilterState } from './log-filters';
 import { countLine } from './log-text';
+import { filtersFromParams } from './schemas';
 import styles from './ActivityLogPage.module.css';
 
 /** The four summary cards (FR-002): label, tip and the filters a click applies. */

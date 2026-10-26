@@ -6,6 +6,8 @@ import { dayLabel, entriesText, loadedLine } from './log-text';
 import type { ActivityLogEntry } from './log-text';
 import styles from './LogEntryList.module.css';
 
+const HEADINGS = { 2: 'h2', 3: 'h3', 4: 'h4' } as const;
+
 export interface LogEntryListProps {
   /** The entries loaded so far, newest first. */
   entries: ActivityLogEntry[];
@@ -35,7 +37,7 @@ export function LogEntryList({
   headingLevel = 2,
 }: LogEntryListProps) {
   const today = localDate(new Date());
-  const Heading = (['h2', 'h3', 'h4'] as const)[headingLevel - 2];
+  const Heading = HEADINGS[headingLevel];
 
   return (
     <div className={styles.list}>

@@ -1,8 +1,10 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { nth } from '@/testing/dom';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { calendarResult, row } from '@/testing/fixtures/all-work';
+import { calendarResult } from '@/testing/fixtures/all-work-budget';
+import { row } from '@/testing/fixtures/all-work-rows';
 import type { AllWorkResult, AllWorkRow } from './all-work-types';
 import { MonthCalendar } from './MonthCalendar';
 
@@ -57,7 +59,7 @@ describe('MonthCalendar (FR-028)', () => {
       'Sun',
     ]);
     // 1 Oct 2026 is a Thursday: three empty days come first.
-    const [firstWeek] = within(screen.getByRole('table')).getAllByRole('row').slice(1);
+    const firstWeek = nth(within(screen.getByRole('table')).getAllByRole('row'), 1);
     expect(
       within(firstWeek)
         .getAllByRole('cell')

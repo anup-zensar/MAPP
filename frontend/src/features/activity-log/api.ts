@@ -17,6 +17,9 @@ export const LOG_PAGE_SIZE = 50;
 /** How many entries a History section loads at a time (FR-011). */
 export const HISTORY_PAGE_SIZE = 20;
 
+/** The first page is asked without `beforeSeq`. */
+const FIRST_PAGE: number | undefined = undefined;
+
 /**
  * The four cards' counts and the filters' choices (FR-002), for the person's local today and
  * week. Asked again when the page regains focus, so the counts stay current.
@@ -58,7 +61,7 @@ export function useLogEntries(
   const result = useInfiniteQuery({
     queryKey,
     enabled: query !== null,
-    initialPageParam: undefined as number | undefined,
+    initialPageParam: FIRST_PAGE,
     queryFn: ({ pageParam, signal }) =>
       call(
         api.GET('/api/v1/activity-log', {
@@ -68,8 +71,8 @@ export function useLogEntries(
       ),
     getNextPageParam: (lastPage, pages) => {
       const loaded = pages.reduce((count, page) => count + page.items.length, 0);
-      const last = lastPage.items[lastPage.items.length - 1];
-      return last && loaded < pages[0].total ? last.seq : undefined;
+      const last = lastPage.items.at(-1);
+      return last && loaded < (pages[0]?.total ?? 0) ? last.seq : undefined;
     },
   });
 
