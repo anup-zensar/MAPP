@@ -1,24 +1,33 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { FormField } from '@/ui/FormField/FormField';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problem-of';
 import { LockedNote } from '@/ui/LockedNote/LockedNote';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
-import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { PersonField } from '@/features/people';
-import { formatAmount, parseMoneyInput } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
 import { fetchGlobalBudget, useCreateGlobalBudget, useUpdateGlobalBudget } from './api';
-import type { GlobalBudget, GlobalBudgetCreate, GlobalBudgetUpdate } from './api';
+import type { GlobalBudget } from './api';
 import { toasts, yearChoices } from './global-budgets-text';
 import { saveFailureOf } from './save-failure';
+import {
+  amountOf,
+  changedFields,
+  globalBudgetSchema,
+  globalBudgetValuesOf,
+  newGlobalBudget,
+} from './schemas';
+import type { GlobalBudgetValues } from './schemas';
 import styles from './GlobalBudgetForm.module.css';
 
-const AMOUNT_PROBLEM = 'Enter an amount of 0 or more.';
+const FIELDS = ['name', 'year', 'amount', 'ownerId', 'description'] as const;
 const YEAR_LOCKED = "The year can't change once the global budget is saved.";
 
 export interface GlobalBudgetFormProps {
@@ -27,14 +36,6 @@ export interface GlobalBudgetFormProps {
   onClose: () => void;
   /** After a create: usually opens the new global budget's page. */
   onCreated?: (created: GlobalBudget) => void;
-}
-
-interface Values {
-  name: string;
-  year: string;
-  amount: string;
-  ownerId: string;
-  description: string;
 }
 
 /**
@@ -47,49 +48,34 @@ export function GlobalBudgetForm({ budget, onClose, onCreated }: GlobalBudgetFor
   const create = useCreateGlobalBudget();
   const update = useUpdateGlobalBudget();
   const currentYear = new Date().getFullYear();
-  const [start] = useState<Values>(() => ({
-    name: budget?.name ?? '',
-    year: String(budget?.year ?? currentYear),
-    amount: budget ? formatAmount(budget.amount.amount) : '',
-    ownerId: budget?.owner?.id ?? '',
-    description: budget?.description ?? '',
-  }));
-  const [values, setValues] = useState(start);
+  const form = useForm<GlobalBudgetValues>({
+    resolver: zodResolver(globalBudgetSchema),
+    defaultValues: globalBudgetValuesOf(budget, currentYear),
+    ...CHECK_ON_SAVE,
+  });
+  const { problems, onInvalid, showServerProblems, clearProblems } = useFormProblems(form, FIELDS);
   const [version, setVersion] = useState(budget?.version ?? 0);
   const [saving, setSaving] = useState(false);
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
   const yearLock = budget?.locks.find((lock) => lock.field === 'year')?.reason ?? YEAR_LOCKED;
 
-  const set = (field: keyof Values) => (value: string) =>
-    setValues((previous) => ({ ...previous, [field]: value }));
-
-  async function save() {
-    const amount = parseMoneyInput(values.amount);
-    if (!amount || amount.amount.startsWith('-')) {
-      setProblems([{ field: 'amount', message: AMOUNT_PROBLEM }]);
-      setFailure(null);
+  async function save(values: GlobalBudgetValues) {
+    const amount = amountOf(values.amount);
+    if (amount === null) {
       return;
     }
     setSaving(true);
-    setProblems([]);
+    clearProblems();
     setFailure(null);
     try {
       if (!budget) {
-        const body: GlobalBudgetCreate = {
-          name: values.name.trim(),
-          year: Number(values.year),
-          amount: { amount: amount.amount, currency: 'USD' },
-          ownerId: values.ownerId,
-          description: values.description,
-        };
-        const created = await create.mutateAsync(body);
+        const created = await create.mutateAsync(newGlobalBudget(values, amount));
         show({ message: toasts.created(created.name) });
         onClose();
         onCreated?.(created);
         return;
       }
-      const body = changedFields(budget, values, amount.amount, version);
+      const body = changedFields(budget, values, amount, version);
       if (!body) {
         onClose();
         return;
@@ -102,7 +88,7 @@ export function GlobalBudgetForm({ budget, onClose, onCreated }: GlobalBudgetFor
       if (view.sessionLost) {
         return;
       }
-      setProblems(view.problems);
+      showServerProblems(view.problems);
       setFailure(view.failure);
       if (view.conflict && budget) {
         // Typed values stay; the next Save replaces the other person's change on purpose.
@@ -116,30 +102,29 @@ export function GlobalBudgetForm({ budget, onClose, onCreated }: GlobalBudgetFor
     }
   }
 
-  const sameAsStart = (Object.keys(start) as (keyof Values)[]).every(
-    (key) => values[key] === start[key],
-  );
+  function showTypedProblems() {
+    onInvalid();
+    setFailure(null);
+  }
 
   return (
     <FormPanel
       title={budget ? 'Edit global budget' : 'New global budget'}
       description="Money for one year, shared out to market plans. Amounts are in USD."
-      isDirty={!sameAsStart}
+      isDirty={form.formState.isDirty}
       saving={saving}
       problems={problems}
       failure={failure}
-      onSave={() => void save()}
+      onSave={() => void form.handleSubmit(save, showTypedProblems)()}
       onClose={onClose}
     >
       <div className={styles.fields}>
-        <TextField
-          label="Name"
+        <FormField
+          control={form.control}
           name="name"
-          marking="Required"
-          maxLength={120}
-          value={values.name}
-          onChange={set('name')}
-          error={problemOf(problems, 'name')}
+          render={(field) => (
+            <TextField label="Name" marking="Required" maxLength={120} {...field} />
+          )}
         />
         {budget ? (
           <div className={styles.readOnly}>
@@ -148,71 +133,49 @@ export function GlobalBudgetForm({ budget, onClose, onCreated }: GlobalBudgetFor
             <LockedNote>{yearLock}</LockedNote>
           </div>
         ) : (
-          <ChoiceField
-            label="Year"
+          <FormField
+            control={form.control}
             name="year"
-            marking="Required"
-            hint="The year can't change once the global budget is saved."
-            options={yearChoices(currentYear).map((year) => ({
-              id: String(year),
-              label: String(year),
-              active: true,
-            }))}
-            value={values.year}
-            onChange={set('year')}
-            error={problemOf(problems, 'year')}
+            render={(field) => (
+              <ChoiceField
+                label="Year"
+                marking="Required"
+                hint="The year can't change once the global budget is saved."
+                options={yearChoices(currentYear).map((year) => ({
+                  id: String(year),
+                  label: String(year),
+                  active: true,
+                }))}
+                {...field}
+              />
+            )}
           />
         )}
-        <MoneyField
-          label="Amount"
+        <FormField
+          control={form.control}
           name="amount"
-          marking="Required"
-          currency="USD"
-          value={values.amount}
-          onChange={set('amount')}
-          error={problemOf(problems, 'amount')}
+          render={(field) => (
+            <MoneyField label="Amount" marking="Required" currency="USD" {...field} />
+          )}
         />
-        <PersonField
-          label="Owner"
+        <FormField
+          control={form.control}
           name="ownerId"
-          marking="Required"
-          hint="A person who can manage global budgets for all markets."
-          value={values.ownerId}
-          onChange={set('ownerId')}
-          error={problemOf(problems, 'ownerId')}
+          render={(field) => (
+            <PersonField
+              label="Owner"
+              marking="Required"
+              hint="A person who can manage global budgets for all markets."
+              {...field}
+            />
+          )}
         />
-        <TextAreaField
-          label="Description"
+        <FormField
+          control={form.control}
           name="description"
-          maxLength={2000}
-          value={values.description}
-          onChange={set('description')}
-          error={problemOf(problems, 'description')}
+          render={(field) => <TextAreaField label="Description" maxLength={2000} {...field} />}
         />
       </div>
     </FormPanel>
   );
-}
-
-/** The fields people changed, with the version (D-203); null when nothing changed. */
-function changedFields(
-  budget: GlobalBudget,
-  values: Values,
-  amount: string,
-  version: number,
-): GlobalBudgetUpdate | null {
-  const body: GlobalBudgetUpdate = { version };
-  if (values.name.trim() !== budget.name) {
-    body.name = values.name.trim();
-  }
-  if (amount !== budget.amount.amount) {
-    body.amount = { amount, currency: 'USD' };
-  }
-  if (values.ownerId !== (budget.owner?.id ?? '')) {
-    body.ownerId = values.ownerId;
-  }
-  if (values.description !== budget.description) {
-    body.description = values.description;
-  }
-  return Object.keys(body).length > 1 ? body : null;
 }

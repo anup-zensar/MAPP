@@ -2,11 +2,12 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { PEOPLE } from '@/testing/fixtures/approval-workflows';
+import { closestTo, nth } from '@/testing/dom';
 import { renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mock-api';
 import { testUser } from '@/testing/fixtures/users';
 import { budgetSummary, globalBudget } from '@/testing/fixtures/global-budgets';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import { GlobalBudgetsPage } from './GlobalBudgetsPage';
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -17,7 +18,7 @@ function listOf(items = [budgetSummary()]) {
 }
 
 function renderPage(route = '/budgets', answers: HttpHandler[] = []) {
-  const api = mockApi([looseReply('GET /api/v1/global-budgets', listOf()), ...answers]);
+  const api = mockApi([reply('GET /api/v1/global-budgets', listOf()), ...answers]);
   return {
     ...renderWithProviders(<GlobalBudgetsPage />, { route, path: '/budgets', user: testUser() }),
     api,
@@ -34,7 +35,7 @@ describe('GlobalBudgetsPage (014 US6, FR-036)', () => {
     expect(document.title).toBe('Global budgets · MAPP');
     const link = await screen.findByRole('link', { name: 'FY2026 Global marketing budget' });
     expect(link).toHaveAttribute('href', '/budgets/GB-1001');
-    const card = link.closest('li') as HTMLElement;
+    const card = closestTo(link, 'li');
     expect(card).toHaveTextContent('2026 · Owner: Carlos Mendes · Allocated to 2 plans');
     const figure = (label: string) =>
       within(card).getByText(label, { selector: 'dt' }).nextElementSibling;
@@ -43,12 +44,12 @@ describe('GlobalBudgetsPage (014 US6, FR-036)', () => {
     expect(figure('Unallocated')).toHaveTextContent('$500,000.00');
     expect(figure('Planned cost')).toHaveTextContent('$670,000.00');
     expect(screen.getByText('1 global budget')).toBeInTheDocument();
-    expect(api.requests[0].search).toBe(`?year=${CURRENT_YEAR}`);
+    expect(nth(api.requests, 0).search).toBe(`?year=${CURRENT_YEAR}`);
   });
 
   it('shows an over-allocated budget in red with words (US6 scenario 5)', async () => {
     renderPage('/budgets', [
-      looseReply(
+      reply(
         'GET /api/v1/global-budgets',
         listOf([
           budgetSummary({
@@ -69,7 +70,7 @@ describe('GlobalBudgetsPage (014 US6, FR-036)', () => {
 
   it('changes the year through the address, and says when a year has none', async () => {
     const { api, router, user } = renderPage('/budgets', [
-      looseReply('GET /api/v1/global-budgets', (request) =>
+      reply('GET /api/v1/global-budgets', (request) =>
         new URL(request.url).searchParams.get('year') === '2027'
           ? { body: { items: [], total: 0, years: [2027, 2026], create: AVAILABLE } }
           : listOf(),
@@ -88,8 +89,8 @@ describe('GlobalBudgetsPage (014 US6, FR-036)', () => {
 
   it('creates a global budget from New global budget and opens it', async () => {
     const { api, router, user } = renderPage('/budgets', [
-      looseReply('GET /api/v1/people', PEOPLE),
-      looseReply('POST /api/v1/global-budgets', {
+      reply('GET /api/v1/people', PEOPLE),
+      reply('POST /api/v1/global-budgets', {
         status: 201,
         body: globalBudget({ id: 'GB-1002', name: 'FY2027 Global brand' }),
       }),
@@ -119,8 +120,8 @@ describe('GlobalBudgetsPage (014 US6, FR-036)', () => {
 
   it('shows the field problems of the API all at once', async () => {
     const { user } = renderPage('/budgets', [
-      looseReply('GET /api/v1/people', PEOPLE),
-      looseReply('POST /api/v1/global-budgets', {
+      reply('GET /api/v1/people', PEOPLE),
+      reply('POST /api/v1/global-budgets', {
         status: 400,
         body: {
           error: {
@@ -165,7 +166,7 @@ describe('GlobalBudgetsPage (014 US6, FR-036)', () => {
   });
 
   it('checks the amount before saving', async () => {
-    const { api, user } = renderPage('/budgets', [looseReply('GET /api/v1/people', PEOPLE)]);
+    const { api, user } = renderPage('/budgets', [reply('GET /api/v1/people', PEOPLE)]);
     await screen.findByRole('link', { name: 'FY2026 Global marketing budget' });
 
     await user.click(screen.getByRole('button', { name: 'New global budget' }));
