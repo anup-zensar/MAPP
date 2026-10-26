@@ -3,6 +3,8 @@ package people
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/web"
 )
@@ -17,84 +19,84 @@ func NewHandler(s *Service) *Handler {
 	return &Handler{service: s}
 }
 
-// Routes registers the people and team routes on r. All of them need a signed-in person, so all are
-// wrapped in signedIn. The handlers of people are in people_handler.go, those of teams in teams_handler.go.
-// There is no DELETE /api/v1/people/{personId}: people are never deleted (FR-008).
-func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
-	r.Handle("GET /api/v1/me", signedIn(h.currentUser))
-	r.Handle("PATCH /api/v1/me", signedIn(h.updateProfile))
-	r.Handle("PATCH /api/v1/me/preferences", signedIn(h.updatePreferences))
-	r.Handle("GET /api/v1/me/display-currencies", signedIn(h.listDisplayCurrencies))
+// RegisterRoutes registers the people and team routes on r. The handlers of people are in people_handler.go,
+// those of teams in teams_handler.go. There is no DELETE /api/v1/people/{personId}: people are never deleted
+// (FR-008).
+func (h *Handler) RegisterRoutes(r gin.IRoutes) {
+	r.GET("/me", h.currentUser)
+	r.PATCH("/me", h.updateProfile)
+	r.PATCH("/me/preferences", h.updatePreferences)
+	r.GET("/me/display-currencies", h.listDisplayCurrencies)
 
-	r.Handle("GET /api/v1/people", signedIn(h.listPeople))
-	r.Handle("POST /api/v1/people", signedIn(h.createPerson))
-	r.Handle("GET /api/v1/people/{personId}", signedIn(h.getPerson))
-	r.Handle("PATCH /api/v1/people/{personId}", signedIn(h.updatePerson))
-	r.Handle("POST /api/v1/people/{personId}/impact", signedIn(h.checkPersonImpact))
-	r.Handle("POST /api/v1/people/{personId}/status", signedIn(h.setPersonStatus))
+	r.GET("/people", h.listPeople)
+	r.POST("/people", h.createPerson)
+	r.GET("/people/:personId", h.getPerson)
+	r.PATCH("/people/:personId", h.updatePerson)
+	r.POST("/people/:personId/impact", h.checkPersonImpact)
+	r.POST("/people/:personId/status", h.setPersonStatus)
 
-	r.Handle("GET /api/v1/teams", signedIn(h.listTeams))
-	r.Handle("POST /api/v1/teams", signedIn(h.createTeam))
-	r.Handle("GET /api/v1/teams/{teamId}", signedIn(h.getTeam))
-	r.Handle("PATCH /api/v1/teams/{teamId}", signedIn(h.updateTeam))
-	r.Handle("DELETE /api/v1/teams/{teamId}", signedIn(h.deleteTeam))
-	r.Handle("POST /api/v1/teams/{teamId}/impact", signedIn(h.checkTeamImpact))
-	r.Handle("POST /api/v1/teams/{teamId}/status", signedIn(h.setTeamStatus))
+	r.GET("/teams", h.listTeams)
+	r.POST("/teams", h.createTeam)
+	r.GET("/teams/:teamId", h.getTeam)
+	r.PATCH("/teams/:teamId", h.updateTeam)
+	r.DELETE("/teams/:teamId", h.deleteTeam)
+	r.POST("/teams/:teamId/impact", h.checkTeamImpact)
+	r.POST("/teams/:teamId/status", h.setTeamStatus)
 }
 
 // currentUser answers GET /api/v1/me: who is signed in, with their preferences.
-func (h *Handler) currentUser(w http.ResponseWriter, r *http.Request) {
-	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
-	user, err := h.service.CurrentUser(r.Context(), a)
+func (h *Handler) currentUser(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context()) // put there by the sign-in middleware
+	user, err := h.service.CurrentUser(c.Request.Context(), a)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, user)
+	web.Respond(c, http.StatusOK, user)
 }
 
 // updateProfile answers PATCH /api/v1/me: My profile changes the signed-in person's name and job title, and the
 // answer is the signed-in person after the change.
-func (h *Handler) updateProfile(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) updateProfile(c *gin.Context) {
 	var update ProfileUpdate
-	if err := web.ReadJSON(w, r, &update); err != nil {
-		web.WriteError(w, r, err)
+	if err := web.BindJSON(c, &update); err != nil {
+		web.RespondError(c, err)
 		return
 	}
-	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
-	user, err := h.service.UpdateProfile(r.Context(), a, update)
+	a, _ := actor.From(c.Request.Context()) // put there by the sign-in middleware
+	user, err := h.service.UpdateProfile(c.Request.Context(), a, update)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, user)
+	web.Respond(c, http.StatusOK, user)
 }
 
 // listDisplayCurrencies answers GET /api/v1/me/display-currencies: the currencies the signed-in person can
 // choose to show amounts in.
-func (h *Handler) listDisplayCurrencies(w http.ResponseWriter, r *http.Request) {
-	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
-	options, err := h.service.DisplayCurrencies(r.Context(), a)
+func (h *Handler) listDisplayCurrencies(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context()) // put there by the sign-in middleware
+	options, err := h.service.DisplayCurrencies(c.Request.Context(), a)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, DisplayCurrencyPage{Items: options, Total: len(options)})
+	web.Respond(c, http.StatusOK, DisplayCurrencyPage{Items: options, Total: len(options)})
 }
 
 // updatePreferences answers PATCH /api/v1/me/preferences: it changes the preferences that were sent and
 // answers all of them.
-func (h *Handler) updatePreferences(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) updatePreferences(c *gin.Context) {
 	var update PreferencesUpdate
-	if err := web.ReadJSON(w, r, &update); err != nil {
-		web.WriteError(w, r, err)
+	if err := web.BindJSON(c, &update); err != nil {
+		web.RespondError(c, err)
 		return
 	}
-	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
-	prefs, err := h.service.UpdatePreferences(r.Context(), a, update)
+	a, _ := actor.From(c.Request.Context()) // put there by the sign-in middleware
+	prefs, err := h.service.UpdatePreferences(c.Request.Context(), a, update)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, prefs)
+	web.Respond(c, http.StatusOK, prefs)
 }

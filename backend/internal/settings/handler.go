@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
+
 	"mapp/internal/history"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
@@ -23,352 +25,356 @@ func NewHandler(s *Service) *Handler {
 	return &Handler{service: s}
 }
 
-// Routes registers the Settings routes on r. All of them need a signed-in person, so all are wrapped in
-// signedIn; every signed-in person may change Settings (FR-008, D-004).
-func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
-	r.Handle("GET /api/v1/settings/overview", signedIn(h.overview))
+// RegisterRoutes registers the Settings routes on r.
+func (h *Handler) RegisterRoutes(r gin.IRoutes) {
+	r.GET("/settings/overview", h.overview)
 
-	r.Handle("GET /api/v1/models", signedIn(h.listModels))
-	r.Handle("POST /api/v1/models", signedIn(h.createModel))
-	r.Handle("GET /api/v1/models/{modelId}", signedIn(h.getModel))
-	r.Handle("PATCH /api/v1/models/{modelId}", signedIn(h.updateModel))
-	r.Handle("DELETE /api/v1/models/{modelId}", signedIn(h.deleteModel))
-	r.Handle("POST /api/v1/models/{modelId}/impact", signedIn(h.modelImpact))
-	r.Handle("POST /api/v1/models/{modelId}/status", signedIn(h.setModelStatus))
+	r.GET("/models", h.listModels)
+	r.POST("/models", h.createModel)
+	r.GET("/models/:modelId", h.getModel)
+	r.PATCH("/models/:modelId", h.updateModel)
+	r.DELETE("/models/:modelId", h.deleteModel)
+	r.POST("/models/:modelId/impact", h.modelImpact)
+	r.POST("/models/:modelId/status", h.setModelStatus)
 
-	r.Handle("GET /api/v1/activity-types", signedIn(h.listActivityTypes))
-	r.Handle("POST /api/v1/activity-types", signedIn(h.createActivityType))
-	r.Handle("GET /api/v1/activity-types/{activityTypeId}", signedIn(h.getActivityType))
-	r.Handle("PATCH /api/v1/activity-types/{activityTypeId}", signedIn(h.updateActivityType))
-	r.Handle("DELETE /api/v1/activity-types/{activityTypeId}", signedIn(h.deleteActivityType))
-	r.Handle("POST /api/v1/activity-types/{activityTypeId}/impact", signedIn(h.activityTypeImpact))
-	r.Handle("POST /api/v1/activity-types/{activityTypeId}/status", signedIn(h.setActivityTypeStatus))
+	r.GET("/activity-types", h.listActivityTypes)
+	r.POST("/activity-types", h.createActivityType)
+	r.GET("/activity-types/:activityTypeId", h.getActivityType)
+	r.PATCH("/activity-types/:activityTypeId", h.updateActivityType)
+	r.DELETE("/activity-types/:activityTypeId", h.deleteActivityType)
+	r.POST("/activity-types/:activityTypeId/impact", h.activityTypeImpact)
+	r.POST("/activity-types/:activityTypeId/status", h.setActivityTypeStatus)
 
-	r.Handle("GET /api/v1/shell-attributes", signedIn(h.listAttributes))
-	r.Handle("POST /api/v1/shell-attributes", signedIn(h.createAttribute))
-	r.Handle("GET /api/v1/shell-attributes/{attributeId}", signedIn(h.getAttribute))
-	r.Handle("PATCH /api/v1/shell-attributes/{attributeId}", signedIn(h.updateAttribute))
-	r.Handle("DELETE /api/v1/shell-attributes/{attributeId}", signedIn(h.deleteAttribute))
-	r.Handle("POST /api/v1/shell-attributes/{attributeId}/impact", signedIn(h.attributeImpact))
-	r.Handle("POST /api/v1/shell-attributes/{attributeId}/status", signedIn(h.setAttributeStatus))
-	r.Handle("POST /api/v1/shell-attributes/{attributeId}/move", signedIn(h.moveAttribute))
-	r.Handle("GET /api/v1/shell-attributes/{attributeId}/options", signedIn(h.listOptions))
-	r.Handle("POST /api/v1/shell-attributes/{attributeId}/options", signedIn(h.createOption))
-	r.Handle("POST /api/v1/shell-attributes/{attributeId}/options/import-check", signedIn(h.checkImport))
-	r.Handle("POST /api/v1/shell-attributes/{attributeId}/options/import", signedIn(h.importOptions))
-	r.Handle("GET /api/v1/shell-attribute-options/{optionId}", signedIn(h.getOption))
-	r.Handle("PATCH /api/v1/shell-attribute-options/{optionId}", signedIn(h.updateOption))
-	r.Handle("DELETE /api/v1/shell-attribute-options/{optionId}", signedIn(h.deleteOption))
-	r.Handle("POST /api/v1/shell-attribute-options/{optionId}/status", signedIn(h.setOptionStatus))
-	r.Handle("POST /api/v1/shell-attribute-options/{optionId}/move", signedIn(h.moveOption))
-	r.Handle("GET /api/v1/shell-attribute-forms/{level}", signedIn(h.getForm))
-	r.Handle("POST /api/v1/shell-attribute-forms/{level}/check", signedIn(h.checkValues))
+	h.attributeRoutes(r)
 
-	r.Handle("GET /api/v1/currencies", signedIn(h.listCurrencies))
-	r.Handle("POST /api/v1/currencies", signedIn(h.createCurrency))
-	r.Handle("GET /api/v1/currencies/{code}", signedIn(h.getCurrency))
-	r.Handle("PATCH /api/v1/currencies/{code}", signedIn(h.updateCurrency))
-	r.Handle("DELETE /api/v1/currencies/{code}", signedIn(h.deleteCurrency))
-	r.Handle("POST /api/v1/currencies/{code}/impact", signedIn(h.currencyImpact))
-	r.Handle("POST /api/v1/currencies/{code}/status", signedIn(h.setCurrencyStatus))
-	h.rateRoutes(r, signedIn)      // 016: rate history, current rates, GSAP rate import
-	h.fieldHelpRoutes(r, signedIn) // 016: Field help
+	r.GET("/currencies", h.listCurrencies)
+	r.POST("/currencies", h.createCurrency)
+	r.GET("/currencies/:code", h.getCurrency)
+	r.PATCH("/currencies/:code", h.updateCurrency)
+	r.DELETE("/currencies/:code", h.deleteCurrency)
+	r.POST("/currencies/:code/impact", h.currencyImpact)
+	r.POST("/currencies/:code/status", h.setCurrencyStatus)
+	h.rateRoutes(r)      // 016: rate history, current rates, GSAP rate import
+	h.fieldHelpRoutes(r) // 016: Field help
 
-	r.Handle("GET /api/v1/finance-budgets", signedIn(h.listFinanceBudgets))
-	r.Handle("PATCH /api/v1/finance-budgets/{budgetId}", signedIn(h.renameFinanceBudget))
-	r.Handle("POST /api/v1/finance-budget-items", signedIn(h.createFinanceBudgetItem))
-	r.Handle("GET /api/v1/finance-budget-items/{itemId}", signedIn(h.getFinanceBudgetItem))
-	r.Handle("PATCH /api/v1/finance-budget-items/{itemId}", signedIn(h.updateFinanceBudgetItem))
-	r.Handle("DELETE /api/v1/finance-budget-items/{itemId}", signedIn(h.deleteFinanceBudgetItem))
-	r.Handle("POST /api/v1/finance-budget-items/{itemId}/status", signedIn(h.setFinanceBudgetItemStatus))
+	r.GET("/finance-budgets", h.listFinanceBudgets)
+	r.PATCH("/finance-budgets/:budgetId", h.renameFinanceBudget)
+	r.POST("/finance-budget-items", h.createFinanceBudgetItem)
+	r.GET("/finance-budget-items/:itemId", h.getFinanceBudgetItem)
+	r.PATCH("/finance-budget-items/:itemId", h.updateFinanceBudgetItem)
+	r.DELETE("/finance-budget-items/:itemId", h.deleteFinanceBudgetItem)
+	r.POST("/finance-budget-items/:itemId/status", h.setFinanceBudgetItemStatus)
+}
+
+// attributeRoutes registers the Shell attribute, option and form routes.
+func (h *Handler) attributeRoutes(r gin.IRoutes) {
+	r.GET("/shell-attributes", h.listAttributes)
+	r.POST("/shell-attributes", h.createAttribute)
+	r.GET("/shell-attributes/:attributeId", h.getAttribute)
+	r.PATCH("/shell-attributes/:attributeId", h.updateAttribute)
+	r.DELETE("/shell-attributes/:attributeId", h.deleteAttribute)
+	r.POST("/shell-attributes/:attributeId/impact", h.attributeImpact)
+	r.POST("/shell-attributes/:attributeId/status", h.setAttributeStatus)
+	r.POST("/shell-attributes/:attributeId/move", h.moveAttribute)
+	r.GET("/shell-attributes/:attributeId/options", h.listOptions)
+	r.POST("/shell-attributes/:attributeId/options", h.createOption)
+	r.POST("/shell-attributes/:attributeId/options/import-check", h.checkImport)
+	r.POST("/shell-attributes/:attributeId/options/import", h.importOptions)
+	r.GET("/shell-attribute-options/:optionId", h.getOption)
+	r.PATCH("/shell-attribute-options/:optionId", h.updateOption)
+	r.DELETE("/shell-attribute-options/:optionId", h.deleteOption)
+	r.POST("/shell-attribute-options/:optionId/status", h.setOptionStatus)
+	r.POST("/shell-attribute-options/:optionId/move", h.moveOption)
+	r.GET("/shell-attribute-forms/:level", h.getForm)
+	r.POST("/shell-attribute-forms/:level/check", h.checkValues)
 }
 
 // overview answers GET /api/v1/settings/overview: the active records of each section (FR-001).
-func (h *Handler) overview(w http.ResponseWriter, r *http.Request) {
-	overview, err := h.service.Overview(r.Context(), actorOf(r))
-	respond(w, r, http.StatusOK, overview, err)
+func (h *Handler) overview(c *gin.Context) {
+	overview, err := h.service.Overview(c.Request.Context(), actorOf(c))
+	respond(c, http.StatusOK, overview, err)
 }
 
 // listModels answers GET /api/v1/models.
-func (h *Handler) listModels(w http.ResponseWriter, r *http.Request) {
-	models, err := h.service.ListModels(r.Context(), actorOf(r))
-	respond(w, r, http.StatusOK, ModelPage{Items: models, Total: len(models)}, err)
+func (h *Handler) listModels(c *gin.Context) {
+	models, err := h.service.ListModels(c.Request.Context(), actorOf(c))
+	respond(c, http.StatusOK, ModelPage{Items: models, Total: len(models)}, err)
 }
 
 // createModel answers POST /api/v1/models with 201 and the new model.
-func (h *Handler) createModel(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) createModel(c *gin.Context) {
 	var input ModelInput
-	if !readBody(w, r, &input) {
+	if !readBody(c, &input) {
 		return
 	}
-	model, err := h.service.CreateModel(r.Context(), actorOf(r), input)
-	respond(w, r, http.StatusCreated, model, err)
+	model, err := h.service.CreateModel(c.Request.Context(), actorOf(c), input)
+	respond(c, http.StatusCreated, model, err)
 }
 
 // getModel answers GET /api/v1/models/{modelId}.
-func (h *Handler) getModel(w http.ResponseWriter, r *http.Request) {
-	model, err := h.service.GetModel(r.Context(), actorOf(r), r.PathValue("modelId"))
-	respond(w, r, http.StatusOK, model, err)
+func (h *Handler) getModel(c *gin.Context) {
+	model, err := h.service.GetModel(c.Request.Context(), actorOf(c), c.Param("modelId"))
+	respond(c, http.StatusOK, model, err)
 }
 
 // updateModel answers PATCH /api/v1/models/{modelId} with the model after the change.
-func (h *Handler) updateModel(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) updateModel(c *gin.Context) {
 	var update ModelUpdate
-	if !readBody(w, r, &update) {
+	if !readBody(c, &update) {
 		return
 	}
-	model, err := h.service.UpdateModel(r.Context(), actorOf(r), r.PathValue("modelId"), update)
-	respond(w, r, http.StatusOK, model, err)
+	model, err := h.service.UpdateModel(c.Request.Context(), actorOf(c), c.Param("modelId"), update)
+	respond(c, http.StatusOK, model, err)
 }
 
 // deleteModel answers DELETE /api/v1/models/{modelId} with the recycle-bin entry, so the web app can offer
 // Undo.
-func (h *Handler) deleteModel(w http.ResponseWriter, r *http.Request) {
-	entry, err := h.service.DeleteModel(r.Context(), actorOf(r), r.PathValue("modelId"))
-	respondDeleted(w, r, entry, err)
+func (h *Handler) deleteModel(c *gin.Context) {
+	entry, err := h.service.DeleteModel(c.Request.Context(), actorOf(c), c.Param("modelId"))
+	respondDeleted(c, entry, err)
 }
 
 // modelImpact answers POST /api/v1/models/{modelId}/impact with the warnings to confirm before saving.
-func (h *Handler) modelImpact(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) modelImpact(c *gin.Context) {
 	var update ModelUpdate
-	if !readBody(w, r, &update) {
+	if !readBody(c, &update) {
 		return
 	}
-	impact, err := h.service.ModelImpact(r.Context(), actorOf(r), r.PathValue("modelId"), update)
-	respond(w, r, http.StatusOK, impact, err)
+	impact, err := h.service.ModelImpact(c.Request.Context(), actorOf(c), c.Param("modelId"), update)
+	respond(c, http.StatusOK, impact, err)
 }
 
 // setModelStatus answers POST /api/v1/models/{modelId}/status with the model in its new status.
-func (h *Handler) setModelStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) setModelStatus(c *gin.Context) {
 	var update StatusUpdate
-	if !readBody(w, r, &update) {
+	if !readBody(c, &update) {
 		return
 	}
-	model, err := h.service.SetModelActive(r.Context(), actorOf(r), r.PathValue("modelId"), update)
-	respond(w, r, http.StatusOK, model, err)
+	model, err := h.service.SetModelActive(c.Request.Context(), actorOf(c), c.Param("modelId"), update)
+	respond(c, http.StatusOK, model, err)
 }
 
 // listActivityTypes answers GET /api/v1/activity-types.
-func (h *Handler) listActivityTypes(w http.ResponseWriter, r *http.Request) {
-	types, err := h.service.ListActivityTypes(r.Context(), actorOf(r))
-	respond(w, r, http.StatusOK, ActivityTypePage{Items: types, Total: len(types)}, err)
+func (h *Handler) listActivityTypes(c *gin.Context) {
+	types, err := h.service.ListActivityTypes(c.Request.Context(), actorOf(c))
+	respond(c, http.StatusOK, ActivityTypePage{Items: types, Total: len(types)}, err)
 }
 
 // getActivityType answers GET /api/v1/activity-types/{activityTypeId}.
-func (h *Handler) getActivityType(w http.ResponseWriter, r *http.Request) {
-	activityType, err := h.service.GetActivityType(r.Context(), actorOf(r), r.PathValue("activityTypeId"))
-	respond(w, r, http.StatusOK, activityType, err)
+func (h *Handler) getActivityType(c *gin.Context) {
+	activityType, err := h.service.GetActivityType(c.Request.Context(), actorOf(c), c.Param("activityTypeId"))
+	respond(c, http.StatusOK, activityType, err)
 }
 
 // createActivityType answers POST /api/v1/activity-types with 201 and the new activity type.
-func (h *Handler) createActivityType(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) createActivityType(c *gin.Context) {
 	var input ActivityTypeInput
-	if !readBody(w, r, &input) {
+	if !readBody(c, &input) {
 		return
 	}
-	activityType, err := h.service.CreateActivityType(r.Context(), actorOf(r), input)
-	respond(w, r, http.StatusCreated, activityType, err)
+	activityType, err := h.service.CreateActivityType(c.Request.Context(), actorOf(c), input)
+	respond(c, http.StatusCreated, activityType, err)
 }
 
 // updateActivityType answers PATCH /api/v1/activity-types/{activityTypeId} with the activity type after the
 // change.
-func (h *Handler) updateActivityType(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) updateActivityType(c *gin.Context) {
 	var update ActivityTypeUpdate
-	if !readBody(w, r, &update) {
+	if !readBody(c, &update) {
 		return
 	}
-	activityType, err := h.service.UpdateActivityType(r.Context(), actorOf(r), r.PathValue("activityTypeId"), update)
-	respond(w, r, http.StatusOK, activityType, err)
+	activityType, err := h.service.UpdateActivityType(c.Request.Context(), actorOf(c), c.Param("activityTypeId"), update)
+	respond(c, http.StatusOK, activityType, err)
 }
 
 // deleteActivityType answers DELETE /api/v1/activity-types/{activityTypeId} with the recycle-bin entry.
-func (h *Handler) deleteActivityType(w http.ResponseWriter, r *http.Request) {
-	entry, err := h.service.DeleteActivityType(r.Context(), actorOf(r), r.PathValue("activityTypeId"))
-	respondDeleted(w, r, entry, err)
+func (h *Handler) deleteActivityType(c *gin.Context) {
+	entry, err := h.service.DeleteActivityType(c.Request.Context(), actorOf(c), c.Param("activityTypeId"))
+	respondDeleted(c, entry, err)
 }
 
 // activityTypeImpact answers POST /api/v1/activity-types/{activityTypeId}/impact with the warnings to confirm
 // before saving.
-func (h *Handler) activityTypeImpact(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) activityTypeImpact(c *gin.Context) {
 	var update ActivityTypeUpdate
-	if !readBody(w, r, &update) {
+	if !readBody(c, &update) {
 		return
 	}
-	impact, err := h.service.ActivityTypeImpact(r.Context(), actorOf(r), r.PathValue("activityTypeId"), update)
-	respond(w, r, http.StatusOK, impact, err)
+	impact, err := h.service.ActivityTypeImpact(c.Request.Context(), actorOf(c), c.Param("activityTypeId"), update)
+	respond(c, http.StatusOK, impact, err)
 }
 
 // setActivityTypeStatus answers POST /api/v1/activity-types/{activityTypeId}/status with the activity type in
 // its new status.
-func (h *Handler) setActivityTypeStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) setActivityTypeStatus(c *gin.Context) {
 	var update StatusUpdate
-	if !readBody(w, r, &update) {
+	if !readBody(c, &update) {
 		return
 	}
-	activityType, err := h.service.SetActivityTypeActive(r.Context(), actorOf(r), r.PathValue("activityTypeId"), update)
-	respond(w, r, http.StatusOK, activityType, err)
+	activityType, err := h.service.SetActivityTypeActive(c.Request.Context(), actorOf(c), c.Param("activityTypeId"), update)
+	respond(c, http.StatusOK, activityType, err)
 }
 
 // listAttributes answers GET /api/v1/shell-attributes?level=: the attributes of the level, or of every level,
 // in display order.
-func (h *Handler) listAttributes(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) listAttributes(c *gin.Context) {
 	var level *Level
-	if text := r.URL.Query().Get("level"); text != "" {
+	if text := c.Request.URL.Query().Get("level"); text != "" {
 		l, ok := parseLevel(text)
 		if !ok {
-			web.WriteError(w, r, errs.BadRequest(unreadableMessage))
+			web.RespondError(c, errs.BadRequest(unreadableMessage))
 			return
 		}
 		level = &l
 	}
-	attributes, err := h.service.ListAttributes(r.Context(), actorOf(r), level)
-	respond(w, r, http.StatusOK, ShellAttributePage{Items: attributes, Total: len(attributes)}, err)
+	attributes, err := h.service.ListAttributes(c.Request.Context(), actorOf(c), level)
+	respond(c, http.StatusOK, ShellAttributePage{Items: attributes, Total: len(attributes)}, err)
 }
 
 // getAttribute answers GET /api/v1/shell-attributes/{attributeId}.
-func (h *Handler) getAttribute(w http.ResponseWriter, r *http.Request) {
-	attribute, err := h.service.GetAttribute(r.Context(), actorOf(r), r.PathValue("attributeId"))
-	respond(w, r, http.StatusOK, attribute, err)
+func (h *Handler) getAttribute(c *gin.Context) {
+	attribute, err := h.service.GetAttribute(c.Request.Context(), actorOf(c), c.Param("attributeId"))
+	respond(c, http.StatusOK, attribute, err)
 }
 
 // createAttribute answers POST /api/v1/shell-attributes with 201 and the new attribute.
-func (h *Handler) createAttribute(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) createAttribute(c *gin.Context) {
 	var input ShellAttributeInput
-	if !readBody(w, r, &input) {
+	if !readBody(c, &input) {
 		return
 	}
-	attribute, err := h.service.CreateAttribute(r.Context(), actorOf(r), input)
-	respond(w, r, http.StatusCreated, attribute, err)
+	attribute, err := h.service.CreateAttribute(c.Request.Context(), actorOf(c), input)
+	respond(c, http.StatusCreated, attribute, err)
 }
 
 // updateAttribute answers PATCH /api/v1/shell-attributes/{attributeId} with the attribute after the change.
-func (h *Handler) updateAttribute(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) updateAttribute(c *gin.Context) {
 	var update ShellAttributeUpdate
-	if !readBody(w, r, &update) {
+	if !readBody(c, &update) {
 		return
 	}
-	attribute, err := h.service.UpdateAttribute(r.Context(), actorOf(r), r.PathValue("attributeId"), update)
-	respond(w, r, http.StatusOK, attribute, err)
+	attribute, err := h.service.UpdateAttribute(c.Request.Context(), actorOf(c), c.Param("attributeId"), update)
+	respond(c, http.StatusOK, attribute, err)
 }
 
 // deleteAttribute answers DELETE /api/v1/shell-attributes/{attributeId} with the recycle-bin entry.
-func (h *Handler) deleteAttribute(w http.ResponseWriter, r *http.Request) {
-	entry, err := h.service.DeleteAttribute(r.Context(), actorOf(r), r.PathValue("attributeId"))
-	respondDeleted(w, r, entry, err)
+func (h *Handler) deleteAttribute(c *gin.Context) {
+	entry, err := h.service.DeleteAttribute(c.Request.Context(), actorOf(c), c.Param("attributeId"))
+	respondDeleted(c, entry, err)
 }
 
 // attributeImpact answers POST /api/v1/shell-attributes/{attributeId}/impact with the warnings to confirm
 // before saving.
-func (h *Handler) attributeImpact(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) attributeImpact(c *gin.Context) {
 	var update ShellAttributeUpdate
-	if !readBody(w, r, &update) {
+	if !readBody(c, &update) {
 		return
 	}
-	impact, err := h.service.AttributeImpact(r.Context(), actorOf(r), r.PathValue("attributeId"), update)
-	respond(w, r, http.StatusOK, impact, err)
+	impact, err := h.service.AttributeImpact(c.Request.Context(), actorOf(c), c.Param("attributeId"), update)
+	respond(c, http.StatusOK, impact, err)
 }
 
 // setAttributeStatus answers POST /api/v1/shell-attributes/{attributeId}/status with the attribute in its new
 // status.
-func (h *Handler) setAttributeStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) setAttributeStatus(c *gin.Context) {
 	var update StatusUpdate
-	if !readBody(w, r, &update) {
+	if !readBody(c, &update) {
 		return
 	}
-	attribute, err := h.service.SetAttributeActive(r.Context(), actorOf(r), r.PathValue("attributeId"), update)
-	respond(w, r, http.StatusOK, attribute, err)
+	attribute, err := h.service.SetAttributeActive(c.Request.Context(), actorOf(c), c.Param("attributeId"), update)
+	respond(c, http.StatusOK, attribute, err)
 }
 
 // moveAttribute answers POST /api/v1/shell-attributes/{attributeId}/move with the level's attributes in their
 // new order.
-func (h *Handler) moveAttribute(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) moveAttribute(c *gin.Context) {
 	var in MoveInput
-	if !readBody(w, r, &in) {
+	if !readBody(c, &in) {
 		return
 	}
-	attributes, err := h.service.MoveAttribute(r.Context(), actorOf(r), r.PathValue("attributeId"), in)
-	respond(w, r, http.StatusOK, ShellAttributePage{Items: attributes, Total: len(attributes)}, err)
+	attributes, err := h.service.MoveAttribute(c.Request.Context(), actorOf(c), c.Param("attributeId"), in)
+	respond(c, http.StatusOK, ShellAttributePage{Items: attributes, Total: len(attributes)}, err)
 }
 
 // createOption answers POST /api/v1/shell-attributes/{attributeId}/options with 201 and the new option.
-func (h *Handler) createOption(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) createOption(c *gin.Context) {
 	var input OptionInput
-	if !readBody(w, r, &input) {
+	if !readBody(c, &input) {
 		return
 	}
-	option, err := h.service.CreateOption(r.Context(), actorOf(r), r.PathValue("attributeId"), input)
-	respond(w, r, http.StatusCreated, option, err)
+	option, err := h.service.CreateOption(c.Request.Context(), actorOf(c), c.Param("attributeId"), input)
+	respond(c, http.StatusCreated, option, err)
 }
 
 // checkImport answers POST /api/v1/shell-attributes/{attributeId}/options/import-check with every row's outcome.
 // The request body holds a file, which is never logged.
-func (h *Handler) checkImport(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) checkImport(c *gin.Context) {
 	var file ImportFile
-	if !readBody(w, r, &file) {
+	if !readBody(c, &file) {
 		return
 	}
-	check, err := h.service.CheckImport(r.Context(), actorOf(r), r.PathValue("attributeId"), file)
-	respond(w, r, http.StatusOK, check, err)
+	check, err := h.service.CheckImport(c.Request.Context(), actorOf(c), c.Param("attributeId"), file)
+	respond(c, http.StatusOK, check, err)
 }
 
 // importOptions answers POST /api/v1/shell-attributes/{attributeId}/options/import with what was added and
 // skipped. The request body holds a file, which is never logged.
-func (h *Handler) importOptions(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) importOptions(c *gin.Context) {
 	var file ImportFile
-	if !readBody(w, r, &file) {
+	if !readBody(c, &file) {
 		return
 	}
-	result, err := h.service.Import(r.Context(), actorOf(r), r.PathValue("attributeId"), file)
-	respond(w, r, http.StatusOK, result, err)
+	result, err := h.service.Import(c.Request.Context(), actorOf(c), c.Param("attributeId"), file)
+	respond(c, http.StatusOK, result, err)
 }
 
 // getOption answers GET /api/v1/shell-attribute-options/{optionId} with the option as it is stored now.
-func (h *Handler) getOption(w http.ResponseWriter, r *http.Request) {
-	option, err := h.service.GetOption(r.Context(), actorOf(r), r.PathValue("optionId"))
-	respond(w, r, http.StatusOK, option, err)
+func (h *Handler) getOption(c *gin.Context) {
+	option, err := h.service.GetOption(c.Request.Context(), actorOf(c), c.Param("optionId"))
+	respond(c, http.StatusOK, option, err)
 }
 
 // updateOption answers PATCH /api/v1/shell-attribute-options/{optionId} with the option after the change.
-func (h *Handler) updateOption(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) updateOption(c *gin.Context) {
 	var update OptionUpdate
-	if !readBody(w, r, &update) {
+	if !readBody(c, &update) {
 		return
 	}
-	option, err := h.service.UpdateOption(r.Context(), actorOf(r), r.PathValue("optionId"), update)
-	respond(w, r, http.StatusOK, option, err)
+	option, err := h.service.UpdateOption(c.Request.Context(), actorOf(c), c.Param("optionId"), update)
+	respond(c, http.StatusOK, option, err)
 }
 
 // deleteOption answers DELETE /api/v1/shell-attribute-options/{optionId} with the recycle-bin entry.
-func (h *Handler) deleteOption(w http.ResponseWriter, r *http.Request) {
-	entry, err := h.service.DeleteOption(r.Context(), actorOf(r), r.PathValue("optionId"))
-	respondDeleted(w, r, entry, err)
+func (h *Handler) deleteOption(c *gin.Context) {
+	entry, err := h.service.DeleteOption(c.Request.Context(), actorOf(c), c.Param("optionId"))
+	respondDeleted(c, entry, err)
 }
 
 // setOptionStatus answers POST /api/v1/shell-attribute-options/{optionId}/status with the option in its new
 // status.
-func (h *Handler) setOptionStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) setOptionStatus(c *gin.Context) {
 	var update StatusUpdate
-	if !readBody(w, r, &update) {
+	if !readBody(c, &update) {
 		return
 	}
-	option, err := h.service.SetOptionActive(r.Context(), actorOf(r), r.PathValue("optionId"), update)
-	respond(w, r, http.StatusOK, option, err)
+	option, err := h.service.SetOptionActive(c.Request.Context(), actorOf(c), c.Param("optionId"), update)
+	respond(c, http.StatusOK, option, err)
 }
 
 // moveOption answers POST /api/v1/shell-attribute-options/{optionId}/move with the option in its new place.
-func (h *Handler) moveOption(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) moveOption(c *gin.Context) {
 	var in OptionMoveInput
-	if !readBody(w, r, &in) {
+	if !readBody(c, &in) {
 		return
 	}
-	option, err := h.service.MoveOption(r.Context(), actorOf(r), r.PathValue("optionId"), in)
-	respond(w, r, http.StatusOK, option, err)
+	option, err := h.service.MoveOption(c.Request.Context(), actorOf(c), c.Param("optionId"), in)
+	respond(c, http.StatusOK, option, err)
 }
 
 // listOptions answers GET /api/v1/shell-attributes/{attributeId}/options?q=&status=&limit=&offset=. A limit or
 // offset that is not a whole number gets the message of a number out of range.
-func (h *Handler) listOptions(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
+func (h *Handler) listOptions(c *gin.Context) {
+	query := c.Request.URL.Query()
 	filter := OptionFilter{Q: query.Get("q"), Status: query.Get("status"), Limit: defaultOptionLimit}
 	if query.Has("limit") {
 		filter.Limit = wholeNumber(query.Get("limit"))
@@ -376,192 +382,192 @@ func (h *Handler) listOptions(w http.ResponseWriter, r *http.Request) {
 	if query.Has("offset") {
 		filter.Offset = wholeNumber(query.Get("offset"))
 	}
-	options, err := h.service.ListOptions(r.Context(), actorOf(r), r.PathValue("attributeId"), filter)
-	respond(w, r, http.StatusOK, options, err)
+	options, err := h.service.ListOptions(c.Request.Context(), actorOf(c), c.Param("attributeId"), filter)
+	respond(c, http.StatusOK, options, err)
 }
 
 // getForm answers GET /api/v1/shell-attribute-forms/{level}: everything the level's form needs.
-func (h *Handler) getForm(w http.ResponseWriter, r *http.Request) {
-	level, ok := parseLevel(r.PathValue("level"))
+func (h *Handler) getForm(c *gin.Context) {
+	level, ok := parseLevel(c.Param("level"))
 	if !ok {
-		web.WriteError(w, r, errs.BadRequest(unreadableMessage))
+		web.RespondError(c, errs.BadRequest(unreadableMessage))
 		return
 	}
-	form, err := h.service.Form(r.Context(), actorOf(r), level)
-	respond(w, r, http.StatusOK, form, err)
+	form, err := h.service.Form(c.Request.Context(), actorOf(c), level)
+	respond(c, http.StatusOK, form, err)
 }
 
 // checkValues answers POST /api/v1/shell-attribute-forms/{level}/check: what a save would say.
-func (h *Handler) checkValues(w http.ResponseWriter, r *http.Request) {
-	level, ok := parseLevel(r.PathValue("level"))
+func (h *Handler) checkValues(c *gin.Context) {
+	level, ok := parseLevel(c.Param("level"))
 	if !ok {
-		web.WriteError(w, r, errs.BadRequest(unreadableMessage))
+		web.RespondError(c, errs.BadRequest(unreadableMessage))
 		return
 	}
 	var request CheckRequest
-	if !readBody(w, r, &request) {
+	if !readBody(c, &request) {
 		return
 	}
-	result, err := h.service.CheckValues(r.Context(), actorOf(r), level, request)
-	respond(w, r, http.StatusOK, result, err)
+	result, err := h.service.CheckValues(c.Request.Context(), actorOf(c), level, request)
+	respond(c, http.StatusOK, result, err)
 }
 
 // listCurrencies answers GET /api/v1/currencies: USD first, then by code.
-func (h *Handler) listCurrencies(w http.ResponseWriter, r *http.Request) {
-	currencies, err := h.service.ListCurrencies(r.Context(), actorOf(r))
-	respond(w, r, http.StatusOK, CurrencyPage{Items: currencies, Total: len(currencies)}, err)
+func (h *Handler) listCurrencies(c *gin.Context) {
+	currencies, err := h.service.ListCurrencies(c.Request.Context(), actorOf(c))
+	respond(c, http.StatusOK, CurrencyPage{Items: currencies, Total: len(currencies)}, err)
 }
 
 // getCurrency answers GET /api/v1/currencies/{code}.
-func (h *Handler) getCurrency(w http.ResponseWriter, r *http.Request) {
-	currency, err := h.service.GetCurrency(r.Context(), actorOf(r), r.PathValue("code"))
-	respond(w, r, http.StatusOK, currency, err)
+func (h *Handler) getCurrency(c *gin.Context) {
+	currency, err := h.service.GetCurrency(c.Request.Context(), actorOf(c), c.Param("code"))
+	respond(c, http.StatusOK, currency, err)
 }
 
 // createCurrency answers POST /api/v1/currencies with 201 and the new currency.
-func (h *Handler) createCurrency(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) createCurrency(c *gin.Context) {
 	var input CurrencyInput
-	if !readBody(w, r, &input) {
+	if !readBody(c, &input) {
 		return
 	}
-	currency, err := h.service.CreateCurrency(r.Context(), actorOf(r), input)
-	respond(w, r, http.StatusCreated, currency, err)
+	currency, err := h.service.CreateCurrency(c.Request.Context(), actorOf(c), input)
+	respond(c, http.StatusCreated, currency, err)
 }
 
 // updateCurrency answers PATCH /api/v1/currencies/{code} with the currency after the change.
-func (h *Handler) updateCurrency(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) updateCurrency(c *gin.Context) {
 	var update CurrencyUpdate
-	if !readBody(w, r, &update) {
+	if !readBody(c, &update) {
 		return
 	}
-	currency, err := h.service.UpdateCurrency(r.Context(), actorOf(r), r.PathValue("code"), update)
-	respond(w, r, http.StatusOK, currency, err)
+	currency, err := h.service.UpdateCurrency(c.Request.Context(), actorOf(c), c.Param("code"), update)
+	respond(c, http.StatusOK, currency, err)
 }
 
 // deleteCurrency answers DELETE /api/v1/currencies/{code} with the recycle-bin entry.
-func (h *Handler) deleteCurrency(w http.ResponseWriter, r *http.Request) {
-	entry, err := h.service.DeleteCurrency(r.Context(), actorOf(r), r.PathValue("code"))
-	respondDeleted(w, r, entry, err)
+func (h *Handler) deleteCurrency(c *gin.Context) {
+	entry, err := h.service.DeleteCurrency(c.Request.Context(), actorOf(c), c.Param("code"))
+	respondDeleted(c, entry, err)
 }
 
 // currencyImpact answers POST /api/v1/currencies/{code}/impact with the warnings to confirm before saving.
-func (h *Handler) currencyImpact(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) currencyImpact(c *gin.Context) {
 	var update CurrencyUpdate
-	if !readBody(w, r, &update) {
+	if !readBody(c, &update) {
 		return
 	}
-	impact, err := h.service.CurrencyImpact(r.Context(), actorOf(r), r.PathValue("code"), update)
-	respond(w, r, http.StatusOK, impact, err)
+	impact, err := h.service.CurrencyImpact(c.Request.Context(), actorOf(c), c.Param("code"), update)
+	respond(c, http.StatusOK, impact, err)
 }
 
 // setCurrencyStatus answers POST /api/v1/currencies/{code}/status with the currency in its new status.
-func (h *Handler) setCurrencyStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) setCurrencyStatus(c *gin.Context) {
 	var update StatusUpdate
-	if !readBody(w, r, &update) {
+	if !readBody(c, &update) {
 		return
 	}
-	currency, err := h.service.SetCurrencyActive(r.Context(), actorOf(r), r.PathValue("code"), update)
-	respond(w, r, http.StatusOK, currency, err)
+	currency, err := h.service.SetCurrencyActive(c.Request.Context(), actorOf(c), c.Param("code"), update)
+	respond(c, http.StatusOK, currency, err)
 }
 
 // listFinanceBudgets answers GET /api/v1/finance-budgets?year=: the budgets of the year (the current year
 // when not sent).
-func (h *Handler) listFinanceBudgets(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) listFinanceBudgets(c *gin.Context) {
 	var year *int
-	if text := r.URL.Query().Get("year"); text != "" {
+	if text := c.Request.URL.Query().Get("year"); text != "" {
 		y, err := strconv.Atoi(text)
 		if err != nil {
-			web.WriteError(w, r, errs.BadRequest(unreadableMessage))
+			web.RespondError(c, errs.BadRequest(unreadableMessage))
 			return
 		}
 		year = &y
 	}
-	page, err := h.service.ListFinanceBudgets(r.Context(), actorOf(r), year)
-	respond(w, r, http.StatusOK, page, err)
+	page, err := h.service.ListFinanceBudgets(c.Request.Context(), actorOf(c), year)
+	respond(c, http.StatusOK, page, err)
 }
 
 // renameFinanceBudget answers PATCH /api/v1/finance-budgets/{budgetId} with the budget and its items after the
 // rename.
-func (h *Handler) renameFinanceBudget(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) renameFinanceBudget(c *gin.Context) {
 	var input RenameInput
-	if !readBody(w, r, &input) {
+	if !readBody(c, &input) {
 		return
 	}
-	budget, err := h.service.RenameFinanceBudget(r.Context(), actorOf(r), r.PathValue("budgetId"), input)
-	respond(w, r, http.StatusOK, budget, err)
+	budget, err := h.service.RenameFinanceBudget(c.Request.Context(), actorOf(c), c.Param("budgetId"), input)
+	respond(c, http.StatusOK, budget, err)
 }
 
 // createFinanceBudgetItem answers POST /api/v1/finance-budget-items with 201 and the new item.
-func (h *Handler) createFinanceBudgetItem(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) createFinanceBudgetItem(c *gin.Context) {
 	var input ItemInput
-	if !readBody(w, r, &input) {
+	if !readBody(c, &input) {
 		return
 	}
-	item, err := h.service.CreateFinanceBudgetItem(r.Context(), actorOf(r), input)
-	respond(w, r, http.StatusCreated, item, err)
+	item, err := h.service.CreateFinanceBudgetItem(c.Request.Context(), actorOf(c), input)
+	respond(c, http.StatusCreated, item, err)
 }
 
 // getFinanceBudgetItem answers GET /api/v1/finance-budget-items/{itemId}.
-func (h *Handler) getFinanceBudgetItem(w http.ResponseWriter, r *http.Request) {
-	item, err := h.service.GetFinanceBudgetItem(r.Context(), actorOf(r), r.PathValue("itemId"))
-	respond(w, r, http.StatusOK, item, err)
+func (h *Handler) getFinanceBudgetItem(c *gin.Context) {
+	item, err := h.service.GetFinanceBudgetItem(c.Request.Context(), actorOf(c), c.Param("itemId"))
+	respond(c, http.StatusOK, item, err)
 }
 
 // updateFinanceBudgetItem answers PATCH /api/v1/finance-budget-items/{itemId} with the item after the change.
-func (h *Handler) updateFinanceBudgetItem(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) updateFinanceBudgetItem(c *gin.Context) {
 	var update ItemUpdate
-	if !readBody(w, r, &update) {
+	if !readBody(c, &update) {
 		return
 	}
-	item, err := h.service.UpdateFinanceBudgetItem(r.Context(), actorOf(r), r.PathValue("itemId"), update)
-	respond(w, r, http.StatusOK, item, err)
+	item, err := h.service.UpdateFinanceBudgetItem(c.Request.Context(), actorOf(c), c.Param("itemId"), update)
+	respond(c, http.StatusOK, item, err)
 }
 
 // deleteFinanceBudgetItem answers DELETE /api/v1/finance-budget-items/{itemId} with the recycle-bin entry.
-func (h *Handler) deleteFinanceBudgetItem(w http.ResponseWriter, r *http.Request) {
-	entry, err := h.service.DeleteFinanceBudgetItem(r.Context(), actorOf(r), r.PathValue("itemId"))
-	respondDeleted(w, r, entry, err)
+func (h *Handler) deleteFinanceBudgetItem(c *gin.Context) {
+	entry, err := h.service.DeleteFinanceBudgetItem(c.Request.Context(), actorOf(c), c.Param("itemId"))
+	respondDeleted(c, entry, err)
 }
 
 // setFinanceBudgetItemStatus answers POST /api/v1/finance-budget-items/{itemId}/status with the item in its new
 // status.
-func (h *Handler) setFinanceBudgetItemStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) setFinanceBudgetItemStatus(c *gin.Context) {
 	var update StatusUpdate
-	if !readBody(w, r, &update) {
+	if !readBody(c, &update) {
 		return
 	}
-	item, err := h.service.SetFinanceBudgetItemActive(r.Context(), actorOf(r), r.PathValue("itemId"), update)
-	respond(w, r, http.StatusOK, item, err)
+	item, err := h.service.SetFinanceBudgetItemActive(c.Request.Context(), actorOf(c), c.Param("itemId"), update)
+	respond(c, http.StatusOK, item, err)
 }
 
 // actorOf returns the signed-in person, put in the request's context by the sign-in middleware.
-func actorOf(r *http.Request) actor.Actor {
-	a, _ := actor.From(r.Context())
+func actorOf(c *gin.Context) actor.Actor {
+	a, _ := actor.From(c.Request.Context())
 	return a
 }
 
 // readBody decodes the request's JSON body into dst; when it cannot, it answers the error and returns
 // false.
-func readBody(w http.ResponseWriter, r *http.Request, dst any) bool {
-	if err := web.ReadJSON(w, r, dst); err != nil {
-		web.WriteError(w, r, err)
+func readBody(c *gin.Context, dst any) bool {
+	if err := web.BindJSON(c, dst); err != nil {
+		web.RespondError(c, err)
 		return false
 	}
 	return true
 }
 
 // respond answers body with status, or err when the service failed.
-func respond(w http.ResponseWriter, r *http.Request, status int, body any, err error) {
+func respond(c *gin.Context, status int, body any, err error) {
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, status, body)
+	web.Respond(c, status, body)
 }
 
 // respondDeleted answers a delete with the recycle-bin entry, so the web app can offer Undo.
-func respondDeleted(w http.ResponseWriter, r *http.Request, entry history.BinEntry, err error) {
-	respond(w, r, http.StatusOK, history.DeleteResult{RecycleBinEntry: entry.View()}, err)
+func respondDeleted(c *gin.Context, entry history.BinEntry, err error) {
+	respond(c, http.StatusOK, history.DeleteResult{RecycleBinEntry: entry.View()}, err)
 }
 
 // parseLevel reads a level from a path or query value.

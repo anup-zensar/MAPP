@@ -8,9 +8,10 @@ and this guide is corrected.
 
 The guide is adapted from the Go standards of the separate NorthStar backend repository: access
 scopes instead of tenants, Docker optional (no test requires it), and the comment budget
-(Principle VIII). The samples show the target patterns. They have not yet been compiled against
-this repository, whose code is aligned to constitution 2.x by dedicated features (Governance →
-Alignment); the first of those features compiles the samples and corrects this guide where needed.
+(Principle VIII). The samples show the target patterns. The transport, logging, lifecycle and
+configuration samples (§4, the error answers and panics of §5, §7, §9, §10) follow the code since
+feature 024 (Gin transport); the others are corrected by the alignment feature that compiles them,
+for example §6 by feature 023 (PostgreSQL) (Governance → Alignment).
 Blocks marked **✗ Avoid** show what not to do.
 
 ## Contents
@@ -229,25 +230,39 @@ SIGINT or SIGTERM.
 
 ```go
 func main() {
-	if err := run(context.Background(), os.Getenv); err != nil {
-		slog.Error("server stopped", "error", err)
+	slog.SetDefault(logging.New(os.Stdout, slog.LevelInfo)) // until the configuration sets the level
+	if err := run(context.Background()); err != nil {
+		slog.Error("MAPP API stopped", "error", err)
 		os.Exit(1)
 	}
 }
 
-// run keeps all process wiring in app.New, so tests can exercise it without
-// signals or os.Exit.
-func run(ctx context.Context, getenv func(string) string) error {
+func run(ctx context.Context) error {
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	server, err := app.New(ctx, getenv)
+	cfg, err := app.LoadConfig(os.Getenv)
 	if err != nil {
 		return err
 	}
-	defer server.Close(ctx)
-
-	return server.Serve(ctx)
+	slog.SetDefault(logging.New(os.Stdout, cfg.LogLevel))
+	db, err := store.Open(cfg.DataDir)
+	if err != nil {
+		return err
+	}
+	api, err := app.New(cfg, db, clock.System)
+	if err != nil {
+		return err
+	}
+	listener, err := listen(cfg.Port) // 127.0.0.1 only
+	if err != nil {
+		return err
+	}
+	slog.InfoContext(ctx, "MAPP API listening", "url", "http://"+listener.Addr().String())
+	served := app.Serve(ctx, listener, api.Handler, cfg.ShutdownTimeout)
+	closing, cancel := context.WithTimeout(context.WithoutCancel(ctx), cfg.ShutdownTimeout)
+	defer cancel()
+	return errors.Join(served, api.Close(closing)) // Close flushes the telemetry
 }
 ```
 
@@ -267,29 +282,29 @@ const (
 	idleTimeout       = 60 * time.Second
 )
 
-func (a *App) Serve(ctx context.Context) error {
-	srv := &http.Server{
-		Addr:              net.JoinHostPort(a.cfg.Host, a.cfg.Port),
-		Handler:           a.routes(),
+// Serve serves until ctx ends, then lets the requests in progress finish within shutdownTimeout, or fails.
+func Serve(ctx context.Context, listener net.Listener, handler http.Handler, shutdownTimeout time.Duration) error {
+	server := &http.Server{
+		Handler:           handler,
 		ReadHeaderTimeout: readHeaderTimeout,
 		ReadTimeout:       readTimeout,
 		WriteTimeout:      writeTimeout,
 		IdleTimeout:       idleTimeout,
+		ErrorLog:          slog.NewLogLogger(slog.Default().Handler(), slog.LevelError),
 	}
-	serveErr := make(chan error, 1)
-	go func() { serveErr <- srv.ListenAndServe() }()
-	slog.InfoContext(ctx, "listening", "addr", srv.Addr)
+	served := make(chan error, 1)
+	go func() { served <- server.Serve(listener) }()
 
 	select {
-	case err := <-serveErr:
-		return fmt.Errorf("listen on %s: %w", srv.Addr, err)
+	case err := <-served:
+		return fmt.Errorf("serve on %s: %w", listener.Addr(), err)
 	case <-ctx.Done():
 	}
-	if err := shutdown(ctx, srv, a.cfg.ShutdownTimeout); err != nil {
+	if err := shutdown(ctx, server, shutdownTimeout); err != nil {
 		return err
 	}
-	if err := <-serveErr; !errors.Is(err, http.ErrServerClosed) {
-		return fmt.Errorf("serve: %w", err)
+	if err := <-served; !errors.Is(err, http.ErrServerClosed) {
+		return fmt.Errorf("serve on %s: %w", listener.Addr(), err)
 	}
 	return nil
 }
@@ -307,10 +322,10 @@ func shutdown(ctx context.Context, srv *http.Server, timeout time.Duration) erro
 }
 ```
 
-Two details matter. The serving goroutine has an owner that waits for it (`<-serveErr`), and the
+Two details matter. The serving goroutine has an owner that waits for it (`<-served`), and the
 channel is buffered, so the goroutine can always finish its send and exit. Splitting out
-`shutdown` also keeps `Serve` within the fan-out limit (§11). `App.Close` closes the database
-(B3).
+`shutdown` also keeps `Serve` within the fan-out limit (§11). `App.Close` flushes the telemetry,
+and will close the database once it is PostgreSQL (B3).
 
 ### Goroutines
 
@@ -428,21 +443,21 @@ func (s *Service) Get(ctx context.Context, who actor.Actor, id string) (Budget, 
 
 ### Handle each error exactly once
 
-Either return an error or log it, never both. Errors are logged once, at the edge: `WriteError`
+Either return an error or log it, never both. Errors are logged once, at the edge: `RespondError`
 logs unexpected failures and returns a generic 500, so SQL text, driver messages and stack traces
 never reach a client. Validation failures carry every field at once (B6).
 
 ```go
-// WriteError is the single place where request errors are logged. An
-// unclassified or internal error reaches the client only as a generic 500.
-func WriteError(c *gin.Context, err error) {
-	appErr, ok := errors.AsType[*errs.Error](err)
-	if !ok || appErr.Kind == errs.KindInternal {
-		slog.ErrorContext(c.Request.Context(), "request failed", "error", err)
-		appErr = errInternal
+// RespondError answers an *errs.Error as it is and logs any other error as internal_error, then aborts.
+func RespondError(c *gin.Context, err error) {
+	apiErr, ok := errors.AsType[*errs.Error](err)
+	if !ok {
+		slog.ErrorContext(c.Request.Context(), "request failed", "method", c.Request.Method,
+			"path", c.Request.URL.Path, "error", err)
+		apiErr = errs.Internal()
 	}
-	body := errorBody{Code: appErr.Code, Message: appErr.Message, Fields: append([]errs.FieldError{}, appErr.Fields...)}
-	c.AbortWithStatusJSON(statusOf(appErr.Kind), errorEnvelope{Error: body})
+	Respond(c, apiErr.Status, errorEnvelope{Error: apiErr})
+	c.Abort()
 }
 ```
 
@@ -454,9 +469,16 @@ come from a programming error. A recovery middleware turns any panic into a logg
 stack trace in the log and never in the response:
 
 ```go
+// Recover answers a panic with internal_error unless the answer has started; a nil writer keeps Gin from
+// dumping the request, session cookie included.
 func Recover() gin.HandlerFunc {
-	return gin.CustomRecoveryWithWriter(io.Discard, func(c *gin.Context, recovered any) {
-		WriteError(c, fmt.Errorf("panic: %v\n%s", recovered, debug.Stack()))
+	return gin.CustomRecoveryWithWriter(nil, func(c *gin.Context, recovered any) {
+		slog.ErrorContext(c.Request.Context(), "panic in handler", "panic", recovered, "stack", string(debug.Stack()))
+		if c.Writer.Written() {
+			c.Abort()
+			return
+		}
+		RespondError(c, errs.Internal())
 	})
 }
 ```
@@ -729,50 +751,58 @@ permission (fail closed), and the service applies the scope (Principle VII).
 
 ```go
 func (h *Handler) create(c *gin.Context) {
-	who, err := actor.Require(c.Request.Context())
+	var input PlanInput
+	if err := web.BindJSON(c, &input); err != nil {
+		web.RespondError(c, err)
+		return
+	}
+	a, _ := actor.From(c.Request.Context()) // put there by the sign-in middleware
+	plan, err := h.service.Create(c.Request.Context(), a, input)
 	if err != nil {
-		web.WriteError(c, err)
+		web.RespondError(c, err)
 		return
 	}
-	var req createRequest
-	if err = web.BindJSON(c, &req); err != nil {
-		web.WriteError(c, err)
-		return
-	}
-	created, err := h.service.Create(c.Request.Context(), who, CreateInput(req))
-	if err != nil {
-		web.WriteError(c, err)
-		return
-	}
-	c.JSON(http.StatusCreated, toResponse(created))
+	web.Respond(c, http.StatusCreated, plan)
 }
 ```
+
+The handler registers in its area's `RegisterRoutes`, on the signed-in `/api/v1` group that
+`internal/app` hands it, and its access rule goes in `access/routes.go`, keyed as the contract
+writes the operation:
+
+```go
+func (h *Handler) RegisterRoutes(r gin.IRoutes) {
+	r.POST("/plans", h.create)
+	r.GET("/plans/:planId", h.get)
+}
+```
+
+`web.Respond` encodes before it writes, so a value that cannot be encoded becomes a logged 500
+instead of Gin's empty answer with the intended status; handlers therefore never call `c.JSON`.
 
 - **Separate request and response types** from domain types, so the JSON contract and the domain
   model can change independently. `json` tags are `camelCase`.
-- **Decode strictly.** Unknown fields are rejected, and an oversized body maps to 413:
+- **Decode strictly.** Only `application/json`, no unknown fields, nothing after the JSON value;
+  anything else, an oversized body included, is refused with 400 `bad_request` and the reason
+  goes only to the log:
 
 ```go
 func BindJSON(c *gin.Context, dst any) error {
-	decoder := json.NewDecoder(c.Request.Body)
-	decoder.DisallowUnknownFields()
-	err := decoder.Decode(dst)
-	if err == nil {
-		return nil
-	}
-	if _, tooLarge := errors.AsType[*http.MaxBytesError](err); tooLarge {
-		return ErrBodyTooLarge
-	}
-	return ErrMalformedBody
+	return readBody(c.Request, c.Request.Body, dst)
 }
 ```
 
-- **Limit request bodies** for every route, using middleware:
+- **Limit request bodies** for every route, in one middleware: 1 MB, or the limit `byOperation`
+  gives the few operations that receive a file (the GSAP rate uploads, 3 MB):
 
 ```go
-func LimitBody(maxBytes int64) gin.HandlerFunc {
+func LimitBody(defaultMax int64, byOperation map[string]int64) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxBytes)
+		limit, found := byOperation[Operation(c)]
+		if !found {
+			limit = defaultMax
+		}
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, limit)
 		c.Next()
 	}
 }
@@ -945,25 +975,45 @@ func RequestID() gin.HandlerFunc {
 
 ### Tracing and metrics
 
-`telemetry.Start` installs the OpenTelemetry providers, configured by the standard `OTEL_*`
-environment variables. In the local phase no exporter sends data off the machine (B7). `otelgin`
-traces every request, and `otelpgx` traces every query. Add your own spans only
+`telemetry.Start` builds the OpenTelemetry SDK providers, so every request has a trace ID for the
+logs. `OTEL_TRACES_EXPORTER` and `OTEL_METRICS_EXPORTER` choose `none` (the default) or `console`,
+which writes to standard error because standard output carries the logs; any other value stops the
+API at startup, so no setting sends data off the machine (B7). The providers are passed explicitly,
+never set as OpenTelemetry globals, and no propagator is installed, so a client's `traceparent`
+cannot choose the trace ID. `otelgin` traces every request and records
+`http.server.request.duration` with route and status, and `otelpgx` will trace every query. Add your own spans only
 around significant work that is not already an HTTP or database call. Export request rate, error
 rate and duration (RED) metrics for every route.
 
 ```go
-// newEngine installs, in order: panic recovery, tracing, request ID, body limit.
-func newEngine(maxBodyBytes int64) *gin.Engine {
+// NewEngine puts recovery inside tracing, request ID and log, so a panic keeps their attributes and is a 500.
+func NewEngine(o Options) (*gin.Engine, error) {
+	gin.SetMode(gin.ReleaseMode) // debug mode prints to standard output, which carries only JSON logs
 	engine := gin.New()
+	engine.RedirectTrailingSlash = false
+	engine.RedirectFixedPath = false
+	if err := engine.SetTrustedProxies(nil); err != nil {
+		return nil, fmt.Errorf("trust no proxy: %w", err)
+	}
 	engine.Use(
-		web.Recover(),
-		otelgin.Middleware(serviceName),
-		web.RequestID(),
-		web.LimitBody(maxBodyBytes),
+		otelgin.Middleware(serviceName, otelgin.WithTracerProvider(o.Tracer), otelgin.WithMeterProvider(o.Meter),
+			otelgin.WithPropagators(propagation.NewCompositeTextMapPropagator())),
+		RequestID(),
+		LogRequest(),
+		Recover(),
+		SecurityHeaders(),
+		SameOrigin(),
+		LimitBody(maxBodyBytes, o.BodyLimits),
 	)
-	return engine
+	engine.NoRoute(func(c *gin.Context) { RespondError(c, errs.NotFound(notFoundMessage)) })
+	return engine, nil
 }
 ```
+
+Recovery is not outermost: otelgin restores the outer context when it returns and records the
+status only when the chain returns normally, so a recovery outside it would log a panic without
+`trace_id` or `request_id` and leave the 500 out of traces and metrics. Sign-in and the access
+rule run after these, on the signed-in route group.
 
 ### Health probes
 
@@ -996,26 +1046,34 @@ reported together, and the process stops. Code never calls `os.Getenv` outside `
 `cmd`.
 
 ```go
-// Load reports every invalid variable in one error and never includes a
-// value, because some are secrets.
-func Load(getenv func(string) string) (Config, error) {
-	env := reader{getenv: getenv}
+func LoadConfig(getenv func(name string) string) (Config, error) {
+	env := &reader{getenv: getenv}
 	cfg := Config{
-		Host:            env.text("HOST", defaultHost),
-		Port:            env.text("PORT", defaultPort),
-		DatabaseURL:     env.required("DATABASE_URL"),
-		DemoSignIn:      env.flag("DEMO_SIGN_IN", false),
-		LogLevel:        env.level("LOG_LEVEL", slog.LevelInfo),
-		MaxBodyBytes:    env.bytes("MAX_BODY_BYTES", defaultMaxBodyBytes),
-		ShutdownTimeout: env.duration("SHUTDOWN_TIMEOUT", defaultShutdownTimeout),
+		Env:             env.choice("APP_ENV", envLocal, envLocal, envDevelopment, envProduction),
+		Port:            env.port("APP_PORT", "8080"),
+		DataDir:         env.text("DATA_DIR", "data"),
+		DemoPassword:    env.notBlank("DEMO_PASSWORD", "mapp"),
+		LogLevel:        env.logLevel("LOG_LEVEL"),
+		ShutdownTimeout: env.shutdownTimeout("SHUTDOWN_TIMEOUT"),
+		Telemetry: telemetry.Config{
+			Traces:  env.exporter("OTEL_TRACES_EXPORTER"),
+			Metrics: env.exporter("OTEL_METRICS_EXPORTER"),
+		},
 	}
-	return cfg, env.err()
+	if len(env.problems) > 0 {
+		return Config{}, errors.New(strings.Join(env.problems, "\n"))
+	}
+	return cfg, nil
 }
 ```
 
+Each reader method adds a message to `env.problems` for an invalid value, so one start shows every
+problem. A message names the variable and, unless the variable is a secret, its value.
+
 Passing `getenv` instead of calling `os.Getenv` makes `Load` testable without mutating the process
 environment. Defaults are the safe choice: `defaultHost` is `127.0.0.1`, and development-only
-behaviour (demo sign-in, seeding) needs an explicit setting (B7).
+behaviour (demo sign-in, seeding) needs an explicit setting (B7). The API always listens on
+`127.0.0.1`, so there is no host setting.
 
 ---
 
@@ -1249,12 +1307,12 @@ envelope, and validate every response against `api/openapi.yaml` through
 `internal/platform/apitest`. That validation is the contract test every endpoint needs:
 
 ```go
-		{name: "oversized body is refused", body: `{"name":"` + strings.Repeat("x", 2048) + `"}`,
-			wantStatus: http.StatusRequestEntityTooLarge, wantBody: `"code":"body_too_large"`},
+	refused := sara.Do(t, http.MethodDelete, "/api/v1/plans/P-1001", nil)
+	if refused.Status != http.StatusForbidden { ... }
 ```
 
-`gin.SetMode(gin.TestMode)` changes global state, so call it once in `TestMain`, before any
-parallel test starts.
+`web.NewEngine` sets Gin's release mode, so Gin prints nothing; a test that builds its own
+`gin.New()` engine calls `gin.SetMode(gin.ReleaseMode)` first.
 
 ### Store tests against real PostgreSQL
 

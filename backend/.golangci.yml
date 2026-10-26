@@ -135,6 +135,18 @@ linters:
               desc: "deprecated; use io and os"
             - pkg: math/rand
               desc: "use crypto/rand for anything security-related; justify math/rand/v2 otherwise"
+        transport-only:
+          files:
+            - "$all"
+            - "!$test"
+            - "!**/*handler*.go"
+            - "!**/middleware*.go"
+            - "!**/internal/platform/web/**"
+            - "!**/internal/app/**"
+            - "!**/cmd/api/**"
+          deny:
+            - pkg: github.com/gin-gonic/gin
+              desc: "Gin belongs to handler and middleware files, internal/platform/web, internal/app and cmd/api (constitution B1, B2)"
         service-layer:
           files: ["**/service.go"]
           deny:
