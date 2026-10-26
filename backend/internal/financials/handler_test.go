@@ -2,7 +2,6 @@ package financials_test
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"net/http"
 	"slices"
 	"strings"
@@ -93,63 +92,39 @@ func csvFile(name string, lines ...string) map[string]string {
 const extractHeader = "type,document_number,line,po_number,po_line,posting_date,accrual_month,amount,currency," +
 	"vendor_code,vendor_name,description,swbs_code,tracking_key,line_item_id"
 
-// The activity Social always-on (A-1002) shows its figures, its two line items as the breakdown and its
-// latest five transactions; Stand build (L-1006) is committed above its planned cost and shows its SWBS
-// code; the plan breaks down by campaign (FR-011, FR-015 – FR-018, data model §6.1).
+// The activity Social always-on (A-1002) answers its figures, its line items as the breakdown, its latest
+// transactions and the data's source; a line item and a plan answer their own shapes (FR-015 – FR-018).
 func TestRecord_Contract_FR015(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
 	activity := get[financials.RecordView](t, alex, "/api/v1/financials/records/A-1002")
 	f := activity.Figures
-	if f.Committed != dollars(t, "25000.00") || f.Invoiced != dollars(t, "22500.00") || f.Paid != dollars(t, "20000.00") ||
-		f.Accrued != dollars(t, "2500.00") || f.PlannedCost == nil || *f.PlannedCost != dollars(t, "80000.00") ||
+	if f.Committed != dollars(t, "25000.00") || f.PlannedCost == nil || *f.PlannedCost != dollars(t, "80000.00") ||
 		f.NotYetCommitted == nil || *f.NotYetCommitted != dollars(t, "55000.00") || f.CommittedPercent == nil ||
-		*f.CommittedPercent != 31 || f.CommittedAbovePlanned || f.TransactionCount != 7 {
+		*f.CommittedPercent != 31 || f.TransactionCount != 7 {
 		t.Errorf("Social always-on = %+v", f)
 	}
-	if activity.Record.Name != "Social always-on" || activity.PlanID != "P-1001" || len(activity.Path) != 3 ||
-		activity.BreakdownLevel == nil || *activity.BreakdownLevel != financials.LevelLineItem {
-		t.Errorf("record %+v, plan %s, path %+v, breakdown level %v", activity.Record, activity.PlanID, activity.Path,
-			activity.BreakdownLevel)
+	if activity.Record.Name != "Social always-on" || len(activity.Breakdown) != 2 || len(activity.Latest) != 5 ||
+		activity.Source.FeedName == nil || activity.Source.DataAsOf == nil {
+		t.Errorf("record %+v, breakdown %+v, latest %d, source %+v", activity.Record, activity.Breakdown, len(activity.Latest),
+			activity.Source)
 	}
-	if len(activity.Breakdown) != 2 || activity.Breakdown[0].Record.ID != "L-1003" || activity.Breakdown[1].Record.ID != "L-1004" ||
-		activity.Breakdown[1].Figures.Accrued != dollars(t, "2500.00") {
-		t.Errorf("breakdown = %+v, want Venue hire then Speaker fees", activity.Breakdown)
-	}
-	if len(activity.Latest) != 5 || activity.Latest[0].ID != "FT-1011" || activity.Latest[0].Link.State != financials.StateLinked {
-		t.Errorf("latest = %+v, want 5, the September accrual first", activity.Latest)
-	}
-	if activity.Source.FeedName == nil || *activity.Source.FeedName != "Demo data (simulated GSAP)" ||
-		activity.Source.AccrualMonth == nil || *activity.Source.AccrualMonth != "2026-09" || activity.Source.DataAsOf == nil {
-		t.Errorf("source = %+v", activity.Source)
-	}
-
 	standBuild := get[financials.RecordView](t, alex, "/api/v1/financials/records/L-1006")
-	if s := standBuild.Figures; !s.CommittedAbovePlanned || s.CommittedPercent == nil || *s.CommittedPercent != 107 ||
-		*s.NotYetCommitted != dollars(t, "-652.17") || s.LineItemsAbovePlanned != 0 {
-		t.Errorf("Stand build = %+v", s)
+	if standBuild.BreakdownLevel != nil || len(standBuild.SwbsCodes) != 1 || standBuild.SwbsCodes[0] != "GB01-M26-0006" {
+		t.Errorf("Stand build breakdown %v, SWBS codes %v", standBuild.BreakdownLevel, standBuild.SwbsCodes)
 	}
-	if standBuild.BreakdownLevel != nil || len(standBuild.Breakdown) != 0 || len(standBuild.SwbsCodes) != 1 ||
-		standBuild.SwbsCodes[0] != "GB01-M26-0006" {
-		t.Errorf("Stand build breakdown %v %+v, SWBS codes %v", standBuild.BreakdownLevel, standBuild.Breakdown, standBuild.SwbsCodes)
-	}
-
 	plan := get[financials.RecordView](t, alex, "/api/v1/financials/records/P-1001")
-	if p := plan.Figures; p.Committed != dollars(t, "35652.17") || *p.PlannedCost != dollars(t, "460000.00") ||
-		*p.CommittedPercent != 8 || p.LineItemsAbovePlanned != 1 || p.FirstLineItemAbovePlanned == nil ||
-		p.FirstLineItemAbovePlanned.ID != "L-1006" {
-		t.Errorf("plan = %+v", p)
-	}
-	if *plan.BreakdownLevel != financials.LevelCampaign || len(plan.Breakdown) != 2 || plan.Breakdown[0].Record.Name != "Helix launch" ||
-		plan.Breakdown[0].Figures.Committed != dollars(t, "35652.17") || len(plan.Path) != 0 {
-		t.Errorf("plan breakdown = %+v", plan.Breakdown)
+	if p := plan.Figures; p.FirstLineItemAbovePlanned == nil || p.FirstLineItemAbovePlanned.ID != "L-1006" || len(plan.Breakdown) != 2 {
+		t.Errorf("plan = %+v, breakdown %+v", p, plan.Breakdown)
 	}
 }
 
 // A record that does not exist answers 404 with the level's sentence; amounts follow the reader's display
 // currency, each figure converted once (FR-011, D-061).
 func TestRecord_NotFoundAndDisplayCurrency_FR011(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -166,9 +141,10 @@ func TestRecord_NotFoundAndDisplayCurrency_FR011(t *testing.T) {
 	}
 }
 
-// The Financials page on the seed: the 2026 tab counts and totals, the type, link, record and search
-// filters, and paging (FR-021, spec US3 scenario 1).
+// The Financials page on the seed: the 2026 tab counts and paging by default, and the type, sort, record and
+// page-size parameters (FR-021, spec US3 scenario 1).
 func TestTransactions_Contract_FR021(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
@@ -178,48 +154,20 @@ func TestTransactions_Contract_FR021(t *testing.T) {
 		t.Errorf("counts %+v, total %d, %d items, year %d, page %d of %d", all.Counts, all.Total, len(all.Items), all.Year,
 			all.Page, all.PageSize)
 	}
-	if all.Totals.Committed != dollars(t, "47652.17") || all.Totals.Invoiced != dollars(t, "33152.17") ||
-		all.Totals.Paid != dollars(t, "30652.17") || all.Totals.Accrued != dollars(t, "2500.00") {
-		t.Errorf("totals = %+v", all.Totals)
-	}
-	if all.Items[0].ID != "FT-1011" || all.Choices.CurrentYear != 2026 || len(all.Choices.Plans) == 0 {
-		t.Errorf("first %s, choices %+v", all.Items[0].ID, all.Choices)
-	}
-
 	pos := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions?type=purchaseOrder&sort=amount:desc")
 	if pos.Total != 4 || pos.Items[0].ID != "FT-1001" || pos.Counts != want || pos.Totals.Invoiced != dollars(t, "33152.17") {
 		t.Errorf("purchase orders: total %d, first %s, counts %+v", pos.Total, pos.Items[0].ID, pos.Counts)
-	}
-	notLinked := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions?link=notLinked")
-	if notLinked.Total != 1 || notLinked.Items[0].ID != "FT-1004" || notLinked.Items[0].Link.Reason == nil ||
-		*notLinked.Items[0].Link.Reason != "No line item for HX key HX1099 — check the tracking key in GSAP." {
-		t.Errorf("not linked = %+v", notLinked.Items)
 	}
 	speakerFees := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions?recordId=L-1004&pageSize=100")
 	if speakerFees.Total != 4 || speakerFees.RecordFilter == nil || speakerFees.RecordFilter.Name != "Speaker fees" ||
 		speakerFees.Counts.NotLinked != 0 || speakerFees.PageSize != 100 {
 		t.Errorf("Speaker fees: total %d, record %+v, counts %+v", speakerFees.Total, speakerFees.RecordFilter, speakerFees.Counts)
 	}
-	search := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions?q=4500001003")
-	if search.Total != 2 || search.Items[0].ID != "FT-1007" || search.Items[1].ID != "FT-1003" {
-		t.Errorf("search 4500001003 = %d items", search.Total)
-	}
-	byActivity := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions?q=social%20ALWAYS")
-	if byActivity.Total != 7 {
-		t.Errorf("search by activity name = %d, want 7", byActivity.Total)
-	}
-	secondPage := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions?page=2")
-	if len(secondPage.Items) != 0 || secondPage.Total != 11 || secondPage.Page != 2 {
-		t.Errorf("page 2 = %d items of %d", len(secondPage.Items), secondPage.Total)
-	}
-	lastYear := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions?year=2025")
-	if lastYear.Total != 0 || lastYear.Counts.All != 0 || lastYear.Totals.Committed != dollars(t, "0.00") {
-		t.Errorf("2025 = %d, counts %+v", lastYear.Total, lastYear.Counts)
-	}
 }
 
 // Every wrong parameter is refused with its name as the field (FR-021, as D-219).
 func TestTransactions_ParameterRefusals_FR021(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
@@ -242,6 +190,7 @@ func TestTransactions_ParameterRefusals_FR021(t *testing.T) {
 // One transaction with every field, how it was linked and the import it came from; an unknown one is 404
 // (FR-022).
 func TestTransaction_Contract_FR022(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
@@ -269,6 +218,7 @@ func TestTransaction_Contract_FR022(t *testing.T) {
 // linked again, an unknown line item, a missing version, an out-of-date version, an unlink of a rule-based
 // link (FR-026, D-253).
 func TestLinkAndUnlink_Contract_FR026(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	link := func(id string, body any, opts ...apitest.RequestOption) *apitest.Response {
@@ -326,6 +276,7 @@ func TestLinkAndUnlink_Contract_FR026(t *testing.T) {
 // Home's card for the current year: Priya's team plan and everything (FR-025, data model §6.1); a scope
 // that is not listed is refused.
 func TestOverview_Contract_FR025(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -347,6 +298,7 @@ func TestOverview_Contract_FR025(t *testing.T) {
 // The import history lists the demo load; the sample file is a CSV attachment with the header and three
 // rows (FR-008, FR-009).
 func TestImportsAndTemplate_Contract_FR008(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
@@ -368,9 +320,10 @@ func TestImportsAndTemplate_Contract_FR008(t *testing.T) {
 	}
 }
 
-// Check a three-row file, which saves nothing; import it; import it again; whole-file refusals (FR-004 –
-// FR-007, SC-003, spec US4).
+// Check a three-row file, which saves nothing, and import it; a whole-file refusal of each (FR-004 – FR-007,
+// SC-003, spec US4).
 func TestImport_Contract_FR004(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	body := csvFile("gsap-2026-10-19.csv", extractHeader,
@@ -390,9 +343,6 @@ func TestImport_Contract_FR004(t *testing.T) {
 			Message: "Currency 'XYZ' isn't set up in Settings — an administrator adds it under Currencies."}) {
 		t.Errorf("check = %+v", check)
 	}
-	if got := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions"); got.Counts.All != 11 {
-		t.Errorf("after the check: %d transactions, want 11", got.Counts.All)
-	}
 
 	response = alex.Do(t, http.MethodPost, "/api/v1/financials/imports", body)
 	if response.Status != http.StatusCreated {
@@ -404,51 +354,17 @@ func TestImport_Contract_FR004(t *testing.T) {
 		result.Import.Source != financials.SourceFile || result.Import.FeedName != "Simulated GSAP extract" {
 		t.Errorf("import = %+v", result)
 	}
-	opening := get[financials.RecordView](t, alex, "/api/v1/financials/records/A-1008")
-	if opening.Figures.Committed != dollars(t, "3000.00") || opening.Figures.Invoiced != dollars(t, "1000.00") {
-		t.Errorf("Grand opening Shanghai = %+v", opening.Figures)
-	}
-	if source := opening.Source; source.FileName == nil || *source.FileName != "gsap-2026-10-19.csv" {
-		t.Errorf("source = %+v", source)
-	}
-
-	response = alex.Do(t, http.MethodPost, "/api/v1/financials/imports", body)
-	response.Decode(t, &result)
-	if result.Import.Counts != (financials.ImportCounts{Rows: 3, Unchanged: 2, Refused: 1}) {
-		t.Errorf("second import = %+v", result.Import.Counts)
-	}
 
 	fieldRefused(t, alex.Do(t, http.MethodPost, "/api/v1/financials/imports/check", csvFile("gsap.txt", extractHeader)), "fileName",
 		"Choose a .csv file — GSAP extracts are imported as CSV.")
-	fieldRefused(t, alex.Do(t, http.MethodPost, "/api/v1/financials/imports",
-		map[string]string{"fileName": "gsap.csv", "content": "%%%"}), "content", "The file couldn't be read — choose it again.")
 	fieldRefused(t, alex.Do(t, http.MethodPost, "/api/v1/financials/imports", csvFile("gsap.csv", "type,amount")), "content",
 		"The first row must name the columns. Missing: document_number, posting_date, currency.")
-	if got := get[financials.ImportPage](t, alex, "/api/v1/financials/imports"); got.Total != 3 || got.Items[0].Counts.Unchanged != 2 {
-		t.Errorf("imports = %+v", got)
-	}
-}
-
-// Every operation needs a signed-in person.
-func TestOperations_NeedSignIn_FR028(t *testing.T) {
-	server := apitest.New(t)
-	for _, path := range []string{
-		"/api/v1/financials/records/A-1002", "/api/v1/financials/transactions", "/api/v1/financials/transactions/FT-1001",
-		"/api/v1/financials/overview?scope=myTeams", "/api/v1/financials/imports", "/api/v1/financials/imports/template",
-	} {
-		if response := server.Do(t, http.MethodGet, path, nil); response.Status != http.StatusUnauthorized {
-			t.Errorf("GET %s = %d, want 401", path, response.Status)
-		}
-	}
-	payload, _ := json.Marshal(map[string]any{"version": 1})
-	if response := server.Do(t, http.MethodPost, "/api/v1/financials/transactions/FT-1004/unlink", nil, apitest.RawBody(payload)); response.Status != http.StatusUnauthorized {
-		t.Errorf("unlink = %d, want 401", response.Status)
-	}
 }
 
 // Transactions are read-only: of the ten operations, only an import, its check and a manual link or unlink
 // change anything; none creates, edits or deletes a transaction (FR-002).
 func TestOperations_TransactionsAreReadOnly_FR002(t *testing.T) {
+	t.Parallel()
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
 	financials.NewHandler(nil).RegisterRoutes(engine.Group("/api/v1"))

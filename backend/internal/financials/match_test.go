@@ -30,6 +30,7 @@ var liveItems = storedSet{"L-1003": true, "L-1004": true, "L-1005": true, "L-100
 // The first rule that gives exactly one line item wins: line-item ID, then HX key, then PO number, then
 // SWBS code.
 func TestMatch_RuleOrder_FR007(t *testing.T) {
+	t.Parallel()
 	x := newIndex([]Transaction{
 		tx("FT-1001", TypePurchaseOrder, "4500001001", func(t *Transaction) {
 			t.LineNumber, t.SwbsCode = "10", "GB01-M26-0006"
@@ -71,6 +72,7 @@ func TestMatch_RuleOrder_FR007(t *testing.T) {
 
 // A purchase order never matches by its own PO number: it is the PO others refer to.
 func TestMatch_POsDoNotMatchByPONumber_FR007(t *testing.T) {
+	t.Parallel()
 	x := newIndex([]Transaction{tx("FT-1001", TypePurchaseOrder, "4500001001", linkedTo("L-1003", MatchedByTrackingKey))})
 	po := tx("FT-1002", TypePurchaseOrder, "4500001001", func(t *Transaction) { t.LineNumber = "20" })
 	if got := match(&po, x, liveItems); got.lineItemID != "" || got.reason != reasonNoReference {
@@ -80,6 +82,7 @@ func TestMatch_POsDoNotMatchByPONumber_FR007(t *testing.T) {
 
 // A transaction no rule links carries the reason of the first key it has (data model §4.2).
 func TestMatch_NotLinkedReasons_FR007(t *testing.T) {
+	t.Parallel()
 	x := newIndex([]Transaction{
 		tx("FT-1001", TypePurchaseOrder, "4500001003", func(t *Transaction) {
 			t.LineNumber, t.SwbsCode = "10", "GB01-M26-0006"
@@ -127,6 +130,7 @@ func TestMatch_NotLinkedReasons_FR007(t *testing.T) {
 // The PO line settles a PO with lines on several line items; a purged line item (neither live nor in the
 // bin) does not match.
 func TestMatch_AmbiguousPOWithItsLineAndPurgedLineItem_FR007(t *testing.T) {
+	t.Parallel()
 	x := newIndex([]Transaction{
 		tx("FT-1001", TypePurchaseOrder, "4500001003", func(t *Transaction) {
 			t.LineNumber = "10"
@@ -149,6 +153,7 @@ func TestMatch_AmbiguousPOWithItsLineAndPurgedLineItem_FR007(t *testing.T) {
 
 // relink never changes a manual link, and reports whether anything changed.
 func TestRelink_KeepsManualLinks_FR007(t *testing.T) {
+	t.Parallel()
 	x := newIndex(nil)
 	manual := tx("FT-1", TypePurchaseOrder, "4500001004", func(t *Transaction) {
 		t.TrackingKey = "HX1004"
