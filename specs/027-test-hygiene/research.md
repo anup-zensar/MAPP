@@ -96,8 +96,13 @@ fixed waits; keep the default pool.
 journey is Home for a planner, an approver and a global planner (15.5 s); every journey covers a P1
 story or an acceptance scenario no component test covers end to end (sign-in, navigation, the core
 plan → line item flow, approvals, the activity log and recycle bin, Settings, the 014–017 gaps,
-026's first-page checks). No fixed waits (`waitForTimeout`) were found. **Decision**: no end-to-end
-test removed; every P1 story keeps its journey (SC-005).
+026's first-page checks). No fixed waits (`waitForTimeout`) were found. The one overlap is 011 US5:
+"Delete permanently: the activity leaves the bin for good…" (activity-log-and-recycle-bin.spec.ts)
+and "US5: Delete permanently and Empty recycle bin…" (recycle-bin.spec.ts) both purge a new activity
+through the same dialog; the first alone checks that the activity's page is gone and that its log
+entries lose their link, the second alone empties the bin. **Decision**: no end-to-end test removed;
+every P1 story keeps its journey (SC-005); merging the two US5 journeys (about 3.5 s) is left to a
+change that can move the log helper they would share.
 
 ## R5 — Coverage before and after
 
@@ -142,6 +147,7 @@ Web app (the commits list each test by name):
 | Plans | PlanForm: every problem at once, typed values, owner outside teams, the edit-page describe (merged into PlanCreatePage and PlanEditPage); UnpublishDialog (file); PlanTable pinned star; plan-text statuses, spreads and goal labels; TimingNote words; campaign routes' activities in the initiative panel | R4, R3, R1 |
 | Activities, line items, financials | ReapprovalDialog without line items; the form's dependent-attribute lock; the hook's unused default View history; routes of line items, approval and the spread note (merged into ActivityEditPage); activity-text and line-item-text templates; one hand-picked Financials round trip | R4, R1 |
 | Approvals, people, activity log | ApprovalPreviewPanel decline comment and first decision; ApprovalsTable preview from the name; two ApprovalStatusAction button tests (names folded into the submit tests); OwnerImpactDialog callbacks; display-currency label; the nine action chips; LogEntryList card headings; ActivityLogPage grouping | R4, R3, R1 |
+| Approval workflows, global budgets | nothing removed; WorkflowDetailsPanel's three bare `toHaveBeenCalled()` now check the workflow passed; GlobalBudgetPage's allocation test checks the DELETE sent instead of its own fixture's id; GlobalBudgetsPage and WorkflowFormPanel's conflict test read the real clock and now run on a fixed date | R3, R1, F10 |
 | Settings, recycle bin, dev | ComponentGalleryPage: 13 detail tests and 37 single-card renders (one render left); PlanModuleGallery (file); BinRow restore/purge callbacks, search line, highlighted row; EmptyBinDialog and PurgeDialog success (merged into the page tests); WaterfallExample ⓘ tip and the Settings section list (merged) | R4, R1, R3 |
 
 ### Kept despite doubt
@@ -198,6 +204,9 @@ Measured causes and recommendations, in order of time saved:
   decide/owner-may-approve logic of functional review A-01 has no test of its own — the Approval
   section's A-01 test covers the section), `permissionLabel` in `session/access.ts`, the default
   `onViewHistory` of `useActivityActions`.
+- View-state gaps found by the review: GlobalBudgetsPage has no loading, error or forbidden test;
+  ApprovalWorkflowsPage no loading or error test; WorkflowDetailsPanel no loading or non-404 error
+  test. GlobalBudgetsPage's year tests would have failed from 2027 on (fixed in phase 1).
 - Home gaps found by the review: FinancialsCard has no loading-state test; WaitingCard,
   RecentChangesCard and SummaryCards compute times from `Date.now()` instead of a fixed clock.
 - Optional speed-ups: paste instead of typing long text where typing is not the point (about 15
