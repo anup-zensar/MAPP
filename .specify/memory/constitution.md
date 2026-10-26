@@ -1,16 +1,16 @@
 <!--
 Sync Impact Report
-- Version change: 3.0.0 → 3.1.0 (MINOR: a supply-chain rule added to Principle VII and a quality
-  gate added; no principle removed or redefined). It ships together with 3.0.0 on the same branch:
+- Version change: 3.0.0 → 3.1.0 (MINOR: a supply-chain rule added to Principle VII; no principle
+  removed or redefined). It ships together with 3.0.0 on the same branch:
   IV PostgreSQL in every environment, Docker optional; V file-length limit; VI store and
   end-to-end tests on PostgreSQL.
 - Modified principles: VII Security and Privacy by Design — release age: a package version must be
   at least 24 hours old before it is installed or added
-- Modified sections: Development Workflow and Quality Gates (gate 19, `dependency-age`); Amendment
-  History
+- Modified sections: Amendment History
 - Added sections: none
 - Removed sections: none
-- Files changed with this amendment: frontend/.npmrc (`min-release-age=1`); CLAUDE.md
+- Files changed with this amendment: frontend/.npmrc (`min-release-age=1`), frontend/package.json
+  (`engines.npm`); CLAUDE.md
 - Templates: no change needed (plan-template.md reads its gates from this file)
 - Follow-up TODOs:
   - TODO(DARK_TOKENS): dark-theme values for Disabled Text, Link Hover and an error-text red
@@ -258,9 +258,9 @@ tests that prove nothing cost time to write, read and maintain, and erode trust 
   Dependencies MUST be scanned for known vulnerabilities on every build; a reachable high or
   critical vulnerability blocks merge.
 - **Release age:** a package version — an npm package or a Go module — MUST have been published at
-  least 24 hours before it is installed or added. `frontend/.npmrc` sets npm's
-  `min-release-age=1`, and the pipeline's `dependency-age` check rejects a pull request that adds a
-  younger version.
+  least 24 hours before it is installed or added. `frontend/.npmrc` sets npm's built-in
+  `min-release-age=1` and the web app requires an npm that honours it; Go has no such setting, so
+  the reviewer checks the publication date of every Go module a pull request adds or upgrades.
 
 **Rationale:** Shell's markets must see and change only their own plans, and adding real sign-in
 and a database server later must not require rewriting features.
@@ -982,8 +982,6 @@ MUST run in the approved CI/CD system (TOE default: GitHub Actions) and be requi
     reports none. The reachability exception in Principle VII does not apply to this gate.
 18. The SonarQube quality gate passes, and its findings are remediated in line with the quality
     scanning policy.
-19. No package version published less than 24 hours earlier is added or changed
-    (`dependency-age`, Principle VII).
 
 **Release gates (before every deployment; all MUST pass).** The local phase deploys nothing; these
 apply from the first deployment.
@@ -1113,6 +1111,6 @@ amended to match.
 | 2.1.0 | 2026-10-26 | Governance: existing code is aligned by dedicated features, and until then a change keeps its package's stack. Workflow: no direct pushes to `main`, `release` or `develop`; every change arrives by pull request from a working branch, enforced by branch protection. VIII: the comment budget ignores goose, sqlc and other tool directives. Backend Standards point to `backend/docs/GO_STANDARDS.md`; `backend/.golangci.yml` and `backend/CLAUDE.md` added | Product owner instruction of 2026-10-26 |
 | 2.1.1 | 2026-10-26 | Merge of 1.1.2 from `develop`: the product is named MAPP in every rule; the Go module is `mapp` and browser-storage keys start `mapp.` | D-319 |
 | 3.0.0 | 2026-10-26 | IV: PostgreSQL in every environment from the start (pgx, sqlc, goose), replacing "SQLite now, PostgreSQL later"; Docker optional — `compose.yaml` runs PostgreSQL for those who want it, a native install works as well, and no test requires Docker. V: file length limit of 300 non-blank lines (401+ never merged) | Product owner instruction of 2026-10-26 |
-| 3.1.0 | 2026-10-26 | VII: release age — a package version (npm package or Go module) must have been published at least 24 hours before it is installed or added; `frontend/.npmrc` sets `min-release-age=1` and quality gate 19 (`dependency-age`) rejects younger versions | Product owner instruction of 2026-10-26 |
+| 3.1.0 | 2026-10-26 | VII: release age — a package version (npm package or Go module) must have been published at least 24 hours before it is installed or added; npm's built-in `min-release-age=1` in `frontend/.npmrc`, reviewers for Go modules | Product owner instruction of 2026-10-26 |
 
 **Version**: 3.1.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-26

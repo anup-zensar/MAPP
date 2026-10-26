@@ -22,8 +22,9 @@ my change keeps the code formatted, type-safe, lint-clean, tested, buildable and
 vulnerabilities. A reviewer cannot merge it while any required gate is red.
 
 Rushikesh opens a pull request that changes a Go service and a React screen. The pull request shows
-one named check per gate. The backend lint check reports a finding on a line he changed and
-nothing about older lines he did not touch; he fixes it, pushes, and every check turns green. The
+four checks — backend, frontend, end-to-end and repository — and each check's log lists its gates
+as named steps. The backend lint step reports a finding on a line he changed and nothing about
+older lines he did not touch; he fixes it, pushes, and every check turns green. The
 test results and coverage reports of the run are attached to it for the reviewer.
 
 **Why this priority**: every later alignment feature rewrites large parts of the code; without
@@ -36,10 +37,11 @@ gate fails and names the problem; then open a clean pull request and check that 
 **Acceptance Scenarios**:
 
 1. **Given** a pull request into `develop`, `release` or `main`, **When** it is opened or updated,
-   **Then** every quality gate of FR-002 and FR-003 runs as its own named check and reports pass or
-   fail.
+   **Then** every quality gate of FR-002 and FR-003 runs as its own named step in one of the four
+   checks, and each check reports pass or fail.
 2. **Given** a pull request with an unformatted Go file, **When** the checks run, **Then** the
-   backend formatting check fails and names the file, and the other checks are unaffected.
+   backend check fails at its formatting step, which names the file; the other checks are
+   unaffected.
 3. **Given** a pull request that changes one line of a Go file that already had lint findings
    elsewhere, **When** the lint check runs, **Then** it reports only findings on new and changed
    lines.
@@ -138,8 +140,8 @@ branch name.
 
 ### Edge Cases
 
-- A pull request that changes only documentation still runs every check, so required checks never
-  wait for a result that will not come.
+- A pull request that changes only documentation still runs all four checks, so required checks
+  never wait for a result that will not come.
 - A file renamed in a pull request is judged as the file it now is; a recorded baseline entry
   follows the rename only through an edit to the baseline in the same pull request.
 - A file that shrinks below the limit is no longer an exception; the check reports that its
@@ -158,17 +160,18 @@ branch name.
 
 - **FR-001**: A pipeline MUST run on every pull request into `main`, `release` or `develop`, and on
   every push to those branches, using only the repository's own hosted runners and no secrets.
-- **FR-002**: The pipeline MUST run these backend gates as separate named checks: formatting
+- **FR-002**: The pipeline MUST run these backend gates as named steps of one `backend` check: formatting
   (`gofmt` and `goimports`), `go vet`, `golangci-lint` with `backend/.golangci.yml` reporting only
   findings on new and changed lines compared with the pull request's base, all Go tests with the
   race detector and a coverage profile, and `govulncheck`.
-- **FR-003**: The pipeline MUST run these frontend gates as separate named checks: formatting,
-  type check, lint with warnings counted as failures, the generated-API-types drift check, unit and
-  component tests with branch coverage reported as LCOV, the production build, and the end-to-end
-  tests against the real API with the seed data.
-- **FR-004**: Every gate of FR-002, FR-003, FR-006, FR-007, FR-011, FR-017, FR-018 and FR-020 MUST be
-  able to block a merge:
-  each reports its own pass or fail, and a gate that cannot run counts as failed.
+- **FR-003**: The pipeline MUST run these frontend gates as named steps of one `frontend` check:
+  formatting, type check, lint with warnings counted as failures, the generated-API-types drift
+  check, unit and component tests with branch coverage reported as LCOV, and the production build;
+  and the end-to-end tests against the real API with the seed data as a separate `e2e` check.
+- **FR-004**: The pipeline MUST have exactly four checks — `backend`, `frontend`, `e2e` and
+  `repo-checks` (FR-006, FR-007, FR-011 and the dependency review of FR-017) — each able to block a
+  merge. A failing step fails its check, the log names the gate, and a step that cannot run counts
+  as failed.
 - **FR-005**: Each run MUST publish its test results and coverage reports (Go coverage profile,
   frontend LCOV) so that a reviewer can open them from the pull request, kept for at least 30 days.
 - **FR-006**: A comment check MUST fail when a hand-written source file (Go, TypeScript, TSX, CSS,
@@ -207,35 +210,33 @@ branch name.
 - **FR-016**: This feature MUST NOT change application behaviour: no change to the API, the
   screens, the stored data or the seed data. A gate that today's code fails is fixed with the
   smallest change that keeps behaviour, or the gap is recorded with its reason.
-- **FR-017**: The pipeline MUST run, as separate named checks, the security gates the repository can
-  run without organisation-level setup: a review of the dependencies a pull request adds or
-  changes, and the audit of the web app's production dependencies. Each fails on a high or
-  critical finding.
-- **FR-018**: The production build MUST fail when the JavaScript the first page loads, measured
-  gzipped, exceeds the budget recorded in the repository. The budget starts at today's size plus a
-  small margin and is lowered as the web app is split per route.
+- **FR-017**: The pipeline MUST run the security gates the repository can run without
+  organisation-level setup: a review of the dependencies a pull request adds or changes (a step of
+  `repo-checks`), and the audit of the web app's production dependencies (a step of `frontend`).
+  Each fails on a high or critical finding.
+- **FR-018**: *Withdrawn on 2026-10-26.* The first-page JavaScript budget is deferred (FR-019).
 - **FR-019**: An architecture decision record MUST record the pipeline, the branch rules and the
   size and comment checks, and the deviations the product owner agreed on 2026-10-26: static code
   scanning (SAST, gate 16) waits for SonarQube — GitHub code scanning is not used; SonarQube,
   Apiiro and Mend wait for organisation setup; secret scanning is switched on by a repository
-  administrator; the 80% new-code coverage threshold is enforced once SonarQube is available.
+  administrator; the 80% new-code coverage threshold is enforced once SonarQube is available; the
+  first-page JavaScript budget (gate 12) waits until the web app is split per route.
 - **FR-020**: No package version younger than 24 hours MAY be installed or added (constitution
-  VII). The web app's npm settings MUST refuse to install a version published less than one day
-  ago, and a dependency-age check MUST fail a pull request that adds or changes an npm package or a
-  Go module to a version published less than 24 hours before the check runs, naming the package,
-  the version and its publication time.
+  VII). The web app's npm settings MUST use npm's built-in `min-release-age` to refuse versions
+  published less than one day ago, and MUST require an npm version that honours it. Go has no such
+  setting: the developer documentation MUST tell reviewers to check the publication date of every
+  Go module a pull request adds or upgrades.
 
 ### Key Entities
 
-- **Quality gate**: a named check with the command it runs, the branches it guards, and whether a
-  failure blocks merging.
+- **Quality gate**: a named step with the command it runs, inside one of the four checks that
+  guard the branches and block merging.
 - **Baseline entry**: a legacy file that exceeded a limit when the feature shipped — its path, the
   limit it exceeds (size or comments) and its recorded count.
 - **Size exception**: a file allowed into the 301–400 band — its path, its count and the written
   reason.
 - **Branch rule**: a protected branch with its allowed source branches and its rules in the
   ruleset.
-- **JavaScript budget**: the gzipped size the first page's JavaScript may reach.
 
 ## Success Criteria *(mandatory)*
 
@@ -253,8 +254,9 @@ branch name.
   `release` and `develop` are refused, and no pull request merges without an approval from someone
   other than its author.
 - **SC-006**: No pull request merges with a high or critical finding from the dependency review or
-  the production dependency audit, or with a first-page JavaScript size over its budget.
-- **SC-007**: No package version published less than 24 hours earlier reaches `develop`.
+  the production dependency audit.
+- **SC-007**: `npm install` in the web app never installs a package version published less than 24
+  hours earlier.
 
 ## Assumptions
 

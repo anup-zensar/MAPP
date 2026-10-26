@@ -19,27 +19,27 @@ Findings come from running every gate on `develop` at `049ebf4` on 2026-10-26 (G
 | `npm test` (2,281 tests) | 2 failures, every run: `CampaignPanel` and `LineItemPage` tests make a real request (Budget by month; GSAP financials of the duplicated line item) with no canned answer — they pass only where the request happens after the test ends | Add the two canned answers with the existing helpers (`budgetByMonth()`, `financialsNotServed()`) |
 | `npm run test:e2e` (36 tests) | 6 failures: 5 axe `color-contrast` findings on `ConfirmDialog` while it fades in (opacity < 1); 1 `locator.check()` on a preference-backed checkbox that turns checked a tick after the click | Playwright runs with `reducedMotion: 'reduce'` (the app already drops animations then, `global.css`), and the checkbox step uses `click()` + `toBeChecked()` (web-first). After the fixes: 36/36 |
 
-## R2 — Pipeline: one GitHub Actions workflow, one job per gate
+## R2 — Pipeline: one GitHub Actions workflow, four checks
 
 - **Decision**: `.github/workflows/ci.yml`, triggered by `pull_request` and `push` on `main`,
-  `release` and `develop`; one job per gate, each job's `name` equal to its id, so check names are
-  stable for the branch rules: `backend-format`, `backend-vet`, `backend-lint`, `backend-test`,
-  `backend-vulnerabilities`, `frontend-format`, `frontend-typecheck`, `frontend-lint`,
-  `frontend-api-types`, `frontend-test`, `frontend-build`, `frontend-audit`, `e2e`,
-  `dependency-review`, `dependency-age`, `source-limits`, `branch-name` (17; R12 and R15 add three
-  to the first fourteen).
-  `permissions: contents: read` (plus `pull-requests: read` for the lint job); `concurrency`
-  cancels superseded runs of the same ref.
-- **Rationale**: FR-004 asks for one named, blocking check per gate; jobs are the unit GitHub
-  reports and requires. Seventeen parallel jobs finish well inside SC-001's 20 minutes.
-- **Alternatives**: one job with many steps (a single check, so a reviewer cannot see which gate
-  failed and the branch rules cannot require gates one by one); path filters (required checks
+  `release` and `develop`, with four jobs — the required checks: `backend` (format, vet, lint,
+  test, vulnerabilities), `frontend` (format, type check, lint, API types, test, build, audit),
+  `e2e`, and `repo-checks` (size and comments, branch name and dependency review on pull requests).
+  Each gate is a named step, so a failed check's log shows which gate failed. `permissions:
+  contents: read` (plus `pull-requests: read` for the lint step); `concurrency` cancels superseded
+  runs of the same ref.
+- **Rationale**: the product owner asked for few CI jobs (2026-10-26). Four jobs keep the
+  slow end-to-end tests apart and run the rest in parallel within SC-001's 20 minutes; the
+  constitution requires the gates to be required checks, not one check per gate.
+- **Alternatives**: one job per gate (17 checks; rejected by the product owner); one job for
+  everything (the end-to-end tests would serialise behind the rest); path filters (required checks
   that never run would block merges — spec edge case).
 
 **Pinned versions** (latest releases on 2026-10-26): `actions/checkout@v7`, `actions/setup-go@v7`
 (reads `go.mod`, including `toolchain`), `actions/setup-node@v7` (`node-version: 24`, npm cache),
 `actions/upload-artifact@v7` (`retention-days: 30`), `golangci/golangci-lint-action@v9` with
-golangci-lint `v2.15.0`, `goimports` from `golang.org/x/tools` v0.52.0, `govulncheck` v1.9.0.
+golangci-lint `v2.15.0`, `actions/dependency-review-action@v5`, `goimports` from
+`golang.org/x/tools` v0.52.0, `govulncheck` v1.9.0.
 
 ## R3 — Go toolchain and the vulnerability gate
 
@@ -108,7 +108,7 @@ golangci-lint `v2.15.0`, `goimports` from `golang.org/x/tools` v0.52.0, `govulnc
 - **Decision**: one repository ruleset, committed as `.github/rulesets/protected-branches.json`,
   targeting `main`, `release` and `develop`, with no bypass actors (administrators included):
   `deletion`, `non_fast_forward`, `pull_request` (1 approval, `dismiss_stale_reviews_on_push`,
-  `require_last_push_approval`), and `required_status_checks` listing the 17 checks of R2. An
+  `require_last_push_approval`), and `required_status_checks` listing the four checks of R2. An
   administrator applies it with `gh api --method POST repos/anup-zensar/MAPP/rulesets --input
   .github/rulesets/protected-branches.json`.
 - **Rationale**: the repository is public, so rulesets are available; the account used here has
@@ -149,10 +149,10 @@ golangci-lint `v2.15.0`, `goimports` from `golang.org/x/tools` v0.52.0, `govulnc
 
 ## R12 — Security gates available now (constitution gates 15–17)
 
-- **Decision**: two checks that need no organisation setup on this public repository:
-  `dependency-review` (`actions/dependency-review-action@v5`, `fail-on-severity: high`, pull
-  requests only) and `frontend-audit` (`npm audit --omit=dev --audit-level=high`, the command gate
-  17 names — 0 findings today).
+- **Decision**: two steps that need no organisation setup on this public repository: the
+  dependency review in `repo-checks` (`actions/dependency-review-action@v5`, `fail-on-severity:
+  high`, pull requests only) and the audit in `frontend` (`npm audit --omit=dev
+  --audit-level=high`, the command gate 17 names — 0 findings today).
 - **Rationale**: SCA is a SEMS compliance point that GitHub offers free for public repositories.
 - **Not used**: GitHub code scanning (CodeQL) — the product owner decided on 2026-10-26 not to use
   it; static code scanning (gate 16) waits for SonarQube, and `gosec` in golangci-lint covers
@@ -161,40 +161,39 @@ golangci-lint `v2.15.0`, `goimports` from `golang.org/x/tools` v0.52.0, `govulnc
   on secret scanning (a repository setting an administrator controls) — recorded in ADR-0010
   (R14).
 
-## R13 — First-page JavaScript budget (gate 12, F8)
+## R13 — First-page JavaScript budget (gate 12, F8): deferred
 
-- **Decision**: `frontend/bundle-budget.json` records `initialRouteGzipKiB: 400`;
-  `frontend/scripts/check-bundle-budget.ts` (Node 24 runs TypeScript directly) reads
-  `dist/index.html`, sums the gzipped size of every script and module preload it references, and
-  exits 1 above the budget. `npm run build` runs it after `vite build`.
 - **Measured today**: the whole web app is one chunk, `assets/index-*.js`, 1,295 KiB raw, 376 KiB
-  gzipped — the first page loads everything. The budget is that plus a small margin; it is lowered
-  when the web-app structure feature splits the code per route (constitution F8).
-- **Alternatives**: Vite's `chunkSizeWarningLimit` (warns per chunk, never fails); a size-limit
-  package (a new dependency for a 40-line check).
+  gzipped — the first page loads everything.
+- **Decision**: no budget check now. The product owner decided on 2026-10-26 that it is not needed
+  in CI yet; a budget only becomes useful once the web-app structure feature splits the code per
+  route (constitution F8). The deferral is recorded in ADR-0010; the `frontend` check still builds.
 
 ## R14 — ADR-0010 and the agreed deviations
 
 - **Decision**: `docs/architecture/adr/0010-quality-gates-and-branch-rules.md` records the
-  pipeline, the branch rules, the size and comment checks, the JavaScript budget and the release
-  age, and the deviations the product owner agreed on 2026-10-26 (constitution Governance →
+  pipeline, the branch rules, the size and comment checks and the release age, and the
+  deviations the product owner agreed on 2026-10-26 (constitution Governance →
   Exceptions): static code scanning (gate 16) until SonarQube — GitHub code scanning is not used;
   SonarQube, Apiiro and Mend until organisation setup; secret scanning until an administrator
-  switches it on; the 80% new-code coverage threshold until SonarQube; the
+  switches it on; the 80% new-code coverage threshold until SonarQube; the first-page
+  JavaScript budget until per-route splitting; Go modules' release age checked by reviewers; the
   repository-level SEMS points (approved board, software asset registration, ECCN) as follow-ups.
 
-## R15 — Release age of packages (constitution VII, gate 19)
+## R15 — Release age of packages (constitution VII)
 
-- **Decision**: npm 11 supports `min-release-age` (days); `frontend/.npmrc` sets
-  `min-release-age=1`, so `npm install` on any laptop refuses versions younger than 24 hours. Go has
-  no such setting, and `npm ci` installs the lockfile as it is, so a Go command `releaseage`
-  (standard library only, in the backend module) checks pull requests: it compares
-  `frontend/package-lock.json` and `backend/go.sum` with the base revision, looks up each added or
-  changed version's publication time — the npm registry's `time` map, the Go proxy's `@v/<v>.info`
-  — and fails for any younger than 24 hours. Check name `dependency-age`; it runs on pull requests
-  and pushes.
+- **Decision**: npm's built-in setting only. `frontend/.npmrc` sets `min-release-age=1` (days) and
+  `engine-strict=true`; `frontend/package.json` requires `engines.npm >=11.10.0`, the first npm with
+  `min-release-age` (11.6–11.9 lack it). An older npm therefore refuses to install instead of
+  silently ignoring the setting. Go has no such setting; reviewers check the publication date of
+  every Go module a pull request adds or upgrades (`https://proxy.golang.org/<module>/@v/<v>.info`).
+- **Tested on 2026-10-26**: `npm ci --min-release-age=100000` and `npm install --package-lock-only
+  --min-release-age=100000` both succeed with today's lockfile — npm applies the age only when it
+  chooses a version (`npm install <pkg>`, upgrades), not to versions already locked. With
+  `engine-strict=true`, `npm ci` succeeds when the engines match and fails with `EBADENGINE` when
+  they do not. Node 24.15+ bundles npm 11.12+, so CI and laptops qualify.
 - **Checked for this feature's own additions**: `golang.org/x/net` v0.60.0 was published
   2026-10-08, `@vitest/coverage-v8` 5.0.5 on 2026-10-15 — both older than 24 hours.
-- **Alternatives**: Dependabot or Renovate cool-downs (only delay their own update proposals, not
-  a developer's install); `npm install --before` in CI (npm only, and re-resolves rather than
-  failing).
+- **Not done**: a CI job that looks up every added version's publication time (it would cover Go
+  and hand-edited lockfiles). The product owner preferred the built-in setting and fewer CI jobs
+  (2026-10-26); the remaining gap is recorded in ADR-0010.

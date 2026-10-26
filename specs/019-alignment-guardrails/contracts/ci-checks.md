@@ -1,30 +1,29 @@
 # Contract: CI checks
 
-The ruleset requires these checks by name, so a name changes only together with
-`.github/rulesets/protected-branches.json`. Every check runs on pull requests into, and pushes to,
-`main`, `release` and `develop`. `branch-name` and `dependency-review` run on pull requests only; a
-skipped check counts as passed on pushes.
+Four checks, each a job in `.github/workflows/ci.yml`. The ruleset requires them by name, so a name
+changes only together with `.github/rulesets/protected-branches.json`. Every check runs on pull
+requests into, and pushes to, `main`, `release` and `develop`; steps marked *PR* run on pull
+requests only. Each gate is a named step, so a failed check's log shows which gate failed.
 
-| Check | Constitution gate | Command (from the directory shown) | Publishes |
-|---|---|---|---|
-| `backend-format` | 1 | `backend/`: `gofmt -s -l .` and `goimports -local mapp -l .` print nothing | — |
-| `backend-vet` | 2 | `backend/`: `go vet ./...` | — |
-| `backend-lint` | 2 | `backend/`: `golangci-lint run` (v2.15.0), new and changed lines only | — |
-| `backend-test` | 5 | `backend/`: `go test -race -covermode=atomic -coverprofile=coverage.out ./...` | `backend-test` artifact: test log, `coverage.out` |
-| `backend-vulnerabilities` | 6 | `backend/`: `govulncheck ./...` (v1.9.0) | — |
-| `frontend-format` | 7 | `frontend/`: `npm run format:check` | — |
-| `frontend-typecheck` | 8 | `frontend/`: `npm run typecheck` | — |
-| `frontend-lint` | 9 | `frontend/`: `npm run lint` (`--max-warnings 0`) | — |
-| `frontend-api-types` | 10 | `frontend/`: `npm run api:check` | — |
-| `frontend-test` | 11 | `frontend/`: `npm run test:coverage` | `frontend-test` artifact: `coverage/lcov.info`, `test-results/junit.xml` |
-| `frontend-build` | 12 | `frontend/`: `npm run build` (fails above the JavaScript budget) | — |
-| `frontend-audit` | 17 | `frontend/`: `npm audit --omit=dev --audit-level=high` | — |
-| `e2e` | 13 | `frontend/`: `npm run test:e2e` (Chromium) | `e2e` artifact on failure: `test-results/` (traces) |
-| `dependency-review` | 17 | dependency review of the pull request, fails on high or critical | — |
-| `dependency-age` | 19 | repository root: `go -C backend run ./cmd/releaseage -base <base>` | — |
-| `source-limits` | 14 | repository root: `go -C backend run ./cmd/sourcecheck` | — |
-| `branch-name` | Workflow → no direct pushes | rules of FR-011 on `head_ref` / `base_ref` | — |
+| Check | Step (gate) | Command (from the directory shown) |
+|---|---|---|
+| `backend` | Format (1) | `backend/`: `gofmt -s -l .` and `goimports -local mapp -l .` print nothing |
+| | Vet (2) | `backend/`: `go vet ./...` |
+| | Lint (2) | `backend/`: `golangci-lint run` (v2.15.0), new and changed lines only |
+| | Test (5) | `backend/`: `go test -race -covermode=atomic -coverprofile=coverage.out ./...` → artifact `backend-test` (log, `coverage.out`) |
+| | Vulnerabilities (6) | `backend/`: `govulncheck ./...` (v1.9.0) |
+| `frontend` | Format (7) | `frontend/`: `npm run format:check` |
+| | Type check (8) | `frontend/`: `npm run typecheck` |
+| | Lint (9) | `frontend/`: `npm run lint` (`--max-warnings 0`) |
+| | API types (10) | `frontend/`: `npm run api:check` |
+| | Test (11) | `frontend/`: `npm run test:coverage` → artifact `frontend-test` (`coverage/lcov.info`, `test-results/junit.xml`) |
+| | Build (12) | `frontend/`: `npm run build` |
+| | Audit (17) | `frontend/`: `npm audit --omit=dev --audit-level=high` |
+| `e2e` | End-to-end (13) | `frontend/`: `npm run test:e2e` (Chromium) → artifact `e2e` on failure (`test-results/`) |
+| `repo-checks` | Size and comments (14) | repository root: `go -C backend run ./cmd/sourcecheck` |
+| | Branch name (workflow) *PR* | rules of FR-011 on `head_ref` / `base_ref` |
+| | Dependency review (17) *PR* | `actions/dependency-review-action@v5`, fails on high or critical |
 
-Artifacts are kept for 30 days (FR-005). Gates 3 and 4 (sqlc, goose) join with the PostgreSQL
-feature; gate 16 (static code scanning) and gates 15, 17 and 18 in part wait for SonarQube and
-organisation setup (ADR-0010).
+Artifacts are kept for 30 days (FR-005). Gates 3 and 4 (sqlc, goose) join `backend` with the
+PostgreSQL feature. Gate 12's JavaScript budget, gate 16 (static code scanning) and gates 15, 17 and
+18 in part are deferred (ADR-0010).

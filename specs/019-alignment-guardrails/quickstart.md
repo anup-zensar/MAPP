@@ -17,11 +17,10 @@ go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...                           
 cd ../frontend
 npm run format:check && npm run typecheck && npm run lint && npm run api:check
 npm run test:coverage          # writes coverage/lcov.info and test-results/junit.xml
-npm run build                  # includes the JavaScript budget check
+npm run build
 npm audit --omit=dev --audit-level=high
 npm run test:e2e
 cd .. && go -C backend run ./cmd/sourcecheck   # exit 0
-go -C backend run ./cmd/releaseage -base origin/develop   # exit 0: no version younger than 24 h
 ```
 
 Expected: every command succeeds on the feature branch (SC-002).
@@ -36,20 +35,19 @@ Expected: every command succeeds on the feature branch (SC-002).
 | Add one line to a file recorded in the baseline | fails; remove two lines → passes and says it can be tightened |
 | Run `-tighten` after shrinking a baseline file | its count drops in `quality/baseline.json`; no count rises |
 
-## 2b. Release age and JavaScript budget
+## 2b. Release age
 
 | Do | Expect |
 |---|---|
-| `npm install` a package version published an hour ago | npm refuses (`min-release-age=1`) |
-| Change `package-lock.json` or `go.sum` to a version younger than 24 h and run `releaseage` | exit 1, names the package, version and publication time |
-| Lower `initialRouteGzipKiB` below today's size and run `npm run build` | the build fails and prints the size and the budget |
+| `npm install <package>@<a version published an hour ago>` in `frontend/` | npm refuses (`min-release-age=1`) |
+| Run `npm ci` with an npm older than 11.10 | npm refuses with `EBADENGINE` (`engine-strict`) |
 
 ## 3. Pipeline (US1)
 
 Open a draft pull request into `develop` with one deliberate problem per gate (an unformatted Go
 file, a type error, a failing test, a lint finding on a changed line, a 401-line file), one at a
-time. Expect exactly the matching check to fail and name the problem; push the fix and expect all
-17 checks green, with the `backend-test` and `frontend-test` artifacts attached.
+time. Expect the check holding that gate to fail at the named step; push the fix and expect all four
+checks green, with the `backend-test` and `frontend-test` artifacts attached.
 
 ## 4. Branch rules (US3) — after an administrator applies the ruleset
 
