@@ -186,9 +186,9 @@ Then change the area's line in `app.go` to `RegisterRoutes(signedIn)`. Its tests
 - [x] T029 [P] [US1] ⏳022 Slice C2: `backend/internal/lineitems/handler.go`
 - [x] T030 [P] [US1] ⏳022 Slice C2: `backend/internal/budgets/handler.go`
 - [x] T031 [US1] ⏳022 Slice C2: wiring in `app.go` — **checkpoint C2**
-- [ ] T032 [P] [US1] ⏳022 Slice C3: `backend/internal/plans/handler.go`
-- [ ] T033 [P] [US1] ⏳022 Slice C3: `backend/internal/campaigns/handler.go`
-- [ ] T034 [US1] ⏳022 Slice C3: wiring in `app.go` — **checkpoint C3**
+- [x] T032 [P] [US1] ⏳022 Slice C3: `backend/internal/plans/handler.go`
+- [x] T033 [P] [US1] ⏳022 Slice C3: `backend/internal/campaigns/handler.go`
+- [x] T034 [US1] ⏳022 Slice C3: wiring in `app.go` — **checkpoint C3**
 - [ ] T035 [P] [US1] ⏳022 Slice C4: `backend/internal/activities/handler.go`
 - [ ] T036 [P] [US1] ⏳022 Slice C4: `backend/internal/approvals/handler.go`
 - [ ] T037 [US1] ⏳022 Slice C4: wiring in `app.go` — **checkpoint C4**

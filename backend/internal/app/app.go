@@ -122,7 +122,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 			return nil, err
 		}
 	}
-	plans.NewHandler(planService).Routes(router, unwrapped)
+	plans.NewHandler(planService).RegisterRoutes(signedIn)
 	// Who sees which log and recycle-bin entries and may restore them follows the plans' visibility (014).
 	historyService.UseAccess(historyAccess{plans: plansRepo, history: historyService})
 
@@ -167,7 +167,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 			return nil, err
 		}
 	}
-	campaigns.NewHandler(campaignsService).Routes(router, unwrapped)
+	campaigns.NewHandler(campaignsService).RegisterRoutes(signedIn)
 	activities.NewHandler(activitiesService).Routes(router, unwrapped)
 	lineitems.NewHandler(lineItemsService).RegisterRoutes(signedIn)
 
