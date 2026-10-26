@@ -103,6 +103,13 @@ type SampleNote struct {
 	UpdatedByName string
 }
 
+type Session struct {
+	ID         string
+	PersonID   string
+	CreatedAt  time.Time
+	LastUsedAt time.Time
+}
+
 type Team struct {
 	ID            string
 	Name          string
