@@ -14,8 +14,46 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Which parts a pull request changes. Documentation is read by no job, so a docs-only change skips them all;
+  # a skipped job counts as passed for required checks. Pushes to the protected branches always run everything.
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      backend: ${{ steps.parts.outputs.backend }}
+      frontend: ${{ steps.parts.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Parts changed
+        id: parts
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          backend=true frontend=true
+          if [ "$EVENT" = pull_request ]; then
+            backend=false frontend=false
+            while read -r file; do
+              case "$file" in
+                "" | *.md | docs/* | specs/* | .specify/* | .claude/*) ;;
+                backend/api/openapi.yaml) backend=true frontend=true ;; # the web app's API types come from it
+                backend/*) backend=true ;;
+                frontend/*) frontend=true ;;
+                *) backend=true frontend=true ;;
+              esac
+            done <<< "$(git diff --name-only "$BASE" HEAD)"
+          fi
+          echo "backend=$backend" >> "$GITHUB_OUTPUT"
+          echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
+          echo "backend: $backend, frontend: $frontend"
+
   backend:
     name: backend
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.outputs.backend != 'false') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -99,6 +137,8 @@ jobs:
 
   frontend:
     name: frontend
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.outputs.frontend != 'false') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
@@ -140,6 +180,8 @@ jobs:
 
   e2e:
     name: e2e
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.outputs.backend != 'false' || needs.changes.outputs.frontend != 'false') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:

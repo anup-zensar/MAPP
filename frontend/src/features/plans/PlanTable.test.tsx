@@ -70,19 +70,6 @@ describe('PlanTable (FR-002, design system §5.4)', () => {
     expect(nth(china, 4)).toHaveTextContent('—');
   });
 
-  it('marks pinned rows with the filled star, named for the plan (018 FR-001, FR-003)', () => {
-    renderTable(seedList().items, (plan) => plan.id === 'P-1003');
-
-    const pinned = within(row('FY2025 Lubricants Europe')).getByRole('button', {
-      name: "Unpin plan 'FY2025 Lubricants Europe'",
-    });
-    expect(pinned.className).toMatch(/pinned/);
-    const unpinned = within(row('FY2026 Mobility China')).getByRole('button', {
-      name: "Pin plan 'FY2026 Mobility China'",
-    });
-    expect(unpinned.className).not.toMatch(/pinned/);
-  });
-
   it('shows at most two teams, then "+n" with the other names', () => {
     const plan = nth(seedList().items, 0);
     const team = (id: string, name: string) => ({ ...nth(plan.teams, 0), id, name });

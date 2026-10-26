@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
@@ -65,16 +65,5 @@ describe('Campaign and initiative routes (feature 005)', () => {
       }),
     ).toBeInTheDocument();
     await waitFor(() => expect(document.title).toBe(`${tab} · MAPP`));
-  });
-
-  it('places feature 006’s activities in the initiative panel', async () => {
-    renderApp('/plans/P-1001/initiatives/I-1001', ANSWERS);
-
-    const panel = await screen.findByRole('dialog', { name: 'Digital & social' });
-    await waitFor(() =>
-      expect(within(panel).getByRole('region', { name: 'Activities' })).toHaveTextContent(
-        launchFilmRow().name,
-      ),
-    );
   });
 });

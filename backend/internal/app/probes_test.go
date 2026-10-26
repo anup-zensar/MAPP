@@ -12,6 +12,7 @@ const unavailableBody = `{"error":{"code":"internal_error","message":"Something 
 
 // Both probes answer 204 without a session or a body while the API can use its data (022 FR-007, FR-008).
 func TestProbes_LiveAndReady_022_FR007_FR008(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 
 	for _, path := range []string{"/healthz", "/readyz"} {
@@ -25,6 +26,7 @@ func TestProbes_LiveAndReady_022_FR007_FR008(t *testing.T) {
 
 // Without its data folder the API is not ready (503), and still alive: liveness checks nothing else.
 func TestReadyz_DataFolderGone_Answers503_022_FR008(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	server := apitest.New(t, apitest.WithDataDir(dir))
 	if err := os.RemoveAll(dir); err != nil {

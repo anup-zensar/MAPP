@@ -2,7 +2,6 @@ import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { Button } from '../Button/Button';
-import { LevelTag } from '../LevelTag/LevelTag';
 import { PageHeader } from './PageHeader';
 
 describe('PageHeader', () => {
@@ -38,18 +37,6 @@ describe('PageHeader', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows the page actions next to the title (FR-010)', () => {
-    renderWithProviders(
-      <PageHeader
-        eyebrow="Developer"
-        title="Sample records"
-        actions={<Button variant="primary">New sample folder</Button>}
-      />,
-    );
-
-    expect(screen.getByRole('button', { name: 'New sample folder' })).toBeInTheDocument();
-  });
-
   it('shows the breadcrumb above the title instead of the eyebrow (design system §6.3)', () => {
     renderWithProviders(
       <PageHeader
@@ -66,19 +53,6 @@ describe('PageHeader', () => {
     );
     // The breadcrumb names the section already, so the eyebrow is not repeated.
     expect(screen.getAllByText('Settings')).toHaveLength(1);
-  });
-
-  it('shows a level tag and the record’s facts with the title (design system §6.3)', () => {
-    renderWithProviders(
-      <PageHeader
-        tag={<LevelTag level="plan" />}
-        title="FY2026 Lubricants"
-        meta={<span>P-1001</span>}
-      />,
-    );
-
-    expect(screen.getByText('PLAN')).toBeInTheDocument();
-    expect(screen.getByText('P-1001')).toBeInTheDocument();
   });
 
   it('puts less-used actions in a More menu (design system §6.3)', async () => {

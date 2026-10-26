@@ -22,6 +22,7 @@ import (
 // its rates and deal size, Priya's team, the Business unit options and US dollars as her display currency
 // (004 T030).
 func TestPlansDependencies_ReadTheDemoData(t *testing.T) {
+	t.Parallel()
 	db, err := store.Open(t.TempDir())
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)

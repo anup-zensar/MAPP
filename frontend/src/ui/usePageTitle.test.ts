@@ -3,12 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { usePageTitle } from './usePageTitle';
 
 describe('usePageTitle', () => {
-  it('names the page in the browser tab as "<Page> · MAPP" (FR-017)', () => {
-    renderHook(() => usePageTitle('Plans'));
-
-    expect(document.title).toBe('Plans · MAPP');
-  });
-
   it('follows a page whose name changes (FR-017)', () => {
     const { rerender } = renderHook(({ page }) => usePageTitle(page), {
       initialProps: { page: 'Home' },

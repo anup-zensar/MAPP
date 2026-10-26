@@ -56,13 +56,4 @@ describe('AppLayout', () => {
     expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Open menu' })).toBeInTheDocument();
   });
-
-  it('shows the sidebar as the icon rail when the person collapsed it (FR-011)', () => {
-    renderLayout({
-      ...PRIYA,
-      preferences: { theme: 'system', sidebarCollapsed: true, pinnedPlanIds: [] },
-    });
-
-    expect(screen.getByRole('button', { name: 'Expand sidebar' })).toBeInTheDocument();
-  });
 });

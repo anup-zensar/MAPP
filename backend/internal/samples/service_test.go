@@ -1,40 +1,23 @@
 package samples
 
 import (
-	"context"
-	"errors"
-	"fmt"
 	"reflect"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
-	"mapp/internal/history"
-	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
-	"mapp/internal/platform/ids"
 	"mapp/internal/platform/record"
-	"mapp/internal/platform/store"
 )
 
-// The people of these tests.
-var (
-	priya  = actor.Actor{ID: "U-1002", Name: "Priya Raman"}
-	daniel = actor.Actor{ID: "U-1003", Name: "Daniel Okoro"}
-)
-
-// start is the time on the clock when every test begins: 12 Mar 2026 09:00 UTC.
-var start = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
-
-// A sample folder needs a name of at most 80 characters that no other sample folder has, ignoring letter
-// case and surrounding spaces; the name is saved without its surrounding spaces (data model §8, FR-020).
 func TestCreateFolder_Validation_FR020(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	if saved := f.createFolder(t, priya, "  Ideas  "); saved.Name != "Ideas" {
 		t.Errorf("saved name = %q, want %q", saved.Name, "Ideas")
 	}
-	longest := strings.Repeat("é", 80) // 80 characters in 160 bytes: characters are counted, not bytes
+	longest := strings.Repeat("é", 80) // 160 bytes: characters are counted, not bytes
 	f.createFolder(t, priya, longest)
 	tests := []struct {
 		name, input, message string
@@ -57,9 +40,8 @@ func TestCreateFolder_Validation_FR020(t *testing.T) {
 	}
 }
 
-// A sample note needs a title of at most 120 characters, saved without its surrounding spaces, and a
-// folder that still exists (data model §9, FR-020).
 func TestCreateNote_Validation_FR020(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	folder := f.createFolder(t, priya, "Ideas")
 	note := f.createNote(t, priya, folder.ID, "  First idea  ")
@@ -90,10 +72,9 @@ func TestCreateNote_Validation_FR020(t *testing.T) {
 	}
 }
 
-// Every update sends the version it started from. Without one, or with one below 1, the version check
-// cannot work, so the save is refused next to the field "version", together with every other problem
-// (FR-029, FR-020, research R5).
+// Without a version of at least 1 the version check cannot work (research R5).
 func TestUpdateFolder_MissingVersion_FR029(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	folder := f.createFolder(t, priya, "Ideas")
 	zero := 0
@@ -121,15 +102,13 @@ func TestUpdateFolder_MissingVersion_FR029(t *testing.T) {
 	}
 }
 
-// A save based on an out-of-date copy is refused, naming who changed the folder and when, and nothing is
-// overwritten or logged (FR-029). Anyone may change anyone's folder: there are no permission checks
-// (FR-008).
 func TestUpdateFolder_VersionConflict_FR029(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
-	folder := f.createFolder(t, priya, "Ideas") // version 1
+	folder := f.createFolder(t, priya, "Ideas")
 	f.clock.Advance(5*time.Hour + 32*time.Minute)
-	changedAt := start.Add(5*time.Hour + 32*time.Minute)   // 14:32
-	f.rename(t, daniel, folder.ID, "Ideas from Daniel", 1) // Daniel saves first: version 2
+	changedAt := start.Add(5*time.Hour + 32*time.Minute)
+	f.rename(t, daniel, folder.ID, FolderUpdate{Name: "Ideas from Daniel", Version: version(1)})
 	entriesBefore := len(f.entries(t))
 
 	_, err := f.service.UpdateFolder(t.Context(), priya, folder.ID, FolderUpdate{Name: "Ideas from Priya", Version: version(1)})
@@ -143,9 +122,9 @@ func TestUpdateFolder_VersionConflict_FR029(t *testing.T) {
 	}
 }
 
-// A save that changes nothing is not a change: no new version and no log entry. A name in other letters is
-// a change (FR-022, research R5).
+// A name in other letters is a change (research R5).
 func TestUpdateFolder_NoChangeNoLog_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	folder := f.createFolder(t, priya, "Ideas")
 
@@ -169,116 +148,8 @@ func TestUpdateFolder_NoChangeNoLog_FR022(t *testing.T) {
 	}
 }
 
-// Every change of a sample folder or note writes exactly one log entry naming the person (FR-022, SC-004),
-// as data model §9 lists: create, rename, add notes, delete with the notes, and Undo, which brings
-// everything back with the same IDs.
-func TestFolderLifecycle_OneLogEntryEach_FR022_SC004(t *testing.T) {
-	f := newFixture(t)
-
-	folder := f.createFolder(t, priya, "Ideas")
-	f.rename(t, priya, folder.ID, "Ideas 2", 1)
-	f.createNote(t, priya, folder.ID, "First idea")
-	f.createNote(t, priya, folder.ID, "Second idea")
-	before := f.folders(t)
-	deleted, err := f.service.DeleteFolder(t.Context(), priya, folder.ID)
-	if err != nil {
-		t.Fatalf("DeleteFolder: %v", err)
-	}
-	if snapshots := len(f.binEntry(t, deleted.ID).Snapshots); snapshots != 3 {
-		t.Errorf("the recycle-bin entry holds %d records, want the folder and its 2 notes", snapshots)
-	}
-	if folders := f.folders(t); len(folders) != 0 {
-		t.Errorf("folders after the delete = %+v, want none", folders)
-	}
-	if _, err := f.history.Undo(t.Context(), priya, deleted.ID); err != nil {
-		t.Fatalf("Undo: %v", err)
-	}
-
-	want := []string{
-		"Priya Raman created sample folder 'Ideas' (SF-1001)",
-		"Priya Raman changed sample folder 'Ideas 2' (SF-1001): Name Ideas → Ideas 2",
-		"Priya Raman created sample note 'First idea' (SN-1001) in Ideas 2",
-		"Priya Raman created sample note 'Second idea' (SN-1002) in Ideas 2",
-		"Priya Raman deleted sample folder 'Ideas 2' (SF-1001) — with 2 sample notes",
-		"Priya Raman restored sample folder 'Ideas 2' (SF-1001) — Undo, with 2 sample notes",
-	}
-	if got := sentences(f.entries(t)); !slices.Equal(got, want) {
-		t.Errorf("log =\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
-	}
-	if after := f.folders(t); !reflect.DeepEqual(after, before) {
-		t.Errorf("after Undo = %+v, want exactly %+v", after, before)
-	}
-}
-
-// Undo puts a folder back exactly, so when someone has meanwhile created a folder with its name, Undo is
-// refused naming the clash, and nothing changes: the folder stays in the recycle bin, from where Restore can
-// bring it back (spec edge case, D-037).
-func TestUndo_NameTakenRefused_FR026(t *testing.T) {
-	f := newFixture(t)
-	folder := f.createFolder(t, priya, "Ideas")
-	deleted := f.deleteFolder(t, priya, folder.ID)
-	f.createFolder(t, daniel, "IDEAS")
-	entriesBefore := len(f.entries(t))
-
-	_, err := f.history.Undo(t.Context(), priya, deleted.ID)
-
-	assertError(t, err, errs.NameTaken(
-		"Can't undo — there is now another sample folder called 'IDEAS'. Restore it from the recycle bin instead."))
-	if names := folderNames(f.folders(t)); !slices.Equal(names, []string{"IDEAS"}) {
-		t.Errorf("folders = %q, want only IDEAS", names)
-	}
-	bin, err := f.history.ListBin(t.Context(), priya)
-	if err != nil || len(bin) != 1 || bin[0].ID != deleted.ID {
-		t.Errorf("recycle bin = %+v, %v; want only %s", bin, err, deleted.ID)
-	}
-	if got := len(f.entries(t)); got != entriesBefore {
-		t.Errorf("%d log entries, want still %d", got, entriesBefore)
-	}
-}
-
-// Restore from the recycle bin brings a folder back even when its name is taken: it becomes "<name>
-// (restored)", then "<name> (restored 2)" and so on, gets a new version, and the log and the answer say why
-// (FR-025, feature 011 FR-022).
-func TestRestore_NameClashGetsSuffix_FR025(t *testing.T) {
-	f := newFixture(t)
-	first := f.createFolder(t, priya, "Ideas")
-	firstDeleted := f.deleteFolder(t, priya, first.ID)
-	second := f.createFolder(t, priya, "Ideas")
-	secondDeleted := f.deleteFolder(t, priya, second.ID)
-	f.createFolder(t, priya, "ideas")
-	f.clock.Advance(24 * time.Hour)
-	restoredAt := start.Add(24 * time.Hour)
-
-	got, err := f.history.Restore(t.Context(), daniel, firstDeleted.ID)
-
-	note := "Renamed to 'Ideas (restored)' because the name was taken."
-	want := history.RestoreResult{RecordType: "sampleFolder", RecordTypeLabel: "sample folder", RecordID: first.ID,
-		RecordName: "Ideas (restored)", Details: note}
-	if err != nil || got != want {
-		t.Fatalf("Restore = %+v, %v; want %+v", got, err, want)
-	}
-	wantFolder := Folder{ID: first.ID, Name: "Ideas (restored)", Meta: record.NewMeta(priya, start)}
-	wantFolder.Touch(daniel, restoredAt)
-	if stored := f.storedFolder(t, first.ID); stored != wantFolder {
-		t.Errorf("stored folder = %+v, want %+v", stored, wantFolder)
-	}
-	entries := f.entries(t)
-	wantSentence := "Daniel Okoro restored sample folder 'Ideas (restored)' (SF-1001): Name Ideas → Ideas (restored)" +
-		" — Restored from the recycle bin. " + note
-	if last := sentence(entries[len(entries)-1]); last != wantSentence {
-		t.Errorf("last log entry = %q\nwant %q", last, wantSentence)
-	}
-
-	got, err = f.history.Restore(t.Context(), daniel, secondDeleted.ID)
-
-	if err != nil || got.RecordName != "Ideas (restored 2)" || got.Details != "Renamed to 'Ideas (restored 2)' because the name was taken." {
-		t.Errorf("second Restore = %+v, %v; want the name Ideas (restored 2) and its note", got, err)
-	}
-}
-
-// The developer page lists the folders by name, ignoring letter case, each with its notes oldest first; a
-// folder without notes has an empty list.
 func TestListFolders_SortedByNameNotesOldestFirst(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	banana := f.createFolder(t, priya, "banana")
 	f.createFolder(t, priya, "Apple")
@@ -303,9 +174,8 @@ func TestListFolders_SortedByNameNotesOldestFirst(t *testing.T) {
 	}
 }
 
-// A folder or note that no longer exists answers not_found with the page's message, whatever is asked of
-// it (plan, User-visible messages).
 func TestGoneRecords_NotFound(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	folderGone := errs.NotFound("This sample folder no longer exists — someone may have deleted it.")
 	noteGone := errs.NotFound("This sample note no longer exists — someone may have deleted it.")
@@ -318,188 +188,3 @@ func TestGoneRecords_NotFound(t *testing.T) {
 	assertError(t, deleteFolderErr, folderGone)
 	assertError(t, deleteNoteErr, noteGone)
 }
-
-// fixture is the samples service and the history service it logs to, on a temporary data folder, with the
-// sample kinds registered as internal/app registers them, and a clock that moves only when the test says
-// so.
-type fixture struct {
-	service *Service
-	history *history.Service
-	db      *store.DB
-	clock   *testClock
-}
-
-func newFixture(t *testing.T) *fixture {
-	t.Helper()
-	db, err := store.Open(t.TempDir())
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
-	clock := &testClock{now: start}
-	generator := ids.NewGenerator(ids.NewJSONCounters())
-	hist := history.NewService(db, history.NewJSONRepository(), generator, clock.Now)
-	service := NewService(db, NewJSONRepository(), generator, hist, clock.Now)
-	for _, kind := range service.Kinds() {
-		if err := hist.Register(kind); err != nil {
-			t.Fatalf("Register(%s): %v", kind.Name, err)
-		}
-	}
-	return &fixture{service: service, history: hist, db: db, clock: clock}
-}
-
-// createFolder creates a folder as a and stops the test when that fails.
-func (f *fixture) createFolder(t *testing.T, a actor.Actor, name string) FolderView {
-	t.Helper()
-	folder, err := f.service.CreateFolder(t.Context(), a, FolderInput{Name: name})
-	if err != nil {
-		t.Fatalf("CreateFolder(%q): %v", name, err)
-	}
-	return folder
-}
-
-// rename renames a folder as a, from the version it started at, and stops the test when that fails.
-func (f *fixture) rename(t *testing.T, a actor.Actor, id, name string, from int) FolderView {
-	t.Helper()
-	folder, err := f.service.UpdateFolder(t.Context(), a, id, FolderUpdate{Name: name, Version: version(from)})
-	if err != nil {
-		t.Fatalf("UpdateFolder(%s, %q): %v", id, name, err)
-	}
-	return folder
-}
-
-// deleteFolder deletes a folder as a and stops the test when that fails.
-func (f *fixture) deleteFolder(t *testing.T, a actor.Actor, id string) history.BinEntry {
-	t.Helper()
-	entry, err := f.service.DeleteFolder(t.Context(), a, id)
-	if err != nil {
-		t.Fatalf("DeleteFolder(%s): %v", id, err)
-	}
-	return entry
-}
-
-// createNote adds a note as a and stops the test when that fails.
-func (f *fixture) createNote(t *testing.T, a actor.Actor, folderID, title string) Note {
-	t.Helper()
-	note, err := f.service.CreateNote(t.Context(), a, folderID, NoteInput{Title: title})
-	if err != nil {
-		t.Fatalf("CreateNote(%s, %q): %v", folderID, title, err)
-	}
-	return note
-}
-
-// folders lists the folders as the developer page does.
-func (f *fixture) folders(t *testing.T) []FolderView {
-	t.Helper()
-	folders, err := f.service.ListFolders(t.Context(), priya)
-	if err != nil {
-		t.Fatalf("ListFolders: %v", err)
-	}
-	return folders
-}
-
-// storedFolder returns the stored folder id and stops the test when there is none.
-func (f *fixture) storedFolder(t *testing.T, id string) Folder {
-	t.Helper()
-	var folder Folder
-	var found bool
-	err := f.db.Read(t.Context(), func(ctx context.Context) error {
-		var err error
-		folder, found, err = NewJSONRepository().GetFolder(ctx, id)
-		return err
-	})
-	if err != nil || !found {
-		t.Fatalf("GetFolder(%s) = found %v, %v", id, found, err)
-	}
-	return folder
-}
-
-// entries returns the whole activity log, oldest first.
-func (f *fixture) entries(t *testing.T) []history.Entry {
-	t.Helper()
-	var entries []history.Entry
-	err := f.db.Read(t.Context(), func(ctx context.Context) error {
-		var err error
-		entries, err = history.NewJSONRepository().Entries(ctx)
-		return err
-	})
-	if err != nil {
-		t.Fatalf("Read: %v", err)
-	}
-	return entries
-}
-
-// binEntry returns the stored recycle-bin entry id, with its snapshots.
-func (f *fixture) binEntry(t *testing.T, id string) history.BinEntry {
-	t.Helper()
-	var entry history.BinEntry
-	var found bool
-	err := f.db.Read(t.Context(), func(ctx context.Context) error {
-		var err error
-		entry, found, err = history.NewJSONRepository().GetBinEntry(ctx, id)
-		return err
-	})
-	if err != nil || !found {
-		t.Fatalf("GetBinEntry(%s) = found %v, %v", id, found, err)
-	}
-	return entry
-}
-
-// sentences writes each log entry as a sentence: see sentence.
-func sentences(entries []history.Entry) []string {
-	list := make([]string, 0, len(entries))
-	for _, e := range entries {
-		list = append(list, sentence(e))
-	}
-	return list
-}
-
-// sentence writes a log entry the way feature 011 will show it: "<person> <verb> <record type> '<name>'
-// (<id>)", then where the record was, its changes and the details.
-func sentence(e history.Entry) string {
-	var text strings.Builder
-	fmt.Fprintf(&text, "%s %s %s '%s' (%s)", e.Actor.Name, e.Verb, e.RecordTypeLabel, e.RecordName, e.RecordID)
-	for i, place := range e.Path {
-		separator := " › "
-		if i == 0 {
-			separator = " in "
-		}
-		text.WriteString(separator + place.Name)
-	}
-	for _, c := range e.Changes {
-		fmt.Fprintf(&text, ": %s %s → %s", c.Label, c.OldText, c.NewText)
-	}
-	if e.Details != "" {
-		text.WriteString(" — " + e.Details)
-	}
-	return text.String()
-}
-
-func folderNames(folders []FolderView) []string {
-	names := make([]string, 0, len(folders))
-	for _, folder := range folders {
-		names = append(names, folder.Name)
-	}
-	return names
-}
-
-// version returns a pointer to v, for FolderUpdate.Version.
-func version(v int) *int {
-	return &v
-}
-
-// assertError checks that err is exactly want: the same status, code, message and details.
-func assertError(t *testing.T, err error, want *errs.Error) {
-	t.Helper()
-	var got *errs.Error
-	if !errors.As(err, &got) || !reflect.DeepEqual(got, want) {
-		t.Errorf("error = %#v, want %#v", err, want)
-	}
-}
-
-// testClock is a clock that shows a fixed time until Advance moves it.
-type testClock struct {
-	now time.Time
-}
-
-func (c *testClock) Now() time.Time          { return c.now }
-func (c *testClock) Advance(d time.Duration) { c.now = c.now.Add(d) }

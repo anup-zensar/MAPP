@@ -34,9 +34,12 @@ describe('FinanceBudgetItemsPage: create and edit (US5 scenarios 3 and 4, FR-014
         ),
       ).toEqual(['2026 Lubricants Budget', '2026 Mobility Budget']),
     );
-    await user.type(budgetName, '2026 Lubricants Budget');
-    await user.type(within(form).getByRole('textbox', { name: /^Item name/ }), 'Europe – Retail');
-    await user.type(within(form).getByRole('textbox', { name: /^Code/ }), 'LUB-EU-RET');
+    await user.click(budgetName);
+    await user.paste('2026 Lubricants Budget');
+    await user.click(within(form).getByRole('textbox', { name: /^Item name/ }));
+    await user.paste('Europe – Retail');
+    await user.click(within(form).getByRole('textbox', { name: /^Code/ }));
+    await user.paste('LUB-EU-RET');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     expect(await findMessages()).toHaveTextContent("Finance budget item 'Europe – Retail' created");
@@ -175,7 +178,7 @@ describe('FinanceBudgetItemsPage: Rename budget (US5 scenario 4, FR-015)', () =>
     const name = within(dialog).getByRole('textbox', { name: /^New name/ });
     expect(name).toHaveFocus();
     await user.clear(name);
-    await user.type(name, '2026 Lubricants Budget (EU)');
+    await user.paste('2026 Lubricants Budget (EU)');
     await user.click(within(dialog).getByRole('button', { name: 'Rename budget' }));
 
     expect(await findMessages()).toHaveTextContent(
@@ -211,7 +214,7 @@ describe('FinanceBudgetItemsPage: Rename budget (US5 scenario 4, FR-015)', () =>
     expect(dialog).toHaveTextContent('All 1 item moves with it.');
     const name = within(dialog).getByRole('textbox', { name: /^New name/ });
     await user.clear(name);
-    await user.type(name, '2026 Lubricants Budget');
+    await user.paste('2026 Lubricants Budget');
     await user.click(within(dialog).getByRole('button', { name: 'Rename budget' }));
 
     expect(

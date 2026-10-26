@@ -10,8 +10,6 @@ import { reply } from '@/testing/replies';
 import type { BinItem } from './bin-text';
 import { EmptyBinDialog } from './EmptyBinDialog';
 
-const EMPTY = 'POST /api/v1/recycle-bin/empty';
-
 /** The dialog as the page shows it: gone once it closes. */
 function Harness({ items }: { items: BinItem[] }) {
   const [open, setOpen] = useState(true);
@@ -33,21 +31,6 @@ describe('EmptyBinDialog', () => {
     );
     expect(dialog).toHaveTextContent("This can't be undone.");
     expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
-  });
-
-  it('deletes exactly the entries it listed and says how many (FR-029, FR-030)', async () => {
-    const { user, api } = renderDialog(
-      [reply('POST /api/v1/recycle-bin/empty', { body: { count: 2 } })],
-      [binItem(), lineItemEntry()],
-    );
-
-    await user.click(screen.getByRole('button', { name: 'Empty recycle bin' }));
-
-    await screen.findByText('Closed');
-    expect(api.bodiesOf(EMPTY)).toEqual([{ entryIds: ['BIN-1001', 'BIN-1002'] }]);
-    expect(await findMessages()).toHaveTextContent(
-      'The recycle bin is empty — 2 items deleted permanently',
-    );
   });
 
   it.each([

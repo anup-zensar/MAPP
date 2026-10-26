@@ -16,6 +16,7 @@ import (
 // Feature 006 sees the stored approval workflows — inactive ones too, with their active flag and levels —
 // sorted by name, so the activity form offers only the active ones and labels the others (FR-007).
 func TestAdapter_WorkflowFacts_FR007(t *testing.T) {
+	t.Parallel()
 	db, err := store.Open(t.TempDir())
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)
@@ -75,6 +76,7 @@ func TestAdapter_WorkflowFacts_FR007(t *testing.T) {
 // activity back Submitted with the same round (008-P3, D-031); the round only ends when a restore brings
 // the activity back Created (FR-023).
 func TestAdapter_ActivityDeletingKeepsRound_008P3(t *testing.T) {
+	t.Parallel()
 	db, err := store.Open(t.TempDir())
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)

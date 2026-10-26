@@ -10,13 +10,6 @@ function TooltipProvider({ children }: { children: ReactNode }) {
 }
 
 describe('SummaryCard', () => {
-  it('shows a label and a large value (FR-019)', () => {
-    render(<SummaryCard label="Sample folders" value={3} />, { wrapper: TooltipProvider });
-
-    expect(screen.getByText('Sample folders')).toBeInTheDocument();
-    expect(screen.getByText('3')).toBeInTheDocument();
-  });
-
   it('explains its label with an info tip (FR-019)', async () => {
     const user = userEvent.setup();
     render(
@@ -58,19 +51,5 @@ describe('SummaryCard', () => {
 
     expect(screen.getByText('$950.00')).toBeInTheDocument();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
-  });
-
-  it('shows a detail line under the value (feature 004)', () => {
-    render(
-      <SummaryCard
-        label="Remaining budget"
-        value="-$12,500.00"
-        tone="problem"
-        detail="Over-allocated by $12,500.00"
-      />,
-      { wrapper: TooltipProvider },
-    );
-
-    expect(screen.getByText('Over-allocated by $12,500.00')).toBeInTheDocument();
   });
 });

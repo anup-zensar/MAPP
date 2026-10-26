@@ -46,7 +46,7 @@ describe('TextAreaField', () => {
     await user.type(field, 'x');
     expect(screen.getByText('50 characters left')).toBeInTheDocument();
 
-    await user.type(field, 'x'.repeat(50));
+    await user.paste('x'.repeat(50));
     expect(screen.getByText('0 characters left')).toBeInTheDocument();
 
     await user.type(field, 'xx');

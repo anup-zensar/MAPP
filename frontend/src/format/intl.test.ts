@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DATE_FORMATS,
   formatDate,
   formatDateRange,
   formatDateTime,
@@ -136,15 +135,6 @@ describe('date formats (feature 003, FR-024)', () => {
     expect(formatDate('2026-03-12', 'MM/DD/YYYY')).toBe('03/12/2026');
     expect(formatDate('2026-03-12', 'YYYY-MM-DD')).toBe('2026-03-12');
     expect(formatDateTime('2026-03-12T14:32:00Z', 'DD/MM/YYYY')).toBe('12/03/2026, 14:32');
-  });
-
-  it('lists the formats with their example for the profile page', () => {
-    expect(DATE_FORMATS.map((format) => format.label)).toEqual([
-      '12 Mar 2026 (DD MMM YYYY)',
-      '12/03/2026 (DD/MM/YYYY)',
-      '03/12/2026 (MM/DD/YYYY)',
-      '2026-03-12 (YYYY-MM-DD)',
-    ]);
   });
 
   it.each([

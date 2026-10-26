@@ -27,7 +27,8 @@ describe('SignInForm (FR-003, FR-004, FR-020)', () => {
     const { user, router } = renderSignInPage();
 
     // The browser drops the spaces around an e-mail, and the API ignores its letter case.
-    await user.type(emailField(), ' PRIYA.RAMAN@shell.com ');
+    await user.click(emailField());
+    await user.paste(' PRIYA.RAMAN@shell.com ');
     await user.type(passwordField(), 'mapp');
     await user.click(signInButton());
 
@@ -44,7 +45,8 @@ describe('SignInForm (FR-003, FR-004, FR-020)', () => {
     ]);
     const { user, router } = renderSignInPage();
 
-    await user.type(emailField(), 'priya.raman@shell.com');
+    await user.click(emailField());
+    await user.paste('priya.raman@shell.com');
     await user.type(passwordField(), 'wrong');
     await user.click(signInButton());
 
@@ -61,7 +63,8 @@ describe('SignInForm (FR-003, FR-004, FR-020)', () => {
     ]);
     const { user, router } = renderSignInPage();
 
-    await user.type(emailField(), 'priya.raman@shell.com');
+    await user.click(emailField());
+    await user.paste('priya.raman@shell.com');
     await user.type(passwordField(), 'mapp');
     await user.click(signInButton());
 
@@ -105,7 +108,8 @@ describe('SignInForm (FR-003, FR-004, FR-020)', () => {
     const { user } = renderSignInPage();
 
     // Only spaces: not empty for the page, but the API may still refuse it.
-    await user.type(emailField(), 'priya.raman@shell.com');
+    await user.click(emailField());
+    await user.paste('priya.raman@shell.com');
     await user.type(passwordField(), '   ');
     await user.click(signInButton());
 

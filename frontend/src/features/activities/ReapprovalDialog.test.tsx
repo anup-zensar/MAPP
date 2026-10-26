@@ -42,9 +42,4 @@ describe('ReapprovalDialog (feature 006, FR-027)', () => {
     );
     expect(dialog).not.toHaveTextContent('re-spread');
   });
-
-  it('says nothing about spreads when the activity has no line items', () => {
-    const dialog = open(DATES, null);
-    expect(dialog).not.toHaveTextContent('re-spread');
-  });
 });

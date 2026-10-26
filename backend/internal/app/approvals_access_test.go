@@ -39,6 +39,7 @@ func seededStore(t *testing.T) (*store.DB, func() time.Time) {
 // The facts approvals evaluates its rules on (017 FR-010, data-model §3): the activity's plan with its
 // teams, owner and creator, its activity type id, and the plan's business units with their labels.
 func TestAdapter_RuleFacts_FR010(t *testing.T) {
+	t.Parallel()
 	db, now := seededStore(t)
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	settingsService := settings.NewService(db, settings.NewJSONRepository(), generator,
@@ -75,6 +76,7 @@ func TestAdapter_RuleFacts_FR010(t *testing.T) {
 // behalf and manage workflows, and the holders of a role whose scope covers a plan — Daniel Okoro holds
 // Approver for his own teams' plans only.
 func TestApprovalsAccess_RoleHolders_FR001(t *testing.T) {
+	t.Parallel()
 	db, now := seededStore(t)
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	historyService := history.NewService(db, history.NewJSONRepository(), generator, now)

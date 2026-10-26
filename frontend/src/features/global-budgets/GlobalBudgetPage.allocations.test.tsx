@@ -1,11 +1,6 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import {
-  BRAND_OPTION,
-  globalBudget,
-  LUBRICANTS,
-  MOBILITY,
-} from '@/testing/fixtures/global-budgets';
+import { BRAND_OPTION, globalBudget, LUBRICANTS } from '@/testing/fixtures/global-budgets';
 import { budgetRow, renderBudgetPage } from '@/testing/fixtures/global-budget-page';
 import { reply } from '@/testing/replies';
 
@@ -138,7 +133,8 @@ describe('GlobalBudgetPage allocations (014 US6, FR-030, FR-034)', () => {
     expect(
       (await screen.findAllByText("Allocation to 'FY2026 Mobility China' removed"))[0],
     ).toBeInTheDocument();
-    expect(api.requests.some((request) => request.method === 'DELETE')).toBe(true);
-    expect(MOBILITY.id).toBe('BA-1002');
+    expect(api.requests.map((request) => `${request.method} ${request.path}`)).toContain(
+      'DELETE /api/v1/budget-allocations/BA-1002',
+    );
   });
 });

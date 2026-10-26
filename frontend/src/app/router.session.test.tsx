@@ -80,25 +80,7 @@ describe('SessionProvider: who is signed in (research R15)', () => {
 });
 
 describe('SessionProvider: signing out (US4)', () => {
-  it('signs out to the sign-in page with "You have been signed out." only (US4 scenario 1)', async () => {
-    mockApi([
-      reply('GET /api/v1/me', { body: PRIYA }),
-      reply('POST /api/v1/auth/sign-out', { status: 204 }),
-      ...HOME_ANSWERS,
-      reply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
-    ]);
-    const { user, router } = renderRoutes(routes, { route: '/' });
-
-    await user.click(await screen.findByRole('button', { name: 'Priya — account menu' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
-
-    await waitFor(() => expect(router.state.location.pathname).toBe('/sign-in'));
-    expect(router.state.location.search).toBe('');
-    expect(await screen.findByText('You have been signed out.')).toBeInTheDocument();
-    expect(screen.queryByText('Please sign in again')).not.toBeInTheDocument();
-  });
-
-  it('forgets the person and their data when the session ends (US4 scenario 1)', async () => {
+  it('signs out to the sign-in page with "You have been signed out." only, forgetting the person and their data (US4 scenario 1)', async () => {
     mockApi([
       reply('GET /api/v1/me', { body: PRIYA }),
       reply('POST /api/v1/auth/sign-out', { status: 204 }),
@@ -106,12 +88,15 @@ describe('SessionProvider: signing out (US4)', () => {
       reply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
     ]);
     const { user, router, queryClient } = renderRoutes(routes, { route: '/' });
+
     await user.click(await screen.findByRole('button', { name: 'Priya — account menu' }));
     queryClient.setQueryData(['sample-folders'], { items: [], total: 0 });
-
     await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/sign-in'));
+    expect(router.state.location.search).toBe('');
+    expect(await screen.findByText('You have been signed out.')).toBeInTheDocument();
+    expect(screen.queryByText('Please sign in again')).not.toBeInTheDocument();
     expect(queryClient.getQueryData(['session'])).toBeNull();
     expect(queryClient.getQueryData(['sample-folders'])).toBeUndefined();
   });

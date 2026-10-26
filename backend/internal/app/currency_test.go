@@ -21,11 +21,10 @@ import (
 	"mapp/seed"
 )
 
-// All work converts each record's plan-currency amount to USD once (016 FR-014, data-model §3.1, §5.1) and
-// keeps the plan-currency values beside them: P-1004 is planned in GBP (0.79 per USD) — budget 600,000.00 GBP
-// = 759,493.67 USD phased evenly; A-1011 "UK launch event" 40,000.00 GBP = 50,632.91 USD; its line item
-// L-1010 "Agency fee (Ireland)" 23,000.00 EUR = 25,000.00 USD = 19,750.00 GBP.
+// P-1004 is planned in GBP at 0.79 per USD: 600,000.00 GBP = 759,493.67 USD; A-1011 40,000.00 GBP = 50,632.91
+// USD; its line item L-1010 23,000.00 EUR = 25,000.00 USD = 19,750.00 GBP.
 func TestAllWorkSource_ConvertsPlanCurrency_FR014(t *testing.T) {
+	t.Parallel()
 	built, db := newSeededApp(t)
 	var data allwork.YearData
 	err := db.Read(t.Context(), func(ctx context.Context) error {
@@ -72,7 +71,6 @@ func TestAllWorkSource_ConvertsPlanCurrency_FR014(t *testing.T) {
 	}
 }
 
-// launchCampaignID returns the id of the campaign "Helix UK & Ireland" of P-1004.
 func launchCampaignID(data allwork.YearData) string {
 	for _, n := range data.Nodes {
 		if n.Level == allwork.LevelCampaign && n.Name == "Helix UK & Ireland" {
@@ -82,10 +80,9 @@ func launchCampaignID(data allwork.YearData) string {
 	return ""
 }
 
-// Approvals works in USD and shows the reader's display currency (D-213): an activity of a GBP plan reaches it
-// converted from the plan currency once (016 FR-013, FR-014). A-1011 "UK launch event": 40,000.00 GBP =
-// 50,632.91 USD; its unassigned 40,000.00 − (15,000.00 + 19,750.00) = 5,250.00 GBP = 6,645.57 USD.
+// A-1011's unassigned 40,000.00 − (15,000.00 + 19,750.00) = 5,250.00 GBP = 6,645.57 USD (D-213).
 func TestApprovals_DisplayFromPlanCurrency(t *testing.T) {
+	t.Parallel()
 	db, err := store.Open(t.TempDir())
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)

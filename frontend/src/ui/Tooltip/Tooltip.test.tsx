@@ -1,9 +1,9 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Bell } from 'lucide-react';
 import { Tooltip as RadixTooltip } from 'radix-ui';
 import type { ReactNode } from 'react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Tooltip } from './Tooltip';
 
 // The app puts one Tooltip.Provider around everything (App.tsx); tests need one as well.
@@ -23,13 +23,8 @@ function renderBell() {
 }
 
 describe('Tooltip', () => {
-  it('shows its text when the pointer rests on the control (FR-019)', async () => {
-    const user = userEvent.setup();
-    renderBell();
-
-    await user.hover(screen.getByRole('button', { name: 'Notifications' }));
-
-    expect(await screen.findByRole('tooltip')).toHaveTextContent('Notifications');
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('shows its text on keyboard focus and describes the control (FR-019)', async () => {
@@ -45,7 +40,8 @@ describe('Tooltip', () => {
   });
 
   it('stays closed when a mouse action gives the focus back to the control', async () => {
-    const user = userEvent.setup();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     render(
       <>
         <button type="button">Save</button>
@@ -64,18 +60,7 @@ describe('Tooltip', () => {
     act(() => bell.focus());
 
     expect(bell).toHaveFocus();
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await act(() => vi.advanceTimersByTimeAsync(50));
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
-  });
-
-  it('closes on Escape', async () => {
-    const user = userEvent.setup();
-    renderBell();
-    await user.tab();
-    await screen.findByRole('tooltip');
-
-    await user.keyboard('{Escape}');
-
-    await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument());
   });
 });

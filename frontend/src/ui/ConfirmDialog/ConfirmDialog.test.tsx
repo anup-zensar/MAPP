@@ -24,16 +24,11 @@ function DeleteDialog({ onConfirm, busy }: { onConfirm: () => void; busy?: boole
 }
 
 describe('ConfirmDialog', () => {
-  it('asks the question and says what will happen (FR-019, FR-024)', () => {
+  it('asks the question, says what will happen and puts the focus on Cancel, so Enter never deletes by accident (FR-019, FR-024)', () => {
     render(<DeleteDialog onConfirm={vi.fn()} />);
 
     const dialog = screen.getByRole('alertdialog', { name: "Delete sample note 'Agenda'?" });
     expect(dialog).toHaveAccessibleDescription(TEXT);
-  });
-
-  it('puts the focus on Cancel, so Enter never deletes by accident (FR-019)', () => {
-    render(<DeleteDialog onConfirm={vi.fn()} />);
-
     expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
   });
 
@@ -47,23 +42,7 @@ describe('ConfirmDialog', () => {
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
-  it('closes without doing anything on Cancel and on Escape (FR-019)', async () => {
-    const user = userEvent.setup();
-    const onConfirm = vi.fn();
-    const { unmount } = render(<DeleteDialog onConfirm={onConfirm} />);
-
-    await user.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
-    unmount();
-
-    render(<DeleteDialog onConfirm={onConfirm} />);
-    await user.keyboard('{Escape}');
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
-
-    expect(onConfirm).not.toHaveBeenCalled();
-  });
-
-  it('gives the focus back to the button that opened it (FR-019)', async () => {
+  it('closes on Cancel and gives the focus back to the button that opened it (FR-019)', async () => {
     const user = userEvent.setup();
     function Page() {
       const [open, setOpen] = useState(false);
@@ -89,6 +68,7 @@ describe('ConfirmDialog', () => {
     await user.click(screen.getByRole('button', { name: 'Delete note' }));
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole('button', { name: 'Delete note' })).toHaveFocus());
   });
 

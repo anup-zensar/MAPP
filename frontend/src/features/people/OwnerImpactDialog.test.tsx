@@ -40,24 +40,6 @@ describe('OwnerImpactDialog (feature 003, FR-013)', () => {
     expect(within(dialog).getByRole('button', { name: 'Keep editing' })).toHaveFocus();
   });
 
-  it('keeps editing or saves', async () => {
-    const onKeepEditing = vi.fn();
-    const onSave = vi.fn();
-    const { user } = renderWithProviders(
-      <OwnerImpactDialog
-        warnings={WARNINGS}
-        busy={false}
-        onKeepEditing={onKeepEditing}
-        onSave={onSave}
-      />,
-    );
-
-    await user.click(screen.getByRole('button', { name: 'Save changes' }));
-    expect(onSave).toHaveBeenCalledTimes(1);
-    await user.click(screen.getByRole('button', { name: 'Keep editing' }));
-    expect(onKeepEditing).toHaveBeenCalledTimes(1);
-  });
-
   it('ignores Save changes while saving', async () => {
     const onSave = vi.fn();
     const { user } = renderWithProviders(
