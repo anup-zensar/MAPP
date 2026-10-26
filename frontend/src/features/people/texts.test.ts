@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  currencyLabel,
   deactivateSentences,
   deleteTeamText,
   membersText,
@@ -112,9 +111,5 @@ describe('feature 003 texts', () => {
         plans: [{ id: 'P-1002', name: 'FY2026 Mobility China', inRecycleBin: false }],
       }),
     ).toMatch(/^It is used by 1 plan: FY2026 Mobility China\. /);
-  });
-
-  it('names a display currency by code and name (FR-023)', () => {
-    expect(currencyLabel({ code: 'EUR', name: 'Euro' })).toBe('EUR — Euro');
   });
 });

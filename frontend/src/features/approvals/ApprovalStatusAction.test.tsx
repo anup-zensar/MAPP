@@ -29,16 +29,6 @@ function renderAction(activity: ApprovalActivity, answers: HttpHandler[] = []) {
 }
 
 describe('ApprovalStatusAction (feature 008, US1)', () => {
-  it('offers Submit for a Created activity and Re-submit for a Declined one (FR-009)', () => {
-    renderAction(CREATED);
-    expect(screen.getByRole('button', { name: 'Submit for approval' })).toBeInTheDocument();
-  });
-
-  it('offers Re-submit for a Declined activity (FR-020)', () => {
-    renderAction({ ...CREATED, status: 'declined' });
-    expect(screen.getByRole('button', { name: 'Re-submit for approval' })).toBeInTheDocument();
-  });
-
   it('offers nothing for an Approved activity', () => {
     renderAction({ ...CREATED, status: 'approved' });
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
@@ -131,7 +121,7 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
     expect(api.bodiesOf(SUBMIT)).toEqual([]);
   });
 
-  it('when ready, confirms, submits with the version and says so (FR-011)', async () => {
+  it('offers Submit for a Created activity; when ready, confirms, submits with the version and says so (FR-009, FR-011)', async () => {
     const { user, api } = renderAction(CREATED, [
       reply(
         'GET /api/v1/activities/{activityId}/approval/submission',
@@ -159,7 +149,7 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
     expect(api.bodiesOf(SUBMIT)).toEqual([{ version: 3, comment: 'Please check the dates' }]);
   });
 
-  it('says re-submitted after a re-submit', async () => {
+  it('offers Re-submit for a Declined activity and says re-submitted after it (FR-020)', async () => {
     const { user } = renderAction({ ...CREATED, status: 'declined' }, [
       reply(
         'GET /api/v1/activities/{activityId}/approval/submission',

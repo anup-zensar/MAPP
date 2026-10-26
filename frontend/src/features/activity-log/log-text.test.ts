@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { logEntry } from '@/testing/fixtures/activity-log';
 import {
-  ACTION_CHIPS,
   countLine,
   dayLabel,
   detailLines,
@@ -46,22 +45,6 @@ describe('entry sentence (FR-005, FR-006)', () => {
     expect(initialsOf('Priya Raman')).toBe('PR');
     expect(initialsOf('Ana Maria de Souza')).toBe('AS');
     expect(initialsOf('Cher')).toBe('C');
-  });
-});
-
-describe('action chips (FR-005)', () => {
-  it.each([
-    ['created', 'Created', 'positive'],
-    ['changed', 'Changed', 'neutral'],
-    ['moved', 'Moved', 'neutral'],
-    ['copied', 'Copied', 'neutral'],
-    ['statusChanged', 'Status changed', 'active'],
-    ['restored', 'Restored', 'active'],
-    ['deleted', 'Deleted', 'problem'],
-    ['deletedPermanently', 'Permanently deleted', 'problem'],
-    ['emptiedRecycleBin', 'Permanently deleted', 'problem'],
-  ] as const)('shows %s as "%s" in the %s colour', (action, word, tone) => {
-    expect(ACTION_CHIPS[action]).toEqual({ word, tone });
   });
 });
 

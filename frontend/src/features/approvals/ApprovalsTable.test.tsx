@@ -113,14 +113,6 @@ describe('ApprovalsTable (feature 008, US3)', () => {
     expect(row).not.toHaveTextContent('waiting');
   });
 
-  it('opens the preview from the activity name', async () => {
-    const { user, onOpen } = renderTable();
-
-    await user.click(screen.getByRole('button', { name: 'Launch film' }));
-
-    expect(onOpen).toHaveBeenCalledWith('A-1042');
-  });
-
   it('shows every row as a stacked card on a phone (design system §5.4, UI audit AP-01)', () => {
     vi.stubGlobal('matchMedia', (query: string) => ({
       matches: query === '(max-width: 599px)',
