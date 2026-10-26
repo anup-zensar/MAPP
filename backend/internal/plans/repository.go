@@ -18,6 +18,8 @@ type Repository interface {
 	ListInScope(ctx context.Context, scope authz.Scope) ([]Plan, error)
 	// PlansOfYear returns the plans of year, any status (005's moves and copies stay inside a year).
 	PlansOfYear(ctx context.Context, year int) ([]Plan, error)
+	// ListByIDs returns the stored plans among ids, at once, in the order of their ids.
+	ListByIDs(ctx context.Context, ids []string) ([]Plan, error)
 	// Put saves p, replacing the plan with the same id.
 	Put(ctx context.Context, p Plan) error
 	// Delete removes the plan with id; removing one that does not exist changes nothing.

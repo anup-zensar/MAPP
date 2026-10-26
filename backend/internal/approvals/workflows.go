@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -72,7 +73,11 @@ func (s *Service) GetWorkflow(ctx context.Context, a actor.Actor, id string) (Wo
 			return err
 		}
 		details = WorkflowDetails{Workflow: workflowView(w, u, rc), Activities: []WorkflowUsage{}}
-		for _, facts := range u.usedBy[w.ID] {
+		using, err := s.activities.ListOf(ctx, u.usedBy[w.ID])
+		if err != nil {
+			return err
+		}
+		for _, facts := range using {
 			details.Activities = append(details.Activities, WorkflowUsage{
 				Activity: errs.RecordRef{Type: "activity", ID: facts.ID, Name: facts.Name}, Path: nonNilPath(facts.Path),
 				DisplayStatus: facts.DisplayStatus, Waiting: u.waiting[w.ID][facts.ID],
@@ -561,13 +566,14 @@ func workflowNamed(workflows []Workflow, name, exceptID string) (Workflow, bool)
 // their Approval workflow field or have a round with it, in the order of the activities, and those of them
 // with an open round of it.
 type usages struct {
-	usedBy  map[string][]ActivityFacts
+	usedBy  map[string][]string        // workflow id → activity ids
 	waiting map[string]map[string]bool // workflow id → activity id → waiting
 }
 
-// usage reads who uses each workflow, inside the caller's transaction.
+// usage reads who uses each workflow, inside the caller's transaction: the activities' workflow fields and
+// the rounds, never the activities themselves, which only GetWorkflow lists.
 func (s *Service) usage(ctx context.Context) (usages, error) {
-	list, err := s.activities.List(ctx)
+	fields, err := s.activities.WorkflowFields(ctx)
 	if err != nil {
 		return usages{}, err
 	}
@@ -579,26 +585,36 @@ func (s *Service) usage(ctx context.Context) (usages, error) {
 	for _, r := range rounds {
 		byActivity[r.ActivityID] = append(byActivity[r.ActivityID], r)
 	}
-	u := usages{usedBy: map[string][]ActivityFacts{}, waiting: map[string]map[string]bool{}}
-	for _, facts := range list {
+	u := usages{usedBy: map[string][]string{}, waiting: map[string]map[string]bool{}}
+	for _, activityID := range inIDOrder(slices.Collect(maps.Keys(fields))) {
 		uses := map[string]bool{}
-		if facts.WorkflowID != "" {
-			uses[facts.WorkflowID] = true
+		if fields[activityID] != "" {
+			uses[fields[activityID]] = true
 		}
-		for _, r := range byActivity[facts.ID] {
+		for _, r := range byActivity[activityID] {
 			uses[r.WorkflowID] = true
 			if r.Outcome == OutcomeOpen {
-				if u.waiting[r.WorkflowID] == nil {
-					u.waiting[r.WorkflowID] = map[string]bool{}
-				}
-				u.waiting[r.WorkflowID][facts.ID] = true
+				u.wait(r.WorkflowID, activityID)
 			}
 		}
 		for id := range uses {
-			u.usedBy[id] = append(u.usedBy[id], facts)
+			u.usedBy[id] = append(u.usedBy[id], activityID)
 		}
 	}
 	return u, nil
+}
+
+func (u usages) wait(workflowID, activityID string) {
+	if u.waiting[workflowID] == nil {
+		u.waiting[workflowID] = map[string]bool{}
+	}
+	u.waiting[workflowID][activityID] = true
+}
+
+// inIDOrder sorts readable ids as the stores list records: shorter ids first, then by text.
+func inIDOrder(recordIDs []string) []string {
+	slices.SortFunc(recordIDs, func(x, y string) int { return cmp.Or(cmp.Compare(len(x), len(y)), strings.Compare(x, y)) })
+	return recordIDs
 }
 
 // viewOf returns w as the API shows it, reading its usage inside the caller's transaction.
