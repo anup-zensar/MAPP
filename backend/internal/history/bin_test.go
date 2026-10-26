@@ -16,6 +16,7 @@ import (
 // it has none (restorable); its parent is in another entry (parent in the recycle bin, with that entry to
 // restore first); or its parent is gone for good (parent deleted permanently, naming it). Newest first.
 func TestListBin_RestoreStates_FR017(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	f.put(t, parentsTable, newRecord("P-2", "Parent two", ""))
@@ -56,6 +57,7 @@ func TestListBin_RestoreStates_FR017(t *testing.T) {
 // first (011 FR-015, FR-016), the plural of its kind for the type pills, and the other entries that can't
 // be restored once it is deleted permanently (FR-028).
 func TestListBin_RecordsAndInside_FR015_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	inside := f.moveToBin(t, "grandchild", "G-1")
@@ -88,6 +90,7 @@ func TestListBin_RecordsAndInside_FR015_FR028(t *testing.T) {
 
 // An entry holding a kind this API does not know is not listed: it could not be restored here (D-186).
 func TestListBin_UnregisteredKindHidden(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	other := f.withKind(t, "attachment")
@@ -110,6 +113,7 @@ func TestListBin_UnregisteredKindHidden(t *testing.T) {
 // The preview names where the record returns: its parent's place now, not the place it had when it was
 // deleted (spec edge case: the parent moved meanwhile).
 func TestPreviewRestore_DestinationIsCurrentPlace_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	f.put(t, parentsTable, newRecord("P-2", "Parent two", ""))
@@ -131,6 +135,7 @@ func TestPreviewRestore_DestinationIsCurrentPlace_EdgeCase(t *testing.T) {
 // make them, with the rules' notes (011 FR-018, FR-019): here an approved child and grandchild come back
 // as created.
 func TestPreviewRestore_StatusChanges_FR018_FR019(t *testing.T) {
+	t.Parallel()
 	f := newStatusFixture(t)
 	deleted := f.moveToBin(t, "child", "C-1")
 
@@ -159,6 +164,7 @@ func TestPreviewRestore_StatusChanges_FR018_FR019(t *testing.T) {
 
 // When the name is taken meanwhile, the preview says the record comes back under a new name (011 FR-022).
 func TestPreviewRestore_NameClash_FR022(t *testing.T) {
+	t.Parallel()
 	f := newStatusFixture(t)
 	deleted := f.moveToBin(t, "child", "C-1")
 	f.put(t, childrenTable, newRecord("C-9", "Child one", "P-1")) // takes the name
@@ -178,6 +184,7 @@ func TestPreviewRestore_NameClash_FR022(t *testing.T) {
 // A restore that changes a stored record, as a hook that sends the parent back to created, shows that
 // change too, marked as not restored (011 FR-020): the preview reads what the hook logs.
 func TestPreviewRestore_OutsideRecordChange_FR020(t *testing.T) {
+	t.Parallel()
 	f := newStatusFixture(t)
 	deleted := f.moveToBin(t, "grandchild", "G-1") // its parent C-1 is approved and stays stored
 
@@ -196,6 +203,7 @@ func TestPreviewRestore_OutsideRecordChange_FR020(t *testing.T) {
 // The preview changes nothing (011 FR-018): the records, the bin, the log and the ID counters stay as
 // they were, so the real restore that follows gets the next numbers.
 func TestPreviewRestore_ChangesNothing_FR018(t *testing.T) {
+	t.Parallel()
 	f := newStatusFixture(t)
 	f.moveToBin(t, "grandchild", "G-1")
 	deleted := f.moveToBin(t, "child", "C-1")
@@ -220,6 +228,7 @@ func TestPreviewRestore_ChangesNothing_FR018(t *testing.T) {
 
 // A restored record comes back with the same IDs and values, everything inside it too (011 FR-021).
 func TestRestore_SameIDsAndValues_FR021(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	before := f.allRecords(t)
@@ -236,6 +245,7 @@ func TestRestore_SameIDsAndValues_FR021(t *testing.T) {
 // Restore is never blocked by another rule (011 FR-025): long after the Undo window, by someone else
 // than the person who deleted it.
 func TestRestore_NotBlockedByOtherRules_FR025(t *testing.T) {
+	t.Parallel()
 	f := newStatusFixture(t)
 	deleted := f.moveToBin(t, "child", "C-1")
 	f.clock.Advance(400 * 24 * time.Hour)
@@ -256,6 +266,7 @@ func TestRestore_NotBlockedByOtherRules_FR025(t *testing.T) {
 // The restore is logged with who restored it, the status change of its record and the rules' notes (011
 // FR-019, FR-026).
 func TestRestore_LogsActorAndStatusChanges_FR019_FR026(t *testing.T) {
+	t.Parallel()
 	f := newStatusFixture(t)
 	deleted := f.moveToBin(t, "child", "C-1")
 	f.clock.Advance(time.Hour)
@@ -277,6 +288,7 @@ func TestRestore_LogsActorAndStatusChanges_FR019_FR026(t *testing.T) {
 // Undo still puts everything back exactly, statuses included (011 FR-027): the restore rules apply only to
 // a restore from the bin.
 func TestUndo_StillExact_FR027(t *testing.T) {
+	t.Parallel()
 	f := newStatusFixture(t)
 	before := f.allRecords(t)
 	deleted := f.moveToBin(t, "child", "C-1")
@@ -290,6 +302,7 @@ func TestUndo_StillExact_FR027(t *testing.T) {
 
 // Nothing leaves the recycle bin on its own (011 FR-031): an entry is still there after 400 days.
 func TestBin_NothingLeavesAutomatically_FR031(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	deleted := f.moveToBin(t, "child", "C-1")
@@ -304,6 +317,7 @@ func TestBin_NothingLeavesAutomatically_FR031(t *testing.T) {
 // With its parent and grandparent in the bin, an entry lists both entries to restore first, the top-most
 // first, and each of them lists the entries waiting for it (011 FR-023, FR-028).
 func TestListBin_ChainParentsFirst_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	grandchild, child, parent := f.binChain(t)
@@ -335,6 +349,7 @@ func TestListBin_ChainParentsFirst_FR023(t *testing.T) {
 // Restore without its parents refuses an entry whose parent is in the bin, naming the parent to restore
 // first (011 FR-023); nothing changes.
 func TestRestore_ParentInBin_RestoreParentFirst_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	grandchild, _, _ := f.binChain(t)
@@ -351,6 +366,7 @@ func TestRestore_ParentInBin_RestoreParentFirst_FR023(t *testing.T) {
 // Restore all 3 brings back the grandparent's entry, then the parent's, then the chosen one, in one step,
 // each with its own "restored" log entry by the person who restored (011 FR-023, FR-026).
 func TestRestoreWithParents_ParentsFirstOneStep_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	before := f.allRecords(t)
@@ -389,6 +405,7 @@ func TestRestoreWithParents_ParentsFirstOneStep_FR023(t *testing.T) {
 // When a record above it was deleted permanently, the entry can't be restored, with or without its
 // parents: the refusal names that record, and nothing changes (011 FR-024).
 func TestRestore_ParentPurged_Refused_FR024(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	grandchild, child, parent := f.binChain(t)
@@ -435,6 +452,7 @@ func (f *fixture) binChain(t *testing.T) (grandchild, child, parent BinEntry) {
 // the record, its place when it was deleted and what was inside it. The entries about the records stay,
 // now saying they are gone for good.
 func TestPurge_RemovesForGoodAndLogs_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	f.logAs(t, priya, childOne(ActionChanged))
@@ -480,6 +498,7 @@ func TestPurge_RemovesForGoodAndLogs_FR030(t *testing.T) {
 // Once an entry is deleted permanently, an entry waiting for it stays in the bin but can no longer be
 // restored, naming the record that is gone (011 FR-028, D-181).
 func TestPurge_InsideEntriesBecomeUnrestorable_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	inside := f.moveToBin(t, "grandchild", "G-1")
@@ -499,6 +518,7 @@ func TestPurge_InsideEntriesBecomeUnrestorable_FR028(t *testing.T) {
 // Empty recycle bin deletes every listed entry permanently in one step and writes one entry that lists
 // them, with what was inside each (011 FR-029, FR-030).
 func TestEmptyBin_OneEntryWithItems_FR029_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	first := f.moveToBin(t, "grandchild", "G-1")
@@ -534,6 +554,7 @@ func TestEmptyBin_OneEntryWithItems_FR029_FR030(t *testing.T) {
 // Empty recycle bin leaves alone what someone else restored or deleted meanwhile and what the person did
 // not see; an id listed twice counts once (011 FR-029, FR-032, D-180).
 func TestEmptyBin_SkipsResolvedAndUnlisted_FR032(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	restored := f.moveToBin(t, "grandchild", "G-1")
@@ -560,6 +581,7 @@ func TestEmptyBin_SkipsResolvedAndUnlisted_FR032(t *testing.T) {
 // When nothing listed is left in the bin, Empty deletes nothing and writes no entry; it needs at least one
 // id (011 FR-029, FR-032).
 func TestEmptyBin_NothingLeft_NoEntry(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	deleted := f.moveToBin(t, "grandchild", "G-1")
@@ -583,6 +605,7 @@ func TestEmptyBin_NothingLeft_NoEntry(t *testing.T) {
 // An action on an entry someone else already restored or deleted permanently is refused with how, by whom
 // and when (011 FR-032): restore and preview after a purge, purge after a restore.
 func TestActions_AlreadyResolved_FR032(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	purged := f.moveToBin(t, "grandchild", "G-1")
@@ -611,6 +634,7 @@ func TestActions_AlreadyResolved_FR032(t *testing.T) {
 // Entries are never changed or removed, also not by Delete permanently or Empty recycle bin (011 FR-010,
 // FR-030): they only get new entries after them.
 func TestLog_EntriesNeverChangeOrDisappear_FR010_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	f.logAs(t, priya, childOne(ActionChanged))
