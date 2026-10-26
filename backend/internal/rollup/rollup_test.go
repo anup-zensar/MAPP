@@ -39,6 +39,7 @@ func percentValue(p *int) int {
 // Sum adds only the amounts that are present; with none present it is nil, shown "—"; 0.00 is a real
 // value (FR-011).
 func TestSum_SkipsEmpty_NilWhenNothing_FR011(t *testing.T) {
+	t.Parallel()
 	if got := text(Sum([]*money.Money{usd("100000.00"), nil, usd("50000.00")})); got != "150000.00" {
 		t.Errorf("Sum = %q, want 150000.00", got)
 	}
@@ -58,6 +59,7 @@ func TestSum_SkipsEmpty_NilWhenNothing_FR011(t *testing.T) {
 
 // Total is 0.00 USD when nothing is allocated: the totals row always has an amount (FR-022).
 func TestTotal_ZeroWhenNothing_FR022(t *testing.T) {
+	t.Parallel()
 	if got := Total(nil); got != money.USD(money.Amount{}) {
 		t.Errorf("Total(nil) = %+v, want 0.00 USD", got)
 	}
@@ -69,6 +71,7 @@ func TestTotal_ZeroWhenNothing_FR022(t *testing.T) {
 // Over-allocating is allowed and shown: 800,000 − (600,000 + 300,000) = −100,000.00, over by 100,000.00
 // (US1 scenario 3, D-015).
 func TestRemaining_NegativeAllowed_FR010(t *testing.T) {
+	t.Parallel()
 	remaining := Remaining(usd("800000.00"), Total([]*money.Money{usd("600000.00"), usd("300000.00")}))
 	if got := text(remaining); got != "-100000.00" {
 		t.Errorf("Remaining = %q, want -100000.00", got)
@@ -86,6 +89,7 @@ func TestRemaining_NegativeAllowed_FR010(t *testing.T) {
 
 // Without a budget there is nothing to allocate from: remaining is nil, shown "—" (FR-010).
 func TestRemaining_NilWithoutBudget_FR010(t *testing.T) {
+	t.Parallel()
 	if got := Remaining(nil, *usd("100.00")); got != nil {
 		t.Errorf("Remaining without budget = %v, want nil", got)
 	}
@@ -97,6 +101,7 @@ func TestRemaining_NilWithoutBudget_FR010(t *testing.T) {
 // Budget used is a whole percent, half up; nil without a budget, with a budget of 0.00 or without a planned
 // cost (FR-011).
 func TestBudgetUsedPercent_RoundsHalfUp_FR011(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name, planned, budget string
 		want                  int
@@ -114,6 +119,7 @@ func TestBudgetUsedPercent_RoundsHalfUp_FR011(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := percentValue(BudgetUsedPercent(usd(tt.planned), usd(tt.budget))); got != tt.want {
 				t.Errorf("BudgetUsedPercent(%s, %s) = %d, want %d", tt.planned, tt.budget, got, tt.want)
 			}
@@ -123,6 +129,7 @@ func TestBudgetUsedPercent_RoundsHalfUp_FR011(t *testing.T) {
 
 // Over budget compares exactly: 100.4 % shows "100 %" but in red; equal is not over (FR-011).
 func TestOverBudget_ExactComparison_FR011(t *testing.T) {
+	t.Parallel()
 	planned, budget := usd("1004.00"), usd("1000.00")
 	if got := percentValue(BudgetUsedPercent(planned, budget)); got != 100 || !OverBudget(planned, budget) {
 		t.Errorf("100.4 %%: percent %d, over %v; want 100 and over", got, OverBudget(planned, budget))
@@ -141,6 +148,7 @@ func TestOverBudget_ExactComparison_FR011(t *testing.T) {
 // Left to plan is the budget minus the planned cost (none counts as 0.00); nil without a budget; negative
 // when over budget (FR-011).
 func TestLeftToPlan_FR011(t *testing.T) {
+	t.Parallel()
 	tests := []struct{ budget, planned, want string }{
 		{"1000.00", "250.00", "750.00"},
 		{"1000.00", "", "1000.00"},
@@ -156,6 +164,7 @@ func TestLeftToPlan_FR011(t *testing.T) {
 
 // Approval progress: No activities, In progress (also 0 of 5), All approved (FR-013, US4 scenario 2).
 func TestApprovalProgress_States_FR013(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		approved, total int
 		want            string
@@ -176,6 +185,7 @@ func TestApprovalProgress_States_FR013(t *testing.T) {
 // Timing against today: Not started before the start, Running from the start to the end included,
 // Finished after; "" without dates (FR-013, US4 scenario 3).
 func TestTiming_BeforeOnStartWithinOnEndAfter_FR013(t *testing.T) {
+	t.Parallel()
 	start, end := date.MustParse("2026-03-01"), date.MustParse("2026-12-31")
 	tests := []struct {
 		today string
@@ -202,6 +212,7 @@ func TestTiming_BeforeOnStartWithinOnEndAfter_FR013(t *testing.T) {
 
 // Goal sums add what is there; a goal nothing below has stays nil, shown "—" (FR-016).
 func TestAddGoals_NilWhenNothing_FR016(t *testing.T) {
+	t.Parallel()
 	inq, mql := int64(1000), int64(250)
 	more := int64(500)
 	got := AddGoals([]Goals{
@@ -219,6 +230,7 @@ func TestAddGoals_NilWhenNothing_FR016(t *testing.T) {
 
 // Every container figure equals the hand-calculated value to the cent (SC-004).
 func TestContainer_HandCalculated_SC004(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		budget     string
@@ -244,6 +256,7 @@ func TestContainer_HandCalculated_SC004(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			children := make([]*money.Money, 0, len(tt.children))
 			for _, c := range tt.children {
 				children = append(children, usd(c))

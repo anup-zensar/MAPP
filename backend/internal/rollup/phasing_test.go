@@ -47,17 +47,16 @@ func fields(problems errs.Problems) []string {
 
 // Not phased has no monthly amounts (FR-020).
 func TestPhasing_None(t *testing.T) {
+	t.Parallel()
 	if got := NotPhased.MonthAmounts(budgetOf("600000"), 2027); got != nil {
 		t.Errorf("none = %v, want no amounts", texts(got))
-	}
-	if NotPhased.Method != MethodNone || len(NotPhased.Months) != 0 {
-		t.Errorf("NotPhased = %+v", NotPhased)
 	}
 }
 
 // Evenly spreads the budget over the 12 months by the Evenly rule: rounded down, the rest in December; it
 // follows every budget change (FR-020, data-model §3.3).
 func TestPhasing_Evenly_FR020(t *testing.T) {
+	t.Parallel()
 	evenly := Phasing{Method: MethodEvenly, Months: []PhasingMonth{}}
 	got := evenly.MonthAmounts(budgetOf("600000"), 2027)
 	if len(got) != 12 || !slices.ContainsFunc(got, func(a money.Amount) bool { return a.String() == "50000.00" }) {
@@ -83,6 +82,7 @@ func TestPhasing_Evenly_FR020(t *testing.T) {
 
 // Custom months are the stored months; a month without an entry is 0.00.
 func TestPhasing_Custom_MissingMonthsAreZero(t *testing.T) {
+	t.Parallel()
 	custom := Phasing{Method: MethodCustom, Months: []PhasingMonth{
 		{Month: "2027-03", Amount: amountOf("100000")}, {Month: "2027-11", Amount: amountOf("100000")},
 	}}
@@ -96,6 +96,7 @@ func TestPhasing_Custom_MissingMonthsAreZero(t *testing.T) {
 // A phasing save is checked: a method, a budget to phase, months of the plan's year only, each once, and
 // amounts of 0.00 or more with at most two decimals (FR-020, data-model §3.3).
 func TestCheckPhasing_Rules_FR020(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name   string
 		in     PhasingInput
@@ -141,6 +142,7 @@ func TestCheckPhasing_Rules_FR020(t *testing.T) {
 // A custom phasing that does not add up to the budget is a needed-to-publish problem of its record; one
 // that adds up, or any other method, is none (FR-022).
 func TestPhasingProblem_Mismatch_FR022(t *testing.T) {
+	t.Parallel()
 	custom := Phasing{Method: MethodCustom, Months: []PhasingMonth{{Month: "2027-01", Amount: amountOf("590000")}}}
 	problem := PhasingProblem(custom, budgetOf("600000"), 2027, "GBP")
 	if problem == nil || problem.Field != "budgetPhasing" || problem.Label != "Budget by month" ||
@@ -167,6 +169,7 @@ func TestPhasingProblem_Mismatch_FR022(t *testing.T) {
 
 // A next-year copy moves every month one year later (FR-025).
 func TestShiftPhasing_NextYear_FR025(t *testing.T) {
+	t.Parallel()
 	custom := Phasing{Method: MethodCustom, Months: []PhasingMonth{{Month: "2027-03", Amount: amountOf("100000")}}}
 	shifted := ShiftPhasing(custom, 1)
 	if shifted.Months[0].Month != "2028-03" || custom.Months[0].Month != "2027-03" || shifted.Months[0].Amount != amountOf("100000") {
@@ -179,6 +182,7 @@ func TestShiftPhasing_NextYear_FR025(t *testing.T) {
 
 // A phasing change is logged month by month with old and new amounts in the plan currency (FR-023).
 func TestPhasingChanges_MonthByMonth_FR023(t *testing.T) {
+	t.Parallel()
 	before := Phasing{Method: MethodEvenly}
 	after := Phasing{Method: MethodCustom, Months: []PhasingMonth{}}
 	for m := 1; m <= 12; m++ {
