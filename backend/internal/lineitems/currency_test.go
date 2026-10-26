@@ -27,6 +27,7 @@ func withGBPActivity(f *fixture) {
 // A line item in another currency than the plan's is converted into the plan currency once, half up:
 // 23,000.00 EUR at 0.92 is 19,750.00 GBP at 0.79 (FR-015, data-model §3.1); one in the plan currency is exact.
 func TestPlannedCostPlan_FR015(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	withGBPActivity(f)
 
@@ -40,8 +41,9 @@ func TestPlannedCostPlan_FR015(t *testing.T) {
 }
 
 // The unassigned planned cost is worked out in the plan currency: 40,000.00 − (15,000.00 + 19,750.00) =
-// 5,250.00 GBP, shown in the reader's display currency from it (FR-015, US2-3).
+// 5,250.00 GBP, shown in the reader's display currency from it, each amount converted once (FR-015, US2-3).
 func TestBalance_PlanCurrency_FR015(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	withGBPActivity(f)
 	f.create(t, priya, ukLaunchEvent, input("Venue", "GBP", "15000.00"))
@@ -50,9 +52,13 @@ func TestBalance_PlanCurrency_FR015(t *testing.T) {
 	section, err := f.service.Section(t.Context(), priya, ukLaunchEvent)
 	options, optionsErr := f.service.FormOptions(t.Context(), priya, ukLaunchEvent)
 
-	if err != nil || section.Balance.Balance.Format() != "6,645.57 USD" || section.Balance.State != BalanceLeft ||
+	if b := section.Balance; err != nil || b.Balance.Format() != "6,645.57 USD" || b.State != BalanceLeft ||
+		b.Assigned.Format() != "43,987.34 USD" || b.PlannedCost.Format() != "50,632.91 USD" ||
 		section.Activity.PlannedCost.Format() != "40,000.00 GBP" {
 		t.Errorf("section balance = %+v (activity %v), %v", section.Balance, section.Activity.PlannedCost, err)
+	}
+	if g := section.Grid; g.Total.Format() != "43,987.34 USD" || len(g.Columns) != 3 || g.Columns[0].Key != "2027-03" {
+		t.Errorf("grid total %v, columns %+v", g.Total, g.Columns)
 	}
 	if optionsErr != nil || options.Balance.Balance.Format() != "5,250.00 GBP" || options.Balance.Assigned.Format() != "34,750.00 GBP" ||
 		options.Defaults.Currency != "GBP" || options.Defaults.PlannedCost.Format() != "5,250.00 GBP" {
@@ -63,6 +69,7 @@ func TestBalance_PlanCurrency_FR015(t *testing.T) {
 // The spread grid is worked out in the plan currency: a EUR line item's months converted so they add up to its
 // plan-currency value (FR-015).
 func TestGrid_PlanCurrency_FR015(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	withGBPActivity(f)
 	f.create(t, priya, ukLaunchEvent, input("Venue", "GBP", "15000.00"))
@@ -101,6 +108,7 @@ func TestGrid_PlanCurrency_FR015(t *testing.T) {
 // The rounding hint is measured in the plan currency: a few cents left while a line item uses another
 // currency than the plan's (D-145, data-model §3.1).
 func TestRoundingHint_PlanCurrency(t *testing.T) {
+	t.Parallel()
 	planned := amount("100.00")
 	f := ActivityFacts{PlanCurrency: "GBP", PlannedCost: &planned}
 
@@ -114,6 +122,7 @@ func TestRoundingHint_PlanCurrency(t *testing.T) {
 
 // A line item's currency comes with the date and source of its current rate (FR-009).
 func TestLineItemCurrency_RateDate_FR009(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	withGBPActivity(f)
 

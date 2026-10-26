@@ -35,6 +35,7 @@ func launchFilmWithTwoItems(t *testing.T, f *fixture) (fee, film View) {
 // USD, the unassigned planned cost, the plan's default spread and year, no finance budget item when the
 // plan's default budget has several, and Request SWBS code from GSAP on; with the activity and its balance.
 func TestFormOptions_Defaults_FR008(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	launchFilmWithTwoItems(t, f)
 
@@ -67,6 +68,7 @@ func TestFormOptions_Defaults_FR008(t *testing.T) {
 // A default name that is taken gets " 2", " 3", … (ignoring letter case), and a long activity name is
 // shortened so that the default name fits 120 characters (FR-008).
 func TestFormOptions_NameTaken_FR008(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.create(t, priya, launchFilm, input("Launch film – line item", "USD", "1.00"))
 	f.create(t, priya, launchFilm, input("LAUNCH FILM – LINE ITEM 2", "USD", "1.00"))
@@ -94,6 +96,7 @@ func TestFormOptions_NameTaken_FR008(t *testing.T) {
 // When nothing is left to assign, or the activity has no planned cost, the planned cost starts empty and
 // says why (spec edge case "Zero amounts", D-144).
 func TestFormOptions_NothingLeft_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.create(t, priya, launchFilm, input("Everything", "USD", "120000.00"))
 	f.create(t, priya, retailEvent, input("Too much", "USD", "6000.00"))
@@ -119,6 +122,7 @@ func TestFormOptions_NothingLeft_EdgeCase(t *testing.T) {
 // by year, the plan's default finance budget first, then by budget and item name. The item is pre-selected
 // only when the default budget has exactly one active item (FR-015, R12).
 func TestFormOptions_BudgetChoices_FR015(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 
 	options, err := f.service.FormOptions(t.Context(), priya, launchFilm)
@@ -153,6 +157,7 @@ func TestFormOptions_BudgetChoices_FR015(t *testing.T) {
 
 // The form offers the active currencies, USD first, then by code, each with its current rate (FR-011).
 func TestFormOptions_Currencies_FR011(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 
 	options, err := f.service.FormOptions(t.Context(), priya, launchFilm)
@@ -170,6 +175,7 @@ func TestFormOptions_Currencies_FR011(t *testing.T) {
 
 // A deleted activity has no form: "This activity was deleted — …" (spec edge case).
 func TestFormOptions_ActivityDeleted_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 
 	_, err := f.service.FormOptions(t.Context(), priya, "A-9999")
@@ -180,6 +186,7 @@ func TestFormOptions_ActivityDeleted_EdgeCase(t *testing.T) {
 // Only name, currency and planned cost are needed to save (FR-009, D-009); what is needed to submit stays
 // empty and is listed: "3 fields needed" (US2 scenario 6).
 func TestCreate_OnlyRequired_FR009(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	in := Input{Name: "Agency fee", Currency: "USD", PlannedCost: text("50000"), Spread: SpreadInput{Method: SpreadEvenly}}
 
@@ -210,6 +217,7 @@ func TestCreate_OnlyRequired_FR009(t *testing.T) {
 
 // Every problem of a form is reported at once, and nothing is saved (FR-009, SC-005, US2 scenario 5).
 func TestCreate_AllProblemsAtOnce_FR009_SC005(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.create(t, priya, launchFilm, input("Agency fee", "USD", "50000.00"))
 	tests := []struct {
@@ -261,6 +269,7 @@ func TestCreate_AllProblemsAtOnce_FR009_SC005(t *testing.T) {
 // Names are unique within the activity, ignoring letter case and surrounding spaces, and have at most 120
 // characters; another activity may use the same name (FR-009).
 func TestCreate_NameUnique_FR009(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.create(t, priya, launchFilm, input("Agency fee", "USD", "1.00"))
 
@@ -279,6 +288,7 @@ func TestCreate_NameUnique_FR009(t *testing.T) {
 // Typed amounts have at most two decimals: the form rounds and says so, the API refuses more (D-190, spec
 // edge case "Rounding"); amounts stay below one trillion.
 func TestCreate_AmountsAtMostTwoDecimals_D190(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tests := []struct {
 		cost, message string
@@ -305,6 +315,7 @@ func TestCreate_AmountsAtMostTwoDecimals_D190(t *testing.T) {
 // A new line item gets the next readable ID L-…, the person and time who created it, and one "created" log
 // entry with its activity as its path (FR-010, D-019).
 func TestCreate_IDAndLog_FR010(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 
 	first := f.create(t, priya, launchFilm, input("Agency fee", "USD", "50000.00"))
@@ -331,6 +342,7 @@ func TestCreate_IDAndLog_FR010(t *testing.T) {
 // A new currency choice must be an active currency of Settings (FR-011); the USD amount is calculated at
 // its current rate: 10,000.00 EUR at 0.92 → 10,869.57 USD (US2 scenario 2).
 func TestCreate_CurrencyActive_FR011(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 
 	_, inactive := f.service.Create(t.Context(), priya, launchFilm, input("Fees", "INR", "1.00"))
@@ -350,6 +362,7 @@ func TestCreate_CurrencyActive_FR011(t *testing.T) {
 // Shell attribute problems of feature 002 (R11: a GL code that doesn't fit the spend type) are reported with
 // the others; the values 002 returns are stored (FR-014).
 func TestCreate_AttributeProblems_FR014(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.attributes.problems = []errs.FieldError{{Field: "attributes.SA-1033", Message: "Choose one of the options of spend category."}}
 	in := input("", "USD", "1.00")
@@ -374,6 +387,7 @@ func TestCreate_AttributeProblems_FR014(t *testing.T) {
 
 // The contracted amount is optional, 0.00 or more, in the line item's currency (FR-014).
 func TestCreate_ContractedAmount_FR014(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	for _, tt := range []struct{ amount, message string }{
 		{"-1", "Contracted amount can't be negative."},
@@ -403,6 +417,7 @@ func TestCreate_ContractedAmount_FR014(t *testing.T) {
 // The finance budget year is the plan's year or a year with active items; the item needs a year first, must
 // exist, belong to that year and be active when newly chosen (FR-015, FR-016).
 func TestCreate_FinanceBudgetChecks_FR015_FR016(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	year := func(y int) *int { return &y }
 	tests := []struct {
@@ -441,6 +456,7 @@ func TestCreate_FinanceBudgetChecks_FR015_FR016(t *testing.T) {
 // is saved. With it, the activity goes back to Created with the reason (FR-031, D-146). A Created activity
 // needs no confirmation and keeps its status.
 func TestCreate_RestartNeedsConfirmation_FR031(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	for _, activityID := range []string{socialOnAir, tradeAds} {
 		_, err := f.service.Create(t.Context(), priya, activityID, input("Venue hire", "GBP", "15800"))
@@ -469,6 +485,7 @@ func TestCreate_RestartNeedsConfirmation_FR031(t *testing.T) {
 // USD amounts, spread, missing fields and SWBS status; the unassigned planned cost; and the grid (FR-001 –
 // FR-003, US1 scenario 1).
 func TestSection_RowsInCreationOrder_FR001(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	fee, film := launchFilmWithTwoItems(t, f)
 	f.create(t, priya, socialOnAir, func() Input { in := input("Elsewhere", "USD", "1.00"); in.RestartApproval = true; return in }())
@@ -513,6 +530,7 @@ func TestSection_RowsInCreationOrder_FR001(t *testing.T) {
 // answer EUR like the section (FR-005, D-213). The activity carries its plan's Business unit options
 // (D-212).
 func TestSection_DisplayCurrency_FR005_D213(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	launchFilmWithTwoItems(t, f)
 	facts := f.activities.facts[launchFilm]
@@ -568,6 +586,7 @@ func TestSection_DisplayCurrency_FR005_D213(t *testing.T) {
 // An activity without line items has an empty list, its whole planned cost unassigned and its months as
 // grid columns (FR-004).
 func TestSection_Empty_FR004(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 
 	section, err := f.service.Section(t.Context(), priya, launchFilm)
@@ -583,6 +602,7 @@ func TestSection_Empty_FR004(t *testing.T) {
 
 // A deleted activity has no section: "This activity was deleted — …" (spec edge case).
 func TestSection_ActivityDeleted_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 
 	_, err := f.service.Section(t.Context(), priya, "A-9999")
@@ -593,6 +613,7 @@ func TestSection_ActivityDeleted_EdgeCase(t *testing.T) {
 // USD amounts are worked out with the currency's current rate on every read: a rate change in Settings
 // changes the USD amounts and the balance at once, writes nothing and restarts no approval (FR-013, D-141).
 func TestSection_RateChange_FR013(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	launchFilmWithTwoItems(t, f)
 	stored, logged := f.stored(t), len(f.log(t))
@@ -672,6 +693,7 @@ func (f *fixture) put(t *testing.T, li LineItem) {
 // The details are the line item with its activity and the balance including it (FR-026). A line item that is
 // gone says why (D-154): deleted itself, or deleted with its activity.
 func TestGet_GoneMessages_007P15(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	fee, _ := launchFilmWithTwoItems(t, f)
 	gone := f.create(t, priya, launchFilm, input("Gone", "USD", "1.00"))
@@ -707,6 +729,7 @@ func TestGet_GoneMessages_007P15(t *testing.T) {
 // A save needs the version it started from: a missing one is reported with every other problem, an
 // out-of-date one is refused naming who changed the line item (FR-027, D-030).
 func TestUpdate_Version_FR027(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	fee := f.create(t, priya, launchFilm, input("Agency fee", "USD", "50000.00"))
 	zero := 0
@@ -732,6 +755,7 @@ func TestUpdate_Version_FR027(t *testing.T) {
 
 // A save that changes nothing creates no version and no log entry (FR-027).
 func TestUpdate_NoChangeNoLog_FR027(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	fee := f.create(t, priya, launchFilm, complete(input("Agency fee", "USD", "50000.00")))
 	logged := len(f.log(t))
@@ -748,6 +772,7 @@ func TestUpdate_NoChangeNoLog_FR027(t *testing.T) {
 // A save with changes gets a new version and one "changed" entry listing every changed field with its old
 // and new value as people read them; each Shell attribute is a change of its own (FR-027, data model §7.3).
 func TestUpdate_LogsOldAndNew_FR027(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	fee := f.create(t, priya, launchFilm, complete(input("Agency fee", "USD", "50000.00")))
 	u := formOf(fee)
@@ -782,6 +807,7 @@ func TestUpdate_LogsOldAndNew_FR027(t *testing.T) {
 // A currency, owner or finance budget item that became inactive stays on the line item through any save and
 // still converts at its last rate; only a new choice must be active (FR-011, FR-016).
 func TestUpdate_KeepsInactiveValues_FR011_FR016(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	year := 2026
 	f.put(t, LineItem{
@@ -820,6 +846,7 @@ func TestUpdate_KeepsInactiveValues_FR011_FR016(t *testing.T) {
 // Changing the planned cost or the currency of a line item of a Submitted or Approved activity needs the
 // person's confirmation and sends the activity back to Created with the change (FR-031, US4 scenario 3).
 func TestUpdate_CostOrCurrencyRestart_FR031(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	venue := f.create(t, priya, socialOnAir, confirmed(input("Venue hire", "GBP", "15800")))
 	approve := func() {
@@ -858,6 +885,7 @@ func TestUpdate_CostOrCurrencyRestart_FR031(t *testing.T) {
 // finance budget link — saves without a confirmation and never changes the activity's status (FR-032,
 // SC-007, US4 scenario 2).
 func TestUpdate_OtherEditsKeepStatus_FR032_SC007(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	venue := f.create(t, priya, socialOnAir, confirmed(input("Venue hire", "GBP", "15800")))
 	facts := f.activities.facts[socialOnAir]
@@ -882,6 +910,7 @@ func TestUpdate_OtherEditsKeepStatus_FR032_SC007(t *testing.T) {
 // Duplicate copies every value, the spread included, into the same activity with a new ID and the name
 // "<name> (copy)", " (copy 2)", … shortened to fit 120 characters, and logs "copied" (FR-029).
 func TestDuplicate_CopiesEverything_FR029(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	in := complete(input("Agency fee", "EUR", "1000.00"))
 	in.Description, in.ContractedAmount, in.RequestSwbs = "Retainer", text("900"), false
@@ -917,6 +946,7 @@ func TestDuplicate_CopiesEverything_FR029(t *testing.T) {
 // Duplicating counts as adding a line item: on a Submitted or Approved activity only with confirmation,
 // which sends it back to Created (FR-031, US4 scenario 3).
 func TestDuplicate_RestartNeedsConfirmation_FR031(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	venue := f.create(t, priya, socialOnAir, confirmed(input("Venue hire", "GBP", "15800")))
 	facts := f.activities.facts[socialOnAir]
@@ -942,6 +972,7 @@ func TestDuplicate_RestartNeedsConfirmation_FR031(t *testing.T) {
 // Delete moves the line item to the recycle bin, with its activity as its path, and logs "deleted"; the bin
 // entry is the answer, so the web app can offer Undo (FR-030).
 func TestDelete_MovesToBin_FR030(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	fee, film := launchFilmWithTwoItems(t, f)
 
@@ -971,6 +1002,7 @@ func TestDelete_MovesToBin_FR030(t *testing.T) {
 // Deleting a line item of a Submitted or Approved activity needs confirmation and sends the activity back to
 // Created (FR-031).
 func TestDelete_RestartNeedsConfirmation_FR031(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	venue := f.create(t, priya, tradeAds, confirmed(input("Venue hire", "GBP", "15800")))
 	facts := f.activities.facts[tradeAds]
@@ -1021,6 +1053,7 @@ func monthsOf(v SpreadView) []string {
 // (FR-018, D-152). Months outside the activity's dates are allowed, such as a deposit; the stored months are
 // sorted. Only a custom spread keeps months.
 func TestCreate_CustomMonthChecks_FR018(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	in := input("Venue", "EUR", "10000.00")
 	in.Spread = custom("2024-12", "1.00", "2026-03", "abc", "2026-03", "-1", "2037-01", "1.234", "March", "2", "2026-04", "1000000000000")
@@ -1067,6 +1100,7 @@ func TestCreate_CustomMonthChecks_FR018(t *testing.T) {
 // missing list (which blocks submitting the activity) says "Spread doesn't add up to the planned cost"
 // (FR-019, US3 scenarios 2 and 3). The activity's grid shows the month outside its dates.
 func TestCreate_CustomNotAddingUpSaves_FR019(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	in := complete(input("Venue", "EUR", "10000.00"))
 	in.Spread = custom("2026-02", "2000.00", "2026-03", "3333.33", "2026-04", "3333.33", "2026-05", "3333.34")
@@ -1105,6 +1139,7 @@ func TestCreate_CustomNotAddingUpSaves_FR019(t *testing.T) {
 // Switching a line item away from Custom drops its typed months: the new method spreads the planned cost
 // over the activity's months, and the log shows the change (FR-018, US3 scenario 6).
 func TestUpdate_LeavingCustomDropsMonths_FR018(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	in := input("Venue", "EUR", "10000.00")
 	in.Spread = custom("2026-02", "2000.00", "2026-03", "8000.00")
@@ -1130,6 +1165,7 @@ func TestUpdate_LeavingCustomDropsMonths_FR018(t *testing.T) {
 // When the planned cost or the currency changes, spreads other than Custom follow it, while custom months
 // stay as typed (in the line item's currency) and are flagged when they no longer add up (FR-022).
 func TestUpdate_CostChangeKeepsCustom_FR022(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	in := complete(input("Venue", "EUR", "10000.00"))
 	in.Spread = custom("2026-03", "3000.00", "2026-04", "3000.00", "2026-05", "4000.00")

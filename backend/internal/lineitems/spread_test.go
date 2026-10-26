@@ -32,6 +32,7 @@ func monthTexts(months []MonthAmount) []string {
 // The activity's months are the calendar months from its start month to its end month, both included
 // (data model §3.2, FR-017).
 func TestActivityMonths_CalendarMonths_FR017(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		start, end string
 		want       []string
@@ -52,6 +53,7 @@ func TestActivityMonths_CalendarMonths_FR017(t *testing.T) {
 // An ongoing activity has its start month only, for spreading; without a start date, or a start date
 // without an end date that is not ongoing, there are no dates yet (FR-021, D-032).
 func TestActivityMonths_OngoingAndNoDates_FR021(t *testing.T) {
+	t.Parallel()
 	if months, has := ActivityMonths(dated("2026-03-15", "", true)); !has || !slices.Equal(months, []string{"2026-03"}) {
 		t.Errorf("ongoing: %v, %v; want [2026-03]", months, has)
 	}
@@ -65,6 +67,7 @@ func TestActivityMonths_OngoingAndNoDates_FR021(t *testing.T) {
 // Evenly gives each month the planned cost ÷ the number of months, rounded down to the cent, and the rest
 // to the last month, so the months always add up exactly (FR-017, SC-002, the plan's example table).
 func TestSpread_EvenlyRemainderLast_FR017_SC002(t *testing.T) {
+	t.Parallel()
 	marToMay := dated("2026-03-01", "2026-05-31", false)
 	tests := []struct {
 		cost string
@@ -84,8 +87,6 @@ func TestSpread_EvenlyRemainderLast_FR017_SC002(t *testing.T) {
 
 	for n := 1; n <= 36; n++ {
 		f := dated("2026-01-01", "", false)
-		end := money.FromCents(0) // unused; the end date is the last day of month n
-		_ = end
 		f.EndDate = day(fmt.Sprintf("%04d-%02d-01", 2026+(n-1)/12, (n-1)%12+1))
 		for _, cost := range []string{"0.01", "10000.00", "123456.79", "999999999999.99"} {
 			months, _ := SpreadMonths(lineItem(cost, SpreadEvenly), f)
@@ -102,6 +103,7 @@ func TestSpread_EvenlyRemainderLast_FR017_SC002(t *testing.T) {
 
 // All in first month and All in last month put everything in that month (FR-017).
 func TestSpread_FirstAndLastMonth_FR017(t *testing.T) {
+	t.Parallel()
 	f := dated("2026-03-01", "2026-05-31", false)
 
 	first, _ := SpreadMonths(lineItem("10000.00", SpreadFirstMonth), f)
@@ -118,6 +120,7 @@ func TestSpread_FirstAndLastMonth_FR017(t *testing.T) {
 // For an ongoing activity, Evenly and All in last month behave like All in first month (FR-021, US3
 // scenario 4).
 func TestSpread_OngoingLikeFirst_FR021(t *testing.T) {
+	t.Parallel()
 	f := dated("2026-03-01", "", true)
 	for _, method := range []SpreadMethod{SpreadEvenly, SpreadFirstMonth, SpreadLastMonth} {
 		months, spread := SpreadMonths(lineItem("10000.00", method), f)
@@ -131,6 +134,7 @@ func TestSpread_OngoingLikeFirst_FR021(t *testing.T) {
 // Without activity dates, Evenly, first and last are not spread yet; a custom spread keeps its months
 // (FR-017, D-032).
 func TestSpread_NoDatesNotSpread_FR017(t *testing.T) {
+	t.Parallel()
 	f := dated("", "", false)
 	for _, method := range []SpreadMethod{SpreadEvenly, SpreadFirstMonth, SpreadLastMonth} {
 		if months, spread := SpreadMonths(lineItem("100.00", method), f); spread || months == nil || len(months) != 0 {
@@ -149,6 +153,7 @@ func TestSpread_NoDatesNotSpread_FR017(t *testing.T) {
 // A custom spread is kept as typed, sorted by month; months before or after the activity's dates are marked
 // as outside them, which is allowed (FR-018, US3 scenario 2).
 func TestSpread_CustomOutsideMarked_FR018(t *testing.T) {
+	t.Parallel()
 	f := dated("2026-03-01", "2026-05-31", false)
 	li := lineItem("12000.00", SpreadCustom, "2026-04", "3333.33", "2026-02", "2000.00", "2026-03", "3333.33", "2026-06", "3333.34")
 
@@ -176,6 +181,7 @@ func TestSpread_CustomOutsideMarked_FR018(t *testing.T) {
 // cost, so they follow every change; custom months are kept, marked when they fall outside the new dates
 // (FR-022, D-140, US3 scenario 5).
 func TestSpread_FollowsDatesAndCost_FR022(t *testing.T) {
+	t.Parallel()
 	moved := dated("2026-04-01", "2026-06-30", false)
 	tests := []struct {
 		li   LineItem
@@ -202,6 +208,7 @@ func TestSpread_FollowsDatesAndCost_FR022(t *testing.T) {
 // The USD months of every amount, rate and number of months add up exactly to the USD planned cost (FR-020,
 // SC-002, D-024).
 func TestUSDMonths_AddUp_FR020_SC002(t *testing.T) {
+	t.Parallel()
 	for _, r := range []string{"1", "0.92", "0.79", "7.10", "83.50"} {
 		for n := 1; n <= 36; n++ {
 			f := dated("2026-01-01", fmt.Sprintf("%04d-%02d-28", 2026+(n-1)/12, (n-1)%12+1), false)
@@ -222,6 +229,7 @@ func TestUSDMonths_AddUp_FR020_SC002(t *testing.T) {
 // The rounding cent goes into the last month that has an amount (FR-020): 10,000.00 EUR evenly over Mar–May
 // at 0.92 → 3,623.18 · 3,623.18 · 3,623.21 USD; a custom spread ending with 0.00 months keeps them at 0.00.
 func TestUSDMonths_CentInLastNonZeroMonth_FR020(t *testing.T) {
+	t.Parallel()
 	even, _ := SpreadMonths(lineItem("10000.00", SpreadEvenly), dated("2026-03-01", "2026-05-31", false))
 	if got := USDMonths(even, rate("0.92")); !slices.Equal(got, amounts("3623.18", "3623.18", "3623.21")) {
 		t.Errorf("evenly at 0.92 = %v", got)

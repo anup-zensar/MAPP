@@ -10,6 +10,7 @@ import (
 // Moving a line item to another activity (a split, 016 FR-028) changes only its activity: its ID, currency,
 // planned cost, spread and SWBS request stay as they are.
 func TestMoveToActivity_KeepsIDsValuesSpreads_FR028(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	agency := f.create(t, priya, launchFilm, input("Agency fee", "EUR", "23000.00"))
 	before := f.stored(t)[0]
@@ -30,6 +31,7 @@ func TestMoveToActivity_KeepsIDsValuesSpreads_FR028(t *testing.T) {
 
 // Each moved line item is logged once, "moved", with its old and its new activity (FR-030).
 func TestMoveToActivity_LogsMoved_FR030(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	agency := f.create(t, priya, launchFilm, input("Agency fee", "EUR", "23000.00"))
 
@@ -48,6 +50,7 @@ func TestMoveToActivity_LogsMoved_FR030(t *testing.T) {
 // A moved line item's SWBS request status follows its new activity: from a Created activity (waiting for
 // approval) to an Approved one (ready to send) (FR-029).
 func TestMoveToActivity_SwbsFollowsNewActivity_FR029(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	agency := f.create(t, priya, launchFilm, input("Agency fee", "EUR", "23000.00"))
 	if agency.SwbsStatus != SwbsWaitingForApproval {
@@ -66,6 +69,7 @@ func TestMoveToActivity_SwbsFollowsNewActivity_FR029(t *testing.T) {
 
 // A line item that is not stored is refused and nothing moves.
 func TestMoveToActivity_UnknownLineItemRefused(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	agency := f.create(t, priya, launchFilm, input("Agency fee", "EUR", "23000.00"))
 
@@ -78,6 +82,7 @@ func TestMoveToActivity_UnknownLineItemRefused(t *testing.T) {
 
 // The Split dialog lists the activity's line items with their planned cost in the plan currency (016 FR-026).
 func TestBriefs_PlanCurrency_FR026(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	withGBPActivity(f)
 	f.create(t, priya, ukLaunchEvent, input("Venue", "GBP", "15000.00"))

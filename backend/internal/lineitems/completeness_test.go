@@ -16,6 +16,7 @@ func filledIn() LineItem {
 // The missing list counts the empty needed-to-submit fields in a fixed order: owner, Shell attributes,
 // finance budget year, finance budget item; nothing missing is an empty list, "All filled in" (FR-028).
 func TestMissing_NeededToSubmit_FR028(t *testing.T) {
+	t.Parallel()
 	active := budgetItems[0]
 
 	if got := Missing(filledIn(), nil, &active, true); got == nil || len(got) != 0 {
@@ -37,6 +38,7 @@ func TestMissing_NeededToSubmit_FR028(t *testing.T) {
 // The Shell attributes Settings marks needed to submit (Spend type, GL code) come after the owner, in the
 // order feature 002 lists them (FR-014, FR-028).
 func TestMissing_Attributes_FR014(t *testing.T) {
+	t.Parallel()
 	attributes := []settings.MissingField{
 		{Field: "attributes." + spendType, Label: "Spend type"},
 		{Field: "attributes." + glCode, Label: "GL code"},
@@ -57,6 +59,7 @@ func TestMissing_Attributes_FR014(t *testing.T) {
 
 // A linked finance budget item that became inactive is kept, but counts until another is chosen (FR-016).
 func TestMissing_InactiveItem_FR016(t *testing.T) {
+	t.Parallel()
 	legacy := budgetItems[3]
 	li := filledIn()
 	li.FinanceBudgetItemID = legacy.ID
@@ -72,6 +75,7 @@ func TestMissing_InactiveItem_FR016(t *testing.T) {
 // A custom spread that does not add up to the planned cost saves, but counts as a problem (FR-019): 900.00
 // of 1,000.00 spread.
 func TestMissing_CustomNotAddingUp_FR019(t *testing.T) {
+	t.Parallel()
 	f := newFakeActivities().facts[launchFilm]
 	li := lineItem("1000.00", SpreadCustom, "2026-03", "450.00", "2026-04", "450.00")
 	li.OwnerID, li.FinanceBudgetYear, li.FinanceBudgetItemID = filledIn().OwnerID, filledIn().FinanceBudgetYear, europeDigital
@@ -90,6 +94,7 @@ func TestMissing_CustomNotAddingUp_FR019(t *testing.T) {
 
 // The SWBS request status follows the flag and the activity's status (FR-024, domain model §2.4).
 func TestSwbsStatus_FR024(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		request bool
 		status  string
