@@ -20,7 +20,7 @@ design, in Shell's enterprise design language.
 |---|---|
 | API | Go 1.27, standard library only at run time (`backend/`) |
 | Web app | React 19 + TypeScript (`frontend/`) |
-| Data | Local JSON file store now, PostgreSQL later |
+| Data | PostgreSQL 18 on your own computer: a native install, or the optional `compose.yaml` |
 | Sign-in | Demo sign-in now (password `mapp`), Shell single sign-on later |
 | Design | Shell's enterprise design language, design system v2 (`docs/product/design-system.md`) |
 | Phase | **Plan module** — see `docs/sdd/feature-map.md` |
@@ -77,6 +77,7 @@ Viewer role for their own teams. Details: [014 spec](specs/014-access-control/sp
 |---|---|---|
 | Go | 1.27 | `go version` |
 | Node.js | 22.22 or later, with npm (24 LTS recommended) | `node --version` |
+| PostgreSQL | 18, native install (or Docker with `docker compose up -d postgres`) | `pg_isready -h 127.0.0.1` |
 
 If `node` is not found after installing, open a new terminal; for Node.js unpacked from a zip file, add
 its folder to `PATH`.
@@ -85,16 +86,22 @@ its folder to `PATH`.
 
 Use two terminals: one for the API, one for the web app.
 
+**0. PostgreSQL** — on `127.0.0.1:5432`, with a role `mapp` that may create databases. With Docker,
+`docker compose up -d postgres` sets that up; with a native install, create the role once
+(`createuser --createdb mapp`). The API and the seed read the database from `DATABASE_URL`, by default
+`postgres://mapp@127.0.0.1:5432/mapp?sslmode=disable`.
+
 **1. The API** — <http://127.0.0.1:8080>
 
 ```powershell
 cd backend
-go run ./cmd/seed          # once: loads the demo data (people, roles, plans, approvals, GSAP data) into backend/data
+go run ./cmd/seed          # creates and migrates the database, then loads the demo data (people, roles, plans, approvals, GSAP data)
 go run ./cmd/api           # logs {"msg":"MAPP API listening","url":"http://127.0.0.1:8080",…}
 ```
 
-The API reads its data only when it starts, so **stop the API (Ctrl+C) before you run the seed again**.
-To start over from the demo data: `go run ./cmd/seed -reset` (this deletes the current data).
+**Stop the API (Ctrl+C) before you run the seed again.** To start over from the demo data:
+`go run ./cmd/seed -reset` (this deletes the current data). After pulling new migrations, run
+`go run ./cmd/seed` once: it applies them, and the API refuses to start on a database behind them.
 
 **2. The web app** — <http://127.0.0.1:5173>
 
@@ -124,14 +131,17 @@ $env:MAPP_API_URL = 'http://127.0.0.1:18081'     # web-app terminal, before npm 
 cd backend
 gofmt -l .                 # prints nothing when the formatting is right
 go vet ./...
-go test ./...              # unit and contract tests
+go test -short ./...       # unit and contract tests; no database needed
+go test ./...              # also the scope-isolation tests, on the PostgreSQL server of TEST_DATABASE_URL
 
 cd ../frontend
 npm run check              # API types up to date, type check, lint, format, unit and component tests
 npm run test:e2e           # browser tests; they start their own API (port 18080) and web app (port 14173)
 ```
 
-The end-to-end tests use their own temporary data and never touch `backend/data`.
+The end-to-end tests use their own database, `mapp_e2e` (`E2E_DATABASE_URL` moves it), which the seed
+empties and reloads on every run; your own database is never touched. Set `TEST_DATABASE_URL`, for example
+to `postgres://mapp@127.0.0.1:5432/postgres?sslmode=disable`, before `go test ./...`.
 
 ## Developer pages
 

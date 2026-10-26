@@ -110,8 +110,9 @@ test database is left behind.
   migration.
 - **FR-003**: All application SQL MUST live in `.sql` files compiled by sqlc (pinned version, run with
   `go run`) into committed code under `internal/platform/database/sqlcdb`; no SQL is built by
-  concatenation. The only exception is the test helper's `CREATE`/`DROP DATABASE`, whose identifiers it
-  generates and quotes itself.
+  concatenation. The only exceptions take identifiers, which cannot be query parameters: the test
+  helper's `CREATE`/`DROP DATABASE`, the seed's `CREATE DATABASE` for a missing database and its
+  `TRUNCATE` of the tables the catalogue lists, each identifier quoted by pgx.
 - **FR-004**: Every record type stored today MUST have a table as in [data-model.md](data-model.md): keys,
   foreign keys, `NOT NULL`, `CHECK` and unique constraints for every invariant the database can check
   without being stricter than the service's rule.
@@ -167,7 +168,8 @@ test database is left behind.
 ## Assumptions
 
 - The JSON data folders hold demo data only, so they are not converted: the seed command loads the demo
-  data into PostgreSQL. The `-reset` behaviour becomes "drop and re-create the schema's data".
+  data into PostgreSQL. `-reset` empties every table with `TRUNCATE` (which the write-once triggers let
+  through) before loading.
 - PostgreSQL 18 runs on `127.0.0.1` for development (native or Compose), with a role that may create
   databases (`CREATEDB`) for the test helper.
 - Feature 022 settles how the actor's scope reaches services and the 404 rule for records outside it;

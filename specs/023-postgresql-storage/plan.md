@@ -15,8 +15,9 @@ migrated template. Each area gains a `store_postgres.go` beside its JSON reposit
 interface; when all exist, `internal/app` and the seed command switch to PostgreSQL at once and stop using
 the JSON store, which stays as the service and handler tests' stand-in until 025 ([research](research.md) R1–R11, [data model](data-model.md)).
 
-**Built on this branch**: the foundation, the pilot area (samples, R8) and every other store, with scoped
-reads for plan-owned data (R12); the application still runs on the JSON store until the switch (T026–T028).
+**Built on this branch**: the foundation, the pilot area (samples, R8), every other store with scoped reads
+for plan-owned data (R12), and the switch: the API, the seed and the end-to-end tests run on PostgreSQL
+(T026–T028); the JSON store is the tests' stand-in only (T031).
 
 ## Technical Context
 

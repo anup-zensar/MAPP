@@ -12,8 +12,8 @@ fit together. Exact library versions are fixed in feature 001's `plan.md` and `r
 └──────────────────────────┘           └──────────────┬───────────────┘
                                                        │ repository interfaces
                                           ┌────────────▼────────────┐
-                                          │ JSON file store (now)    │──► PostgreSQL (later)
-                                          │ backend/data/*.json      │
+                                          │ PostgreSQL 18 (local)    │──► Azure Database for
+                                          │ pgx · sqlc · goose       │    PostgreSQL (later)
                                           └──────────────────────────┘
 ```
 
@@ -36,7 +36,7 @@ fit together. Exact library versions are fixed in feature 001's `plan.md` and `r
 |---|---|---|
 | **Handler** | Read the HTTP request, call the service, write JSON. No business rules. | `POST /api/v1/plans` |
 | **Service** | All business rules: validation, calculations, status changes, activity log. Receives the actor. | `plans.Service.Create(ctx, actor, input)` |
-| **Repository** | Read and write records. An interface plus one implementation per storage. | `plans.Repository` → JSON store now, PostgreSQL later |
+| **Repository** | Read and write records. An interface plus one implementation per storage. | `plans.Repository` → `plans.PostgresStore` |
 
 - Shared platform code (small and boring, `internal/platform/`): JSON helpers and the error format, the
   actor, readable IDs, record bookkeeping (version, created/updated), clock (so tests can fix "today"),
@@ -63,15 +63,18 @@ fit together. Exact library versions are fixed in feature 001's `plan.md` and `r
 
 ## 3. Storage
 
-- **Now:** a local JSON file store (one file per record type in `backend/data/`, git-ignored), written
-  safely (write to a temporary file, then rename) and guarded by a lock so concurrent requests cannot
-  corrupt it. Work runs in transactions (`store.Transactor`): all changes of one request — for example
-  a delete, its recycle-bin entry and its activity-log entry — are saved together or not at all.
-- **Later:** PostgreSQL. Each repository gets a PostgreSQL implementation; services and the web app do not
-  change. To make that easy, records are relational in shape: each level is its own record type with a
-  parent id, no deep nesting, ids that never change.
-- Seed data: a command loads the demo dataset into an empty data folder (see
-  `docs/product/demo-users-and-data.md`).
+- **PostgreSQL 18** in every environment (ADR-0013): a native install or the optional `compose.yaml` on
+  a developer's machine, a service in CI, Azure Database for PostgreSQL later. Each area's
+  `store_postgres.go` implements its repository interface with sqlc-generated queries over the schema of
+  the goose migrations; constraints guard every invariant the database can check, and the reads of
+  plan-owned records the person sees filter by their scope in SQL.
+- Work runs in transactions (`store.Transactor`): all changes of one request — for example a delete, its
+  recycle-bin entry and its activity-log entry — are saved together or not at all. Writes run one at a
+  time; reads see one consistent snapshot and never wait.
+- Seed data: `go run ./cmd/seed` creates and migrates the database and loads the demo dataset into it
+  (see `docs/product/demo-users-and-data.md`).
+- The JSON file store of feature 001 (ADR-0004) remains only as the stand-in of service, handler and
+  contract tests until feature 025 replaces it with fakes.
 
 ## 4. Sign-in and the actor
 

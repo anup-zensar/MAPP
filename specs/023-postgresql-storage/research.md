@@ -151,10 +151,17 @@ values, report changes nobody made. Every such column has a `CHECK (json_typeof(
 
 - JSON data folders are not converted (demo data only); the seed command loads the demo data into
   PostgreSQL.
-- `store.Memo` (settings forms decoded once per request) has no PostgreSQL counterpart yet. The settings
-  task first measures the pages that use it on PostgreSQL; only if they miss today's times does
-  `database` gain a per-transaction memo with the same contract (Principle V: no optimisation without a
-  measurement).
+- `store.Memo` (settings forms decoded once per request) had no PostgreSQL counterpart. **Measured**
+  (T026): one Plans list request on the seeded data loaded the forms 166 times (60 plan, 10 campaign, 20
+  initiative, 36 activity, 40 line item), a number that grows with the records shown, so 004 SC-009
+  (200 plans within a second) could not hold. **Decision**: `internal/platform/memo` keeps such values for
+  the rest of a `Read` — a read-only snapshot, so they cannot go stale — and `store.Memo` uses it outside a
+  JSON transaction; in a `Write`, they are worked out on every call. The Plans list went from 0.34 s to
+  0.21 s.
+- **Still open**: the same page sends about 600 queries, mostly the same reference record read again and
+  again (a person, a finance budget, a workflow, the rates). The seeded pages answer within 0.4 s, well
+  inside the 2-second targets; the scale targets (004 SC-009, 009 SC-004) need a measurement on large data
+  and, if missed, batched or memoised reference reads.
 
 ## R12 — Scope in SQL (FR-009)
 
