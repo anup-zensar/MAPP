@@ -254,6 +254,15 @@ func (x lineItemsForActivities) CopyAll(ctx context.Context, a actor.Actor, from
 	return x.svc.CopyLineItems(ctx, a, fromActivityID, toActivityID, yearShift)
 }
 
+// CopyMany copies the line items of many activities at once: a campaign or initiative copy.
+func (x lineItemsForActivities) CopyMany(ctx context.Context, a actor.Actor, pairs []activities.CopyPair, yearShift int) (int, error) {
+	converted := make([]lineitems.CopyPair, 0, len(pairs))
+	for _, p := range pairs {
+		converted = append(converted, lineitems.CopyPair{FromID: p.FromID, ToID: p.ToID})
+	}
+	return x.svc.CopyLineItemsOf(ctx, a, converted, yearShift)
+}
+
 // DatesChanged needs nothing stored: a line item spread Evenly, First or Last month follows its activity's
 // dates when it is read, and a custom spread is kept as typed (007 FR-022, D-141).
 func (lineItemsForActivities) DatesChanged(context.Context, actor.Actor, activities.Activity, activities.Activity) error {

@@ -297,6 +297,15 @@ func (l *fakeLineItems) Facts(_ context.Context, activityIDs []string) (map[stri
 	return facts, nil
 }
 
+func (l *fakeLineItems) CopyMany(ctx context.Context, by actor.Actor, pairs []activities.CopyPair, years int) (int, error) {
+	copied := 0
+	for _, p := range pairs {
+		n, _ := l.CopyAll(ctx, by, p.FromID, p.ToID, years)
+		copied += n
+	}
+	return copied, nil
+}
+
 // CopyAll records the call and answers the activity's line-item count of facts.
 func (l *fakeLineItems) CopyAll(_ context.Context, _ actor.Actor, from, to string, years int) (int, error) {
 	l.copies = append(l.copies, fmt.Sprintf("%s → %s +%d", from, to, years))

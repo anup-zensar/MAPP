@@ -22,6 +22,8 @@ type LineItems interface {
 	// custom months and the finance budget year by yearShift years (D-195, 007-P9), inside the caller's
 	// Write; it writes no log entries and returns how many it copied.
 	CopyAll(ctx context.Context, a actor.Actor, fromActivityID, toActivityID string, yearShift int) (int, error)
+	// CopyMany is CopyAll for many activities at once, activity by activity in the order of pairs.
+	CopyMany(ctx context.Context, a actor.Actor, pairs []CopyPair, yearShift int) (int, error)
 	// DatesChanged is told after the activity's dates or ongoing changed, inside the same Write (007 FR-022).
 	DatesChanged(ctx context.Context, a actor.Actor, before, after Activity) error
 	// Items returns the line items of the activity activityID in creation order, with their planned costs in
@@ -30,6 +32,10 @@ type LineItems interface {
 	// MoveToActivity moves the line items lineItemIDs to the activity toActivityID keeping their IDs, values
 	// and spreads, logging each as moved, inside the caller's Write (016 FR-028, FR-030).
 	MoveToActivity(ctx context.Context, a actor.Actor, lineItemIDs []string, toActivityID string) error
+}
+
+type CopyPair struct {
+	FromID, ToID string
 }
 
 // LineItemBrief is a line item in short (016 FR-026): its planned cost in its own currency and in the plan
