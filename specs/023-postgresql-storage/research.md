@@ -71,8 +71,12 @@ constitution's named stack (B1).
   be committed.
 - **Soft references**: a reference that may outlive its target — to a record in the recycle bin (approval
   rounds and notifications of a deleted activity, transactions of a deleted line item, a deleted pinned
-  plan, the source of a split activity) or to history (actor ids, which include `system`) — is a plain id
-  without a foreign key. The list is in the data model.
+  plan, the source of a split activity), to a record whose delete rule ignores it (a workflow level's role,
+  an activity's workflow, an allocation's global budget, a transaction's currency) or to history (actor
+  ids, which include `system`) — is a plain id without a foreign key. Each area's delete and restore rules
+  were read to find them; the list is in the data model §4.
+- **Uniqueness a Write may break for a moment** (a second open round, a plan's allocation, a GSAP identity,
+  overlapping delegations) is a deferrable constraint or exclusion, checked at commit.
 - **Unique "ignoring case"**: the services compare with `strings.EqualFold`. A unique index on
   `lower(name COLLATE "C")` folds ASCII letters only, so it can never refuse a name the service accepts,
   and it still stops the common duplicates if a rule is ever bypassed.
@@ -90,7 +94,8 @@ constitution's named stack (B1).
   **fails**, so CI can never skip store tests silently.
 - **Rationale**: a copy from a template takes ~0.15 s, so every test can run in parallel on its own data.
   Templates of older migration sets stay on the server and may be dropped by hand
-  (`DROP DATABASE mapp_template_…`).
+  (`DROP DATABASE mapp_template_…`). The role in `TEST_DATABASE_URL` needs `CREATEDB`; migration 00013
+  creates the trusted extension `btree_gist`, which the owner of a database may create.
 - **Alternatives**: testcontainers (banned: Docker), one shared database with transactions rolled back
   (cannot test commit-time constraints or concurrent transactions).
 
@@ -149,3 +154,15 @@ values, report changes nobody made. Every such column has a `CHECK (json_typeof(
   task first measures the pages that use it on PostgreSQL; only if they miss today's times does
   `database` gain a per-transaction memo with the same contract (Principle V: no optimisation without a
   measurement).
+
+## R12 — Scope in SQL (FR-009)
+
+- **Decision**: `authz.Scope` (from `authz.ScopeOf` / `PermissionScopeOf`) carries where the person holds a
+  permission. Three SQL functions mirror the Go rules: `plan_in_scope()` = `authz.CanView`,
+  `plan_in_permission_scope()` = `authz.InScope`, `activity_in_scope()` = `authz.CanViewActivity` (plan
+  scope, activity owner, approvers named in its rounds). Each plan-owned store keeps its interface's
+  unscoped reads (internal work: usage counts, restores, the seed) and adds `…InScope` reads that call the
+  functions; the plans test compares the SQL with `authz.CanView` for six people and roles.
+- **Rationale**: 022 kept today's unscoped store interfaces and filters in the services, so changing the
+  interfaces would change every service; the scoped reads let T025a move each person-facing read into SQL
+  without a second schema change.

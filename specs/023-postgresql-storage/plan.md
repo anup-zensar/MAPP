@@ -15,8 +15,8 @@ template. Each area gains a `store_postgres.go` beside its JSON repository, impl
 interface; when all exist, `internal/app` and the seed command switch to PostgreSQL at once and the JSON
 store is removed ([research](research.md) R1–R11, [data model](data-model.md)).
 
-**Built on this branch**: the foundation and the pilot area, samples (R8); the application still runs on
-the JSON store.
+**Built on this branch**: the foundation, the pilot area (samples, R8) and every other store, with scoped
+reads for plan-owned data (R12); the application still runs on the JSON store until the switch (T025–T028).
 
 ## Technical Context
 
@@ -40,8 +40,8 @@ store tests per interface promise, constraint and race (FR-004–FR-008)
 **Constraints**: no change to services, handlers, the contract or the web app (FR-008); no Docker in any
 test (FR-010); new files ≤ 300 non-blank lines and ≤ 5% comment lines; release age for every module (R1)
 
-**Scale/Scope**: 52 tables in 13 migrations; 15 stores (14 areas and the id counters) with 158
-repository methods
+**Scale/Scope**: 50 tables in 15 migrations and 3 scope functions; 15 stores (14 areas and the id counters)
+with 158 repository methods plus the scoped reads
 
 ## Constitution Check
 
@@ -59,7 +59,7 @@ repository methods
 | B1 Stack | pgx, sqlc, goose, go-cmp — all named in B1; reasons in R1 | Pass |
 | B2 Layout | `internal/platform/database/{migrations,queries,sqlcdb,dbtest}`; `store_postgres.go` per area | Pass |
 | B3 Lifecycle | Pool opened once, closed on shutdown (wiring task) | Pass |
-| B5 Data | SQL in `.sql` via sqlc; goose forward-only, embedded; `bigint` minor units, `numeric` rates, `date`, `timestamptz` UTC; service-owned transactions; change and log entry in one transaction | Pass |
+| B5 Data | SQL in `.sql` via sqlc; goose forward-only, embedded; `bigint` minor units (rates in millionths, percentages in hundredths), `date`, `timestamptz` UTC; service-owned transactions; change and log entry in one transaction | Pass |
 | B9 Testing | `dbtest` per-test databases from a migrated template, skipped under `-short`, no Docker | Pass |
 | Gates 3–4 | `sqlc generate` diff and migrations on an empty database run in CI (T029) | Pass |
 | Governance → Alignment | No area is switched as a side effect: stores are added beside the JSON ones and switched together in one task | Pass |

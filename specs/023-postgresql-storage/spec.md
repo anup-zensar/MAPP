@@ -113,7 +113,7 @@ test database is left behind.
 - **FR-004**: Every record type stored today MUST have a table as in [data-model.md](data-model.md): keys,
   foreign keys, `NOT NULL`, `CHECK` and unique constraints for every invariant the database can check
   without being stricter than the service's rule.
-- **FR-005**: Money MUST be stored as `bigint` minor units (exchange rates and percentages as `numeric`),
+- **FR-005**: Money MUST be stored as `bigint` minor units (exchange rates in millionths, percentages in hundredths),
   calendar dates as `date` and timestamps as `timestamptz`; timestamps MUST come back in UTC.
 - **FR-006**: Services MUST own their transactions: `Write` runs one transaction carried in the context,
   which every store and the activity log called with that context join; a change and its log entry
