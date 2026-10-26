@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router';
 import type { RouteObject } from 'react-router';
+import { ComingSoonPage } from '@/features/placeholders';
 import type { PageHandle } from '@/session/page-handle';
 import { RequirePermission } from '@/session/RequirePermission';
 import { RequireSignIn } from '@/session/RequireSignIn';
@@ -18,7 +19,6 @@ import {
   ApprovalWorkflowsPage,
   ApprovalsPage,
   CampaignPanel,
-  ComingSoonPage,
   ComponentGalleryPage,
   CurrenciesPage,
   FieldHelpSettingsPage,

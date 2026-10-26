@@ -13,7 +13,6 @@ const globalBudgets = () => import('@/features/global-budgets');
 const home = () => import('@/features/home');
 const lineItems = () => import('@/features/line-items');
 const people = () => import('@/features/people');
-const placeholders = () => import('@/features/placeholders');
 const plans = () => import('@/features/plans');
 const recycleBin = () => import('@/features/recycle-bin');
 const settings = () => import('@/features/settings');
@@ -78,9 +77,6 @@ export const RoleFormPage = lazy(() =>
 );
 export const RolePage = lazy(() => people().then((feature) => ({ default: feature.RolePage })));
 export const TeamsPage = lazy(() => people().then((feature) => ({ default: feature.TeamsPage })));
-export const ComingSoonPage = lazy(() =>
-  placeholders().then((feature) => ({ default: feature.ComingSoonPage })),
-);
 export const CampaignPanel = lazy(() =>
   plans().then((feature) => ({ default: feature.CampaignPanel })),
 );

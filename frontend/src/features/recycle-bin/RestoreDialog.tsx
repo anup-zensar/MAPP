@@ -6,6 +6,7 @@ import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { useToast } from '@/ui/Toast/useToast';
 import { useFormatters } from '@/format/useFormatters';
+import { asApiError } from '@/api/errors';
 import {
   blockedText,
   blockedTitle,
@@ -20,7 +21,7 @@ import {
 } from './restore-text';
 import type { BinItem } from './bin-text';
 import type { RestorePreview } from './restore-text';
-import { asApiError, closingMessage, refetchBin } from './dialog-failure';
+import { closingMessage, refetchBin } from './dialog-failure';
 import { useRestore, useRestorePreview } from './api';
 import styles from './dialogs.module.css';
 

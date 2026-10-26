@@ -4,9 +4,10 @@ import type { ApiError } from '@/api/errors';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { useToast } from '@/ui/Toast/useToast';
 import { useFormatters } from '@/format/useFormatters';
+import { asApiError } from '@/api/errors';
 import type { BinItem } from './bin-text';
 import { insideEntriesWarning, purgeContentsText, purgeTitle, purgedMessage } from './purge-text';
-import { asApiError, closingMessage, refetchBin } from './dialog-failure';
+import { closingMessage, refetchBin } from './dialog-failure';
 import { usePurge } from './api';
 import styles from './dialogs.module.css';
 

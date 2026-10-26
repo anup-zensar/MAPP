@@ -155,6 +155,16 @@ export function resolvedMessage(error: ApiError, name: string, dateFormat?: Date
   return `'${name}' is no longer in the recycle bin — ${by.name} ${what} ${when(at, dateFormat)}`;
 }
 
+/** Any thrown value as an ApiError; anything that is not one is the general failure. */
+export function asApiError(error: unknown): ApiError {
+  return error instanceof ApiError ? error : new ApiError('other');
+}
+
+/** The session ended: the sign-in page says so, so nothing else needs to. */
+export function isSessionLost(error: ApiError): boolean {
+  return error.kind === 'signInRequired' || error.kind === 'sessionExpired';
+}
+
 /** "at 14:32" today, otherwise "on 12 Mar 2026 at 14:32", in the user's own time zone. */
 function when(timestamp: string, dateFormat?: DateFormat): string {
   const time = `at ${formatTime(timestamp)}`;
