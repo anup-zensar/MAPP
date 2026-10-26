@@ -1,9 +1,16 @@
 import { useState } from 'react';
-import type { FieldValues, Path, UseFormReturn } from 'react-hook-form';
+import type { FieldError, FieldValues, Path, UseFormReturn } from 'react-hook-form';
 import type { FieldProblem } from './FormErrorSummary/FormErrorSummary';
 
-/** Forms check on Save and keep their problems until the next Save (design system §6.4). */
-export const CHECK_ON_SAVE = { mode: 'onSubmit', reValidateMode: 'onSubmit' } as const;
+/**
+ * Forms check on Save and keep their problems until the next Save (design system §6.4); every
+ * problem of a field is kept, for the summary.
+ */
+export const CHECK_ON_SAVE = {
+  mode: 'onSubmit',
+  reValidateMode: 'onSubmit',
+  criteriaMode: 'all',
+} as const;
 
 /** What useFormProblems gives a form. */
 export interface FormProblems {
@@ -25,10 +32,9 @@ export function useFormProblems<T extends FieldValues>(
 
   function onInvalid() {
     setProblems(
-      fields.flatMap((field) => {
-        const message = form.getFieldState(field).error?.message;
-        return message ? [{ field, message }] : [];
-      }),
+      fields.flatMap((field) =>
+        messagesOf(form.getFieldState(field).error).map((message) => ({ field, message })),
+      ),
     );
   }
 
@@ -43,4 +49,14 @@ export function useFormProblems<T extends FieldValues>(
   }
 
   return { problems, onInvalid, showServerProblems, clearProblems: () => setProblems([]) };
+}
+
+function messagesOf(error: FieldError | undefined): string[] {
+  const all = Object.values(error?.types ?? {}).flatMap((value) =>
+    typeof value === 'string' ? [value] : Array.isArray(value) ? value : [],
+  );
+  if (all.length > 0) {
+    return all;
+  }
+  return error?.message ? [error.message] : [];
 }
