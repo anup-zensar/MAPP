@@ -1,8 +1,4 @@
-/**
- * The line-item forms' answers (feature 007): the form options of "Launch film", the line-item
- * Shell attributes (Spend type → GL code), the people and rates every form asks for, refusals and
- * the answer to a delete.
- */
+/** The line-item forms' answers (feature 007): form options, attributes, people, rates, refusals. */
 import type { HttpHandler } from 'msw';
 import type { components } from '@/api/generated/schema';
 import { attribute, option } from './attribute-forms';
@@ -97,10 +93,7 @@ const PRIYA: Person = {
   updatedBy: ACTOR,
 };
 
-/**
- * What every line-item form asks besides its own data: people and attributes. The plan's Business
- * unit options come with the activity (D-212), so no plan is asked for.
- */
+/** People, attributes and rates; the Business unit options come with the activity (D-212). */
 export function formAnswers(): HttpHandler[] {
   return [
     reply('GET /api/v1/people', { body: { items: [PRIYA], total: 1 } }),
@@ -113,7 +106,6 @@ export function formAnswers(): HttpHandler[] {
   ];
 }
 
-/** A 400 answer with these field problems. */
 export function validationError(fields: { field: string; message: string }[]): {
   status: number;
   body: ErrorBody;
@@ -137,7 +129,6 @@ export function restartRefusal() {
   ]);
 }
 
-/** A 404 with the API's message. */
 export function notFound(message: string): { status: number; body: ErrorBody } {
   return { status: 404, body: { error: { code: 'not_found', message, fields: [] } } };
 }
@@ -160,7 +151,7 @@ export function deleteResult(name = 'Agency fee', id = 'L-1001') {
   };
 }
 
-/** Today's rates (GET /api/v1/exchange-rates/current), for the ⓘ that names the rates used (016 FR-009). */
+/** Today's rates, for the ⓘ that names the rates used (016 FR-009). */
 export function currentRates() {
   return {
     today: '2026-03-12',

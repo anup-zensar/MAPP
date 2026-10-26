@@ -1,7 +1,6 @@
 /**
  * The line-item rules the browser repeats for instant feedback (007 plan, "Calculations in the
- * browser", D-142): conversion, spreads over the activity's months, quarters and what new activity
- * dates do to the spreads. Amounts are BigInt cents, never JavaScript numbers. The API recalculates
+ * browser", D-142): conversion and spreads over the activity's months. Amounts are BigInt cents, never JavaScript numbers. The API recalculates
  * everything on save, and its answer is what the pages show; the Go and TypeScript tests share one
  * example table.
  */
@@ -9,7 +8,6 @@ import type { components } from '@/api/generated/schema';
 import { formatAmount, formatCents, parseMoneyInput, toCents } from '@/format/decimal';
 
 export type SpreadMethod = components['schemas']['SpreadMethod'];
-type SpreadGrid = components['schemas']['SpreadGrid'];
 type Money = components['schemas']['Money'];
 
 /** The activity's dates as the line-item screens know them ("YYYY-MM-DD" or null). */
@@ -155,14 +153,16 @@ export function spreadMonths(
   dates: ActivityDates,
 ): SpreadResult {
   const months = activityMonths(dates);
-  if (months.length === 0) {
+  const first = months[0];
+  const last = months.at(-1);
+  if (first === undefined || last === undefined) {
     return { state: 'notSpread', months: [] };
   }
   if (dates.ongoing || method === 'firstMonth') {
-    return { state: 'spread', months: [{ month: months[0], cents }] };
+    return { state: 'spread', months: [{ month: first, cents }] };
   }
   if (method === 'lastMonth') {
-    return { state: 'spread', months: [{ month: months[months.length - 1], cents }] };
+    return { state: 'spread', months: [{ month: last, cents }] };
   }
   return { state: 'spread', months: splitEvenly(cents, months) };
 }
@@ -191,92 +191,10 @@ export function usdMonths(months: MonthCents[], rate: string): MonthCents[] {
     months.reduce((sum, { cents }) => sum + cents, 0n),
     rate,
   );
-  const converted = usd.reduce((sum, { cents }) => sum + cents, 0n);
-  usd[lastWithAmount] = {
-    month: usd[lastWithAmount].month,
-    cents: usd[lastWithAmount].cents + target - converted,
-  };
-  return usd;
-}
-
-/** One column of the grid after Monthly or Quarterly. */
-export interface GridColumn {
-  key: string;
-  /** "Mar 2026", "Q1 2026" or "No dates yet". */
-  label: string;
-  outsideActivityDates: boolean;
-  noDates: boolean;
-}
-
-/** The grid as shown: columns, each row's cells and the totals, as API amounts or null. */
-export interface ShownGrid {
-  columns: GridColumn[];
-  rows: { lineItemId: string; name: string; cells: (Money | null)[]; total: Money }[];
-  totals: (Money | null)[];
-  total: Money;
-}
-
-/** The API's grid by month, with its column labels. */
-export function monthColumns(grid: SpreadGrid): ShownGrid {
-  return {
-    columns: grid.columns.map((column) => ({
-      key: column.key,
-      label: column.month ? formatMonth(column.month) : 'No dates yet',
-      outsideActivityDates: column.outsideActivityDates,
-      noDates: column.month === null,
-    })),
-    rows: grid.rows,
-    totals: grid.totals,
-    total: grid.total,
-  };
-}
-
-/**
- * The grid by calendar quarter (data model §3.8): the month columns of each quarter added up ("Q1
- * 2026"), the No dates yet column kept; a quarter is outside the activity's dates when all of its
- * months are. Display only.
- */
-export function quarterColumns(grid: SpreadGrid): ShownGrid {
-  const groups: { key: string; label: string; indexes: number[]; noDates: boolean }[] = [];
-  grid.columns.forEach((column, index) => {
-    const key = column.month ? quarterOf(column.month) : column.key;
-    const group = groups.find((candidate) => candidate.key === key);
-    if (group) {
-      group.indexes.push(index);
-    } else {
-      groups.push({
-        key,
-        label: column.month ? key.replace(/^(\d{4})-(Q\d)$/, '$2 $1') : 'No dates yet',
-        indexes: [index],
-        noDates: column.month === null,
-      });
-    }
-  });
-  const currency = grid.total.currency;
-  const sum = (cells: (Money | null)[], indexes: number[]): Money | null => {
-    const amounts = indexes.map((index) => cells[index]).filter((cell) => cell !== null);
-    if (amounts.length === 0) {
-      return null;
-    }
-    const cents = amounts.reduce((total, cell) => total + toCents(cell.amount), 0n);
-    return { amount: formatCents(cents), currency };
-  };
-  return {
-    columns: groups.map((group) => ({
-      key: group.key,
-      label: group.label,
-      outsideActivityDates: group.indexes.every(
-        (index) => grid.columns[index].outsideActivityDates,
-      ),
-      noDates: group.noDates,
-    })),
-    rows: grid.rows.map((row) => ({
-      ...row,
-      cells: groups.map((group) => sum(row.cells, group.indexes)),
-    })),
-    totals: groups.map((group) => sum(grid.totals, group.indexes)),
-    total: grid.total,
-  };
+  const difference = target - usd.reduce((sum, { cents }) => sum + cents, 0n);
+  return usd.map((month, index) =>
+    index === lastWithAmount ? { month: month.month, cents: month.cents + difference } : month,
+  );
 }
 
 /**
@@ -290,53 +208,16 @@ export function customGridMonths(
   storedMonths: string[] = [],
 ): string[] {
   let months = activityMonths(dates);
-  if (months.length === 0) {
+  const first = months[0];
+  if (first === undefined) {
     months = Array.from({ length: 12 }, (_, index) => addMonths(`${planYear}-01`, index));
   } else if (dates.ongoing) {
     const december = `${planYear}-12`;
-    for (let month = addMonths(months[0], 1); month <= december; month = addMonths(month, 1)) {
+    for (let month = addMonths(first, 1); month <= december; month = addMonths(month, 1)) {
       months.push(month);
     }
   }
   return [...new Set([...months, ...storedMonths])].sort();
-}
-
-/** The line items' spreads as SpreadEffectNote needs them. */
-export interface SpreadFacts {
-  method: SpreadMethod;
-  /** The months of a custom spread. */
-  months: string[];
-}
-
-/** What new activity dates do to its line items (FR-022, D-150). */
-export interface SpreadEffect {
-  /** Evenly, first or last month: spread again over the new dates. */
-  respread: number;
-  /** Custom spreads: kept as typed. */
-  customKept: number;
-  /** Custom spreads with a month outside the new dates. */
-  customOutside: number;
-  /** Evenly, first or last month while the new dates leave the activity without dates. */
-  notSpread: number;
-}
-
-/** Counts what new dates do to the given spreads (D-150). */
-export function spreadEffect(items: SpreadFacts[], dates: ActivityDates): SpreadEffect {
-  const hasDates = activityMonths(dates).length > 0;
-  const effect: SpreadEffect = { respread: 0, customKept: 0, customOutside: 0, notSpread: 0 };
-  for (const item of items) {
-    if (item.method === 'custom') {
-      effect.customKept += 1;
-      if (item.months.some((month) => isOutsideDates(month, dates))) {
-        effect.customOutside += 1;
-      }
-    } else if (hasDates) {
-      effect.respread += 1;
-    } else {
-      effect.notSpread += 1;
-    }
-  }
-  return effect;
 }
 
 /** A rate ("0.92", "83.500000") in millionths. */
@@ -352,9 +233,4 @@ function divideHalfUp(numerator: bigint, divisor: bigint): bigint {
   const d = divisor < 0n ? -divisor : divisor;
   const result = (n * 2n + d) / (d * 2n);
   return negative ? -result : result;
-}
-
-/** "2026-Q1" for "2026-03". */
-function quarterOf(month: string): string {
-  return `${month.slice(0, 4)}-Q${Math.floor((Number(month.slice(5, 7)) - 1) / 3) + 1}`;
 }

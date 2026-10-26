@@ -1,7 +1,4 @@
-/**
- * GSAP's figures for the line-item tests (feature 015): "Launch film" (A-1001) and "Agency fee"
- * (L-1001) as the financials record view answers them, and a page of transactions.
- */
+/** GSAP's figures of "Launch film" (A-1001) and "Agency fee" (L-1001), feature 015. */
 import type { components } from '@/api/generated/schema';
 import { nth } from '../dom';
 import { usd } from './line-items';
@@ -18,7 +15,7 @@ const SOURCE = {
   accrualMonth: '2026-03',
 };
 
-/** A record's GSAP figures (015 FR-011): nothing yet unless given. */
+/** Nothing yet unless given (015 FR-011). */
 export function figures(overrides: Partial<FinancialFigures> = {}): FinancialFigures {
   return {
     plannedCost: usd('50000.00'),
@@ -152,7 +149,6 @@ export function lineItemRecord(overrides: Partial<FinancialRecordView> = {}): Fi
   };
 }
 
-/** One page of a line item's transactions (GET /api/v1/financials/transactions). */
 export function transactionPage(items: FinancialTransactionRow[]): FinancialTransactionPage {
   return {
     items,

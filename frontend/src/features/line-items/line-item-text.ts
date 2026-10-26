@@ -4,7 +4,7 @@
  */
 import type { components } from '@/api/generated/schema';
 import { plural } from '@/format/text';
-import type { SpreadEffect, SpreadMethod } from './line-item-math';
+import type { SpreadMethod } from './line-item-math';
 
 type SwbsStatus = components['schemas']['SwbsStatus'];
 type ActivityStatus = components['schemas']['ActivityStatus'];
@@ -342,44 +342,7 @@ export const ACTIVITY_GONE =
 export const GO_TO_PLANS = 'Go to Plans';
 export const GO_TO_BIN = 'Go to the recycle bin';
 
-// Spread effect (FR-022, D-150)
-/**
- * What new activity dates do to its line items, for the activity's edit form and its re-approval
- * dialog: "When you save, 2 line items are re-spread over the new dates and 1 custom spread is kept
- * as typed. 1 custom spread will have months outside the activity's dates." Null when nothing
- * changes for them.
- */
-export function spreadEffectText(effect: SpreadEffect): string | null {
-  const sentences: string[] = [];
-  const respread = effect.respread
-    ? `${plural(effect.respread, 'line item')} ${isAre(effect.respread)} re-spread over the new dates`
-    : null;
-  const kept = effect.customKept
-    ? `${plural(effect.customKept, 'custom spread')} ${isAre(effect.customKept)} kept as typed`
-    : null;
-  if (respread && kept) {
-    sentences.push(`When you save, ${respread} and ${kept}.`);
-  } else if (respread || kept) {
-    sentences.push(`When you save, ${respread ?? kept}.`);
-  }
-  if (effect.customOutside) {
-    sentences.push(
-      `${plural(effect.customOutside, 'custom spread')} will have months outside the activity's dates.`,
-    );
-  }
-  if (effect.notSpread) {
-    sentences.push(
-      `Without dates, ${plural(effect.notSpread, 'line item')} won't be spread until the activity has dates again.`,
-    );
-  }
-  return sentences.length > 0 ? sentences.join(' ') : null;
-}
-
 /** "All filled in", "1 field needed", "3 fields needed" (FR-028). */
 export function completenessText(count: number): string {
   return count === 0 ? 'All filled in' : `${plural(count, 'field')} needed`;
-}
-
-function isAre(count: number): string {
-  return count === 1 ? 'is' : 'are';
 }

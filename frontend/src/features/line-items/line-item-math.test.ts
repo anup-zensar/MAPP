@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import type { components } from '@/api/generated/schema';
 import { toCents } from '@/format/decimal';
 import { nth } from '@/testing/dom';
 import {
@@ -12,20 +11,14 @@ import {
   fromUsd,
   isOutsideDates,
   parseAmount,
-  quarterColumns,
-  spreadEffect,
   spreadMonths,
   toUsd,
   usdMonths,
 } from './line-item-math';
 
-type SpreadGrid = components['schemas']['SpreadGrid'];
-
 const MAR_MAY = { startDate: '2026-03-01', endDate: '2026-05-31', ongoing: false };
 const ONGOING = { startDate: '2026-03-15', endDate: null, ongoing: true };
 const NO_DATES = { startDate: null, endDate: null, ongoing: false };
-
-const usd = (amount: string) => ({ amount, currency: 'USD' });
 
 // The shared example table of the 007 plan ("Business rules and their tests"); the Go tests use
 // the same rows.
@@ -203,52 +196,5 @@ describe('customGridMonths (D-152)', () => {
     expect(months).toHaveLength(12);
     expect(months[0]).toBe('2026-01');
     expect(months[11]).toBe('2026-12');
-  });
-});
-
-describe('quarterColumns (FR-003)', () => {
-  it('adds the months of each quarter and keeps the No dates yet column', () => {
-    const grid: SpreadGrid = {
-      columns: [
-        { key: '2026-03', month: '2026-03', outsideActivityDates: true },
-        { key: '2026-04', month: '2026-04', outsideActivityDates: false },
-        { key: '2026-05', month: '2026-05', outsideActivityDates: false },
-        { key: 'noDates', month: null, outsideActivityDates: false },
-      ],
-      rows: [
-        {
-          lineItemId: 'L-1',
-          name: 'Agency fee',
-          cells: [usd('100.00'), usd('200.00'), null, usd('5.00')],
-          total: usd('305.00'),
-        },
-      ],
-      totals: [usd('100.00'), usd('200.00'), null, usd('5.00')],
-      total: usd('305.00'),
-    };
-    const quarters = quarterColumns(grid);
-    expect(quarters.columns.map((c) => c.label)).toEqual(['Q1 2026', 'Q2 2026', 'No dates yet']);
-    expect(quarters.columns.map((c) => c.outsideActivityDates)).toEqual([true, false, false]);
-    expect(nth(quarters.rows, 0).cells).toEqual([usd('100.00'), usd('200.00'), usd('5.00')]);
-    expect(quarters.totals).toEqual([usd('100.00'), usd('200.00'), usd('5.00')]);
-  });
-});
-
-describe('spreadEffect (FR-022)', () => {
-  it('counts re-spread and kept custom spreads with their outside months', () => {
-    const items = [
-      { method: 'evenly' as const, months: [] },
-      { method: 'lastMonth' as const, months: [] },
-      { method: 'custom' as const, months: ['2026-03', '2026-04'] },
-    ];
-    expect(
-      spreadEffect(items, { startDate: '2026-04-01', endDate: '2026-06-30', ongoing: false }),
-    ).toEqual({ respread: 2, customKept: 1, customOutside: 1, notSpread: 0 });
-    expect(spreadEffect(items, NO_DATES)).toEqual({
-      respread: 0,
-      customKept: 1,
-      customOutside: 0,
-      notSpread: 2,
-    });
   });
 });
