@@ -20,6 +20,7 @@ import (
 
 // The sign-in page lists only the people who can sign in, sorted by name (FR-001).
 func TestActivePeople_ExcludesInactive_FR001(t *testing.T) {
+	t.Parallel()
 	service, db := newTestService(t)
 	addPeople(t, db,
 		newPerson("U-1001", "Sara Novak", true),
@@ -49,6 +50,7 @@ func TestActivePeople_ExcludesInactive_FR001(t *testing.T) {
 // Without demo data the list is empty, never nil, so the API answers "people": [] and the sign-in page can
 // say what to do (FR-028).
 func TestActivePeople_NoPeopleGivesAnEmptyList_FR028(t *testing.T) {
+	t.Parallel()
 	service, _ := newTestService(t)
 
 	got, err := service.ActivePeople(t.Context())
@@ -61,6 +63,7 @@ func TestActivePeople_NoPeopleGivesAnEmptyList_FR028(t *testing.T) {
 // The signed-in person comes with everything the sidebar and the account menu show (FR-012), and with
 // what My profile needs: their version and teams (003 FR-021, FR-026).
 func TestCurrentUser_PersonWithPreferences_FR012(t *testing.T) {
+	t.Parallel()
 	service, db := newTestService(t)
 	priya := newPerson("U-1002", "Priya Raman", true)
 	addPeople(t, db, priya)
@@ -89,6 +92,7 @@ func TestCurrentUser_PersonWithPreferences_FR012(t *testing.T) {
 
 // A signed-in person who no longer exists must sign in again (FR-007).
 func TestCurrentUser_PersonGoneMustSignInAgain_FR007(t *testing.T) {
+	t.Parallel()
 	service, _ := newTestService(t)
 
 	_, err := service.CurrentUser(t.Context(), actor.Actor{ID: "U-9999", Name: "Nobody"})
@@ -100,6 +104,7 @@ func TestCurrentUser_PersonGoneMustSignInAgain_FR007(t *testing.T) {
 // amounts in US dollars and dates as "12 Mar 2026" (FR-011, FR-014, D-038; 003 FR-023, FR-024). Sending no
 // change saves nothing.
 func TestPreferences_Defaults_FR011_FR014(t *testing.T) {
+	t.Parallel()
 	service, db := newTestService(t)
 	priya := newPerson("U-1002", "Priya Raman", true)
 	addPeople(t, db, priya)
@@ -128,6 +133,7 @@ func TestPreferences_Defaults_FR011_FR014(t *testing.T) {
 
 // Only the preferences that were sent change; the others stay as they were (FR-011, FR-014).
 func TestUpdatePreferences_ChangesOnlySentFields_FR011(t *testing.T) {
+	t.Parallel()
 	service, db := newTestService(t)
 	priya := newPerson("U-1002", "Priya Raman", true)
 	addPeople(t, db, priya)
@@ -160,6 +166,7 @@ func TestUpdatePreferences_ChangesOnlySentFields_FR011(t *testing.T) {
 
 // Preferences belong to one person: demo people often share a browser (FR-014, D-038).
 func TestUpdatePreferences_EachPersonHasTheirOwn_FR014(t *testing.T) {
+	t.Parallel()
 	service, db := newTestService(t)
 	priya := newPerson("U-1002", "Priya Raman", true)
 	daniel := newPerson("U-1003", "Daniel Okoro", true)
@@ -182,6 +189,7 @@ func TestUpdatePreferences_EachPersonHasTheirOwn_FR014(t *testing.T) {
 // A theme other than system, light or dark is refused with a message next to the field, and nothing
 // changes (FR-014, FR-020).
 func TestUpdatePreferences_InvalidTheme_FR014(t *testing.T) {
+	t.Parallel()
 	service, db := newTestService(t)
 	priya := newPerson("U-1002", "Priya Raman", true)
 	addPeople(t, db, priya)
@@ -200,6 +208,7 @@ func TestUpdatePreferences_InvalidTheme_FR014(t *testing.T) {
 // A preferences record saved by feature 001 has no display currency or date format: the person sees the
 // defaults, and the record needs no migration (003 FR-024, data model §4).
 func TestPreferences_Old001RecordGetsDefaults_FR024(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
 	old := Preferences{PersonID: priya.ID, Theme: "dark", SidebarCollapsed: true} // as feature 001 saved it
@@ -228,6 +237,7 @@ func TestPreferences_Old001RecordGetsDefaults_FR024(t *testing.T) {
 // set inactive after the person chose it stays theirs, also when they change another preference or send it
 // again (spec edge case, D-063); nobody can choose an inactive or unknown currency.
 func TestUpdatePreferences_DisplayCurrencyActiveOnly_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
 	daniel := f.addPerson(t, "Daniel Okoro", "", true)
@@ -268,6 +278,7 @@ func TestUpdatePreferences_DisplayCurrencyActiveOnly_FR023(t *testing.T) {
 // The date format is one of DD MMM YYYY, DD/MM/YYYY, MM/DD/YYYY and YYYY-MM-DD (003 FR-024); anything else
 // is refused next to the field, together with every other problem of the request (SC-007).
 func TestUpdatePreferences_DateFormatChoices_FR024(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
 
@@ -298,6 +309,7 @@ func TestUpdatePreferences_DateFormatChoices_FR024(t *testing.T) {
 // Preferences are not business records: changing the display currency or the date format writes nothing
 // to the activity log (D-038, D-062; 003 data model §6).
 func TestUpdatePreferences_NotLogged_D038(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
 	f.service.UseCurrencies(func(context.Context) ([]Currency, error) {
@@ -317,6 +329,7 @@ func TestUpdatePreferences_NotLogged_D038(t *testing.T) {
 // The signed-in person comes with their version and their teams, active or not, by name: the "My teams"
 // of other features and My profile (003 FR-026, FR-021).
 func TestCurrentUser_VersionAndTeams_FR026(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -349,6 +362,7 @@ func TestCurrentUser_VersionAndTeams_FR026(t *testing.T) {
 // included) and wherever the person is named. Saving the same values again writes nothing (003 FR-022,
 // FR-028).
 func TestUpdateProfile_NameAndTitleLogged_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
 	f.addTeam(t, "Lubricants Europe", "blue", true, priya)
@@ -388,6 +402,7 @@ func TestUpdateProfile_NameAndTitleLogged_FR022(t *testing.T) {
 // An empty name, a job title over 120 characters and a missing version are reported together, and nothing
 // is saved (003 FR-022, SC-007); an out-of-date version is refused with version_conflict.
 func TestUpdateProfile_EmptyName_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -415,6 +430,7 @@ func TestUpdateProfile_EmptyName_FR022(t *testing.T) {
 // A signed-in person who no longer exists cannot change their profile: they must sign in again (003
 // FR-022, 001 FR-007).
 func TestUpdateProfile_PersonGoneMustSignInAgain_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	_, err := f.service.UpdateProfile(t.Context(), actor.Actor{ID: "U-9999", Name: "Nobody"},
@@ -426,6 +442,7 @@ func TestUpdateProfile_PersonGoneMustSignInAgain_FR022(t *testing.T) {
 // The display currencies offered are the active currencies, sorted by code, plus the person's current one
 // when it has been set inactive since (003 FR-023, D-063).
 func TestDisplayCurrencies_ActivePlusCurrent_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
 	daniel := f.addPerson(t, "Daniel Okoro", "", true)
@@ -455,6 +472,7 @@ func TestDisplayCurrencies_ActivePlusCurrent_FR023(t *testing.T) {
 // back to My teams, which is stored as no value (so choosing it again saves nothing); any other value is
 // refused next to the field with the other problems, and nothing changes (009 FR-003, D-172).
 func TestUpdatePreferences_HomeScope_FR003(t *testing.T) {
+	t.Parallel()
 	service, db := newTestService(t)
 	priya := newPerson("U-1002", "Priya Raman", true)
 	addPeople(t, db, priya)
@@ -499,6 +517,7 @@ func TestUpdatePreferences_HomeScope_FR003(t *testing.T) {
 // TestUpdatePreferences_HistoryIncludeInside_FR012: the History section's include choice (feature 011) is
 // false by default, remembered for the person, saved only when it changes, and leaves the activity log alone.
 func TestUpdatePreferences_HistoryIncludeInside_FR012(t *testing.T) {
+	t.Parallel()
 	service, db := newTestService(t)
 	priya := newPerson("U-1002", "Priya Raman", true)
 	addPeople(t, db, priya)
@@ -533,6 +552,7 @@ func TestUpdatePreferences_HistoryIncludeInside_FR012(t *testing.T) {
 // until the person pins, kept per person in the order pinned (unknown ids included: a deleted plan's id is
 // harmless, 018 FR-007), shown by GET /api/v1/me from any browser, and never written to the activity log.
 func TestUpdatePreferences_PinnedPlans_RoundTrip_FR004(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
 	daniel := f.addPerson(t, "Daniel Okoro", "", true)
@@ -570,6 +590,7 @@ func TestUpdatePreferences_PinnedPlans_RoundTrip_FR004(t *testing.T) {
 
 // A repeated id pins the plan once: duplicates are dropped, keeping the order sent (018 FR-005).
 func TestUpdatePreferences_PinnedPlans_DuplicatesDropped_FR005(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
 
@@ -590,6 +611,7 @@ func TestUpdatePreferences_PinnedPlans_DuplicatesDropped_FR005(t *testing.T) {
 // Only ids of the plan form P-<number> can be pinned; anything else is refused next to the field, with
 // the other problems of the request, and nothing changes (018 FR-005, FR-020 of 001).
 func TestUpdatePreferences_PinnedPlans_InvalidIDRefused_FR005(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
 	refused := errs.Validation(errs.FieldError{Field: "pinnedPlanIds", Message: "Pin plans by their id, like P-1001."})
@@ -614,6 +636,7 @@ func TestUpdatePreferences_PinnedPlans_InvalidIDRefused_FR005(t *testing.T) {
 
 // At most 100 plans can be pinned; the cap counts the list after duplicates are dropped (018 FR-006).
 func TestUpdatePreferences_PinnedPlans_CapAt100_FR006(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
 	ids := make([]string, 0, 101)

@@ -12,6 +12,7 @@ import (
 // A membership change is a change of both records (D-057): the edited team and every person who joined or
 // left get a new version and one "changed" entry; a member who stays is not touched (FR-012, FR-028).
 func TestMembershipChange_BothSidesNewVersionAndLog_FR012_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -47,6 +48,7 @@ func TestMembershipChange_BothSidesNewVersionAndLog_FR012_FR028(t *testing.T) {
 // Removing a member who owns plans that use only this team of theirs warns first, with the plans and the
 // exact sentence, counted by plan; the check saves nothing (FR-013, US2 scenario 5).
 func TestTeamImpact_OwnerLosesLastPlanTeam_Warns_FR013(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -81,6 +83,7 @@ func TestTeamImpact_OwnerLosesLastPlanTeam_Warns_FR013(t *testing.T) {
 
 // An owner who still belongs to another of the plan's teams is no concern (R1 still holds).
 func TestTeamImpact_OwnerStillInAnotherPlanTeam_NoWarning_FR013(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -101,6 +104,7 @@ func TestTeamImpact_OwnerStillInAnotherPlanTeam_NoWarning_FR013(t *testing.T) {
 // Members of an inactive team still count for R1, so an owner who stays in the plan's inactive team needs
 // no attention (FR-014).
 func TestTeamImpact_InactiveTeamStillCounts_FR014(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -120,6 +124,7 @@ func TestTeamImpact_InactiveTeamStillCounts_FR014(t *testing.T) {
 
 // Plans in the recycle bin are not part of the owner warning (D-058, D-067).
 func TestImpact_IgnoresPlansInRecycleBin_FR013(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -139,6 +144,7 @@ func TestImpact_IgnoresPlansInRecycleBin_FR013(t *testing.T) {
 // The impact check reports the problems of the form exactly as the save would, all at once, but does not
 // need the version (SC-007, D-058); an unknown team or person answers not_found.
 func TestImpact_ValidatesLikeUpdate_SC007(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	mei := f.addPerson(t, "Mei Lin", "", false)
@@ -173,6 +179,7 @@ func TestImpact_ValidatesLikeUpdate_SC007(t *testing.T) {
 // sentence names it, with several it says "the removed teams"; plans that keep one of the person's teams
 // are left out, and nothing is saved (FR-013, D-058).
 func TestPersonImpact_OneAndTwoRemovedTeams_FR013(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -218,6 +225,7 @@ func TestPersonImpact_OneAndTwoRemovedTeams_FR013(t *testing.T) {
 
 // Removing a plan's owner from its team is allowed: the warning is only a confirmation (FR-013).
 func TestUpdateTeam_RemovingOwnerIsAllowed_FR013(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)

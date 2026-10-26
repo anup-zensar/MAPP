@@ -11,6 +11,7 @@ import (
 // when added or changed (one who became inactive may stay); no loop through the chain of managers. Every
 // problem comes with the form's others, and a change is logged with the managers' names.
 func TestManager_Rules_FR016(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -97,6 +98,7 @@ func TestManager_Rules_FR016(t *testing.T) {
 // The people a person is the line manager of, active or not, are the last usage count of their details:
 // "Line manager of 2 people" in the details and the Deactivate dialog (017 FR-016).
 func TestUsage_Manager_FR016(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	daniel := f.addPerson(t, "Daniel Okoro", "", true)
