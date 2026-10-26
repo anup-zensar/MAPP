@@ -1,9 +1,8 @@
 # Contract: CI checks
 
-Four checks, each a job in `.github/workflows/ci.yml`. The ruleset requires them by name, so a name
+Three checks, each a job in `.github/workflows/ci.yml`. The ruleset requires them by name, so a name
 changes only together with `.github/rulesets/protected-branches.json`. Every check runs on pull
-requests into, and pushes to, `main`, `release` and `develop`; steps marked *PR* run on pull
-requests only. Each gate is a named step, so a failed check's log shows which gate failed.
+requests into, and pushes to, `main`, `release` and `develop`. Each gate is a named step, so a failed check's log shows which gate failed.
 
 | Check | Step (gate) | Command (from the directory shown) |
 |---|---|---|
@@ -20,8 +19,6 @@ requests only. Each gate is a named step, so a failed check's log shows which ga
 | | Build (12) | `frontend/`: `npm run build` |
 | | Audit (17) | `frontend/`: `npm audit --omit=dev --audit-level=high` |
 | `e2e` | End-to-end (13) | `frontend/`: `npm run test:e2e` (Chromium) → artifact `e2e` on failure (`test-results/`) |
-| `repo-checks` | Branch name (workflow) *PR* | rules of FR-011 on `head_ref` / `base_ref` |
-| | Dependency review (17) *PR* | `actions/dependency-review-action@v5`, fails on high or critical |
 
 Gate 14 (comment budget and file length) is checked in review, not by a step. Artifacts are kept
 for 30 days (FR-005). Gates 3 and 4 (sqlc, goose) join `backend` with the

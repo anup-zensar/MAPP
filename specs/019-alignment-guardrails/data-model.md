@@ -7,7 +7,7 @@ files so every change to them is reviewed in a pull request.
 
 | Field | Value |
 |---|---|
-| Name | One of the four checks (`backend`, `frontend`, `e2e`, `repo-checks`) and its named step in [contracts/ci-checks.md](contracts/ci-checks.md) |
+| Name | One of the three checks (`backend`, `frontend`, `e2e`) and its named step in [contracts/ci-checks.md](contracts/ci-checks.md) |
 | Command | The command the job runs (same as the local command) |
 | Branches | Pull requests into, and pushes to, `main`, `release`, `develop` |
 | Blocking | Yes, through the ruleset's required status checks |
@@ -18,8 +18,7 @@ files so every change to them is reviewed in a pull request.
 |---|---|
 | Branches | `main`, `release`, `develop` |
 | Bypass | None (administrators included) |
-| Rules | No deletion; no force push; pull request with 1 approval, stale approvals dismissed, last push approved by someone else; the four checks required |
-| Allowed sources (checked by `branch-name`) | into `develop`: `feature/NNN-…`, `docs/…`, `fix/…`, module branches; into `release`: `develop`, `fix/…`; into `main`: `release` |
+| Rules | No deletion; no force push; pull request with 1 approval, stale approvals dismissed, last push approved by someone else; the three checks required |
 
 ## Release age — `frontend/.npmrc`
 

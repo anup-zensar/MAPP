@@ -22,7 +22,7 @@ my change keeps the code formatted, type-safe, lint-clean, tested, buildable and
 vulnerabilities. A reviewer cannot merge it while any required gate is red.
 
 Rushikesh opens a pull request that changes a Go service and a React screen. The pull request shows
-four checks — backend, frontend, end-to-end and repository — and each check's log lists its gates
+three checks — backend, frontend and end-to-end — and each check's log lists its gates
 as named steps. The backend lint step reports a finding on a line he changed and nothing about
 older lines he did not touch; he fixes it, pushes, and every check turns green. The
 test results and coverage reports of the run are attached to it for the reviewer.
@@ -37,7 +37,7 @@ gate fails and names the problem; then open a clean pull request and check that 
 **Acceptance Scenarios**:
 
 1. **Given** a pull request into `develop`, `release` or `main`, **When** it is opened or updated,
-   **Then** every quality gate of FR-002 and FR-003 runs as its own named step in one of the four
+   **Then** every quality gate of FR-002 and FR-003 runs as its own named step in one of the three
    checks, and each check reports pass or fail.
 2. **Given** a pull request with an unformatted Go file, **When** the checks run, **Then** the
    backend check fails at its formatting step, which names the file; the other checks are
@@ -60,13 +60,12 @@ requests from working branches, so every change is seen by a second person and p
 
 Anup tries to push a quick fix directly to `develop`; the push is refused. He pushes it to
 `fix/date-label`, opens a pull request, a colleague approves it, the checks pass, and it merges.
-A pull request into `develop` from a branch named `quickfix` is flagged by the branch-name check.
 
 **Why this priority**: the rule is in the constitution and the product owner asked for it, but it
 only matters once the gates of story 1 exist.
 
 **Independent Test**: try a direct push, a force push and a self-approved merge on each protected
-branch (all refused), and a pull request from a badly named branch (flagged).
+branch (all refused).
 
 **Acceptance Scenarios**:
 
@@ -76,11 +75,6 @@ branch (all refused), and a pull request from a badly named branch (flagged).
    than its author, or any required check is red, **Then** it cannot be merged.
 3. **Given** an approved pull request, **When** its author pushes a new commit, **Then** the earlier
    approval no longer counts.
-4. **Given** a pull request into `develop` from a branch not named `feature/NNN-short-name`,
-   `docs/…`, `fix/…` or a module branch, **When** the checks run, **Then** the branch-name check
-   fails and says which names are allowed.
-5. **Given** a pull request into `main` from any branch other than `release`, or into `release`
-   from any branch other than `develop` or `fix/…`, **Then** the branch-name check fails.
 
 ---
 
@@ -102,7 +96,7 @@ branch name.
 
 ### Edge Cases
 
-- A pull request that changes only documentation still runs all four checks, so required checks
+- A pull request that changes only documentation still runs all three checks, so required checks
   never wait for a result that will not come.
 - A check that cannot run (the runner fails, a download times out) fails the pull request rather
   than passing it silently.
@@ -125,9 +119,8 @@ branch name.
   formatting, type check, lint with warnings counted as failures, the generated-API-types drift
   check, unit and component tests with branch coverage reported as LCOV, and the production build;
   and the end-to-end tests against the real API with the seed data as a separate `e2e` check.
-- **FR-004**: The pipeline MUST have exactly four checks — `backend`, `frontend`, `e2e` and
-  `repo-checks` (the branch name of FR-011 and the dependency review of FR-017) — each able to
-  block a merge. A failing step fails its check, the log names the gate, and a step that cannot run counts
+- **FR-004**: The pipeline MUST have exactly three checks — `backend`, `frontend` and `e2e` — each
+  able to block a merge. A failing step fails its check, the log names the gate, and a step that cannot run counts
   as failed.
 - **FR-005**: Each run MUST publish its test results and coverage reports (Go coverage profile,
   frontend LCOV) so that a reviewer can open them from the pull request, kept for at least 30 days.
@@ -138,10 +131,8 @@ branch name.
   names that are missing today: a `test:coverage` script producing LCOV with branch coverage, and a
   `browserslist` entry naming the two most recent major versions of Chrome, Edge, Firefox and
   Safari, desktop and mobile.
-- **FR-011**: A branch-name check MUST fail a pull request into `develop` from any branch other than
-  `feature/NNN-short-name`, `docs/…`, `fix/…` or a module branch (today `plan-module`); into
-  `release` from any branch other than `develop` or `fix/…`; into `main` from any branch other than
-  `release`. The message lists the allowed names.
+- **FR-011**: *Withdrawn on 2026-10-26.* Branch names are a documented convention (Spec Kit creates
+  `feature/NNN-short-name`); the branch rules refuse direct pushes (FR-014).
 - **FR-012**: The Spec Kit configuration MUST create feature branches named
   `feature/NNN-short-name`, with the same number as the spec folder.
 - **FR-013**: A `release` branch MUST exist, created from `main` if missing, so that it can be
@@ -158,9 +149,9 @@ branch name.
   screens, the stored data or the seed data. A gate that today's code fails is fixed with the
   smallest change that keeps behaviour, or the gap is recorded with its reason.
 - **FR-017**: The pipeline MUST run the security gates the repository can run without
-  organisation-level setup: a review of the dependencies a pull request adds or changes (a step of
-  `repo-checks`), and the audit of the web app's production dependencies (a step of `frontend`).
-  Each fails on a high or critical finding.
+  organisation-level setup: the audit of the web app's production dependencies (`npm audit`, a
+  step of `frontend`), failing on a high or critical finding; Go dependencies are covered by
+  `govulncheck` (FR-002).
 - **FR-018**: *Withdrawn on 2026-10-26.* The first-page JavaScript budget is deferred (FR-019).
 - **FR-019**: An architecture decision record MUST record the pipeline and the branch rules, and
   the deviations the product owner agreed on 2026-10-26: static code
@@ -176,7 +167,7 @@ branch name.
 
 ### Key Entities
 
-- **Quality gate**: a named step with the command it runs, inside one of the four checks that
+- **Quality gate**: a named step with the command it runs, inside one of the three checks that
   guard the branches and block merging.
 - **Branch rule**: a protected branch with its allowed source branches and its rules in the
   ruleset.
@@ -193,8 +184,8 @@ branch name.
 - **SC-005**: Once an administrator applies the branch rules, 100% of direct pushes to `main`,
   `release` and `develop` are refused, and no pull request merges without an approval from someone
   other than its author.
-- **SC-006**: No pull request merges with a high or critical finding from the dependency review or
-  the production dependency audit.
+- **SC-006**: No pull request merges with a high or critical finding from the production dependency
+  audit or `govulncheck`.
 - **SC-007**: `npm install` in the web app never installs a package version published less than 24
   hours earlier.
 
@@ -214,8 +205,7 @@ branch name.
   them.
 - The storage still uses the JSON file store, so the pipeline needs no database yet; the
   PostgreSQL feature adds a PostgreSQL service to the pipeline.
-- The repository is public, so the dependency review and secret scanning are available without
-  organisation setup; SonarQube, Apiiro and Mend are not. The product owner chose not to use GitHub
+- The repository is public, so secret scanning is available without organisation setup; SonarQube, Apiiro and Mend are not. The product owner chose not to use GitHub
   code scanning (FR-019).
 - Out of scope: the stack moves (PostgreSQL, Gin, `/api/v1`); the Shell palette; pruning existing
   comments and splitting existing long files; restructuring the frontend and splitting it per

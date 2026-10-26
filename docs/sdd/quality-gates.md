@@ -1,6 +1,6 @@
 # Quality gates
 
-Every pull request into `develop`, `release` or `main` runs four checks
+Every pull request into `develop`, `release` or `main` runs three checks
 (`.github/workflows/ci.yml`, [ADR-0010](../architecture/adr/0010-quality-gates-and-branch-rules.md)).
 Run the same commands before you push.
 
@@ -9,7 +9,6 @@ Run the same commands before you push.
 | `backend` | in `backend/`: `gofmt -s -l .` and `go run golang.org/x/tools/cmd/goimports@v0.52.0 -local mapp -l .` (print nothing), `go vet ./...`, `golangci-lint run --new-from-merge-base=origin/develop ./...`, `go test -race ./...`, `go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...` |
 | `frontend` | in `frontend/`: `npm run format:check`, `npm run typecheck`, `npm run lint`, `npm run api:check`, `npm run test:coverage`, `npm run build`, `npm audit --omit=dev --audit-level=high` |
 | `e2e` | in `frontend/`: `npm run test:e2e` |
-| `repo-checks` | on pull requests only: the branch name (below) and GitHub's dependency review |
 
 ## Branches
 
@@ -20,7 +19,7 @@ Nobody pushes directly to `main`, `release` or `develop`. Open a pull request fr
 - into `release`: `develop` or `fix/…`;
 - into `main`: `release`.
 
-A pull request needs one approval from someone other than its last pusher, and the four checks
+A pull request needs one approval from someone other than its last pusher, and the three checks
 green.
 
 ## What the reviewer checks

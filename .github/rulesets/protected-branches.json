@@ -29,8 +29,7 @@
         "required_status_checks": [
           { "context": "backend" },
           { "context": "frontend" },
-          { "context": "e2e" },
-          { "context": "repo-checks" }
+          { "context": "e2e" }
         ]
       }
     }

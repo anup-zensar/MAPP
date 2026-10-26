@@ -51,8 +51,8 @@ product owner on 2026-10-26: the two limits stay review checks (quality gate 14)
 
 ## Phase 4: User Story 3 — Nobody pushes straight to the shared branches (P2)
 
-- [X] T013 [US3] The `repo-checks` job in `.github/workflows/ci.yml` with two named steps, both only on pull requests: `Branch name` (FR-011: into `develop` only `feature/NNN-*`, `docs/*`, `fix/*` or `plan-module`; into `release` only `develop` or `fix/*`; into `main` only `release`; otherwise print the allowed names and fail) and `Dependency review` (`actions/dependency-review-action@v5`, `fail-on-severity: high`, FR-017)
-- [X] T014 [P] [US3] `.github/rulesets/protected-branches.json`: `main`, `release`, `develop`; no bypass; `deletion`, `non_fast_forward`, `pull_request` (1 approval, stale approvals dismissed, last push approved by someone else), `required_status_checks` `backend`, `frontend`, `e2e`, `repo-checks` (FR-014, R8)
+- [X] T013 [US3] *Withdrawn on 2026-10-26:* the `repo-checks` job (branch name, dependency review) was removed at the product owner's request; `npm audit` and `govulncheck` cover dependencies, and branch names are a convention
+- [X] T014 [P] [US3] `.github/rulesets/protected-branches.json`: `main`, `release`, `develop`; no bypass; `deletion`, `non_fast_forward`, `pull_request` (1 approval, stale approvals dismissed, last push approved by someone else), `required_status_checks` `backend`, `frontend`, `e2e` (FR-014, R8)
 - [ ] T015 [US3] Create `release` from `main`: `git push origin origin/main:refs/heads/release` (FR-013)
 
 ---
@@ -66,11 +66,11 @@ product owner on 2026-10-26: the two limits stay review checks (quality gate 14)
 ## Phase 6: Polish
 
 - [X] T017 [P] `docs/architecture/adr/0010-quality-gates-and-branch-rules.md` and its row in `docs/architecture/adr/README.md` (FR-019, R14): the pipeline, the branch rules, the release age; the agreed deviations (static code scanning until SonarQube, GitHub code scanning not used; SonarQube, Apiiro, Mend; secret scanning by an administrator; the 80% coverage threshold; the JavaScript budget; Go release age by review; the comment budget and file length by review)
-- [X] T018 [P] `docs/sdd/quality-gates.md` (FR-015): the four checks and how to run each gate locally; the review checks (comment budget, file length, Go release age); how an administrator applies the ruleset and switches on secret scanning
+- [X] T018 [P] `docs/sdd/quality-gates.md` (FR-015): the three checks and how to run each gate locally; the review checks (comment budget, file length, Go release age); how an administrator applies the ruleset and switches on secret scanning
 - [X] T019 [P] `docs/sdd/sdd-process.md` branch section and `docs/sdd/feature-map.md` 019 row (with the alignment roadmap 020–027 as Planned)
 - [X] T020 [P] `CLAUDE.md`: the npm release-age rule
 - [ ] T021 Run every command of [quickstart.md](quickstart.md) §1; all pass (SC-002)
-- [ ] T022 Push the branch, open a pull request into `develop` asking an administrator to apply the ruleset and switch on secret scanning; the four checks pass (SC-001, SC-002, SC-006); leave the pull request open for review
+- [ ] T022 Push the branch, open a pull request into `develop` asking an administrator to apply the ruleset and switch on secret scanning; the three checks pass (SC-001, SC-002, SC-006); leave the pull request open for review
 - [ ] T023 After the administrator applies the ruleset: run [quickstart.md](quickstart.md) §4 and record the result in the pull request (SC-005) — waits for the administrator
 
 ---

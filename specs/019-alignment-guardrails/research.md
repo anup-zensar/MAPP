@@ -19,16 +19,16 @@ Findings come from running every gate on `develop` at `049ebf4` on 2026-10-26 (G
 | `npm test` (2,281 tests) | 2 failures, every run: `CampaignPanel` and `LineItemPage` tests make a real request (Budget by month; GSAP financials of the duplicated line item) with no canned answer — they pass only where the request happens after the test ends | Add the two canned answers with the existing helpers (`budgetByMonth()`, `financialsNotServed()`) |
 | `npm run test:e2e` (36 tests) | 6 failures: 5 axe `color-contrast` findings on `ConfirmDialog` while it fades in (opacity < 1); 1 `locator.check()` on a preference-backed checkbox that turns checked a tick after the click | Playwright runs with `reducedMotion: 'reduce'` (the app already drops animations then, `global.css`), and the checkbox step uses `click()` + `toBeChecked()` (web-first). After the fixes: 36/36 |
 
-## R2 — Pipeline: one GitHub Actions workflow, four checks
+## R2 — Pipeline: one GitHub Actions workflow, three checks
 
 - **Decision**: `.github/workflows/ci.yml`, triggered by `pull_request` and `push` on `main`,
-  `release` and `develop`, with four jobs — the required checks: `backend` (format, vet, lint,
-  test, vulnerabilities), `frontend` (format, type check, lint, API types, test, build, audit),
-  `e2e`, and `repo-checks` (branch name and dependency review, on pull requests).
+  `release` and `develop`, with three jobs — the required checks: `backend` (format, vet, lint,
+  test, vulnerabilities), `frontend` (format, type check, lint, API types, test, build, audit) and
+  `e2e`.
   Each gate is a named step, so a failed check's log shows which gate failed. `permissions:
   contents: read` (plus `pull-requests: read` for the lint step); `concurrency` cancels superseded
   runs of the same ref.
-- **Rationale**: the product owner asked for few CI jobs (2026-10-26). Four jobs keep the
+- **Rationale**: the product owner asked for few CI jobs (2026-10-26). Three jobs keep the
   slow end-to-end tests apart and run the rest in parallel within SC-001's 20 minutes; the
   constitution requires the gates to be required checks, not one check per gate.
 - **Alternatives**: one job per gate (17 checks; rejected by the product owner); one job for
@@ -38,7 +38,7 @@ Findings come from running every gate on `develop` at `049ebf4` on 2026-10-26 (G
 **Pinned versions** (latest releases on 2026-10-26): `actions/checkout@v7`, `actions/setup-go@v7`
 (reads `go.mod`, including `toolchain`), `actions/setup-node@v7` (`node-version: 24`, npm cache),
 `actions/upload-artifact@v7` (`retention-days: 30`), `golangci/golangci-lint-action@v9` with
-golangci-lint `v2.15.0`, `actions/dependency-review-action@v5`, `goimports` from
+golangci-lint `v2.15.0`, `goimports` from
 `golang.org/x/tools` v0.52.0, `govulncheck` v1.9.0.
 
 ## R3 — Go toolchain and the vulnerability gate
@@ -76,19 +76,18 @@ golangci-lint `v2.15.0`, `actions/dependency-review-action@v5`, `goimports` from
 - **Alternatives**: a Go command with a legacy baseline and its tests (built, then removed at the
   product owner's request — it added a tool to maintain for rules a reviewer can see).
 
-## R7 — Branch names
+## R7 — Branch names: a convention, not a check
 
-- **Decision**: a `branch-name` job, run on pull requests only, compares `github.head_ref` with
-  the rules of FR-011 for `github.base_ref`. Module branches are listed in the workflow
-  (`plan-module`).
-- **Rationale**: a few lines of shell, no dependency; the job's message lists the allowed names.
+- **Decision**: no CI check. Spec Kit creates `feature/NNN-short-name`; `docs/…` and `fix/…` are
+  documented in `docs/sdd/quality-gates.md`; the branch rules refuse direct pushes (R8). The product
+  owner removed the `repo-checks` job on 2026-10-26.
 
 ## R8 — Branch rules (protection)
 
 - **Decision**: one repository ruleset, committed as `.github/rulesets/protected-branches.json`,
   targeting `main`, `release` and `develop`, with no bypass actors (administrators included):
   `deletion`, `non_fast_forward`, `pull_request` (1 approval, `dismiss_stale_reviews_on_push`,
-  `require_last_push_approval`), and `required_status_checks` listing the four checks of R2. An
+  `require_last_push_approval`), and `required_status_checks` listing the three checks of R2. An
   administrator applies it with `gh api --method POST repos/anup-zensar/MAPP/rulesets --input
   .github/rulesets/protected-branches.json`.
 - **Rationale**: the repository is public, so rulesets are available; the account used here has
@@ -122,24 +121,21 @@ golangci-lint `v2.15.0`, `actions/dependency-review-action@v5`, `goimports` from
 
 - **New-code coverage ≥ 80%** needs SonarQube (or a diff-coverage service); until then the
   reports are published and reviewers check them — a deviation recorded in ADR-0010 (R14).
-- **Gates 15–18**: the dependency review and `npm audit` run now (R12); static code scanning,
+- **Gates 15–18**: `npm audit` and `govulncheck` run now (R12); static code scanning,
   SonarQube, Apiiro, Mend and switching on secret scanning are recorded deviations (R14).
 - **PostgreSQL** is not needed until the storage feature; that feature adds a `postgres` service
   to `backend-test` and `e2e`.
 
 ## R12 — Security gates available now (constitution gates 15–17)
 
-- **Decision**: two steps that need no organisation setup on this public repository: the
-  dependency review in `repo-checks` (`actions/dependency-review-action@v5`, `fail-on-severity:
-  high`, pull requests only) and the audit in `frontend` (`npm audit --omit=dev
-  --audit-level=high`, the command gate 17 names — 0 findings today).
-- **Rationale**: SCA is a SEMS compliance point that GitHub offers free for public repositories.
-- **Not used**: GitHub code scanning (CodeQL) — the product owner decided on 2026-10-26 not to use
-  it; static code scanning (gate 16) waits for SonarQube, and `gosec` in golangci-lint covers
+- **Decision**: `npm audit --omit=dev --audit-level=high` in `frontend` (the command gate 17 names
+  — 0 findings today) and `govulncheck` in `backend`.
+- **Not used**: GitHub's dependency review — it overlaps with the two above and needs the
+  repository's Dependency graph switched on (product owner, 2026-10-26); GitHub code scanning
+  (CodeQL) — static code scanning (gate 16) waits for SonarQube, and `gosec` in golangci-lint covers
   common Go security mistakes on changed lines meanwhile.
 - **Not available here**: SonarQube (gates 16, 18), Apiiro and Mend (gates 15, 17), and switching
-  on secret scanning (a repository setting an administrator controls) — recorded in ADR-0010
-  (R14).
+  on secret scanning — recorded in ADR-0010 (R14).
 
 ## R13 — First-page JavaScript budget (gate 12, F8): deferred
 

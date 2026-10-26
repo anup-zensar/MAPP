@@ -34,7 +34,7 @@ Expected: every command succeeds on the feature branch (SC-002).
 ## 3. Pipeline (US1)
 
 Open a draft pull request into `develop` with one deliberate problem per gate (an unformatted Go
-file, a type error, a failing test, a lint finding on a changed line), one at a time. Expect the check holding that gate to fail at the named step; push the fix and expect all four
+file, a type error, a failing test, a lint finding on a changed line), one at a time. Expect the check holding that gate to fail at the named step; push the fix and expect all three
 checks green, with the `backend-test` and `frontend-test` artifacts attached.
 
 ## 4. Branch rules (US3) — after an administrator applies the ruleset
@@ -48,7 +48,6 @@ gh api --method POST repos/anup-zensar/MAPP/rulesets --input .github/rulesets/pr
 | `git push origin HEAD:develop` | refused |
 | `git push --force origin …:main` | refused |
 | Merge a pull request without an approval from someone else | blocked |
-| Open a pull request into `develop` from a branch named `quickfix` | `branch-name` fails and lists the allowed names |
 
 ## 5. Feature branches (US4)
 

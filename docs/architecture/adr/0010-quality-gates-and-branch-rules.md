@@ -10,14 +10,15 @@ on 2026-10-26 to the deviations listed below (constitution Governance → Except
 implements this decision.
 
 ## Decision
-- **One GitHub Actions workflow** (`.github/workflows/ci.yml`) with four checks, each gate a named
+- **One GitHub Actions workflow** (`.github/workflows/ci.yml`) with three checks, each gate a named
   step: `backend` (format, vet, lint on new and changed lines, race-enabled tests with coverage,
   `govulncheck`), `frontend` (format, type check, lint with zero warnings, API-types drift, tests
-  with coverage, build, `npm audit`), `e2e` (Playwright against the real API), `repo-checks` (branch
-  name and GitHub dependency review, on pull requests).
+  with coverage, build, `npm audit`), `e2e` (Playwright against the real API). Dependency
+  vulnerabilities are covered by `npm audit` and `govulncheck`; branch names are a convention
+  (Spec Kit creates `feature/NNN-short-name`), not a check.
 - **Branch rules** as a repository ruleset (`.github/rulesets/protected-branches.json`) on `main`,
   `release` and `develop`: no bypass, no deletion, no force push, pull requests only with one
-  approval from someone other than the last pusher, stale approvals dismissed, the four checks
+  approval from someone other than the last pusher, stale approvals dismissed, the three checks
   required. A repository administrator applies it.
 - **Release age**: npm's built-in `min-release-age=1` with `engine-strict` and `engines.npm
   >=11.10.0` in `frontend/`.
@@ -34,7 +35,7 @@ implements this decision.
 | VII, release age of Go modules | Checked by the reviewer; Go has no built-in setting | — (permanent) |
 
 ## Consequences
-- Every pull request shows four checks; a failed check's log names the gate that failed.
+- Every pull request shows three checks; a failed check's log names the gate that failed.
 - Code written before 2.0.0 keeps its lint findings until its package is aligned; only new and
   changed lines are linted.
 - Follow-ups: an approved planning board, software asset registration and an export classification
