@@ -12,6 +12,7 @@ import (
 	"mapp/internal/history"
 	"mapp/internal/people"
 	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/ids"
@@ -64,6 +65,14 @@ func (f *fakeActivities) List(context.Context) ([]ActivityFacts, error) {
 		}
 	}
 	return list, nil
+}
+
+// ListInScope applies the scope to the plan and the owner; the fake knows no round's approvers.
+func (f *fakeActivities) ListInScope(ctx context.Context, scope authz.Scope) ([]ActivityFacts, error) {
+	all, err := f.List(ctx)
+	return slices.DeleteFunc(all, func(facts ActivityFacts) bool {
+		return !scope.SeesActivity(authz.ActivityFacts{Plan: facts.Access, OwnerID: facts.OwnerID})
+	}), err
 }
 
 // SetStatus changes the status, and the version goes up by one, as the adapter's Touch does.

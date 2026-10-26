@@ -161,7 +161,7 @@ type board struct {
 
 // board reads the board inside the caller's transaction.
 func (s *Service) board(ctx context.Context) (*board, error) {
-	list, err := s.activities.List(ctx)
+	list, err := s.activities.ListInScope(ctx, authz.ScopeOf(ctx)) // every tab and count is over these (014 FR-007)
 	if err != nil {
 		return nil, err
 	}
@@ -196,9 +196,6 @@ func (s *Service) board(ctx context.Context) (*board, error) {
 	for id := range b.rounds {
 		slices.SortFunc(b.rounds[id], func(x, y Round) int { return x.Number - y.Number })
 	}
-	// Only the activities the person may see: of plans they see, their own, or named to approve (014 FR-007);
-	// every tab and count is worked out over them.
-	b.activities = slices.DeleteFunc(b.activities, func(f ActivityFacts) bool { return !canView(ctx, f, b.rounds[f.ID]) })
 	for _, e := range entries {
 		b.entries[e.ActivityID] = append(b.entries[e.ActivityID], e)
 	}
@@ -374,18 +371,4 @@ func nonNilPath(path []errs.RecordRef) []errs.RecordRef {
 		return []errs.RecordRef{}
 	}
 	return path
-}
-
-// canView reports whether the person acting sees the activity f with its rounds (014 FR-006): its plan, as its
-// owner, or as an approver named in any level of any round. An internal call sees everything.
-func canView(ctx context.Context, f ActivityFacts, rounds []Round) bool {
-	var approverIDs []string
-	for _, r := range rounds {
-		for _, level := range r.Levels {
-			for _, approver := range level.Approvers {
-				approverIDs = append(approverIDs, approver.ID)
-			}
-		}
-	}
-	return authz.CanViewActivity(ctx, authz.ActivityFacts{Plan: f.Access, OwnerID: f.OwnerID, ApproverIDs: approverIDs})
 }

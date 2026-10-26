@@ -167,3 +167,8 @@ values, report changes nobody made. Every such column has a `CHECK (json_typeof(
 - **Rationale**: 022 kept today's unscoped store interfaces and filters in the services, so changing the
   interfaces would change every service; the scoped reads let T025a move each person-facing read into SQL
   without a second schema change.
+- **Adopted** (T025a): the plan lists and the Approvals board read through `ListInScope`. `authz.Scope`
+  has the three functions in Go (`Covers`, `Sees`, `SeesActivity`), which the `Grants` checks and the JSON
+  stand-in share, so the rule exists once in Go and once in SQL. The global budget page and the financials
+  list still filter behind their access ports: their service tests fake visibility there, and feature 025's
+  fakes let them call `AllocationsInScope` and `TransactionsInScope`.

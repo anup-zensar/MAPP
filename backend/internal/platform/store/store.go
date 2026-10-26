@@ -397,11 +397,11 @@ func Append(ctx context.Context, table string, record any) error {
 // Every change in a Write (Put, Delete, Append) forgets all memos, so a memo never outlives the data it
 // was worked out from; an error is not kept. Every caller in the transaction gets the same value, so
 // callers must treat it as read-only. Keys are named after their package, such as "settings.form:plan".
+// Outside a transaction of this store, such as one on PostgreSQL, load runs on every call.
 func Memo[T any](ctx context.Context, key string, load func(ctx context.Context) (T, error)) (T, error) {
 	t, ok := ctx.Value(txKey{}).(*tx)
 	if !ok {
-		var zero T
-		return zero, ErrNoTransaction
+		return load(ctx)
 	}
 	return memo(ctx, t, key, load)
 }

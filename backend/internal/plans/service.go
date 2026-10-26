@@ -205,7 +205,6 @@ func (s *Service) List(ctx context.Context, a actor.Actor, filter ListFilter) (P
 		if err != nil {
 			return err
 		}
-		scoped = visible(ctx, scoped)
 		slices.SortFunc(scoped, func(x, y Plan) int {
 			return cmp.Or(cmp.Compare(y.Year, x.Year), strings.Compare(strings.ToLower(x.Name), strings.ToLower(y.Name)),
 				strings.Compare(x.ID, y.ID))
@@ -282,7 +281,7 @@ func (s *Service) List(ctx context.Context, a actor.Actor, filter ListFilter) (P
 
 // inScope returns the plans of the team scope: every plan, or with myTeams those with one of a's teams.
 func (s *Service) inScope(ctx context.Context, a actor.Actor, scope string) ([]Plan, error) {
-	all, err := s.repo.List(ctx)
+	all, err := s.repo.ListInScope(ctx, authz.ScopeOf(ctx))
 	if err != nil || scope != ScopeMyTeams {
 		return all, err
 	}
