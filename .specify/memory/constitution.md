@@ -2,7 +2,7 @@
 Sync Impact Report
 - Version change: 4.1.0 → 4.2.0 (MINOR: guidance changed for existing files; no principle removed)
 - Modified principles: VIII Clean Construction — files over the comment budget are brought within
-  it by the first change that touches them (whole file), except feature 025's mechanical moves
+  it by the first change that touches them (whole file), except in features 025, 027 and 028
 - Modified sections: Governance (Alignment of existing code), Amendment History
 - Added sections: none
 - Removed sections: none
@@ -278,9 +278,9 @@ In addition:
   `prettier-ignore`, `@ts-expect-error` with its reason, `/// <reference>`, goose's `-- +goose`
   and sqlc's `-- name:` annotations).
 - **Files over the budget today** are brought within it one at a time: a change that touches a file
-  brings the whole file's comments within the budget, not only the lines it changed. Feature 025
-  (backend layout) is the one exception: it moves and splits files mechanically and leaves their
-  comments to the next change of each file.
+  brings the whole file's comments within the budget, not only the lines it changed. Features 025
+  (backend layout), 027 (test hygiene) and 028 (query efficiency) are exempt: they change many files
+  for another purpose and leave the comments of those files to the next change of each file.
 - **What a comment says.** Names, types and small functions carry the meaning. A comment is
   written only for what the code cannot say: why a choice was made, a constraint, a non-obvious
   behaviour, or the measurement behind an optimisation. A comment never restates the code and
@@ -1124,6 +1124,6 @@ amended to match.
 | 3.1.1 | 2026-10-26 | B6: the error envelope's `fields` is a list of `{field, message}` — it keeps the order and allows several messages for one field (feature 022) | Product owner decision of 2026-10-26 |
 | 4.0.0 | 2026-10-26 | VI, B9: only end-to-end tests and the scope-isolation tests of scoped store reads use a real database; every other test uses fakes, and database tests of queries, constraints or migrations are forbidden (they were required store tests before) | Product owner decision of 2026-10-26 |
 | 4.1.0 | 2026-10-26 | Current Phase & Scope: `compose.yaml` may also build and run the whole application locally for reviewers such as business analysts, published on `127.0.0.1` only and pushed nowhere; Docker and Podman stay optional for developers (ADR-0012) | Product owner instruction of 2026-10-26 |
-| 4.2.0 | 2026-10-26 | VIII, Governance: the comment budget is aligned file by file — a change that touches a file brings the whole file's comments within the budget, except feature 025's mechanical moves; feature 021 (a dedicated comment pass) is dropped | Product owner instruction of 2026-10-26 |
+| 4.2.0 | 2026-10-26 | VIII, Governance: the comment budget is aligned file by file — a change that touches a file brings the whole file's comments within the budget, except in features 025, 027 and 028; feature 021 (a dedicated comment pass) is dropped | Product owner instruction of 2026-10-26 |
 
 **Version**: 4.2.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-26

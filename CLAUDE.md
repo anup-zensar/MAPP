@@ -23,8 +23,8 @@ Software Design & Construction Policy and SEMS, which are mandatory.
 3. **Comments are rare** (constitution VIII): at most 5% of a file's non-blank lines, rounded up; only
    *why*, a constraint or non-obvious behaviour; no doc comment that repeats a name. Requirement IDs go
    in test names and pull requests, not in comments. Tool directives don't count. A change that touches a
-   file brings that whole file's comments within the budget, not only its own lines (except feature 025's
-   mechanical moves).
+   file brings that whole file's comments within the budget, not only its own lines (features 025, 027 and
+   028 are exempt).
 4. **Two parts only:** React + TypeScript in `frontend/`, Go in `backend/`. Go packages per business
    area, each handler → service → store; Gin only in handlers; all business rules in services. The
    server is the source of truth: the web app never recomputes a figure the API provides.
