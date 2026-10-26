@@ -168,8 +168,8 @@ func (p Preferences) equal(o Preferences) bool {
 // The API types below are what the API returns or receives. They are kept apart from the stored records
 // above, so the stored data can change without changing the API (research R10).
 
-// CurrentUser is the signed-in person with their preferences: the answer of GET /api/me, PATCH /api/me and
-// of a sign-in. Version is the person's, sent back by PATCH /api/me; Teams are their teams, active or not,
+// CurrentUser is the signed-in person with their preferences: the answer of GET /api/v1/me, PATCH /api/v1/me and
+// of a sign-in. Version is the person's, sent back by PATCH /api/v1/me; Teams are their teams, active or not,
 // by name — "My teams" (003 FR-026).
 type CurrentUser struct {
 	ID          string          `json:"id"`
@@ -208,7 +208,7 @@ type PreferencesView struct {
 	PinnedPlanIDs []string `json:"pinnedPlanIds"`
 }
 
-// PreferencesUpdate is the body of PATCH /api/me/preferences: only the preferences to change. A field that
+// PreferencesUpdate is the body of PATCH /api/v1/me/preferences: only the preferences to change. A field that
 // was not sent is nil and stays as it is.
 type PreferencesUpdate struct {
 	Theme            *string `json:"theme"`
@@ -328,13 +328,13 @@ type PersonDetails struct {
 	Usage []UsageCount `json:"usage"` // owners first, then approvers
 }
 
-// PersonPage is the answer of GET /api/people (PersonPage).
+// PersonPage is the answer of GET /api/v1/people (PersonPage).
 type PersonPage struct {
 	Items []PersonListItem `json:"items"`
 	Total int              `json:"total"`
 }
 
-// PersonInput is the body of POST /api/people (PersonCreate).
+// PersonInput is the body of POST /api/v1/people (PersonCreate).
 type PersonInput struct {
 	Name      string   `json:"name"`
 	Email     string   `json:"email"`
@@ -343,7 +343,7 @@ type PersonInput struct {
 	ManagerID string   `json:"managerId"` // "" or left out for none (017 FR-016)
 }
 
-// PersonUpdate is the body of PATCH /api/people/{personId} and of its impact check (PersonUpdate): only
+// PersonUpdate is the body of PATCH /api/v1/people/{personId} and of its impact check (PersonUpdate): only
 // the fields to change, plus the version (D-203, D-210). A field that is not sent (nil) keeps its value;
 // TeamIDs, when sent, is every team after the change; ManagerID "" clears the line manager.
 type PersonUpdate struct {
@@ -394,13 +394,13 @@ type TeamView struct {
 	record.Meta
 }
 
-// TeamPage is the answer of GET /api/teams (TeamPage).
+// TeamPage is the answer of GET /api/v1/teams (TeamPage).
 type TeamPage struct {
 	Items []TeamView `json:"items"`
 	Total int        `json:"total"`
 }
 
-// TeamInput is the body of POST /api/teams (TeamCreate); an empty colour means the least-used one.
+// TeamInput is the body of POST /api/v1/teams (TeamCreate); an empty colour means the least-used one.
 type TeamInput struct {
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
@@ -408,7 +408,7 @@ type TeamInput struct {
 	MemberIDs   []string `json:"memberIds"`
 }
 
-// TeamUpdate is the body of PATCH /api/teams/{teamId} and of its impact check (TeamUpdate): only the
+// TeamUpdate is the body of PATCH /api/v1/teams/{teamId} and of its impact check (TeamUpdate): only the
 // fields to change, plus the version (D-203, D-210). A field that is not sent (nil) keeps its value;
 // MemberIDs, when sent, is every member after the change.
 type TeamUpdate struct {
@@ -436,14 +436,14 @@ func (u TeamUpdate) applyTo(form teamForm) teamForm {
 	return form
 }
 
-// StatusUpdate is the body of POST /api/people/{personId}/status and /api/teams/{teamId}/status
+// StatusUpdate is the body of POST /api/v1/people/{personId}/status and /api/v1/teams/{teamId}/status
 // (feature 002's StatusUpdate).
 type StatusUpdate struct {
 	Active  *bool `json:"active"`
 	Version *int  `json:"version"`
 }
 
-// ProfileUpdate is the body of PATCH /api/me (ProfileUpdate): My profile's name and job title.
+// ProfileUpdate is the body of PATCH /api/v1/me (ProfileUpdate): My profile's name and job title.
 type ProfileUpdate struct {
 	Name     string `json:"name"`
 	JobTitle string `json:"jobTitle"`
@@ -457,7 +457,7 @@ type DisplayCurrencyOption struct {
 	Active bool   `json:"active"` // false only for the person's current one after it was set inactive
 }
 
-// DisplayCurrencyPage is the answer of GET /api/me/display-currencies (DisplayCurrencyPage), by code.
+// DisplayCurrencyPage is the answer of GET /api/v1/me/display-currencies (DisplayCurrencyPage), by code.
 type DisplayCurrencyPage struct {
 	Items []DisplayCurrencyOption `json:"items"`
 	Total int                     `json:"total"`
@@ -474,7 +474,7 @@ type ImpactWarning struct {
 	Count   int    `json:"count"`
 }
 
-// ChangeImpact is the answer of POST /api/people/{personId}/impact and /api/teams/{teamId}/impact (feature
+// ChangeImpact is the answer of POST /api/v1/people/{personId}/impact and /api/v1/teams/{teamId}/impact (feature
 // 002's ChangeImpact).
 type ChangeImpact struct {
 	Warnings []ImpactWarning `json:"warnings"`

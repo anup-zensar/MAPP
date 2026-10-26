@@ -16,8 +16,8 @@ const priyasEmail = "priya.raman@shell.com"
 
 // The bodies of the API's refusals, as the web app receives them.
 const (
-	signInRequiredBody = `{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}`
-	sessionExpiredBody = `{"code":"session_expired","message":"Please sign in again","fields":[]}`
+	signInRequiredBody = `{"error":{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}}`
+	sessionExpiredBody = `{"error":{"code":"session_expired","message":"Please sign in again","fields":[]}}`
 )
 
 // The answers about Priya Raman as the seed has her: her preferences are the defaults, and she is in the
@@ -47,14 +47,14 @@ func inLubricantsEurope(keys ...string) string {
 	return strings.Join(parts, ",")
 }
 
-// GET /api/me answers who is signed in, with everything the sidebar and the account menu show (FR-012),
+// GET /api/v1/me answers who is signed in, with everything the sidebar and the account menu show (FR-012),
 // and what My profile shows: the version, the five preferences, the person's teams (003 FR-021, FR-026) and
 // their access (014 FR-024).
 func TestGetMe_SignedInPerson_FR012(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodGet, "/api/me", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/me", nil)
 
 	assertAnswer(t, response, http.StatusOK, `{"id":"U-1002","name":"Priya Raman","firstName":"Priya",`+
 		`"email":"priya.raman@shell.com","jobTitle":"Marketer","initials":"PR",`+
@@ -65,7 +65,7 @@ func TestGetMe_SignedInPerson_FR012(t *testing.T) {
 func TestGetMe_WithoutSession_FR005(t *testing.T) {
 	server := apitest.New(t)
 
-	response := server.Do(t, http.MethodGet, "/api/me", nil)
+	response := server.Do(t, http.MethodGet, "/api/v1/me", nil)
 
 	assertAnswer(t, response, http.StatusUnauthorized, signInRequiredBody)
 }
@@ -77,7 +77,7 @@ func TestGetMe_SessionExpired_FR006(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	server.Advance(12*time.Hour + 2*time.Minute)
 
-	response := priya.Do(t, http.MethodGet, "/api/me", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/me", nil)
 
 	assertAnswer(t, response, http.StatusUnauthorized, sessionExpiredBody)
 }
@@ -87,7 +87,7 @@ func TestPatchPreferences_NothingSent_FR011(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{})
+	response := priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{})
 
 	assertAnswer(t, response, http.StatusOK, defaultPreferencesBody)
 }
@@ -96,18 +96,18 @@ func TestPatchPreferences_NothingSent_FR011(t *testing.T) {
 func TestPatchPreferences_ThemeKeepsSidebarCollapsed_FR014(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
-	collapse := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"sidebarCollapsed": true})
+	collapse := priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"sidebarCollapsed": true})
 	assertAnswer(t, collapse, http.StatusOK, `{"theme":"system","sidebarCollapsed":true,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams","historyIncludeInside":false,"pinnedPlanIds":[]}`)
 
-	response := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"theme": "dark"})
+	response := priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"theme": "dark"})
 
 	assertAnswer(t, response, http.StatusOK, `{"theme":"dark","sidebarCollapsed":true,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams","historyIncludeInside":false,"pinnedPlanIds":[]}`)
 	var me people.CurrentUser
-	priya.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
+	priya.Do(t, http.MethodGet, "/api/v1/me", nil).Decode(t, &me)
 	want := people.PreferencesView{Theme: "dark", SidebarCollapsed: true, DisplayCurrency: "USD", DateFormat: "DD MMM YYYY", HomeScope: "myTeams",
 		PinnedPlanIDs: []string{}}
 	if !reflect.DeepEqual(me.Preferences, want) {
-		t.Errorf("GET /api/me preferences = %+v, want %+v", me.Preferences, want)
+		t.Errorf("GET /api/v1/me preferences = %+v, want %+v", me.Preferences, want)
 	}
 }
 
@@ -116,50 +116,50 @@ func TestPatchPreferences_InvalidTheme_FR014(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"theme": "blue"},
+	response := priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"theme": "blue"},
 		apitest.SkipRequestValidation()) // the contract itself allows only the three themes
 
-	assertAnswer(t, response, http.StatusBadRequest, `{"code":"validation_failed",`+
-		`"message":"Some fields need your attention.","fields":[{"field":"theme","message":"Choose system, light or dark."}]}`)
+	assertAnswer(t, response, http.StatusBadRequest, `{"error":{"code":"validation_failed",`+
+		`"message":"Some fields need your attention.","fields":[{"field":"theme","message":"Choose system, light or dark."}]}}`)
 }
 
-// Home's My teams / Everything switch is saved per person and comes back with GET /api/me; a value other
+// Home's My teams / Everything switch is saved per person and comes back with GET /api/v1/me; a value other
 // than myTeams or everything is refused next to the field (009 FR-003).
 func TestPatchPreferences_HomeScope_FR003(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"homeScope": "everything"})
-	refused := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"homeScope": "all"},
+	response := priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"homeScope": "everything"})
+	refused := priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"homeScope": "all"},
 		apitest.SkipRequestValidation()) // the contract itself allows only the two scopes
 
 	assertAnswer(t, response, http.StatusOK, `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"everything","historyIncludeInside":false,"pinnedPlanIds":[]}`)
 	var me people.CurrentUser
-	priya.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
+	priya.Do(t, http.MethodGet, "/api/v1/me", nil).Decode(t, &me)
 	if me.Preferences.HomeScope != "everything" {
-		t.Errorf("GET /api/me home scope = %q, want everything", me.Preferences.HomeScope)
+		t.Errorf("GET /api/v1/me home scope = %q, want everything", me.Preferences.HomeScope)
 	}
-	assertAnswer(t, refused, http.StatusBadRequest, `{"code":"validation_failed",`+
-		`"message":"Some fields need your attention.","fields":[{"field":"homeScope","message":"Choose My teams or Everything."}]}`)
+	assertAnswer(t, refused, http.StatusBadRequest, `{"error":{"code":"validation_failed",`+
+		`"message":"Some fields need your attention.","fields":[{"field":"homeScope","message":"Choose My teams or Everything."}]}}`)
 }
 
-// Pinned plans are saved per person like the other preferences and come back with GET /api/me, in the
+// Pinned plans are saved per person like the other preferences and come back with GET /api/v1/me, in the
 // order pinned; a repeated id is pinned once; an id that is no plan id is refused next to the field
 // (018 FR-004 – FR-006, D-317).
 func TestPatchPreferences_PinnedPlans_FR004_FR005(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	pinned := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"pinnedPlanIds": []string{"P-1002", "P-1001", "P-1002"}})
-	refused := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"pinnedPlanIds": []string{"plan-7"}},
+	pinned := priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"pinnedPlanIds": []string{"P-1002", "P-1001", "P-1002"}})
+	refused := priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"pinnedPlanIds": []string{"plan-7"}},
 		apitest.SkipRequestValidation()) // the contract itself allows only plan ids
 
 	assertAnswer(t, pinned, http.StatusOK, `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams","historyIncludeInside":false,"pinnedPlanIds":["P-1002","P-1001"]}`)
 	assertAnswer(t, refused, http.StatusBadRequest, validationBody(`{"field":"pinnedPlanIds","message":"Pin plans by their id, like P-1001."}`))
 	var me people.CurrentUser
-	priya.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
+	priya.Do(t, http.MethodGet, "/api/v1/me", nil).Decode(t, &me)
 	if want := []string{"P-1002", "P-1001"}; !slices.Equal(me.Preferences.PinnedPlanIDs, want) {
-		t.Errorf("GET /api/me pinned plans = %q, want %q (the refusal changed nothing)", me.Preferences.PinnedPlanIDs, want)
+		t.Errorf("GET /api/v1/me pinned plans = %q, want %q (the refusal changed nothing)", me.Preferences.PinnedPlanIDs, want)
 	}
 }
 
@@ -167,7 +167,7 @@ func TestPatchPreferences_PinnedPlans_FR004_FR005(t *testing.T) {
 func TestPatchPreferences_WithoutSession_FR005(t *testing.T) {
 	server := apitest.New(t)
 
-	response := server.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"theme": "dark"})
+	response := server.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"theme": "dark"})
 
 	assertAnswer(t, response, http.StatusUnauthorized, signInRequiredBody)
 }
@@ -180,17 +180,17 @@ func TestPatchMe_UpdatesProfile_FR021_FR022(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	alex := server.SignIn(t, alexsEmail)
 
-	response := priya.Do(t, http.MethodPatch, "/api/me", map[string]any{"name": "Priya Sharma", "jobTitle": "Senior marketer", "version": 1})
+	response := priya.Do(t, http.MethodPatch, "/api/v1/me", map[string]any{"name": "Priya Sharma", "jobTitle": "Senior marketer", "version": 1})
 
 	assertAnswer(t, response, http.StatusOK, `{"id":"U-1002","name":"Priya Sharma","firstName":"Priya",`+
 		`"email":"priya.raman@shell.com","jobTitle":"Senior marketer","initials":"PS",`+
 		`"preferences":`+defaultPreferencesBody+`,"version":2,"teams":`+priyasTeamsBody+`,"access":`+priyasAccessBody+`}`)
 	var me people.CurrentUser
-	priya.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
+	priya.Do(t, http.MethodGet, "/api/v1/me", nil).Decode(t, &me)
 	var details people.PersonDetails
-	alex.Do(t, http.MethodGet, "/api/people/U-1002", nil).Decode(t, &details)
+	alex.Do(t, http.MethodGet, "/api/v1/people/U-1002", nil).Decode(t, &details)
 	if me.Name != "Priya Sharma" || details.Name != "Priya Sharma" || details.UpdatedBy.Name != "Priya Raman" {
-		t.Errorf("after the change: GET /api/me %q, GET /api/people/U-1002 %q changed by %q; want the new name",
+		t.Errorf("after the change: GET /api/v1/me %q, GET /api/v1/people/U-1002 %q changed by %q; want the new name",
 			me.Name, details.Name, details.UpdatedBy.Name)
 	}
 }
@@ -202,21 +202,21 @@ func TestPatchMe_VersionConflict_FR022(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	alex := server.SignIn(t, alexsEmail)
 	server.Advance(time.Hour)
-	changed := alex.Do(t, http.MethodPatch, "/api/people/U-1002", map[string]any{"name": "Priya Raman",
+	changed := alex.Do(t, http.MethodPatch, "/api/v1/people/U-1002", map[string]any{"name": "Priya Raman",
 		"email": priyasEmail, "jobTitle": "Team leader", "teamIds": []string{"T-1001"}, "version": 1})
 	if changed.Status != http.StatusOK {
 		t.Fatalf("Alex's change = %d %s", changed.Status, changed.Body)
 	}
 
-	response := priya.Do(t, http.MethodPatch, "/api/me", map[string]any{"name": "Priya Sharma", "jobTitle": "Marketer", "version": 1})
+	response := priya.Do(t, http.MethodPatch, "/api/v1/me", map[string]any{"name": "Priya Sharma", "jobTitle": "Marketer", "version": 1})
 
-	assertAnswer(t, response, http.StatusConflict, `{"code":"version_conflict",`+
+	assertAnswer(t, response, http.StatusConflict, `{"error":{"code":"version_conflict",`+
 		`"message":"Not saved — Alex Morgan changed this person","fields":[],`+
-		`"conflict":{"changedBy":"Alex Morgan","changedAt":"2026-03-12T10:00:00Z"}}`)
+		`"conflict":{"changedBy":"Alex Morgan","changedAt":"2026-03-12T10:00:00Z"}}}`)
 	var me people.CurrentUser
-	priya.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
+	priya.Do(t, http.MethodGet, "/api/v1/me", nil).Decode(t, &me)
 	if me.Name != "Priya Raman" || me.JobTitle != "Team leader" || me.Version != 2 {
-		t.Errorf("GET /api/me = %+v, want only Alex's change", me)
+		t.Errorf("GET /api/v1/me = %+v, want only Alex's change", me)
 	}
 }
 
@@ -225,7 +225,7 @@ func TestPatchMe_AllProblemsAtOnce_FR022(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodPatch, "/api/me", map[string]any{"name": " ", "jobTitle": strings.Repeat("j", 121), "version": 1})
+	response := priya.Do(t, http.MethodPatch, "/api/v1/me", map[string]any{"name": " ", "jobTitle": strings.Repeat("j", 121), "version": 1})
 
 	assertAnswer(t, response, http.StatusBadRequest, validationBody(`{"field":"name","message":"Enter a name."},`+
 		`{"field":"jobTitle","message":"Use 120 characters or fewer."}`))
@@ -238,8 +238,8 @@ func TestPatchPreferences_DisplayCurrencyAndDateFormat_FR023_FR024(t *testing.T)
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	chosen := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"displayCurrency": "EUR", "dateFormat": "DD/MM/YYYY"})
-	invalid := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"displayCurrency": "XYZ", "dateFormat": "DD.MM.YYYY"})
+	chosen := priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"displayCurrency": "EUR", "dateFormat": "DD/MM/YYYY"})
+	invalid := priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"displayCurrency": "XYZ", "dateFormat": "DD.MM.YYYY"})
 
 	assertAnswer(t, chosen, http.StatusOK, `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"EUR","dateFormat":"DD/MM/YYYY","homeScope":"myTeams","historyIncludeInside":false,"pinnedPlanIds":[]}`)
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"displayCurrency","message":"Choose one of the active currencies."},`+
@@ -255,18 +255,18 @@ func TestGetDisplayCurrencies_FR023(t *testing.T) {
 	daniel := server.SignIn(t, danielsEmail)
 	alex := server.SignIn(t, alexsEmail)
 
-	before := daniel.Do(t, http.MethodGet, "/api/me/display-currencies", nil)
-	priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"displayCurrency": "GBP"})
+	before := daniel.Do(t, http.MethodGet, "/api/v1/me/display-currencies", nil)
+	priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"displayCurrency": "GBP"})
 	var gbp struct {
 		Version int `json:"version"`
 	}
-	alex.Do(t, http.MethodGet, "/api/currencies/GBP", nil).Decode(t, &gbp)
-	inactive := alex.Do(t, http.MethodPost, "/api/currencies/GBP/status", map[string]any{"active": false, "version": gbp.Version})
+	alex.Do(t, http.MethodGet, "/api/v1/currencies/GBP", nil).Decode(t, &gbp)
+	inactive := alex.Do(t, http.MethodPost, "/api/v1/currencies/GBP/status", map[string]any{"active": false, "version": gbp.Version})
 	if inactive.Status != http.StatusOK {
 		t.Fatalf("setting GBP inactive = %d %s", inactive.Status, inactive.Body)
 	}
-	priyas := priya.Do(t, http.MethodGet, "/api/me/display-currencies", nil)
-	daniels := daniel.Do(t, http.MethodGet, "/api/me/display-currencies", nil)
+	priyas := priya.Do(t, http.MethodGet, "/api/v1/me/display-currencies", nil)
+	daniels := daniel.Do(t, http.MethodGet, "/api/v1/me/display-currencies", nil)
 
 	cny, eur := `{"code":"CNY","name":"Chinese yuan","active":true}`, `{"code":"EUR","name":"Euro","active":true}`
 	inr, usd := `{"code":"INR","name":"Indian rupee","active":true}`, `{"code":"USD","name":"US dollar","active":true}`
@@ -284,9 +284,9 @@ func TestPreferences_SameInAnotherBrowser_FR025(t *testing.T) {
 	firstBrowser := server.SignIn(t, priyasEmail)
 	secondBrowser := server.SignIn(t, priyasEmail)
 
-	firstBrowser.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"displayCurrency": "EUR", "dateFormat": "YYYY-MM-DD"})
+	firstBrowser.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"displayCurrency": "EUR", "dateFormat": "YYYY-MM-DD"})
 	var me people.CurrentUser
-	secondBrowser.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
+	secondBrowser.Do(t, http.MethodGet, "/api/v1/me", nil).Decode(t, &me)
 
 	if me.Preferences.DisplayCurrency != "EUR" || me.Preferences.DateFormat != "YYYY-MM-DD" {
 		t.Errorf("preferences in the second browser = %+v, want EUR and YYYY-MM-DD", me.Preferences)

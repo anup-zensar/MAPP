@@ -34,10 +34,10 @@ type displayedActivity struct {
 func TestActivity_DisplayCurrency_D220(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
-	assertStatus(t, priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"displayCurrency": "EUR"}), http.StatusOK)
+	assertStatus(t, priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"displayCurrency": "EUR"}), http.StatusOK)
 
 	var activity displayedActivity
-	response := priya.Do(t, http.MethodGet, "/api/activities/A-1001", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/activities/A-1001", nil)
 	assertStatus(t, response, http.StatusOK)
 	response.Decode(t, &activity)
 	if *activity.PlannedCost != (amountOf{"120000.00", "USD"}) || *activity.UnassignedPlannedCost != (amountOf{"20000.00", "USD"}) {
@@ -55,7 +55,7 @@ func TestActivity_DisplayCurrency_D220(t *testing.T) {
 	var page struct {
 		Items []displayedActivity `json:"items"`
 	}
-	response = priya.Do(t, http.MethodGet, "/api/plans/P-1001/activities", nil)
+	response = priya.Do(t, http.MethodGet, "/api/v1/plans/P-1001/activities", nil)
 	assertStatus(t, response, http.StatusOK)
 	response.Decode(t, &page)
 	for _, row := range page.Items {

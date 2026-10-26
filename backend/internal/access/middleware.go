@@ -21,17 +21,17 @@ const noRuleMessage = "This action isn't available. Ask an administrator if you 
 //   - Need and InPlan operations, and View operations with a permission, are refused with 403 forbidden
 //     when no role of the person includes the permission (messages 1 and 2);
 //   - when the path names a planning record (a plan, campaign, initiative, activity or line item, through
-//     the finders of UseTargets), View, InPlan and Custom operations are refused when the person cannot
-//     see the record (message 4, FR-008), and InPlan operations when the permission is not theirs in the
-//     record's plan (message 3, FR-009);
+//     the finders of UseTargets), View, InPlan and Custom operations answer 404 when the person cannot
+//     see the record, exactly as for a missing one, and InPlan operations are refused when the permission
+//     is not theirs in the record's plan (message 3, FR-009);
 //   - the services check what the path does not say: destinations of moves and copies, the teams of a
 //     plan, list filters and the rules of Custom operations.
 //
 // An operation without a rule is refused.
 //
 // Every refusal, by the middleware or by a service, is written to the technical log with the operation, the
-// person's ID and the code forbidden, never a name or an e-mail (FR-039, constitution VI). Refused requests
-// change nothing and are not in the activity log (D-241).
+// person's ID and the code (forbidden, or not_found for a record they cannot see), never a name or an
+// e-mail (FR-039, constitution VI). Refused requests change nothing and are not in the activity log (D-241).
 func (s *Service) Authorize(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		a, _ := actor.From(r.Context())
@@ -47,7 +47,7 @@ func (s *Service) Authorize(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 		if rule.Permission != "" && rule.Kind != Custom && !g.Has(rule.Permission) {
-			logForbidden(r, a.ID)
+			logRefusal(r, a.ID, errs.CodeForbidden)
 			web.WriteError(w, r, errs.Forbidden(g.Refusal(rule.Permission, nil)))
 			return
 		}
@@ -57,9 +57,9 @@ func (s *Service) Authorize(next http.HandlerFunc) http.HandlerFunc {
 				web.WriteError(w, r, err)
 				return
 			}
-			if refusal := checkTarget(g, rule, target); found && refusal != "" {
-				logForbidden(r, a.ID)
-				web.WriteError(w, r, errs.Forbidden(refusal))
+			if refusal := checkTarget(g, rule, target); found && refusal != nil {
+				logRefusal(r, a.ID, refusal.Code)
+				web.WriteError(w, r, refusal)
 				return
 			}
 		}
@@ -67,14 +67,14 @@ func (s *Service) Authorize(next http.HandlerFunc) http.HandlerFunc {
 		answer := &statusWriter{ResponseWriter: w, status: http.StatusOK}
 		next(answer, r.WithContext(authz.With(r.Context(), g)))
 		if answer.status == http.StatusForbidden {
-			logForbidden(r, a.ID) // refused by the service: a scope or a record rule
+			logRefusal(r, a.ID, errs.CodeForbidden) // refused by the service: a scope or a record rule
 		}
 	}
 }
 
-// logForbidden writes the technical log line of a refusal: the operation, the person's ID and the code.
-func logForbidden(r *http.Request, personID string) {
-	slog.Warn("request refused", "operation", r.Pattern, "person", personID, "code", errs.CodeForbidden)
+// logRefusal writes the technical log line of a refusal: the operation, the person's ID and the code.
+func logRefusal(r *http.Request, personID, code string) {
+	slog.Warn("request refused", "operation", r.Pattern, "person", personID, "code", code)
 }
 
 // statusWriter passes the answer on and remembers its status, so Authorize can log refusals made by

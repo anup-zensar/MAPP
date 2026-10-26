@@ -30,7 +30,7 @@ const DATE_FORMAT_CHOICES: ChoiceOption[] = DATE_FORMATS.map((format) => ({
 
 /**
  * "Edit your details" (US4-2, FR-022): the signed-in person's name and job title, saved with
- * PATCH /api/me. The e-mail is not here: it is the sign-in name, changed in Settings › People.
+ * PATCH /api/v1/me. The e-mail is not here: it is the sign-in name, changed in Settings › People.
  * The account button shows the new name as soon as it is saved.
  */
 export function EditDetailsPanel({ onClose }: { onClose: () => void }) {
@@ -105,7 +105,7 @@ export function EditDetailsPanel({ onClose }: { onClose: () => void }) {
 
 /**
  * "Edit display preferences" (US4-3, US4-4, FR-023, FR-024): the display currency and the date
- * format, saved together with PATCH /api/me/preferences. Afterwards dates use the new format at
+ * format, saved together with PATCH /api/v1/me/preferences. Afterwards dates use the new format at
  * once and every list is asked again, so amounts come converted by the API (SC-006).
  */
 export function EditPreferencesPanel({ onClose }: { onClose: () => void }) {

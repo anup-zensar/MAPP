@@ -20,7 +20,7 @@ export interface SettingsSection {
   description: string;
   path: string;
   icon: LucideIcon;
-  /** 002's sections: the count of active records in GET /api/settings/overview. */
+  /** 002's sections: the count of active records in GET /api/v1/settings/overview. */
   overviewKey?: keyof components['schemas']['SettingsOverview'];
   /**
    * Other features' sections: a component that shows "<n> active" from their own data. Left out

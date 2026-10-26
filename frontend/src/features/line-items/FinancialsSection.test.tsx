@@ -15,7 +15,7 @@ import {
 } from './testData';
 
 function renderActivity(answer: MockHandler) {
-  mockApi({ 'GET /api/financials/records/A-1001': answer });
+  mockApi({ 'GET /api/v1/financials/records/A-1001': answer });
   return renderWithProviders(<ActivityFinancials activityId="A-1001" />, { user: testUser() });
 }
 
@@ -24,8 +24,8 @@ function renderLineItem(
   transactions: MockHandler = { body: transactionPage([transaction()]) },
 ) {
   mockApi({
-    'GET /api/financials/records/L-1001': answer,
-    'GET /api/financials/transactions': transactions,
+    'GET /api/v1/financials/records/L-1001': answer,
+    'GET /api/v1/financials/transactions': transactions,
   });
   return renderWithProviders(<LineItemFinancials lineItemId="L-1001" />, { user: testUser() });
 }
@@ -101,7 +101,7 @@ describe('ActivityFinancials (015 US1, FR-011 – FR-015)', () => {
   it('says in place when the person may not see financial data (015 T044)', async () => {
     renderActivity({
       status: 409,
-      body: { code: 'not_allowed', message: 'Not allowed', fields: [] },
+      body: { error: { code: 'not_allowed', message: 'Not allowed', fields: [] } },
     });
 
     expect(

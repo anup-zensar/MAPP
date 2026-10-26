@@ -24,23 +24,23 @@ export const CURRENCY_LISTS: QueryKey[] = [
 
 /** One currency as it is stored now; after a conflict the form takes its version from it. */
 export function fetchCurrency(code: string): Promise<Currency> {
-  return call(api.GET('/api/currencies/{code}', { params: { path: { code } } }));
+  return call(api.GET('/api/v1/currencies/{code}', { params: { path: { code } } }));
 }
 
 /** The line items and activities a rate change would recalculate (FR-030). Saves nothing. */
 export function checkCurrencyImpact(code: string, body: CurrencyUpdate): Promise<ChangeImpact> {
-  return call(api.POST('/api/currencies/{code}/impact', { params: { path: { code } }, body }));
+  return call(api.POST('/api/v1/currencies/{code}/impact', { params: { path: { code } }, body }));
 }
 
 /** POST …/status: sets a currency inactive or reactivates it (FR-004). */
 export function setCurrencyStatus(code: string, body: { active: boolean; version: number }) {
-  return call(api.POST('/api/currencies/{code}/status', { params: { path: { code } }, body }));
+  return call(api.POST('/api/v1/currencies/{code}/status', { params: { path: { code } }, body }));
 }
 
 export function useCreateCurrency() {
   const refresh = useRefreshCurrencyLists();
   return useMutation({
-    mutationFn: (body: CurrencyCreate) => call(api.POST('/api/currencies', { body })),
+    mutationFn: (body: CurrencyCreate) => call(api.POST('/api/v1/currencies', { body })),
     onSettled: refresh,
   });
 }
@@ -50,7 +50,7 @@ export function useUpdateCurrency() {
   const refresh = useRefreshCurrencyLists();
   return useMutation({
     mutationFn: ({ code, body }: { code: string; body: CurrencyUpdate }) =>
-      call(api.PATCH('/api/currencies/{code}', { params: { path: { code } }, body })),
+      call(api.PATCH('/api/v1/currencies/{code}', { params: { path: { code } }, body })),
     onSettled: refresh,
   });
 }
@@ -60,7 +60,7 @@ export function useDeleteCurrency() {
   const refresh = useRefreshCurrencyLists();
   return useMutation({
     mutationFn: (code: string) =>
-      call(api.DELETE('/api/currencies/{code}', { params: { path: { code } } })),
+      call(api.DELETE('/api/v1/currencies/{code}', { params: { path: { code } } })),
     onSettled: refresh,
   });
 }

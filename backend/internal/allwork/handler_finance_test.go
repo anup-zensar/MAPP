@@ -18,10 +18,10 @@ func TestGetAllWork_FinancialColumns_FR023(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodGet, "/api/all-work?year=2026&column=committed&column=invoiced&column=paid&column=accrued"+
+	response := priya.Do(t, http.MethodGet, "/api/v1/all-work?year=2026&column=committed&column=invoiced&column=paid&column=accrued"+
 		"&column=notYetCommitted", nil)
 	if response.Status != http.StatusOK {
-		t.Fatalf("GET /api/all-work = %d %s", response.Status, response.Body)
+		t.Fatalf("GET /api/v1/all-work = %d %s", response.Status, response.Body)
 	}
 	var r allwork.Result
 	response.Decode(t, &r)
@@ -55,7 +55,7 @@ func TestGetAllWork_FinancialColumns_FR023(t *testing.T) {
 		t.Errorf("totals committed = %+v", total)
 	}
 
-	defaults := priya.Do(t, http.MethodGet, "/api/all-work", nil)
+	defaults := priya.Do(t, http.MethodGet, "/api/v1/all-work", nil)
 	var d allwork.Result
 	defaults.Decode(t, &d)
 	keys := []string{}
@@ -73,9 +73,9 @@ func TestGetAllWork_FinancialsFilterAndExport_FR024(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodGet, "/api/all-work?year=2026&finance=committedAbovePlanned", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/all-work?year=2026&finance=committedAbovePlanned", nil)
 	if response.Status != http.StatusOK {
-		t.Fatalf("GET /api/all-work = %d %s", response.Status, response.Body)
+		t.Fatalf("GET /api/v1/all-work = %d %s", response.Status, response.Body)
 	}
 	var r allwork.Result
 	response.Decode(t, &r)
@@ -89,14 +89,14 @@ func TestGetAllWork_FinancialsFilterAndExport_FR024(t *testing.T) {
 		t.Errorf("matching activities = %v", activities)
 	}
 
-	export := priya.Do(t, http.MethodGet, "/api/all-work/export?format=csv&finance=committedAbovePlanned", nil)
+	export := priya.Do(t, http.MethodGet, "/api/v1/all-work/export?format=csv&finance=committedAbovePlanned", nil)
 	body := string(export.Body)
 	if export.Status != http.StatusOK || !strings.Contains(body, `Financial figures,"GSAP data as of 12 Mar 2026, 09:00 UTC"`) ||
 		!strings.Contains(body, "Financials: Committed above planned cost") || !strings.Contains(body, "Committed (USD)") {
 		t.Errorf("export = %d %s", export.Status, body)
 	}
 
-	refused := priya.Do(t, http.MethodGet, "/api/all-work?finance=overBudget", nil, apitest.SkipRequestValidation())
+	refused := priya.Do(t, http.MethodGet, "/api/v1/all-work?finance=overBudget", nil, apitest.SkipRequestValidation())
 	if refused.Status != http.StatusBadRequest || !strings.Contains(string(refused.Body), `"field":"finance"`) {
 		t.Errorf("an unknown value = %d %s", refused.Status, refused.Body)
 	}

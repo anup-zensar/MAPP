@@ -165,7 +165,7 @@ export function planCampaigns(
   };
 }
 
-/** The part of feature 004's GET /api/plans/{planId} answer the forms read: the business unit. */
+/** The part of feature 004's GET /api/v1/plans/{planId} answer the forms read: the business unit. */
 export function planAnswer(businessUnit: { id: string; label: string }[] = []) {
   return { id: PLAN_ID, name: PLAN_NAME, year: 2026, businessUnit };
 }
@@ -178,7 +178,7 @@ const PERSON_META = {
   updatedBy: { id: 'U-1001', name: 'Alex Morgan' },
 };
 
-/** GET /api/people: Alex Morgan and Priya Raman. */
+/** GET /api/v1/people: Alex Morgan and Priya Raman. */
 export const PEOPLE = {
   total: 2,
   items: [ALEX, PRIYA].map((person) => ({

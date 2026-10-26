@@ -359,20 +359,20 @@ type SavedView struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-// SavedViewPage is the answer of GET /api/saved-views (SavedViewPage).
+// SavedViewPage is the answer of GET /api/v1/saved-views (SavedViewPage).
 type SavedViewPage struct {
 	Items []SavedView `json:"items"`
 	Total int         `json:"total"`
 }
 
-// SavedViewCreate is the body of POST /api/saved-views (SavedViewCreate).
+// SavedViewCreate is the body of POST /api/v1/saved-views (SavedViewCreate).
 type SavedViewCreate struct {
 	Name      string     `json:"name"`
 	State     *ViewState `json:"state"`
 	IsDefault bool       `json:"isDefault"`
 }
 
-// SavedViewUpdate is the body of PATCH /api/saved-views/{viewId} (SavedViewUpdate): only the parts to
+// SavedViewUpdate is the body of PATCH /api/v1/saved-views/{viewId} (SavedViewUpdate): only the parts to
 // change.
 type SavedViewUpdate struct {
 	Name      *string    `json:"name"`

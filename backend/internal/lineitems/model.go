@@ -223,7 +223,7 @@ type SpreadGrid struct {
 	Total   money.Money        `json:"total"`
 }
 
-// Section is the answer of GET /api/activities/{activityId}/line-items (LineItemSection).
+// Section is the answer of GET /api/v1/activities/{activityId}/line-items (LineItemSection).
 type Section struct {
 	Activity ActivityView          `json:"activity"`
 	Items    []View                `json:"items"` // in creation order
@@ -232,7 +232,7 @@ type Section struct {
 	Access   *authz.LineItemAccess `json:"access,omitempty"` // what the reader may do (014 FR-011)
 }
 
-// Details is the answer of GET /api/line-items/{lineItemId} (LineItemDetails).
+// Details is the answer of GET /api/v1/line-items/{lineItemId} (LineItemDetails).
 type Details struct {
 	LineItem View                  `json:"lineItem"`
 	Activity ActivityView          `json:"activity"`
@@ -254,7 +254,7 @@ type Defaults struct {
 	RequestSwbs                  bool              `json:"requestSwbs"`
 }
 
-// FormOptions is the answer of GET /api/activities/{activityId}/line-items/form-options
+// FormOptions is the answer of GET /api/v1/activities/{activityId}/line-items/form-options
 // (LineItemFormOptions).
 type FormOptions struct {
 	Activity           ActivityView           `json:"activity"`
@@ -265,7 +265,7 @@ type FormOptions struct {
 	FinanceBudgetItems []FinanceBudgetItemRef `json:"financeBudgetItems"`
 }
 
-// Input is the body of POST /api/activities/{activityId}/line-items (LineItemCreate).
+// Input is the body of POST /api/v1/activities/{activityId}/line-items (LineItemCreate).
 type Input struct {
 	Name                string                   `json:"name"`
 	OwnerID             *string                  `json:"ownerId"`
@@ -281,7 +281,7 @@ type Input struct {
 	RestartApproval     bool                     `json:"restartApproval"` // the person confirmed the activity needs approval again
 }
 
-// Update is the body of PATCH /api/line-items/{lineItemId} (LineItemUpdate): the whole form and the version.
+// Update is the body of PATCH /api/v1/line-items/{lineItemId} (LineItemUpdate): the whole form and the version.
 type Update struct {
 	Name                string                   `json:"name"`
 	OwnerID             *string                  `json:"ownerId"`
@@ -298,7 +298,7 @@ type Update struct {
 	Version             *int                     `json:"version"`
 }
 
-// DuplicateInput is the body of POST /api/line-items/{lineItemId}/duplicate (LineItemDuplicate).
+// DuplicateInput is the body of POST /api/v1/line-items/{lineItemId}/duplicate (LineItemDuplicate).
 type DuplicateInput struct {
 	RestartApproval bool `json:"restartApproval"`
 }

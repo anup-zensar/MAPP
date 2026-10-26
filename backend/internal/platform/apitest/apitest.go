@@ -3,11 +3,11 @@
 // written with it (constitution V):
 //
 //	server := apitest.New(t)
-//	response := server.Do(t, http.MethodGet, "/api/health", nil)
+//	response := server.Do(t, http.MethodGet, "/api/v1/health", nil)
 //	if response.Status != http.StatusOK { ... }
 //
 //	priya := server.SignIn(t, "priya.raman@shell.com")
-//	response = priya.Do(t, http.MethodGet, "/api/me", nil) // sent with Priya's session cookie
+//	response = priya.Do(t, http.MethodGet, "/api/v1/me", nil) // sent with Priya's session cookie
 //
 // The API runs on a temporary data folder holding the demo people of the seed, with a fixed clock that
 // starts at 12 Mar 2026 09:00 UTC and moves only with Advance. Requests are handed to the API directly,
@@ -181,12 +181,12 @@ type Client struct {
 	cookie *http.Cookie // the person's session cookie
 }
 
-// SignIn signs in as the demo person with e-mail email, through POST /api/auth/sign-in with the demo
+// SignIn signs in as the demo person with e-mail email, through POST /api/v1/auth/sign-in with the demo
 // password, and returns a client that sends that person's session cookie. It stops the test when the
 // sign-in fails.
 func (s *Server) SignIn(t testing.TB, email string) *Client {
 	t.Helper()
-	response := s.Do(t, http.MethodPost, "/api/auth/sign-in",
+	response := s.Do(t, http.MethodPost, "/api/v1/auth/sign-in",
 		map[string]string{"email": email, "password": s.demoPassword})
 	cookie := response.Cookie(auth.CookieName)
 	if response.Status != http.StatusOK || cookie == nil {

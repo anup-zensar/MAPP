@@ -51,14 +51,14 @@ describe('saveBlob', () => {
 describe('downloadFromApi (FR-034)', () => {
   it('saves the answered file under the name the API gives and returns it', async () => {
     mockApi({
-      'GET /api/all-work/export': () =>
+      'GET /api/v1/all-work/export': () =>
         new Response('View,Grid', {
           headers: { 'Content-Type': 'text/csv', 'Content-Disposition': DISPOSITION },
         }),
     });
 
     const fileName = await downloadFromApi(
-      api.GET('/api/all-work/export', { params: { query: { format: 'csv' } }, parseAs: 'blob' }),
+      api.GET('/api/v1/all-work/export', { params: { query: { format: 'csv' } }, parseAs: 'blob' }),
     );
 
     expect(fileName).toBe(NAME);
@@ -67,18 +67,20 @@ describe('downloadFromApi (FR-034)', () => {
 
   it('turns an error answer into an ApiError with the API’s message, saving nothing', async () => {
     mockApi({
-      'GET /api/all-work/export': {
+      'GET /api/v1/all-work/export': {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Choose a year from 2000 to 2100.',
-          fields: [{ field: 'year', message: 'Choose a year from 2000 to 2100.' }],
+          error: {
+            code: 'validation_failed',
+            message: 'Choose a year from 2000 to 2100.',
+            fields: [{ field: 'year', message: 'Choose a year from 2000 to 2100.' }],
+          },
         },
       },
     });
 
     const failure = await downloadFromApi(
-      api.GET('/api/all-work/export', {
+      api.GET('/api/v1/all-work/export', {
         params: { query: { format: 'csv', year: 2026 } },
         parseAs: 'blob',
       }),

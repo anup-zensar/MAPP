@@ -19,7 +19,7 @@ const CHECK_KEPT_FOR_MS = 30_000;
 
 /**
  * Knows who is signed in and keeps the whole app in step with it (plan "Session", research R15
- * and R16): it asks GET /api/me, ends a session in one place, notices when another person signed
+ * and R16): it asks GET /api/v1/me, ends a session in one place, notices when another person signed
  * in in another tab of this browser, and shows the person's light or dark mode.
  */
 export function SessionProvider({ children }: { children: ReactNode }) {
@@ -38,7 +38,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     pageOnScreen.current = location;
   }, [location]);
 
-  // Counts the sessions this tab has ended or begun. A check of GET /api/me that was on its way
+  // Counts the sessions this tab has ended or begun. A check of GET /api/v1/me that was on its way
   // when the session ended (or a new one began) answers for a session that is no longer the one
   // on screen: its answer must not bring the person back after signing out, nor end a new session.
   const sessionChanges = useRef(0);
@@ -88,7 +88,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       // The session ended or began while this check was on its way: keep what is on screen now.
       const outOfDate = () => sessionChanges.current !== changesBefore;
       try {
-        const person = await call(api.GET('/api/me'));
+        const person = await call(api.GET('/api/v1/me'));
         if (outOfDate()) {
           return queryClient.getQueryData<CurrentUser | null>(SESSION_KEY) ?? null;
         }
@@ -129,7 +129,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return () => setSessionLostHandler(null);
   }, [endSession]);
 
-  // A call refused by the person's roles: their access may have changed since GET /api/me, so it is
+  // A call refused by the person's roles: their access may have changed since GET /api/v1/me, so it is
   // asked again and navigation and page gates follow at once (feature 014, FR-020).
   useEffect(() => {
     setForbiddenHandler(refetch);
@@ -148,14 +148,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 
   async function signIn(email: string, password: string) {
-    const signedIn = await call(api.POST('/api/auth/sign-in', { body: { email, password } }));
+    const signedIn = await call(api.POST('/api/v1/auth/sign-in', { body: { email, password } }));
     sessionChanges.current += 1;
     queryClient.setQueryData(SESSION_KEY, signedIn);
   }
 
   async function signOut() {
     try {
-      await call(api.POST('/api/auth/sign-out'));
+      await call(api.POST('/api/v1/auth/sign-out'));
     } catch (failure) {
       // The person is still signed in: say why in plain words, with Try again (FR-020).
       show({ message: messageOf(failure), action: tryAgain(signOut) });
@@ -184,7 +184,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   async function savePreferences(patch: PreferencesUpdate) {
     try {
       // Only the changed preference is sent.
-      await call(api.PATCH('/api/me/preferences', { body: patch }));
+      await call(api.PATCH('/api/v1/me/preferences', { body: patch }));
     } catch (failure) {
       // A session that has ended is handled by endSession alone (plan "Preferences and theme").
       if (!isSessionGone(failure)) {

@@ -211,7 +211,7 @@ type Summary struct {
 	SplitFromID           *string           `json:"splitFromId"` // 016 FR-031: null when not split from another
 }
 
-// SummaryPage is the answer of GET /api/plans/{planId}/activities (ActivitySummaryPage).
+// SummaryPage is the answer of GET /api/v1/plans/{planId}/activities (ActivitySummaryPage).
 type SummaryPage struct {
 	Items []Summary `json:"items"`
 	Total int       `json:"total"`
@@ -219,7 +219,7 @@ type SummaryPage struct {
 	Access *authz.PlanContentAccess `json:"access,omitempty"`
 }
 
-// Input is the body of POST /api/initiatives/{initiativeId}/activities (ActivityCreate). Dates are texts so
+// Input is the body of POST /api/v1/initiatives/{initiativeId}/activities (ActivityCreate). Dates are texts so
 // that a wrong date is a field problem ("Enter a valid date."); amounts are money inputs.
 type Input struct {
 	Name               string                   `json:"name"`
@@ -236,7 +236,7 @@ type Input struct {
 	Goals              GoalsInput               `json:"goals"`
 }
 
-// Update is the body of PATCH /api/activities/{activityId} (ActivityUpdate): every editable field (null
+// Update is the body of PATCH /api/v1/activities/{activityId} (ActivityUpdate): every editable field (null
 // clears an optional one), the version, and whether the person confirmed that the activity needs approval
 // again (RestartApproval, D-189).
 type Update struct {
@@ -256,13 +256,13 @@ type Update struct {
 	RestartApproval    bool                     `json:"restartApproval"`
 }
 
-// MoveInput is the body of POST /api/activities/{activityId}/move (ActivityMove).
+// MoveInput is the body of POST /api/v1/activities/{activityId}/move (ActivityMove).
 type MoveInput struct {
 	InitiativeID string `json:"initiativeId"` // another initiative of the same plan
 	Version      *int   `json:"version"`
 }
 
-// CopyInput is the body of POST /api/activities/{activityId}/copy (ActivityCopy).
+// CopyInput is the body of POST /api/v1/activities/{activityId}/copy (ActivityCopy).
 type CopyInput struct {
 	InitiativeID string `json:"initiativeId"` // its own initiative or another of the same plan
 }
@@ -278,7 +278,7 @@ type Destination struct {
 	CopyProblem *string        `json:"copyProblem"` // null when it can be copied here
 }
 
-// DestinationPage is the answer of GET /api/activities/{activityId}/destinations (ActivityDestinationPage).
+// DestinationPage is the answer of GET /api/v1/activities/{activityId}/destinations (ActivityDestinationPage).
 type DestinationPage struct {
 	Items []Destination `json:"items"`
 	Total int           `json:"total"`

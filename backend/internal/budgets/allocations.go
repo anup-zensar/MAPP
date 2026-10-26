@@ -217,7 +217,7 @@ func (s *Service) RemoveAllocation(ctx context.Context, a actor.Actor, id string
 }
 
 // storedAllocation reads the allocation id with its global budget and its plan inside the caller's
-// transaction; an allocation that does not exist is not_found.
+// transaction; an allocation that does not exist, or whose plan the person cannot see, is not_found.
 func (s *Service) storedAllocation(ctx context.Context, id string) (Allocation, GlobalBudget, PlanInfo, error) {
 	allocation, found, err := s.repo.GetAllocation(ctx, id)
 	if err != nil {
@@ -234,7 +234,8 @@ func (s *Service) storedAllocation(ctx context.Context, id string) (Allocation, 
 	if err != nil {
 		return Allocation{}, GlobalBudget{}, PlanInfo{}, err
 	}
-	if !found { // a deleted plan takes its allocation to the recycle bin, so this does not happen
+	// A deleted plan takes its allocation to the recycle bin; a plan the person cannot see hides it.
+	if !found || !s.access.CanViewPlan(ctx, plan) {
 		return Allocation{}, GlobalBudget{}, PlanInfo{}, errs.NotFound(msgAllocationGone)
 	}
 	return allocation, b, plan, nil

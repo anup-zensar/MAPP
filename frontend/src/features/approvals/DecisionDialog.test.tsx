@@ -9,8 +9,8 @@ import { DecisionDialog } from './DecisionDialog';
 import type { DecisionDialogProps } from './DecisionDialog';
 import { ALEX, approvalOf, CARLOS, DANIEL, PRIYA, roundOf } from './testData';
 
-const APPROVE = 'POST /api/activities/A-1042/approval/approve';
-const DECLINE = 'POST /api/activities/A-1042/approval/decline';
+const APPROVE = 'POST /api/v1/activities/A-1042/approval/approve';
+const DECLINE = 'POST /api/v1/activities/A-1042/approval/decline';
 
 /** Level 1 approved by Carlos: the round now waits at level 2 for Alex. */
 const AT_LEVEL_2 = approvalOf({
@@ -152,7 +152,7 @@ describe('DecisionDialog (feature 008, US2)', () => {
     expect(screen.getByRole('alertdialog')).toHaveTextContent(
       'The activity goes back to Daniel Okoro, who can fix it and re-submit.',
     );
-    expect(api.requests.some((request) => request.path === '/api/people')).toBe(false);
+    expect(api.requests.some((request) => request.path === '/api/v1/people')).toBe(false);
   });
 
   it('names the owner it goes back to, or says "its owner" without one', () => {
@@ -178,10 +178,12 @@ describe('DecisionDialog (feature 008, US2)', () => {
         [APPROVE]: {
           status: 409,
           body: {
-            code: 'version_conflict',
-            message: 'Level 1 was already approved by Carlos Mendes',
-            fields: [],
-            conflict: { changedBy: CARLOS.name, changedAt },
+            error: {
+              code: 'version_conflict',
+              message: 'Level 1 was already approved by Carlos Mendes',
+              fields: [],
+              conflict: { changedBy: CARLOS.name, changedAt },
+            },
           },
         },
       },

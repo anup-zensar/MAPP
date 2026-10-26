@@ -59,7 +59,7 @@ function PlanStandIn() {
 function renderTree(answers: Record<string, MockHandler>, route: unknown = '/plans/P-1001') {
   // Feature 006 adds the plan's activities under the initiatives: none here.
   const api = mockApi({
-    'GET /api/plans/P-1001/activities': { body: { items: [], total: 0 } },
+    'GET /api/v1/plans/P-1001/activities': { body: { items: [], total: 0 } },
     ...answers,
   });
   const rendered = renderRoutes(
@@ -89,7 +89,7 @@ function renderTree(answers: Record<string, MockHandler>, route: unknown = '/pla
 
 describe('useCampaignTreeContent (feature 005)', () => {
   it('gives the plan tree its campaign rows with their initiatives and the totals row (FR-019, FR-022)', async () => {
-    renderTree({ 'GET /api/plans/P-1001/campaigns': { body: planCampaigns() } });
+    renderTree({ 'GET /api/v1/plans/P-1001/campaigns': { body: planCampaigns() } });
 
     const tree = await screen.findByRole('treegrid', { name: 'Plan tree' });
     const rows = within(tree).getAllByRole('row');
@@ -100,10 +100,10 @@ describe('useCampaignTreeContent (feature 005)', () => {
 
   it('offers Add campaign in the toolbar and on the plan row (FR-001)', async () => {
     const { user, router } = renderTree({
-      'GET /api/plans/P-1001/campaigns': { body: planCampaigns() },
-      'GET /api/plans/P-1001': { body: planAnswer() },
-      'GET /api/shell-attribute-forms/campaign': { body: campaignForm() },
-      'GET /api/people': { body: PEOPLE },
+      'GET /api/v1/plans/P-1001/campaigns': { body: planCampaigns() },
+      'GET /api/v1/plans/P-1001': { body: planAnswer() },
+      'GET /api/v1/shell-attribute-forms/campaign': { body: campaignForm() },
+      'GET /api/v1/people': { body: PEOPLE },
     });
 
     await user.click(await screen.findByRole('link', { name: 'Add campaign' }));
@@ -118,7 +118,7 @@ describe('useCampaignTreeContent (feature 005)', () => {
   });
 
   it('offers Add campaign under an empty tree (FR-001)', async () => {
-    renderTree({ 'GET /api/plans/P-1001/campaigns': { body: planCampaigns([]) } });
+    renderTree({ 'GET /api/v1/plans/P-1001/campaigns': { body: planCampaigns([]) } });
 
     const empty = await screen.findByTestId('empty');
     expect(within(empty).getByRole('link', { name: 'Add campaign' })).toHaveAttribute(
@@ -129,7 +129,7 @@ describe('useCampaignTreeContent (feature 005)', () => {
 
   it('highlights the record named in the location state (FR-004)', async () => {
     renderTree(
-      { 'GET /api/plans/P-1001/campaigns': { body: planCampaigns() } },
+      { 'GET /api/v1/plans/P-1001/campaigns': { body: planCampaigns() } },
       { pathname: '/plans/P-1001', state: { highlight: 'I-1001' } },
     );
 
@@ -151,15 +151,15 @@ describe('useCampaignTreeContent (feature 005)', () => {
     });
     let saved = false;
     const { user } = renderTree({
-      'GET /api/plans/P-1001/campaigns': () => ({
+      'GET /api/v1/plans/P-1001/campaigns': () => ({
         body: saved
           ? planCampaigns([campaign(), created], { allocatedToCampaigns: usd('500000.00') })
           : planCampaigns(),
       }),
-      'GET /api/plans/P-1001': { body: planAnswer() },
-      'GET /api/shell-attribute-forms/campaign': { body: campaignForm() },
-      'GET /api/people': { body: PEOPLE },
-      'POST /api/plans/P-1001/campaigns': () => {
+      'GET /api/v1/plans/P-1001': { body: planAnswer() },
+      'GET /api/v1/shell-attribute-forms/campaign': { body: campaignForm() },
+      'GET /api/v1/people': { body: PEOPLE },
+      'POST /api/v1/plans/P-1001/campaigns': () => {
         saved = true;
         return { status: 201, body: created };
       },
@@ -180,10 +180,10 @@ describe('useCampaignTreeContent (feature 005)', () => {
   it('deletes from a row’s ⋯ menu and the row leaves the tree at once (FR-021, FR-028, FR-012)', async () => {
     let deleted = false;
     const { user } = renderTree({
-      'GET /api/plans/P-1001/campaigns': () => ({
+      'GET /api/v1/plans/P-1001/campaigns': () => ({
         body: deleted ? planCampaigns([]) : planCampaigns(),
       }),
-      'DELETE /api/initiatives/I-1001': () => {
+      'DELETE /api/v1/initiatives/I-1001': () => {
         deleted = true;
         return {
           body: {
@@ -225,10 +225,10 @@ describe('useCampaignTreeContent (feature 005)', () => {
     });
     let copied = false;
     const { user, api } = renderTree({
-      'GET /api/plans/P-1001/campaigns': () => ({
+      'GET /api/v1/plans/P-1001/campaigns': () => ({
         body: copied ? planCampaigns([campaign(), copy]) : planCampaigns(),
       }),
-      'GET /api/campaigns/C-1001/destinations': {
+      'GET /api/v1/campaigns/C-1001/destinations': {
         body: destinationList(
           [
             planDestination({
@@ -241,7 +241,7 @@ describe('useCampaignTreeContent (feature 005)', () => {
           'A copy can go into this plan or another plan of the same year',
         ),
       },
-      'POST /api/campaigns/C-1001/copy': () => {
+      'POST /api/v1/campaigns/C-1001/copy': () => {
         copied = true;
         return { status: 201, body: copy };
       },
@@ -256,7 +256,7 @@ describe('useCampaignTreeContent (feature 005)', () => {
     const tree = await screen.findByRole('treegrid', { name: 'Plan tree' });
     const link = await within(tree).findByRole('link', { name: 'Helix launch (copy)' });
     await waitFor(() => expect(link.closest('tr')?.className).toContain('highlighted'));
-    expect(api.bodiesOf('POST /api/campaigns/C-1001/copy')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/campaigns/C-1001/copy')).toEqual([
       { planId: 'P-1001', name: 'Helix launch (copy)' },
     ]);
     expect(await findMessages()).toHaveTextContent("Campaign 'Helix launch (copy)' created");
@@ -272,18 +272,18 @@ describe('useCampaignTreeContent (feature 005)', () => {
     const moved = initiative({ campaignId: 'C-1002', version: 4 });
     let done = false;
     const { user, api } = renderTree({
-      'GET /api/plans/P-1001/campaigns': () => ({
+      'GET /api/v1/plans/P-1001/campaigns': () => ({
         body: done
           ? planCampaigns([campaign({ initiatives: [] }), { ...rimula, initiatives: [moved] }])
           : planCampaigns([campaign(), rimula]),
       }),
-      'GET /api/initiatives/I-1001/destinations': {
+      'GET /api/v1/initiatives/I-1001/destinations': {
         body: destinationList(
           [destination()],
           'Initiatives move only between campaigns of the same plan',
         ),
       },
-      'POST /api/initiatives/I-1001/move': () => {
+      'POST /api/v1/initiatives/I-1001/move': () => {
         done = true;
         return { body: moved };
       },
@@ -300,7 +300,7 @@ describe('useCampaignTreeContent (feature 005)', () => {
     expect(await findMessages()).toHaveTextContent(
       "Initiative 'Digital & social' moved to 'Rimula fleet'",
     );
-    expect(api.bodiesOf('POST /api/initiatives/I-1001/move')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/initiatives/I-1001/move')).toEqual([
       { campaignId: 'C-1002', version: 3 },
     ]);
     const tree = screen.getByRole('treegrid', { name: 'Plan tree' });
@@ -320,9 +320,9 @@ describe('useCampaignTreeContent (feature 005)', () => {
   it('reports a failure to read the rows with Try again', async () => {
     let calls = 0;
     const { user } = renderTree({
-      'GET /api/plans/P-1001/campaigns': () =>
+      'GET /api/v1/plans/P-1001/campaigns': () =>
         ++calls === 1
-          ? { status: 500, body: { code: 'internal_error', message: 'Oops' } }
+          ? { status: 500, body: { error: { code: 'internal_error', message: 'Oops' } } }
           : { body: planCampaigns([campaign({ initiatives: [initiative()] })]) },
     });
 

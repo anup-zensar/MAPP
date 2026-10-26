@@ -48,7 +48,7 @@ export function useUndoableDelete({
   async function undo(entry: RecycleBinEntry) {
     try {
       await call(
-        api.POST('/api/recycle-bin/{entryId}/undo', { params: { path: { entryId: entry.id } } }),
+        api.POST('/api/v1/recycle-bin/{entryId}/undo', { params: { path: { entryId: entry.id } } }),
       );
       // Undo puts the record back exactly as it was, so it has its name from before (FR-026).
       show({ message: `${recordTitle(entry)} restored` });

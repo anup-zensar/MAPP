@@ -35,7 +35,7 @@ type FieldHelpPage struct {
 	ShellAttributesWithoutHelp int              `json:"shellAttributesWithoutHelp"` // active ones with empty help (FR-048)
 }
 
-// FieldHelpUpdate is the body of PATCH /api/field-help/{helpKey} (contract FieldHelpUpdate): a new text, or
+// FieldHelpUpdate is the body of PATCH /api/v1/field-help/{helpKey} (contract FieldHelpUpdate): a new text, or
 // null to reset to the default, from the version the person started at (0 for a default).
 type FieldHelpUpdate struct {
 	Text    *string `json:"text"`

@@ -39,8 +39,8 @@ func TestGetActivityApproval_MobilityWaitingAtLevel2_FR024_FR037(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	response := alex.Do(t, http.MethodGet, "/api/activities/"+fleetCardLaunch+"/approval", nil)
-	gone := alex.Do(t, http.MethodGet, "/api/activities/A-9999/approval", nil)
+	response := alex.Do(t, http.MethodGet, "/api/v1/activities/"+fleetCardLaunch+"/approval", nil)
+	gone := alex.Do(t, http.MethodGet, "/api/v1/activities/A-9999/approval", nil)
 
 	approval := decodeApproval(t, response)
 	if approval.Status != "submitted" || approval.Workflow == nil || approval.Workflow.ID != "WF-1002" || len(approval.Rounds) != 1 {
@@ -76,7 +76,7 @@ func TestGetSubmission_IncompleteMobilityListsAll_FR010(t *testing.T) {
 	server := apitest.New(t)
 	mei := server.SignIn(t, meisEmail)
 
-	response := mei.Do(t, http.MethodGet, "/api/activities/"+lunarNewYearPromo+"/approval/submission", nil)
+	response := mei.Do(t, http.MethodGet, "/api/v1/activities/"+lunarNewYearPromo+"/approval/submission", nil)
 
 	if response.Status != http.StatusOK {
 		t.Fatalf("status = %d %s, want 200", response.Status, response.Body)
@@ -96,27 +96,29 @@ func TestSubmit_Problems400_FR010(t *testing.T) {
 	server := apitest.New(t)
 	mei := server.SignIn(t, meisEmail)
 
-	response := mei.Do(t, http.MethodPost, "/api/activities/"+lunarNewYearPromo+"/approval/submit", map[string]any{"version": 1})
+	response := mei.Do(t, http.MethodPost, "/api/v1/activities/"+lunarNewYearPromo+"/approval/submit", map[string]any{"version": 1})
 
 	if response.Status != http.StatusBadRequest {
 		t.Fatalf("status = %d %s, want 400", response.Status, response.Body)
 	}
 	var refusal struct {
-		Code   string `json:"code"`
-		Fields []struct {
-			Field string `json:"field"`
-		} `json:"fields"`
+		Error struct {
+			Code   string `json:"code"`
+			Fields []struct {
+				Field string `json:"field"`
+			} `json:"fields"`
+		} `json:"error"`
 	}
 	response.Decode(t, &refusal)
 	var fields []string
-	for _, f := range refusal.Fields {
+	for _, f := range refusal.Error.Fields {
 		fields = append(fields, f.Field)
 	}
-	if refusal.Code != "validation_failed" {
-		t.Errorf("code = %s, want validation_failed", refusal.Code)
+	if refusal.Error.Code != "validation_failed" {
+		t.Errorf("code = %s, want validation_failed", refusal.Error.Code)
 	}
 	assertListsFields(t, fields, "ownerId", "startDate", "endDate", "plannedCost", "approvalWorkflowId")
-	after := decodeApproval(t, mei.Do(t, http.MethodGet, "/api/activities/"+lunarNewYearPromo+"/approval", nil))
+	after := decodeApproval(t, mei.Do(t, http.MethodGet, "/api/v1/activities/"+lunarNewYearPromo+"/approval", nil))
 	if after.Status != "created" || after.ActivityVersion != 1 || len(after.Rounds) != 0 {
 		t.Errorf("after: %s, version %d, %d rounds; want unchanged", after.Status, after.ActivityVersion, len(after.Rounds))
 	}
@@ -128,16 +130,16 @@ func TestSubmit_Problems400_FR010(t *testing.T) {
 func TestSubmit_ReadyActivity_FR011(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
-	submission := priya.Do(t, http.MethodGet, "/api/activities/"+fleetRoadshow+"/approval/submission", nil)
+	submission := priya.Do(t, http.MethodGet, "/api/v1/activities/"+fleetRoadshow+"/approval/submission", nil)
 	var before approvals.Submission
 	submission.Decode(t, &before)
 	if !before.Ready || before.Kind != "resubmit" || before.RoundNumber != 2 || before.Workflow == nil || before.Workflow.ID != "WF-1001" {
 		t.Fatalf("submission = %+v, want a ready re-submission with WF-1001 as round 2", before)
 	}
 
-	response := priya.Do(t, http.MethodPost, "/api/activities/"+fleetRoadshow+"/approval/submit",
+	response := priya.Do(t, http.MethodPost, "/api/v1/activities/"+fleetRoadshow+"/approval/submit",
 		map[string]any{"version": before.ActivityVersion, "comment": "Reduced to fit the Q2 budget."})
-	stale := priya.Do(t, http.MethodPost, "/api/activities/"+fleetRoadshow+"/approval/submit", map[string]any{"version": before.ActivityVersion})
+	stale := priya.Do(t, http.MethodPost, "/api/v1/activities/"+fleetRoadshow+"/approval/submit", map[string]any{"version": before.ActivityVersion})
 
 	approval := decodeApproval(t, response)
 	if approval.Status != "submitted" || approval.ActivityVersion != before.ActivityVersion+1 || approval.LatestDecline != nil {
@@ -154,7 +156,7 @@ func TestSubmit_ReadyActivity_FR011(t *testing.T) {
 	}
 	assertError(t, stale, http.StatusConflict, "version_conflict", "Not saved — Priya Raman changed this activity")
 
-	again := priya.Do(t, http.MethodPost, "/api/activities/"+fleetRoadshow+"/approval/submit", map[string]any{"version": approval.ActivityVersion})
+	again := priya.Do(t, http.MethodPost, "/api/v1/activities/"+fleetRoadshow+"/approval/submit", map[string]any{"version": approval.ActivityVersion})
 	assertError(t, again, http.StatusBadRequest, "bad_request", "Only Created or Declined activities can be submitted for approval.")
 }
 
@@ -164,7 +166,7 @@ func TestApprove_Level2AsAlex_US2(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	response := alex.Do(t, http.MethodPost, "/api/activities/"+fleetCardLaunch+"/approval/approve",
+	response := alex.Do(t, http.MethodPost, "/api/v1/activities/"+fleetCardLaunch+"/approval/approve",
 		map[string]any{"roundId": "AR-1008", "level": 2, "comment": "Approved for launch."})
 
 	approval := decodeApproval(t, response)
@@ -188,23 +190,25 @@ func TestApprove_Twice409_FR018(t *testing.T) {
 	alex := server.SignIn(t, alexsEmail)
 	carlos := server.SignIn(t, carlosEmail)
 	decision := map[string]any{"roundId": "AR-1008", "level": 2}
-	decodeApproval(t, alex.Do(t, http.MethodPost, "/api/activities/"+fleetCardLaunch+"/approval/approve", decision))
+	decodeApproval(t, alex.Do(t, http.MethodPost, "/api/v1/activities/"+fleetCardLaunch+"/approval/approve", decision))
 	server.Advance(time.Minute)
 
-	again := carlos.Do(t, http.MethodPost, "/api/activities/"+fleetCardLaunch+"/approval/approve", decision)
+	again := carlos.Do(t, http.MethodPost, "/api/v1/activities/"+fleetCardLaunch+"/approval/approve", decision)
 
 	assertError(t, again, http.StatusConflict, "version_conflict", "Level 2 was already approved by Alex Morgan")
-	var conflict struct {
-		Conflict struct {
-			ChangedBy string    `json:"changedBy"`
-			ChangedAt time.Time `json:"changedAt"`
-		} `json:"conflict"`
+	var answer struct {
+		Error struct {
+			Conflict struct {
+				ChangedBy string    `json:"changedBy"`
+				ChangedAt time.Time `json:"changedAt"`
+			} `json:"conflict"`
+		} `json:"error"`
 	}
-	again.Decode(t, &conflict)
-	if conflict.Conflict.ChangedBy != "Alex Morgan" || !conflict.Conflict.ChangedAt.Equal(now) {
-		t.Errorf("conflict = %+v, want Alex Morgan at %v", conflict.Conflict, now)
+	again.Decode(t, &answer)
+	if conflict := answer.Error.Conflict; conflict.ChangedBy != "Alex Morgan" || !conflict.ChangedAt.Equal(now) {
+		t.Errorf("conflict = %+v, want Alex Morgan at %v", conflict, now)
 	}
-	after := decodeApproval(t, carlos.Do(t, http.MethodGet, "/api/activities/"+fleetCardLaunch+"/approval", nil))
+	after := decodeApproval(t, carlos.Do(t, http.MethodGet, "/api/v1/activities/"+fleetCardLaunch+"/approval", nil))
 	if actions := historyActions(after.Rounds[0]); len(actions) != 3 {
 		t.Errorf("history = %q, want only the first approval of level 2", actions)
 	}
@@ -215,7 +219,7 @@ func TestApprove_Twice409_FR018(t *testing.T) {
 func TestDecline_WithoutComment400_FR016(t *testing.T) {
 	server := apitest.New(t)
 	daniel := server.SignIn(t, danielsEmail)
-	path := "/api/activities/" + tradeMagazineAds + "/approval/decline"
+	path := "/api/v1/activities/" + tradeMagazineAds + "/approval/decline"
 
 	blank := daniel.Do(t, http.MethodPost, path, map[string]any{"roundId": "AR-1004", "level": 1, "comment": "  "})
 	declined := daniel.Do(t, http.MethodPost, path, map[string]any{"roundId": "AR-1004", "level": 1, "comment": "Still not split by country."})
@@ -237,9 +241,9 @@ func TestDecline_WithoutComment400_FR016(t *testing.T) {
 func TestApprove_OnBehalfOfDaniel_FR017(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
-	before := decodeApproval(t, alex.Do(t, http.MethodGet, "/api/activities/"+tradeMagazineAds+"/approval", nil))
+	before := decodeApproval(t, alex.Do(t, http.MethodGet, "/api/v1/activities/"+tradeMagazineAds+"/approval", nil))
 
-	approval := decodeApproval(t, alex.Do(t, http.MethodPost, "/api/activities/"+tradeMagazineAds+"/approval/approve",
+	approval := decodeApproval(t, alex.Do(t, http.MethodPost, "/api/v1/activities/"+tradeMagazineAds+"/approval/approve",
 		map[string]any{"roundId": "AR-1004", "level": 1}))
 
 	if before.Viewer.IsCurrentApprover || len(before.Viewer.OnBehalfOf) != 1 || before.Viewer.OnBehalfOf[0].Name != "Daniel Okoro" {
@@ -259,10 +263,10 @@ func TestListApprovals_TabsForDaniel_FR029(t *testing.T) {
 	daniel := server.SignIn(t, danielsEmail)
 	server.GrantRole(t, danielsEmail, "approver", "all") // 014: every market's approvals
 
-	waiting := decodeRows(t, daniel.Do(t, http.MethodGet, "/api/approvals", nil))
-	open := decodeRows(t, daniel.Do(t, http.MethodGet, "/api/approvals?tab=open", nil))
-	decided := decodeRows(t, daniel.Do(t, http.MethodGet, "/api/approvals?tab=decided", nil))
-	unknown := daniel.Do(t, http.MethodGet, "/api/approvals?tab=mine", nil, apitest.SkipRequestValidation()) // off the contract on purpose
+	waiting := decodeRows(t, daniel.Do(t, http.MethodGet, "/api/v1/approvals", nil))
+	open := decodeRows(t, daniel.Do(t, http.MethodGet, "/api/v1/approvals?tab=open", nil))
+	decided := decodeRows(t, daniel.Do(t, http.MethodGet, "/api/v1/approvals?tab=decided", nil))
+	unknown := daniel.Do(t, http.MethodGet, "/api/v1/approvals?tab=mine", nil, apitest.SkipRequestValidation()) // off the contract on purpose
 
 	if got := rowIDs(waiting); !slices.Equal(got, []string{tradeMagazineAds}) || waiting.Total != 1 {
 		t.Errorf("waiting = %q (total %d), want only %s", got, waiting.Total, tradeMagazineAds)
@@ -292,9 +296,9 @@ func TestApprovalSummary_FR028(t *testing.T) {
 	daniel := server.SignIn(t, danielsEmail)
 	server.GrantRole(t, danielsEmail, "approver", "all") // 014: every market's approvals
 
-	march := daniel.Do(t, http.MethodGet, "/api/approvals/summary", nil)
-	february := daniel.Do(t, http.MethodGet, "/api/approvals/summary?monthStart=2026-02-01T00:00:00Z&monthEnd=2026-03-01T00:00:00Z", nil)
-	broken := daniel.Do(t, http.MethodGet, "/api/approvals/summary?monthStart=yesterday&monthEnd=2026-03-01T00:00:00Z", nil,
+	march := daniel.Do(t, http.MethodGet, "/api/v1/approvals/summary", nil)
+	february := daniel.Do(t, http.MethodGet, "/api/v1/approvals/summary?monthStart=2026-02-01T00:00:00Z&monthEnd=2026-03-01T00:00:00Z", nil)
+	broken := daniel.Do(t, http.MethodGet, "/api/v1/approvals/summary?monthStart=yesterday&monthEnd=2026-03-01T00:00:00Z", nil,
 		apitest.SkipRequestValidation()) // off the contract on purpose
 
 	if got, want := decodeCounts(t, march), (approvals.Counts{WaitingForMe: 1, AllOpen: 2, DeclinedThisMonth: 2}); got != want {
@@ -313,8 +317,8 @@ func TestApprovalPreview_FR032(t *testing.T) {
 	server := apitest.New(t)
 	daniel := server.SignIn(t, danielsEmail)
 
-	response := daniel.Do(t, http.MethodGet, "/api/approvals/activities/"+tradeMagazineAds, nil)
-	gone := daniel.Do(t, http.MethodGet, "/api/approvals/activities/A-9999", nil)
+	response := daniel.Do(t, http.MethodGet, "/api/v1/approvals/activities/"+tradeMagazineAds, nil)
+	gone := daniel.Do(t, http.MethodGet, "/api/v1/approvals/activities/A-9999", nil)
 
 	if response.Status != http.StatusOK {
 		t.Fatalf("status = %d %s, want 200", response.Status, response.Body)
@@ -414,11 +418,13 @@ func assertListsFields(t *testing.T, fields []string, want ...string) {
 func assertError(t *testing.T, response *apitest.Response, status int, code, message string) {
 	t.Helper()
 	var answer struct {
-		Code    string `json:"code"`
-		Message string `json:"message"`
+		Error struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
 	}
 	response.Decode(t, &answer)
-	if response.Status != status || answer.Code != code || answer.Message != message {
+	if response.Status != status || answer.Error.Code != code || answer.Error.Message != message {
 		t.Errorf("answer = %d %s\nwant %d %s %q", response.Status, response.Body, status, code, message)
 	}
 }

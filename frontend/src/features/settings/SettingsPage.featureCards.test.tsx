@@ -47,17 +47,17 @@ function card(title: string): HTMLElement {
 describe('SettingsPage, the cards of other features (FR-001)', () => {
   it('shows the People, Teams and Approval workflows cards with their texts and active counts, like the others', async () => {
     mockApi({
-      'GET /api/settings/overview': { body: OVERVIEW },
-      'GET /api/people': listOf([true, true, true, true, true, true, false]),
-      'GET /api/teams': listOf([true, true, true]),
-      'GET /api/approval-workflows': {
+      'GET /api/v1/settings/overview': { body: OVERVIEW },
+      'GET /api/v1/people': listOf([true, true, true, true, true, true, false]),
+      'GET /api/v1/teams': listOf([true, true, true]),
+      'GET /api/v1/approval-workflows': {
         body: {
           items: [workflowOf(), workflowOf({ id: 'WF-1003' }), CHINA_WORKFLOW], // CHINA_WORKFLOW is inactive
           total: 3,
         },
       },
-      'GET /api/roles': { body: { items: ROLES, total: ROLES.length } },
-      'GET /api/field-help': { body: FIELD_HELP_PAGE },
+      'GET /api/v1/roles': { body: { items: ROLES, total: ROLES.length } },
+      'GET /api/v1/field-help': { body: FIELD_HELP_PAGE },
     });
     renderWithProviders(<SettingsPage />, { route: '/settings', user: testUser() });
 

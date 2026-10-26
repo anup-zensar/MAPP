@@ -10,7 +10,7 @@ import { FORM_ANSWERS, plan, planDefaults } from './testData';
 function renderPage(answers: Record<string, MockHandler> = {}) {
   const api = mockApi({
     ...FORM_ANSWERS,
-    'GET /api/plan-defaults': { body: planDefaults() },
+    'GET /api/v1/plan-defaults': { body: planDefaults() },
     ...answers,
   });
   const result = renderWithProviders(<PlanCreatePage />, {
@@ -33,7 +33,7 @@ describe('PlanCreatePage (US1)', () => {
 
   it('creates the plan, opens its page and says what to do next (US1#2)', async () => {
     const { api, user, router } = renderPage({
-      'POST /api/plans': {
+      'POST /api/v1/plans': {
         status: 201,
         body: plan({ id: 'P-1004', name: 'FY2026 Lubricants Test' }),
       },
@@ -51,7 +51,7 @@ describe('PlanCreatePage (US1)', () => {
     expect(
       await screen.findByText("Plan 'FY2026 Lubricants Test' created — add campaigns next."),
     ).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/plans')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/plans')).toEqual([
       {
         name: 'FY2026 Lubricants Test',
         year: 2026,
@@ -73,15 +73,17 @@ describe('PlanCreatePage (US1)', () => {
 
   it('shows every problem of the API at once and stays (US1#3, FR-010)', async () => {
     const { user, router } = renderPage({
-      'POST /api/plans': {
+      'POST /api/v1/plans': {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Some fields need your attention.',
-          fields: [
-            { field: 'name', message: 'Enter a plan name.' },
-            { field: 'modelId', message: 'Choose a model.' },
-          ],
+          error: {
+            code: 'validation_failed',
+            message: 'Some fields need your attention.',
+            fields: [
+              { field: 'name', message: 'Enter a plan name.' },
+              { field: 'modelId', message: 'Choose a model.' },
+            ],
+          },
         },
       },
     });
@@ -108,7 +110,7 @@ describe('PlanCreatePage (US1)', () => {
   });
 
   it('says when the defaults could not be loaded, with Try again', async () => {
-    renderPage({ 'GET /api/plan-defaults': { status: 500 } });
+    renderPage({ 'GET /api/v1/plan-defaults': { status: 500 } });
 
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent("MAPP can't reach its server");

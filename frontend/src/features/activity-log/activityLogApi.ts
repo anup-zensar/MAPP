@@ -25,7 +25,9 @@ export function useLogSummary(todayStart: string, weekStart: string) {
   return useQuery({
     queryKey: ['activity-log', 'summary', todayStart, weekStart],
     queryFn: () =>
-      call(api.GET('/api/activity-log/summary', { params: { query: { todayStart, weekStart } } })),
+      call(
+        api.GET('/api/v1/activity-log/summary', { params: { query: { todayStart, weekStart } } }),
+      ),
     refetchOnWindowFocus: true,
   });
 }
@@ -59,7 +61,7 @@ export function useLogEntries(
     initialPageParam: undefined as number | undefined,
     queryFn: ({ pageParam, signal }) =>
       call(
-        api.GET('/api/activity-log', {
+        api.GET('/api/v1/activity-log', {
           params: { query: { ...query, limit: pageSize, beforeSeq: pageParam } },
           signal,
         }),

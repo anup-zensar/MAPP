@@ -9,7 +9,7 @@ import type { FinancialOverview, HomeScope } from './homeApi';
 import { emptyOverview, overviewOf, usd } from './testData';
 
 function renderCard(answer: MockHandler = { body: overviewOf() }, scope: HomeScope = 'myTeams') {
-  const api = mockApi({ 'GET /api/financials/overview': answer });
+  const api = mockApi({ 'GET /api/v1/financials/overview': answer });
   const rendered = renderWithProviders(<FinancialsCard scope={scope} />, {
     user: testUser(),
     path: '/',
@@ -42,7 +42,7 @@ describe('FinancialsCard (015 US6, FR-025)', () => {
 
     const card = await screen.findByRole('region', { name: 'Financials · 2026' });
     expect(
-      api.requests.find((request) => request.path === '/api/financials/overview')?.search,
+      api.requests.find((request) => request.path === '/api/v1/financials/overview')?.search,
     ).toBe('?scope=myTeams');
     expect(
       within(card).getByText(
@@ -142,7 +142,7 @@ describe('FinancialsCard (015 US6, FR-025)', () => {
   });
 
   it('fails on its own with a retry (009 FR-022)', async () => {
-    renderCard({ status: 500, body: { code: 'internal', message: 'Boom', fields: [] } });
+    renderCard({ status: 500, body: { error: { code: 'internal', message: 'Boom', fields: [] } } });
 
     expect(await screen.findByText("This section couldn't load")).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Financials' })).toBeInTheDocument();
@@ -153,7 +153,7 @@ describe('FinancialsCard (015 US6, FR-025)', () => {
 
     await screen.findByRole('region', { name: 'Financials · 2026' });
     expect(
-      api.requests.find((request) => request.path === '/api/financials/overview')?.search,
+      api.requests.find((request) => request.path === '/api/v1/financials/overview')?.search,
     ).toBe('?scope=everything');
   });
 });

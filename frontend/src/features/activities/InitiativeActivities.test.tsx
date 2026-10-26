@@ -8,7 +8,7 @@ import { launchFilmRow } from './testData';
 describe('InitiativeActivities (feature 006, FR-001)', () => {
   it("lists the initiative's activities with their status, and offers Add activity", async () => {
     mockApi({
-      'GET /api/plans/P-1001/activities': {
+      'GET /api/v1/plans/P-1001/activities': {
         body: {
           items: [
             launchFilmRow(),
@@ -32,7 +32,7 @@ describe('InitiativeActivities (feature 006, FR-001)', () => {
   });
 
   it('says when the initiative has no activities yet', async () => {
-    mockApi({ 'GET /api/plans/P-1001/activities': { body: { items: [], total: 0 } } });
+    mockApi({ 'GET /api/v1/plans/P-1001/activities': { body: { items: [], total: 0 } } });
     renderWithProviders(<InitiativeActivities planId="P-1001" initiativeId="I-1001" />);
 
     expect(await screen.findByText('No activities yet.')).toBeVisible();

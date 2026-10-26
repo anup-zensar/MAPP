@@ -87,11 +87,16 @@ func WriteJSON(w http.ResponseWriter, status int, v any) {
 		// Only a programming mistake gets here: a value that JSON cannot encode.
 		slog.Error("could not encode the answer", "error", err)
 		status = http.StatusInternalServerError
-		body, _ = json.Marshal(errs.Internal()) // cannot fail: errs.Error holds only strings and lists
+		body, _ = json.Marshal(errorEnvelope{Error: errs.Internal()}) // cannot fail: only strings and lists
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_, _ = w.Write(body) // a failed write means the client has gone; there is nobody left to tell
+}
+
+// errorEnvelope is the body of every error answer: {"error": {"code", "message", "fields", …}}.
+type errorEnvelope struct {
+	Error *errs.Error `json:"error"`
 }
 
 // WriteError answers with err in the API's error format. An *errs.Error, also when wrapped with %w on its
@@ -103,10 +108,10 @@ func WriteError(w http.ResponseWriter, r *http.Request, err error) {
 		slog.Error("request failed", "method", r.Method, "path", r.URL.Path, "error", err)
 		apiErr = errs.Internal()
 	}
-	WriteJSON(w, apiErr.Status, apiErr)
+	WriteJSON(w, apiErr.Status, errorEnvelope{Error: apiErr})
 }
 
-// NotFound answers 404 not_found. The API answers it for every /api path or method it does not serve.
+// NotFound answers 404 not_found. The API answers it for every /api/ path or method it does not serve.
 func NotFound(w http.ResponseWriter, r *http.Request) {
 	WriteError(w, r, errs.NotFound(notFoundMessage))
 }

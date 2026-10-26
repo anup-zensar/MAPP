@@ -7,12 +7,14 @@ import { testUser } from '@/test/users';
 import { ActivityLogPage } from './ActivityLogPage';
 import { TODAY_NOON, logEntry, logPage, logSummary } from './testData';
 
-const LOG = 'GET /api/activity-log';
-const SUMMARY = 'GET /api/activity-log/summary';
+const LOG = 'GET /api/v1/activity-log';
+const SUMMARY = 'GET /api/v1/activity-log/summary';
 
 const NOT_FOUND_BODY = {
-  code: 'internal_error',
-  message: 'Something went wrong. Please try again.',
+  error: {
+    code: 'internal_error',
+    message: 'Something went wrong. Please try again.',
+  },
 };
 
 function renderPage(route: string, answers: Record<string, MockHandler>) {
@@ -25,10 +27,10 @@ function renderPage(route: string, answers: Record<string, MockHandler>) {
   return { ...rendered, api };
 }
 
-/** The query strings GET /api/activity-log was asked with, in order. */
+/** The query strings GET /api/v1/activity-log was asked with, in order. */
 function logSearches(api: ReturnType<typeof mockApi>): URLSearchParams[] {
   return api.requests
-    .filter((request) => request.method === 'GET' && request.path === '/api/activity-log')
+    .filter((request) => request.method === 'GET' && request.path === '/api/v1/activity-log')
     .map((request) => new URLSearchParams(request.search));
 }
 
@@ -66,7 +68,7 @@ describe('ActivityLogPage', () => {
       expect(await screen.findByRole('link', { name })).toBeInTheDocument();
     }
     expect(screen.getByRole('button', { name: 'About Changes today' })).toBeInTheDocument();
-    const summary = api.requests.find((request) => request.path === '/api/activity-log/summary');
+    const summary = api.requests.find((request) => request.path === '/api/v1/activity-log/summary');
     expect(new URLSearchParams(summary?.search)).toEqual(
       new URLSearchParams({
         todayStart: '2026-10-19T00:00:00.000Z',

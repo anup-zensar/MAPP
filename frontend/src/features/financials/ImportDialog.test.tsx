@@ -7,8 +7,8 @@ import { testUser } from '@/test/users';
 import { ImportDialog } from './ImportDialog';
 import { checkResult } from './testData';
 
-const CHECK = 'POST /api/financials/imports/check';
-const IMPORT = 'POST /api/financials/imports';
+const CHECK = 'POST /api/v1/financials/imports/check';
+const IMPORT = 'POST /api/v1/financials/imports';
 const CSV =
   'type,document_number,posting_date,amount,currency\nPO,4500001009,2026-10-01,100.00,USD\n';
 
@@ -186,14 +186,16 @@ describe('ImportDialog (015 US4, FR-004 – FR-009)', () => {
       [CHECK]: {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Check the file.',
-          fields: [
-            {
-              field: 'content',
-              message: 'The first row must name the columns. Missing: type, amount.',
-            },
-          ],
+          error: {
+            code: 'validation_failed',
+            message: 'Check the file.',
+            fields: [
+              {
+                field: 'content',
+                message: 'The first row must name the columns. Missing: type, amount.',
+              },
+            ],
+          },
         },
       },
     });

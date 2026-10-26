@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: MAPP API
-  version: 0.3.0
+  version: 1.0.0
   license:
     name: Proprietary - internal use only
   description: |
@@ -9,7 +9,7 @@ info:
     This file is the source of truth: the Go contract tests check every request and response against
     it, and the web app's TypeScript types are generated from it.
 
-    Feature 001 adds health, demo sign-in, the current user and preferences, the activity-log and
+    Feature 001 adds the environment, demo sign-in, the current user and preferences, the activity-log and
     recycle-bin core, and the developer sample records. Features 002-012 (the Plan module) add their
     operations; the fragments in specs/0NN-*/contracts/openapi.yaml are merged here (consolidation,
     2026-10-19); features 014-017 (access control and global budgets, financial transactions,
@@ -20,7 +20,9 @@ info:
     Conventions (feature 001 research R9 and R10):
     - JSON with camelCase field names. Timestamps are UTC (RFC 3339). Calendar dates are YYYY-MM-DD.
     - Lists answer an object with items and total.
-    - Every failure answers the Error object. Messages are written for users.
+    - Every operation is under /api/v1, except the probes /healthz and /readyz (feature 022).
+    - Every failure answers the Error envelope {"error": {...}}. Messages are written for users.
+    - A record outside the person's access answers 404 not_found, exactly like a missing record.
     - Every update sends the version it started from; an out-of-date version answers 409 version_conflict.
     - Deleting a business record answers the recycle-bin entry so the web app can offer Undo.
     - Money is {"amount": "1234.50", "currency": "USD"} (Money in answers, MoneyInput or decimal strings in requests).
@@ -32,7 +34,7 @@ security:
   - sessionCookie: []
 tags:
   - name: System
-    description: Health of the API
+    description: Liveness and readiness probes, and the environment
   - name: Sign-in
     description: Demo sign-in, only in local and development environments (decision D-004)
   - name: Me
@@ -98,23 +100,54 @@ tags:
   - name: Approval delegations
     description: "Delegation of approval authority for a date range (feature 017)"
 paths:
-  /api/health:
+  /healthz:
     get:
       tags:
         - System
-      operationId: getHealth
-      summary: Check that the API is running
+      operationId: getLiveness
+      summary: Liveness probe - the API process answers
+      description: Checks nothing else, so a storage problem never makes a platform restart a healthy process.
       security: []
       responses:
-        "200":
-          description: The API is running.
+        "204":
+          description: The API process answers.
+        default:
+          $ref: "#/components/responses/Error"
+  /readyz:
+    get:
+      tags:
+        - System
+      operationId: getReadiness
+      summary: Readiness probe - the API can use its data
+      security: []
+      responses:
+        "204":
+          description: The API can use its data.
+        "503":
+          description: The API cannot use its data now (internal_error); the cause is in the server log.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Health"
+                $ref: "#/components/schemas/Error"
         default:
           $ref: "#/components/responses/Error"
-  /api/auth/demo-people:
+  /api/v1/environment:
+    get:
+      tags:
+        - System
+      operationId: getEnvironment
+      summary: The environment the API runs in and whether demo sign-in is on
+      security: []
+      responses:
+        "200":
+          description: The environment and demo sign-in.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Environment"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/auth/demo-people:
     get:
       tags:
         - Sign-in
@@ -135,7 +168,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/auth/sign-in:
+  /api/v1/auth/sign-in:
     post:
       tags:
         - Sign-in
@@ -171,7 +204,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/auth/sign-out:
+  /api/v1/auth/sign-out:
     post:
       tags:
         - Sign-in
@@ -184,7 +217,7 @@ paths:
           description: Signed out.
         default:
           $ref: "#/components/responses/Error"
-  /api/me:
+  /api/v1/me:
     get:
       tags:
         - Me
@@ -232,7 +265,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/me/preferences:
+  /api/v1/me/preferences:
     patch:
       tags:
         - Me
@@ -259,7 +292,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/activity-log:
+  /api/v1/activity-log:
     get:
       tags:
         - History
@@ -356,7 +389,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/recycle-bin:
+  /api/v1/recycle-bin:
     get:
       tags:
         - History
@@ -375,7 +408,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/recycle-bin/{entryId}/undo:
+  /api/v1/recycle-bin/{entryId}/undo:
     post:
       tags:
         - History
@@ -403,7 +436,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/recycle-bin/{entryId}/restore:
+  /api/v1/recycle-bin/{entryId}/restore:
     post:
       tags:
         - History
@@ -443,7 +476,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/sample-folders:
+  /api/v1/sample-folders:
     get:
       tags:
         - Samples
@@ -488,7 +521,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/sample-folders/{folderId}:
+  /api/v1/sample-folders/{folderId}:
     patch:
       tags:
         - Samples
@@ -543,7 +576,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/sample-folders/{folderId}/notes:
+  /api/v1/sample-folders/{folderId}/notes:
     post:
       tags:
         - Samples
@@ -574,7 +607,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/sample-notes/{noteId}:
+  /api/v1/sample-notes/{noteId}:
     delete:
       tags:
         - Samples
@@ -602,7 +635,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/settings/overview:
+  /api/v1/settings/overview:
     get:
       tags:
         - Settings
@@ -621,7 +654,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/models:
+  /api/v1/models:
     get:
       tags:
         - Models
@@ -666,7 +699,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/models/{modelId}:
+  /api/v1/models/{modelId}:
     parameters:
       - $ref: "#/components/parameters/ModelId"
     get:
@@ -741,7 +774,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/models/{modelId}/impact:
+  /api/v1/models/{modelId}/impact:
     parameters:
       - $ref: "#/components/parameters/ModelId"
     post:
@@ -775,7 +808,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/models/{modelId}/status:
+  /api/v1/models/{modelId}/status:
     parameters:
       - $ref: "#/components/parameters/ModelId"
     post:
@@ -808,7 +841,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/activity-types:
+  /api/v1/activity-types:
     get:
       tags:
         - Activity types
@@ -853,7 +886,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/activity-types/{activityTypeId}:
+  /api/v1/activity-types/{activityTypeId}:
     parameters:
       - $ref: "#/components/parameters/ActivityTypeId"
     get:
@@ -928,7 +961,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/activity-types/{activityTypeId}/impact:
+  /api/v1/activity-types/{activityTypeId}/impact:
     parameters:
       - $ref: "#/components/parameters/ActivityTypeId"
     post:
@@ -959,7 +992,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/activity-types/{activityTypeId}/status:
+  /api/v1/activity-types/{activityTypeId}/status:
     parameters:
       - $ref: "#/components/parameters/ActivityTypeId"
     post:
@@ -992,7 +1025,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/shell-attributes:
+  /api/v1/shell-attributes:
     get:
       tags:
         - Shell attributes
@@ -1047,7 +1080,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/shell-attributes/{attributeId}:
+  /api/v1/shell-attributes/{attributeId}:
     parameters:
       - $ref: "#/components/parameters/AttributeId"
     get:
@@ -1122,7 +1155,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/shell-attributes/{attributeId}/impact:
+  /api/v1/shell-attributes/{attributeId}/impact:
     parameters:
       - $ref: "#/components/parameters/AttributeId"
     post:
@@ -1153,7 +1186,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/shell-attributes/{attributeId}/status:
+  /api/v1/shell-attributes/{attributeId}/status:
     parameters:
       - $ref: "#/components/parameters/AttributeId"
     post:
@@ -1186,7 +1219,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/shell-attributes/{attributeId}/move:
+  /api/v1/shell-attributes/{attributeId}/move:
     parameters:
       - $ref: "#/components/parameters/AttributeId"
     post:
@@ -1219,7 +1252,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/shell-attributes/{attributeId}/options:
+  /api/v1/shell-attributes/{attributeId}/options:
     parameters:
       - $ref: "#/components/parameters/AttributeId"
     get:
@@ -1303,7 +1336,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/shell-attributes/{attributeId}/options/import-check:
+  /api/v1/shell-attributes/{attributeId}/options/import-check:
     parameters:
       - $ref: "#/components/parameters/AttributeId"
     post:
@@ -1334,7 +1367,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/shell-attributes/{attributeId}/options/import:
+  /api/v1/shell-attributes/{attributeId}/options/import:
     parameters:
       - $ref: "#/components/parameters/AttributeId"
     post:
@@ -1365,7 +1398,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/shell-attribute-options/{optionId}:
+  /api/v1/shell-attribute-options/{optionId}:
     parameters:
       - $ref: "#/components/parameters/OptionId"
     get:
@@ -1450,7 +1483,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/shell-attribute-options/{optionId}/status:
+  /api/v1/shell-attribute-options/{optionId}/status:
     parameters:
       - $ref: "#/components/parameters/OptionId"
     post:
@@ -1483,7 +1516,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/shell-attribute-options/{optionId}/move:
+  /api/v1/shell-attribute-options/{optionId}/move:
     parameters:
       - $ref: "#/components/parameters/OptionId"
     post:
@@ -1516,7 +1549,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/shell-attribute-forms/{level}:
+  /api/v1/shell-attribute-forms/{level}:
     parameters:
       - $ref: "#/components/parameters/LevelPath"
     get:
@@ -1544,7 +1577,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/shell-attribute-forms/{level}/check:
+  /api/v1/shell-attribute-forms/{level}/check:
     parameters:
       - $ref: "#/components/parameters/LevelPath"
     post:
@@ -1577,7 +1610,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/currencies:
+  /api/v1/currencies:
     get:
       tags:
         - Currencies
@@ -1622,7 +1655,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/currencies/{code}:
+  /api/v1/currencies/{code}:
     parameters:
       - $ref: "#/components/parameters/CurrencyCode"
     get:
@@ -1699,7 +1732,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/currencies/{code}/impact:
+  /api/v1/currencies/{code}/impact:
     parameters:
       - $ref: "#/components/parameters/CurrencyCode"
     post:
@@ -1732,7 +1765,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/currencies/{code}/status:
+  /api/v1/currencies/{code}/status:
     parameters:
       - $ref: "#/components/parameters/CurrencyCode"
     post:
@@ -1765,7 +1798,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/finance-budgets:
+  /api/v1/finance-budgets:
     get:
       tags:
         - Finance budgets
@@ -1792,7 +1825,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/finance-budgets/{budgetId}:
+  /api/v1/finance-budgets/{budgetId}:
     parameters:
       - $ref: "#/components/parameters/BudgetId"
     patch:
@@ -1825,7 +1858,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/finance-budget-items:
+  /api/v1/finance-budget-items:
     post:
       tags:
         - Finance budgets
@@ -1852,7 +1885,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/finance-budget-items/{itemId}:
+  /api/v1/finance-budget-items/{itemId}:
     parameters:
       - $ref: "#/components/parameters/ItemId"
     get:
@@ -1927,7 +1960,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/finance-budget-items/{itemId}/status:
+  /api/v1/finance-budget-items/{itemId}/status:
     parameters:
       - $ref: "#/components/parameters/ItemId"
     post:
@@ -1960,7 +1993,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/people:
+  /api/v1/people:
     get:
       tags:
         - People and teams
@@ -2006,7 +2039,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/people/{personId}:
+  /api/v1/people/{personId}:
     parameters:
       - $ref: "#/components/parameters/PersonId"
     get:
@@ -2063,7 +2096,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/people/{personId}/impact:
+  /api/v1/people/{personId}/impact:
     parameters:
       - $ref: "#/components/parameters/PersonId"
     post:
@@ -2098,7 +2131,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/people/{personId}/status:
+  /api/v1/people/{personId}/status:
     parameters:
       - $ref: "#/components/parameters/PersonId"
     post:
@@ -2135,7 +2168,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/teams:
+  /api/v1/teams:
     get:
       tags:
         - People and teams
@@ -2180,7 +2213,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/teams/{teamId}:
+  /api/v1/teams/{teamId}:
     parameters:
       - $ref: "#/components/parameters/TeamId"
     get:
@@ -2260,7 +2293,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/teams/{teamId}/impact:
+  /api/v1/teams/{teamId}/impact:
     parameters:
       - $ref: "#/components/parameters/TeamId"
     post:
@@ -2295,7 +2328,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/teams/{teamId}/status:
+  /api/v1/teams/{teamId}/status:
     parameters:
       - $ref: "#/components/parameters/TeamId"
     post:
@@ -2331,7 +2364,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/me/display-currencies:
+  /api/v1/me/display-currencies:
     get:
       tags:
         - Me
@@ -2353,7 +2386,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/plan-defaults:
+  /api/v1/plan-defaults:
     get:
       tags:
         - Plans
@@ -2375,7 +2408,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/plans:
+  /api/v1/plans:
     get:
       tags:
         - Plans
@@ -2456,7 +2489,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/plans/{planId}:
+  /api/v1/plans/{planId}:
     get:
       tags:
         - Plans
@@ -2536,7 +2569,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/plans/{planId}/publish:
+  /api/v1/plans/{planId}/publish:
     post:
       tags:
         - Plans
@@ -2565,7 +2598,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/plans/{planId}/unpublish:
+  /api/v1/plans/{planId}/unpublish:
     post:
       tags:
         - Plans
@@ -2597,7 +2630,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/plans/{planId}/copy-options:
+  /api/v1/plans/{planId}/copy-options:
     get:
       tags:
         - Plans
@@ -2620,7 +2653,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/plans/{planId}/copy:
+  /api/v1/plans/{planId}/copy:
     post:
       tags:
         - Plans
@@ -2654,7 +2687,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/plans/{planId}/change-effects:
+  /api/v1/plans/{planId}/change-effects:
     post:
       tags:
         - Plans
@@ -2688,7 +2721,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/plans/{planId}/campaigns:
+  /api/v1/plans/{planId}/campaigns:
     parameters:
       - name: planId
         in: path
@@ -2752,7 +2785,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/campaigns/{campaignId}:
+  /api/v1/campaigns/{campaignId}:
     parameters:
       - $ref: "#/components/parameters/CampaignId"
     get:
@@ -2829,7 +2862,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/campaigns/{campaignId}/destinations:
+  /api/v1/campaigns/{campaignId}/destinations:
     parameters:
       - $ref: "#/components/parameters/CampaignId"
       - $ref: "#/components/parameters/Purpose"
@@ -2861,7 +2894,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/campaigns/{campaignId}/move:
+  /api/v1/campaigns/{campaignId}/move:
     parameters:
       - $ref: "#/components/parameters/CampaignId"
     post:
@@ -2897,7 +2930,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/campaigns/{campaignId}/copy:
+  /api/v1/campaigns/{campaignId}/copy:
     parameters:
       - $ref: "#/components/parameters/CampaignId"
     post:
@@ -2932,7 +2965,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/campaigns/{campaignId}/initiatives:
+  /api/v1/campaigns/{campaignId}/initiatives:
     parameters:
       - $ref: "#/components/parameters/CampaignId"
     post:
@@ -2966,7 +2999,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/initiatives/{initiativeId}:
+  /api/v1/initiatives/{initiativeId}:
     parameters:
       - $ref: "#/components/parameters/InitiativeId"
     get:
@@ -3042,7 +3075,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/initiatives/{initiativeId}/destinations:
+  /api/v1/initiatives/{initiativeId}/destinations:
     parameters:
       - $ref: "#/components/parameters/InitiativeId"
       - $ref: "#/components/parameters/Purpose"
@@ -3073,7 +3106,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/initiatives/{initiativeId}/move:
+  /api/v1/initiatives/{initiativeId}/move:
     parameters:
       - $ref: "#/components/parameters/InitiativeId"
     post:
@@ -3109,7 +3142,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/initiatives/{initiativeId}/copy:
+  /api/v1/initiatives/{initiativeId}/copy:
     parameters:
       - $ref: "#/components/parameters/InitiativeId"
     post:
@@ -3140,7 +3173,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/initiatives/{initiativeId}/activity-form:
+  /api/v1/initiatives/{initiativeId}/activity-form:
     get:
       tags:
         - Activities
@@ -3168,7 +3201,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/initiatives/{initiativeId}/activities:
+  /api/v1/initiatives/{initiativeId}/activities:
     post:
       tags:
         - Activities
@@ -3200,7 +3233,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/plans/{planId}/activities:
+  /api/v1/plans/{planId}/activities:
     get:
       tags:
         - Activities
@@ -3229,7 +3262,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/activities/{activityId}:
+  /api/v1/activities/{activityId}:
     get:
       tags:
         - Activities
@@ -3311,7 +3344,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/activities/{activityId}/form:
+  /api/v1/activities/{activityId}/form:
     get:
       tags:
         - Activities
@@ -3337,7 +3370,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/activities/{activityId}/destinations:
+  /api/v1/activities/{activityId}/destinations:
     get:
       tags:
         - Activities
@@ -3360,7 +3393,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/activities/{activityId}/move:
+  /api/v1/activities/{activityId}/move:
     post:
       tags:
         - Activities
@@ -3396,7 +3429,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/activities/{activityId}/copy:
+  /api/v1/activities/{activityId}/copy:
     post:
       tags:
         - Activities
@@ -3430,7 +3463,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/activities/{activityId}/line-items:
+  /api/v1/activities/{activityId}/line-items:
     get:
       tags:
         - Line items
@@ -3494,7 +3527,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/activities/{activityId}/line-items/form-options:
+  /api/v1/activities/{activityId}/line-items/form-options:
     get:
       tags:
         - Line items
@@ -3522,7 +3555,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/line-items/{lineItemId}:
+  /api/v1/line-items/{lineItemId}:
     get:
       tags:
         - Line items
@@ -3612,7 +3645,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/line-items/{lineItemId}/duplicate:
+  /api/v1/line-items/{lineItemId}/duplicate:
     post:
       tags:
         - Line items
@@ -3648,7 +3681,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/approval-workflows:
+  /api/v1/approval-workflows:
     get:
       tags:
         - Approval workflows
@@ -3696,7 +3729,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/approval-workflows/{workflowId}:
+  /api/v1/approval-workflows/{workflowId}:
     get:
       tags:
         - Approval workflows
@@ -3777,7 +3810,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/approval-workflows/{workflowId}/deactivate:
+  /api/v1/approval-workflows/{workflowId}/deactivate:
     post:
       tags:
         - Approval workflows
@@ -3813,7 +3846,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/approval-workflows/{workflowId}/activate:
+  /api/v1/approval-workflows/{workflowId}/activate:
     post:
       tags:
         - Approval workflows
@@ -3846,7 +3879,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/activities/{activityId}/approval:
+  /api/v1/activities/{activityId}/approval:
     get:
       tags:
         - Approvals
@@ -3869,7 +3902,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/activities/{activityId}/approval/submission:
+  /api/v1/activities/{activityId}/approval/submission:
     get:
       tags:
         - Approvals
@@ -3893,7 +3926,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/activities/{activityId}/approval/submit:
+  /api/v1/activities/{activityId}/approval/submit:
     post:
       tags:
         - Approvals
@@ -3931,7 +3964,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/activities/{activityId}/approval/approve:
+  /api/v1/activities/{activityId}/approval/approve:
     post:
       tags:
         - Approvals
@@ -3967,7 +4000,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/activities/{activityId}/approval/decline:
+  /api/v1/activities/{activityId}/approval/decline:
     post:
       tags:
         - Approvals
@@ -4000,7 +4033,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/activities/{activityId}/approval/recall:
+  /api/v1/activities/{activityId}/approval/recall:
     post:
       tags:
         - Approvals
@@ -4034,7 +4067,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/approvals:
+  /api/v1/approvals:
     get:
       tags:
         - Approvals
@@ -4071,7 +4104,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/approvals/summary:
+  /api/v1/approvals/summary:
     get:
       tags:
         - Approvals
@@ -4109,7 +4142,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/approvals/activities/{activityId}:
+  /api/v1/approvals/activities/{activityId}:
     get:
       tags:
         - Approvals
@@ -4132,7 +4165,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/notifications:
+  /api/v1/notifications:
     get:
       tags:
         - Notifications
@@ -4151,7 +4184,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/notifications/{notificationId}/read:
+  /api/v1/notifications/{notificationId}/read:
     post:
       tags:
         - Notifications
@@ -4175,7 +4208,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/notifications/read-all:
+  /api/v1/notifications/read-all:
     post:
       tags:
         - Notifications
@@ -4194,7 +4227,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/home/summary:
+  /api/v1/home/summary:
     get:
       tags:
         - Home
@@ -4217,7 +4250,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/home/plans:
+  /api/v1/home/plans:
     get:
       tags:
         - Home
@@ -4240,7 +4273,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/home/attention:
+  /api/v1/home/attention:
     get:
       tags:
         - Home
@@ -4259,7 +4292,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/home/waiting:
+  /api/v1/home/waiting:
     get:
       tags:
         - Home
@@ -4278,7 +4311,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/home/my-activities:
+  /api/v1/home/my-activities:
     get:
       tags:
         - Home
@@ -4297,7 +4330,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/home/recent-changes:
+  /api/v1/home/recent-changes:
     get:
       tags:
         - Home
@@ -4320,7 +4353,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/all-work:
+  /api/v1/all-work:
     get:
       tags:
         - All work
@@ -4372,7 +4405,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/all-work/options:
+  /api/v1/all-work/options:
     get:
       tags:
         - All work
@@ -4397,7 +4430,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/all-work/export:
+  /api/v1/all-work/export:
     get:
       tags:
         - All work
@@ -4472,7 +4505,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/all-work/records/{recordId}:
+  /api/v1/all-work/records/{recordId}:
     get:
       tags:
         - All work
@@ -4498,7 +4531,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/all-work/preferences:
+  /api/v1/all-work/preferences:
     get:
       tags:
         - All work
@@ -4543,7 +4576,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/saved-views:
+  /api/v1/saved-views:
     get:
       tags:
         - All work
@@ -4588,7 +4621,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/saved-views/{viewId}:
+  /api/v1/saved-views/{viewId}:
     patch:
       tags:
         - All work
@@ -4641,7 +4674,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/activity-log/summary:
+  /api/v1/activity-log/summary:
     get:
       tags:
         - History
@@ -4677,7 +4710,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/recycle-bin/empty:
+  /api/v1/recycle-bin/empty:
     post:
       tags:
         - History
@@ -4708,7 +4741,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/recycle-bin/{entryId}:
+  /api/v1/recycle-bin/{entryId}:
     delete:
       tags:
         - History
@@ -4736,7 +4769,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/recycle-bin/{entryId}/restore-preview:
+  /api/v1/recycle-bin/{entryId}/restore-preview:
     get:
       tags:
         - History
@@ -4765,7 +4798,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/bulk-actions/fields:
+  /api/v1/bulk-actions/fields:
     get:
       tags:
         - Bulk actions
@@ -4792,7 +4825,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/bulk-actions/targets:
+  /api/v1/bulk-actions/targets:
     post:
       tags:
         - Bulk actions
@@ -4820,7 +4853,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/bulk-actions/preview:
+  /api/v1/bulk-actions/preview:
     post:
       tags:
         - Bulk actions
@@ -4847,7 +4880,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/bulk-actions:
+  /api/v1/bulk-actions:
     post:
       tags:
         - Bulk actions
@@ -4877,7 +4910,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/bulk-actions/{bulkActionId}/undo:
+  /api/v1/bulk-actions/{bulkActionId}/undo:
     post:
       tags:
         - Bulk actions
@@ -4904,7 +4937,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/plans/{planId}/imports:
+  /api/v1/plans/{planId}/imports:
     get:
       tags:
         - Imports
@@ -4957,7 +4990,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/plans/{planId}/imports/check:
+  /api/v1/plans/{planId}/imports/check:
     post:
       tags:
         - Imports
@@ -4988,7 +5021,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/plans/{planId}/import-template:
+  /api/v1/plans/{planId}/import-template:
     get:
       tags:
         - Imports
@@ -5019,7 +5052,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/imports/{importId}:
+  /api/v1/imports/{importId}:
     get:
       tags:
         - Imports
@@ -5042,7 +5075,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/imports/{importId}/undo:
+  /api/v1/imports/{importId}/undo:
     post:
       tags:
         - Imports
@@ -5068,7 +5101,7 @@ paths:
         default:
           $ref: "#/components/responses/Error"
   # Feature 014 Access control and global budgets (merged 2026-10-20, D-298)
-  /api/access/permissions:
+  /api/v1/access/permissions:
     get:
       tags: [Roles and access]
       operationId: listPermissions
@@ -5086,7 +5119,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/access/people:
+  /api/v1/access/people:
     get:
       tags: [Roles and access]
       operationId: listPeopleAccess
@@ -5104,7 +5137,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/access/changes:
+  /api/v1/access/changes:
     get:
       tags: [Roles and access]
       operationId: listAccessChanges
@@ -5122,7 +5155,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/roles:
+  /api/v1/roles:
     get:
       tags: [Roles and access]
       operationId: listRoles
@@ -5165,7 +5198,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/roles/{roleId}:
+  /api/v1/roles/{roleId}:
     parameters:
       - $ref: "#/components/parameters/RoleId"
     get:
@@ -5243,7 +5276,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/people/{personId}/roles:
+  /api/v1/people/{personId}/roles:
     parameters:
       - $ref: "#/components/parameters/PersonId"
     get:
@@ -5298,7 +5331,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/people/{personId}/roles/impact:
+  /api/v1/people/{personId}/roles/impact:
     parameters:
       - $ref: "#/components/parameters/PersonId"
     post:
@@ -5332,7 +5365,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/access-rules:
+  /api/v1/access-rules:
     get:
       tags: [Roles and access]
       operationId: getAccessRules
@@ -5377,7 +5410,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/global-budgets:
+  /api/v1/global-budgets:
     get:
       tags: [Global budgets]
       operationId: listGlobalBudgets
@@ -5430,7 +5463,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/global-budgets/{globalBudgetId}:
+  /api/v1/global-budgets/{globalBudgetId}:
     parameters:
       - $ref: "#/components/parameters/GlobalBudgetId"
     get:
@@ -5502,7 +5535,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/global-budgets/{globalBudgetId}/allocation-options:
+  /api/v1/global-budgets/{globalBudgetId}/allocation-options:
     parameters:
       - $ref: "#/components/parameters/GlobalBudgetId"
     get:
@@ -5524,7 +5557,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/global-budgets/{globalBudgetId}/allocations:
+  /api/v1/global-budgets/{globalBudgetId}/allocations:
     parameters:
       - $ref: "#/components/parameters/GlobalBudgetId"
     post:
@@ -5556,7 +5589,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/budget-allocations/{allocationId}:
+  /api/v1/budget-allocations/{allocationId}:
     parameters:
       - $ref: "#/components/parameters/AllocationId"
     patch:
@@ -5608,7 +5641,7 @@ paths:
         default:
           $ref: "#/components/responses/Error"
   # Feature 015 Financial transactions (merged 2026-10-20, D-298)
-  /api/financials/records/{recordId}:
+  /api/v1/financials/records/{recordId}:
     get:
       tags: [Financials]
       operationId: getFinancialRecord
@@ -5635,7 +5668,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/financials/transactions:
+  /api/v1/financials/transactions:
     get:
       tags: [Financials]
       operationId: listFinancialTransactions
@@ -5669,7 +5702,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/financials/transactions/{transactionId}:
+  /api/v1/financials/transactions/{transactionId}:
     get:
       tags: [Financials]
       operationId: getFinancialTransaction
@@ -5691,7 +5724,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/financials/transactions/{transactionId}/link:
+  /api/v1/financials/transactions/{transactionId}/link:
     post:
       tags: [Financials]
       operationId: linkFinancialTransaction
@@ -5727,7 +5760,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/financials/transactions/{transactionId}/unlink:
+  /api/v1/financials/transactions/{transactionId}/unlink:
     post:
       tags: [Financials]
       operationId: unlinkFinancialTransaction
@@ -5763,7 +5796,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/financials/overview:
+  /api/v1/financials/overview:
     get:
       tags: [Financials]
       operationId: getFinancialOverview
@@ -5785,7 +5818,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/financials/imports:
+  /api/v1/financials/imports:
     get:
       tags: [Financials]
       operationId: listFinancialImports
@@ -5833,7 +5866,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/financials/imports/check:
+  /api/v1/financials/imports/check:
     post:
       tags: [Financials]
       operationId: checkFinancialImport
@@ -5862,7 +5895,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/financials/imports/template:
+  /api/v1/financials/imports/template:
     get:
       tags: [Financials]
       operationId: getFinancialImportTemplate
@@ -5886,7 +5919,7 @@ paths:
         default:
           $ref: "#/components/responses/Error"
   # Feature 016 Planning and currency extensions (merged 2026-10-20, D-298)
-  /api/currencies/{code}/rates:
+  /api/v1/currencies/{code}/rates:
     parameters:
       - $ref: "#/components/parameters/CurrencyCode"
     get:
@@ -5935,7 +5968,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/currencies/{code}/rates/impact:
+  /api/v1/currencies/{code}/rates/impact:
     parameters:
       - $ref: "#/components/parameters/CurrencyCode"
     post:
@@ -5969,7 +6002,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/exchange-rates/{rateId}:
+  /api/v1/exchange-rates/{rateId}:
     parameters:
       - $ref: "#/components/parameters/RateId"
     patch:
@@ -6025,7 +6058,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/exchange-rates/{rateId}/impact:
+  /api/v1/exchange-rates/{rateId}/impact:
     parameters:
       - $ref: "#/components/parameters/RateId"
     post:
@@ -6055,7 +6088,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/exchange-rates/current:
+  /api/v1/exchange-rates/current:
     get:
       tags: [Exchange rates]
       operationId: listCurrentRates
@@ -6073,7 +6106,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/exchange-rates/import-check:
+  /api/v1/exchange-rates/import-check:
     post:
       tags: [Exchange rates]
       operationId: checkRateImport
@@ -6102,7 +6135,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/exchange-rates/import:
+  /api/v1/exchange-rates/import:
     post:
       tags: [Exchange rates]
       operationId: importRates
@@ -6131,7 +6164,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/exchange-rates/imports:
+  /api/v1/exchange-rates/imports:
     get:
       tags: [Exchange rates]
       operationId: listRateImports
@@ -6157,7 +6190,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/exchange-rates/import-sample:
+  /api/v1/exchange-rates/import-sample:
     get:
       tags: [Exchange rates]
       operationId: getRateImportSample
@@ -6175,7 +6208,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/field-help:
+  /api/v1/field-help:
     get:
       tags: [Field help]
       operationId: listFieldHelp
@@ -6193,7 +6226,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/field-help/{helpKey}:
+  /api/v1/field-help/{helpKey}:
     parameters:
       - $ref: "#/components/parameters/HelpKey"
     patch:
@@ -6225,7 +6258,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/plans/{planId}/budget-phasing:
+  /api/v1/plans/{planId}/budget-phasing:
     parameters:
       - $ref: "#/components/parameters/PlanId"
     put:
@@ -6257,7 +6290,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/campaigns/{campaignId}/budget-phasing:
+  /api/v1/campaigns/{campaignId}/budget-phasing:
     parameters:
       - $ref: "#/components/parameters/CampaignId"
     put:
@@ -6289,7 +6322,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/initiatives/{initiativeId}/budget-phasing:
+  /api/v1/initiatives/{initiativeId}/budget-phasing:
     parameters:
       - $ref: "#/components/parameters/InitiativeId"
     put:
@@ -6321,7 +6354,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/plans/{planId}/budget-by-month:
+  /api/v1/plans/{planId}/budget-by-month:
     parameters:
       - $ref: "#/components/parameters/PlanId"
     get:
@@ -6343,7 +6376,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/activities/{activityId}/split-options:
+  /api/v1/activities/{activityId}/split-options:
     parameters:
       - $ref: "#/components/parameters/ActivityId"
     get:
@@ -6365,7 +6398,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/activities/{activityId}/split-preview:
+  /api/v1/activities/{activityId}/split-preview:
     parameters:
       - $ref: "#/components/parameters/ActivityId"
     post:
@@ -6394,7 +6427,7 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
-  /api/activities/{activityId}/split:
+  /api/v1/activities/{activityId}/split:
     parameters:
       - $ref: "#/components/parameters/ActivityId"
     post:
@@ -6426,7 +6459,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/all-work/breakdown:
+  /api/v1/all-work/breakdown:
     get:
       tags:
         - All work
@@ -6473,7 +6506,7 @@ paths:
         default:
           $ref: "#/components/responses/Error"
   # Feature 017 Approval rules (merged 2026-10-20, D-298)
-  /api/approval-rule-options:
+  /api/v1/approval-rule-options:
     get:
       tags: [Approval workflows]
       operationId: getApprovalRuleOptions
@@ -6492,7 +6525,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/approval-delegations:
+  /api/v1/approval-delegations:
     get:
       tags: [Approval delegations]
       operationId: listApprovalDelegations
@@ -6550,7 +6583,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/approval-delegations/{delegationId}:
+  /api/v1/approval-delegations/{delegationId}:
     patch:
       tags: [Approval delegations]
       operationId: updateApprovalDelegation
@@ -6583,7 +6616,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/approval-delegations/{delegationId}/cancel:
+  /api/v1/approval-delegations/{delegationId}/cancel:
     post:
       tags: [Approval delegations]
       operationId: cancelApprovalDelegation
@@ -6615,7 +6648,7 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
-  /api/approvals/monitoring:
+  /api/v1/approvals/monitoring:
     get:
       tags: [Approvals]
       operationId: getApprovalMonitoring
@@ -6649,7 +6682,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
-  /api/approvals/escalations/run:
+  /api/v1/approvals/escalations/run:
     post:
       tags: [Approvals]
       operationId: runApprovalEscalations
@@ -7275,7 +7308,7 @@ components:
       in: query
       description: >-
         The grouping - attr:<attributeId>, plan, planType, planCurrency, year, team, businessUnit, activityType or
-        owner. Needed by GET /api/all-work/breakdown and by the Breakdown export (view=breakdown): missing there, it
+        owner. Needed by GET /api/v1/all-work/breakdown and by the Breakdown export (view=breakdown): missing there, it
         answers 400 validation_failed on by. Optional in the contract so the other exports need not send it (D-298).
       schema:
         type: string
@@ -7320,7 +7353,9 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
     NotFound:
-      description: The record or path does not exist (also the demo sign-in paths when demo sign-in is disabled).
+      description: >-
+        The record or path does not exist, or the record is outside the person's access, which answers exactly like a
+        missing record (also the demo sign-in paths when demo sign-in is disabled).
       content:
         application/json:
           schema:
@@ -7344,14 +7379,23 @@ components:
     # Feature 014 Access control and global budgets (merged 2026-10-20, D-298)
     Forbidden:
       description: >-
-        The signed-in person's roles do not allow this (forbidden), or the record is outside their access. The message
-        says so in plain language and names nothing of a record they cannot see. Nothing was changed.
+        The signed-in person's roles do not allow this (forbidden). The message says so in plain language and names
+        nothing of a record they cannot see. Nothing was changed.
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
   schemas:
     Error:
+      type: object
+      additionalProperties: false
+      description: Every failure, in one envelope (constitution B6).
+      required:
+        - error
+      properties:
+        error:
+          $ref: "#/components/schemas/ErrorDetail"
+    ErrorDetail:
       type: object
       additionalProperties: false
       required:
@@ -7401,7 +7445,7 @@ components:
             submitting an activity).
           items:
             $ref: "#/components/schemas/ReadinessGroup"
-      description: "Every failure. Codes added by 002-014: in_use, cannot_restore (002), not_allowed (003), not_ready with missing (004), parent_deleted_permanently (011), forbidden (014: 403, refused by permission or scope, or a record outside the person's access; D-299)."
+      description: "Every failure. Codes added by 002-014: in_use, cannot_restore (002), not_allowed (003), not_ready with missing (004), parent_deleted_permanently (011), forbidden (014: 403, refused by permission or scope; D-299). A record outside the person's access answers 404 not_found, like a missing one (022)."
     FieldError:
       type: object
       additionalProperties: false
@@ -7480,18 +7524,13 @@ components:
         name:
           type: string
           example: Priya Raman
-    Health:
+    Environment:
       type: object
       additionalProperties: false
       required:
-        - status
         - environment
         - demoSignIn
       properties:
-        status:
-          type: string
-          enum:
-            - ok
         environment:
           type: string
           enum:
@@ -7660,7 +7699,7 @@ components:
         version:
           type: integer
           minimum: 1
-          description: The person's version, sent back by PATCH /api/me.
+          description: The person's version, sent back by PATCH /api/v1/me.
         teams:
           type: array
           description: The signed-in person's teams, active or not, sorted by name ("My teams" filters, plan defaults).
@@ -11233,7 +11272,7 @@ components:
     PlanCampaigns:
       type: object
       additionalProperties: false
-      description: Answer of GET /api/plans/{planId}/campaigns.
+      description: Answer of GET /api/v1/plans/{planId}/campaigns.
       required:
         - plan
         - planOwner

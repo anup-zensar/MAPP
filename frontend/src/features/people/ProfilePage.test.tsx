@@ -31,7 +31,7 @@ const PRIYA_AS_PERSON = {
 
 const VALIDATION = (fields: { field: string; message: string }[]) => ({
   status: 400,
-  body: { code: 'validation_failed', message: 'Check the highlighted fields.', fields },
+  body: { error: { code: 'validation_failed', message: 'Check the highlighted fields.', fields } },
 });
 
 /** What the rest of the app sees of the session: the account's name and a date on another page. */
@@ -42,13 +42,13 @@ function ElsewhereInTheApp() {
 }
 
 /**
- * My profile at /profile as `person`, with the answers every test needs (GET /api/me: the
+ * My profile at /profile as `person`, with the answers every test needs (GET /api/v1/me: the
  * session is asked again after every change).
  */
 function renderProfile(answers: Record<string, MockHandler> = {}, person = testUser()) {
   const api = mockApi({
-    'GET /api/me': { body: person },
-    'GET /api/me/display-currencies': { body: CURRENCIES },
+    'GET /api/v1/me': { body: person },
+    'GET /api/v1/me/display-currencies': { body: CURRENCIES },
     ...answers,
   });
   return {
@@ -115,8 +115,8 @@ describe('ProfilePage (feature 003, US4)', () => {
       version: 2,
     });
     const { api, user } = renderProfile({
-      'PATCH /api/me': { body: renamed },
-      'GET /api/me': { body: renamed },
+      'PATCH /api/v1/me': { body: renamed },
+      'GET /api/v1/me': { body: renamed },
     });
 
     await user.click(screen.getByRole('button', { name: 'Edit details' }));
@@ -131,7 +131,7 @@ describe('ProfilePage (feature 003, US4)', () => {
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText('Your details saved')).toBeInTheDocument();
-    expect(api.bodiesOf('PATCH /api/me')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/me')).toEqual([
       { name: 'Priya Iyer', jobTitle: 'Senior marketer', version: 1 },
     ]);
     expect(screen.queryByRole('dialog', { name: 'Edit your details' })).not.toBeInTheDocument();
@@ -141,7 +141,7 @@ describe('ProfilePage (feature 003, US4)', () => {
 
   it('shows "Enter a name" at the field and in the summary when the name is empty (US4-2, SC-007)', async () => {
     const { user } = renderProfile({
-      'PATCH /api/me': VALIDATION([{ field: 'name', message: 'Enter a name.' }]),
+      'PATCH /api/v1/me': VALIDATION([{ field: 'name', message: 'Enter a name.' }]),
     });
 
     await user.click(screen.getByRole('button', { name: 'Edit details' }));
@@ -158,22 +158,24 @@ describe('ProfilePage (feature 003, US4)', () => {
     let patches = 0;
     const saved = testUser({ jobTitle: 'Brand lead', version: 3 });
     const { api, user } = renderProfile({
-      'PATCH /api/me': () => {
+      'PATCH /api/v1/me': () => {
         patches += 1;
         return patches === 1
           ? {
               status: 409,
               body: {
-                code: 'version_conflict',
-                message: 'Not saved — Alex Morgan changed this person.',
-                fields: [],
-                conflict: { changedBy: 'Alex Morgan', changedAt: '2026-03-10T14:32:00Z' },
+                error: {
+                  code: 'version_conflict',
+                  message: 'Not saved — Alex Morgan changed this person.',
+                  fields: [],
+                  conflict: { changedBy: 'Alex Morgan', changedAt: '2026-03-10T14:32:00Z' },
+                },
               },
             }
           : { body: saved };
       },
-      'GET /api/me': () => ({ body: patches === 1 ? testUser({ version: 2 }) : saved }),
-      'GET /api/people/U-1002': { body: PRIYA_AS_PERSON },
+      'GET /api/v1/me': () => ({ body: patches === 1 ? testUser({ version: 2 }) : saved }),
+      'GET /api/v1/people/U-1002': { body: PRIYA_AS_PERSON },
     });
 
     await user.click(screen.getByRole('button', { name: 'Edit details' }));
@@ -190,7 +192,7 @@ describe('ProfilePage (feature 003, US4)', () => {
 
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
     expect(await screen.findByText('Your details saved')).toBeInTheDocument();
-    expect(api.bodiesOf('PATCH /api/me')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/me')).toEqual([
       { name: 'Priya Raman', jobTitle: 'Brand lead', version: 1 },
       { name: 'Priya Raman', jobTitle: 'Brand lead', version: 2 },
     ]);
@@ -205,8 +207,8 @@ describe('ProfilePage (feature 003, US4)', () => {
       pinnedPlanIds: [] as string[],
     } as const;
     const { api, user, queryClient } = renderProfile({
-      'PATCH /api/me/preferences': { body: preferences },
-      'GET /api/me': { body: testUser({ preferences }) },
+      'PATCH /api/v1/me/preferences': { body: preferences },
+      'GET /api/v1/me': { body: testUser({ preferences }) },
     });
     // A list of another page, kept in the cache: its amounts must come again, converted.
     queryClient.setQueryData(['plans'], { items: [], total: 0 });
@@ -230,11 +232,11 @@ describe('ProfilePage (feature 003, US4)', () => {
     ]);
     await user.selectOptions(currency, 'EUR — Euro');
     await user.selectOptions(dateFormat, '12/03/2026 (DD/MM/YYYY)');
-    const currencyAsks = api.bodiesOf('GET /api/me/display-currencies').length;
+    const currencyAsks = api.bodiesOf('GET /api/v1/me/display-currencies').length;
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText('Your preferences saved')).toBeInTheDocument();
-    expect(api.bodiesOf('PATCH /api/me/preferences')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/me/preferences')).toEqual([
       { displayCurrency: 'EUR', dateFormat: 'DD/MM/YYYY' },
     ]);
     const shown = card('Display preferences');
@@ -243,13 +245,13 @@ describe('ProfilePage (feature 003, US4)', () => {
     expect(screen.getByText('Account: Priya Raman (PR) · a date: 12/03/2026')).toBeInTheDocument();
     expect(queryClient.getQueryState(['plans'])?.isInvalidated).toBe(true);
     await waitFor(() =>
-      expect(api.bodiesOf('GET /api/me/display-currencies')).toHaveLength(currencyAsks + 1),
+      expect(api.bodiesOf('GET /api/v1/me/display-currencies')).toHaveLength(currencyAsks + 1),
     );
   });
 
   it('shows every problem of the preferences at its field at once (SC-007)', async () => {
     const { user } = renderProfile({
-      'PATCH /api/me/preferences': VALIDATION([
+      'PATCH /api/v1/me/preferences': VALIDATION([
         { field: 'displayCurrency', message: 'Choose one of the active currencies.' },
         { field: 'dateFormat', message: 'Choose one of the date formats.' },
       ]),
@@ -269,11 +271,16 @@ describe('ProfilePage (feature 003, US4)', () => {
   it('shows a grey field while the currencies load, and Try again when they fail (plan "States")', async () => {
     let failing = true;
     const { user } = renderProfile({
-      'GET /api/me/display-currencies': () =>
+      'GET /api/v1/me/display-currencies': () =>
         failing
           ? {
               status: 500,
-              body: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+              body: {
+                error: {
+                  code: 'internal_error',
+                  message: 'Something went wrong. Please try again.',
+                },
+              },
             }
           : { body: CURRENCIES },
     });
@@ -297,7 +304,7 @@ describe('ProfilePage (feature 003, US4)', () => {
   it('keeps a display currency that was set inactive, labelled "(inactive)" (edge case, D-063)', async () => {
     renderProfile(
       {
-        'GET /api/me/display-currencies': {
+        'GET /api/v1/me/display-currencies': {
           body: { items: [EUR, { code: 'GBP', name: 'Pound sterling', active: false }, USD] },
         },
       },

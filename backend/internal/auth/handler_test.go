@@ -52,8 +52,8 @@ func inLubricantsEurope(keys ...string) string {
 
 // The bodies of the API's answers, as the web app receives them.
 const (
-	signInRequiredBody = `{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}`
-	incorrectBody      = `{"code":"incorrect_credentials","message":"Incorrect e-mail or password.","fields":[]}`
+	signInRequiredBody = `{"error":{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}}`
+	incorrectBody      = `{"error":{"code":"incorrect_credentials","message":"Incorrect e-mail or password.","fields":[]}}`
 )
 
 // The sign-in page lists the active demo people, sorted by name, with the shared demo password
@@ -61,7 +61,7 @@ const (
 func TestGetDemoPeople_ActivePeopleAndPassword_FR001_FR002(t *testing.T) {
 	server := apitest.New(t)
 
-	response := server.Do(t, http.MethodGet, "/api/auth/demo-people", nil)
+	response := server.Do(t, http.MethodGet, "/api/v1/auth/demo-people", nil)
 
 	if response.Status != http.StatusOK {
 		t.Fatalf("status = %d %s, want 200", response.Status, response.Body)
@@ -86,7 +86,7 @@ func TestGetDemoPeople_ActivePeopleAndPassword_FR001_FR002(t *testing.T) {
 func TestDemoPeople_EmptyStore_FR028(t *testing.T) {
 	server := apitest.New(t, apitest.WithoutSeed())
 
-	response := server.Do(t, http.MethodGet, "/api/auth/demo-people", nil)
+	response := server.Do(t, http.MethodGet, "/api/v1/auth/demo-people", nil)
 
 	assertAnswer(t, response, http.StatusOK, `{"password":"mapp","people":[]}`)
 }
@@ -97,7 +97,7 @@ func TestDemoPeople_EmptyStore_FR028(t *testing.T) {
 func TestSignIn_SetsTheSessionCookie_FR003(t *testing.T) {
 	server := apitest.New(t)
 
-	response := server.Do(t, http.MethodPost, "/api/auth/sign-in", signIn(" Priya.Raman@Shell.COM ", demoPassword))
+	response := server.Do(t, http.MethodPost, "/api/v1/auth/sign-in", signIn(" Priya.Raman@Shell.COM ", demoPassword))
 
 	assertAnswer(t, response, http.StatusOK, priyaBody)
 	cookie := response.Cookie(auth.CookieName)
@@ -108,7 +108,7 @@ func TestSignIn_SetsTheSessionCookie_FR003(t *testing.T) {
 		cookie.Secure || cookie.MaxAge != 0 || !cookie.Expires.IsZero() {
 		t.Errorf("cookie = %+v, want a value, HttpOnly, SameSite=Strict, Path=/, not Secure over HTTP, no expiry", cookie)
 	}
-	me := server.Do(t, http.MethodGet, "/api/me", nil, apitest.WithCookie(cookie))
+	me := server.Do(t, http.MethodGet, "/api/v1/me", nil, apitest.WithCookie(cookie))
 	assertAnswer(t, me, http.StatusOK, priyaBody)
 }
 
@@ -116,10 +116,10 @@ func TestSignIn_SetsTheSessionCookie_FR003(t *testing.T) {
 func TestSignIn_EmptyFields_FR004(t *testing.T) {
 	server := apitest.New(t)
 
-	response := server.Do(t, http.MethodPost, "/api/auth/sign-in", signIn("", ""))
+	response := server.Do(t, http.MethodPost, "/api/v1/auth/sign-in", signIn("", ""))
 
-	assertAnswer(t, response, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
-		`"fields":[{"field":"email","message":"Enter your e-mail"},{"field":"password","message":"Enter the password"}]}`)
+	assertAnswer(t, response, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
+		`"fields":[{"field":"email","message":"Enter your e-mail"},{"field":"password","message":"Enter the password"}]}}`)
 }
 
 // An unknown e-mail and a wrong password get the same answer, without saying which was wrong, and no
@@ -136,7 +136,7 @@ func TestSignIn_IncorrectCredentials_FR004(t *testing.T) {
 
 	for _, attempt := range attempts {
 		t.Run(attempt.name, func(t *testing.T) {
-			response := server.Do(t, http.MethodPost, "/api/auth/sign-in", attempt.body)
+			response := server.Do(t, http.MethodPost, "/api/v1/auth/sign-in", attempt.body)
 
 			assertAnswer(t, response, http.StatusUnauthorized, incorrectBody)
 			if cookie := response.Cookie(auth.CookieName); cookie != nil {
@@ -149,16 +149,16 @@ func TestSignIn_IncorrectCredentials_FR004(t *testing.T) {
 // Signing in again in the same browser ends the browser's earlier session (FR-006).
 func TestSignIn_EndsThisBrowsersPreviousSession_FR006(t *testing.T) {
 	server := apitest.New(t)
-	first := sessionCookie(t, server.Do(t, http.MethodPost, "/api/auth/sign-in", signIn(priyasEmail, demoPassword)))
+	first := sessionCookie(t, server.Do(t, http.MethodPost, "/api/v1/auth/sign-in", signIn(priyasEmail, demoPassword)))
 
-	again := server.Do(t, http.MethodPost, "/api/auth/sign-in", signIn("daniel.okoro@shell.com", demoPassword),
+	again := server.Do(t, http.MethodPost, "/api/v1/auth/sign-in", signIn("daniel.okoro@shell.com", demoPassword),
 		apitest.WithCookie(first))
 
 	second := sessionCookie(t, again)
-	assertAnswer(t, server.Do(t, http.MethodGet, "/api/me", nil, apitest.WithCookie(first)),
+	assertAnswer(t, server.Do(t, http.MethodGet, "/api/v1/me", nil, apitest.WithCookie(first)),
 		http.StatusUnauthorized, signInRequiredBody)
-	if me := server.Do(t, http.MethodGet, "/api/me", nil, apitest.WithCookie(second)); me.Status != http.StatusOK {
-		t.Errorf("the new session: GET /api/me = %d %s, want 200", me.Status, me.Body)
+	if me := server.Do(t, http.MethodGet, "/api/v1/me", nil, apitest.WithCookie(second)); me.Status != http.StatusOK {
+		t.Errorf("the new session: GET /api/v1/me = %d %s, want 200", me.Status, me.Body)
 	}
 }
 
@@ -167,7 +167,7 @@ func TestSignOut_EndsTheSession_FR006(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodPost, "/api/auth/sign-out", nil)
+	response := priya.Do(t, http.MethodPost, "/api/v1/auth/sign-out", nil)
 
 	if response.Status != http.StatusNoContent || len(response.Body) != 0 {
 		t.Errorf("answer = %d %s, want 204 without a body", response.Status, response.Body)
@@ -175,14 +175,14 @@ func TestSignOut_EndsTheSession_FR006(t *testing.T) {
 	if cleared := response.Cookie(auth.CookieName); cleared == nil || cleared.Value != "" || cleared.MaxAge >= 0 {
 		t.Errorf("cookie = %+v, want the session cookie cleared (empty, Max-Age=0)", cleared)
 	}
-	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/me", nil), http.StatusUnauthorized, signInRequiredBody)
+	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/v1/me", nil), http.StatusUnauthorized, signInRequiredBody)
 }
 
 // Signing out always succeeds, also when nobody is signed in.
 func TestSignOut_WithoutSession_FR006(t *testing.T) {
 	server := apitest.New(t)
 
-	response := server.Do(t, http.MethodPost, "/api/auth/sign-out", nil)
+	response := server.Do(t, http.MethodPost, "/api/v1/auth/sign-out", nil)
 
 	if response.Status != http.StatusNoContent {
 		t.Errorf("answer = %d %s, want 204", response.Status, response.Body)
@@ -218,7 +218,7 @@ func TestRequireSignIn_HandlerCanWrite_FR007(t *testing.T) {
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
-	request := httptest.NewRequest(http.MethodPost, "http://127.0.0.1/api/notes", nil)
+	request := httptest.NewRequest(http.MethodPost, "http://127.0.0.1/api/v1/notes", nil)
 	request.AddCookie(&http.Cookie{Name: auth.CookieName, Value: token})
 	answer := httptest.NewRecorder()
 
@@ -246,7 +246,7 @@ func TestRequireSignIn_HandlerCanWrite_FR007(t *testing.T) {
 	}
 }
 
-// signIn is the body of POST /api/auth/sign-in.
+// signIn is the body of POST /api/v1/auth/sign-in.
 func signIn(email, password string) map[string]string {
 	return map[string]string{"email": email, "password": password}
 }

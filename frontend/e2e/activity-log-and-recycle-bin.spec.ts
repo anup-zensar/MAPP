@@ -78,7 +78,7 @@ test('An activity deleted from its page is found in the recycle bin and restored
     records.year,
     '1000.00',
   );
-  await callApi(page, 'DELETE', `/api/initiatives/${binned.id}`);
+  await callApi(page, 'DELETE', `/api/v1/initiatives/${binned.id}`);
 
   // Delete it from its page.
   await page.goto(records.activityPath);
@@ -182,7 +182,7 @@ test('Delete permanently: the activity leaves the bin for good and the log keeps
   });
   const name = records.activityName;
   // Deleted from its page as in the journey above; here through the API.
-  await callApi(page, 'DELETE', `/api/activities/${records.activityId}`);
+  await callApi(page, 'DELETE', `/api/v1/activities/${records.activityId}`);
 
   // Deleting permanently needs "Delete permanently and empty the recycle bin": Alex's (014).
   await signInAs(page, ALEX);
@@ -238,7 +238,7 @@ test('Home: Recent changes shows the latest changes in Mei’s plans, newest fir
     records.year,
     '1000.00',
   );
-  await callApi(page, 'DELETE', `/api/initiatives/${binned.id}`);
+  await callApi(page, 'DELETE', `/api/v1/initiatives/${binned.id}`);
   await changeActivityPlannedCost(page, records.activityId, '26000.00');
 
   await page.goto('/');

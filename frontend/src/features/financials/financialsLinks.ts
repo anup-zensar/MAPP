@@ -5,7 +5,7 @@
  */
 import type { operations } from '@/api/schema';
 
-/** The query of GET /api/financials/transactions, as the contract types it. */
+/** The query of GET /api/v1/financials/transactions, as the contract types it. */
 export type TransactionsQuery = NonNullable<
   operations['listFinancialTransactions']['parameters']['query']
 >;

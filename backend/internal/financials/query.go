@@ -11,7 +11,7 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// Query is the filter set, sort and page of the Financials page (FR-021), as GET /api/financials/transactions
+// Query is the filter set, sort and page of the Financials page (FR-021), as GET /api/v1/financials/transactions
 // receives it. The address of the page holds the same parameters, so a link reproduces the view.
 type Query struct {
 	Type     string // "all" or a Type: the tab

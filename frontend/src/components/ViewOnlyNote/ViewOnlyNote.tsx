@@ -11,7 +11,7 @@ export interface ViewOnlyNoteProps {
 /**
  * The one note that replaces every change action of a page where the signed-in person may change
  * nothing (feature 014, FR-011, D-230): a lock, "View only", their roles and the administrators to
- * ask, from GET /api/me. Pages show it instead of a page full of disabled buttons.
+ * ask, from GET /api/v1/me. Pages show it instead of a page full of disabled buttons.
  */
 export function ViewOnlyNote({ area }: ViewOnlyNoteProps) {
   const access = useAccess();

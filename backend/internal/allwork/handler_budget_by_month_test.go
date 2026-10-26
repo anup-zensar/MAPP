@@ -18,8 +18,8 @@ func TestGetBudgetByMonth_Contract_FR024(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodGet, "/api/plans/P-1004/budget-by-month", nil)
-	gone := priya.Do(t, http.MethodGet, "/api/plans/P-9999/budget-by-month", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/plans/P-1004/budget-by-month", nil)
+	gone := priya.Do(t, http.MethodGet, "/api/v1/plans/P-9999/budget-by-month", nil)
 
 	if response.Status != http.StatusOK {
 		t.Fatalf("status = %d %s", response.Status, response.Body)

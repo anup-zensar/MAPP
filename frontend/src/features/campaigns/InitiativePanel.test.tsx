@@ -34,12 +34,12 @@ function renderPanel(route: string, answers: Record<string, MockHandler> = {}) {
   const api = mockApi({
     ...HISTORY_ANSWERS,
     ...financialsNotServed('I-1001'),
-    'GET /api/initiatives/I-1001': { body: initiative() },
-    'GET /api/plans/P-1001': { body: planAnswer() },
-    'GET /api/shell-attribute-forms/initiative': {
+    'GET /api/v1/initiatives/I-1001': { body: initiative() },
+    'GET /api/v1/plans/P-1001': { body: planAnswer() },
+    'GET /api/v1/shell-attribute-forms/initiative': {
       body: { ...campaignForm(), level: 'initiative' },
     },
-    'GET /api/people': { body: PEOPLE },
+    'GET /api/v1/people': { body: PEOPLE },
     ...answers,
   });
   const rendered = renderRoutes(
@@ -79,7 +79,7 @@ async function findForm() {
 describe('InitiativePanel (feature 005, US3)', () => {
   it('shows its campaign, the remaining campaign budget and what is below it (FR-016)', async () => {
     renderPanel(DETAILS, {
-      'GET /api/initiatives/I-1001': {
+      'GET /api/v1/initiatives/I-1001': {
         body: initiative({
           counts: { activities: 3, approvedActivities: 1, lineItems: 5 },
           parentRemainingBudget: usd('-50000.00'),
@@ -155,7 +155,7 @@ describe('InitiativePanel (feature 005, US3)', () => {
 
   it('edits with the campaign read-only and its dates as the allowed range (FR-006, FR-018)', async () => {
     const { user, api, router } = renderPanel(`${DETAILS}/edit`, {
-      'PATCH /api/initiatives/I-1001': { body: initiative({ version: 4 }) },
+      'PATCH /api/v1/initiatives/I-1001': { body: initiative({ version: 4 }) },
     });
     const form = await findForm();
 
@@ -169,7 +169,7 @@ describe('InitiativePanel (feature 005, US3)', () => {
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe(DETAILS));
-    expect(api.bodiesOf('PATCH /api/initiatives/I-1001')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/initiatives/I-1001')).toEqual([
       expect.objectContaining({ description: 'Paid social.', version: 3 }),
     ]);
   });
@@ -179,15 +179,17 @@ describe('InitiativePanel (feature 005, US3)', () => {
     const fr007 =
       'Launch webinar (01 Mar – 31 Mar 2026) would be outside these dates. Change its dates first, or choose dates that include it.';
     const { user } = renderPanel(`${DETAILS}/edit`, {
-      'PATCH /api/initiatives/I-1001': {
+      'PATCH /api/v1/initiatives/I-1001': {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Some fields need your attention.',
-          fields: [
-            { field: 'startDate', message: fr007 },
-            { field: 'endDate', message: r3 },
-          ],
+          error: {
+            code: 'validation_failed',
+            message: 'Some fields need your attention.',
+            fields: [
+              { field: 'startDate', message: fr007 },
+              { field: 'endDate', message: r3 },
+            ],
+          },
         },
       },
     });
@@ -205,11 +207,13 @@ describe('InitiativePanel (feature 005, US3)', () => {
 
   it('says when the initiative no longer exists', async () => {
     renderPanel(DETAILS, {
-      'GET /api/initiatives/I-1001': {
+      'GET /api/v1/initiatives/I-1001': {
         status: 404,
         body: {
-          code: 'not_found',
-          message: 'This initiative no longer exists — someone may have deleted it.',
+          error: {
+            code: 'not_found',
+            message: 'This initiative no longer exists — someone may have deleted it.',
+          },
         },
       },
     });

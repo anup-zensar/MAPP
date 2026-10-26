@@ -10,7 +10,7 @@ import type { ApprovalActivity } from './approvalTypes';
 import { APPROVED_NO_RECALL } from './messages';
 import { ALEX, approvalOf, CARLOS, DANIEL, DECLINE, PRIYA, roundOf, SUBMITTED } from './testData';
 
-const APPROVAL = 'GET /api/activities/A-1042/approval';
+const APPROVAL = 'GET /api/v1/activities/A-1042/approval';
 
 const ACTIVITY: ApprovalActivity = {
   id: 'A-1042',
@@ -265,7 +265,7 @@ describe('ApprovalSection (feature 008, US2)', () => {
   });
 });
 
-const RECALL = 'POST /api/activities/A-1042/approval/recall';
+const RECALL = 'POST /api/v1/activities/A-1042/approval/recall';
 
 /** The actions of an activity back in Created: only Submit. */
 const SUBMIT_ONLY = {

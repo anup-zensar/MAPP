@@ -72,7 +72,7 @@ function renderDialog(target: RecordTarget, answers: Record<string, MockHandler>
 
 describe('CopyDialog (feature 005, US6#4–5, FR-026, FR-027)', () => {
   it('suggests the name in this plan, with the counts, R13 and the budget warning (US6#4)', async () => {
-    renderDialog(HELIX, { 'GET /api/campaigns/C-1001/destinations': CAMPAIGN_DESTINATIONS });
+    renderDialog(HELIX, { 'GET /api/v1/campaigns/C-1001/destinations': CAMPAIGN_DESTINATIONS });
 
     const dialog = screen.getByRole('dialog', { name: "Copy campaign 'Helix launch'" });
     const name = await within(dialog).findByRole('textbox', { name: /Name of the copy/ });
@@ -93,7 +93,7 @@ describe('CopyDialog (feature 005, US6#4–5, FR-026, FR-027)', () => {
 
   it('follows the chosen plan’s suggestion until the name is typed (FR-026)', async () => {
     const { user } = renderDialog(HELIX, {
-      'GET /api/campaigns/C-1001/destinations': CAMPAIGN_DESTINATIONS,
+      'GET /api/v1/campaigns/C-1001/destinations': CAMPAIGN_DESTINATIONS,
     });
 
     const name = await screen.findByRole('textbox', { name: /Name of the copy/ });
@@ -109,8 +109,8 @@ describe('CopyDialog (feature 005, US6#4–5, FR-026, FR-027)', () => {
 
   it('copies and opens the plan with the copy highlighted and a message with View (US6#5, FR-027)', async () => {
     const { user, api, router } = renderDialog(HELIX, {
-      'GET /api/campaigns/C-1001/destinations': CAMPAIGN_DESTINATIONS,
-      'POST /api/campaigns/C-1001/copy': {
+      'GET /api/v1/campaigns/C-1001/destinations': CAMPAIGN_DESTINATIONS,
+      'POST /api/v1/campaigns/C-1001/copy': {
         status: 201,
         body: campaign({ id: 'C-1009', planId: 'P-1002', name: 'Helix launch (copy)' }),
       },
@@ -122,7 +122,7 @@ describe('CopyDialog (feature 005, US6#4–5, FR-026, FR-027)', () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1002'));
     expect(router.state.location.state).toEqual({ highlight: 'C-1009' });
-    expect(api.bodiesOf('POST /api/campaigns/C-1001/copy')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/campaigns/C-1001/copy')).toEqual([
       { planId: 'P-1002', name: 'Helix launch (copy)' },
     ]);
     const messages = await findMessages();
@@ -137,23 +137,25 @@ describe('CopyDialog (feature 005, US6#4–5, FR-026, FR-027)', () => {
 
   it('shows the API’s problems under the name and the destinations', async () => {
     const { user } = renderDialog(HELIX, {
-      'GET /api/campaigns/C-1001/destinations': CAMPAIGN_DESTINATIONS,
-      'POST /api/campaigns/C-1001/copy': {
+      'GET /api/v1/campaigns/C-1001/destinations': CAMPAIGN_DESTINATIONS,
+      'POST /api/v1/campaigns/C-1001/copy': {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Some fields need your attention.',
-          fields: [
-            {
-              field: 'name',
-              message:
-                "'FY2026 Lubricants Europe' already has a campaign called 'Helix launch (copy 2)'.",
-            },
-            {
-              field: 'planId',
-              message: 'This plan no longer exists — someone may have deleted it.',
-            },
-          ],
+          error: {
+            code: 'validation_failed',
+            message: 'Some fields need your attention.',
+            fields: [
+              {
+                field: 'name',
+                message:
+                  "'FY2026 Lubricants Europe' already has a campaign called 'Helix launch (copy 2)'.",
+              },
+              {
+                field: 'planId',
+                message: 'This plan no longer exists — someone may have deleted it.',
+              },
+            ],
+          },
         },
       },
     });
@@ -174,7 +176,7 @@ describe('CopyDialog (feature 005, US6#4–5, FR-026, FR-027)', () => {
 
   it('copies an initiative with nothing below it into its campaign', async () => {
     const { user, api, router } = renderDialog(DIGITAL, {
-      'GET /api/initiatives/I-1001/destinations': {
+      'GET /api/v1/initiatives/I-1001/destinations': {
         body: destinationList(
           [
             destination({
@@ -187,7 +189,7 @@ describe('CopyDialog (feature 005, US6#4–5, FR-026, FR-027)', () => {
           'A copy can go into this campaign or another campaign of the same plan',
         ),
       },
-      'POST /api/initiatives/I-1001/copy': {
+      'POST /api/v1/initiatives/I-1001/copy': {
         status: 201,
         body: initiative({ id: 'I-1009', name: 'Digital & social (copy)' }),
       },
@@ -202,7 +204,7 @@ describe('CopyDialog (feature 005, US6#4–5, FR-026, FR-027)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Copy initiative' }));
 
     await waitFor(() => expect(router.state.location.state).toEqual({ highlight: 'I-1009' }));
-    expect(api.bodiesOf('POST /api/initiatives/I-1001/copy')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/initiatives/I-1001/copy')).toEqual([
       { campaignId: 'C-1001', name: 'Digital & social (copy)' },
     ]);
     expect(await findMessages()).toHaveTextContent("Initiative 'Digital & social (copy)' created");
@@ -210,13 +212,15 @@ describe('CopyDialog (feature 005, US6#4–5, FR-026, FR-027)', () => {
 
   it('shows a failure that is not about a field in the dialog', async () => {
     const { user } = renderDialog(HELIX, {
-      'GET /api/campaigns/C-1001/destinations': CAMPAIGN_DESTINATIONS,
-      'POST /api/campaigns/C-1001/copy': {
+      'GET /api/v1/campaigns/C-1001/destinations': CAMPAIGN_DESTINATIONS,
+      'POST /api/v1/campaigns/C-1001/copy': {
         status: 404,
         body: {
-          code: 'not_found',
-          message: 'This campaign no longer exists — someone may have deleted it.',
-          fields: [],
+          error: {
+            code: 'not_found',
+            message: 'This campaign no longer exists — someone may have deleted it.',
+            fields: [],
+          },
         },
       },
     });

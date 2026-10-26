@@ -6,7 +6,7 @@ import (
 	"mapp/internal/platform/date"
 )
 
-// The answer of GET /api/all-work as a pure function of the year's nodes (D-114): build takes everything a
+// The answer of GET /api/v1/all-work as a pure function of the year's nodes (D-114): build takes everything a
 // view depends on and returns the rows in their final order with their cells, the summary cards, the count
 // and the totals row. Service.Query reads the input; tests call build directly.
 
@@ -49,7 +49,7 @@ func build(in input) built {
 	}
 	q, leftOut := knownValues(in.query, in.data, in.choices)
 	q.attrs = resolveAttrs(q.Attributes, in.attributes, in.data.Nodes) // 016 FR-039
-	if q.View == ViewBreakdown {                                       // its rows are the Grid's; the groups come from GET /api/all-work/breakdown
+	if q.View == ViewBreakdown {                                       // its rows are the Grid's; the groups come from GET /api/v1/all-work/breakdown
 		q.View = ViewGrid
 	}
 	in.query = q

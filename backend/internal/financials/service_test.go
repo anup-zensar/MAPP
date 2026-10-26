@@ -770,18 +770,19 @@ func TestAccess_NoLinkRefusesLinking_FR028(t *testing.T) {
 	}
 }
 
-// A person who sees only some plans gets only their transactions; a record of another plan, or a link into
-// one, is forbidden (FR-028, 014 FR-007).
-func TestAccess_VisiblePlansScopeEverything_FR028(t *testing.T) {
+// A person who sees only some plans gets only their transactions; a record or transaction of another plan
+// answers like a missing one, and a link into one is forbidden (FR-028, 014 FR-007, 022 FR-005).
+func TestAccess_VisiblePlansScopeEverything_FR028_022_FR005(t *testing.T) {
 	f := newFixture(t)
 	f.access.plans = []string{"P-1002"}
 	ctx := t.Context()
 	_, err := f.service.Record(ctx, priya, "A-1002")
-	assertCode(t, err, http.StatusForbidden, errs.CodeForbidden)
+	if e := assertCode(t, err, http.StatusNotFound, errs.CodeNotFound); e.Message != "This activity no longer exists — someone may have deleted it." {
+		t.Errorf("record message = %q", e.Message)
+	}
 	_, err = f.service.Transaction(ctx, priya, "FT-1001")
-	e := assertCode(t, err, http.StatusForbidden, errs.CodeForbidden)
-	if e.Message != "You don't have access to this GSAP transaction. Ask an administrator if you need it." {
-		t.Errorf("message = %q", e.Message)
+	if e := assertCode(t, err, http.StatusNotFound, errs.CodeNotFound); e.Message != "This GSAP transaction doesn't exist." {
+		t.Errorf("transaction message = %q", e.Message)
 	}
 	if _, err := f.service.Record(ctx, priya, "A-1008"); err != nil {
 		t.Errorf("Record(A-1008): %v", err)
@@ -798,7 +799,7 @@ func TestAccess_VisiblePlansScopeEverything_FR028(t *testing.T) {
 	_, err = f.service.Link(ctx, priya, "FT-1004", LinkRequest{LineItemID: "L-1003", Version: version(1)})
 	assertCode(t, err, http.StatusForbidden, errs.CodeForbidden)
 	_, err = f.service.Transactions(ctx, priya, Query{Type: filterAll, Link: filterAll, Page: 1, PageSize: 50, PlanID: "P-1001"})
-	assertCode(t, err, http.StatusForbidden, errs.CodeForbidden)
+	assertCode(t, err, http.StatusBadRequest, errs.CodeValidationFailed)
 }
 
 // FactsByLineItem gives All work the same figures as the cards (FR-023, SC-002).

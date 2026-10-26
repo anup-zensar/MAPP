@@ -16,7 +16,7 @@ func TestListApprovalWorkflows_SeededThree_FR005_FR037(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	response := alex.Do(t, http.MethodGet, "/api/approval-workflows", nil)
+	response := alex.Do(t, http.MethodGet, "/api/v1/approval-workflows", nil)
 
 	if response.Status != http.StatusOK {
 		t.Fatalf("status = %d %s, want 200", response.Status, response.Body)
@@ -46,7 +46,7 @@ func TestCreateApprovalWorkflow_201_FR002(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	response := alex.Do(t, http.MethodPost, "/api/approval-workflows", map[string]any{
+	response := alex.Do(t, http.MethodPost, "/api/v1/approval-workflows", map[string]any{
 		"name": "Mobility India approval", "description": "India first.",
 		"levels": []map[string]any{{"name": "Regional", "approverIds": []string{"U-1005"}}, {"name": "", "approverIds": []string{"U-1001"}}},
 	})
@@ -63,7 +63,7 @@ func TestCreateApprovalWorkflow_AllProblems400_FR003(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	response := alex.Do(t, http.MethodPost, "/api/approval-workflows", map[string]any{
+	response := alex.Do(t, http.MethodPost, "/api/v1/approval-workflows", map[string]any{
 		"name": " lubricants EU APPROVAL ",
 		"levels": []map[string]any{
 			{"name": "", "approverIds": []string{}},
@@ -73,11 +73,13 @@ func TestCreateApprovalWorkflow_AllProblems400_FR003(t *testing.T) {
 
 	assertError(t, response, http.StatusBadRequest, "validation_failed", "Some fields need your attention.")
 	var refusal struct {
-		Fields []struct{ Field, Message string } `json:"fields"`
+		Error struct {
+			Fields []struct{ Field, Message string } `json:"fields"`
+		} `json:"error"`
 	}
 	response.Decode(t, &refusal)
 	var got []string
-	for _, f := range refusal.Fields {
+	for _, f := range refusal.Error.Fields {
 		got = append(got, f.Field+": "+f.Message)
 	}
 	want := []string{
@@ -97,7 +99,7 @@ func TestGetApprovalWorkflow_UsedBy_FR005(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	response := alex.Do(t, http.MethodGet, "/api/approval-workflows/WF-1002", nil)
+	response := alex.Do(t, http.MethodGet, "/api/v1/approval-workflows/WF-1002", nil)
 
 	if response.Status != http.StatusOK {
 		t.Fatalf("status = %d %s, want 200", response.Status, response.Body)
@@ -123,7 +125,7 @@ func TestGetApprovalWorkflow_404(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	response := alex.Do(t, http.MethodGet, "/api/approval-workflows/WF-9999", nil)
+	response := alex.Do(t, http.MethodGet, "/api/v1/approval-workflows/WF-9999", nil)
 
 	assertError(t, response, http.StatusNotFound, "not_found", "This approval workflow no longer exists — someone may have deleted it.")
 }
@@ -135,7 +137,7 @@ func TestUpdateApprovalWorkflow_OpenRoundUnchanged_FR006(t *testing.T) {
 	server.GrantRole(t, "sara.novak@shell.com", "approver", "all") // 014: a role that approves, to be named an approver
 	alex := server.SignIn(t, alexsEmail)
 
-	response := alex.Do(t, http.MethodPatch, "/api/approval-workflows/WF-1002", map[string]any{
+	response := alex.Do(t, http.MethodPatch, "/api/v1/approval-workflows/WF-1002", map[string]any{
 		"levels": []map[string]any{{"name": "", "approverIds": []string{"U-1003"}, "backupApproverId": "U-1001"}}, "version": 1,
 	})
 
@@ -143,7 +145,7 @@ func TestUpdateApprovalWorkflow_OpenRoundUnchanged_FR006(t *testing.T) {
 	if view.LevelsText != "Level 1 · Daniel Okoro" || view.Version != 2 || view.WaitingCount != 1 {
 		t.Errorf("workflow = %+v, want the new level in version 2, 1 waiting", view)
 	}
-	approval := decodeApproval(t, alex.Do(t, http.MethodGet, "/api/activities/"+fleetCardLaunch+"/approval", nil))
+	approval := decodeApproval(t, alex.Do(t, http.MethodGet, "/api/v1/activities/"+fleetCardLaunch+"/approval", nil))
 	round := approval.Rounds[0]
 	if round.LevelCount != 2 || round.CurrentLevel != 2 || round.Levels[1].Approvers[0].Name != "Alex Morgan" || !approval.Viewer.IsCurrentApprover {
 		t.Errorf("round = %+v, want still waiting for Alex Morgan at level 2 of 2", round)
@@ -156,10 +158,10 @@ func TestUpdateApprovalWorkflow_409(t *testing.T) {
 	alex := server.SignIn(t, alexsEmail)
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: changing workflows
-	renamed := alex.Do(t, http.MethodPatch, "/api/approval-workflows/WF-1001", map[string]any{"name": "Lubricants approval", "version": 1})
+	renamed := alex.Do(t, http.MethodPatch, "/api/v1/approval-workflows/WF-1001", map[string]any{"name": "Lubricants approval", "version": 1})
 	decodeWorkflow(t, renamed, http.StatusOK)
 
-	response := priya.Do(t, http.MethodPatch, "/api/approval-workflows/WF-1001", map[string]any{"name": "Other", "version": 1})
+	response := priya.Do(t, http.MethodPatch, "/api/v1/approval-workflows/WF-1001", map[string]any{"name": "Other", "version": 1})
 
 	assertError(t, response, http.StatusConflict, "version_conflict", "Not saved — Alex Morgan changed this approval workflow")
 }
@@ -169,7 +171,7 @@ func TestDeleteApprovalWorkflow_InUse409_FR008(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	response := alex.Do(t, http.MethodDelete, "/api/approval-workflows/WF-1002", nil)
+	response := alex.Do(t, http.MethodDelete, "/api/v1/approval-workflows/WF-1002", nil)
 
 	assertError(t, response, http.StatusConflict, "in_use", "Used by 2 activities — set it inactive instead.")
 }
@@ -178,10 +180,10 @@ func TestDeleteApprovalWorkflow_InUse409_FR008(t *testing.T) {
 func TestDeleteApprovalWorkflow_UnusedUndo_FR008(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
-	created := decodeWorkflow(t, alex.Do(t, http.MethodPost, "/api/approval-workflows", map[string]any{
+	created := decodeWorkflow(t, alex.Do(t, http.MethodPost, "/api/v1/approval-workflows", map[string]any{
 		"name": "Temp flow", "levels": []map[string]any{{"name": "", "approverIds": []string{"U-1005"}}},
 	}), http.StatusCreated)
-	path := "/api/approval-workflows/" + created.ID
+	path := "/api/v1/approval-workflows/" + created.ID
 
 	deleted := alex.Do(t, http.MethodDelete, path, nil)
 	gone := alex.Do(t, http.MethodGet, path, nil)
@@ -200,7 +202,7 @@ func TestDeleteApprovalWorkflow_UnusedUndo_FR008(t *testing.T) {
 		t.Errorf("bin entry = %+v, want %s", result.RecycleBinEntry, created.ID)
 	}
 	assertError(t, gone, http.StatusNotFound, "not_found", "This approval workflow no longer exists — someone may have deleted it.")
-	if undo := alex.Do(t, http.MethodPost, "/api/recycle-bin/"+result.RecycleBinEntry.ID+"/undo", nil); undo.Status != http.StatusOK {
+	if undo := alex.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+result.RecycleBinEntry.ID+"/undo", nil); undo.Status != http.StatusOK {
 		t.Fatalf("undo status = %d %s, want 200", undo.Status, undo.Body)
 	}
 	if back := alex.Do(t, http.MethodGet, path, nil); back.Status != http.StatusOK {
@@ -213,10 +215,10 @@ func TestDeleteApprovalWorkflow_UnusedUndo_FR008(t *testing.T) {
 func TestDeactivateActivate_FR007(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
-	path := "/api/approval-workflows/WF-1002"
+	path := "/api/v1/approval-workflows/WF-1002"
 
 	inactive := decodeWorkflow(t, alex.Do(t, http.MethodPost, path+"/deactivate", map[string]any{"version": 1}), http.StatusOK)
-	approval := decodeApproval(t, alex.Do(t, http.MethodGet, "/api/activities/"+fleetCardLaunch+"/approval", nil))
+	approval := decodeApproval(t, alex.Do(t, http.MethodGet, "/api/v1/activities/"+fleetCardLaunch+"/approval", nil))
 	stale := alex.Do(t, http.MethodPost, path+"/activate", map[string]any{"version": 1})
 	active := decodeWorkflow(t, alex.Do(t, http.MethodPost, path+"/activate", map[string]any{"version": 2}), http.StatusOK)
 

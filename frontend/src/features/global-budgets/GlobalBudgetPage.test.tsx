@@ -7,7 +7,7 @@ import { testUser } from '@/test/users';
 import { GlobalBudgetPage } from './GlobalBudgetPage';
 import { BRAND_OPTION, globalBudget, LUBRICANTS, MOBILITY } from './testData';
 
-const ONE = 'GET /api/global-budgets/GB-1001';
+const ONE = 'GET /api/v1/global-budgets/GB-1001';
 
 function renderPage(answers: Record<string, MockHandler> = {}) {
   const api = mockApi({ [ONE]: { body: globalBudget() }, ...answers });
@@ -103,7 +103,7 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
 
   it('changes an allocation with the allocation and plan versions (US6 scenario 2)', async () => {
     const { api, user } = renderPage({
-      'PATCH /api/budget-allocations/BA-1001': { body: globalBudget() },
+      'PATCH /api/v1/budget-allocations/BA-1001': { body: globalBudget() },
     });
     await screen.findByRole('table', { name: 'Allocations' });
 
@@ -125,14 +125,14 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
     expect(
       (await screen.findAllByText("Allocation to 'FY2026 Lubricants Europe' saved"))[0],
     ).toBeInTheDocument();
-    expect(api.bodiesOf('PATCH /api/budget-allocations/BA-1001')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/budget-allocations/BA-1001')).toEqual([
       { amount: { amount: '1300000.00', currency: 'USD' }, version: 1, planVersion: 4 },
     ]);
   });
 
   it('allocates to a plan without an allocation', async () => {
     const { api, user } = renderPage({
-      'POST /api/global-budgets/GB-1001/allocations': { status: 201, body: globalBudget() },
+      'POST /api/v1/global-budgets/GB-1001/allocations': { status: 201, body: globalBudget() },
     });
     await screen.findByRole('table', { name: 'Allocations' });
 
@@ -145,22 +145,24 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
     expect(
       (await screen.findAllByText("Allocation to 'FY2026 Brand Europe' saved"))[0],
     ).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/global-budgets/GB-1001/allocations')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/global-budgets/GB-1001/allocations')).toEqual([
       { planId: 'P-1005', amount: { amount: '250000.00', currency: 'USD' }, planVersion: 1 },
     ]);
   });
 
   it('chooses the plan from the allocation options and shows refusals at the fields', async () => {
     const { user } = renderPage({
-      'GET /api/global-budgets/GB-1001/allocation-options': {
+      'GET /api/v1/global-budgets/GB-1001/allocation-options': {
         body: { items: [BRAND_OPTION], total: 1 },
       },
-      'POST /api/global-budgets/GB-1001/allocations': {
+      'POST /api/v1/global-budgets/GB-1001/allocations': {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Check the highlighted fields.',
-          fields: [{ field: 'planId', message: 'Choose a plan of 2026.' }],
+          error: {
+            code: 'validation_failed',
+            message: 'Check the highlighted fields.',
+            fields: [{ field: 'planId', message: 'Choose a plan of 2026.' }],
+          },
         },
       },
     });
@@ -184,7 +186,7 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
 
   it('removes an allocation after asking; the plan keeps its budget (US6 scenario 6)', async () => {
     const { api, user } = renderPage({
-      'DELETE /api/budget-allocations/BA-1002': {
+      'DELETE /api/v1/budget-allocations/BA-1002': {
         body: globalBudget({ allocations: [LUBRICANTS] }),
       },
     });
@@ -238,7 +240,7 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
   it('deletes a global budget without allocations and goes back to the list', async () => {
     const { api, router, user } = renderPage({
       [ONE]: { body: globalBudget({ allocations: [], plansWithoutAllocation: [] }) },
-      'DELETE /api/global-budgets/GB-1001': {
+      'DELETE /api/v1/global-budgets/GB-1001': {
         body: {
           recycleBinEntry: {
             id: 'RB-1009',
@@ -274,7 +276,7 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
     renderPage({
       [ONE]: {
         status: 404,
-        body: { code: 'not_found', message: 'This global budget no longer exists.' },
+        body: { error: { code: 'not_found', message: 'This global budget no longer exists.' } },
       },
     });
 

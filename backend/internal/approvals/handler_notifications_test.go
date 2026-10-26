@@ -18,12 +18,12 @@ func TestNotifications_SubmitThenDecline_US6(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, danielsEmail)
-	submission := decodeApproval(t, priya.Do(t, http.MethodGet, "/api/activities/"+fleetRoadshow+"/approval", nil))
+	submission := decodeApproval(t, priya.Do(t, http.MethodGet, "/api/v1/activities/"+fleetRoadshow+"/approval", nil))
 
-	submitted := priya.Do(t, http.MethodPost, "/api/activities/"+fleetRoadshow+"/approval/submit", map[string]any{"version": submission.ActivityVersion})
+	submitted := priya.Do(t, http.MethodPost, "/api/v1/activities/"+fleetRoadshow+"/approval/submit", map[string]any{"version": submission.ActivityVersion})
 	round := decodeApproval(t, submitted).Rounds[0]
 	danielsBell := notifications(t, daniel)
-	declined := daniel.Do(t, http.MethodPost, "/api/activities/"+fleetRoadshow+"/approval/decline",
+	declined := daniel.Do(t, http.MethodPost, "/api/v1/activities/"+fleetRoadshow+"/approval/decline",
 		map[string]any{"roundId": round.ID, "level": 1, "comment": "Please move half of the cost to Q4."})
 	decodeApproval(t, declined)
 	priyasBell := notifications(t, priya)
@@ -54,10 +54,10 @@ func TestMarkReadAndAll_FR034(t *testing.T) {
 	before := notifications(t, priya)
 	unread := before.Items[0] // the decline of Fleet roadshow, her newest
 
-	opened := priya.Do(t, http.MethodPost, "/api/notifications/"+unread.ID+"/read", nil)
+	opened := priya.Do(t, http.MethodPost, "/api/v1/notifications/"+unread.ID+"/read", nil)
 	afterOpening := notifications(t, priya)
 	deleteActivity(t, priya, tradeMagazineAds)
-	all := daniel.Do(t, http.MethodPost, "/api/notifications/read-all", nil)
+	all := daniel.Do(t, http.MethodPost, "/api/v1/notifications/read-all", nil)
 	danielsBell := notifications(t, daniel)
 
 	if opened.Status != http.StatusOK {
@@ -89,8 +89,8 @@ func TestMarkRead_OtherPersons404_FR034(t *testing.T) {
 	daniel := server.SignIn(t, danielsEmail)
 	danielsOwn := notifications(t, daniel).Items[0]
 
-	response := alex.Do(t, http.MethodPost, "/api/notifications/"+danielsOwn.ID+"/read", nil)
-	unknown := daniel.Do(t, http.MethodPost, "/api/notifications/NT-9999/read", nil)
+	response := alex.Do(t, http.MethodPost, "/api/v1/notifications/"+danielsOwn.ID+"/read", nil)
+	unknown := daniel.Do(t, http.MethodPost, "/api/v1/notifications/NT-9999/read", nil)
 
 	assertError(t, response, http.StatusNotFound, "not_found", "This notification no longer exists.")
 	assertError(t, unknown, http.StatusNotFound, "not_found", "This notification no longer exists.")
@@ -99,12 +99,12 @@ func TestMarkRead_OtherPersons404_FR034(t *testing.T) {
 	}
 }
 
-// notifications reads the bell of client through GET /api/notifications.
+// notifications reads the bell of client through GET /api/v1/notifications.
 func notifications(t *testing.T, client *apitest.Client) approvals.NotificationPage {
 	t.Helper()
-	response := client.Do(t, http.MethodGet, "/api/notifications", nil)
+	response := client.Do(t, http.MethodGet, "/api/v1/notifications", nil)
 	if response.Status != http.StatusOK {
-		t.Fatalf("GET /api/notifications = %d %s, want 200", response.Status, response.Body)
+		t.Fatalf("GET /api/v1/notifications = %d %s, want 200", response.Status, response.Body)
 	}
 	var page approvals.NotificationPage
 	response.Decode(t, &page)

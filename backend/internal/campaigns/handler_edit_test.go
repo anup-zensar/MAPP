@@ -39,7 +39,7 @@ func TestUpdateCampaign_Contract(t *testing.T) {
 	form := helixForm(1)
 	form["budget"], form["ownerId"] = usd("600000.00"), "U-1003"
 
-	response := priya.Do(t, http.MethodPatch, "/api/campaigns/C-1001", form)
+	response := priya.Do(t, http.MethodPatch, "/api/v1/campaigns/C-1001", form)
 
 	assertStatus(t, response, http.StatusOK)
 	var helix campaign
@@ -49,7 +49,7 @@ func TestUpdateCampaign_Contract(t *testing.T) {
 		t.Errorf("Helix launch = %+v", helix)
 	}
 	var tree planCampaigns
-	priya.Do(t, http.MethodGet, "/api/plans/P-1001/campaigns", nil).Decode(t, &tree)
+	priya.Do(t, http.MethodGet, "/api/v1/plans/P-1001/campaigns", nil).Decode(t, &tree)
 	if *tree.Totals.RemainingPlanBudget != usd("150000.00") {
 		t.Errorf("remaining plan budget = %+v, want 150000.00", tree.Totals.RemainingPlanBudget)
 	}
@@ -64,7 +64,7 @@ func TestUpdateCampaign_MissingVersion400(t *testing.T) {
 	delete(form, "version")
 	form["name"] = ""
 
-	response := priya.Do(t, http.MethodPatch, "/api/campaigns/C-1001", form, apitest.SkipRequestValidation())
+	response := priya.Do(t, http.MethodPatch, "/api/v1/campaigns/C-1001", form, apitest.SkipRequestValidation())
 
 	assertBody(t, response, http.StatusBadRequest, validationBody(
 		`{"field":"name","message":"Enter a name."}`,
@@ -72,12 +72,12 @@ func TestUpdateCampaign_MissingVersion400(t *testing.T) {
 	))
 	narrower := helixForm(1)
 	narrower["startDate"] = "2026-03-01"
-	assertBody(t, priya.Do(t, http.MethodPatch, "/api/campaigns/C-1001", narrower), http.StatusBadRequest, validationBody(
+	assertBody(t, priya.Do(t, http.MethodPatch, "/api/v1/campaigns/C-1001", narrower), http.StatusBadRequest, validationBody(
 		`{"field":"startDate","message":"These initiatives would be outside these dates: `+
 			`Digital \u0026 social (01 Jan – 30 Jun 2026), Print \u0026 outdoor (01 Jan – 31 Dec 2026). `+
 			`Change their dates first, or choose dates that include them."}`,
 	))
-	assertBody(t, priya.Do(t, http.MethodPatch, "/api/campaigns/C-9999", helixForm(1)), http.StatusNotFound, campaignGoneBody)
+	assertBody(t, priya.Do(t, http.MethodPatch, "/api/v1/campaigns/C-9999", helixForm(1)), http.StatusNotFound, campaignGoneBody)
 }
 
 // A save from an out-of-date copy answers 409 naming who changed the campaign and when (FR-018).
@@ -88,12 +88,12 @@ func TestUpdateCampaign_Conflict409(t *testing.T) {
 	server.Advance(time.Hour)
 	first := helixForm(1)
 	first["description"] = "Premium launch"
-	assertStatus(t, priya.Do(t, http.MethodPatch, "/api/campaigns/C-1001", first), http.StatusOK)
+	assertStatus(t, priya.Do(t, http.MethodPatch, "/api/v1/campaigns/C-1001", first), http.StatusOK)
 
-	response := daniel.Do(t, http.MethodPatch, "/api/campaigns/C-1001", helixForm(1))
+	response := daniel.Do(t, http.MethodPatch, "/api/v1/campaigns/C-1001", helixForm(1))
 
-	assertBody(t, response, http.StatusConflict, `{"code":"version_conflict","message":"Not saved — Priya Raman changed this campaign",`+
-		`"fields":[],"conflict":{"changedBy":"Priya Raman","changedAt":"2026-03-12T10:00:00Z"}}`)
+	assertBody(t, response, http.StatusConflict, `{"error":{"code":"version_conflict","message":"Not saved — Priya Raman changed this campaign",`+
+		`"fields":[],"conflict":{"changedBy":"Priya Raman","changedAt":"2026-03-12T10:00:00Z"}}}`)
 }
 
 // Saving Digital & social answers the initiative with its new version; dates outside Helix launch are
@@ -104,7 +104,7 @@ func TestUpdateInitiative_Contract(t *testing.T) {
 	form := digitalForm(1)
 	form["name"], form["endDate"] = "Digital, social & search", "2026-09-30"
 
-	response := priya.Do(t, http.MethodPatch, "/api/initiatives/I-1001", form)
+	response := priya.Do(t, http.MethodPatch, "/api/v1/initiatives/I-1001", form)
 
 	assertStatus(t, response, http.StatusOK)
 	var digital initiative
@@ -114,9 +114,9 @@ func TestUpdateInitiative_Contract(t *testing.T) {
 	}
 	outside := digitalForm(2)
 	outside["endDate"] = "2027-01-31"
-	assertBody(t, priya.Do(t, http.MethodPatch, "/api/initiatives/I-1001", outside), http.StatusBadRequest, validationBody(
+	assertBody(t, priya.Do(t, http.MethodPatch, "/api/v1/initiatives/I-1001", outside), http.StatusBadRequest, validationBody(
 		`{"field":"startDate","message":"Dates must be inside the campaign's dates (01 Jan 2026 – 31 Dec 2026)."}`))
-	assertBody(t, priya.Do(t, http.MethodPatch, "/api/initiatives/I-9999", digitalForm(1)), http.StatusNotFound, initiativeGoneBody)
+	assertBody(t, priya.Do(t, http.MethodPatch, "/api/v1/initiatives/I-9999", digitalForm(1)), http.StatusNotFound, initiativeGoneBody)
 }
 
 // A save of an initiative from an out-of-date copy answers 409 (FR-018).
@@ -129,12 +129,12 @@ func TestUpdateInitiative_Conflict409(t *testing.T) {
 	server.Advance(2 * time.Hour)
 	first := digitalForm(1)
 	first["description"] = "Social first"
-	assertStatus(t, meiLin.Do(t, http.MethodPatch, "/api/initiatives/I-1001", first), http.StatusOK)
+	assertStatus(t, meiLin.Do(t, http.MethodPatch, "/api/v1/initiatives/I-1001", first), http.StatusOK)
 
-	response := daniel.Do(t, http.MethodPatch, "/api/initiatives/I-1001", digitalForm(1))
+	response := daniel.Do(t, http.MethodPatch, "/api/v1/initiatives/I-1001", digitalForm(1))
 
-	assertBody(t, response, http.StatusConflict, `{"code":"version_conflict","message":"Not saved — Mei Lin changed this initiative",`+
-		`"fields":[],"conflict":{"changedBy":"Mei Lin","changedAt":"2026-03-12T11:00:00Z"}}`)
+	assertBody(t, response, http.StatusConflict, `{"error":{"code":"version_conflict","message":"Not saved — Mei Lin changed this initiative",`+
+		`"fields":[],"conflict":{"changedBy":"Mei Lin","changedAt":"2026-03-12T11:00:00Z"}}}`)
 }
 
 // Daniel edits a campaign Priya created: there are no role checks (FR-031, D-004).
@@ -142,12 +142,12 @@ func TestAnyoneCanChangeAnyCampaign_FR031(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, danielsEmail)
-	response := priya.Do(t, http.MethodPost, "/api/plans/P-1001/campaigns", map[string]any{"name": "Priya's campaign"})
+	response := priya.Do(t, http.MethodPost, "/api/v1/plans/P-1001/campaigns", map[string]any{"name": "Priya's campaign"})
 	assertStatus(t, response, http.StatusCreated)
 	var created campaign
 	response.Decode(t, &created)
 
-	edit := daniel.Do(t, http.MethodPatch, "/api/campaigns/"+created.ID, map[string]any{
+	edit := daniel.Do(t, http.MethodPatch, "/api/v1/campaigns/"+created.ID, map[string]any{
 		"name": "Daniel's campaign now", "description": "", "ownerId": nil, "startDate": nil, "endDate": nil,
 		"budget": nil, "attributes": map[string]any{}, "version": 1,
 	})

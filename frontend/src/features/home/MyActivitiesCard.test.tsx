@@ -25,7 +25,7 @@ const page = (groups: MyActivityGroup[]) => ({
 });
 
 function renderCard(answer: MockHandler = page(GROUPS)) {
-  mockApi({ 'GET /api/home/my-activities': answer });
+  mockApi({ 'GET /api/v1/home/my-activities': answer });
   return renderWithProviders(<MyActivitiesCard />, { user: testUser(), path: '/' });
 }
 

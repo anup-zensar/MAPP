@@ -139,7 +139,7 @@ func (s *Service) GrantsFor(ctx context.Context, personID string) (authz.Grants,
 	return w.grantsOf(personID, w.assignmentsOf(personID)), nil
 }
 
-// Summary returns the person's access for GET /api/me (FR-024): their roles with scopes, what they allow
+// Summary returns the person's access for GET /api/v1/me (FR-024): their roles with scopes, what they allow
 // together, the administrators to ask and the segregation-of-duties rule.
 func (s *Service) Summary(ctx context.Context, personID string) (authz.MyAccess, error) {
 	w, err := s.read(ctx)

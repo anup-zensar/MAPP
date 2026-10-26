@@ -14,14 +14,14 @@ import {
 
 const FORM_OPTIONS: Record<string, MockHandler> = {
   ...formAnswers(),
-  'GET /api/activities/A-1001/line-items/form-options': { body: formOptions() },
+  'GET /api/v1/activities/A-1001/line-items/form-options': { body: formOptions() },
 };
 const DETAILS: Record<string, MockHandler> = {
   ...FORM_OPTIONS,
   ...HISTORY_ANSWERS,
-  'GET /api/line-items/L-1001': { body: details() },
-  'GET /api/financials/records/L-1001': { body: lineItemRecord() },
-  'GET /api/financials/transactions': { body: transactionPage([transaction()]) },
+  'GET /api/v1/line-items/L-1001': { body: details() },
+  'GET /api/v1/financials/records/L-1001': { body: lineItemRecord() },
+  'GET /api/v1/financials/transactions': { body: transactionPage([transaction()]) },
 };
 
 // Feature 007's addresses (build guide §5), with the requests each page makes.

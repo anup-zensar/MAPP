@@ -26,10 +26,10 @@ func TestGetAllWork_Contract(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
-	response := priya.Do(t, http.MethodGet, "/api/all-work", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/all-work", nil)
 
 	if response.Status != http.StatusOK {
-		t.Fatalf("GET /api/all-work = %d %s", response.Status, response.Body)
+		t.Fatalf("GET /api/v1/all-work = %d %s", response.Status, response.Body)
 	}
 	var r allwork.Result
 	response.Decode(t, &r)
@@ -56,7 +56,7 @@ func TestGetAllWork_Contract(t *testing.T) {
 		t.Errorf("summary %+v, count %+v, totals %d activities", r.Summary, r.Count, r.Totals.Activities)
 	}
 	// The other views answer in the contract's shape too: the calendar without line items and grid columns.
-	calendar := priya.Do(t, http.MethodGet, "/api/all-work?view=calendar&year=2026", nil)
+	calendar := priya.Do(t, http.MethodGet, "/api/v1/all-work?view=calendar&year=2026", nil)
 	var c allwork.Result
 	calendar.Decode(t, &c)
 	for _, row := range c.Rows {
@@ -65,7 +65,7 @@ func TestGetAllWork_Contract(t *testing.T) {
 		}
 	}
 	// A query in the order the person chose its columns keeps that order.
-	ordered := priya.Do(t, http.MethodGet, "/api/all-work?column=plannedCost&column=id&column=createdAt", nil)
+	ordered := priya.Do(t, http.MethodGet, "/api/v1/all-work?column=plannedCost&column=id&column=createdAt", nil)
 	var o allwork.Result
 	ordered.Decode(t, &o)
 	var keys []string
@@ -76,7 +76,7 @@ func TestGetAllWork_Contract(t *testing.T) {
 		t.Errorf("columns = %q", keys)
 	}
 	// A year without plans answers no rows.
-	empty := priya.Do(t, http.MethodGet, "/api/all-work?year=2030", nil)
+	empty := priya.Do(t, http.MethodGet, "/api/v1/all-work?year=2030", nil)
 	var e allwork.Result
 	empty.Decode(t, &e)
 	if len(e.Rows) != 0 || e.Summary.PlannedCost != nil || e.Count.Total != 0 {
@@ -91,8 +91,8 @@ func TestGetAllWork_Budget_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	monthly := priya.Do(t, http.MethodGet, "/api/all-work?view=budget", nil)
-	quarterly := priya.Do(t, http.MethodGet, "/api/all-work?view=budget&period=quarter", nil)
+	monthly := priya.Do(t, http.MethodGet, "/api/v1/all-work?view=budget", nil)
+	quarterly := priya.Do(t, http.MethodGet, "/api/v1/all-work?view=budget&period=quarter", nil)
 
 	var m, q allwork.Result
 	monthly.Decode(t, &m)
@@ -126,7 +126,7 @@ func TestGetAllWork_Calendar_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodGet, "/api/all-work?view=calendar", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/all-work?view=calendar", nil)
 
 	var r allwork.Result
 	response.Decode(t, &r)
@@ -157,10 +157,10 @@ func TestLocate_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	found := priya.Do(t, http.MethodGet, "/api/all-work/records/L-1002", nil)
-	deleted := priya.Do(t, http.MethodDelete, "/api/campaigns/C-1002", nil)
-	inBin := priya.Do(t, http.MethodGet, "/api/all-work/records/A-1005", nil) // Fleet roadshow, under Rimula fleet
-	unknown := priya.Do(t, http.MethodGet, "/api/all-work/records/I-9999", nil)
+	found := priya.Do(t, http.MethodGet, "/api/v1/all-work/records/L-1002", nil)
+	deleted := priya.Do(t, http.MethodDelete, "/api/v1/campaigns/C-1002", nil)
+	inBin := priya.Do(t, http.MethodGet, "/api/v1/all-work/records/A-1005", nil) // Fleet roadshow, under Rimula fleet
+	unknown := priya.Do(t, http.MethodGet, "/api/v1/all-work/records/I-9999", nil)
 
 	assertAnswer(t, found, http.StatusOK,
 		`{"recordId":"L-1002","level":"lineItem","name":"Film production","planId":"P-1001","activityId":"A-1001"}`)
@@ -168,9 +168,9 @@ func TestLocate_Contract(t *testing.T) {
 		t.Fatalf("delete C-1002 = %d %s", deleted.Status, deleted.Body)
 	}
 	assertAnswer(t, inBin, http.StatusNotFound,
-		`{"code":"not_found","message":"This activity was deleted — it is in the recycle bin","fields":[]}`)
+		`{"error":{"code":"not_found","message":"This activity was deleted — it is in the recycle bin","fields":[]}}`)
 	assertAnswer(t, unknown, http.StatusNotFound,
-		`{"code":"not_found","message":"This initiative no longer exists — someone may have deleted it.","fields":[]}`)
+		`{"error":{"code":"not_found","message":"This initiative no longer exists — someone may have deleted it.","fields":[]}}`)
 }
 
 // Every filter parameter of the contract is accepted, together, and the answer follows them (FR-004):
@@ -178,7 +178,7 @@ func TestLocate_Contract(t *testing.T) {
 func TestGetAllWork_EveryFilterParameter_FR004(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
-	query := "/api/all-work?year=2026&view=grid&plan=P-1001&planStatus=published&containerStatus=inProgress" +
+	query := "/api/v1/all-work?year=2026&view=grid&plan=P-1001&planStatus=published&containerStatus=inProgress" +
 		"&activityStatus=declined&owner=U-1002&owner=U-1003&team=T-1001&businessUnit=SO-1002&strategic=exclude" +
 		"&showLevels=completeBranches&search=fleet&column=id&column=status&sort=plannedCost:desc&period=month"
 
@@ -205,14 +205,14 @@ func TestGetAllWork_InvalidParameters_FR004(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodGet, "/api/all-work?year=1999&view=table&activityStatus=lost&sort=name",
+	response := priya.Do(t, http.MethodGet, "/api/v1/all-work?year=1999&view=table&activityStatus=lost&sort=name",
 		nil, apitest.SkipRequestValidation())
 
-	assertAnswer(t, response, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
+	assertAnswer(t, response, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
 		`"fields":[{"field":"year","message":"Choose a year from 2000 to 2100."},`+
 		`{"field":"view","message":"Choose grid, calendar or budget."},`+
 		`{"field":"activityStatus","message":"Choose one of the listed values."},`+
-		`{"field":"sort","message":"Choose a column of the grid to sort by."}]}`)
+		`{"field":"sort","message":"Choose a column of the grid to sort by."}]}}`)
 }
 
 // The filter bar's choices (FR-004): the years, the plans and owners of the year, the teams with the
@@ -222,8 +222,8 @@ func TestGetOptions_Contract(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
-	response := priya.Do(t, http.MethodGet, "/api/all-work/options", nil)
-	wrongYear := priya.Do(t, http.MethodGet, "/api/all-work/options?year=3000", nil, apitest.SkipRequestValidation())
+	response := priya.Do(t, http.MethodGet, "/api/v1/all-work/options", nil)
+	wrongYear := priya.Do(t, http.MethodGet, "/api/v1/all-work/options?year=3000", nil, apitest.SkipRequestValidation())
 
 	if response.Status != http.StatusOK {
 		t.Fatalf("GET options = %d %s", response.Status, response.Body)
@@ -244,8 +244,8 @@ func TestGetOptions_Contract(t *testing.T) {
 		len(o.ColumnGroups) == 0 || len(o.DefaultColumns) != 11 {
 		t.Errorf("options = %s", response.Body)
 	}
-	assertAnswer(t, wrongYear, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
-		`"fields":[{"field":"year","message":"Choose a year from 2000 to 2100."}]}`)
+	assertAnswer(t, wrongYear, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
+		`"fields":[{"field":"year","message":"Choose a year from 2000 to 2100."}]}}`)
 }
 
 // The remembered columns and sort are read and saved per person (FR-019, FR-021): the defaults first, then
@@ -258,22 +258,22 @@ func TestPreferences_GetPut_Contract(t *testing.T) {
 	defaults := `{"columns":["id","status","owner","startDate","endDate","planBudget","plannedCost","lineItems","unassigned",` +
 		`"committed","invoiced"],"sort":null}`
 
-	before := priya.Do(t, http.MethodGet, "/api/all-work/preferences", nil)
-	saved := priya.Do(t, http.MethodPut, "/api/all-work/preferences",
+	before := priya.Do(t, http.MethodGet, "/api/v1/all-work/preferences", nil)
+	saved := priya.Do(t, http.MethodPut, "/api/v1/all-work/preferences",
 		map[string]any{"columns": []string{"plannedCost", "id"}, "sort": map[string]string{"column": "plannedCost", "direction": "desc"}})
-	after := priya.Do(t, http.MethodGet, "/api/all-work/preferences", nil)
-	daniels := daniel.Do(t, http.MethodGet, "/api/all-work/preferences", nil)
-	refused := priya.Do(t, http.MethodPut, "/api/all-work/preferences", map[string]any{"columns": []string{"id", "id"}, "sort": nil})
+	after := priya.Do(t, http.MethodGet, "/api/v1/all-work/preferences", nil)
+	daniels := daniel.Do(t, http.MethodGet, "/api/v1/all-work/preferences", nil)
+	refused := priya.Do(t, http.MethodPut, "/api/v1/all-work/preferences", map[string]any{"columns": []string{"id", "id"}, "sort": nil})
 
 	assertAnswer(t, before, http.StatusOK, defaults)
 	want := `{"columns":["plannedCost","id"],"sort":{"column":"plannedCost","direction":"desc"}}`
 	assertAnswer(t, saved, http.StatusOK, want)
 	assertAnswer(t, after, http.StatusOK, want)
 	assertAnswer(t, daniels, http.StatusOK, defaults)
-	assertAnswer(t, refused, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
-		`"fields":[{"field":"columns","message":"Each column can be chosen once."}]}`)
+	assertAnswer(t, refused, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
+		`"fields":[{"field":"columns","message":"Each column can be chosen once."}]}}`)
 	// The grid in the remembered order, sorted, as the web app asks for it.
-	sorted := priya.Do(t, http.MethodGet, "/api/all-work?column=plannedCost&column=id&sort=plannedCost:desc", nil)
+	sorted := priya.Do(t, http.MethodGet, "/api/v1/all-work?column=plannedCost&column=id&sort=plannedCost:desc", nil)
 	var r allwork.Result
 	sorted.Decode(t, &r)
 	var plans []string
@@ -309,24 +309,24 @@ func TestSavedViews_CRUD_Contract(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, danielsEmail)
 
-	created := priya.Do(t, http.MethodPost, "/api/saved-views", newViewBody("Helix by month", false))
-	refused := priya.Do(t, http.MethodPost, "/api/saved-views", newViewBody("helix BY month", false))
+	created := priya.Do(t, http.MethodPost, "/api/v1/saved-views", newViewBody("Helix by month", false))
+	refused := priya.Do(t, http.MethodPost, "/api/v1/saved-views", newViewBody("helix BY month", false))
 	var view allwork.SavedView
 	created.Decode(t, &view)
-	updated := priya.Do(t, http.MethodPatch, "/api/saved-views/"+view.ID, map[string]any{"name": "Helix monthly", "isDefault": true})
-	listed := priya.Do(t, http.MethodGet, "/api/saved-views", nil)
-	danielsList := daniel.Do(t, http.MethodGet, "/api/saved-views", nil)
-	danielsPatch := daniel.Do(t, http.MethodPatch, "/api/saved-views/"+view.ID, map[string]any{"name": "Mine"})
-	danielsDelete := daniel.Do(t, http.MethodDelete, "/api/saved-views/"+view.ID, nil)
-	deleted := priya.Do(t, http.MethodDelete, "/api/saved-views/"+view.ID, nil)
-	again := priya.Do(t, http.MethodDelete, "/api/saved-views/"+view.ID, nil)
+	updated := priya.Do(t, http.MethodPatch, "/api/v1/saved-views/"+view.ID, map[string]any{"name": "Helix monthly", "isDefault": true})
+	listed := priya.Do(t, http.MethodGet, "/api/v1/saved-views", nil)
+	danielsList := daniel.Do(t, http.MethodGet, "/api/v1/saved-views", nil)
+	danielsPatch := daniel.Do(t, http.MethodPatch, "/api/v1/saved-views/"+view.ID, map[string]any{"name": "Mine"})
+	danielsDelete := daniel.Do(t, http.MethodDelete, "/api/v1/saved-views/"+view.ID, nil)
+	deleted := priya.Do(t, http.MethodDelete, "/api/v1/saved-views/"+view.ID, nil)
+	again := priya.Do(t, http.MethodDelete, "/api/v1/saved-views/"+view.ID, nil)
 
 	if created.Status != http.StatusCreated || view.ID != "SV-1003" || view.Name != "Helix by month" ||
 		view.State.View != "budget" || len(view.State.Filters.Plans) != 1 {
 		t.Errorf("created = %d %s", created.Status, created.Body)
 	}
-	assertAnswer(t, refused, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
-		`"fields":[{"field":"name","message":"You already have a view called 'Helix by month'."}]}`)
+	assertAnswer(t, refused, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
+		`"fields":[{"field":"name","message":"You already have a view called 'Helix by month'."}]}}`)
 	var after allwork.SavedView
 	updated.Decode(t, &after)
 	if updated.Status != http.StatusOK || after.Name != "Helix monthly" || !after.IsDefault {
@@ -342,7 +342,7 @@ func TestSavedViews_CRUD_Contract(t *testing.T) {
 		t.Errorf("Priya's views (two of the seed) = %q", names)
 	}
 	assertAnswer(t, danielsList, http.StatusOK, `{"items":[],"total":0}`)
-	gone := `{"code":"not_found","message":"This view no longer exists — it may have been deleted in another tab.","fields":[]}`
+	gone := `{"error":{"code":"not_found","message":"This view no longer exists — it may have been deleted in another tab.","fields":[]}}`
 	assertAnswer(t, danielsPatch, http.StatusNotFound, gone)
 	assertAnswer(t, danielsDelete, http.StatusNotFound, gone)
 	if deleted.Status != http.StatusOK {
@@ -356,20 +356,20 @@ func TestSavedViews_CRUD_Contract(t *testing.T) {
 func TestViews_NotLogged_D121(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
-	logBefore := priya.Do(t, http.MethodGet, "/api/activity-log", nil)
-	binBefore := priya.Do(t, http.MethodGet, "/api/recycle-bin", nil)
+	logBefore := priya.Do(t, http.MethodGet, "/api/v1/activity-log", nil)
+	binBefore := priya.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil)
 
-	created := priya.Do(t, http.MethodPost, "/api/saved-views", newViewBody("Not logged", true))
+	created := priya.Do(t, http.MethodPost, "/api/v1/saved-views", newViewBody("Not logged", true))
 	var view allwork.SavedView
 	created.Decode(t, &view)
-	priya.Do(t, http.MethodPatch, "/api/saved-views/"+view.ID, map[string]any{"name": "Still not logged"})
-	priya.Do(t, http.MethodDelete, "/api/saved-views/"+view.ID, nil)
-	priya.Do(t, http.MethodPut, "/api/all-work/preferences", map[string]any{"columns": []string{"id"}, "sort": nil})
+	priya.Do(t, http.MethodPatch, "/api/v1/saved-views/"+view.ID, map[string]any{"name": "Still not logged"})
+	priya.Do(t, http.MethodDelete, "/api/v1/saved-views/"+view.ID, nil)
+	priya.Do(t, http.MethodPut, "/api/v1/all-work/preferences", map[string]any{"columns": []string{"id"}, "sort": nil})
 
-	if logAfter := priya.Do(t, http.MethodGet, "/api/activity-log", nil); string(logAfter.Body) != string(logBefore.Body) {
+	if logAfter := priya.Do(t, http.MethodGet, "/api/v1/activity-log", nil); string(logAfter.Body) != string(logBefore.Body) {
 		t.Errorf("activity log changed:\nbefore %s\nafter  %s", logBefore.Body, logAfter.Body)
 	}
-	if binAfter := priya.Do(t, http.MethodGet, "/api/recycle-bin", nil); string(binAfter.Body) != string(binBefore.Body) {
+	if binAfter := priya.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil); string(binAfter.Body) != string(binBefore.Body) {
 		t.Errorf("recycle bin changed:\nbefore %s\nafter  %s", binBefore.Body, binAfter.Body)
 	}
 }
@@ -381,9 +381,9 @@ func TestExport_XlsxAndCsvContentTypeAndDisposition_FR034(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
-	xlsx := priya.Do(t, http.MethodGet, "/api/all-work/export?format=xlsx&activityStatus=declined", nil)
-	csv := priya.Do(t, http.MethodGet, "/api/all-work/export?format=csv&view=budget&unassigned=false", nil)
-	refused := priya.Do(t, http.MethodGet, "/api/all-work/export?format=pdf&unassigned=maybe", nil, apitest.SkipRequestValidation())
+	xlsx := priya.Do(t, http.MethodGet, "/api/v1/all-work/export?format=xlsx&activityStatus=declined", nil)
+	csv := priya.Do(t, http.MethodGet, "/api/v1/all-work/export?format=csv&view=budget&unassigned=false", nil)
+	refused := priya.Do(t, http.MethodGet, "/api/v1/all-work/export?format=pdf&unassigned=maybe", nil, apitest.SkipRequestValidation())
 
 	if xlsx.Status != http.StatusOK || xlsx.Header.Get("Content-Type") != "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
 		xlsx.Header.Get("Content-Disposition") != `attachment; filename="MAPP All work - Grid - 2026 - 12 Mar 2026.xlsx"; `+
@@ -399,25 +399,25 @@ func TestExport_XlsxAndCsvContentTypeAndDisposition_FR034(t *testing.T) {
 		!strings.Contains(body, "Total · 10 activities") {
 		t.Errorf("csv = %d %v\n%s", csv.Status, csv.Header, body)
 	}
-	assertAnswer(t, refused, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
+	assertAnswer(t, refused, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
 		`"fields":[{"field":"format","message":"Choose one of the listed values."},`+
-		`{"field":"unassigned","message":"Choose one of the listed values."}]}`)
+		`{"field":"unassigned","message":"Choose one of the listed values."}]}}`)
 }
 
 // Every All work operation needs a signed-in person (FR-005 of feature 001).
 func TestEveryAllWorkOperationRequiresSignIn(t *testing.T) {
 	server := apitest.New(t)
 	calls := []struct{ method, path string }{
-		{http.MethodGet, "/api/all-work"}, {http.MethodGet, "/api/all-work/options"},
-		{http.MethodGet, "/api/all-work/export?format=csv"}, {http.MethodGet, "/api/all-work/records/A-1001"},
-		{http.MethodGet, "/api/all-work/preferences"}, {http.MethodPut, "/api/all-work/preferences"},
-		{http.MethodGet, "/api/saved-views"}, {http.MethodPost, "/api/saved-views"},
-		{http.MethodPatch, "/api/saved-views/SV-1001"}, {http.MethodDelete, "/api/saved-views/SV-1001"},
+		{http.MethodGet, "/api/v1/all-work"}, {http.MethodGet, "/api/v1/all-work/options"},
+		{http.MethodGet, "/api/v1/all-work/export?format=csv"}, {http.MethodGet, "/api/v1/all-work/records/A-1001"},
+		{http.MethodGet, "/api/v1/all-work/preferences"}, {http.MethodPut, "/api/v1/all-work/preferences"},
+		{http.MethodGet, "/api/v1/saved-views"}, {http.MethodPost, "/api/v1/saved-views"},
+		{http.MethodPatch, "/api/v1/saved-views/SV-1001"}, {http.MethodDelete, "/api/v1/saved-views/SV-1001"},
 	}
 	for _, call := range calls {
 		response := server.Do(t, call.method, call.path, nil, apitest.SkipRequestValidation())
 
-		assertAnswer(t, response, http.StatusUnauthorized, `{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}`)
+		assertAnswer(t, response, http.StatusUnauthorized, `{"error":{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}}`)
 	}
 }
 

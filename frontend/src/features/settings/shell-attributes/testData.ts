@@ -189,7 +189,7 @@ export function emptyForm(level: AttributeForm['level']): AttributeForm {
   };
 }
 
-/** The activity form of ACTIVITY_ATTRIBUTES (GET /api/shell-attribute-forms/activity). */
+/** The activity form of ACTIVITY_ATTRIBUTES (GET /api/v1/shell-attribute-forms/activity). */
 export function activityForm(): AttributeForm {
   return {
     ...emptyForm('activity'),
@@ -243,9 +243,9 @@ export function activityForm(): AttributeForm {
 
 /** The forms of every level: the activity form above, the others empty. */
 export const FORM_ANSWERS = {
-  'GET /api/shell-attribute-forms/plan': { body: emptyForm('plan') },
-  'GET /api/shell-attribute-forms/campaign': { body: emptyForm('campaign') },
-  'GET /api/shell-attribute-forms/initiative': { body: emptyForm('initiative') },
-  'GET /api/shell-attribute-forms/activity': { body: activityForm() },
-  'GET /api/shell-attribute-forms/lineItem': { body: emptyForm('lineItem') },
+  'GET /api/v1/shell-attribute-forms/plan': { body: emptyForm('plan') },
+  'GET /api/v1/shell-attribute-forms/campaign': { body: emptyForm('campaign') },
+  'GET /api/v1/shell-attribute-forms/initiative': { body: emptyForm('initiative') },
+  'GET /api/v1/shell-attribute-forms/activity': { body: activityForm() },
+  'GET /api/v1/shell-attribute-forms/lineItem': { body: emptyForm('lineItem') },
 };

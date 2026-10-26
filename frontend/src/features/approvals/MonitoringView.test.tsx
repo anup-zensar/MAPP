@@ -7,8 +7,8 @@ import { testUser } from '@/test/users';
 import { MonitoringView } from './MonitoringView';
 import { ALEX, monitoringOf } from './testData';
 
-const MONITORING = 'GET /api/approvals/monitoring';
-const RUN = 'POST /api/approvals/escalations/run';
+const MONITORING = 'GET /api/v1/approvals/monitoring';
+const RUN = 'POST /api/v1/approvals/escalations/run';
 
 function renderView(answers: Record<string, MockHandler>) {
   const api = mockApi(answers);
@@ -92,7 +92,9 @@ describe('MonitoringView (feature 017, US6)', () => {
   });
 
   it('says when the figures could not be loaded, with Try again', async () => {
-    renderView({ [MONITORING]: { status: 500, body: { code: 'internal', message: 'Boom' } } });
+    renderView({
+      [MONITORING]: { status: 500, body: { error: { code: 'internal', message: 'Boom' } } },
+    });
 
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });
@@ -144,7 +146,9 @@ describe('RunEscalationsButton (feature 017, US5)', () => {
         "Not escalated: 'Trade magazine ads' (A-1004), level 1: no backup approver can take it.",
       ),
     ).toBeInTheDocument();
-    expect(api.requests.filter((r) => r.path === '/api/approvals/escalations/run')).toHaveLength(1);
+    expect(api.requests.filter((r) => r.path === '/api/v1/approvals/escalations/run')).toHaveLength(
+      1,
+    );
   });
 
   it('says when nothing was due', async () => {

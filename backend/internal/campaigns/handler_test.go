@@ -18,9 +18,9 @@ const (
 
 // The answers of the "no longer exists" cases (plan's message table).
 const (
-	planGoneBody       = `{"code":"not_found","message":"This plan no longer exists — someone may have deleted it.","fields":[]}`
-	campaignGoneBody   = `{"code":"not_found","message":"This campaign no longer exists — someone may have deleted it.","fields":[]}`
-	initiativeGoneBody = `{"code":"not_found","message":"This initiative no longer exists — someone may have deleted it.","fields":[]}`
+	planGoneBody       = `{"error":{"code":"not_found","message":"This plan no longer exists — someone may have deleted it.","fields":[]}}`
+	campaignGoneBody   = `{"error":{"code":"not_found","message":"This campaign no longer exists — someone may have deleted it.","fields":[]}}`
+	initiativeGoneBody = `{"error":{"code":"not_found","message":"This initiative no longer exists — someone may have deleted it.","fields":[]}}`
 )
 
 // amount is money as the API answers it.
@@ -119,14 +119,14 @@ func assertBody(t *testing.T, r *apitest.Response, status int, body string) {
 
 // validationBody is the answer of validation_failed with the given field problems (JSON objects).
 func validationBody(fields ...string) string {
-	body := `{"code":"validation_failed","message":"Some fields need your attention.","fields":[`
+	body := `{"error":{"code":"validation_failed","message":"Some fields need your attention.","fields":[`
 	for i, f := range fields {
 		if i > 0 {
 			body += ","
 		}
 		body += f
 	}
-	return body + "]}"
+	return body + "]}}"
 }
 
 // usd is a USD amount as the API answers it.
@@ -139,7 +139,7 @@ func TestListPlanCampaigns_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodGet, "/api/plans/P-1001/campaigns", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/plans/P-1001/campaigns", nil)
 
 	assertStatus(t, response, http.StatusOK)
 	var tree planCampaigns
@@ -176,8 +176,8 @@ func TestListPlanCampaigns_UnknownPlan404(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	assertBody(t, priya.Do(t, http.MethodGet, "/api/plans/P-9999/campaigns", nil), http.StatusNotFound, planGoneBody)
-	assertBody(t, priya.Do(t, http.MethodPost, "/api/plans/P-9999/campaigns", map[string]any{"name": "Fleet growth"}),
+	assertBody(t, priya.Do(t, http.MethodGet, "/api/v1/plans/P-9999/campaigns", nil), http.StatusNotFound, planGoneBody)
+	assertBody(t, priya.Do(t, http.MethodPost, "/api/v1/plans/P-9999/campaigns", map[string]any{"name": "Fleet growth"}),
 		http.StatusNotFound, planGoneBody)
 }
 
@@ -187,7 +187,7 @@ func TestCreateCampaign_Contract201(t *testing.T) {
 	server := apitest.New(t)
 	meiLin := server.SignIn(t, meiLinsEmail)
 
-	response := meiLin.Do(t, http.MethodPost, "/api/plans/P-1002/campaigns", map[string]any{
+	response := meiLin.Do(t, http.MethodPost, "/api/v1/plans/P-1002/campaigns", map[string]any{
 		"name": "Fleet growth", "description": "", "ownerId": "U-1004", "startDate": "2026-01-01", "endDate": "2027-03-31",
 		"budget": usd("300000.00"), "attributes": map[string]any{},
 	})
@@ -203,7 +203,7 @@ func TestCreateCampaign_Contract201(t *testing.T) {
 	if len(missing) != 2 || missing[0].Label != "Cluster" || missing[1].Label != "Region" {
 		t.Errorf("missing = %+v, want Cluster and Region", missing)
 	}
-	minimal := meiLin.Do(t, http.MethodPost, "/api/plans/P-1002/campaigns", map[string]any{"name": "Only a name"})
+	minimal := meiLin.Do(t, http.MethodPost, "/api/v1/plans/P-1002/campaigns", map[string]any{"name": "Only a name"})
 	assertStatus(t, minimal, http.StatusCreated)
 }
 
@@ -212,7 +212,7 @@ func TestCreateCampaign_AllProblems400(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodPost, "/api/plans/P-1001/campaigns", map[string]any{
+	response := priya.Do(t, http.MethodPost, "/api/v1/plans/P-1001/campaigns", map[string]any{
 		"name": " HELIX LAUNCH ", "startDate": "2026-12-01", "endDate": "2026-03-01", "budget": usd("-5.00"),
 		"ownerId": "U-9999",
 	})
@@ -231,7 +231,7 @@ func TestGetCampaign_Contract(t *testing.T) {
 	daniel := server.SignIn(t, danielsEmail)
 	server.GrantRole(t, danielsEmail, "globalPlanner", "all") // 014: every market's plans
 
-	response := daniel.Do(t, http.MethodGet, "/api/campaigns/C-1004", nil)
+	response := daniel.Do(t, http.MethodGet, "/api/v1/campaigns/C-1004", nil)
 
 	assertStatus(t, response, http.StatusOK)
 	var brand campaign
@@ -247,7 +247,7 @@ func TestGetCampaign_404(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	assertBody(t, priya.Do(t, http.MethodGet, "/api/campaigns/C-9999", nil), http.StatusNotFound, campaignGoneBody)
+	assertBody(t, priya.Do(t, http.MethodGet, "/api/v1/campaigns/C-9999", nil), http.StatusNotFound, campaignGoneBody)
 }
 
 // The plan's remaining budget follows a new campaign straight away (FR-012).
@@ -256,11 +256,11 @@ func TestCreateCampaign_TotalsFollow_FR012(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	server.Advance(time.Minute)
 
-	assertStatus(t, priya.Do(t, http.MethodPost, "/api/plans/P-1001/campaigns",
+	assertStatus(t, priya.Do(t, http.MethodPost, "/api/v1/plans/P-1001/campaigns",
 		map[string]any{"name": "Helix extra", "budget": usd("100000.00")}), http.StatusCreated)
 
 	var tree planCampaigns
-	priya.Do(t, http.MethodGet, "/api/plans/P-1001/campaigns", nil).Decode(t, &tree)
+	priya.Do(t, http.MethodGet, "/api/v1/plans/P-1001/campaigns", nil).Decode(t, &tree)
 	if *tree.Totals.RemainingPlanBudget != usd("-50000.00") || *tree.Totals.OverAllocatedBy != usd("50000.00") {
 		t.Errorf("totals = %+v, want remaining -50000.00", tree.Totals)
 	}
@@ -272,7 +272,7 @@ func TestCreateInitiative_Contract201(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodPost, "/api/campaigns/C-1001/initiatives", map[string]any{"name": "Events & sponsoring"})
+	response := priya.Do(t, http.MethodPost, "/api/v1/campaigns/C-1001/initiatives", map[string]any{"name": "Events & sponsoring"})
 
 	assertStatus(t, response, http.StatusCreated)
 	var created initiative
@@ -283,13 +283,13 @@ func TestCreateInitiative_Contract201(t *testing.T) {
 		*created.ParentRemainingBudget != usd("150000.00") {
 		t.Errorf("created = %+v", created)
 	}
-	full := priya.Do(t, http.MethodPost, "/api/campaigns/C-1001/initiatives", map[string]any{
+	full := priya.Do(t, http.MethodPost, "/api/v1/campaigns/C-1001/initiatives", map[string]any{
 		"name": "Search", "description": "Paid search", "ownerId": "U-1002", "startDate": "2026-02-01", "endDate": "2026-11-30",
 		"budget": usd("200000.00"), "attributes": map[string]any{},
 	})
 	assertStatus(t, full, http.StatusCreated)
 	var helix campaign
-	priya.Do(t, http.MethodGet, "/api/campaigns/C-1001", nil).Decode(t, &helix)
+	priya.Do(t, http.MethodGet, "/api/v1/campaigns/C-1001", nil).Decode(t, &helix)
 	if helix.Counts.Initiatives != 4 || *helix.BudgetAndCost.OverAllocatedBy != usd("50000.00") {
 		t.Errorf("Helix launch = %+v, want 4 initiatives, over-allocated by 50000.00", helix)
 	}
@@ -301,12 +301,12 @@ func TestCreateInitiative_OutsideCampaign400(t *testing.T) {
 	server := apitest.New(t)
 	daniel := server.SignIn(t, danielsEmail)
 
-	response := daniel.Do(t, http.MethodPost, "/api/campaigns/C-1002/initiatives",
+	response := daniel.Do(t, http.MethodPost, "/api/v1/campaigns/C-1002/initiatives",
 		map[string]any{"name": "Trade fairs", "startDate": "2026-01-15", "endDate": "2026-06-30"})
 
 	assertBody(t, response, http.StatusBadRequest, validationBody(
 		`{"field":"startDate","message":"Dates must be inside the campaign's dates (01 Feb 2026 – 31 Dec 2026)."}`))
-	assertBody(t, daniel.Do(t, http.MethodPost, "/api/campaigns/C-9999/initiatives", map[string]any{"name": "Lost"}),
+	assertBody(t, daniel.Do(t, http.MethodPost, "/api/v1/campaigns/C-9999/initiatives", map[string]any{"name": "Lost"}),
 		http.StatusNotFound, campaignGoneBody)
 }
 
@@ -316,7 +316,7 @@ func TestGetInitiative_Contract(t *testing.T) {
 	server := apitest.New(t)
 	meiLin := server.SignIn(t, meiLinsEmail)
 
-	response := meiLin.Do(t, http.MethodGet, "/api/initiatives/I-1006", nil)
+	response := meiLin.Do(t, http.MethodGet, "/api/v1/initiatives/I-1006", nil)
 
 	assertStatus(t, response, http.StatusOK)
 	var fleet initiative
@@ -331,5 +331,5 @@ func TestGetInitiative_404(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	assertBody(t, priya.Do(t, http.MethodGet, "/api/initiatives/I-9999", nil), http.StatusNotFound, initiativeGoneBody)
+	assertBody(t, priya.Do(t, http.MethodGet, "/api/v1/initiatives/I-9999", nil), http.StatusNotFound, initiativeGoneBody)
 }

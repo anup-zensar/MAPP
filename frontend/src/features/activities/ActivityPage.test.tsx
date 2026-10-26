@@ -77,14 +77,14 @@ function openPage(
 ) {
   const api = mockApi({
     ...HISTORY_ANSWERS,
-    'GET /api/activities/A-1042': answer,
-    'GET /api/activities/A-1042/approval': approval,
-    'GET /api/exchange-rates/current': { body: RATES },
-    'GET /api/financials/records/A-1042': {
+    'GET /api/v1/activities/A-1042': answer,
+    'GET /api/v1/activities/A-1042/approval': approval,
+    'GET /api/v1/exchange-rates/current': { body: RATES },
+    'GET /api/v1/financials/records/A-1042': {
       body: activityRecord({ record: { type: 'activity', id: 'A-1042', name: 'Launch film' } }),
     },
-    'GET /api/activities/A-1042/form': { body: editForm() },
-    'GET /api/shell-attribute-forms/activity': { body: activityAttributeForm() },
+    'GET /api/v1/activities/A-1042/form': { body: editForm() },
+    'GET /api/v1/shell-attribute-forms/activity': { body: activityAttributeForm() },
   });
   return { ...renderWithProviders(<ActivityPage />, { route, path: PATH, user: testUser() }), api };
 }
@@ -291,9 +291,11 @@ describe('ActivityPage (feature 006, US2)', () => {
     openPage({
       status: 404,
       body: {
-        code: 'not_found',
-        message: 'This activity no longer exists — someone may have deleted it.',
-        fields: [],
+        error: {
+          code: 'not_found',
+          message: 'This activity no longer exists — someone may have deleted it.',
+          fields: [],
+        },
       },
     });
 
@@ -304,7 +306,10 @@ describe('ActivityPage (feature 006, US2)', () => {
   });
 
   it('offers Try again when the activity cannot be loaded', async () => {
-    openPage({ status: 500, body: { code: 'internal_error', message: 'Broken', fields: [] } });
+    openPage({
+      status: 500,
+      body: { error: { code: 'internal_error', message: 'Broken', fields: [] } },
+    });
 
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeVisible();
   });

@@ -35,11 +35,11 @@ vi.mock('@/features/approvals/SubmitButton', () => ({
 /** The requests of each page. */
 const ANSWERS: Record<string, MockHandler> = {
   ...HISTORY_ANSWERS,
-  'GET /api/initiatives/I-1001/activity-form': { body: newForm() },
-  'GET /api/people': { body: PEOPLE },
-  'GET /api/activities/A-1001': { body: launchFilm({ id: 'A-1001' }) },
-  'GET /api/activities/A-1001/form': { body: editForm() },
-  'GET /api/activities/A-1001/approval': {
+  'GET /api/v1/initiatives/I-1001/activity-form': { body: newForm() },
+  'GET /api/v1/people': { body: PEOPLE },
+  'GET /api/v1/activities/A-1001': { body: launchFilm({ id: 'A-1001' }) },
+  'GET /api/v1/activities/A-1001/form': { body: editForm() },
+  'GET /api/v1/activities/A-1001/approval': {
     body: approvalOf({
       activityId: 'A-1001',
       status: 'created',
@@ -47,8 +47,8 @@ const ANSWERS: Record<string, MockHandler> = {
       rounds: [],
     }),
   },
-  'GET /api/shell-attribute-forms/activity': { body: activityAttributeForm() },
-  'GET /api/financials/records/A-1001': { body: activityRecord() },
+  'GET /api/v1/shell-attribute-forms/activity': { body: activityAttributeForm() },
+  'GET /api/v1/financials/records/A-1001': { body: activityRecord() },
 };
 
 // Feature 006's addresses (build guide §5, D-194). Feature 006 keeps this file up to date as it

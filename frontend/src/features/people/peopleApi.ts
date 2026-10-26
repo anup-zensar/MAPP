@@ -43,28 +43,28 @@ const CHANGED_BY_EVERY_CHANGE: QueryKey[] = [
   ['recycle-bin'],
 ];
 
-/** Everyone, active or not, with their teams, sorted by name (GET /api/people). */
+/** Everyone, active or not, with their teams, sorted by name (GET /api/v1/people). */
 export function usePeople() {
   return useQuery({
     queryKey: PEOPLE_KEY,
-    queryFn: () => call(api.GET('/api/people')),
+    queryFn: () => call(api.GET('/api/v1/people')),
   });
 }
 
-/** Every team, active or not, with members and plans, sorted by name (GET /api/teams). */
+/** Every team, active or not, with members and plans, sorted by name (GET /api/v1/teams). */
 export function useTeams() {
   return useQuery({
     queryKey: TEAMS_KEY,
-    queryFn: () => call(api.GET('/api/teams')),
+    queryFn: () => call(api.GET('/api/v1/teams')),
   });
 }
 
-/** One person with their teams and what they own or approve (GET /api/people/{personId}). */
+/** One person with their teams and what they own or approve (GET /api/v1/people/{personId}). */
 export function usePerson(id: string) {
   return useQuery({ queryKey: [...PEOPLE_KEY, id], queryFn: () => fetchPerson(id) });
 }
 
-/** One team with its members and the plans using it (GET /api/teams/{teamId}). */
+/** One team with its members and the plans using it (GET /api/v1/teams/{teamId}). */
 export function useTeam(id: string) {
   return useQuery({ queryKey: [...TEAMS_KEY, id], queryFn: () => fetchTeam(id) });
 }
@@ -93,7 +93,7 @@ export function fetchLatestTeam(queryClient: QueryClient, id: string): Promise<T
 export function useCreatePerson() {
   const refresh = useRefreshAfterChange();
   return useMutation({
-    mutationFn: (body: PersonCreate) => call(api.POST('/api/people', { body })),
+    mutationFn: (body: PersonCreate) => call(api.POST('/api/v1/people', { body })),
     onSettled: refresh,
   });
 }
@@ -109,7 +109,7 @@ export function useUpdatePerson() {
   const refresh = useRefreshAfterChange();
   return useMutation({
     mutationFn: ({ id, body }: PersonChange) =>
-      call(api.PATCH('/api/people/{personId}', { params: { path: { personId: id } }, body })),
+      call(api.PATCH('/api/v1/people/{personId}', { params: { path: { personId: id } }, body })),
     onSettled: refresh,
   });
 }
@@ -118,7 +118,9 @@ export function useUpdatePerson() {
 export function useCheckPersonImpact() {
   return useMutation({
     mutationFn: ({ id, body }: PersonChange) =>
-      call(api.POST('/api/people/{personId}/impact', { params: { path: { personId: id } }, body })),
+      call(
+        api.POST('/api/v1/people/{personId}/impact', { params: { path: { personId: id } }, body }),
+      ),
   });
 }
 
@@ -135,7 +137,7 @@ export function useSetPersonStatus() {
   return useMutation({
     mutationFn: ({ id, active, version }: StatusChange) =>
       call(
-        api.POST('/api/people/{personId}/status', {
+        api.POST('/api/v1/people/{personId}/status', {
           params: { path: { personId: id } },
           body: { active, version },
         }),
@@ -148,7 +150,7 @@ export function useSetPersonStatus() {
 export function useCreateTeam() {
   const refresh = useRefreshAfterChange();
   return useMutation({
-    mutationFn: (body: TeamCreate) => call(api.POST('/api/teams', { body })),
+    mutationFn: (body: TeamCreate) => call(api.POST('/api/v1/teams', { body })),
     onSettled: refresh,
   });
 }
@@ -164,7 +166,7 @@ export function useUpdateTeam() {
   const refresh = useRefreshAfterChange();
   return useMutation({
     mutationFn: ({ id, body }: TeamChange) =>
-      call(api.PATCH('/api/teams/{teamId}', { params: { path: { teamId: id } }, body })),
+      call(api.PATCH('/api/v1/teams/{teamId}', { params: { path: { teamId: id } }, body })),
     onSettled: refresh,
   });
 }
@@ -173,7 +175,7 @@ export function useUpdateTeam() {
 export function useCheckTeamImpact() {
   return useMutation({
     mutationFn: ({ id, body }: TeamChange) =>
-      call(api.POST('/api/teams/{teamId}/impact', { params: { path: { teamId: id } }, body })),
+      call(api.POST('/api/v1/teams/{teamId}/impact', { params: { path: { teamId: id } }, body })),
   });
 }
 
@@ -183,7 +185,7 @@ export function useSetTeamStatus() {
   return useMutation({
     mutationFn: ({ id, active, version }: StatusChange) =>
       call(
-        api.POST('/api/teams/{teamId}/status', {
+        api.POST('/api/v1/teams/{teamId}/status', {
           params: { path: { teamId: id } },
           body: { active, version },
         }),
@@ -197,7 +199,7 @@ export function useDeleteTeam() {
   const refresh = useRefreshAfterChange();
   return useMutation({
     mutationFn: (id: string) =>
-      call(api.DELETE('/api/teams/{teamId}', { params: { path: { teamId: id } } })),
+      call(api.DELETE('/api/v1/teams/{teamId}', { params: { path: { teamId: id } } })),
     onSettled: refresh,
   });
 }
@@ -209,7 +211,7 @@ export function useDeleteTeam() {
 export function useDisplayCurrencies() {
   return useQuery({
     queryKey: DISPLAY_CURRENCIES_KEY,
-    queryFn: () => call(api.GET('/api/me/display-currencies')),
+    queryFn: () => call(api.GET('/api/v1/me/display-currencies')),
   });
 }
 
@@ -222,7 +224,7 @@ export function useUpdateProfile() {
   const queryClient = useQueryClient();
   const refresh = useRefreshAfterChange();
   return useMutation({
-    mutationFn: (body: ProfileUpdate) => call(api.PATCH('/api/me', { body })),
+    mutationFn: (body: ProfileUpdate) => call(api.PATCH('/api/v1/me', { body })),
     onSuccess: (person) => queryClient.setQueryData<CurrentUser | null>(SESSION_KEY, person),
     onSettled: refresh,
   });
@@ -236,7 +238,7 @@ export function useUpdateProfile() {
 export function useUpdateDisplayPreferences() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: PreferencesUpdate) => call(api.PATCH('/api/me/preferences', { body })),
+    mutationFn: (body: PreferencesUpdate) => call(api.PATCH('/api/v1/me/preferences', { body })),
     onSuccess: (preferences) => {
       queryClient.setQueryData<CurrentUser | null>(SESSION_KEY, (user) =>
         user ? { ...user, preferences } : user,
@@ -247,11 +249,11 @@ export function useUpdateDisplayPreferences() {
 }
 
 function fetchPerson(id: string) {
-  return call(api.GET('/api/people/{personId}', { params: { path: { personId: id } } }));
+  return call(api.GET('/api/v1/people/{personId}', { params: { path: { personId: id } } }));
 }
 
 function fetchTeam(id: string) {
-  return call(api.GET('/api/teams/{teamId}', { params: { path: { teamId: id } } }));
+  return call(api.GET('/api/v1/teams/{teamId}', { params: { path: { teamId: id } } }));
 }
 
 /**

@@ -40,9 +40,9 @@ func TestDeleteCampaign_ContractAndUndo(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, "alex.morgan@shell.com")
 	var before campaign
-	alex.Do(t, http.MethodGet, "/api/campaigns/C-1004", nil).Decode(t, &before)
+	alex.Do(t, http.MethodGet, "/api/v1/campaigns/C-1004", nil).Decode(t, &before)
 
-	response := alex.Do(t, http.MethodDelete, "/api/campaigns/C-1004", nil)
+	response := alex.Do(t, http.MethodDelete, "/api/v1/campaigns/C-1004", nil)
 
 	assertStatus(t, response, http.StatusOK)
 	var result deleteResult
@@ -53,18 +53,18 @@ func TestDeleteCampaign_ContractAndUndo(t *testing.T) {
 		entry.Contents[0].RecordType != "initiative" || entry.Contents[0].Label != "initiatives" || entry.Contents[0].Count != 2 {
 		t.Errorf("recycle-bin entry = %+v", entry)
 	}
-	assertBody(t, alex.Do(t, http.MethodGet, "/api/campaigns/C-1004", nil), http.StatusNotFound, campaignGoneBody)
-	assertBody(t, alex.Do(t, http.MethodGet, "/api/initiatives/I-1007", nil), http.StatusNotFound, initiativeGoneBody)
+	assertBody(t, alex.Do(t, http.MethodGet, "/api/v1/campaigns/C-1004", nil), http.StatusNotFound, campaignGoneBody)
+	assertBody(t, alex.Do(t, http.MethodGet, "/api/v1/initiatives/I-1007", nil), http.StatusNotFound, initiativeGoneBody)
 	var tree planCampaigns
-	alex.Do(t, http.MethodGet, "/api/plans/P-1003/campaigns", nil).Decode(t, &tree)
+	alex.Do(t, http.MethodGet, "/api/v1/plans/P-1003/campaigns", nil).Decode(t, &tree)
 	if tree.Total != 0 || tree.Totals.Initiatives != 0 {
 		t.Errorf("plan tree after the delete = %+v", tree)
 	}
 
-	assertStatus(t, alex.Do(t, http.MethodPost, "/api/recycle-bin/"+entry.ID+"/undo", nil), http.StatusOK)
+	assertStatus(t, alex.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+entry.ID+"/undo", nil), http.StatusOK)
 
 	var after campaign
-	alex.Do(t, http.MethodGet, "/api/campaigns/C-1004", nil).Decode(t, &after)
+	alex.Do(t, http.MethodGet, "/api/v1/campaigns/C-1004", nil).Decode(t, &after)
 	if !reflect.DeepEqual(after, before) {
 		t.Errorf("after Undo =\n%+v\nwant\n%+v", after, before)
 	}
@@ -76,7 +76,7 @@ func TestDeleteInitiative_Contract(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, "alex.morgan@shell.com")
 
-	response := alex.Do(t, http.MethodDelete, "/api/initiatives/I-1007", nil)
+	response := alex.Do(t, http.MethodDelete, "/api/v1/initiatives/I-1007", nil)
 
 	assertStatus(t, response, http.StatusOK)
 	var result deleteResult
@@ -88,11 +88,11 @@ func TestDeleteInitiative_Contract(t *testing.T) {
 		t.Errorf("recycle-bin entry = %+v", entry)
 	}
 	var brand campaign
-	alex.Do(t, http.MethodGet, "/api/campaigns/C-1004", nil).Decode(t, &brand)
+	alex.Do(t, http.MethodGet, "/api/v1/campaigns/C-1004", nil).Decode(t, &brand)
 	if brand.Counts.Initiatives != 1 {
 		t.Errorf("Brand platform has %d initiatives after the delete, want 1", brand.Counts.Initiatives)
 	}
 
-	assertBody(t, alex.Do(t, http.MethodDelete, "/api/initiatives/I-1007", nil), http.StatusNotFound, initiativeGoneBody)
-	assertBody(t, alex.Do(t, http.MethodDelete, "/api/campaigns/C-9999", nil), http.StatusNotFound, campaignGoneBody)
+	assertBody(t, alex.Do(t, http.MethodDelete, "/api/v1/initiatives/I-1007", nil), http.StatusNotFound, initiativeGoneBody)
+	assertBody(t, alex.Do(t, http.MethodDelete, "/api/v1/campaigns/C-9999", nil), http.StatusNotFound, campaignGoneBody)
 }

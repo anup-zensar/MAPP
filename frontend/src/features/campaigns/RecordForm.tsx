@@ -60,7 +60,7 @@ export interface RecordFormProps {
   onChange: (values: RecordFormValues) => void;
   /** The field problems of the last save, all at once. */
   problems: FieldProblem[];
-  /** The level's Shell attributes (GET /api/shell-attribute-forms/{level}). */
+  /** The level's Shell attributes (GET /api/v1/shell-attribute-forms/{level}). */
   attributeForm: AttributeForm;
   /** The plan's Business unit option ids: they decide the conditional attributes. */
   businessUnit: string[];

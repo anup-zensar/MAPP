@@ -12,7 +12,7 @@ function renderCards(
   scope: HomeScope = 'myTeams',
   answer: MockHandler = { body: summaryOf({ scope }) },
 ) {
-  const api = mockApi({ 'GET /api/home/summary': answer });
+  const api = mockApi({ 'GET /api/v1/home/summary': answer });
   const rendered = renderWithProviders(<SummaryCards scope={scope} />, {
     user: testUser(),
     path: '/',

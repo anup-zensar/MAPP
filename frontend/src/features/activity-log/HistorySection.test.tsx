@@ -9,8 +9,8 @@ import { HistorySection } from './HistorySection';
 import { showHistory } from './showHistory';
 import { logEntry, logPage } from './testData';
 
-const LOG = 'GET /api/activity-log';
-const PREFERENCES = 'PATCH /api/me/preferences';
+const LOG = 'GET /api/v1/activity-log';
+const PREFERENCES = 'PATCH /api/v1/me/preferences';
 
 function renderSection(
   answers: Record<string, MockHandler>,
@@ -27,7 +27,7 @@ function renderSection(
 
 function logSearches(api: ReturnType<typeof mockApi>): URLSearchParams[] {
   return api.requests
-    .filter((request) => request.method === 'GET' && request.path === '/api/activity-log')
+    .filter((request) => request.method === 'GET' && request.path === '/api/v1/activity-log')
     .map((request) => new URLSearchParams(request.search));
 }
 

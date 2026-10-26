@@ -3,7 +3,7 @@
  * reports use it too). The browser saves it under the name the API gives in Content-Disposition.
  *
  *   const fileName = await downloadFromApi(
- *     api.GET('/api/all-work/export', { params: { query }, parseAs: 'blob' }),
+ *     api.GET('/api/v1/all-work/export', { params: { query }, parseAs: 'blob' }),
  *   );
  */
 import { call } from '@/api/client';

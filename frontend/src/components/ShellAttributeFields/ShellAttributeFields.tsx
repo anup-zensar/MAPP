@@ -47,7 +47,7 @@ import {
 } from './texts';
 
 export interface ShellAttributeFieldsProps {
-  /** The level's form definition: GET /api/shell-attribute-forms/{level} (useAttributeForm). */
+  /** The level's form definition: GET /api/v1/shell-attribute-forms/{level} (useAttributeForm). */
   form: AttributeForm;
   /** The record's values, keyed by attribute id (its `attributes` field). */
   values: AttributeValues;

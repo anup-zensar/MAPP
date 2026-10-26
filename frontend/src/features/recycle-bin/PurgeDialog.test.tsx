@@ -9,7 +9,7 @@ import type { BinItem } from './binText';
 import { PurgeDialog } from './PurgeDialog';
 import { binItem, lineItemEntry } from './testData';
 
-const PURGE = 'DELETE /api/recycle-bin/BIN-1001';
+const PURGE = 'DELETE /api/v1/recycle-bin/BIN-1001';
 
 /** The dialog as the page shows it: gone once it closes. */
 function Harness({ item, onClose }: { item: BinItem; onClose: () => void }) {
@@ -95,12 +95,14 @@ describe('PurgeDialog', () => {
       [PURGE]: {
         status: 409,
         body: {
-          code: 'already_resolved',
-          message: 'This item is no longer in the recycle bin.',
-          resolution: {
-            how: 'restored',
-            by: { id: 'U-1003', name: 'Daniel Okoro' },
-            at: '2026-03-12T14:05:00Z',
+          error: {
+            code: 'already_resolved',
+            message: 'This item is no longer in the recycle bin.',
+            resolution: {
+              how: 'restored',
+              by: { id: 'U-1003', name: 'Daniel Okoro' },
+              at: '2026-03-12T14:05:00Z',
+            },
           },
         },
       },

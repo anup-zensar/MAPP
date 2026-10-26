@@ -28,16 +28,16 @@ func TestAnswers_CarryWhatTheReaderMayDo_FR011(t *testing.T) {
 		path   string
 		action func(body map[string]any) any // finds one availability in the answer
 	}{
-		{"/api/plans/P-1001", func(b map[string]any) any { return at(b, "access", "edit") }},
-		{"/api/plans/P-1001", func(b map[string]any) any { return at(b, "access", "content", "addActivity") }},
-		{"/api/plans", func(b map[string]any) any { return at(b, "items", 0, "access", "edit") }},
-		{"/api/plans/P-1001/campaigns", func(b map[string]any) any { return at(b, "access", "addCampaign") }},
-		{"/api/plans/P-1001/activities", func(b map[string]any) any { return at(b, "access", "editActivities") }},
-		{"/api/campaigns/C-1001", func(b map[string]any) any { return at(b, "access", "addChild") }},
-		{"/api/initiatives/I-1001", func(b map[string]any) any { return at(b, "access", "addChild") }},
-		{"/api/activities/A-1001", func(b map[string]any) any { return at(b, "access", "edit") }},
-		{"/api/activities/A-1001/line-items", func(b map[string]any) any { return at(b, "access", "add") }},
-		{"/api/line-items/L-1001", func(b map[string]any) any { return at(b, "access", "edit") }},
+		{"/api/v1/plans/P-1001", func(b map[string]any) any { return at(b, "access", "edit") }},
+		{"/api/v1/plans/P-1001", func(b map[string]any) any { return at(b, "access", "content", "addActivity") }},
+		{"/api/v1/plans", func(b map[string]any) any { return at(b, "items", 0, "access", "edit") }},
+		{"/api/v1/plans/P-1001/campaigns", func(b map[string]any) any { return at(b, "access", "addCampaign") }},
+		{"/api/v1/plans/P-1001/activities", func(b map[string]any) any { return at(b, "access", "editActivities") }},
+		{"/api/v1/campaigns/C-1001", func(b map[string]any) any { return at(b, "access", "addChild") }},
+		{"/api/v1/initiatives/I-1001", func(b map[string]any) any { return at(b, "access", "addChild") }},
+		{"/api/v1/activities/A-1001", func(b map[string]any) any { return at(b, "access", "edit") }},
+		{"/api/v1/activities/A-1001/line-items", func(b map[string]any) any { return at(b, "access", "add") }},
+		{"/api/v1/line-items/L-1001", func(b map[string]any) any { return at(b, "access", "edit") }},
 	} {
 		for _, p := range []struct {
 			name      string
@@ -61,12 +61,12 @@ func TestAnswers_CarryWhatTheReaderMayDo_FR011(t *testing.T) {
 	var plan struct {
 		Access struct{ Delete availability }
 	}
-	priya.Do(t, http.MethodGet, "/api/plans/P-1001", nil).Decode(t, &plan)
+	priya.Do(t, http.MethodGet, "/api/v1/plans/P-1001", nil).Decode(t, &plan)
 	want := "Deleting plans isn't part of your role (Planner). Ask an administrator if you need it."
 	if plan.Access.Delete.Available || plan.Access.Delete.Reason != want {
 		t.Errorf("Priya's delete plan = %+v, want unavailable with %q", plan.Access.Delete, want)
 	}
-	for _, path := range []string{"/api/activities/A-1001", "/api/activities/A-1001/line-items"} {
+	for _, path := range []string{"/api/v1/activities/A-1001", "/api/v1/activities/A-1001/line-items"} {
 		var answer struct {
 			Access struct{ SeeFinance availability }
 		}

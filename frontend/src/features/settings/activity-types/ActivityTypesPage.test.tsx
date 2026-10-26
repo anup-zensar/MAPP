@@ -64,8 +64,8 @@ function renderTypes(
   route = '/settings/activity-types',
 ) {
   const api = mockApi({
-    'GET /api/activity-types': { body: TYPES },
-    'GET /api/models': { body: MODELS },
+    'GET /api/v1/activity-types': { body: TYPES },
+    'GET /api/v1/models': { body: MODELS },
     ...answers,
   });
   return {
@@ -142,7 +142,7 @@ describe('ActivityTypesPage: the list (FR-002)', () => {
   });
 
   it('invites to create the first activity type when there are none', async () => {
-    renderTypes({ 'GET /api/activity-types': { body: { items: [], total: 0 } } });
+    renderTypes({ 'GET /api/v1/activity-types': { body: { items: [], total: 0 } } });
 
     expect(
       await screen.findByText('No activity types yet — create your first activity type'),
@@ -153,12 +153,17 @@ describe('ActivityTypesPage: the list (FR-002)', () => {
   it('says when the activity types cannot be loaded, and tries again', async () => {
     let calls = 0;
     const { user } = renderTypes({
-      'GET /api/activity-types': () => {
+      'GET /api/v1/activity-types': () => {
         calls += 1;
         return calls === 1
           ? {
               status: 500,
-              body: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+              body: {
+                error: {
+                  code: 'internal_error',
+                  message: 'Something went wrong. Please try again.',
+                },
+              },
             }
           : { body: TYPES };
       },
@@ -204,7 +209,7 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
   it('creates "Webinar" with a default cost, allowed in a model (scenario 1)', async () => {
     const webinar = { ...PODCAST, id: 'AT-1008', name: 'Webinar' };
     const { user, api } = renderTypes({
-      'POST /api/activity-types': { status: 201, body: webinar },
+      'POST /api/v1/activity-types': { status: 201, body: webinar },
     });
 
     await user.click(screen.getByRole('button', { name: 'New activity type' }));
@@ -222,7 +227,7 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     expect(await findMessages()).toHaveTextContent("Activity type 'Webinar' created");
-    expect(api.bodiesOf('POST /api/activity-types')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/activity-types')).toEqual([
       {
         name: 'Webinar',
         defaultPlannedCost: { amount: '5000.00', currency: 'USD' },
@@ -233,7 +238,7 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
 
   it('shows every problem at once and saves nothing (FR-005)', async () => {
     const { user } = renderTypes({
-      'POST /api/activity-types': {
+      'POST /api/v1/activity-types': {
         status: 400,
         body: validationFailed([
           { field: 'name', message: "An activity type called 'Event' already exists." },
@@ -262,7 +267,7 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
 
   it('says a changed default cost applies from now on, and saves only that (scenario 2)', async () => {
     const { user, api } = renderTypes({
-      'PATCH /api/activity-types/AT-1002': {
+      'PATCH /api/v1/activity-types/AT-1002': {
         body: { ...EVENT, defaultPlannedCost: { amount: '7500.00', currency: 'USD' } },
       },
     });
@@ -278,14 +283,14 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     expect(await findMessages()).toHaveTextContent("Activity type 'Event' saved");
-    expect(api.bodiesOf('PATCH /api/activity-types/AT-1002')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/activity-types/AT-1002')).toEqual([
       { defaultPlannedCost: { amount: '7500.00', currency: 'USD' }, version: 3 },
     ]);
   });
 
   it('removes the default cost with null', async () => {
     const { user, api } = renderTypes({
-      'PATCH /api/activity-types/AT-1002': { body: { ...EVENT, defaultPlannedCost: null } },
+      'PATCH /api/v1/activity-types/AT-1002': { body: { ...EVENT, defaultPlannedCost: null } },
     });
 
     await chooseAction('Event', 'Edit', user);
@@ -294,7 +299,7 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     await findMessages();
-    expect(api.bodiesOf('PATCH /api/activity-types/AT-1002')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/activity-types/AT-1002')).toEqual([
       { defaultPlannedCost: null, version: 3 },
     ]);
   });
@@ -303,10 +308,10 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
     const warning =
       "In plans using 'Lubricants 1.0', 4 activities use 'Event'. They keep it; new activities can't choose it.";
     const { user, api } = renderTypes({
-      'POST /api/activity-types/AT-1002/impact': {
+      'POST /api/v1/activity-types/AT-1002/impact': {
         body: { warnings: [{ kind: 'activityTypeRemoved', message: warning, count: 4 }] },
       },
-      'PATCH /api/activity-types/AT-1002': { body: { ...EVENT, models: [] } },
+      'PATCH /api/v1/activity-types/AT-1002': { body: { ...EVENT, models: [] } },
     });
 
     await chooseAction('Event', 'Edit', user);
@@ -322,18 +327,18 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
     });
     expect(impact).toHaveTextContent(warning);
     expect(within(impact).getByRole('button', { name: 'Keep editing' })).toHaveFocus();
-    expect(api.bodiesOf('PATCH /api/activity-types/AT-1002')).toEqual([]);
+    expect(api.bodiesOf('PATCH /api/v1/activity-types/AT-1002')).toEqual([]);
     await user.click(within(impact).getByRole('button', { name: 'Save changes' }));
 
     expect(await findMessages()).toHaveTextContent("Activity type 'Event' saved");
     const change = { modelIds: [RETAIL.id], version: 3 };
-    expect(api.bodiesOf('POST /api/activity-types/AT-1002/impact')).toEqual([change]);
-    expect(api.bodiesOf('PATCH /api/activity-types/AT-1002')).toEqual([change]);
+    expect(api.bodiesOf('POST /api/v1/activity-types/AT-1002/impact')).toEqual([change]);
+    expect(api.bodiesOf('PATCH /api/v1/activity-types/AT-1002')).toEqual([change]);
   });
 
   it('adds a model without an impact check', async () => {
     const { user, api } = renderTypes({
-      'PATCH /api/activity-types/AT-1006': { body: PODCAST },
+      'PATCH /api/v1/activity-types/AT-1006': { body: PODCAST },
     });
 
     await chooseAction('Podcast', 'Edit', user);
@@ -342,7 +347,7 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     await findMessages();
-    expect(api.bodiesOf('PATCH /api/activity-types/AT-1006')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/activity-types/AT-1006')).toEqual([
       { modelIds: ['MOD-1002'], version: 1 },
     ]);
     expect(api.requests.some((request) => request.path.endsWith('/impact'))).toBe(false);
@@ -351,13 +356,13 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
   it('keeps the typed values after a conflict and saves again over it (FR-007)', async () => {
     let patches = 0;
     const { user, api } = renderTypes({
-      'PATCH /api/activity-types/AT-1006': () => {
+      'PATCH /api/v1/activity-types/AT-1006': () => {
         patches += 1;
         return patches === 1
           ? { status: 409, body: versionConflict() }
           : { body: { ...PODCAST, name: 'Podcast series' } };
       },
-      'GET /api/activity-types/AT-1006': { body: { ...PODCAST, version: 4 } },
+      'GET /api/v1/activity-types/AT-1006': { body: { ...PODCAST, version: 4 } },
     });
 
     await chooseAction('Podcast', 'Edit', user);
@@ -373,13 +378,13 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
     expect(name).toHaveValue('Podcast series');
     await waitFor(() =>
       expect(
-        api.requests.some((r) => r.method === 'GET' && r.path === '/api/activity-types/AT-1006'),
+        api.requests.some((r) => r.method === 'GET' && r.path === '/api/v1/activity-types/AT-1006'),
       ).toBe(true),
     );
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     expect(await findMessages()).toHaveTextContent("Activity type 'Podcast series' saved");
-    expect(api.bodiesOf('PATCH /api/activity-types/AT-1006')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/activity-types/AT-1006')).toEqual([
       { name: 'Podcast series', version: 1 },
       { name: 'Podcast series', version: 4 },
     ]);
@@ -389,7 +394,7 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
 describe('ActivityTypesPage: status and delete (US5 scenario 5, FR-004)', () => {
   it('moves an unused type to the recycle bin and offers Undo', async () => {
     const { user } = renderTypes({
-      'DELETE /api/activity-types/AT-1006': {
+      'DELETE /api/v1/activity-types/AT-1006': {
         body: deleted('activity type', 'AT-1006', 'Podcast'),
       },
     });
@@ -409,7 +414,7 @@ describe('ActivityTypesPage: status and delete (US5 scenario 5, FR-004)', () => 
 
   it('offers Set inactive instead of deleting a type in use', async () => {
     const { user, api } = renderTypes({
-      'POST /api/activity-types/AT-1002/status': { body: { ...EVENT, active: false } },
+      'POST /api/v1/activity-types/AT-1002/status': { body: { ...EVENT, active: false } },
     });
 
     await screen.findByRole('table');
@@ -422,7 +427,7 @@ describe('ActivityTypesPage: status and delete (US5 scenario 5, FR-004)', () => 
     await user.click(within(dialog).getByRole('button', { name: 'Set inactive' }));
 
     expect(await findMessages()).toHaveTextContent("Activity type 'Event' set inactive");
-    expect(api.bodiesOf('POST /api/activity-types/AT-1002/status')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/activity-types/AT-1002/status')).toEqual([
       { active: false, version: 3 },
     ]);
     expect(api.requests.some((r) => r.method === 'DELETE')).toBe(false);
@@ -431,7 +436,7 @@ describe('ActivityTypesPage: status and delete (US5 scenario 5, FR-004)', () => 
   it('switches to the in-use dialog when the API finds the type in use', async () => {
     const message = "'Podcast' is in use (used by 1 activity) — set it inactive instead.";
     const { user } = renderTypes({
-      'DELETE /api/activity-types/AT-1006': { status: 409, body: inUse(message) },
+      'DELETE /api/v1/activity-types/AT-1006': { status: 409, body: inUse(message) },
     });
 
     await screen.findByRole('table');
@@ -444,7 +449,7 @@ describe('ActivityTypesPage: status and delete (US5 scenario 5, FR-004)', () => 
 
   it('reactivates an inactive type', async () => {
     const { user, api } = renderTypes(
-      { 'POST /api/activity-types/AT-1007/status': { body: { ...PRINT, active: true } } },
+      { 'POST /api/v1/activity-types/AT-1007/status': { body: { ...PRINT, active: true } } },
       '/settings/activity-types?status=inactive',
     );
 
@@ -452,7 +457,7 @@ describe('ActivityTypesPage: status and delete (US5 scenario 5, FR-004)', () => 
     await chooseAction('Print advert', 'Reactivate', user);
 
     expect(await findMessages()).toHaveTextContent("Activity type 'Print advert' reactivated");
-    expect(api.bodiesOf('POST /api/activity-types/AT-1007/status')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/activity-types/AT-1007/status')).toEqual([
       { active: true, version: 1 },
     ]);
   });

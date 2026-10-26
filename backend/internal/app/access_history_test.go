@@ -19,7 +19,7 @@ type binItem struct {
 func binOf(t *testing.T, client *apitest.Client) []binItem {
 	t.Helper()
 	var page struct{ Items []binItem }
-	client.Do(t, http.MethodGet, "/api/recycle-bin", nil).Decode(t, &page)
+	client.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil).Decode(t, &page)
 	return page.Items
 }
 
@@ -57,14 +57,16 @@ func TestRecycleBin_EntryAccess_FR011_D238(t *testing.T) {
 		t.Errorf("Mei's recycle bin = %+v, want empty", meis)
 	}
 
-	preview := "/api/recycle-bin/" + entry.ID + "/restore-preview"
-	refused(t, "Mei previewing its restore", mei.Do(t, http.MethodGet, preview, nil),
-		"You don't have access to this initiative. Ask an administrator if you need it.")
+	preview := "/api/v1/recycle-bin/" + entry.ID + "/restore-preview"
+	if answer := mei.Do(t, http.MethodGet, preview, nil); answer.Status != http.StatusNotFound ||
+		!strings.Contains(string(answer.Body), "This item is not in the recycle bin.") {
+		t.Errorf("Mei previewing its restore = %d %s, want 404 as for a missing entry", answer.Status, answer.Body)
+	}
 	refused(t, "Sara previewing its restore", sara.Do(t, http.MethodGet, preview, nil), viewOnly)
 	if answer := priya.Do(t, http.MethodGet, preview, nil); answer.Status != http.StatusOK {
 		t.Errorf("Priya previewing its restore = %d %s, want 200", answer.Status, answer.Body)
 	}
-	refused(t, "Priya deleting it permanently", priya.Do(t, http.MethodDelete, "/api/recycle-bin/"+entry.ID, nil),
+	refused(t, "Priya deleting it permanently", priya.Do(t, http.MethodDelete, "/api/v1/recycle-bin/"+entry.ID, nil),
 		"Deleting permanently isn't part of your role (Planner). Ask an administrator if you need it.")
 }
 
@@ -74,7 +76,7 @@ func TestRecycleBin_EntryAccess_FR011_D238(t *testing.T) {
 func TestLogSummary_OnlyWhatThePersonSees_FR007(t *testing.T) {
 	server := apitest.New(t)
 	alex, mei := server.SignIn(t, alexsEmail), server.SignIn(t, meisEmail)
-	const path = "/api/activity-log/summary?todayStart=2026-03-13T00:00:00Z&weekStart=2026-03-09T00:00:00Z"
+	const path = "/api/v1/activity-log/summary?todayStart=2026-03-13T00:00:00Z&weekStart=2026-03-09T00:00:00Z"
 	type summary struct {
 		Total int
 		Plans []struct{ ID string }
@@ -98,7 +100,7 @@ func TestLogSummary_OnlyWhatThePersonSees_FR007(t *testing.T) {
 		t.Errorf("Mei's summary names the Lubricants plan: %q", planIDs(meis))
 	}
 	var log struct{ Total, UnfilteredTotal int }
-	mei.Do(t, http.MethodGet, "/api/activity-log?limit=50", nil).Decode(t, &log)
+	mei.Do(t, http.MethodGet, "/api/v1/activity-log?limit=50", nil).Decode(t, &log)
 	if log.UnfilteredTotal != meis.Total || log.Total != meis.Total {
 		t.Errorf("Mei's log = %+v, want both totals %d (her summary's)", log, meis.Total)
 	}

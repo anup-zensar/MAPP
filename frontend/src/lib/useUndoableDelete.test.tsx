@@ -52,7 +52,7 @@ const IDEAS_RESTORED = {
   details: '',
 };
 
-const UNDO_IDEAS = 'POST /api/recycle-bin/BIN-1001/undo';
+const UNDO_IDEAS = 'POST /api/v1/recycle-bin/BIN-1001/undo';
 
 const IDEAS_MOVED = "Sample folder 'Ideas' moved to the recycle bin";
 
@@ -178,7 +178,7 @@ describe('useUndoableDelete', () => {
     await waitFor(() => expect(messages).toHaveTextContent("Sample folder 'Ideas' restored"));
     expect(messages).not.toHaveTextContent(IDEAS_MOVED);
     expect(api.requests).toEqual([
-      { method: 'POST', path: '/api/recycle-bin/BIN-1001/undo', search: '', body: undefined },
+      { method: 'POST', path: '/api/v1/recycle-bin/BIN-1001/undo', search: '', body: undefined },
     ]);
   });
 
@@ -207,7 +207,9 @@ describe('useUndoableDelete', () => {
   ])(
     'says why an Undo was refused, %s, and refreshes the lists (FR-025, FR-026, edge case)',
     async (code, message, extra) => {
-      mockApi({ [UNDO_IDEAS]: { status: 409, body: { code, message, fields: [], ...extra } } });
+      mockApi({
+        [UNDO_IDEAS]: { status: 409, body: { error: { code, message, fields: [], ...extra } } },
+      });
 
       const { messages, invalidate } = await deleteIdeasAndUndo();
 
@@ -224,13 +226,15 @@ describe('useUndoableDelete', () => {
       [UNDO_IDEAS]: {
         status: 409,
         body: {
-          code: 'already_resolved',
-          message: "'Ideas' is no longer in the recycle bin.",
-          fields: [],
-          resolution: {
-            how: 'restored',
-            by: { id: 'U-1003', name: 'Daniel Okoro' },
-            at: '2026-03-12T09:05:00Z',
+          error: {
+            code: 'already_resolved',
+            message: "'Ideas' is no longer in the recycle bin.",
+            fields: [],
+            resolution: {
+              how: 'restored',
+              by: { id: 'U-1003', name: 'Daniel Okoro' },
+              at: '2026-03-12T09:05:00Z',
+            },
           },
         },
       },
@@ -267,7 +271,7 @@ describe('useUndoableDelete', () => {
     mockApi({
       [UNDO_IDEAS]: {
         status: 401,
-        body: { code: 'session_expired', message: 'Please sign in again', fields: [] },
+        body: { error: { code: 'session_expired', message: 'Please sign in again', fields: [] } },
       },
     });
 

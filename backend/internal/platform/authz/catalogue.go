@@ -102,7 +102,7 @@ var catalogue = []PermissionInfo{
 	{RecycleBinPurge, GroupAdministration, "Delete permanently and empty the recycle bin", "Deleting permanently", false},
 }
 
-// Catalogue returns every permission in Table A order. GET /api/access/permissions serves it.
+// Catalogue returns every permission in Table A order. GET /api/v1/access/permissions serves it.
 func Catalogue() []PermissionInfo {
 	return slices.Clone(catalogue)
 }

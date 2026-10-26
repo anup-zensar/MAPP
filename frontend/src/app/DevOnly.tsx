@@ -10,22 +10,22 @@ import type { PageHandle } from './RequireSignIn';
 /**
  * The gate in front of the developer pages (research R23, D-036): they exist only where demo
  * sign-in is on — the local and development environments. Anywhere else their address shows
- * "Page not found". The API's health answer says which it is; Vite's development flag is not
+ * "Page not found". The API's environment answer says which it is; Vite's development flag is not
  * used, because the end-to-end tests run the production build.
  */
 export function DevOnly({ children }: { children: ReactNode }) {
-  const health = useQuery({
-    queryKey: ['health'],
-    queryFn: () => call(api.GET('/api/health')),
+  const environment = useQuery({
+    queryKey: ['environment'],
+    queryFn: () => call(api.GET('/api/v1/environment')),
   });
 
-  if (health.data) {
-    return health.data.demoSignIn ? children : <NotFoundPage />;
+  if (environment.data) {
+    return environment.data.demoSignIn ? children : <NotFoundPage />;
   }
   return (
     <EnvironmentCheck
-      error={health.isError ? health.error : null}
-      onRetry={() => health.refetch()}
+      error={environment.isError ? environment.error : null}
+      onRetry={() => environment.refetch()}
     />
   );
 }
