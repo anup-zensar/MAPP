@@ -65,9 +65,6 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	accessService := access.NewService(db, access.NewJSONRepository(), generator, historyService,
 		accessDirectory{people: peopleService}, now)
 	peopleService.UseAccess(peopleAccessHooks(accessService))
-	signedIn := func(next http.HandlerFunc) http.HandlerFunc {
-		return authService.RequireSignIn(accessService.Authorize(next))
-	}
 
 	// The kinds of people, teams and team memberships (feature 003), registered before any other business
 	// kind, so that history can log their changes and delete teams with their memberships. A kind that
@@ -89,12 +86,12 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	router := web.NewRouter(engine)
-	probeRoutes(router, cfg, db)
-	auth.NewHandler(authService, peopleService).Routes(router, signedIn)
-	people.NewHandler(peopleService).Routes(router, signedIn)
-	history.NewHandler(historyService).Routes(router, signedIn)
-	access.NewHandler(accessService).Routes(router, signedIn)
+	router := web.NewRouter(engine.Group("", authService.RequireSignIn, accessService.Authorize))
+	probeRoutes(engine, cfg, db)
+	auth.NewHandler(authService, peopleService).RegisterRoutes(engine.Group(apiV1))
+	people.NewHandler(peopleService).Routes(router, unwrapped)
+	history.NewHandler(historyService).Routes(router, unwrapped)
+	access.NewHandler(accessService).Routes(router, unwrapped)
 
 	// Settings (feature 002) exist in every environment. Their kinds are registered with history, parents
 	// first, so that their deletes can be undone and restored.
@@ -112,7 +109,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	}
 	settingsService.UseRateFeed(settings.GSAPRateFile{})
 	// Features 003–007 tell Settings where its records are used at the end of New, once they are built.
-	settings.NewHandler(settingsService).Routes(router, signedIn)
+	settings.NewHandler(settingsService).Routes(router, unwrapped)
 
 	// Plans (004). Plans reads Settings (002) and people and teams (003) through their services. Its history
 	// kind comes before the kinds of the levels below the plan (005–007), which also register themselves
@@ -124,7 +121,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 			return nil, err
 		}
 	}
-	plans.NewHandler(planService).Routes(router, signedIn)
+	plans.NewHandler(planService).Routes(router, unwrapped)
 	// Who sees which log and recycle-bin entries and may restore them follows the plans' visibility (014).
 	historyService.UseAccess(historyAccess{plans: plansRepo, history: historyService})
 
@@ -169,9 +166,9 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 			return nil, err
 		}
 	}
-	campaigns.NewHandler(campaignsService).Routes(router, signedIn)
-	activities.NewHandler(activitiesService).Routes(router, signedIn)
-	lineitems.NewHandler(lineItemsService).Routes(router, signedIn)
+	campaigns.NewHandler(campaignsService).Routes(router, unwrapped)
+	activities.NewHandler(activitiesService).Routes(router, unwrapped)
+	lineitems.NewHandler(lineItemsService).Routes(router, unwrapped)
 
 	// Global budgets (014, BUS.BUD.040): global budgets and their allocations to plans, which set the plans'
 	// budgets through the plans service (budgets_adapter.go). Their kinds come after the planning kinds: an
@@ -187,7 +184,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		}
 	}
 	planService.UseAllocations(planAllocations{budgets: budgetsService}) // Plan.allocation and the budget lock
-	budgets.NewHandler(budgetsService).Routes(router, signedIn)
+	budgets.NewHandler(budgetsService).Routes(router, unwrapped)
 
 	// The developer sample records exist only in demo mode (D-036). Their kinds are registered with
 	// history, so that their deletes can be undone and restored; a kind that history refuses stops the API
@@ -199,7 +196,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 				return nil, err
 			}
 		}
-		samples.NewHandler(samplesService).Routes(router, signedIn)
+		samples.NewHandler(samplesService).Routes(router, unwrapped)
 	}
 
 	// Activity approvals (008), built after activities and line items: approval actions are logged on the
@@ -226,7 +223,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	approvalsService.UseApprovers(accessService) // who may be named and flagged as an approver (014 FR-028)
 	accessService.UseTargets(planningTargets{db: db, plans: plansRepo, campaigns: campaignsRepo, activities: activitiesRepo,
 		lineItems: lineItemsRepo, approvals: approvalsRepo}.finders())
-	approvals.NewHandler(approvalsService).Routes(router, signedIn)
+	approvals.NewHandler(approvalsService).Routes(router, unwrapped)
 
 	// Financial transactions (015): GSAP's POs, invoices, payments and accruals, read-only, from the
 	// simulated GSAP extract and the demo data, with figures over the planning tree (financials.go). Its two
@@ -244,12 +241,12 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 			return nil, err
 		}
 	}
-	financials.NewHandler(financialsService).Routes(router, signedIn)
+	financials.NewHandler(financialsService).Routes(router, unwrapped)
 
 	// Home (009): a read-only dashboard over the services of 003–008 and 011's activity log (home_sources.go).
 	homeService := home.NewService(db, homeSources(peopleService, plansRepo, planService, campaignsService, activitiesService,
 		approvalsService, historyService, settingsService.Rates))
-	home.NewHandler(homeService).Routes(router, signedIn)
+	home.NewHandler(homeService).Routes(router, unwrapped)
 
 	// All work (010): a read-only view of a year over plans (004) and the records below them (005–007),
 	// read through the adapter allWorkSource (allwork_source.go), with its own personal settings — saved
@@ -262,7 +259,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		history: historyService, financials: financialsService, financeAccess: financialAccess{tx: db, plans: plansRepo},
 	}
 	allWorkService := allwork.NewService(db, allwork.NewJSONRepository(), allWork, generator, now)
-	allwork.NewHandler(allWorkService).Routes(router, signedIn)
+	allwork.NewHandler(allWorkService).Routes(router, unwrapped)
 
 	// Where the records of people (003) and Settings (002) are used, now that every feature is built
 	// (references.go): people's plans (004), owner and approver counts (005–008) and currencies (002);

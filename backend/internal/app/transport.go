@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -10,6 +11,8 @@ import (
 	"mapp/internal/platform/web"
 	"mapp/internal/settings"
 )
+
+const apiV1 = "/api/v1"
 
 // Close flushes what telemetry still holds; the server must have stopped.
 func (a *App) Close(ctx context.Context) error {
@@ -29,4 +32,9 @@ func newEngine(cfg Config) (*gin.Engine, *telemetry.Telemetry, error) {
 		return nil, nil, err
 	}
 	return engine, tel, nil
+}
+
+// unwrapped is the sign-in check the bridge hands to packages not yet on Gin: its group already signs in.
+func unwrapped(h http.HandlerFunc) http.HandlerFunc {
+	return h
 }

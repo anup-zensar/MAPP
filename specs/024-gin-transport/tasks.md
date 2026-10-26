@@ -121,16 +121,16 @@ end-to-end suite green with no test expectation changed.
 
 ### Slice B — sign-in and access as Gin middleware
 
-- [ ] T018 ⏳022 In `backend/internal/auth/middleware.go`, make `RequireSignIn(c *gin.Context)` put the actor
+- [x] T018 ⏳022 In `backend/internal/auth/middleware.go`, make `RequireSignIn(c *gin.Context)` put the actor
   and `logging.WithAttrs(actor_id)` into `c.Request`. In `handler.go`, move to Gin handlers with
   `RegisterRoutes(public gin.IRoutes)` (FR-003, FR-006)
-- [ ] T019 ⏳022 In `backend/internal/access/middleware.go`, make `Authorize(c *gin.Context)` look up its rule
+- [x] T019 ⏳022 In `backend/internal/access/middleware.go`, make `Authorize(c *gin.Context)` look up its rule
   with `web.Operation(c)` and refuse an operation without one with 403. It finds the target from `c.Params`
   (the lookup moves out of `targets.go`), logs with `…Context` (`actor_id` replaces `person`) and keeps
   022's 404 for records the person cannot see (FR-003, FR-006)
-- [ ] T020 ⏳022 Rewrite `backend/internal/access/middleware_test.go` to serve through a small Gin engine. The
+- [x] T020 ⏳022 Rewrite `backend/internal/access/middleware_test.go` to serve through a small Gin engine. The
   log test asserts `operation` and `actor_id` and no name or e-mail (FR-003, FR-006)
-- [ ] T021 ⏳022 In `backend/internal/app/app.go`, create the groups: public (probes, environment, auth) and
+- [x] T021 ⏳022 In `backend/internal/app/app.go`, create the groups: public (probes, environment, auth) and
   signed-in (`/api/v1` with `RequireSignIn` and `Authorize`). The bridge moves onto the signed-in group, and
   the `Wrap` it hands to areas not yet moved does nothing. Delete the old `signedIn` closure (FR-003,
   FR-004)
@@ -146,14 +146,14 @@ end-to-end suite green with no test expectation changed.
 **Independent Test**: spec User Story 2.
 
 - [ ] T022 [P] [US2] Create `backend/internal/platform/web/telemetry_test.go` with an engine on an in-memory
-  span exporter and a manual metric reader. Write `TestEngine_SpanAndDurationPerRoute_024_FR008` (span
-  `GET /x/:id` with `http.route` and status; a duration point with route and status) and
-  `TestEngine_PanicCountedAsError_024_FR009`
+  span exporter and a manual metric reader: `TestEngine_TracesAndMeasuresEveryRoute_024_FR008_FR009` checks
+  one span per request named by its route, a duration measured with route and status, a panic counted as a
+  500, and a client's `traceparent` not continued
 - [ ] T023 [US2] Create `backend/internal/app/logging_test.go` (through `apitest`, not parallel, swapping the
   default slog logger). In `TestRequestLogs_CarryRequestTraceAndActor_024_FR006`, Sara's refused delete and
   a successful read must produce records that are all JSON, with `request_id` equal to the header and with
   `trace_id`, and `actor_id` `U-1006` after sign-in; none may contain "Sara", "Novak", "@" or the session
-  cookie. Add `TestClientTraceparent_Ignored_024_FR008`
+  cookie
 - [ ] T024 [US2] ⏳022 Add "Every response has the header X-Request-ID" to the conventions in
   `backend/api/openapi.yaml`. `npm run api:types` shows no diff (FR-005)
 
