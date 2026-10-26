@@ -23,7 +23,7 @@ CREATE UNIQUE INDEX currencies_name_key ON currencies (lower(name COLLATE "C"));
 CREATE TABLE rate_imports (
     id              text        PRIMARY KEY CHECK (id ~ '^RI-[0-9]+$'),
     file_name       text        NOT NULL CHECK (file_name <> ''),
-    feed            text        NOT NULL CHECK (feed = 'gsapDailyRatesFile'),
+    feed            text        NOT NULL CHECK (feed <> ''),
     first_date      date,
     last_date       date,
     added           integer     NOT NULL CHECK (added >= 0),
