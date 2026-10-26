@@ -32,6 +32,13 @@ type Kind struct {
 	// Put writes the record of a snapshot back to storage, exactly as its Data says.
 	Put func(ctx context.Context, s Snapshot) error
 
+	// The four below, optional, do for many records at once what ChildIDs, Snapshot, Remove and Put do for one,
+	// so a whole tree costs a few reads and writes per level; each record's Snapshot names its parent.
+	AllChildIDs func(ctx context.Context, parentIDs []string) ([]string, error)
+	SnapshotsOf func(ctx context.Context, ids []string) ([]Snapshot, error)
+	RemoveAll   func(ctx context.Context, ids []string) error
+	PutAll      func(ctx context.Context, snapshots []Snapshot) error
+
 	// The hooks below are optional.
 
 	// Describe gives a field's label and a value's text for the activity log, such as "Owner" and "Priya

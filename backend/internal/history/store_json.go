@@ -45,3 +45,17 @@ func (jsonRepository) GetBinEntry(ctx context.Context, id string) (BinEntry, boo
 func (jsonRepository) BinEntries(ctx context.Context) ([]BinEntry, error) {
 	return store.List[BinEntry](ctx, binTable)
 }
+
+func (r jsonRepository) PurgeBinEntries(ctx context.Context, ids []string, resolution Resolution) error {
+	for _, id := range ids {
+		e, found, err := r.GetBinEntry(ctx, id)
+		if err != nil || !found {
+			return err
+		}
+		e.Resolution, e.Snapshots = &resolution, []Snapshot{}
+		if err := r.PutBinEntry(ctx, e); err != nil {
+			return err
+		}
+	}
+	return nil
+}
