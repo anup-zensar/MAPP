@@ -35,6 +35,7 @@ const (
 // The Global budgets list of 2026 has the demo global budget with its four totals; 2027 has none; the years
 // are those with a global budget; New global budget is available (FR-036, FR-032).
 func TestListGlobalBudgets_200_FR036(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	carlos := server.SignIn(t, carlosEmail)
 
@@ -68,6 +69,7 @@ func TestListGlobalBudgets_200_FR036(t *testing.T) {
 // planned cost, left to plan and budget used; no plan of 2026 without an allocation; the year lock and the
 // delete lock (FR-032). An unknown global budget is not found.
 func TestGetGlobalBudget_200_404_FR032(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	carlos := server.SignIn(t, carlosEmail)
 
@@ -115,6 +117,7 @@ func TestGetGlobalBudget_200_404_FR032(t *testing.T) {
 // Creating a global budget answers 201 with GB-1002 and its empty figures; a form with problems answers
 // every problem at once (FR-029, messages 24 and 26).
 func TestCreateGlobalBudget_201_400_FR029(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	carlos := server.SignIn(t, carlosEmail)
 	body := map[string]any{"name": "FY2027 Global brand budget", "year": 2027, "amount": usd("900000.00"), "ownerId": "U-1005",
@@ -148,6 +151,7 @@ func TestCreateGlobalBudget_201_400_FR029(t *testing.T) {
 // Saving changed fields answers the global budget after the change, version 2; a save from the old version
 // is refused naming who changed it and when; an unknown global budget is not found (FR-029).
 func TestUpdateGlobalBudget_200_409_404_FR029(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	carlos := server.SignIn(t, carlosEmail)
 	server.Advance(90 * time.Minute)
@@ -174,6 +178,7 @@ func TestUpdateGlobalBudget_200_409_404_FR029(t *testing.T) {
 // A global budget with allocations cannot be deleted (409 in_use, message 30); one without goes to the
 // recycle bin, and the answer offers Undo (FR-035).
 func TestDeleteGlobalBudget_409_200_404_FR035(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	carlos := server.SignIn(t, carlosEmail)
 	created := carlos.Do(t, http.MethodPost, "/api/v1/global-budgets", map[string]any{
@@ -200,6 +205,7 @@ func TestDeleteGlobalBudget_409_200_404_FR035(t *testing.T) {
 // The Allocate dialog offers the plans of 2026 without an allocation: none while both are allocated, Mobility
 // China once its allocation is removed (FR-030).
 func TestListAllocationOptions_200_404_FR030(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	carlos := server.SignIn(t, carlosEmail)
 
@@ -222,6 +228,7 @@ func TestListAllocationOptions_200_404_FR030(t *testing.T) {
 // problems are answered at once; an out-of-date plan version is refused naming who changed the plan
 // (FR-030, messages 28 and 29).
 func TestCreateBudgetAllocation_201_400_409_FR030(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	carlos := server.SignIn(t, carlosEmail)
 	carlos.Do(t, http.MethodDelete, "/api/v1/budget-allocations/BA-1002", nil)
@@ -269,6 +276,7 @@ func TestCreateBudgetAllocation_201_400_409_FR030(t *testing.T) {
 // comment. A change from an out-of-date allocation version is refused; an unknown allocation is not found
 // (FR-030, FR-037).
 func TestUpdateBudgetAllocation_200_409_404_FR030_FR037(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	carlos := server.SignIn(t, carlosEmail)
 	server.Advance(time.Hour)
@@ -315,6 +323,7 @@ func TestUpdateBudgetAllocation_200_409_404_FR030_FR037(t *testing.T) {
 // refused with 409 not_allowed and the plan form's sentence; once Carlos removes the Mobility allocation,
 // Mei can change her plan's budget, which kept 800,000.00 (FR-031, FR-034).
 func TestRemoveBudgetAllocation_200_404_AndThePlanBudgetLock_FR031_FR034(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	carlos := server.SignIn(t, carlosEmail)
 	priya := server.SignIn(t, priyaEmail)
@@ -351,6 +360,7 @@ func TestRemoveBudgetAllocation_200_404_AndThePlanBudgetLock_FR031_FR034(t *test
 // Deleting a plan takes its allocation to the recycle bin; once the global budget is deleted too, restoring
 // the plan brings it back without the allocation, with note 31 (FR-035).
 func TestPlanDeleteAndRestore_TheAllocation_FR035(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	carlos := server.SignIn(t, carlosEmail)
 	carlos.Do(t, http.MethodDelete, "/api/v1/budget-allocations/BA-1001", nil) // GB-1001 keeps one allocation only

@@ -16,6 +16,7 @@ import (
 // A new global budget gets the first ID, version 1 and a "created" entry; its page has no allocation yet,
 // the year lock, and every action for the global planner (FR-029, FR-037).
 func TestCreate_GlobalBudget_FR029(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	view, err := f.service.Create(t.Context(), carlos, budgetInput())
@@ -47,6 +48,7 @@ func TestCreate_GlobalBudget_FR029(t *testing.T) {
 
 // Every problem of the form is reported at once and nothing is saved (FR-029, messages 24, 26 and 27).
 func TestCreate_EveryProblemAtOnce_FR029(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.create(t, budgetInput())
 	tooLong := strings.Repeat("x", 121)
@@ -103,6 +105,7 @@ func TestCreate_EveryProblemAtOnce_FR029(t *testing.T) {
 // Creating, changing and deleting a global budget needs "Create global budgets and allocate them to plans"
 // for All markets (FR-029): a local planner is refused with the access rules' message and nothing changes.
 func TestCreateUpdateDelete_NeedManageForAllMarkets_FR029(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	b := f.create(t, budgetInput())
 	f.as(priyasAccess())
@@ -123,6 +126,7 @@ func TestCreateUpdateDelete_NeedManageForAllMarkets_FR029(t *testing.T) {
 // cannot be sent; an out-of-date version is refused naming who changed it; a missing version is a field
 // problem; a save that changes nothing changes nothing (FR-029, FR-037, data model §3).
 func TestUpdate_ChangedFieldsAndVersion_FR029_FR037(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	b := f.create(t, budgetInput())
 	f.clock.Advance(time.Hour)
@@ -155,6 +159,7 @@ func TestUpdate_ChangedFieldsAndVersion_FR029_FR037(t *testing.T) {
 // A new owner must manage global budgets for all markets (message 27) and is logged by name; an owner the
 // global budget already has stays when other fields change, even after losing that role (FR-029, FR-037).
 func TestUpdate_Owner_FR029_FR037(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	b := f.create(t, budgetInput())
 
@@ -179,6 +184,7 @@ func TestUpdate_Owner_FR029_FR037(t *testing.T) {
 // A global budget with allocations cannot be deleted (409 in_use, message 30, one plan and several plans);
 // one without goes to the recycle bin and comes back with Undo (FR-035).
 func TestDelete_InUseOrToTheBin_FR035(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	demo := f.demo(t)
 	single := f.create(t, GlobalBudgetInput{Name: "Single", Year: ptr(2026), Amount: &money.Input{Amount: "0.00", Currency: "USD"}, OwnerID: carlos.ID})
@@ -207,6 +213,7 @@ func TestDelete_InUseOrToTheBin_FR035(t *testing.T) {
 // A global budget restored from the bin after another took its name is renamed; its Undo is refused
 // (001's name rule, FR-035).
 func TestRestore_NameRule_FR035(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	b := f.create(t, budgetInput())
 	entry, err := f.service.Delete(t.Context(), carlos, b.ID)
@@ -228,6 +235,7 @@ func TestRestore_NameRule_FR035(t *testing.T) {
 // The list shows the global budgets of the chosen year by name with their four totals, every year that has
 // one, newest first, and whether the person may create one (FR-036).
 func TestList_YearsTotalsAndCreate_FR036(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.demo(t)
 	f.create(t, GlobalBudgetInput{Name: "Asia reserve", Year: ptr(2026), Amount: &money.Input{Amount: "100.00", Currency: "USD"}, OwnerID: carlos.ID})
@@ -265,6 +273,7 @@ func TestList_YearsTotalsAndCreate_FR036(t *testing.T) {
 // status, allocation, planned cost, left to plan and budget used; the plans of the year without an
 // allocation (FR-032).
 func TestGet_FiguresAndRows_FR032(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	demo := f.demo(t)
 
@@ -305,6 +314,7 @@ func TestGet_FiguresAndRows_FR032(t *testing.T) {
 // and the plans of the year without an allocation are those she can see. The totals still count every
 // allocation (FR-033, US6).
 func TestGet_OtherMarkets_FR033(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	demo := f.demo(t)
 	f.as(priyasAccess())
@@ -338,6 +348,7 @@ func TestGet_OtherMarkets_FR033(t *testing.T) {
 // Allocations that add up to more than the global budget save, and the figures show a negative
 // unallocated amount, over-allocated (US6 scenario 5, never blocks as D-015).
 func TestAllocate_OverAllocationNeverBlocks_FR032(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	demo := f.demo(t)
 
@@ -355,6 +366,7 @@ func TestAllocate_OverAllocationNeverBlocks_FR032(t *testing.T) {
 // allocation on the global budget, Not allocated → 1,200,000.00 USD, and with a comment on the plan (FR-030,
 // FR-037, data model §3).
 func TestAllocate_SetsThePlanBudgetAndLogs_FR030_FR037(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	b := f.create(t, budgetInput())
 
@@ -385,6 +397,7 @@ func TestAllocate_SetsThePlanBudgetAndLogs_FR030_FR037(t *testing.T) {
 // currency (D-303); the plan version is required. A person who may not manage global budgets in the plan's
 // scope is refused (403). Nothing is saved (FR-030).
 func TestAllocate_Rules_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	demo := f.demo(t)
 	other := f.create(t, GlobalBudgetInput{Name: "Other", Year: ptr(2026), Amount: &money.Input{Amount: "1.00", Currency: "USD"}, OwnerID: carlos.ID})
@@ -432,6 +445,7 @@ func TestAllocate_Rules_FR030(t *testing.T) {
 // An allocation from a plan version that is out of date is refused naming who changed the plan, and
 // nothing is saved: the allocation would otherwise overwrite a newer plan budget unseen (FR-030).
 func TestAllocate_PlanVersionConflict_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	b := f.create(t, budgetInput())
 
@@ -448,6 +462,7 @@ func TestAllocate_PlanVersionConflict_FR030(t *testing.T) {
 // A plan in another currency is allocated in that currency (D-303): its row shows the allocation, planned
 // cost and left to plan in BRL and the allocation in USD, which the figures count at the current rate.
 func TestAllocate_InThePlansCurrency_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	b := f.create(t, budgetInput())
 	f.plans.planned[planBrazil] = amount(t, "100.00") // USD
@@ -466,6 +481,7 @@ func TestAllocate_InThePlansCurrency_FR030(t *testing.T) {
 // Changing an allocation sets the plan's budget in the same save and logs both; the allocation's and the
 // plan's versions are both checked; an unchanged amount changes and logs nothing (FR-030, US6 scenario 2).
 func TestUpdateAllocation_FR030_FR037(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	demo := f.demo(t)
 	f.clock.Advance(time.Hour)
@@ -523,6 +539,7 @@ func TestUpdateAllocation_FR030_FR037(t *testing.T) {
 // Changing or removing an allocation needs "Create global budgets and allocate them to plans" in the plan's
 // scope (FR-030).
 func TestChangeAndRemoveAllocation_NeedTheirPlansScope_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.demo(t)
 	f.access.manageIn = map[string]error{planEurope: refusal(refusedPlan)}
@@ -541,6 +558,7 @@ func TestChangeAndRemoveAllocation_NeedTheirPlansScope_FR030(t *testing.T) {
 
 // An allocation whose plan the person cannot see answers like a missing one, and nothing changes (022 FR-005).
 func TestChangeAndRemoveAllocation_HiddenPlanIsNotFound_022_FR005(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.demo(t)
 	f.access.hidden = map[string]bool{planEurope: true}
@@ -561,6 +579,7 @@ func TestChangeAndRemoveAllocation_HiddenPlanIsNotFound_022_FR005(t *testing.T) 
 // Removing an allocation deletes it outright: the plan keeps its budget, which is editable again, the plan's
 // log says the allocation was removed, and the global budget's log keeps the amount (FR-034, US6 scenario 6).
 func TestRemoveAllocation_KeepsThePlanBudget_FR034(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	demo := f.demo(t)
 
@@ -589,6 +608,7 @@ func TestRemoveAllocation_KeepsThePlanBudget_FR034(t *testing.T) {
 // The Allocate dialog offers the plans of the global budget's year without an allocation that the person
 // may allocate to, by name (FR-030).
 func TestAllocationOptions_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	b := f.create(t, budgetInput())
 	f.allocate(t, b.ID, planChina, "800000.00")
@@ -612,6 +632,7 @@ func TestAllocationOptions_FR030(t *testing.T) {
 // A plan's allocation, for the plan page and the budget lock: its global budget, and whether the reader may
 // open it (FR-031, FR-033).
 func TestAllocationOf_FR031(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.demo(t)
 
@@ -634,6 +655,7 @@ func TestAllocationOf_FR031(t *testing.T) {
 // Deleting a plan takes its allocation to the recycle bin with it, so the global budget no longer counts
 // it; restoring the plan brings the allocation back (FR-035).
 func TestPlanDelete_TakesTheAllocation_FR035(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	demo := f.demo(t)
 
@@ -658,6 +680,7 @@ func TestPlanDelete_TakesTheAllocation_FR035(t *testing.T) {
 // A plan restored after its global budget was deleted comes back without the allocation, with note 31, and
 // keeps its budget (FR-035).
 func TestPlanRestore_GlobalBudgetGone_FR035(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	b := f.create(t, budgetInput())
 	f.allocate(t, b.ID, planChina, "800000.00")
@@ -681,6 +704,7 @@ func TestPlanRestore_GlobalBudgetGone_FR035(t *testing.T) {
 
 // percentUsed rounds half up to two decimals and is null for an allocation of 0.00 (domain model §4.2).
 func TestPercentUsed_FR032(t *testing.T) {
+	t.Parallel()
 	cases := []struct{ planned, allocation, want string }{
 		{"750000.00", "1200000.00", "62.50"}, {"1.00", "3.00", "33.33"}, {"2.00", "3.00", "66.67"},
 		{"0.00", "5.00", "0.00"}, {"15.00", "10.00", "150.00"}, {"1.00", "0.00", "null"},
