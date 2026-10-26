@@ -4,10 +4,10 @@ import (
 	"context"
 	"slices"
 
-	"northstar/internal/access"
-	"northstar/internal/budgets"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
+	"mapp/internal/access"
+	"mapp/internal/budgets"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
 )
 
 // budgetAccess is budgets.Access (014 plan Table C; FR-029, FR-030, FR-033) over the grants the request's

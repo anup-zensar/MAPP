@@ -1,4 +1,4 @@
-module northstar
+module mapp
 
 go 1.27
 

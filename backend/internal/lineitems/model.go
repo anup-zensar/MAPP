@@ -9,13 +9,13 @@
 package lineitems
 
 import (
-	"northstar/internal/people"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/settings"
+	"mapp/internal/people"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/settings"
 )
 
 // SpreadMethod is how a line item's planned cost is spread over the activity's months (004's SpreadMethod).

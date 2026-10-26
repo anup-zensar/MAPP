@@ -77,7 +77,7 @@ is in brackets; the question of the gap analysis it answers is named where there
    shown (D-227).
 8. Refused attempts are recorded only in the technical log, not shown to administrators (D-241).
 9. New people get the Viewer role for their own teams (D-234).
-10. Roles are assigned in NorthStar while demo sign-in stays; with Microsoft Entra ID they may come from Entra app
+10. Roles are assigned in MAPP while demo sign-in stays; with Microsoft Entra ID they may come from Entra app
     roles or groups later (D-223).
 
 **Global and local budgets (014; Q-011)**
@@ -102,7 +102,7 @@ is in brackets; the question of the gap analysis it answers is named where there
     100,000.00 USD. Shell sets its own on each workflow (D-295).
 19. Only planned cost, dates and line-item amounts or currencies restart an approval; a change of activity type
     does not (D-276).
-20. "Manager" is a line manager kept in NorthStar (Settings › People), to come from Entra ID later (D-282).
+20. "Manager" is a line manager kept in MAPP (Settings › People), to come from Entra ID later (D-282).
 21. "All must approve" means every approver of the level; one decline declines the activity (D-278).
 22. A level that names nobody (no line manager, nobody with the role) stops the submission; a level whose people
     are all left out (inactive, owner, submitter) goes to its backup approver or waits for an Administrator
@@ -111,10 +111,10 @@ is in brackets; the question of the gap analysis it answers is named where there
     their rights; people who manage approval workflows manage everyone's delegations (D-284).
 24. A reminder after 3 days and an escalation after 5 days waiting (calendar days), once each per level;
     escalation goes to the level's backup approver, who can then decide the whole level (D-285).
-25. Until NorthStar is hosted, reminders and escalations are sent when someone who manages workflows presses **Run
+25. Until MAPP is hosted, reminders and escalations are sent when someone who manages workflows presses **Run
     reminders and escalations**; then a nightly job does it (D-286).
 26. "Overdue" means waited at least the escalation days, or the reminder days when there is no escalation (D-287).
-27. Notifications stay in NorthStar (the bell); e-mail and Teams come with BUS.WFL.040 (017 Assumptions).
+27. Notifications stay in MAPP (the bell); e-mail and Teams come with BUS.WFL.040 (017 Assumptions).
 28. Delegation dates and "today" are UTC calendar dates (D-284).
 
 **Financial transactions (015; Q-015)**
@@ -126,14 +126,14 @@ is in brackets; the question of the gap analysis it answers is named where there
     is sent to GSAP (D-242).
 31. Purchase requests are not shown (D-243).
 32. "Paid" means Shell's actuals: payments released (D-243).
-33. "Accrued" is GSAP's accruals of the latest accrual month in the data; NorthStar calculates no accruals
+33. "Accrued" is GSAP's accruals of the latest accrual month in the data; MAPP calculates no accruals
     (D-244).
 34. Committed (purchase orders) is the figure compared with planned cost ("% of planned cost committed"); "Not yet
     committed" = planned cost − committed; committed above planned cost is shown in red and never blocks (015
     FR-011, FR-013).
-35. Matching: the HX key is "HX" + the NorthStar line-item number; invoices, payments and accruals link through
+35. Matching: the HX key is "HX" + the MAPP line-item number; invoices, payments and accruals link through
     their PO number, then by SWBS code; unmatched rows are listed as "Not linked" with the reason (D-245).
-36. Links made from GSAP data cannot be changed in NorthStar; unmatched transactions can be linked by hand by
+36. Links made from GSAP data cannot be changed in MAPP; unmatched transactions can be linked by hand by
     people allowed to link (D-253).
 37. Transactions are converted to USD at the current rate, like every other amount, not at their posting-date rate
     (D-248, D-303).
@@ -182,7 +182,7 @@ is in brackets; the question of the gap analysis it answers is named where there
 
 **Field help (016)**
 
-56. Field help is plain text of up to 300 characters; NorthStar writes the defaults; an empty text hides the tip;
+56. Field help is plain text of up to 300 characters; MAPP writes the defaults; an empty text hides the tip;
     Shell attributes keep their help on each attribute's page (D-271).
 
 **General**
@@ -190,7 +190,7 @@ is in brackets; the question of the gap analysis it answers is named where there
 57. GSAP (transactions and daily rates), single sign-on and the nightly approvals job stay simulated until Shell's
     systems are available. Each sits behind an adapter, so the real feed replaces the simulation without changing
     screens or rules (D-242, D-259, D-286, D-308).
-58. Still open from before: which built-in fields are "needed to publish/submit" (Q-005); NorthStar keeps the
+58. Still open from before: which built-in fields are "needed to publish/submit" (Q-005); MAPP keeps the
     markings of the field catalogue until Shell confirms.
 
 ## 4. Build order

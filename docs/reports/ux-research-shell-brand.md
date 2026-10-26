@@ -1,11 +1,11 @@
-# Shell brand and design language: research for the NorthStar UI revamp
+# Shell brand and design language: research for the MAPP UI revamp
 
 | | |
 |---|---|
 | **Date** | 20 October 2026 (all pages captured on this date) |
 | **For** | Product owner and the Shell client team |
-| **Question** | How do Shell's public websites look and behave, and what should an internal Shell planning tool (NorthStar) take from them? |
-| **Scope** | Brand principles and tone, colour, logo (pecten) rules, imagery and icons, fonts, consumer vs business pages. A token set for NorthStar with checked contrast. |
+| **Question** | How do Shell's public websites look and behave, and what should an internal Shell planning tool (MAPP) take from them? |
+| **Scope** | Brand principles and tone, colour, logo (pecten) rules, imagery and icons, fonts, consumer vs business pages. A token set for MAPP with checked contrast. |
 | **Out of scope** | Detailed layout, navigation and component research. Other reports in this folder cover those. This report touches them only where they carry the brand. |
 
 ---
@@ -16,13 +16,13 @@
 2. **Shell yellow on the live sites is `#FFC800` and Shell red is `#DD1D20`** (written in the code as `hsl(47 100% 50%)` and `hsl(359 77% 49%)`). The often-quoted values `#FBCE07` and `#DD1D21` are older or rounded versions. Shell's older Fleet Hub portal still uses `#FBCE07`. Official print and screen specifications are only in Shell's brand portal, which needs a Shell login (§3.5).
 3. **Brand colour is used very sparingly.** Text is one dark grey (`#4A4A4A`) almost everywhere. Backgrounds are white and a light grey (`#F5F5F5`). A whole page paints only 8 to 10 distinct colours. On the homepage, 440 text elements are grey and about 24 are yellow, and all of those yellow ones sit on dark-grey buttons. **Red appears in no interface element on 15 of the 17 Shell web pages we measured.** The two exceptions are red buttons on the careers page and a few red accents on the brand-history page. Otherwise red lives only in the logo and the photography (§3.4).
 4. **Yellow means "act here" and "you are here".** It fills the main button (with dark-grey text, never white), marks the current menu item with a 4 px bar, and fills some promotional panels. Yellow is never used for text on white, because it reaches only 1.55:1 contrast there (§3.4, §9).
-5. **The pecten is a registered trade mark and cannot be used without Shell's written consent.** Shell runs a yearly consent process through its "Brand Central" portal and sends logo files only after an agreement is signed. Any artwork carrying the logo goes to `Askbrand@shell.com` for approval (§4). NorthStar must not show the pecten until Shell grants this.
+5. **The pecten is a registered trade mark and cannot be used without Shell's written consent.** Shell runs a yearly consent process through its "Brand Central" portal and sends logo files only after an agreement is signed. Any artwork carrying the logo goes to `Askbrand@shell.com` for approval (§4). MAPP must not show the pecten until Shell grants this.
 6. **Headings use a proprietary Shell typeface and body text uses Arial.** The heading font file names itself "ShellHeavy" and carries the notice "Copyright 2018 by URW Type Foundry GmbH. All rights reserved". Shell's own body text stack is `Arial, Roboto, Helvetica, sans-serif`, which anyone may use (§5).
 7. **Business pages look more restrained than consumer pages.** shell.co.uk (drivers) is full of yellow panels, app badges, red Ferrari imagery and "+" sparkles. shell.com (corporate) and the business pages are mostly white and grey with yellow only on buttons. Sub-brands such as Shell Recharge and Shell Energy swap in a teal accent while keeping yellow for actions (§8). **An internal enterprise tool should follow the corporate and business look, not the consumer one.**
-8. **Shell publicly commits to WCAG 2.2 A and AA** (higher than NorthStar's current WCAG 2.1 target), 400 % zoom and dark mode that follows the system setting. Shell's own sites define a full dark palette, which we can reuse (§9).
-9. **NorthStar today does not look like Shell.** It uses an Apple-style blue (`#0071e3`) for actions and a blue-to-purple gradient for the brand (`frontend/src/styles/tokens.css:30-41`). Neither appears anywhere on Shell's sites. §10 proposes a Shell-aligned token set with every pair checked against WCAG AA in light and dark mode. It also lists what must wait for official Shell assets.
+8. **Shell publicly commits to WCAG 2.2 A and AA** (higher than MAPP's current WCAG 2.1 target), 400 % zoom and dark mode that follows the system setting. Shell's own sites define a full dark palette, which we can reuse (§9).
+9. **MAPP today does not look like Shell.** It uses an Apple-style blue (`#0071e3`) for actions and a blue-to-purple gradient for the brand (`frontend/src/styles/tokens.css:30-41`). Neither appears anywhere on Shell's sites. §10 proposes a Shell-aligned token set with every pair checked against WCAG AA in light and dark mode. It also lists what must wait for official Shell assets.
 
-**Recommendation in one line:** keep NorthStar white, calm and simple. Replace the blue and the gradient with **Shell yellow for the one main action and the current place**, Shell's grey ink for text, **Shell red only for danger and errors**, and Shell's secondary colours (blue, green, purple, teal) for data meaning. Leave the logo and the Shell typeface out until Shell supplies them.
+**Recommendation in one line:** keep MAPP white, calm and simple. Replace the blue and the gradient with **Shell yellow for the one main action and the current place**, Shell's grey ink for text, **Shell red only for danger and errors**, and Shell's secondary colours (blue, green, purple, teal) for data meaning. Leave the logo and the Shell typeface out until Shell supplies them.
 
 ---
 
@@ -75,7 +75,7 @@
 - **Calm, factual corporate copy** on shell.com, investors and newsroom. Promotional copy and asterisked offer terms appear only on consumer pages.
 - **Small inconsistencies**: "Read more" and "Read More" on the same page ([shell.co.uk](https://www.shell.co.uk/)), and all-capital page titles on the [terms](https://www.shell.com/terms-of-use.html) and error pages ("TERMS AND CONDITIONS", "ERROR PAGE") while every other page uses sentence case.
 
-**What this means for NorthStar.** NorthStar's existing writing rules already match Shell's style: plain words, sentence case, verb buttons, friendly specific messages (`docs/product/design-system.md` §8). No change is needed beyond applying them consistently. Shell's own small slips show why a written rule helps.
+**What this means for MAPP.** MAPP's existing writing rules already match Shell's style: plain words, sentence case, verb buttons, friendly specific messages (`docs/product/design-system.md` §8). No change is needed beyond applying them consistently. Shell's own small slips show why a written rule helps.
 
 ---
 
@@ -135,7 +135,7 @@ The pecten keeps its full colours in dark mode.
 | **Shell Energy** (US business) | Teal-blue `#0080A3` used for 42 text elements and 7 backgrounds; yellow kept for actions | [Shell Energy US](https://www.shell.us/business/shell-energy.html) |
 | **Shell Fleet Hub** (B2B customer portal) | An older visual generation: yellow `#FBCE07`, dark blue `#003C88` for the main login button with white text, text `#404040`, square corners, upper-case labels, its own "Shell-Bold" web font | [fleethub.shell.com](https://fleethub.shell.com/) |
 
-**Takeaway.** Shell's pattern is "**master brand fixed, one accent per sub-brand**". Yellow, ink and paper never change. A product or sub-brand adds one secondary colour. NorthStar could do the same: Shell yellow for actions, and Shell's secondary colours for meaning (§10).
+**Takeaway.** Shell's pattern is "**master brand fixed, one accent per sub-brand**". Yellow, ink and paper never change. A product or sub-brand adds one secondary colour. MAPP could do the same: Shell yellow for actions, and Shell's secondary colours for meaning (§10).
 
 ### 3.4 How sparingly brand colours are used
 
@@ -184,7 +184,7 @@ We will **not** copy logo files. Here is what Shell publishes about using its ma
 
 **How Shell itself places the pecten on its websites.** It shows the symbol only, without the "Shell" word, top-left in a 64 px square that links to the home page, in full colour on both the light and dark backgrounds. Nothing sits on top of it. The page name ("Shell Global", "shell.co.uk") is given as accessible text, not as a visible wordmark.
 
-**For NorthStar:** show no pecten, no "Shell"-styled wordmark and no red-and-yellow shell shapes (including look-alike icons or striped red and yellow livery) until Shell gives consent and artwork approval. Keep a neutral NorthStar name mark in the logo slot. The word "Shell" may appear as plain text where it describes the business ("Shell attributes"), which is how NorthStar already uses it.
+**For MAPP:** show no pecten, no "Shell"-styled wordmark and no red-and-yellow shell shapes (including look-alike icons or striped red and yellow livery) until Shell gives consent and artwork approval. Keep a neutral MAPP name mark in the logo slot. The word "Shell" may appear as plain text where it describes the business ("Shell attributes"), which is how MAPP already uses it.
 
 ---
 
@@ -201,7 +201,7 @@ We will **not** copy logo files. Here is what Shell publishes about using its ma
 
 **Type scale on the sites.** The shared library defines sizes of 11, 12, **14** (body), 16, 18, **20** (card titles, H3), **28** (section titles, H2), **32** (page titles, H1), 36, 40, 44, 60 and 68 px, all with line height 1.5. Most body text on every page is 14 px Arial regular; bold 14 px is used for buttons.
 
-Typography is studied in more depth in its own report. Our conclusion for the brand: **NorthStar may use Shell's own body stack (Arial first) freely, but may not use the Shell typeface without a licence from Shell.**
+Typography is studied in more depth in its own report. Our conclusion for the brand: **MAPP may use Shell's own body stack (Arial first) freely, but may not use the Shell typeface without a licence from Shell.**
 
 ---
 
@@ -213,7 +213,7 @@ Typography is studied in more depth in its own report. Our conclusion for the br
 - **Graphic devices appear on consumer and marketing pages only.** Red and white "+" sparkles on Shell GO+ panels ([GO+](https://www.shell.co.uk/shell-go-plus.html)); chevron-shaped photo crops and yellow halftone dots ([Fleet Solutions](https://www.shell.co.uk/business/shell-fleet-solutions.html)).
 - **Corporate and legal pages carry little or no imagery** ([terms](https://www.shell.com/terms-of-use.html), [newsroom](https://www.shell.com/news-and-insights/newsroom.html) list cards with a standard forecourt image).
 
-**For NorthStar:** working screens need no photography. One outline icon set at 20 to 24 px in the ink colour matches Shell's style. Shell photography, if wanted on the sign-in screen, must come from Shell's licensed image library (§10.7). The consumer graphic devices (sparkles, halftone dots, chevrons) do not belong in an enterprise tool.
+**For MAPP:** working screens need no photography. One outline icon set at 20 to 24 px in the ink colour matches Shell's style. Shell photography, if wanted on the sign-in screen, must come from Shell's licensed image library (§10.7). The consumer graphic devices (sparkles, halftone dots, chevrons) do not belong in an enterprise tool.
 
 ---
 
@@ -251,7 +251,7 @@ These are the patterns that make a page feel "Shell". Full layout and component 
 | Sub-brand accent | – | – | Shell Energy teal-blue `#0080A3`; Recharge teal `#008192` |
 | Customer portal | – | – | Fleet Hub: older style (square corners, dark-blue button, upper case) |
 
-**Pattern:** the more serious the audience, the less brand colour. Corporate and business pages look like a calm white page with grey ink and yellow only where you act. That is the right model for an internal planning tool used all day by marketing and finance staff. **Fleet Hub, Shell's closest public example of a logged-in business tool, looks dated next to the current websites.** NorthStar should follow the current web system, not Fleet Hub.
+**Pattern:** the more serious the audience, the less brand colour. Corporate and business pages look like a calm white page with grey ink and yellow only where you act. That is the right model for an internal planning tool used all day by marketing and finance staff. **Fleet Hub, Shell's closest public example of a logged-in business tool, looks dated next to the current websites.** MAPP should follow the current web system, not Fleet Hub.
 
 ---
 
@@ -262,9 +262,9 @@ These are the patterns that make a page feel "Shell". Full layout and component 
 - "following W3C's WCAG 2.2 A and AA standards and guidelines"
 - "Zoom in up to 400% without text overlapping or losing clarity for most content"
 - "If you would like to use dark mode when visiting Shell sites this can be done by setting this as your preference in your system or browser settings."
-- The statement covers "our internal and external sites", which includes internal tools like NorthStar.
+- The statement covers "our internal and external sites", which includes internal tools like MAPP.
 
-NorthStar's design system currently targets WCAG **2.1** AA (`docs/product/design-system.md` §9). **We recommend moving to WCAG 2.2 AA** to match Shell. WCAG 2.2 adds rules for the focused item not being hidden, minimum target size and dragging alternatives.
+MAPP's design system currently targets WCAG **2.1** AA (`docs/product/design-system.md` §9). **We recommend moving to WCAG 2.2 AA** to match Shell. WCAG 2.2 adds rules for the focused item not being hidden, minimum target size and dragging alternatives.
 
 **Contrast of Shell's own colours** (WCAG 2.x ratios; AA needs 4.5 : 1 for normal text and 3 : 1 for large text, icons and control borders):
 
@@ -280,7 +280,7 @@ NorthStar's design system currently targets WCAG **2.1** AA (`docs/product/desig
 | Teal `#008192` | 4.61 | **4.23** | 3.44 | Text on white only |
 | Navy `#092949` | 14.74 | 13.52 | 1.07 | Text, focus ring |
 
-**Weak spots on Shell's sites that NorthStar should not copy:**
+**Weak spots on Shell's sites that MAPP should not copy:**
 
 - The current-page bar is yellow on white (1.55 : 1). It is acceptable only because the menu text is still readable; it must never be the only sign of state.
 - The input border (ink at 60 %, about 3.1 : 1) barely passes.
@@ -289,11 +289,11 @@ NorthStar's design system currently targets WCAG **2.1** AA (`docs/product/desig
 
 ---
 
-## 10. Recommendations for NorthStar
+## 10. Recommendations for MAPP
 
 ### 10.1 Direction
 
-**"Shell corporate, not Shell consumer."** NorthStar stays white, calm and simple, as the product owner asked (design system §1). We change the accent from Apple blue to Shell's system:
+**"Shell corporate, not Shell consumer."** MAPP stays white, calm and simple, as the product owner asked (design system §1). We change the accent from Apple blue to Shell's system:
 
 - **Ink grey** for all text and icons.
 - **White and `#F5F5F5` grey** for surfaces.
@@ -302,7 +302,7 @@ NorthStar's design system currently targets WCAG **2.1** AA (`docs/product/desig
 - **Shell's secondary colours** (blue, green, purple, teal) only where colour carries meaning: planning levels, statuses, teams, charts.
 - **No gradients**, no photography in working screens, no logo until Shell approves it.
 
-This replaces the visual part of decision D-005 (the version 1 Apple-inspired look). NorthStar's layout and interaction patterns (design system §2, §6–§8) can stay. **This is a decision for the product owner to log** (§10.8).
+This replaces the visual part of decision D-005 (the version 1 Apple-inspired look). MAPP's layout and interaction patterns (design system §2, §6–§8) can stay. **This is a decision for the product owner to log** (§10.8).
 
 ### 10.2 Proposed tokens: light mode
 
@@ -392,32 +392,32 @@ Keep the current behaviour: follow the computer's setting first, then remember t
 
 ### 10.6 Logo and naming
 
-- Keep the logo slot top-left with a **neutral NorthStar name mark** in ink. No pecten, no yellow-and-red shell shape, no "Shell" in a Shell typeface.
-- Use the browser tab title "NorthStar". Do not use the pecten as favicon.
+- Keep the logo slot top-left with a **neutral MAPP name mark** in ink. No pecten, no yellow-and-red shell shape, no "Shell" in a Shell typeface.
+- Use the browser tab title "MAPP". Do not use the pecten as favicon.
 - When Shell approves its use, place the pecten exactly as Shell's sites do (symbol only, full colour, top-left, linking home) and follow the clear-space and minimum-size rules Shell supplies.
 
 ### 10.7 What must wait for official Shell assets
 
 | Item | Why it waits | Who to ask |
 |---|---|---|
-| **Pecten files and permission to show them in NorthStar** | Registered trade mark; yearly consent and artwork approval required | Shell program manager → Brand Central consent; artwork to `Askbrand@shell.com` ([Shell process PDF](https://www.shell.us/about-us/projects-and-locations/_jcr_content/par/textimage.stream/1713545199865/2a7400272d635be4d99f89c8d71deb1c80104f1c/shell-brand-approval-process-external.pdf)) |
+| **Pecten files and permission to show them in MAPP** | Registered trade mark; yearly consent and artwork approval required | Shell program manager → Brand Central consent; artwork to `Askbrand@shell.com` ([Shell process PDF](https://www.shell.us/about-us/projects-and-locations/_jcr_content/par/textimage.stream/1713545199865/2a7400272d635be4d99f89c8d71deb1c80104f1c/shell-brand-approval-process-external.pdf)) |
 | **Shell typeface (Heavy, plus any text weights) and a licence for an internal app** | Font copyright URW, all rights reserved | Shell brand team via Brand Central |
 | **Official screen colour values** (confirm `#FFC800` vs `#FBCE07`, `#DD1D21`) and secondary palette | Only the live CSS is public; official specifications are behind sign-in | Shell brand team |
-| **Shell's internal design system ("Shell DS")**: tokens, React components, icon set | It may be mandatory for internal Shell applications. If so, NorthStar should use its tokens instead of ours | Shell digital or IT contact for internal apps |
+| **Shell's internal design system ("Shell DS")**: tokens, React components, icon set | It may be mandatory for internal Shell applications. If so, MAPP should use its tokens instead of ours | Shell digital or IT contact for internal apps |
 | **Icon library, illustration and photography** | Shell images are copyright; consumer graphic devices do not suit a tool | Shell brand team |
-| **Rules for internal tool names and co-branding** (is "NorthStar" acceptable? any vendor credit?) | Not public | Shell program manager |
+| **Rules for internal tool names and co-branding** (is "MAPP" acceptable? any vendor credit?) | Not public | Shell program manager |
 | **Shell's internal accessibility standard** for employee applications | Public statement says WCAG 2.2 AA; internal tools may have a checklist | Shell digital accessibility contact |
-| **Tone-of-voice guide** | None is public; NorthStar's words rules already match the observed tone | Shell brand team (nice to have) |
+| **Tone-of-voice guide** | None is public; MAPP's words rules already match the observed tone | Shell brand team (nice to have) |
 
 Until these arrive, the token set in §10.2 and §10.3 is a **provisional, Shell-aligned** look that uses no protected asset.
 
 ### 10.8 Decisions to record (for the product owner)
 
-1. **NorthStar adopts Shell's web colour system** (yellow action, ink text, red for danger only, Shell secondaries for meaning). This replaces version 1's blue and gradient. NorthStar's layout and interaction patterns (design system §2, §6–§8) stay. This changes the visual part of D-005.
+1. **MAPP adopts Shell's web colour system** (yellow action, ink text, red for danger only, Shell secondaries for meaning). This replaces version 1's blue and gradient. MAPP's layout and interaction patterns (design system §2, §6–§8) stay. This changes the visual part of D-005.
 2. **Accessibility target moves from WCAG 2.1 AA to WCAG 2.2 AA**, matching [Shell's statement](https://www.shell.com/accessibility.html).
-3. **No Shell logo or typeface until Shell grants consent.** A neutral NorthStar name mark is used; `--font-display` stays on Arial bold.
+3. **No Shell logo or typeface until Shell grants consent.** A neutral MAPP name mark is used; `--font-display` stays on Arial bold.
 4. **Provisional brand values** are `#FFC800` (yellow) and `#DD1D21` (red), to be confirmed by Shell (new open question).
-5. **Ask Shell whether its internal design system is mandatory** for NorthStar (new open question). If it is, it replaces items 1 and 4.
+5. **Ask Shell whether its internal design system is mandatory** for MAPP (new open question). If it is, it replaces items 1 and 4.
 
 ---
 
@@ -469,7 +469,7 @@ Secondary (context only)
 - ST1-hosted Shell identity document (could not be opened; points in §4 item 5 unverified): <https://content.st1.fi/sites/default/files/2018-06/b48eac65-ce9f-4447-8859-88ff4ffddc18.pdf>
 - Third-party colour listing, shown only as an example of conflicting values: <https://brandpalettes.com/shell-logo-colors/>
 
-NorthStar files referred to
+MAPP files referred to
 
 - `docs/product/design-system.md` §1, §3, §4, §8, §9 (current design language)
 - `frontend/src/styles/tokens.css:9-142` (current token values)

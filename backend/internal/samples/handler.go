@@ -3,9 +3,9 @@ package samples
 import (
 	"net/http"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/web"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/web"
 )
 
 // Handler answers the HTTP requests of the developer sample page.

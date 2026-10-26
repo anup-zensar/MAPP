@@ -221,7 +221,7 @@ check the dialog's counts, choose Undo and confirm everything is back with the s
   backwards, rounded half up to whole numbers (revenue to the cent), labelled "Calculated" with the
   formula, or "Choose a model to calculate" without a model.
 - **FR-010**: Saving MUST require only name, year and model, and MUST check: name of at most 120
-  characters, unique across NorthStar ignoring letter case and surrounding spaces; owner in a chosen team
+  characters, unique across MAPP ignoring letter case and surrounding spaces; owner in a chosen team
   (R1); description of at most 2,000 characters; budget and goal amount not negative. Every problem is
   reported in one attempt (design system §6.4). A new plan is Draft, gets a permanent ID and opens.
 
@@ -257,10 +257,10 @@ check the dialog's counts, choose Undo and confirm everything is back with the s
 - **FR-018**: **Edit** MUST open the plan form with current values and Year read-only with the lock and
   reason (design system §6.6); Save is never disabled, every problem is reported in one attempt, and
   leaving with unsaved changes asks **Keep editing** or **Discard changes**.
-- **FR-019**: Before saving a model change, NorthStar MUST list the activities whose type the new model
+- **FR-019**: Before saving a model change, MAPP MUST list the activities whose type the new model
   does not allow (R7) with links; once confirmed, they keep their type and show "Type not allowed by the
   plan's model" until changed, and the plan goal and model-calculated activity goals are recalculated.
-- **FR-020**: Before saving a business-unit change, NorthStar MUST say which attribute groups will be
+- **FR-020**: Before saving a business-unit change, MAPP MUST say which attribute groups will be
   hidden or shown on the plan and its activities; hidden values are kept and reappear when shown again
   (R9), and only shown attributes count towards completeness.
 - **FR-021**: When the owner belongs to none of the chosen teams, Owner MUST show a problem naming the
@@ -304,7 +304,7 @@ check the dialog's counts, choose Undo and confirm everything is back with the s
 
 - **FR-031**: **View history** MUST open the plan's history (feature 011; "Coming soon" until then), and
   every create, edit, publish, unpublish, copy and delete MUST be logged with the actor (feature 001).
-- **FR-032**: NorthStar MUST NOT restrict these actions by role or team (D-004). Shell's rules — plans
+- **FR-032**: MAPP MUST NOT restrict these actions by role or team (D-004). Shell's rules — plans
   visible only to their teams' members; creating, publishing, unpublishing and deleting plans limited to
   permitted roles — are enforced when roles arrive.
 

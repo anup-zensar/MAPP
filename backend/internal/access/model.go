@@ -8,8 +8,8 @@
 package access
 
 import (
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/record"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/record"
 )
 
 // Role is a named set of permissions, stored in the table "roles" (data model §1.1).

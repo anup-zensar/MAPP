@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"northstar/internal/history"
+	"mapp/internal/history"
 )
 
 // "Used by" counts every record using a Settings record, those in the recycle bin included and said so,

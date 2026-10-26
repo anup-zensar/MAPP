@@ -8,17 +8,17 @@ import (
 	"maps"
 	"slices"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/clock"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/platform/store"
-	"northstar/internal/rollup"
-	"northstar/internal/settings"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/clock"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/platform/store"
+	"mapp/internal/rollup"
+	"mapp/internal/settings"
 )
 
 // Service holds the rules of campaigns and initiatives (005 plan, "Service"). Every method takes the actor,

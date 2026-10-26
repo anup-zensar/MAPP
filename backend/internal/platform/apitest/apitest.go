@@ -1,4 +1,4 @@
-// Package apitest runs the real NorthStar API inside a test and checks every request and every answer
+// Package apitest runs the real MAPP API inside a test and checks every request and every answer
 // against the contract, backend/api/openapi.yaml (research R11). Every endpoint gets a contract test
 // written with it (constitution V):
 //
@@ -6,7 +6,7 @@
 //	response := server.Do(t, http.MethodGet, "/api/health", nil)
 //	if response.Status != http.StatusOK { ... }
 //
-//	priya := server.SignIn(t, "priya.raman@northstar.demo")
+//	priya := server.SignIn(t, "priya.raman@shell.com")
 //	response = priya.Do(t, http.MethodGet, "/api/me", nil) // sent with Priya's session cookie
 //
 // The API runs on a temporary data folder holding the demo people of the seed, with a fixed clock that
@@ -34,11 +34,11 @@ import (
 	"github.com/pb33f/libopenapi-validator/config"
 	openapierrors "github.com/pb33f/libopenapi-validator/errors"
 
-	"northstar/api"
-	"northstar/internal/app"
-	"northstar/internal/auth"
-	"northstar/internal/platform/store"
-	"northstar/seed"
+	"mapp/api"
+	"mapp/internal/app"
+	"mapp/internal/auth"
+	"mapp/internal/platform/store"
+	"mapp/seed"
 )
 
 // startTime is where the clock of every test server starts: 12 Mar 2026 09:00 UTC.

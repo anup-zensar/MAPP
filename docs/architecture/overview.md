@@ -1,6 +1,6 @@
 # Architecture Overview
 
-NorthStar is deliberately small: **one React web app and one Go API**. This page explains how the parts
+MAPP is deliberately small: **one React web app and one Go API**. This page explains how the parts
 fit together. Exact library versions are fixed in feature 001's `plan.md` and `research.md`.
 
 ```
@@ -96,4 +96,4 @@ Shell's final architecture (`Hive9_Final_Architecture.pptx`, summarised in
 `docs/reference/shell-target-architecture.md`): Azure Front Door + WAF → React app and API Management →
 Go API on Azure Container Apps → Azure Database for PostgreSQL; a separate Go GSAP worker exchanging CSV
 files with GSAP through Blob SFTP and SAP Cloud Integration; Entra ID, Key Vault, Azure Monitor; GitHub
-Actions delivery under Shell SEMS. NorthStar's two-part design grows into that without rewrites.
+Actions delivery under Shell SEMS. MAPP's two-part design grows into that without rewrites.

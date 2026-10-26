@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // periodText writes the period amounts of a row by period label, "—" for none, and its total:

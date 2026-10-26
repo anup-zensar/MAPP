@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/apitest"
+	"mapp/internal/platform/apitest"
 )
 
 // The move and copy operations of US6 on the demo data: FY2026 Lubricants Europe (P-1001) holds Helix

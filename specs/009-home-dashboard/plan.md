@@ -403,7 +403,7 @@ invalidates `['session']` and `['home']`.
 | Header | Home · Welcome back, · <first name>. · Your plans, your activities and what needs you today. |
 | Currency picker | Currency · <CODE> — <name> · <CODE> is no longer available — showing USD · Your choice couldn't be saved. · **Try again** |
 | Scope switch | Scope · My teams · Everything · Your own activities, what needs your attention and your approvals always cover all plans. |
-| Card 1 | My teams' plans · All plans · tip: Plans that have at least one of your teams. / Every plan in NorthStar. · <n> published · <n> draft |
+| Card 1 | My teams' plans · All plans · tip: Plans that have at least one of your teams. / Every plan in MAPP. · <n> published · <n> draft |
 | Card 2 | Activities I own · tip: Activities you own, in every plan. · <n> declined · <n> submitted |
 | Card 3 | Waiting for my approval · tip: Submitted activities waiting at a level where you are an approver. · oldest waiting <time> · Nothing waiting |
 | Card 4 | Planned cost vs plan budget · tip: Planned cost of the plans in scope compared with their plan budgets. · of <amount> plan budget · <n> % used · Includes <n> plans with no budget (1: Includes 1 plan with no budget) · No plan budgets set · No plans in scope |

@@ -813,7 +813,7 @@ type ListResponse[T any] struct {
 
 ### The scope comes only from the signed-in actor
 
-NorthStar serves one organisation, Shell. What multi-tenant systems call tenant isolation applies
+MAPP serves one organisation, Shell. What multi-tenant systems call tenant isolation applies
 here to access scopes: the teams (markets) in which an actor holds a permission (Principle VII).
 
 ```go
@@ -1035,7 +1035,7 @@ behaviour (demo sign-in, seeding) needs an explicit setting (B7).
 - No commented-out code (`gocritic`) and no `TODO`/`FIXME`/`XXX`/`HACK`/`BUG` markers (`godox`).
   Track future work in the board. Git holds the history, so don't write changelogs in comments.
 - Imports form three groups: standard library, third-party, then this module (`goimports` with
-  `local-prefixes: northstar`).
+  `local-prefixes: mapp`).
 
 ### Types and functions
 

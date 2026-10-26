@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // Budget phasing (016 FR-020 – FR-025, data-model §3.3, D-265): a plan's, campaign's or initiative's budget

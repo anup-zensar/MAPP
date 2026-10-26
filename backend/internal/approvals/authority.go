@@ -6,10 +6,10 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
 )
 
 // Who may decide (017 FR-017 – FR-020, data-model §6): 014's approve/decline check order, extended with the

@@ -49,7 +49,7 @@ describe('LineItemCreatePage (US2)', () => {
     renderPage();
 
     expect(await findForm()).toHaveValue('Launch film – line item');
-    expect(document.title).toBe('New line item · NorthStar');
+    expect(document.title).toBe('New line item · MAPP');
     expect(screen.getByRole('heading', { level: 1, name: 'New line item' })).toBeInTheDocument();
     expect(
       within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByRole('link', {

@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"strings"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
 )
 
 // AllocationOptions returns the plans of the global budget's year that no global budget allocates to and that

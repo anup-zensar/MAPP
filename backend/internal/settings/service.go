@@ -11,12 +11,12 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/clock"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/store"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/clock"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/store"
 )
 
 // The mid-sentence names of the Settings records: in conflict messages ("Not saved — Alex Morgan changed

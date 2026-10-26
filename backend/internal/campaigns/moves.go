@@ -10,16 +10,16 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/rollup"
-	"northstar/internal/settings"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/rollup"
+	"mapp/internal/settings"
 )
 
 // Moving and copying campaigns and initiatives (US6, FR-023 – FR-027): the destinations the dialogs offer,

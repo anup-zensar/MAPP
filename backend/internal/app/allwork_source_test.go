@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/allwork"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/store"
-	"northstar/seed"
+	"mapp/internal/allwork"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/store"
+	"mapp/seed"
 )
 
 // everyColumn names the columns whose values the source reads only when a view shows them.

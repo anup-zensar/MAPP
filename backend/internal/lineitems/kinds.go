@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // The history kind of line items and its parent, feature 006's activity (data model §7.1).

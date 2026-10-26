@@ -3,8 +3,8 @@ package home
 import (
 	"net/http"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/web"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/web"
 )
 
 // Handler answers the HTTP requests of the Home dashboard: one read-only route per card (FR-022).

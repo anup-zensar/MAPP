@@ -75,10 +75,10 @@ describe('HomePage', () => {
     expect(screen.queryByRole('group', { name: 'Scope' })).not.toBeInTheDocument();
   });
 
-  it('names the page "Home · NorthStar" in the browser tab', () => {
+  it('names the page "Home · MAPP" in the browser tab', () => {
     renderHome();
 
-    expect(document.title).toBe('Home · NorthStar');
+    expect(document.title).toBe('Home · MAPP');
   });
 
   it('starts on the scope the person chose last time (FR-003)', async () => {

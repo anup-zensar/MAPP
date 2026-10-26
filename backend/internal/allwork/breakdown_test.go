@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // The Breakdown of 016 (FR-040 – FR-042, data-model §3.5) over twoYears: A-1 10,000.00 (P-1001, Europe,

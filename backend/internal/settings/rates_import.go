@@ -12,13 +12,13 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
 )
 
 // The GSAP rate import (016 FR-006 – FR-008, data-model §2.3, §2.4; D-259): review a rate file, then import

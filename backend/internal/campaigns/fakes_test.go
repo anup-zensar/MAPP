@@ -11,15 +11,15 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/history"
-	"northstar/internal/people"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/store"
-	"northstar/internal/settings"
+	"mapp/internal/history"
+	"mapp/internal/people"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/store"
+	"mapp/internal/settings"
 )
 
 // The people of these tests (Sam is inactive).

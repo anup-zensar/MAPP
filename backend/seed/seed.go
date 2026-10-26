@@ -1,4 +1,4 @@
-// Package seed is NorthStar's demo data: the fictitious records a demonstration starts from (FR-028,
+// Package seed is MAPP's demo data: the fictitious records a demonstration starts from (FR-028,
 // docs/product/demo-users-and-data.md). The command go run ./cmd/seed loads it into an empty data folder,
 // and the API's contract tests start from it.
 //
@@ -20,14 +20,14 @@ import (
 	"fmt"
 	"time"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/clock"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/platform/store"
-	"northstar/internal/settings"
+	"mapp/internal/people"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/clock"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/platform/store"
+	"mapp/internal/settings"
 )
 
 // ErrNotEmpty means the store already has data. The demo data is loaded only into an empty store, so it is
@@ -45,12 +45,12 @@ const Loaded = "6 people, 3 teams, 2 models, 6 activity types, 35 Shell attribut
 var demoPeople = []struct {
 	name, email, jobTitle string
 }{
-	{"Alex Morgan", "alex.morgan@northstar.demo", "Marketing administrator"},
-	{"Priya Raman", "priya.raman@northstar.demo", "Marketer"},
-	{"Daniel Okoro", "daniel.okoro@northstar.demo", "Marketing team leader"},
-	{"Mei Lin", "mei.lin@northstar.demo", "Marketer"},
-	{"Carlos Mendes", "carlos.mendes@northstar.demo", "Business champion"},
-	{"Sara Novak", "sara.novak@northstar.demo", "Local finance advisor"},
+	{"Alex Morgan", "alex.morgan@shell.com", "Marketing administrator"},
+	{"Priya Raman", "priya.raman@shell.com", "Marketer"},
+	{"Daniel Okoro", "daniel.okoro@shell.com", "Marketing team leader"},
+	{"Mei Lin", "mei.lin@shell.com", "Marketer"},
+	{"Carlos Mendes", "carlos.mendes@shell.com", "Business champion"},
+	{"Sara Novak", "sara.novak@shell.com", "Local finance advisor"},
 }
 
 // Option changes what Load loads. The seed command uses none; tests use them.
@@ -69,7 +69,7 @@ func WithoutHistory() Option {
 }
 
 // Load loads the demo data into db, which must be empty (ErrNotEmpty otherwise), in one Write: all of it,
-// or nothing when something fails. NorthStar itself (actor.System) creates every record, at the time now
+// or nothing when something fails. MAPP itself (actor.System) creates every record, at the time now
 // gives, so tests can fix it; the approval history and the demo history are dated before that time. Call
 // Load outside transactions.
 func Load(ctx context.Context, db *store.DB, now clock.Clock, opts ...Option) error {
@@ -106,7 +106,7 @@ func Load(ctx context.Context, db *store.DB, now clock.Clock, opts ...Option) er
 // by name, so that each step finds what the earlier ones wrote.
 type demo struct {
 	ids *ids.Generator
-	at  time.Time // the seed time: NorthStar creates every record then
+	at  time.Time // the seed time: MAPP creates every record then
 
 	people   map[string]string // person name → ID
 	settings SettingsSeed      // Settings records by name
@@ -127,7 +127,7 @@ func (d *demo) next(ctx context.Context, prefix string) (string, error) {
 	return d.ids.Next(ctx, prefix)
 }
 
-// meta is the bookkeeping of a record NorthStar creates at the seed time.
+// meta is the bookkeeping of a record MAPP creates at the seed time.
 func (d *demo) meta() record.Meta {
 	return record.NewMeta(actor.System, d.at)
 }

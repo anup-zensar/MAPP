@@ -3,7 +3,7 @@ package authz
 import (
 	"slices"
 
-	"northstar/internal/platform/actor"
+	"mapp/internal/platform/actor"
 )
 
 // ScopeType says where a role applies (FR-004): All markets, the teams the person belongs to at the moment

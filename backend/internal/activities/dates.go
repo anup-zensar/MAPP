@@ -3,9 +3,9 @@ package activities
 import (
 	"fmt"
 
-	"northstar/internal/campaigns"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
+	"mapp/internal/campaigns"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
 )
 
 // Messages of the plan's "User-visible messages" table about dates.

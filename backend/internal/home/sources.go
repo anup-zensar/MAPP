@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // Sources is everything Home reads, as functions (009 plan "Inputs", D-171, D-196): internal/app fills them

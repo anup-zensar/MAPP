@@ -116,7 +116,7 @@ describe('SettingDeleteDialog (FR-003, FR-004)', () => {
 
     expect(onClose).toHaveBeenCalled();
     const messages = await findMessages();
-    expect(messages).toHaveTextContent("NorthStar can't reach its server right now.");
+    expect(messages).toHaveTextContent("MAPP can't reach its server right now.");
     expect(within(messages).getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });
 });

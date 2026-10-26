@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/approvals"
+	"mapp/internal/approvals"
 )
 
 // seededWorkflows reads the approval workflows the seed wrote in feature 008's table (D-103, D-201).

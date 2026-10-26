@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: NorthStar API — feature 009 fragment (home dashboard)
+  title: MAPP API — feature 009 fragment (home dashboard)
   version: 0.1.0
   license:
     name: Proprietary - internal use only

@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // My teams covers the plans with at least one of the person's teams, each once even when two of its teams

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/platform/date"
+	"mapp/internal/platform/date"
 )
 
 // upload is a rate file of lines, as the web app sends it.

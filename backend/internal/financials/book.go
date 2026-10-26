@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"slices"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // book is everything one request works out its answers from, read once inside its transaction (plan,

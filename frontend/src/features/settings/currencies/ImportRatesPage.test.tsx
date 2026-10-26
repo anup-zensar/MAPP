@@ -43,7 +43,7 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Import GSAP rates' }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Import GSAP rates · NorthStar');
+    expect(document.title).toBe('Import GSAP rates · MAPP');
     await user.upload(fileField(), rateFile());
 
     const review = await screen.findByRole('region', {

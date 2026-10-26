@@ -35,7 +35,7 @@ Both `[NEEDS CLARIFICATION]` markers are resolved with the decision-log defaults
 
 **Language/Version**: Go 1.27 (API); TypeScript 5.9 strict + React 19 (web app) — as feature 001
 
-**Primary Dependencies**: no new dependency. API: standard library, `northstar/internal/platform/*`,
+**Primary Dependencies**: no new dependency. API: standard library, `mapp/internal/platform/*`,
 `history`, `people`, `platform/money` (feature 002). Web app: the libraries of 001 research R12.
 
 **Storage**: JSON file store, four new tables `approval_workflows`, `approval_rounds`,
@@ -419,9 +419,9 @@ there and sets it Submitted. The seed summary line adds ", 2 approval workflows"
 
 | Path | Page | Tab title |
 |---|---|---|
-| `/approvals` (`?tab=waiting\|open\|decided`, default `waiting`; `?activity=A-1042` opens the preview) | `ApprovalsPage` | Approvals · NorthStar |
-| `/settings/approval-workflows` | `ApprovalWorkflowsPage` | Approval workflows · NorthStar |
-| `/settings/approval-workflows/:workflowId` | `ApprovalWorkflowsPage` with the details panel open | Approval workflows · NorthStar |
+| `/approvals` (`?tab=waiting\|open\|decided`, default `waiting`; `?activity=A-1042` opens the preview) | `ApprovalsPage` | Approvals · MAPP |
+| `/settings/approval-workflows` | `ApprovalWorkflowsPage` | Approval workflows · MAPP |
+| `/settings/approval-workflows/:workflowId` | `ApprovalWorkflowsPage` with the details panel open | Approval workflows · MAPP |
 
 - `navigation.ts`: `APPROVALS` becomes a plain `NavItem` (out of `COMING_SOON_SECTIONS`); `NavItem` gains
   optional `Badge?: ComponentType<{ collapsed: boolean }>`; `APPROVALS.Badge = ApprovalsNavBadge`.

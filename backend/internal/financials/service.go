@@ -10,14 +10,14 @@ import (
 	"strings"
 	"time"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/clock"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/store"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/clock"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/store"
 )
 
 // maxListed is the most problems and not-linked rows a check or an import lists; the totals say how many
@@ -450,7 +450,7 @@ func (s *Service) applier(ctx context.Context, a actor.Actor, feed Feed) (applie
 }
 
 // LoadDemo loads the demo data of FR-031 inside the caller's Write: the demo feed's 11 transactions
-// through the same apply code as an import, as NorthStar (actor.System) at the time at, and one import
+// through the same apply code as an import, as MAPP (actor.System) at the time at, and one import
 // record "Demo data (simulated GSAP)". It writes no activity-log entry (D-188). The seed calls it, with the
 // line items it stored and the rates of its currencies.
 func LoadDemo(ctx context.Context, repo Repository, generator *ids.Generator, items LineItemStates, rates money.Rates,

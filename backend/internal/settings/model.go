@@ -1,4 +1,4 @@
-// Package settings holds NorthStar's Settings (feature 002): models, activity types, Shell attributes and
+// Package settings holds MAPP's Settings (feature 002): models, activity types, Shell attributes and
 // their options, currencies with exchange rates, and finance budgets with their items. Later features read
 // Settings only through this package's readers and attribute functions (002 plan, "How later features read
 // Settings"), never with store.Get on its tables.
@@ -13,10 +13,10 @@ import (
 	"slices"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
 )
 
 // Level is the planning level a Shell attribute belongs to (data model §4).
@@ -181,7 +181,7 @@ type ExchangeRate struct {
 	record.Meta
 }
 
-// RateImport is one GSAP rate file read into NorthStar (table "rate_imports", 016 data-model §2.3). Never
+// RateImport is one GSAP rate file read into MAPP (table "rate_imports", 016 data-model §2.3). Never
 // changed or deleted.
 type RateImport struct {
 	ID        string     `json:"id"`        // "RI-1001"

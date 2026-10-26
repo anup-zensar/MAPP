@@ -10,10 +10,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/record"
-	"northstar/internal/settings"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/record"
+	"mapp/internal/settings"
 )
 
 // User story 6 — Move or copy a campaign or initiative (moves.go).

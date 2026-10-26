@@ -3,9 +3,9 @@ package budgets
 import (
 	"context"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/money"
+	"mapp/internal/people"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/money"
 )
 
 // Budgets reads plans, people and exchange rates, and asks the access rules, through the small interfaces

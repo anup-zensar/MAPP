@@ -3,10 +3,10 @@ package access
 import (
 	"context"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/record"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/record"
 )
 
 // GetRules returns the access rules (FR-019): the stored ones, or the defaults with version 0 while they were

@@ -7,13 +7,13 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/clock"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/record"
-	"northstar/internal/platform/store"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/clock"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/record"
+	"mapp/internal/platform/store"
 )
 
 // Service holds the rules of global budgets and their allocations (feature 014, FR-029 – FR-036).

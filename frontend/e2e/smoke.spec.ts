@@ -9,8 +9,8 @@ test('US1: a visitor is sent to sign in and comes back after choosing a demo per
   await page.goto('/plans');
 
   await expect(page).toHaveURL(/\/sign-in\?next=%2Fplans$/);
-  await expect(page).toHaveTitle('Sign in · NorthStar');
-  await expect(page.getByRole('heading', { name: 'Sign in to NorthStar' })).toBeVisible();
+  await expect(page).toHaveTitle('Sign in · MAPP');
+  await expect(page.getByRole('heading', { name: 'Sign in to MAPP' })).toBeVisible();
   await expect(
     page.getByText('Demo environment — sign-in and data are for demonstration only'),
   ).toBeVisible();
@@ -20,7 +20,7 @@ test('US1: a visitor is sent to sign in and comes back after choosing a demo per
   await page.getByRole('button', { name: /^Sign in as Priya Raman\s*,\s*Marketer$/ }).click();
 
   await expect(page).toHaveURL(/\/plans$/);
-  await expect(page).toHaveTitle('Plans · NorthStar');
+  await expect(page).toHaveTitle('Plans · MAPP');
   await expect(page.getByRole('heading', { name: 'Plans', level: 1 })).toBeVisible();
 });
 
@@ -33,12 +33,12 @@ test('US1: wrong password is refused; e-mail case and spaces are ignored (FR-003
   await expect(page.getByText('Enter your e-mail').first()).toBeVisible();
   await expect(page.getByText('Enter the password').first()).toBeVisible();
 
-  await page.getByLabel('E-mail').fill('  PRIYA.RAMAN@northstar.demo  ');
+  await page.getByLabel('E-mail').fill('  PRIYA.RAMAN@shell.com  ');
   await page.getByLabel('Password', { exact: true }).fill('wrong');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByText('Incorrect e-mail or password.')).toBeVisible();
   // The e-mail stays in the field (the browser itself trims the spaces around an e-mail value).
-  await expect(page.getByLabel('E-mail')).toHaveValue('PRIYA.RAMAN@northstar.demo');
+  await expect(page.getByLabel('E-mail')).toHaveValue('PRIYA.RAMAN@shell.com');
 
   await page.getByLabel('Password', { exact: true }).fill(DEMO_PASSWORD);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
@@ -55,7 +55,7 @@ test('US2: every navigation item opens its page with its tab title (FR-010, FR-0
 }) => {
   // Alex Morgan, the administrator: Global budgets and Financials are shown only to people whose
   // role includes them (014 FR-011).
-  await signInAs(page, 'alex.morgan@northstar.demo');
+  await signInAs(page, 'alex.morgan@shell.com');
   await page.goto('/');
   const nav = page.getByRole('navigation', { name: 'Main' });
   const main = page.getByRole('main');
@@ -76,10 +76,10 @@ test('US2: every navigation item opens its page with its tab title (FR-010, FR-0
   ];
   for (const { item, heading } of pages) {
     await nav.getByRole('link', { name: item }).click();
-    await expect(page).toHaveTitle(`${item} · NorthStar`);
+    await expect(page).toHaveTitle(`${item} · MAPP`);
     await expect(nav.getByRole('link', { name: item })).toHaveAttribute('aria-current', 'page');
     await expect(main.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
-    await expect(main.getByText("This part of NorthStar isn't built yet.")).toHaveCount(0);
+    await expect(main.getByText("This part of MAPP isn't built yet.")).toHaveCount(0);
   }
 
   await page.goto('/nowhere');
@@ -89,15 +89,15 @@ test('US2: every navigation item opens its page with its tab title (FR-010, FR-0
 test('US4: sign out returns to the sign-in page and Back does not show the previous page (FR-006, FR-012)', async ({
   page,
 }) => {
-  await signInAs(page, 'mei.lin@northstar.demo');
+  await signInAs(page, 'mei.lin@shell.com');
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Welcome back, Mei.' })).toBeVisible();
-  // Open another page inside the app first, so that Back has a NorthStar page to go back to.
+  // Open another page inside the app first, so that Back has a MAPP page to go back to.
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Plans' }).click();
-  await expect(page).toHaveTitle('Plans · NorthStar');
+  await expect(page).toHaveTitle('Plans · MAPP');
 
   await page.getByRole('button', { name: 'Mei — account menu' }).click();
-  await expect(page.getByText('mei.lin@northstar.demo')).toBeVisible();
+  await expect(page.getByText('mei.lin@shell.com')).toBeVisible();
   await page.getByRole('menuitem', { name: 'Sign out' }).click();
 
   await expect(page).toHaveURL(/\/sign-in$/);
@@ -111,7 +111,7 @@ test('US4: sign out returns to the sign-in page and Back does not show the previ
 test('US5: create, rename, delete and Undo a sample folder; the activity log records each change (FR-022–FR-026)', async ({
   page,
 }) => {
-  await signInAs(page, 'priya.raman@northstar.demo');
+  await signInAs(page, 'priya.raman@shell.com');
   await page.goto('/dev/sample-records');
   await expect(page.getByRole('heading', { name: 'Sample records', level: 1 })).toBeVisible();
 
@@ -149,11 +149,11 @@ test('US5: create, rename, delete and Undo a sample folder; the activity log rec
 
 test('SC-006: the sign-in page and Home pass the automated WCAG 2.1 AA check', async ({ page }) => {
   await page.goto('/sign-in');
-  await expect(page.getByRole('heading', { name: 'Sign in to NorthStar' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sign in to MAPP' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Sign in as/ }).first()).toBeVisible();
   await expectNoAxeViolations(page);
 
-  await signInAs(page, 'sara.novak@northstar.demo');
+  await signInAs(page, 'sara.novak@shell.com');
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Welcome back, Sara.' })).toBeVisible();
   await expectNoAxeViolations(page);

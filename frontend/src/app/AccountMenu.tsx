@@ -16,7 +16,7 @@ export function AccountMenu() {
   const { signOut } = useSession();
 
   return (
-    // Not modal, like every NorthStar menu: the rest of the page stays usable while it is open.
+    // Not modal, like every MAPP menu: the rest of the page stays usable while it is open.
     <DropdownMenu.Root modal={false}>
       {/* The first name may be cut short on the button; the tooltip has everything in full. */}
       <Tooltip content={[person.name, person.jobTitle].filter(Boolean).join(' — ')}>

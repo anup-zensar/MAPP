@@ -83,11 +83,11 @@ describe('useTheme', () => {
     const { rerender } = renderHook(({ preference }) => useTheme(preference), {
       initialProps: { preference: 'system' as ThemePreference },
     });
-    expect(localStorage.getItem('northstar.theme')).toBe('system');
+    expect(localStorage.getItem('mapp.theme')).toBe('system');
 
     rerender({ preference: 'dark' });
 
-    expect(localStorage.getItem('northstar.theme')).toBe('dark');
+    expect(localStorage.getItem('mapp.theme')).toBe('dark');
   });
 
   it('still shows the theme when the browser blocks storage (FR-014)', () => {
@@ -103,7 +103,7 @@ describe('useTheme', () => {
 
 describe('readStoredPreference', () => {
   it('reads the preference this browser remembers (FR-014)', () => {
-    localStorage.setItem('northstar.theme', 'dark');
+    localStorage.setItem('mapp.theme', 'dark');
 
     expect(readStoredPreference()).toBe('dark');
   });
@@ -111,7 +111,7 @@ describe('readStoredPreference', () => {
   it('starts with "system", so the first visit follows the computer (FR-014)', () => {
     expect(readStoredPreference()).toBe('system');
 
-    localStorage.setItem('northstar.theme', 'purple');
+    localStorage.setItem('mapp.theme', 'purple');
     expect(readStoredPreference()).toBe('system');
   });
 

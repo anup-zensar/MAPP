@@ -14,7 +14,7 @@ export const PEOPLE: PickerPerson[] = [
   {
     id: 'U-1001',
     name: 'Alex Morgan',
-    email: 'alex.morgan@northstar.demo',
+    email: 'alex.morgan@shell.com',
     jobTitle: 'Head of marketing',
     initials: 'AM',
     active: true,
@@ -23,7 +23,7 @@ export const PEOPLE: PickerPerson[] = [
   {
     id: 'U-1002',
     name: 'Priya Raman',
-    email: 'priya.raman@northstar.demo',
+    email: 'priya.raman@shell.com',
     jobTitle: 'Marketer',
     initials: 'PR',
     active: true,
@@ -32,7 +32,7 @@ export const PEOPLE: PickerPerson[] = [
   {
     id: 'U-1004',
     name: 'Sara Novak',
-    email: 'sara.novak@northstar.demo',
+    email: 'sara.novak@shell.com',
     jobTitle: 'Finance partner',
     initials: 'SN',
     active: true,

@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: NorthStar API — feature 005 fragment (campaigns and initiatives)
+  title: MAPP API — feature 005 fragment (campaigns and initiatives)
   version: 0.5.0
   license:
     name: Proprietary - internal use only

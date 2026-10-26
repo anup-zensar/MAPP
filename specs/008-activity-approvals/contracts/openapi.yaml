@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: NorthStar API — feature 008 Activity approvals (fragment)
+  title: MAPP API — feature 008 Activity approvals (fragment)
   version: 0.8.0
   license:
     name: Proprietary - internal use only

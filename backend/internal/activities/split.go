@@ -8,13 +8,13 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/settings"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/settings"
 )
 
 // Split activity (feature 016, FR-026 – FR-031, data-model §3.6, D-267): one activity becomes two inside its

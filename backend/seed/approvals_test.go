@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/activities"
-	"northstar/internal/approvals"
-	"northstar/internal/platform/date"
+	"mapp/internal/activities"
+	"mapp/internal/approvals"
+	"mapp/internal/platform/date"
 )
 
 // The approval rounds of 008 data model §8 match the seeded statuses: approved activities have one approved

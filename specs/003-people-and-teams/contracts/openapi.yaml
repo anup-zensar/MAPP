@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: NorthStar API — feature 003 People and Teams (fragment)
+  title: MAPP API — feature 003 People and Teams (fragment)
   version: 0.3.0
   license:
     name: Proprietary - internal use only
@@ -479,7 +479,7 @@ components:
         email:
           type: string
           description: The sign-in name, in lower case.
-          example: priya.raman@northstar.demo
+          example: priya.raman@shell.com
         jobTitle:
           type: string
         initials:

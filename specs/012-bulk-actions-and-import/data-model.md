@@ -160,7 +160,7 @@ new activities". Fields whose cell already had a format problem are not reported
 ### 3.4 Sheets "Allowed values" and "Instructions"
 
 - **Allowed values**: one column per choice column — Campaign ("Helix launch (C-1001)"), Initiative
-  ("Helix launch › Digital & social (I-1001)"), Activity type, Owner (e-mail) ("mei.lin@northstar.demo —
+  ("Helix launch › Digital & social (I-1001)"), Activity type, Owner (e-mail) ("mei.lin@shell.com —
   Mei Lin"), Approval workflow, Ongoing (Yes, No), and each choice attribute (dependent options as
   "<option> (for <parent option>)").
 - **Instructions** (one line each): "Fill one row per activity, starting on row 3. Row 2 says which

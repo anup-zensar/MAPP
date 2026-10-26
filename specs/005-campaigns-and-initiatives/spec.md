@@ -305,7 +305,7 @@ campaigns' totals; copy "Helix launch" and compare the copy with the original.
 
 - **FR-030**: Every create, edit, move (with old and new parent), copy and delete MUST be logged with the
   actor (feature 001); **View history** opens the record's history (feature 011).
-- **FR-031**: NorthStar MUST NOT restrict these actions by role (D-004); Shell's role rules for creating,
+- **FR-031**: MAPP MUST NOT restrict these actions by role (D-004); Shell's role rules for creating,
   editing, moving and deleting campaigns and initiatives are enforced when roles arrive.
 
 ### Key Entities *(include if feature involves data)*

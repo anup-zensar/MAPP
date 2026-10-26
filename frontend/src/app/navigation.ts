@@ -1,5 +1,5 @@
 /**
- * The sections of NorthStar: their names, addresses and sidebar icons (design system §2), and —
+ * The sections of MAPP: their names, addresses and sidebar icons (design system §2), and —
  * until a later feature builds a section — the sentence its "Coming soon" page shows (FR-015).
  * A feature that builds a section removes its sentence and gives it a real page in router.tsx.
  *

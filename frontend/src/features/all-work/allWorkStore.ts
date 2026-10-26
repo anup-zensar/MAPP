@@ -1,7 +1,7 @@
 /**
  * All work's session state, per person (plan "State", D-122): the view, filters, search and
  * expansion, the applied saved view, the page and the scroll position. It lives in memory while
- * the browser tab lives, so it survives moving around NorthStar (FR-009) and coming back from a
+ * the browser tab lives, so it survives moving around MAPP (FR-009) and coming back from a
  * record (FR-016). A reload, or a new sign-in, is a new visit: signing out clears the web app's
  * cached data, and with it the marker this store checks.
  */

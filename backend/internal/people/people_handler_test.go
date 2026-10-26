@@ -7,15 +7,15 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/auth"
-	"northstar/internal/people"
-	"northstar/internal/platform/apitest"
+	"mapp/internal/auth"
+	"mapp/internal/people"
+	"mapp/internal/platform/apitest"
 )
 
 const (
-	alexsEmail   = "alex.morgan@northstar.demo"
-	danielsEmail = "daniel.okoro@northstar.demo"
-	janesEmail   = "jane.doe@northstar.demo" // the person the tests create
+	alexsEmail   = "alex.morgan@shell.com"
+	danielsEmail = "daniel.okoro@shell.com"
+	janesEmail   = "jane.doe@shell.com" // the person the tests create
 )
 
 // The bodies of the API's refusals about people.
@@ -54,7 +54,7 @@ func TestListPeople_GivesPickerData_FR017_FR018(t *testing.T) {
 		{ID: "T-1001", Name: "Lubricants Europe", Colour: "blue", Active: true},
 		{ID: "T-1002", Name: "Mobility China", Colour: "violet", Active: true},
 	}
-	if sara.ID != "U-1006" || sara.Email != "sara.novak@northstar.demo" || sara.JobTitle != "Local finance advisor" ||
+	if sara.ID != "U-1006" || sara.Email != "sara.novak@shell.com" || sara.JobTitle != "Local finance advisor" ||
 		sara.Initials != "SN" || !sara.Active || !slices.Equal(sara.Teams, wantTeams) {
 		t.Errorf("Sara = %+v, want her e-mail, job title, initials, status and two teams", sara)
 	}
@@ -103,18 +103,18 @@ func TestCreatePerson_CreatedOrRefused_FR001_FR002(t *testing.T) {
 	alex := server.SignIn(t, alexsEmail)
 
 	created := alex.Do(t, http.MethodPost, "/api/people", map[string]any{"name": " Jane Doe ",
-		"email": " Jane.Doe@NorthStar.Demo", "jobTitle": "Marketer", "teamIds": []string{"T-1001"}})
+		"email": " Jane.Doe@Shell.Com", "jobTitle": "Marketer", "teamIds": []string{"T-1001"}})
 	refused := alex.Do(t, http.MethodPost, "/api/people", map[string]any{"name": " ",
-		"email": "PRIYA.raman@northstar.demo", "jobTitle": strings.Repeat("j", 121), "teamIds": []string{"T-9999"}})
-	invalidEmail := alex.Do(t, http.MethodPost, "/api/people", map[string]any{"name": "Jane", "email": "jane@northstar"})
+		"email": "PRIYA.raman@shell.com", "jobTitle": strings.Repeat("j", 121), "teamIds": []string{"T-9999"}})
+	invalidEmail := alex.Do(t, http.MethodPost, "/api/people", map[string]any{"name": "Jane", "email": "jane@shell"})
 
-	assertAnswer(t, created, http.StatusCreated, `{"id":"U-1007","name":"Jane Doe","email":"jane.doe@northstar.demo",`+
+	assertAnswer(t, created, http.StatusCreated, `{"id":"U-1007","name":"Jane Doe","email":"jane.doe@shell.com",`+
 		`"jobTitle":"Marketer","initials":"JD","active":true,`+
 		`"teams":[{"id":"T-1001","name":"Lubricants Europe","colour":"blue","active":true}],`+
 		`"version":1,"createdAt":"2026-03-12T09:00:00Z","createdBy":{"id":"U-1001","name":"Alex Morgan"},`+
 		`"updatedAt":"2026-03-12T09:00:00Z","updatedBy":{"id":"U-1001","name":"Alex Morgan"},"usage":[]}`)
 	assertAnswer(t, refused, http.StatusBadRequest, validationBody(`{"field":"name","message":"Enter a name."},`+
-		`{"field":"email","message":"priya.raman@northstar.demo already belongs to Priya Raman."},`+
+		`{"field":"email","message":"priya.raman@shell.com already belongs to Priya Raman."},`+
 		`{"field":"jobTitle","message":"Use 120 characters or fewer."},`+
 		`{"field":"teamIds","message":"Choose teams from the list."}`))
 	assertAnswer(t, invalidEmail, http.StatusBadRequest,
@@ -131,7 +131,7 @@ func TestUpdatePerson_ChangedConflictInvalidOrNotFound_FR002(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: changing people
 	server.Advance(time.Hour)
-	update := map[string]any{"name": "Jane Smith", "email": "jane.smith@northstar.demo", "jobTitle": "Marketer",
+	update := map[string]any{"name": "Jane Smith", "email": "jane.smith@shell.com", "jobTitle": "Marketer",
 		"teamIds": []string{"T-1001"}, "version": 1}
 
 	changed := priya.Do(t, http.MethodPatch, "/api/people/"+jane.ID, update)
@@ -142,7 +142,7 @@ func TestUpdatePerson_ChangedConflictInvalidOrNotFound_FR002(t *testing.T) {
 
 	var person people.PersonDetails
 	changed.Decode(t, &person)
-	if changed.Status != http.StatusOK || person.Name != "Jane Smith" || person.Email != "jane.smith@northstar.demo" ||
+	if changed.Status != http.StatusOK || person.Name != "Jane Smith" || person.Email != "jane.smith@shell.com" ||
 		person.Version != 2 || len(person.Teams) != 1 || person.UpdatedBy.Name != "Priya Raman" {
 		t.Errorf("PATCH = %d %s", changed.Status, changed.Body)
 	}

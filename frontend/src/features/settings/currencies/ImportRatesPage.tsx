@@ -37,7 +37,7 @@ const OPEN_AT_FIRST: RateImportOutcome[] = ['problem', 'notUsed', 'replace'];
 
 /**
  * Import GSAP rates (016 US1, FR-006 – FR-008), at /settings/currencies/import: choose the GSAP
- * daily rate extract (a .csv of up to 2 MB, simulated — NorthStar reads the file and connects to
+ * daily rate extract (a .csv of up to 2 MB, simulated — MAPP reads the file and connects to
  * no system); before anything is saved, the review lists every row's outcome with its row number,
  * grouped and counted; **Import n rates** saves the rows to add and replace in one step and
  * **Cancel** saves nothing. **Download a sample file** gives a file of today's rates.
@@ -138,7 +138,7 @@ export function ImportRatesPage() {
           { label: 'Import GSAP rates' },
         ]}
         title="Import GSAP rates"
-        description="Import the GSAP daily rate extract until GSAP sends rates by itself. NorthStar reads the file and connects to no system."
+        description="Import the GSAP daily rate extract until GSAP sends rates by itself. MAPP reads the file and connects to no system."
       />
       <div className={styles.stack}>
         <Card title="Rate file">

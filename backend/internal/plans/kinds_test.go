@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
 )
 
 // User story 6 — Delete a plan, with Undo.

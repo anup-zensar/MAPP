@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"strings"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/rollup"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/rollup"
 )
 
 // The Breakdown (feature 016, FR-040 – FR-042, data-model §3.5, D-270): the planned cost of the activities that

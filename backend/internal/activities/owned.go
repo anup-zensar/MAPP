@@ -5,10 +5,10 @@ import (
 	"slices"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // Owned is an activity as feature 009's Home reads it (Go only): what its page shows of it, amounts in US

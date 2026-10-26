@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/record"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/record"
 )
 
 // putWorkflow stores a workflow with the given rule levels, active, and returns its id.

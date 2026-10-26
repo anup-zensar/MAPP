@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // percent parses s or stops the test.

@@ -1,12 +1,12 @@
 # Reference Material (read-only)
 
-Inputs used to write NorthStar's specs. They are **sources, not requirements** — the requirements are the
+Inputs used to write MAPP's specs. They are **sources, not requirements** — the requirements are the
 specs under `specs/` and the product docs under `docs/product/`. Do not edit these files except to
 refresh them from a newer version of the source.
 
-NorthStar's requirements and features were collected from **the available documentation** listed here and
+MAPP's requirements and features were collected from **the available documentation** listed here and
 from **the Hive9 application itself** — Shell's live Hive9 sandbox, analysed in the functional analysis
-(D-318). NorthStar's look and layout are its own design system (`docs/product/design-system.md`).
+(D-318). MAPP's look and layout are its own design system (`docs/product/design-system.md`).
 
 | File | Abbrev. | Source | Date | Use |
 |---|---|---|---|---|

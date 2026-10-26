@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"testing"
 
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/record"
-	"northstar/internal/settings"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/record"
+	"mapp/internal/settings"
 )
 
 // Services this package provides to other features (provide.go): plan roll-ups for feature 004 and

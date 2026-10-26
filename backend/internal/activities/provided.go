@@ -7,15 +7,15 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/campaigns"
-	"northstar/internal/plans"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/settings"
+	"mapp/internal/campaigns"
+	"mapp/internal/plans"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/settings"
 )
 
 // Summaries returns one roll-up summary per activity under the initiatives initiativeIDs (FR-005, D-105):

@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // The history kinds of the Settings records (data model §11).

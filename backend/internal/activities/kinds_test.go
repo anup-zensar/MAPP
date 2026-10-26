@@ -3,11 +3,11 @@ package activities_test
 import (
 	"testing"
 
-	"northstar/internal/activities"
-	"northstar/internal/campaigns"
-	"northstar/internal/history"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/store"
+	"mapp/internal/activities"
+	"mapp/internal/campaigns"
+	"mapp/internal/history"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/store"
 )
 
 // Activities have one history kind, "activity", under feature 005's initiative kind: history refuses it

@@ -1,6 +1,6 @@
 # Demo Users and Seed Data
 
-NorthStar ships with a **fictitious** dataset so every feature can be demonstrated and tested. No real
+MAPP ships with a **fictitious** dataset so every feature can be demonstrated and tested. No real
 Shell person, figure or code is used; option lists are realistic samples until Shell supplies the real
 lists from a production data extract. The seed is loaded by an explicit command (defined in feature
 001's plan) and never in a production environment.
@@ -9,16 +9,16 @@ Features add their own seed records; this page is the shared story they extend.
 
 ## Demo users (demo sign-in)
 
-All demo users share the password **`northstar`**, shown on the sign-in page (decision D-004).
+All demo users share the password **`mapp`**, shown on the sign-in page (decision D-004).
 
 | Name | E-mail | Job title | Teams | Typical use |
 |---|---|---|---|---|
-| Alex Morgan | alex.morgan@northstar.demo | Marketing administrator | Global Marketing Ops | Settings, approval level 2 |
-| Priya Raman | priya.raman@northstar.demo | Marketer | Lubricants Europe | Builds the Lubricants plan |
-| Daniel Okoro | daniel.okoro@northstar.demo | Marketing team leader | Lubricants Europe | Approves Lubricants activities |
-| Mei Lin | mei.lin@northstar.demo | Marketer | Mobility China | Builds the Mobility plan |
-| Carlos Mendes | carlos.mendes@northstar.demo | Business champion | Mobility China, Global Marketing Ops | Approves Mobility activities (level 1) |
-| Sara Novak | sara.novak@northstar.demo | Local finance advisor | Lubricants Europe, Mobility China | Reviews finance coding |
+| Alex Morgan | alex.morgan@shell.com | Marketing administrator | Global Marketing Ops | Settings, approval level 2 |
+| Priya Raman | priya.raman@shell.com | Marketer | Lubricants Europe | Builds the Lubricants plan |
+| Daniel Okoro | daniel.okoro@shell.com | Marketing team leader | Lubricants Europe | Approves Lubricants activities |
+| Mei Lin | mei.lin@shell.com | Marketer | Mobility China | Builds the Mobility plan |
+| Carlos Mendes | carlos.mendes@shell.com | Business champion | Mobility China, Global Marketing Ops | Approves Mobility activities (level 1) |
+| Sara Novak | sara.novak@shell.com | Local finance advisor | Lubricants Europe, Mobility China | Reviews finance coding |
 
 ## Settings seed
 

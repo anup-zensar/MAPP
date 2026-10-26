@@ -7,16 +7,16 @@ import (
 	"maps"
 	"slices"
 
-	"northstar/internal/activities"
-	"northstar/internal/approvals"
-	"northstar/internal/campaigns"
-	"northstar/internal/history"
-	"northstar/internal/lineitems"
-	"northstar/internal/people"
-	"northstar/internal/plans"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/settings"
+	"mapp/internal/activities"
+	"mapp/internal/approvals"
+	"mapp/internal/campaigns"
+	"mapp/internal/history"
+	"mapp/internal/lineitems"
+	"mapp/internal/people"
+	"mapp/internal/plans"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/settings"
 )
 
 // The adapters below tell Settings (002) and people (003) where their records are used (D-196): Settings'

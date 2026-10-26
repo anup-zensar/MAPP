@@ -16,9 +16,9 @@ import (
 	"strconv"
 	"testing"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/store"
-	"northstar/seed"
+	"mapp/internal/people"
+	"mapp/internal/platform/store"
+	"mapp/seed"
 )
 
 // The seed loads the demo data into an empty data folder, creating the folder when it is missing, and says
@@ -133,7 +133,7 @@ func TestRun_RefusesWhileTheAPIIsRunning_FR028(t *testing.T) {
 
 	err := run([]string{"-data", dir, "-reset"}, environment(t, map[string]string{"APP_PORT": port}), io.Discard)
 
-	want := "The NorthStar API is running — stop it, then run the seed again."
+	want := "The MAPP API is running — stop it, then run the seed again."
 	if err == nil || err.Error() != want {
 		t.Errorf("run = %v, want %q", err, want)
 	}
@@ -143,7 +143,7 @@ func TestRun_RefusesWhileTheAPIIsRunning_FR028(t *testing.T) {
 }
 
 // Another program on APP_PORT that answers /api/health with a web page and 200 OK, as a single-page app
-// does for every path, is not a NorthStar API: the seed goes on (FR-028).
+// does for every path, is not a MAPP API: the seed goes on (FR-028).
 func TestRun_IgnoresAnotherProgramOnThePort_FR028(t *testing.T) {
 	other := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")

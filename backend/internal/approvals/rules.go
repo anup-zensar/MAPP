@@ -4,7 +4,7 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // The rule engine of feature 017 (data-model §2, §3 steps 1–3): pure functions over a workflow's levels and

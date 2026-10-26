@@ -85,7 +85,7 @@
   white-space: nowrap;
 }
 
-/* The Action menu: the look of every NorthStar menu (§5.1). */
+/* The Action menu: the look of every MAPP menu (§5.1). */
 .menu {
   z-index: 300;
   min-width: 220px;

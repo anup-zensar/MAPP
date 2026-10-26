@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/errs"
 )
 
 // Query is the filter set, sort and page of the Financials page (FR-021), as GET /api/financials/transactions

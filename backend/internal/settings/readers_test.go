@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // Later features read Settings through the readers inside their own transaction: lists come sorted as

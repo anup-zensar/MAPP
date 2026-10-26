@@ -3,7 +3,7 @@ package approvals
 import (
 	"context"
 
-	"northstar/internal/platform/actor"
+	"mapp/internal/platform/actor"
 )
 
 // RuleOptions returns what a level's rule may name (017 FR-001, FR-005): every activity type and business

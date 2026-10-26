@@ -4,7 +4,7 @@ import (
 	"context"
 	"slices"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // The readers below are how later features read Settings (002 plan, "How later features read Settings").

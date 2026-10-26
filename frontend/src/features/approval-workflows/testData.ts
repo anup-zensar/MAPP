@@ -76,7 +76,7 @@ const PERSON_META = {
 const person = (id: string, name: string, initials: string, active = true) => ({
   id,
   name,
-  email: `${name.toLowerCase().replace(' ', '.')}@northstar.demo`,
+  email: `${name.toLowerCase().replace(' ', '.')}@shell.com`,
   jobTitle: '',
   initials,
   active,

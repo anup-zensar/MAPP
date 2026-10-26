@@ -3,8 +3,8 @@
 // committed, invoiced, paid, accrued, not yet committed — worked out from them for every line item,
 // activity, initiative, campaign and plan.
 //
-// Transactions are read-only in NorthStar: they arrive through a Feed (feed.go) — now the simulated GSAP
-// extract (a CSV file sent to the API) and the demo data — and NorthStar never creates, edits, deletes or
+// Transactions are read-only in MAPP: they arrive through a Feed (feed.go) — now the simulated GSAP
+// extract (a CSV file sent to the API) and the demo data — and MAPP never creates, edits, deletes or
 // sends one (constitution II, D-242). The only change a person makes is a manual link of a transaction the
 // rules could not link (FR-026). Every figure is calculated on read and never stored (FR-012).
 //
@@ -17,10 +17,10 @@ import (
 	"strings"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
 )
 
 // Type is the kind of GSAP transaction (FR-001, D-243).

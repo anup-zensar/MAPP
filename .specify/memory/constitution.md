@@ -1,7 +1,9 @@
 <!--
 Sync Impact Report
-- Version change: 2.0.0 → 2.1.0 (MINOR: Governance gains the alignment plan for existing code and
-  names the Go guidance; no principle added, removed or redefined)
+- Version change: 2.1.0 → 2.1.1 (PATCH: merges 1.1.2 from `develop` — the product is named MAPP
+  throughout, D-319). The 2.0.0 → 2.1.0 changes listed below come with it (MINOR: Governance gains
+  the alignment plan for existing code and names the Go guidance; no principle added, removed or
+  redefined)
 - Modified principles: VIII Clean Construction — the tool directives the comment budget ignores
   now include goose's and sqlc's annotations (sqlc needs one `-- name:` line per query),
   `prettier-ignore` and triple-slash references
@@ -21,9 +23,9 @@ Sync Impact Report
 -->
 
 
-# NorthStar Constitution
+# MAPP Constitution
 
-NorthStar is Shell's marketing planning application that replaces Hive9. This constitution sets the
+MAPP is Shell's marketing planning application that replaces Hive9. This constitution sets the
 rules everyone — people and AI agents — follows when specifying, designing, building and testing
 it, in the Go API (`backend/`) and the web app (`frontend/`) alike. It applies Shell's Software
 Design & Construction Policy (the "Policy") and the compliance points of the Software Engineering
@@ -50,7 +52,7 @@ These principles apply to every part of the system: backend, frontend, data and 
   e.g. `004 FR-012`) MUST appear in the names of the tests that verify them and in the pull request
   description. Every functional requirement is covered by at least one task.
 - A change in behaviour starts with a change in the spec, in the same pull request as the code.
-- Features MUST be designed from independent domain knowledge. Hive9, which NorthStar replaces, is
+- Features MUST be designed from independent domain knowledge. Hive9, which MAPP replaces, is
   a source of requirements (Principle II), but the project MUST NOT copy Hive9's or any other
   third party's code, assets, content, copy, visual design, layout, icons, fonts or imagery.
 
@@ -59,11 +61,11 @@ cheapest place to fix a defect. Traceability lets a maintainer find why any beha
 
 ### II. Shell Business, Plain Language
 
-- NorthStar uses Shell's planning vocabulary on every screen: **Plan → Campaign → Initiative →
+- MAPP uses Shell's planning vocabulary on every screen: **Plan → Campaign → Initiative →
   Activity → Line item**. Hive9 product words (Program, Tactic, Inspection Window, Honeycomb, HUD)
   are never shown to users. `docs/product/glossary.md` is the authoritative list of terms.
 - **Requirements and features come from the available documentation and the Hive9 application
-  itself; Shell's process is the functional reference; NorthStar's design system is the layout and
+  itself; Shell's process is the functional reference; MAPP's design system is the layout and
   interaction reference; Shell's enterprise design language is the visual reference (Principles IX
   and X).** When sources disagree on behaviour, follow the precedence in
   `docs/reference/README.md` (Shell's own documents first). Every simplification of Hive9 behaviour
@@ -74,7 +76,7 @@ cheapest place to fix a defect. Traceability lets a maintainer find why any beha
 - Business configuration is data, not code: models, activity types, custom attributes and their
   option lists, currencies and exchange rates, finance budget items and roles are managed on
   Settings screens, never hard-coded.
-- **NorthStar owns plans; GSAP owns the money.** NorthStar never creates SWBS codes, purchase
+- **MAPP owns plans; GSAP owns the money.** MAPP never creates SWBS codes, purchase
   orders or invoices, and shows GSAP's financial transactions read-only. Live GSAP integration is
   out of scope for the current phase: GSAP data (daily exchange rates; purchase-order lines,
   invoices, payments and accruals) is loaded through **simulated feeds** behind adapter interfaces
@@ -230,7 +232,7 @@ tests that prove nothing cost time to write, read and maintain, and erode trust 
   fails closed: every API operation has a declared access rule in one route table, and an
   operation without a rule is refused. Scoped checks run in the service. The web app hides or
   explains actions from the server's decisions, but that is a convenience, never the control.
-- **Scope isolation.** NorthStar serves one organisation, Shell; the NorthStar rules for tenant
+- **Scope isolation.** MAPP serves one organisation, Shell; the NorthStar rules for tenant
   isolation apply here to access scopes. The scope MUST be taken only from the signed-in actor,
   never from a request body, query string or header. Every read and write of plan-owned data MUST
   be filtered by the actor's scope. A record outside the actor's scope MUST be indistinguishable
@@ -367,7 +369,7 @@ corrected.
   greyed out without saying why and what to do instead. Unsaved changes are protected.
 - Screens meet **WCAG 2.2 AA** (detail in F6).
 
-**Rationale:** Shell users describe Hive9 as too complex; NorthStar's value is that anyone can plan
+**Rationale:** Shell users describe Hive9 as too complex; MAPP's value is that anyone can plan
 in it with confidence, in a tool that looks like the rest of Shell and never does something the
 user did not expect.
 
@@ -438,7 +440,7 @@ changes.
   Yellow or Secondary Red, MUST meet the WCAG contrast for its use, and MUST NOT be the only
   carrier of meaning.
 
-**Rationale:** the palette is Shell's; using it exactly is what makes NorthStar recognisably part
+**Rationale:** the palette is Shell's; using it exactly is what makes MAPP recognisably part
 of Shell's estate, and stating the contrast limits next to it lets the palette and accessibility
 both be non-negotiable without conflict.
 
@@ -467,9 +469,9 @@ both be non-negotiable without conflict.
 | Web app | React + TypeScript (strict), built with Vite (F1) | Same, served as static files |
 | API | Go with Gin, REST + JSON, OpenAPI 3.1 contract (B1, B6) | Same |
 | Storage | SQLite: one local file, pure-Go driver, behind store interfaces (B5) | PostgreSQL (Azure Database for PostgreSQL) through a new store implementation; tests move with it |
-| Sign-in and access | Demo sign-in with seeded users; roles, permissions and team scopes kept in NorthStar (ADR-0008) | Microsoft Entra ID single sign-on; roles may come from Entra app roles or groups |
+| Sign-in and access | Demo sign-in with seeded users; roles, permissions and team scopes kept in MAPP (ADR-0008) | Microsoft Entra ID single sign-on; roles may come from Entra app roles or groups |
 | Shell integrations | Simulated GSAP feeds behind adapters (ADR-0009) | Live GSAP feeds implementing the same adapters |
-| Visual design | Shell palette (Principle X), Jost and Arial, NorthStar's own mark | Shell's typeface and pecten once Shell supplies them and consents |
+| Visual design | Shell palette (Principle X), Jost and Arial, MAPP's own mark | Shell's typeface and pecten once Shell supplies them and consents |
 | Containers | None | Chosen by ADR before hosting |
 | Hosting | Local laptop | Azure Container Apps behind Azure Front Door (see `docs/reference/README.md`) |
 
@@ -836,7 +838,7 @@ frontend/
   API (`Secure` outside local development); an access token, if the API ever issues one, is held
   in memory only. A credential MUST NOT appear in a URL.
 - Browser storage holds only non-sensitive interface preferences. Each key is prefixed
-  `northstar.`, carries a version, and is parsed with a Zod schema on read, an invalid value
+  `mapp.`, carries a version, and is parsed with a Zod schema on read, an invalid value
   falling back to the default. Per-user preferences are cleared on sign-out.
 - Only the Web Crypto API is used for cryptography. Client-side encryption is never a substitute
   for a server-side control.
@@ -1096,9 +1098,11 @@ amended to match.
 | Version | Date | Change | Decisions |
 |---|---|---|---|
 | 1.0.0 | 2026-10-18 | Ratified: principles I–VII, Current Phase & Scope, Technology Choices, Development Workflow, Governance | D-001–D-008 |
-| 1.1.0 | 2026-10-20 | II: NorthStar's design system is the layout and interaction reference; GSAP data from simulated feeds, live integration still out. III: Shell's enterprise design language instead of "white, one blue primary action"; WCAG 2.2 AA instead of 2.1 AA. IV: Shell's systems behind adapter interfaces. VI: role- and team-based access control enforced by the server instead of "every signed-in user can do everything"; demo sign-in stays until single sign-on. Current Phase & Scope and Technology Choices follow (features 014–017) | D-223, D-239, D-242, D-259, D-308, D-310–D-315; ADR-0008, ADR-0009 |
-| 1.1.1 | 2026-10-22 | II (wording): requirements and features come from the available documentation and the Hive9 application itself; NorthStar's design system is the layout and interaction reference | D-318 |
+| 1.1.0 | 2026-10-20 | II: MAPP's design system is the layout and interaction reference; GSAP data from simulated feeds, live integration still out. III: Shell's enterprise design language instead of "white, one blue primary action"; WCAG 2.2 AA instead of 2.1 AA. IV: Shell's systems behind adapter interfaces. VI: role- and team-based access control enforced by the server instead of "every signed-in user can do everything"; demo sign-in stays until single sign-on. Current Phase & Scope and Technology Choices follow (features 014–017) | D-223, D-239, D-242, D-259, D-308, D-310–D-315; ADR-0008, ADR-0009 |
+| 1.1.1 | 2026-10-22 | II (wording): requirements and features come from the available documentation and the Hive9 application itself; MAPP's design system is the layout and interaction reference | D-318 |
+| 1.1.2 | 2026-10-22 | The product is named MAPP throughout (on `develop`) | D-319 |
 | 2.0.0 | 2026-10-26 | The NorthStar backend (1.1.0) and frontend (1.0.0) constitutions merged into this one, NorthStar winning where they disagreed (SEMS): Documented Design, Clean Construction, quality metrics, Backend Standards B1–B9 (Gin, sqlc, goose, OpenTelemetry), Frontend Standards F1–F10, quality and release gates, SEMS Compliance, `main`/`release`/`develop` with `feature/NNN-short-name` branches. Product owner's additions: SQLite now and PostgreSQL later, no Docker; comments at most 5% of a file's lines; meaningful tests only; IX modern, tasteful UI with visual hierarchy and no surprises; X Shell colour palette, non-negotiable (primary yellow `#FFC600`). Scope isolation answers 404 for out-of-scope records | Product owner instruction of 2026-10-26 |
 | 2.1.0 | 2026-10-26 | Governance: existing code is aligned by dedicated features, and until then a change keeps its package's stack. Workflow: no direct pushes to `main`, `release` or `develop`; every change arrives by pull request from a working branch, enforced by branch protection. VIII: the comment budget ignores goose, sqlc and other tool directives. Backend Standards point to `backend/docs/GO_STANDARDS.md`; `backend/.golangci.yml` and `backend/CLAUDE.md` added | Product owner instruction of 2026-10-26 |
+| 2.1.1 | 2026-10-26 | Merge of 1.1.2 from `develop`: the product is named MAPP in every rule; the Go module is `mapp` and browser-storage keys start `mapp.` | D-319 |
 
-**Version**: 2.1.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-26
+**Version**: 2.1.1 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-26

@@ -5,7 +5,7 @@ import { defineConfig, devices } from '@playwright/test';
 // The end-to-end tests start their own API and web app on ports of their own, with freshly seeded demo
 // data in a temporary folder, so a development server and backend/data are never touched (research R19).
 // E2E_API_PORT, E2E_WEB_PORT and E2E_DATA_DIR move them, so two checkouts can run their tests at once.
-const dataDir = process.env.E2E_DATA_DIR || path.join(os.tmpdir(), 'northstar-e2e');
+const dataDir = process.env.E2E_DATA_DIR || path.join(os.tmpdir(), 'mapp-e2e');
 const apiPort = process.env.E2E_API_PORT || '18080';
 const webPort = process.env.E2E_WEB_PORT || '14173';
 
@@ -37,7 +37,7 @@ export default defineConfig({
     {
       // The production build, served on 127.0.0.1 with /api forwarded to the test API.
       command: `npm run build && npx vite preview --host 127.0.0.1 --port ${webPort} --strictPort`,
-      env: { ...process.env, NORTHSTAR_API_URL: `http://127.0.0.1:${apiPort}` },
+      env: { ...process.env, MAPP_API_URL: `http://127.0.0.1:${apiPort}` },
       url: `http://127.0.0.1:${webPort}`,
       timeout: 180_000,
       reuseExistingServer: false,

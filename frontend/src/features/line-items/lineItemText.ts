@@ -121,7 +121,7 @@ export const SWBS_TEXT: Record<SwbsStatus, string> = {
 };
 export const SWBS_LATER = 'Filled by GSAP later';
 export const SWBS_HELP =
-  'NorthStar asks GSAP for an SWBS code once the activity is approved. Sending requests to GSAP comes later.';
+  'MAPP asks GSAP for an SWBS code once the activity is approved. Sending requests to GSAP comes later.';
 
 // Pages and form
 export const EYEBROW = 'Line item';

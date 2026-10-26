@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
 )
 
 // modelInput is a valid new model: 2 %, 5 %, 10,000 USD, allowing the activity types.

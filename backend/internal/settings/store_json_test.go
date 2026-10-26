@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/platform/store"
-	"northstar/internal/settings"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/platform/store"
+	"mapp/internal/settings"
 )
 
 var (

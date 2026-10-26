@@ -33,7 +33,7 @@
 
 - Validated 2026-10-18 (baseline, decision D-021). 22 functional requirements, 7 success criteria.
 - No clarifications needed: the open choices are documented assumptions instead — team colours assigned
-  by NorthStar (the Team record has none), a plan's approval progress uses the campaign/initiative rule
+  by MAPP (the Team record has none), a plan's approval progress uses the campaign/initiative rule
   of domain model §2.2, and the **Activities I own** card falls back to the My activities card until
   feature 010 exists.
 - First pass fixed: the over-allocation reason (FR-011 c) now names the plan or campaign that owns the

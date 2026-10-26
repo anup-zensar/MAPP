@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"slices"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
 )
 
 // RunEscalations sends the reminders and escalations that are due now (017 FR-026 – FR-028, D-285, D-286):
-// it stands in for the nightly job that will call it once NorthStar is hosted, and needs workflows.manage
+// it stands in for the nightly job that will call it once MAPP is hosted, and needs workflows.manage
 // (403 otherwise). In one Write, for the open round of each stored activity, by activity id, at its current
 // level:
 //
@@ -25,7 +25,7 @@ import (
 //     approvers still waiting and their current delegates are reminded.
 //
 // Each level gets at most one reminder and one escalation, so the run is safe to repeat (SC-005). Its events
-// are recorded as made by NorthStar, with "run by <person>" in the activity log.
+// are recorded as made by MAPP, with "run by <person>" in the activity log.
 func (s *Service) RunEscalations(ctx context.Context, a actor.Actor) (EscalationRun, error) {
 	run := EscalationRun{Events: []EscalationEvent{}, NotEscalated: []EscalationEvent{}}
 	err := s.tx.Write(ctx, func(ctx context.Context) error {

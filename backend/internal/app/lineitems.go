@@ -6,14 +6,14 @@ import (
 	"maps"
 	"slices"
 
-	"northstar/internal/activities"
-	"northstar/internal/campaigns"
-	"northstar/internal/lineitems"
-	"northstar/internal/people"
-	"northstar/internal/plans"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/settings"
+	"mapp/internal/activities"
+	"mapp/internal/campaigns"
+	"mapp/internal/lineitems"
+	"mapp/internal/people"
+	"mapp/internal/plans"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/settings"
 )
 
 // The wiring of feature 007, line items (D-196): the adapters that implement the dependency interfaces of

@@ -65,7 +65,7 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
 
     const description = await screen.findByLabelText('Description');
     expect(screen.getByRole('heading', { level: 1, name: 'Edit activity' })).toBeVisible();
-    expect(document.title).toBe('Edit Launch film · NorthStar');
+    expect(document.title).toBe('Edit Launch film · MAPP');
     expect(screen.getByLabelText('Activity name')).toHaveValue('Launch film');
     expect(screen.getByLabelText('Planned cost')).toHaveValue('120,000.00');
     expect(screen.queryByText('From the initiative')).not.toBeInTheDocument();

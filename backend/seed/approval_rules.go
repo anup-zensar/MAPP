@@ -5,16 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"northstar/internal/activities"
-	"northstar/internal/approvals"
-	"northstar/internal/people"
-	"northstar/internal/plans"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/settings"
+	"mapp/internal/activities"
+	"mapp/internal/approvals"
+	"mapp/internal/people"
+	"mapp/internal/plans"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/settings"
 )
 
 // The demo data of feature 017, approval rules (017 data-model §13, FR-037): line managers, the reminder,

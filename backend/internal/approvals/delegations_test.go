@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
 )
 
 // day writes the fixture's today plus n days as a request sends it.

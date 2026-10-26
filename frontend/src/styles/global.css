@@ -111,7 +111,7 @@ table {
   transform: none;
 }
 
-/* Edge shows its own eye button in password fields; NorthStar's PasswordField has one already. */
+/* Edge shows its own eye button in password fields; MAPP's PasswordField has one already. */
 input[type='password']::-ms-reveal {
   display: none;
 }

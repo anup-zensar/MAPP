@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/lineitems"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/platform/store"
-	"northstar/internal/settings"
+	"mapp/internal/lineitems"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/platform/store"
+	"mapp/internal/settings"
 )
 
 // A line item is saved in the table "line_items" and read back exactly — amounts as decimal strings in its

@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // The service's rules on the demo data of data model §6, with fakes for the ports (plan, "Tests").

@@ -36,10 +36,10 @@ describe('PublicLayout', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows the NorthStar logo in its header (FR-001)', () => {
+  it('shows the MAPP logo in its header (FR-001)', () => {
     renderPage();
 
-    expect(screen.getByRole('banner')).toHaveTextContent('NorthStar');
+    expect(screen.getByRole('banner')).toHaveTextContent('MAPP');
   });
 
   it('has the light/dark switch in its header, which changes only this browser’s choice (FR-014, research R16)', async () => {
@@ -50,7 +50,7 @@ describe('PublicLayout', () => {
     );
 
     await waitFor(() => expect(document.documentElement.dataset.theme).toBe('dark'));
-    expect(localStorage.getItem('northstar.theme')).toBe('dark');
+    expect(localStorage.getItem('mapp.theme')).toBe('dark');
   });
 
   it('can leave the switch out, for the error page that shows when the app itself failed', () => {

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
 )
 
 // The rules of All work's personal settings (data model §1): the remembered columns and, later in this file,

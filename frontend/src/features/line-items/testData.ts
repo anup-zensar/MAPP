@@ -313,7 +313,7 @@ export function lineItemForm(): AttributeForm {
 
 const PRIYA: Person = {
   ...PRIYA_REF,
-  email: 'priya.raman@northstar.demo',
+  email: 'priya.raman@shell.com',
   teams: [{ id: 'T-1001', name: 'Lubricants Europe', colour: 'blue', active: true }],
   version: 1,
   createdAt: '2026-01-01T00:00:00Z',

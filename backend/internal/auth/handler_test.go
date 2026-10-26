@@ -9,18 +9,18 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/auth"
-	"northstar/internal/people"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/apitest"
-	"northstar/internal/platform/store"
-	"northstar/internal/platform/web"
-	"northstar/seed"
+	"mapp/internal/auth"
+	"mapp/internal/people"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/apitest"
+	"mapp/internal/platform/store"
+	"mapp/internal/platform/web"
+	"mapp/seed"
 )
 
 const (
-	priyasEmail  = "priya.raman@northstar.demo"
-	demoPassword = "northstar"
+	priyasEmail  = "priya.raman@shell.com"
+	demoPassword = "mapp"
 )
 
 // lubricantsEurope is the team T-1001 as answers show it.
@@ -29,7 +29,7 @@ const lubricantsEurope = `{"id":"T-1001","name":"Lubricants Europe","colour":"bl
 // priyaBody is Priya Raman as the API answers her: with her access (feature 014, FR-024) — the Planner role
 // for her teams, its twelve permissions in Lubricants Europe, the administrator to ask and the
 // segregation-of-duties rule.
-var priyaBody = `{"id":"U-1002","name":"Priya Raman","firstName":"Priya","email":"priya.raman@northstar.demo",` +
+var priyaBody = `{"id":"U-1002","name":"Priya Raman","firstName":"Priya","email":"priya.raman@shell.com",` +
 	`"jobTitle":"Marketer","initials":"PR",` +
 	`"preferences":{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams","historyIncludeInside":false,"pinnedPlanIds":[]},` +
 	`"version":1,"teams":[` + lubricantsEurope + `],` +
@@ -69,12 +69,12 @@ func TestGetDemoPeople_ActivePeopleAndPassword_FR001_FR002(t *testing.T) {
 	var got auth.DemoPeople
 	response.Decode(t, &got)
 	want := auth.DemoPeople{Password: demoPassword, People: []people.DemoPerson{
-		{ID: "U-1001", Name: "Alex Morgan", Email: "alex.morgan@northstar.demo", JobTitle: "Marketing administrator", Initials: "AM"},
-		{ID: "U-1005", Name: "Carlos Mendes", Email: "carlos.mendes@northstar.demo", JobTitle: "Business champion", Initials: "CM"},
-		{ID: "U-1003", Name: "Daniel Okoro", Email: "daniel.okoro@northstar.demo", JobTitle: "Marketing team leader", Initials: "DO"},
-		{ID: "U-1004", Name: "Mei Lin", Email: "mei.lin@northstar.demo", JobTitle: "Marketer", Initials: "ML"},
-		{ID: "U-1002", Name: "Priya Raman", Email: "priya.raman@northstar.demo", JobTitle: "Marketer", Initials: "PR"},
-		{ID: "U-1006", Name: "Sara Novak", Email: "sara.novak@northstar.demo", JobTitle: "Local finance advisor", Initials: "SN"},
+		{ID: "U-1001", Name: "Alex Morgan", Email: "alex.morgan@shell.com", JobTitle: "Marketing administrator", Initials: "AM"},
+		{ID: "U-1005", Name: "Carlos Mendes", Email: "carlos.mendes@shell.com", JobTitle: "Business champion", Initials: "CM"},
+		{ID: "U-1003", Name: "Daniel Okoro", Email: "daniel.okoro@shell.com", JobTitle: "Marketing team leader", Initials: "DO"},
+		{ID: "U-1004", Name: "Mei Lin", Email: "mei.lin@shell.com", JobTitle: "Marketer", Initials: "ML"},
+		{ID: "U-1002", Name: "Priya Raman", Email: "priya.raman@shell.com", JobTitle: "Marketer", Initials: "PR"},
+		{ID: "U-1006", Name: "Sara Novak", Email: "sara.novak@shell.com", JobTitle: "Local finance advisor", Initials: "SN"},
 	}}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("demo people =\n%+v\nwant\n%+v", got, want)
@@ -88,7 +88,7 @@ func TestDemoPeople_EmptyStore_FR028(t *testing.T) {
 
 	response := server.Do(t, http.MethodGet, "/api/auth/demo-people", nil)
 
-	assertAnswer(t, response, http.StatusOK, `{"password":"northstar","people":[]}`)
+	assertAnswer(t, response, http.StatusOK, `{"password":"mapp","people":[]}`)
 }
 
 // Signing in answers the signed-in person and sets the session cookie: HttpOnly, SameSite=Strict, for the
@@ -97,7 +97,7 @@ func TestDemoPeople_EmptyStore_FR028(t *testing.T) {
 func TestSignIn_SetsTheSessionCookie_FR003(t *testing.T) {
 	server := apitest.New(t)
 
-	response := server.Do(t, http.MethodPost, "/api/auth/sign-in", signIn(" Priya.Raman@NorthStar.demo ", demoPassword))
+	response := server.Do(t, http.MethodPost, "/api/auth/sign-in", signIn(" Priya.Raman@Shell.COM ", demoPassword))
 
 	assertAnswer(t, response, http.StatusOK, priyaBody)
 	cookie := response.Cookie(auth.CookieName)
@@ -131,7 +131,7 @@ func TestSignIn_IncorrectCredentials_FR004(t *testing.T) {
 		body map[string]string
 	}{
 		{"wrong password", signIn(priyasEmail, "wrong")},
-		{"unknown e-mail", signIn("nobody@northstar.demo", demoPassword)},
+		{"unknown e-mail", signIn("nobody@shell.com", demoPassword)},
 	}
 
 	for _, attempt := range attempts {
@@ -151,7 +151,7 @@ func TestSignIn_EndsThisBrowsersPreviousSession_FR006(t *testing.T) {
 	server := apitest.New(t)
 	first := sessionCookie(t, server.Do(t, http.MethodPost, "/api/auth/sign-in", signIn(priyasEmail, demoPassword)))
 
-	again := server.Do(t, http.MethodPost, "/api/auth/sign-in", signIn("daniel.okoro@northstar.demo", demoPassword),
+	again := server.Do(t, http.MethodPost, "/api/auth/sign-in", signIn("daniel.okoro@shell.com", demoPassword),
 		apitest.WithCookie(first))
 
 	second := sessionCookie(t, again)

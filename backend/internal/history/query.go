@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
 )
 
 // planKind is the name of the kind of plans (feature 004): the Plan filter offers the plans the log names.

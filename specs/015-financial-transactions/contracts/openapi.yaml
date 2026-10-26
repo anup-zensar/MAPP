@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: NorthStar API — feature 015 fragment (financial transactions)
+  title: MAPP API — feature 015 fragment (financial transactions)
   version: 0.1.0
   license:
     name: Proprietary - internal use only
@@ -282,7 +282,7 @@ paths:
       summary: The sample GSAP extract file (header and three example rows, FR-009)
       responses:
         "200":
-          description: The file, named northstar-gsap-extract-sample.csv in Content-Disposition.
+          description: The file, named mapp-gsap-extract-sample.csv in Content-Disposition.
           headers:
             Content-Disposition:
               description: attachment with filename.
@@ -975,7 +975,7 @@ components:
           type: integer
         unusedColumns:
           type: array
-          description: Header names NorthStar does not read.
+          description: Header names MAPP does not read.
           items:
             type: string
     FinancialImport:

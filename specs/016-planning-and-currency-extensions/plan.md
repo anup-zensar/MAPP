@@ -283,7 +283,7 @@ func ShiftPhasing(p Phasing, years int) Phasing // copies into another year (FR-
   (data-model §3.4), using the plan's nodes and plan-currency rates (`Source.PlanRates`).
 - Columns: Year, Plan type, Plan currency, Plan budget (plan currency), Planned cost (plan currency).
 - Export: "About this export" adds the range, new filters, the breakdown and the rates used
-  (`CurrentRates`); file name "NorthStar All work – Breakdown – 2026–2027 – 20 Oct 2026".
+  (`CurrentRates`); file name "MAPP All work – Breakdown – 2026–2027 – 20 Oct 2026".
 - Saved views: read old states as data-model §5.2.
 
 ### `internal/app`
@@ -400,7 +400,7 @@ Every field of the forms and details of 004–007 passes `tip={help('<key>')}` t
 | Breakdown line items | Includes 3,000.00 USD on line items of activities without a planned cost. |
 | Year range too long | Choose at most 5 years. |
 | Field help too long | Use 300 characters or fewer. |
-| Field help reset confirm | Reset the help of 'Plan budget' to NorthStar's text? |
+| Field help reset confirm | Reset the help of 'Plan budget' to MAPP's text? |
 | Attributes without help | 3 Shell attributes have no help yet — view them |
 
 ## Tests

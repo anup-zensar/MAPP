@@ -6,10 +6,10 @@ import (
 	"errors"
 	"fmt"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/history"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // The history hooks of feature 016's Settings records: exchange rates (under their currency, restorable),

@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/clock"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/store"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/clock"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/store"
 )
 
 // The prefixes of the readable IDs history gives out: LOG-1001 for log entries, BIN-1001 for recycle-bin

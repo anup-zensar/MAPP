@@ -1,7 +1,7 @@
 package allwork
 
 import (
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // Roll-ups, summary cards and totals (data model §5; FR-003, FR-013, FR-014, FR-017). Every sum is made in

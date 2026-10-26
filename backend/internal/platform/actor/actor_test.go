@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"northstar/internal/platform/actor"
+	"mapp/internal/platform/actor"
 )
 
 // The sign-in middleware puts the actor in the request context and handlers take it out again, so every
@@ -35,7 +35,7 @@ func TestActor_JSON(t *testing.T) {
 	if err != nil {
 		t.Fatalf("json.Marshal: %v", err)
 	}
-	if got, want := string(body), `{"id":"system","name":"NorthStar"}`; got != want {
+	if got, want := string(body), `{"id":"system","name":"MAPP"}`; got != want {
 		t.Errorf("JSON = %s, want %s", got, want)
 	}
 }

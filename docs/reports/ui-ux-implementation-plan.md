@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Deliverable** | Updated UI/UX implementation plan |
-| **For** | Product owner, the Shell client team and the NorthStar delivery team |
+| **For** | Product owner, the Shell client team and the MAPP delivery team |
 | **Date** | 20 October 2026 |
 | **Applies** | [Design system version 2](../product/design-system.md) (binding) and the [UX/UI recommendations](ux-design-recommendations.md) |
 | **Closes** | The 97 entries of the [UI audit](ui-audit.md) and the UI-related findings of the [functional review](functional-review.md) |

@@ -7,12 +7,12 @@ import { createPlan, createPlanningRecords, idOf, type ListOf, type Named } from
 // split activity, global budgets) and approval rules (017: approved automatically, delegation).
 // Records a journey needs are prepared through the API; what it proves is done on screen.
 
-const ALEX = 'alex.morgan@northstar.demo';
-const PRIYA = 'priya.raman@northstar.demo';
-const DANIEL = 'daniel.okoro@northstar.demo';
-const MEI = 'mei.lin@northstar.demo';
-const CARLOS = 'carlos.mendes@northstar.demo';
-const SARA = 'sara.novak@northstar.demo';
+const ALEX = 'alex.morgan@shell.com';
+const PRIYA = 'priya.raman@shell.com';
+const DANIEL = 'daniel.okoro@shell.com';
+const MEI = 'mei.lin@shell.com';
+const CARLOS = 'carlos.mendes@shell.com';
+const SARA = 'sara.novak@shell.com';
 
 const STANDARD_WORKFLOW = 'Standard marketing approval';
 /** The demo plan, activity and purchase order of the GSAP story (backend/seed). */
@@ -178,7 +178,7 @@ test('014: an administrator gives a person a role in Settings › Roles and acce
   test.slow();
   await signInAs(page, ALEX);
   const name = uniqueName('Access Person');
-  const email = `access.${Date.now().toString(36)}@northstar.demo`;
+  const email = `access.${Date.now().toString(36)}@shell.com`;
   const teamId = await idOf(page, '/api/teams', 'Lubricants Europe');
   await callApi(page, 'POST', '/api/people', {
     name,
@@ -245,7 +245,7 @@ test('015: a planner sees an activity’s GSAP financials and the Financials pag
     .getByRole('navigation', { name: 'Main' })
     .getByRole('link', { name: 'Financials' })
     .click();
-  await expect(page).toHaveTitle('Financials · NorthStar');
+  await expect(page).toHaveTitle('Financials · MAPP');
   await expect(page.getByRole('heading', { name: 'Financials', level: 1 })).toBeVisible();
   await expect(page.getByRole('main').getByText(SOCIAL_PO).first()).toBeVisible();
 });

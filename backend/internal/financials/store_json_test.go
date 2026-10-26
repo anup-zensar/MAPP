@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"northstar/internal/platform/actor"
+	"mapp/internal/platform/actor"
 )
 
 // The JSON store keeps transactions and imports exactly, and the stored data keeps the invariants of data

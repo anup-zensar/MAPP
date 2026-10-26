@@ -3,8 +3,8 @@ package plans
 import (
 	"context"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/actor"
+	"mapp/internal/people"
+	"mapp/internal/platform/actor"
 )
 
 // Overview is a plan as feature 009's Home reads it (Go only): the stored plan with what the Plans list and

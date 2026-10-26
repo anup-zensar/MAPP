@@ -5,11 +5,11 @@ import (
 	"context"
 	"fmt"
 
-	"northstar/internal/plans"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/money"
-	"northstar/internal/rollup"
-	"northstar/internal/settings"
+	"mapp/internal/plans"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
+	"mapp/internal/rollup"
+	"mapp/internal/settings"
 )
 
 // demoPlan is one plan of 004 plan "Seed".

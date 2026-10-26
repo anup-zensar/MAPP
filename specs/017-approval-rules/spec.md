@@ -62,7 +62,7 @@ Lubricants activity as Priya Raman; the first is Approved, the second waits for 
    **When** Priya submits an activity of $8,000.00, **Then** the confirmation shows "Level 1 · Line
    manager — Approved automatically: planned cost is below $10,000.00" and "This activity will be
    approved automatically."; confirming makes it **Approved**; its history shows "Submitted" by Priya
-   Raman and "Approved automatically" by NorthStar with the rule; Priya receives no notification.
+   Raman and "Approved automatically" by MAPP with the rule; Priya receives no notification.
 2. **Given** the same workflow, **When** Priya submits an activity of $30,000.00, **Then** the
    confirmation shows "Level 1 · Daniel Okoro (line manager of Priya Raman)", the activity becomes
    Submitted waiting for Daniel, and Daniel is notified.
@@ -189,7 +189,7 @@ seeded activity waiting for Daniel and see "as delegate of Daniel Okoro" in its 
 
 Each workflow can send a reminder after N days of waiting and escalate to the level's backup approver
 after M days. Someone who can change approval workflows chooses **Run reminders and escalations** (it
-stands in for the nightly job that will run it once NorthStar is hosted).
+stands in for the nightly job that will run it once MAPP is hosted).
 
 **Why this priority**: BUS.WFL.010 asks for automated notifications and escalations; approvals already
 work without them.
@@ -202,7 +202,7 @@ approver.
 
 1. **Given** a level waiting 3 days in a workflow that reminds after 3 days, **When** the job runs,
    **Then** the level's waiting approvers and their current delegates get "Reminder — approval waiting
-   3 days", the history shows "Reminder sent" by NorthStar, and the result says "1 reminder sent, no
+   3 days", the history shows "Reminder sent" by MAPP, and the result says "1 reminder sent, no
    escalations".
 2. **Given** the job ran, **When** it runs again the same day, **Then** nothing new is sent.
 3. **Given** a level waiting 5 days in a workflow that escalates after 5 days, **When** the job runs,
@@ -251,12 +251,12 @@ activity's approval history and in the Activity log (feature 011), with who, whe
 **Why this priority**: BUS.WFL.010 asks for an audit trail and compliance controls.
 
 **Independent Test**: After stories 1–5, open the activity log filtered on one activity and on the record
-type "Approval delegation"; every event is there with its person (or NorthStar) and its rule or reason.
+type "Approval delegation"; every event is there with its person (or MAPP) and its rule or reason.
 
 **Acceptance Scenarios**:
 
 1. **Given** any approval event of this feature, **Then** the activity's **Approval history** and the
-   Activity log both show it with the person (NorthStar for automatic events), the time and the rule,
+   Activity log both show it with the person (MAPP for automatic events), the time and the rule,
    capacity or reason ("as delegate of Daniel Okoro", "planned cost is below $10,000.00", "waited 5
    days").
 2. **Given** a round, **Then** its history heading shows the facts the rules used: "Rules applied to:
@@ -308,7 +308,7 @@ BRD trace: every FR names its BRD capability. "W10" = BUS.WFL.010, "W30" = BUS.W
   when** condition. A level without one is always needed; a level whose condition does not match is
   **Not needed** for that submission and is passed over.
 - **FR-004** *(W10 client comment 1: auto vs manager approval)*: A level MAY have an **Approve
-  automatically when** condition. When a needed level's condition matches, NorthStar approves the
+  automatically when** condition. When a needed level's condition matches, MAPP approves the
   level itself, with the rule as its reason; otherwise the level's approvers decide.
 - **FR-005** *(W10 conditional approvals)*: A condition MUST hold one or more of: planned cost (USD)
   **at least** an amount; planned cost **below** an amount; the plan's **business unit is one of**
@@ -329,13 +329,13 @@ BRD trace: every FR names its BRD capability. "W10" = BUS.WFL.010, "W30" = BUS.W
   words, e.g. "Level 1 · Line manager · automatic when planned cost is below $10,000.00 → Level 2 · Alex
   Morgan · only when planned cost is at least $100,000.00" (data-model §2), and show the reminder and
   escalation timings.
-- **FR-010** *(W10 compliance controls; amends 008 FR-011)*: On submission NorthStar MUST evaluate the
+- **FR-010** *(W10 compliance controls; amends 008 FR-011)*: On submission MAPP MUST evaluate the
   rules once, level by level, on the activity's values at that moment (planned cost, activity type, the
   plan's business units), and keep in the round each level's outcome — **Needs approval**, **Not
   needed** or **Approved automatically** — with its reason, its resolved approvers and the values used.
   Open rounds are never re-evaluated; a re-submission evaluates afresh.
 - **FR-011** *(W10 role-based approvals, segregation of duties)*: For each level that needs approval,
-  NorthStar MUST resolve the approvers (named people; the owner's line manager; or the role's holders
+  MAPP MUST resolve the approvers (named people; the owner's line manager; or the role's holders
   for the plan) and leave out, with the reason, inactive people, people who cannot approve, and — while
   014's access rule is on — the activity's owner and the person submitting. When nobody is left, the
   level's backup approver (when it can act) becomes its approver; otherwise the level waits with **no
@@ -419,7 +419,7 @@ BRD trace: every FR names its BRD capability. "W10" = BUS.WFL.010, "W30" = BUS.W
 - **FR-028** *(W10 escalations, monitoring)*: People holding `workflows.manage` MUST be able to choose
   **Run reminders and escalations** on Approvals › Monitoring; it MUST be safe to run any number of times,
   answer how many reminders and escalations were sent and which levels could not be escalated, and record
-  its events as made by NorthStar.
+  its events as made by MAPP.
 - **FR-029** *(W10 monitoring)*: A level's waiting time MUST be counted from when the round reached it
   (submission for the first level that needs approval, otherwise the approval of the level before), in
   whole days of 24 hours. A level is **overdue** when it has waited at least the round's escalation
@@ -439,12 +439,12 @@ BRD trace: every FR names its BRD capability. "W10" = BUS.WFL.010, "W30" = BUS.W
   needed, Approved automatically, "<a> of <b> approved", Escalated to <name>, Reminder sent, No approver —
   with each level's approver source and the people left out and why.
 - **FR-034** *(W10 audit trail; amends 008 FR-025)*: The approval history MUST also show "Approved
-  automatically", "Not needed", "Reminder sent" and "Escalated to <name>" entries (by NorthStar, with
+  automatically", "Not needed", "Reminder sent" and "Escalated to <name>" entries (by MAPP, with
   their rule or waiting days), each decision's capacity (FR-019), and per round the values the rules used.
 - **FR-035** *(W10 audit trail, compliance controls; amends 008 FR-026)*: Every event of this feature —
   rule outcomes that approve an activity, decisions in every capacity, reminders, escalations,
   delegation created, changed and cancelled, workflow rule changes and line-manager changes — MUST be
-  written to the activity log with the person (NorthStar for automatic events) and be readable on
+  written to the activity log with the person (MAPP for automatic events) and be readable on
   feature 011's Activity log page and record History.
 - **FR-036** *(W30)*: Submitting MUST still be halted with every missing mandatory field and every other
   problem listed at once (008 FR-010); this feature only adds problems (FR-012) and removes none.
@@ -480,7 +480,7 @@ BRD trace: every FR names its BRD capability. "W10" = BUS.WFL.010, "W30" = BUS.W
 - **SC-003**: An administrator who has never seen the screen sets up "line manager, automatic below
   $10,000.00" in under 3 minutes; a person sets up a delegation in at most 4 steps.
 - **SC-004**: 100 % of approval events of this feature appear in the approval history and the activity
-  log with the correct person or NorthStar, capacity and reason.
+  log with the correct person or MAPP, capacity and reason.
 - **SC-005**: Running reminders and escalations twice in a row sends nothing the second time.
 - **SC-006**: Monitoring's ageing bars add up to the **All open** count and its overdue list equals the
   rows flagged overdue.
@@ -494,7 +494,7 @@ listed for Shell to confirm (Q-014, Q-002):
 
 - Auto-approval and conditions use the activity's **planned cost in USD**, the **plan's business
   units** and the **activity type**; the $10,000.00 and $100,000.00 thresholds are demo values only.
-- "Manager" is a **line manager field kept in NorthStar** (Settings › People), to be filled from
+- "Manager" is a **line manager field kept in MAPP** (Settings › People), to be filled from
   Microsoft Entra ID when real sign-in arrives (SSO is simulated by demo sign-in).
 - Rules are evaluated **once, at submission**; only the changes of domain model §2.5 restart approval.
 - Segregation of duties is 014's access rule, **on by default**, and covers the owner **and the

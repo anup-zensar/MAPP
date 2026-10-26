@@ -3,8 +3,8 @@ package financials
 import (
 	"context"
 
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
 )
 
 // DemoFeed is the demo data of FR-031 as a feed: the 11 fictitious GSAP transactions of data model §6, for

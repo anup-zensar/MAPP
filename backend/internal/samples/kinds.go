@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
 )
 
 // The history kinds of the sample records (data model §7).

@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/authz"
+	"mapp/internal/history"
+	"mapp/internal/platform/authz"
 )
 
 // withPermissions returns a context of a person holding perms for All markets, through one role.

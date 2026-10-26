@@ -14,8 +14,8 @@
 
 ### User Story 1 - Sign in with a demo account (Priority: P1)
 
-A Shell user opens NorthStar and lands on a single, friendly sign-in page in Shell's design language (design system v2): the
-NorthStar logo on the brand gradient, "Welcome back", e-mail and password fields, and a section
+A Shell user opens MAPP and lands on a single, friendly sign-in page in Shell's design language (design system v2): the
+MAPP logo on the brand gradient, "Welcome back", e-mail and password fields, and a section
 "Explore as a demo person" listing the seeded demo users with their job titles. The page states clearly
 that this is a demo sign-in and shows the shared demo password. The user either types a demo e-mail and
 the password, or clicks a demo person, and arrives on the Home page.
@@ -23,12 +23,12 @@ the password, or clicks a demo person, and arrives on the Home page.
 **Why this priority**: Nothing else can be used without getting in, and every change must be recorded
 against a person (the actor).
 
-**Independent Test**: Start NorthStar with the seed data, sign in as each demo person in turn, and confirm
+**Independent Test**: Start MAPP with the seed data, sign in as each demo person in turn, and confirm
 the Home page greets that person by name.
 
 **Acceptance Scenarios**:
 
-1. **Given** the user is not signed in, **When** they open any NorthStar address, **Then** they see the
+1. **Given** the user is not signed in, **When** they open any MAPP address, **Then** they see the
    sign-in page, and after signing in they are taken to the address they originally asked for (or Home).
 2. **Given** the sign-in page, **When** the user enters a demo e-mail (any letter case, surrounding spaces
    ignored) and the demo password and chooses **Sign in**, **Then** they arrive on Home and the sidebar
@@ -39,14 +39,14 @@ the Home page greets that person by name.
    shows "Incorrect e-mail or password." without saying which one was wrong, and keeps the typed e-mail.
 5. **Given** the sign-in page, **When** the user presses **Sign in** with an empty field, **Then** every
    empty field is marked at once ("Enter your e-mail", "Enter the password").
-6. **Given** a signed-in user, **When** they reload the page or open NorthStar in a new tab of the same
+6. **Given** a signed-in user, **When** they reload the page or open MAPP in a new tab of the same
    browser, **Then** they are still signed in.
 
 ---
 
 ### User Story 2 - Find my way around the application (Priority: P1)
 
-After signing in the user sees the layout of design system v2 (Shell's design language): a white left sidebar with the NorthStar
+After signing in the user sees the layout of design system v2 (Shell's design language): a white left sidebar with the MAPP
 logo, the main sections (**Home, Plans, Approvals, All work**), a **MORE** group (**Settings, Recycle
 bin, Activity log**), and at the bottom a collapse toggle, their account button, a notification bell and
 a light/dark switch. Every page uses the same page header (blue eyebrow, title, one-line description,
@@ -61,7 +61,7 @@ dark mode and back, and resize to a phone width.
 **Acceptance Scenarios**:
 
 1. **Given** a signed-in user, **When** they choose a navigation item, **Then** that page opens, the item
-   is highlighted in the sidebar, and the browser tab title names the page ("Plans · NorthStar").
+   is highlighted in the sidebar, and the browser tab title names the page ("Plans · MAPP").
 2. **Given** a section not yet built, **When** the user opens it, **Then** a "Coming soon" page explains
    in one sentence what the section will do, without errors.
 3. **Given** the sidebar, **When** the user collapses it, **Then** it shrinks to icons with tooltips, and
@@ -121,7 +121,7 @@ message "You have been signed out."
 
 ### User Story 5 - Every change is recorded and every delete can be undone (Priority: P1)
 
-Behind every screen of every later feature, NorthStar records **who** did **what** to **which record**
+Behind every screen of every later feature, MAPP records **who** did **what** to **which record**
 and **when** (the activity log), and a delete never destroys data immediately: the deleted record and
 everything under it is kept in the recycle bin and can be brought back. This feature provides that
 common behaviour and a shared **Undo** for deletes; feature 011 adds the screens to browse the log and
@@ -157,7 +157,7 @@ Undo after the delete brings the record back unchanged.
   tab." and returns to Home, so nothing is done in the wrong person's name.
 - The seed data has not been loaded: the sign-in page says "No demo users found — load the demo data
   first" instead of failing.
-- NorthStar's server is not reachable: pages show "NorthStar can't reach its server right now. Check that it is
+- MAPP's server is not reachable: pages show "MAPP can't reach its server right now. Check that it is
   running and try again." with a **Try again** button, never a technical error.
 - A very long name or job title is shortened with an ellipsis in the sidebar and shown in full in a
   tooltip.
@@ -172,12 +172,12 @@ Undo after the delete brings the record back unchanged.
 
 **Sign-in and session**
 
-- **FR-001**: NorthStar MUST show a single sign-in page in Shell's design language (design system v2 §2):
+- **FR-001**: MAPP MUST show a single sign-in page in Shell's design language (design system v2 §2):
   logo on the brand gradient, "Welcome back", e-mail, password with a show/hide control, **Sign in**, and
   "Explore as a demo person" listing every active demo person with avatar, name and job title.
 - **FR-002**: The sign-in page MUST state "Demo sign-in — Shell single sign-on comes later" and show the
   shared demo password (decision D-004).
-- **FR-003**: NorthStar MUST sign a user in when the e-mail matches an active demo person (ignoring letter
+- **FR-003**: MAPP MUST sign a user in when the e-mail matches an active demo person (ignoring letter
   case and surrounding spaces) and the password equals the demo password, or when a demo person is chosen
   from the list.
 - **FR-004**: A failed sign-in MUST show "Incorrect e-mail or password." for both unknown e-mails and wrong
@@ -189,9 +189,9 @@ Undo after the delete brings the record back unchanged.
   returned to where they were).
 - **FR-007**: Every action a signed-in user performs MUST be attributed to that person (the actor), and
   the actor MUST be available to every business operation.
-- **FR-008**: In this phase NorthStar MUST NOT restrict any signed-in user's actions by role or team
+- **FR-008**: In this phase MAPP MUST NOT restrict any signed-in user's actions by role or team
   (decision D-004); no permission messages appear anywhere.
-- **FR-009**: Demo sign-in MUST be available only when NorthStar runs in a local or development
+- **FR-009**: Demo sign-in MUST be available only when MAPP runs in a local or development
   environment.
 
 **Layout and navigation**
@@ -211,7 +211,7 @@ Undo after the delete brings the record back unchanged.
 - **FR-015**: Sections delivered by later features MUST show a "Coming soon" page with one sentence on
   what they will do; unknown addresses MUST show "Page not found" with a link to Home.
 - **FR-016**: Every page MUST show the demo-environment banner during this phase.
-- **FR-017**: Each page MUST set the browser tab title to "<Page> · NorthStar".
+- **FR-017**: Each page MUST set the browser tab title to "<Page> · MAPP".
 
 **Home (getting started)**
 
@@ -220,11 +220,11 @@ Undo after the delete brings the record back unchanged.
 
 **Shared building blocks for later features**
 
-- **FR-019**: NorthStar MUST provide the shared visual building blocks listed in design system §5 (page
+- **FR-019**: MAPP MUST provide the shared visual building blocks listed in design system §5 (page
   header, summary card, content card, buttons, status chip, completeness chip, info tip, person avatar,
   side panel, confirmation dialog, toast with Undo, empty state, loading placeholder, form error summary),
   styled with the tokens of design system §3, so later features reuse them instead of creating their own.
-- **FR-020**: NorthStar MUST present every error from its server in plain language: field problems next
+- **FR-020**: MAPP MUST present every error from its server in plain language: field problems next
   to the fields and in a summary at the top (all at once), and other failures as a friendly message with
   **Try again**; technical details MUST never be shown to users.
 - **FR-021**: Dates MUST be shown as `DD MMM YYYY` (e.g. 12 Mar 2026) and money with its currency, using
@@ -232,7 +232,7 @@ Undo after the delete brings the record back unchanged.
 
 **Activity log and recycle bin core**
 
-- **FR-022**: NorthStar MUST write one activity-log entry for every create, change, status change, move,
+- **FR-022**: MAPP MUST write one activity-log entry for every create, change, status change, move,
   copy, delete and restore of any business record (planning records and Settings records), containing
   the actor, the time (UTC), the record type, its readable ID (planning records) or name (Settings
   records), the action and, for changes, each changed field with old and new values.
@@ -248,7 +248,7 @@ Undo after the delete brings the record back unchanged.
   until the next delete replaces the message (only one Undo is offered at a time; an earlier delete stays
   restorable from the recycle bin); Undo MUST restore exactly what was deleted, statuses included
   (domain model R14).
-- **FR-027**: NorthStar MUST give every planning record (plan, campaign, initiative, activity, line item)
+- **FR-027**: MAPP MUST give every planning record (plan, campaign, initiative, activity, line item)
   a permanent readable ID with a prefix per level (P-, C-, I-, A-, L-, decision D-019); IDs MUST never be
   reused, even after deletion. Settings records are identified by their type and name.
 
@@ -261,7 +261,7 @@ Undo after the delete brings the record back unchanged.
 
 **Demo data**
 
-- **FR-028**: NorthStar MUST provide a way to load the demo people of
+- **FR-028**: MAPP MUST provide a way to load the demo people of
   [demo-users-and-data.md](../../docs/product/demo-users-and-data.md) into an empty data store, and the
   sign-in page MUST explain what to do when no demo people exist.
 
@@ -297,13 +297,13 @@ Undo after the delete brings the record back unchanged.
 
 - Demo sign-in is temporary (ADR-0005); Microsoft Entra ID replaces only the sign-in page and the way the
   actor is identified.
-- The demo password is shown openly because all data is fictitious; NorthStar is not exposed outside the
+- The demo password is shown openly because all data is fictitious; MAPP is not exposed outside the
   developer's computer in this phase.
 - The 12-hour inactivity expiry is a reasonable default for a demo environment. It is measured to the
   minute: a session ends between 12 hours and 12 hours 1 minute after its last request.
 - The Approvals, All work, Settings, Recycle bin and Activity log pages are delivered by features 008,
   010, 002/003, 011 and 011; until then they show "Coming soon".
-- In local and development environments only, NorthStar provides two developer pages that are not in
+- In local and development environments only, MAPP provides two developer pages that are not in
   the navigation (decision D-036): **Sample records** — the "simple demonstration record type provided
   for testing" of User Story 5 (sample folders and the notes inside them), where the shared create, edit,
   delete, Undo, restore and activity-log behaviour can be tried and tested — and **Shared building

@@ -1,7 +1,7 @@
 package settings
 
 // The Field help catalogue (016 FR-045, data-model §6, D-271): every built-in field and calculated value of
-// the planning levels and pages, with a stable key, its screen label and the help text NorthStar supplies.
+// the planning levels and pages, with a stable key, its screen label and the help text MAPP supplies.
 // Administrators may edit a text in Settings › Field help; only edited texts are stored. A new field gets
 // its default here, without any data change. Shell attributes keep their help on each attribute.
 
@@ -34,7 +34,7 @@ type helpDefinition struct {
 
 // helpCatalogue is the catalogue, in the order of the Settings page.
 var helpCatalogue = []helpDefinition{
-	{"plan.name", "Plan name", `A name everyone recognises, such as "FY2027 Lubricants UK & Ireland". It must be unique in NorthStar.`, HelpPlan},
+	{"plan.name", "Plan name", `A name everyone recognises, such as "FY2027 Lubricants UK & Ireland". It must be unique in MAPP.`, HelpPlan},
 	{"plan.year", "Year", "The fiscal year the plan covers, January to December. It can't change after the plan is saved.", HelpPlan},
 	{"plan.planType", "Plan type", "Operational: one business's or market's plan for the year. Strategic: sets direction for several years. Cross-market: campaigns that run across several markets.", HelpPlan},
 	{"plan.model", "Model", "The plan's rulebook: which activity types it allows and how inquiries turn into MQLs, deals and revenue.", HelpPlan},

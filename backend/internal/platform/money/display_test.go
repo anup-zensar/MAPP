@@ -3,7 +3,7 @@ package money_test
 import (
 	"testing"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // A display currency converts US dollars half up to the cent; USD, no code or an unusable rate leave the

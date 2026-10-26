@@ -70,7 +70,7 @@ and `rateImportFileName` (null for `manual`); `usage` adds a `plans` part (plans
 
 ### 2.4 The simulated GSAP daily rate extract
 
-Until Shell confirms GSAP's real layout (Q-012) NorthStar reads this file. It mirrors SAP's exchange-rate
+Until Shell confirms GSAP's real layout (Q-012) MAPP reads this file. It mirrors SAP's exchange-rate
 table (rate type, from and to currency, valid-from date, rate).
 
 - `.csv`, UTF-8 (a byte-order mark is allowed), comma-separated, at most 2 MB and 20,000 data rows.
@@ -84,7 +84,7 @@ table (rate type, from and to currency, valid-from date, rate).
 | `rate_type` ≠ `M` (ignoring case) | not used | "Rate type B is not used — only M rates are imported." |
 | `from_currency` ≠ `USD` | not used | "Only rates quoted from USD are used." |
 | `to_currency` = `USD` | not used | "USD is always 1." |
-| `to_currency` not a NorthStar currency | not used | "CHF is not set up in Settings › Currencies." |
+| `to_currency` not a MAPP currency | not used | "CHF is not set up in Settings › Currencies." |
 | `valid_from` not `YYYY-MM-DD` or `YYYYMMDD`, or not a date | problem | "Row 12: 'valid_from' must be a date such as 2026-10-19." |
 | `rate` not a number above 0 with ≤ 6 decimals, or > 1,000,000 | problem | "Row 41: the rate must be above 0 with at most 6 decimals." |
 | Same currency and date twice in the file | problem (the later row) | "Row 57: EUR on 19 Oct 2026 appears twice (also row 33)." |
@@ -315,7 +315,7 @@ in `backend/internal/settings/fieldhelp_catalogue.go`. Groups order the Settings
 
 | Key | Label | Default text |
 |---|---|---|
-| `plan.name` | Plan name | A name everyone recognises, such as "FY2027 Lubricants UK & Ireland". It must be unique in NorthStar. |
+| `plan.name` | Plan name | A name everyone recognises, such as "FY2027 Lubricants UK & Ireland". It must be unique in MAPP. |
 | `plan.year` | Year | The fiscal year the plan covers, January to December. It can't change after the plan is saved. |
 | `plan.planType` | Plan type | Operational: one business's or market's plan for the year. Strategic: sets direction for several years. Cross-market: campaigns that run across several markets. |
 | `plan.model` | Model | The plan's rulebook: which activity types it allows and how inquiries turn into MQLs, deals and revenue. |
@@ -438,7 +438,7 @@ No new `action` values: new verbs use the existing ones (D-167).
 
 Added after the existing seed steps' records, so no existing ID, 2026 total or test fact changes:
 
-- **Rates** (`seed/settings.go`): one `RI-1001` import "gsap_rates_seed.csv" by NorthStar; for EUR, GBP, CNY
+- **Rates** (`seed/settings.go`): one `RI-1001` import "gsap_rates_seed.csv" by MAPP; for EUR, GBP, CNY
   and INR one `gsapImport` rate per day for the 30 days before the seed day, each `seeded rate × (1 + d)`
   with `d` cycling −0.6 %, −0.3 %, 0, +0.3 %, +0.6 % (rounded half up to six decimals), and a rate on the seed
   day equal to today's seeded rate (EUR 0.92, GBP 0.79, CNY 7.10, INR 83.50), so current rates are unchanged.

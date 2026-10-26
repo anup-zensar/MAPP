@@ -1,11 +1,11 @@
-# NorthStar functional review — Plan module (features 001–011)
+# MAPP functional review — Plan module (features 001–011)
 
 **Date:** 20 Oct 2026 · **Branch reviewed:** `plan-module` (commit `e4966aa`), plus `lane-011` for feature 011 ·
 **Reviewer:** functional review agent · **Audience:** product owner and the Shell client team
 
 ## Summary
 
-NorthStar's Plan module works from start to finish. A planner can build a plan down to line items, see what is
+MAPP's Plan module works from start to finish. A planner can build a plan down to line items, see what is
 missing, fix it from the links and submit. An approver can approve from the Approvals page, and an
 administrator can manage Settings, people and teams. Every business rule we tried held, for example dates
 inside the initiative's dates, duplicate e-mails and not deactivating yourself. Forms show all errors at
@@ -99,7 +99,7 @@ about 44 clicks and field entries from an empty plan to a submitted activity, an
   - The delete dialog says "It moves to the recycle bin; you can restore it."
   - The toast offers **Undo** for about 10 seconds, and its screen-reader text says "Restore it from the
     recycle bin".
-  - The **Recycle bin** page in the sidebar says "Coming soon — This part of NorthStar isn't built yet."
+  - The **Recycle bin** page in the sidebar says "Coming soon — This part of MAPP isn't built yet."
   - After the toast is gone, a planner cannot bring the record back. The API still holds it
     (`GET /api/recycle-bin` lists it as `BIN-1001`), but no screen reaches it.
 - **Steps:** open any activity, choose **⋯ › Delete › Delete activity**, wait 12 seconds, then open
@@ -288,7 +288,7 @@ What we did (as Alex Morgan):
 
 Validation messages are clear. Some examples:
 - "2 problems need your attention · Enter a name. · Enter an e-mail address."
-- "priya.raman@northstar.demo already belongs to Priya Raman."
+- "priya.raman@shell.com already belongs to Priya Raman."
 - "You can't deactivate yourself — ask someone else to do it."
 - The Deactivate dialog lists everything the person owns.
 
@@ -562,12 +562,12 @@ We trial-merged in a temporary copy of the repository. **5 files conflict:**
 
 - **Data:** in `backend/`, run `go run ./cmd/seed -data <temp folder> -reset`. Then start the API with
   `DATA_DIR=<temp folder> APP_PORT=18102 go run ./cmd/api`. In `frontend/`, start the web app with
-  `NORTHSTAR_API_URL=http://127.0.0.1:18102 npx vite --host 127.0.0.1 --port 14102 --strictPort`.
+  `MAPP_API_URL=http://127.0.0.1:18102 npx vite --host 127.0.0.1 --port 14102 --strictPort`.
 - **People:**
-  - Priya Raman (`priya.raman@northstar.demo`), planner
+  - Priya Raman (`priya.raman@shell.com`), planner
   - Daniel Okoro, approver for Lubricants
   - Alex Morgan, administrator and level-2 approver for China
-  - The password is `northstar`.
+  - The password is `mapp`.
 - **Records created during the review:** plan P-1004 "Review plan …" with C-1005, I-1009, A-1011 and
   L-1009; the throwaway activity A-1012, deleted to the bin; team "Review team …". EUR was set inactive and
   then reactivated.

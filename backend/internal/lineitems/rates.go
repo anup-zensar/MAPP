@@ -3,8 +3,8 @@ package lineitems
 import (
 	"context"
 
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // rateTable is every currency with its current rate, and the date and source of that rate (016 FR-002,

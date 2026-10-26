@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/apitest"
-	"northstar/internal/platform/store"
-	"northstar/seed"
+	"mapp/internal/people"
+	"mapp/internal/platform/apitest"
+	"mapp/internal/platform/store"
+	"mapp/seed"
 )
 
 // The tests below check the wiring of app.New across features (references.go): Settings (002) sees the
@@ -101,7 +101,7 @@ var settingsPaths = []string{
 // D-042), and its records list the plans using a model.
 func TestUsedBy_SeesEveryFeature_FR003(t *testing.T) {
 	server := apitest.New(t)
-	priya := server.SignIn(t, "priya.raman@northstar.demo")
+	priya := server.SignIn(t, "priya.raman@shell.com")
 
 	got := summaries(t, priya, settingsPaths)
 
@@ -132,8 +132,8 @@ func TestUsedBy_SeesEveryFeature_FR003(t *testing.T) {
 // it are in the bin. Undo brings the counts back.
 func TestUsedBy_CountsTheRecycleBin_FR003(t *testing.T) {
 	server := apitest.New(t)
-	priya := server.SignIn(t, "priya.raman@northstar.demo")
-	server.GrantRole(t, "priya.raman@northstar.demo", "administrator", "all") // 014: Settings, people and every plan
+	priya := server.SignIn(t, "priya.raman@shell.com")
+	server.GrantRole(t, "priya.raman@shell.com", "administrator", "all") // 014: Settings, people and every plan
 	before := summaries(t, priya, settingsPaths)
 
 	planEntry := deletePlan(t, priya, "P-1002") // with its campaign, initiatives, activities and line items
@@ -182,8 +182,8 @@ func TestUsedBy_CountsTheRecycleBin_FR003(t *testing.T) {
 // A Settings record in use cannot be deleted (002 FR-004): a currency of a line item, a model of a plan.
 func TestInUseDelete_RefusedForEveryFeature_FR004(t *testing.T) {
 	server := apitest.New(t)
-	priya := server.SignIn(t, "priya.raman@northstar.demo")
-	server.GrantRole(t, "priya.raman@northstar.demo", "administrator", "all") // 014: Settings, people and every plan
+	priya := server.SignIn(t, "priya.raman@shell.com")
+	server.GrantRole(t, "priya.raman@shell.com", "administrator", "all") // 014: Settings, people and every plan
 	want := map[string]string{
 		"/api/currencies/GBP":  `{"code":"in_use","message":"'GBP' is in use (used by 2 line items · Plan currency of 1 plan) — set it inactive instead.","fields":[]}`,
 		"/api/models/MOD-1002": `{"code":"in_use","message":"'Mobility 1.0' is in use (used by 1 plan) — set it inactive instead.","fields":[]}`,
@@ -203,8 +203,8 @@ func TestInUseDelete_RefusedForEveryFeature_FR004(t *testing.T) {
 // recalculates.
 func TestImpact_CountsTheLiveRecords_FR011_FR030(t *testing.T) {
 	server := apitest.New(t)
-	priya := server.SignIn(t, "priya.raman@northstar.demo")
-	server.GrantRole(t, "priya.raman@northstar.demo", "administrator", "all") // 014: Settings, people and every plan
+	priya := server.SignIn(t, "priya.raman@shell.com")
+	server.GrantRole(t, "priya.raman@shell.com", "administrator", "all") // 014: Settings, people and every plan
 	type warning struct {
 		Kind, Message string
 		Count         int
@@ -239,8 +239,8 @@ func TestImpact_CountsTheLiveRecords_FR011_FR030(t *testing.T) {
 // the plans with their recycle-bin state (003 FR-014, through 004's plans). A team no plan uses can be.
 func TestTeamUsedByPlans_InUseDelete_FR014(t *testing.T) {
 	server := apitest.New(t)
-	priya := server.SignIn(t, "priya.raman@northstar.demo")
-	server.GrantRole(t, "priya.raman@northstar.demo", "administrator", "all") // 014: Settings, people and every plan
+	priya := server.SignIn(t, "priya.raman@shell.com")
+	server.GrantRole(t, "priya.raman@shell.com", "administrator", "all") // 014: Settings, people and every plan
 	type team struct {
 		Plans []struct {
 			ID, Name     string
@@ -280,8 +280,8 @@ func TestTeamUsedByPlans_InUseDelete_FR014(t *testing.T) {
 // activities, line items and approval workflows — leaving out records in the recycle bin (003 FR-004).
 func TestPersonUsage_EveryFeature_FR004(t *testing.T) {
 	server := apitest.New(t)
-	priya := server.SignIn(t, "priya.raman@northstar.demo")
-	server.GrantRole(t, "priya.raman@northstar.demo", "administrator", "all") // 014: Settings, people and every plan
+	priya := server.SignIn(t, "priya.raman@shell.com")
+	server.GrantRole(t, "priya.raman@shell.com", "administrator", "all") // 014: Settings, people and every plan
 
 	mei := personUsage(t, priya, "U-1004")
 	carlos := personUsage(t, priya, "U-1005")
@@ -314,8 +314,8 @@ func TestPersonUsage_EveryFeature_FR004(t *testing.T) {
 // plans' teams (003 FR-013), with the warning kind ownerNeedsAttention of the contract.
 func TestImpact_OwnerNeedsAttention_FR013(t *testing.T) {
 	server := apitest.New(t)
-	priya := server.SignIn(t, "priya.raman@northstar.demo")
-	server.GrantRole(t, "priya.raman@northstar.demo", "administrator", "all") // 014: Settings, people and every plan
+	priya := server.SignIn(t, "priya.raman@shell.com")
+	server.GrantRole(t, "priya.raman@shell.com", "administrator", "all") // 014: Settings, people and every plan
 	type warning struct {
 		Kind, Message string
 		Count         int
@@ -327,7 +327,7 @@ func TestImpact_OwnerNeedsAttention_FR013(t *testing.T) {
 
 	var person, team struct{ Warnings []warning }
 	priya.Do(t, http.MethodPost, "/api/people/U-1004/impact", map[string]any{
-		"name": "Mei Lin", "email": "mei.lin@northstar.demo", "jobTitle": "Marketer", "teamIds": []string{}, "version": 1,
+		"name": "Mei Lin", "email": "mei.lin@shell.com", "jobTitle": "Marketer", "teamIds": []string{}, "version": 1,
 	}).Decode(t, &person)
 	priya.Do(t, http.MethodPost, "/api/teams/T-1002/impact", map[string]any{
 		"name": "Mobility China", "description": "Mobility and retail marketing in China.", "colour": "violet", "memberIds": []string{"U-1005", "U-1006"}, "version": 1,
@@ -362,10 +362,10 @@ func TestDisplayCurrencies_SettingsAndPeople_FR003_D061(t *testing.T) {
 		t.Fatalf("saving Mei Lin's display currency: %v", err)
 	}
 	server := apitest.New(t, apitest.WithDataDir(dir))
-	priya := server.SignIn(t, "priya.raman@northstar.demo")
-	server.GrantRole(t, "priya.raman@northstar.demo", "globalPlanner", "all") // 014: every market's plans
-	mei := server.SignIn(t, "mei.lin@northstar.demo")
-	server.GrantRole(t, "mei.lin@northstar.demo", "globalPlanner", "all") // 014: every market's plans
+	priya := server.SignIn(t, "priya.raman@shell.com")
+	server.GrantRole(t, "priya.raman@shell.com", "globalPlanner", "all") // 014: every market's plans
+	mei := server.SignIn(t, "mei.lin@shell.com")
+	server.GrantRole(t, "mei.lin@shell.com", "globalPlanner", "all") // 014: every market's plans
 
 	got := summaries(t, priya, []string{"/api/currencies/USD", "/api/currencies/EUR"})
 	budgetCurrency := func(c *apitest.Client) string {
@@ -399,8 +399,8 @@ func TestDisplayCurrencies_SettingsAndPeople_FR003_D061(t *testing.T) {
 // MOBILITY – Long-term contract, the type of Fleet card launch; Mobility 1.0 allows every type.
 func TestPlanChangeEffects_DisallowedActivities_FR019(t *testing.T) {
 	server := apitest.New(t)
-	mei := server.SignIn(t, "mei.lin@northstar.demo")
-	server.GrantRole(t, "mei.lin@northstar.demo", "globalPlanner", "all") // 014: every market's plans
+	mei := server.SignIn(t, "mei.lin@shell.com")
+	server.GrantRole(t, "mei.lin@shell.com", "globalPlanner", "all") // 014: every market's plans
 	type effects struct {
 		ModelChanged         bool
 		DisallowedActivities []recordRef

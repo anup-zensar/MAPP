@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/record"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/record"
 )
 
 var (

@@ -4,9 +4,9 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 // Where the development and preview servers forward /api requests. The end-to-end tests point it at
-// their own API with NORTHSTAR_API_URL. 127.0.0.1 rather than "localhost": Node may resolve localhost
+// their own API with MAPP_API_URL. 127.0.0.1 rather than "localhost": Node may resolve localhost
 // to the IPv6 address, where the API does not listen.
-const apiTarget = process.env.NORTHSTAR_API_URL ?? 'http://127.0.0.1:8080';
+const apiTarget = process.env.MAPP_API_URL ?? 'http://127.0.0.1:8080';
 
 // Unit tests format dates and times, so they always run in the same time zone, whatever the laptop's.
 if (process.env.VITEST) {

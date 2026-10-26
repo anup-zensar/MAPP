@@ -1,11 +1,11 @@
 openapi: 3.1.0
 info:
-  title: NorthStar API
+  title: MAPP API
   version: 0.3.0
   license:
     name: Proprietary - internal use only
   description: |
-    The contract between the NorthStar web app and the NorthStar API (constitution IV).
+    The contract between the MAPP web app and the MAPP API (constitution IV).
     This file is the source of truth: the Go contract tests check every request and response against
     it, and the web app's TypeScript types are generated from it.
 
@@ -156,7 +156,7 @@ paths:
           description: Signed in. The session cookie is set.
           headers:
             Set-Cookie:
-              description: The HttpOnly session cookie northstar_session.
+              description: The HttpOnly session cookie mapp_session.
               schema:
                 type: string
           content:
@@ -4450,7 +4450,7 @@ paths:
         - $ref: "#/components/parameters/AllWorkThenBy"
       responses:
         "200":
-          description: The file. Its name is in Content-Disposition, e.g. NorthStar All work – Grid – 2026 – 18 Oct 2026.xlsx.
+          description: The file. Its name is in Content-Disposition, e.g. MAPP All work – Grid – 2026 – 18 Oct 2026.xlsx.
           headers:
             Content-Disposition:
               description: attachment with filename (ASCII) and filename* (UTF-8).
@@ -4999,7 +4999,7 @@ paths:
         - $ref: "#/components/parameters/PlanId"
       responses:
         "200":
-          description: The template. Its name is in Content-Disposition (NorthStar import template – <plan>.xlsx).
+          description: The template. Its name is in Content-Disposition (MAPP import template – <plan>.xlsx).
           headers:
             Content-Disposition:
               schema:
@@ -5869,7 +5869,7 @@ paths:
       summary: The sample GSAP extract file (header and three example rows, FR-009)
       responses:
         "200":
-          description: The file, named northstar-gsap-extract-sample.csv in Content-Disposition.
+          description: The file, named mapp-gsap-extract-sample.csv in Content-Disposition.
           headers:
             Content-Disposition:
               description: attachment with filename.
@@ -6654,7 +6654,7 @@ paths:
       tags: [Approvals]
       operationId: runApprovalEscalations
       summary: Send due reminders and escalations now (needs workflows.manage; stands in for the nightly job) (FR-026 – FR-028)
-      description: Safe to call any number of times; each level gets at most one reminder and one escalation. Events are recorded as made by NorthStar.
+      description: Safe to call any number of times; each level gets at most one reminder and one escalation. Events are recorded as made by MAPP.
       responses:
         "200":
           description: What was sent, and what could not be escalated.
@@ -6675,7 +6675,7 @@ components:
     sessionCookie:
       type: apiKey
       in: cookie
-      name: northstar_session
+      name: mapp_session
       description: HttpOnly session cookie set by sign-in.
   parameters:
     EntryId:
@@ -7531,7 +7531,7 @@ components:
         password:
           type: string
           description: The shared demo password, shown on the sign-in page.
-          example: northstar
+          example: mapp
         people:
           type: array
           items:
@@ -9475,7 +9475,7 @@ components:
         email:
           type: string
           description: The sign-in name, in lower case.
-          example: priya.raman@northstar.demo
+          example: priya.raman@shell.com
         jobTitle:
           type: string
         initials:
@@ -18429,7 +18429,7 @@ components:
           type: integer
         unusedColumns:
           type: array
-          description: Header names NorthStar does not read.
+          description: Header names MAPP does not read.
           items:
             type: string
     FinancialImport:

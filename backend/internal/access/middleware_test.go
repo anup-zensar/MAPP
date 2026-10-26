@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/web"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/web"
 )
 
 // serve sends one request for the operation pattern as the person a through Authorize to next, and returns

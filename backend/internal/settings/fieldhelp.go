@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/record"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/record"
 )
 
 // Field help (016 FR-045 – FR-048, data-model §2.5, D-271): the catalogue of fieldhelp_catalogue.go gives

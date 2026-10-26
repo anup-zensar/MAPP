@@ -11,14 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/activities"
-	"northstar/internal/campaigns"
-	"northstar/internal/history"
-	"northstar/internal/lineitems"
-	"northstar/internal/platform/apitest"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/store"
-	"northstar/seed"
+	"mapp/internal/activities"
+	"mapp/internal/campaigns"
+	"mapp/internal/history"
+	"mapp/internal/lineitems"
+	"mapp/internal/platform/apitest"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/store"
+	"mapp/seed"
 )
 
 const day = 24 * time.Hour
@@ -127,7 +127,7 @@ func TestSeed_HistoryAndRecycleBin_011(t *testing.T) {
 
 	// Through the API, as the Recycle bin page reads it.
 	server := apitest.New(t)
-	priya := server.SignIn(t, "priya.raman@northstar.demo")
+	priya := server.SignIn(t, "priya.raman@shell.com")
 	response := priya.Do(t, http.MethodGet, "/api/recycle-bin", nil)
 	if response.Status != http.StatusOK {
 		t.Fatalf("GET /api/recycle-bin = %d %s", response.Status, response.Body)
@@ -313,8 +313,8 @@ func TestSeed_History_ApprovalActions_011(t *testing.T) {
 // see), so the summary counts the whole seeded history.
 func TestSeed_History_ThroughTheAPI_011(t *testing.T) {
 	server := apitest.New(t)
-	server.GrantRole(t, "priya.raman@northstar.demo", "viewer", "all")
-	priya := server.SignIn(t, "priya.raman@northstar.demo")
+	server.GrantRole(t, "priya.raman@shell.com", "viewer", "all")
+	priya := server.SignIn(t, "priya.raman@shell.com")
 
 	response := priya.Do(t, http.MethodGet, "/api/activity-log?recordId=I-1011&limit=10", nil)
 	if response.Status != http.StatusOK {
@@ -358,7 +358,7 @@ func TestSeed_History_ThroughTheAPI_011(t *testing.T) {
 // FR-018, FR-021).
 func TestSeed_DeletedInitiative_Restores_011(t *testing.T) {
 	server := apitest.New(t)
-	priya := server.SignIn(t, "priya.raman@northstar.demo")
+	priya := server.SignIn(t, "priya.raman@shell.com")
 
 	response := priya.Do(t, http.MethodGet, "/api/recycle-bin/BIN-1001/restore-preview", nil)
 	if response.Status != http.StatusOK {

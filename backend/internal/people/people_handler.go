@@ -3,8 +3,8 @@ package people
 import (
 	"net/http"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/web"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/web"
 )
 
 // listPeople answers GET /api/people: everyone, with their teams, sorted by name.

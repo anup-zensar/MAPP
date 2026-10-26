@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/web"
-	"northstar/internal/rollup"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/web"
+	"mapp/internal/rollup"
 )
 
 // Handler answers the HTTP requests of plans (plan "API operations").

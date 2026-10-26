@@ -4,12 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>NorthStar</title>
+    <title>MAPP</title>
     <script>
       // Paint the right colours before the app starts (feature 001, research R16). The saved choice is
       // "system", "light" or "dark"; "system" follows the computer's setting.
       try {
-        var choice = localStorage.getItem('northstar.theme') || 'system';
+        var choice = localStorage.getItem('mapp.theme') || 'system';
         var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         var dark = choice === 'dark' || (choice === 'system' && prefersDark);
         document.documentElement.dataset.theme = dark ? 'dark' : 'light';

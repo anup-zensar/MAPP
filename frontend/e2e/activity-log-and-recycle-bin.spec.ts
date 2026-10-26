@@ -13,8 +13,8 @@ import { changeActivityPlannedCost, createInitiative, createPlanningRecords } fr
 // "Trade shows" (recycle-bin.spec.ts relies on both). Deleting permanently is Alex Morgan's, whose
 // Administrator role holds it (014).
 
-const MEI = 'mei.lin@northstar.demo';
-const ALEX = 'alex.morgan@northstar.demo';
+const MEI = 'mei.lin@shell.com';
+const ALEX = 'alex.morgan@shell.com';
 
 /** The list item of an entry whose sentence holds `sentence` (the avatar's initials come first). */
 function entry(scope: Page | Locator, sentence: string): Locator {

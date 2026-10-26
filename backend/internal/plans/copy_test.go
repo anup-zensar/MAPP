@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/platform/store"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/platform/store"
 )
 
 // User story 6 — Copy a plan.

@@ -24,11 +24,11 @@ function person(
 }
 
 const PEOPLE: PickerPerson[] = [
-  person('U-1001', 'Alex Morgan', 'alex.morgan@northstar.demo', 'Head of marketing', [EUROPE]),
-  person('U-1002', 'Priya Raman', 'priya.raman@northstar.demo', 'Marketer', [EUROPE]),
-  person('U-1003', 'Daniel Okoro', 'daniel.okoro@northstar.demo', '', [CHINA]),
-  person('U-1004', 'Sara Novak', 'sara.novak@northstar.demo', 'Finance partner', [CHINA]),
-  person('U-1005', 'Old Timer', 'old.timer@northstar.demo', 'Retired', [EUROPE], false),
+  person('U-1001', 'Alex Morgan', 'alex.morgan@shell.com', 'Head of marketing', [EUROPE]),
+  person('U-1002', 'Priya Raman', 'priya.raman@shell.com', 'Marketer', [EUROPE]),
+  person('U-1003', 'Daniel Okoro', 'daniel.okoro@shell.com', '', [CHINA]),
+  person('U-1004', 'Sara Novak', 'sara.novak@shell.com', 'Finance partner', [CHINA]),
+  person('U-1005', 'Old Timer', 'old.timer@shell.com', 'Retired', [EUROPE], false),
 ];
 
 function Single({ start = '', teamIds }: { start?: string; teamIds?: string[] }) {
@@ -63,7 +63,7 @@ describe('PersonPicker', () => {
     expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
       'PRPriya Raman (you)Marketer',
       'AMAlex MorganHead of marketing',
-      'DODaniel Okorodaniel.okoro@northstar.demo',
+      'DODaniel Okorodaniel.okoro@shell.com',
       'SNSara NovakFinance partner',
     ]);
     expect(screen.getByRole('status')).toHaveTextContent('4 people');
@@ -109,7 +109,7 @@ describe('PersonPicker', () => {
     await user.click(field());
 
     expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
-      'DODaniel Okorodaniel.okoro@northstar.demo · Mobility China',
+      'DODaniel Okorodaniel.okoro@shell.com · Mobility China',
       'SNSara NovakFinance partner · Mobility China',
     ]);
   });

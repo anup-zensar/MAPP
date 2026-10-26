@@ -5,8 +5,8 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // amountOf parses an amount or panics.

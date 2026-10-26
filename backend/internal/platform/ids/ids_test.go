@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"testing"
 
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/store"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/store"
 )
 
 // The first ID of every prefix is 1001, and each prefix counts on its own (FR-027).

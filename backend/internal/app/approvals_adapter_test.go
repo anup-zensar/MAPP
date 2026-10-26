@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/activities"
-	"northstar/internal/approvals"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/record"
-	"northstar/internal/platform/store"
+	"mapp/internal/activities"
+	"mapp/internal/approvals"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/record"
+	"mapp/internal/platform/store"
 )
 
 // Feature 006 sees the stored approval workflows — inactive ones too, with their active flag and levels —

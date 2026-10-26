@@ -11,10 +11,10 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/store"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/store"
 )
 
 // The limits of attribute values (data model §9, D-053).

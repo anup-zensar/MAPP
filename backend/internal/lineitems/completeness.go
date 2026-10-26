@@ -3,7 +3,7 @@ package lineitems
 import (
 	"fmt"
 
-	"northstar/internal/settings"
+	"mapp/internal/settings"
 )
 
 // The labels of the missing list (plan, "Completeness labels").

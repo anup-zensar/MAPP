@@ -94,7 +94,7 @@ describe('ActivityPage (feature 006, US2)', () => {
     openPage({ body: incompleteLaunchFilm({ owner: launchFilm().owner }) });
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Launch film' })).toBeVisible();
-    expect(document.title).toBe('Launch film · NorthStar');
+    expect(document.title).toBe('Launch film · MAPP');
     const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
     expect(
       within(breadcrumb)

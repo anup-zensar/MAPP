@@ -50,7 +50,7 @@ const NOT_MEMBER = "Not a member of the plan's teams";
 const INACTIVE_TIP = "Inactive people can't be chosen again. Keep them or choose someone else.";
 
 /**
- * Every person field of NorthStar (feature 003, FR-016 – FR-020): searchable by name, e-mail or
+ * Every person field of MAPP (feature 003, FR-016 – FR-020): searchable by name, e-mail or
  * job title; only active people are offered, the signed-in person first; with `teamIds` only
  * members of those teams. A chosen person who became inactive is kept, labelled and explained.
  * Load the people with features/people's PersonField, which wraps this picker.

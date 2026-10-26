@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/history"
-	"northstar/internal/people"
-	"northstar/internal/platform/apitest"
+	"mapp/internal/history"
+	"mapp/internal/people"
+	"mapp/internal/platform/apitest"
 )
 
 // The body of the API's answer for a team that does not exist.

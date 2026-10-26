@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/apitest"
+	"mapp/internal/platform/apitest"
 )
 
 // The handler tests run the real API on the demo data (002 data model §13) and check every request and
@@ -18,8 +18,8 @@ import (
 // report their records, so the tests assert the usage of records they create themselves only.
 
 const (
-	alexsEmail   = "alex.morgan@northstar.demo"
-	danielsEmail = "daniel.okoro@northstar.demo"
+	alexsEmail   = "alex.morgan@shell.com"
+	danielsEmail = "daniel.okoro@shell.com"
 )
 
 // Bodies that several tests expect.
@@ -403,7 +403,7 @@ func TestShellAttributesAPI_ListByLevel_FR019(t *testing.T) {
 	if len(all) != 35 || all[0].Label != "Business unit" || all[34].Label != "Contracted spend" {
 		t.Errorf("%d attributes, first %+v", len(all), all[0])
 	}
-	assertAnswer(t, unknown, http.StatusBadRequest, `{"code":"bad_request","message":"NorthStar couldn't read this request. Reload the page and try again.","fields":[]}`)
+	assertAnswer(t, unknown, http.StatusBadRequest, `{"code":"bad_request","message":"MAPP couldn't read this request. Reload the page and try again.","fields":[]}`)
 }
 
 // listedAttribute is the part of an attribute these tests read.
@@ -615,7 +615,7 @@ func TestCurrenciesAPI_ListCreateGet_FR028(t *testing.T) {
 	if euro.Rate != "0.92" || euro.InverseRate != "1.086957" || len(euro.Locks) != 1 || euro.Locks[0].Field != "code" {
 		t.Errorf("EUR = %+v", euro)
 	}
-	if len(dollar.Locks) != 4 || dollar.Locks[1].Reason != "USD is NorthStar's base currency; its rate is always 1." {
+	if len(dollar.Locks) != 4 || dollar.Locks[1].Reason != "USD is MAPP's base currency; its rate is always 1." {
 		t.Errorf("USD = %+v", dollar)
 	}
 	assertAnswer(t, gone, http.StatusNotFound, `{"code":"not_found","message":"This currency no longer exists — someone may have deleted it.","fields":[]}`)
@@ -1160,7 +1160,7 @@ func TestImportAPI_CheckAndImport_FR031(t *testing.T) {
 // Bodies of the currency tests.
 const (
 	currencyGoneBody = `{"code":"not_found","message":"This currency no longer exists — someone may have deleted it.","fields":[]}`
-	usdLockedReason  = "USD is NorthStar's base currency; its rate is always 1."
+	usdLockedReason  = "USD is MAPP's base currency; its rate is always 1."
 )
 
 // jpyBody is the new currency of US4-1.

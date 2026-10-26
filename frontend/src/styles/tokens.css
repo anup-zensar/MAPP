@@ -1,5 +1,5 @@
 /*
- * NorthStar design tokens: the Shell-aligned look (product owner decisions of 2026-10-20, which
+ * MAPP design tokens: the Shell-aligned look (product owner decisions of 2026-10-20, which
  * replace the visual part of D-005 and D-022; docs/reports/ux-research-shell-brand.md §10 and
  * ux-research-shell-ui-patterns.md §9).
  *
@@ -42,7 +42,7 @@
   --brand-yellow-pressed: #e0a800;
   --on-brand-yellow: #404040; /* text and icons on yellow: 6.7:1 */
   --brand-yellow-tint: #fff4cc; /* selected row, current sidebar item */
-  --brand-mark: #092949; /* the NorthStar mark's tile (Shell system navy; no Shell logo) */
+  --brand-mark: #092949; /* the MAPP mark's tile (Shell system navy; no Shell logo) */
   --avatar-bg: #003c88; /* initials circles, white initials 10.5:1 */
 
   /* ── Interaction ── */

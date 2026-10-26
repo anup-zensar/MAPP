@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
 )
 
 // The ageing buckets in order, with their labels (data-model §11).

@@ -3,7 +3,7 @@ package access
 import (
 	"context"
 
-	"northstar/internal/platform/store"
+	"mapp/internal/platform/store"
 )
 
 // The JSON store tables of this package (data model §1.1–§1.3).

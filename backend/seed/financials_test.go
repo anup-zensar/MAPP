@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"testing"
 
-	"northstar/internal/financials"
-	"northstar/internal/platform/apitest"
-	"northstar/internal/platform/money"
+	"mapp/internal/financials"
+	"mapp/internal/platform/apitest"
+	"mapp/internal/platform/money"
 )
 
 // The demo GSAP data tells the story of data model §6.1 (FR-031): every figure of its table, read through
@@ -16,7 +16,7 @@ import (
 // in its parent's breakdown and the totals of the Financials page filtered on it (SC-002).
 func TestSeed_FinancialsStory_015(t *testing.T) {
 	server := apitest.New(t)
-	priya := server.SignIn(t, "priya.raman@northstar.demo")
+	priya := server.SignIn(t, "priya.raman@shell.com")
 	get := func(path string, v any) {
 		t.Helper()
 		response := priya.Do(t, http.MethodGet, path, nil)
@@ -120,7 +120,7 @@ func TestSeed_FinancialsStory_015(t *testing.T) {
 // (D-306): the other line items have no transactions.
 func TestSeed_FinancialsLinkOnlyThreeLineItems_D306(t *testing.T) {
 	server := apitest.New(t)
-	alex := server.SignIn(t, "alex.morgan@northstar.demo")
+	alex := server.SignIn(t, "alex.morgan@shell.com")
 	response := alex.Do(t, http.MethodGet, "/api/financials/transactions?pageSize=50", nil)
 	var page financials.TransactionPage
 	response.Decode(t, &page)

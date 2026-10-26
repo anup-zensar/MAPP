@@ -3,8 +3,8 @@ package lineitems
 import (
 	"context"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/money"
 )
 
 // The amounts the line-item section and page show — a line item's planned cost in USD, the unassigned

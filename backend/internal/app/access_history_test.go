@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/platform/apitest"
+	"mapp/internal/platform/apitest"
 )
 
 // binItem is a recycle-bin entry as the recycle bin page lists it, with its access object.

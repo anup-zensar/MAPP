@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
 )
 
 // danielActs is a second actor of the service tests.

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/record"
+	"mapp/internal/platform/record"
 )
 
 // Changes are listed by field name, whatever the order of the record's own fields, so the log always reads

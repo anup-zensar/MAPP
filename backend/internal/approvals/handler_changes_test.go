@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/activities"
-	"northstar/internal/approvals"
-	"northstar/internal/history"
-	"northstar/internal/lineitems"
-	"northstar/internal/platform/apitest"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/activities"
+	"mapp/internal/approvals"
+	"mapp/internal/history"
+	"mapp/internal/lineitems"
+	"mapp/internal/platform/apitest"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // User story 5 — keep approval meaningful when things change, through the real endpoints of features 006

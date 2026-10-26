@@ -15,7 +15,7 @@ const DANIEL: CurrentUser = testUser({
   id: 'U-1003',
   name: 'Daniel Okoro',
   firstName: 'Daniel',
-  email: 'daniel.okoro@northstar.demo',
+  email: 'daniel.okoro@shell.com',
   jobTitle: 'Marketing team leader',
   initials: 'DO',
 });

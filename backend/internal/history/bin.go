@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
 )
 
 // The verbs of the two actions of feature 011 (FR-006).

@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"northstar/internal/settings"
+	"mapp/internal/settings"
 )
 
 // filledIn is a line item with everything needed to submit: owner, finance budget year and item.

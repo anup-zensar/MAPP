@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // Small helpers for Shell attribute values as activities stores them (JSON values keyed by attribute id).

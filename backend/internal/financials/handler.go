@@ -3,8 +3,8 @@ package financials
 import (
 	"net/http"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/web"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/web"
 )
 
 // Handler serves the operations of feature 015 (plan, "API operations"). Every route needs a signed-in

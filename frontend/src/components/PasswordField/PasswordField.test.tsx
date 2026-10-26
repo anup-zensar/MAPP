@@ -30,10 +30,10 @@ describe('PasswordField', () => {
     render(<Field />, { wrapper: TooltipProvider });
 
     const input = screen.getByLabelText('Password');
-    await user.type(input, 'northstar');
+    await user.type(input, 'mapp');
 
     expect(input).toHaveAttribute('type', 'password');
-    expect(input).toHaveValue('northstar');
+    expect(input).toHaveValue('mapp');
     expect(input).toHaveAttribute('autocomplete', 'current-password');
   });
 

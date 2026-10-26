@@ -11,19 +11,19 @@ import { testUser } from '@/test/users';
 const PRIYA: CurrentUser = testUser();
 
 const DEMO_PEOPLE = {
-  password: 'northstar',
+  password: 'mapp',
   people: [
     {
       id: 'U-1001',
       name: 'Alex Morgan',
-      email: 'alex.morgan@northstar.demo',
+      email: 'alex.morgan@shell.com',
       jobTitle: 'Marketing administrator',
       initials: 'AM',
     },
     {
       id: 'U-1002',
       name: 'Priya Raman',
-      email: 'priya.raman@northstar.demo',
+      email: 'priya.raman@shell.com',
       jobTitle: 'Marketer',
       initials: 'PR',
     },
@@ -37,7 +37,7 @@ const INCORRECT = {
 };
 
 const UNREACHABLE =
-  "NorthStar can't reach its server right now. Check that it is running and try again.";
+  "MAPP can't reach its server right now. Check that it is running and try again.";
 
 /** The sign-in page at /sign-in for a visitor who is not signed in (unless `user` says otherwise). */
 function renderSignInPage({
@@ -70,9 +70,7 @@ describe('SignInPage', () => {
     mockApi({ 'GET /api/auth/demo-people': { body: DEMO_PEOPLE } });
     renderSignInPage();
 
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'Sign in to NorthStar' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Sign in to MAPP' })).toBeInTheDocument();
     expect(
       screen.getByText('Plan your marketing work, from plan to line item.'),
     ).toBeInTheDocument();
@@ -81,7 +79,7 @@ describe('SignInPage', () => {
       await screen.findByText(
         (_text, element) =>
           element?.tagName === 'P' &&
-          element.textContent === 'All demo people share the password northstar.',
+          element.textContent === 'All demo people share the password mapp.',
       ),
     ).toBeInTheDocument();
     expect(emailField()).toHaveAttribute('type', 'email');
@@ -112,12 +110,12 @@ describe('SignInPage', () => {
     mockApi({
       'GET /api/auth/demo-people': {
         body: {
-          password: 'northstar',
+          password: 'mapp',
           people: [
             {
               id: 'U-1006',
               name: 'Sara Novak',
-              email: 'sara.novak@northstar.demo',
+              email: 'sara.novak@shell.com',
               jobTitle: '',
               initials: 'SN',
             },
@@ -154,7 +152,7 @@ describe('SignInPage', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans'));
     expect(router.state.historyAction).toBe('REPLACE');
     expect(api.bodiesOf('POST /api/auth/sign-in')).toEqual([
-      { email: 'priya.raman@northstar.demo', password: 'northstar' },
+      { email: 'priya.raman@shell.com', password: 'mapp' },
     ]);
   });
 
@@ -166,13 +164,13 @@ describe('SignInPage', () => {
     const { user, router } = renderSignInPage();
 
     // The browser drops the spaces around an e-mail, and the API ignores its letter case.
-    await user.type(emailField(), ' PRIYA.RAMAN@northstar.demo ');
-    await user.type(passwordField(), 'northstar');
+    await user.type(emailField(), ' PRIYA.RAMAN@shell.com ');
+    await user.type(passwordField(), 'mapp');
     await user.click(signInButton());
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans'));
     expect(api.bodiesOf('POST /api/auth/sign-in')).toEqual([
-      { email: 'PRIYA.RAMAN@northstar.demo', password: 'northstar' },
+      { email: 'PRIYA.RAMAN@shell.com', password: 'mapp' },
     ]);
   });
 
@@ -183,12 +181,12 @@ describe('SignInPage', () => {
     });
     const { user, router } = renderSignInPage();
 
-    await user.type(emailField(), 'priya.raman@northstar.demo');
+    await user.type(emailField(), 'priya.raman@shell.com');
     await user.type(passwordField(), 'wrong');
     await user.click(signInButton());
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Incorrect e-mail or password.');
-    expect(emailField()).toHaveValue('priya.raman@northstar.demo');
+    expect(emailField()).toHaveValue('priya.raman@shell.com');
     expect(passwordField()).toHaveValue('');
     expect(router.state.location.pathname).toBe('/sign-in');
   });
@@ -200,13 +198,13 @@ describe('SignInPage', () => {
     });
     const { user, router } = renderSignInPage();
 
-    await user.type(emailField(), 'priya.raman@northstar.demo');
-    await user.type(passwordField(), 'northstar');
+    await user.type(emailField(), 'priya.raman@shell.com');
+    await user.type(passwordField(), 'mapp');
     await user.click(signInButton());
 
     expect(await screen.findByRole('alert')).toHaveTextContent(UNREACHABLE);
-    expect(emailField()).toHaveValue('priya.raman@northstar.demo');
-    expect(passwordField()).toHaveValue('northstar');
+    expect(emailField()).toHaveValue('priya.raman@shell.com');
+    expect(passwordField()).toHaveValue('mapp');
     expect(router.state.location.pathname).toBe('/sign-in');
   });
 
@@ -242,7 +240,7 @@ describe('SignInPage', () => {
     const { user } = renderSignInPage();
 
     // Only spaces: not empty for the page, but the API may still refuse it.
-    await user.type(emailField(), 'priya.raman@northstar.demo');
+    await user.type(emailField(), 'priya.raman@shell.com');
     await user.type(passwordField(), '   ');
     await user.click(signInButton());
 
@@ -283,7 +281,7 @@ describe('SignInPage', () => {
   });
 
   it('explains what to do when no demo people exist, and keeps the form (FR-028)', async () => {
-    mockApi({ 'GET /api/auth/demo-people': { body: { password: 'northstar', people: [] } } });
+    mockApi({ 'GET /api/auth/demo-people': { body: { password: 'mapp', people: [] } } });
     renderSignInPage();
 
     expect(
@@ -294,7 +292,7 @@ describe('SignInPage', () => {
         (_text, element) =>
           element?.tagName === 'P' &&
           element.textContent ===
-            "Stop NorthStar's API, run go run ./cmd/seed in the backend folder, start the API again with go run ./cmd/api, then reload this page.",
+            "Stop MAPP's API, run go run ./cmd/seed in the backend folder, start the API again with go run ./cmd/api, then reload this page.",
       ),
     ).toBeInTheDocument();
     expect(emailField()).toBeInTheDocument();
@@ -371,11 +369,11 @@ describe('SignInPage', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/'));
   });
 
-  it('names the page "Sign in · NorthStar" in the browser tab (FR-017)', () => {
+  it('names the page "Sign in · MAPP" in the browser tab (FR-017)', () => {
     mockApi({ 'GET /api/auth/demo-people': { body: DEMO_PEOPLE } });
     renderSignInPage();
 
-    expect(document.title).toBe('Sign in · NorthStar');
+    expect(document.title).toBe('Sign in · MAPP');
   });
 });
 
@@ -386,7 +384,7 @@ describe('SignInPage while the session is checked (plan "Session")', () => {
 
     expect(await screen.findByRole('status')).toHaveTextContent('Loading…');
     expect(screen.queryByLabelText('E-mail')).not.toBeInTheDocument();
-    expect(document.title).toBe('Sign in · NorthStar');
+    expect(document.title).toBe('Sign in · MAPP');
   });
 
   it('shows the full-page error when the API cannot be reached (edge case)', async () => {

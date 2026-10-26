@@ -25,11 +25,11 @@ import { CHINA_WORKFLOW, createPlanningRecords, idIn, planTree, treeRow } from '
 // the approval workflow "China BC approval workflow" (level 1 Carlos Mendes, level 2 Alex Morgan), and
 // for the accessibility test FY2026 Lubricants Europe (P-1001) with Launch film (A-1001).
 
-const ALEX = 'alex.morgan@northstar.demo';
-const PRIYA = 'priya.raman@northstar.demo';
-const DANIEL = 'daniel.okoro@northstar.demo';
-const MEI = 'mei.lin@northstar.demo';
-const CARLOS = 'carlos.mendes@northstar.demo';
+const ALEX = 'alex.morgan@shell.com';
+const PRIYA = 'priya.raman@shell.com';
+const DANIEL = 'daniel.okoro@shell.com';
+const MEI = 'mei.lin@shell.com';
+const CARLOS = 'carlos.mendes@shell.com';
 
 /** Opens the Approvals page as `email`, finds the activity and opens its preview. */
 async function openApprovalPreview(

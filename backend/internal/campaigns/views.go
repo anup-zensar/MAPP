@@ -6,11 +6,11 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
-	"northstar/internal/rollup"
-	"northstar/internal/settings"
+	"mapp/internal/people"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
+	"mapp/internal/rollup"
+	"mapp/internal/settings"
 )
 
 // The labels of a campaign's and an initiative's own needed-to-publish fields (data model §4.4). The dates

@@ -62,7 +62,7 @@ describe('SettingsPage, the cards of other features (FR-001)', () => {
     renderWithProviders(<SettingsPage />, { route: '/settings', user: testUser() });
 
     const people = card('People');
-    expect(within(people).getByText('Everyone who can sign in to NorthStar.')).toBeInTheDocument();
+    expect(within(people).getByText('Everyone who can sign in to MAPP.')).toBeInTheDocument();
     expect(await within(people).findByText('6 active')).toBeInTheDocument();
     const teams = card('Teams');
     expect(within(teams).getByText('The teams plans belong to.')).toBeInTheDocument();

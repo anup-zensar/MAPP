@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: NorthStar API - feature 002 fragment (Settings and Shell attributes)
+  title: MAPP API - feature 002 fragment (Settings and Shell attributes)
   version: 0.2.0
   description: |
     FRAGMENT of backend/api/openapi.yaml: only the paths and component schemas of feature 002. The

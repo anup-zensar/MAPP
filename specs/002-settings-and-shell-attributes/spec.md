@@ -34,12 +34,12 @@ average deal size (USD) and allowed activity types. The form shows a **live work
 3. **Given** a model, **When** the user selects it, **Then** the details show every field, the example, "Used by
    2 plans" with links and who last changed it; **Duplicate** opens a new form named "<name> (copy)".
 4. **Given** a model used by plans, **When** the user changes a rate or the deal size and saves, **Then**
-   NorthStar first says "Used by 2 plans (31 activities). Their calculated MQL and revenue goals will be
+   MAPP first says "Used by 2 plans (31 activities). Their calculated MQL and revenue goals will be
    recalculated; typed goals ('Set later stages myself') are kept." with **Save changes** / **Keep editing**,
    and after saving the log shows each old and new value.
 5. **Given** an empty name, a rate of 0 % and no activity type, **When** the user saves, **Then** all three
    problems are shown at once and nothing is saved.
-6. **Given** activities in the model's plans use "Event", **When** the user un-ticks "Event", **Then** NorthStar
+6. **Given** activities in the model's plans use "Event", **When** the user un-ticks "Event", **Then** MAPP
    warns "5 activities use 'Event'. They keep it; new activities can't choose it." before saving.
 7. **Given** a model in use, **When** the user chooses **Delete**, **Then** the dialog says "Used by 2 plans —
    set it inactive instead" and offers **Set inactive**; plans keep it as "Lubricants 1.0 (inactive)" and still
@@ -72,7 +72,7 @@ analysis F3, decision D-014).
    wording at once and the log keeps old and new labels; the type shows a lock and "Type can't change once
    records use this attribute — create a new attribute instead."
 5. **Given** 7 Created activities without a value, **When** the marking changes from Optional to Needed to
-   submit, **Then** NorthStar warns "7 activities have no value yet and will show as incomplete. Submitted and
+   submit, **Then** MAPP warns "7 activities have no value yet and will show as incomplete. Submitted and
    approved activities keep their status." before saving.
 6. **Given** the list, **When** the user moves an attribute up or down or changes its section, **Then** the
    preview and every form of that level follow the new order.
@@ -124,10 +124,10 @@ at 1. The form shows the rate both ways ("1 USD = 0.92 EUR · 1 EUR = 1.086957 U
    items", "Display currency of 2 people" and who last changed the rate and when; if it is in use, **Delete**
    offers **Set inactive** instead, and an unused currency moves to the recycle bin with **Undo**.
 3. **Given** 14 EUR line items in 6 activities, **When** the EUR rate changes from 0.92 to 0.95, **Then** before
-   saving NorthStar says "14 line items in 6 activities use EUR. Their EUR amounts stay the same; their USD
+   saving MAPP says "14 line items in 6 activities use EUR. Their EUR amounts stay the same; their USD
    amounts will be recalculated (52,173.91 → 50,526.32 USD). Unassigned planned cost of these activities will
    change. No activity goes back for approval." and, once confirmed, logs the change.
-4. **Given** USD, **Then** its rate and status show a lock and "USD is NorthStar's base currency; its rate is
+4. **Given** USD, **Then** its rate and status show a lock and "USD is MAPP's base currency; its rate is
    always 1."
 5. **Given** code "EURO", a code already used and rate 0, **When** the user saves, **Then** all three problems
    are shown at once.
@@ -283,7 +283,7 @@ Shell has long lists (1,217 cost centres). The administrator downloads a templat
   active and have rate 1; its locks MUST say why.
 - **FR-029**: Conversions MUST always use the current rate: a new rate MUST recalculate the USD amount of every
   line item in that currency (domain model §4.3) and every display conversion.
-- **FR-030**: Before saving a rate change NorthStar MUST state the number of line items and activities affected
+- **FR-030**: Before saving a rate change MAPP MUST state the number of line items and activities affected
   and their total USD before and after; no activity is sent back for approval.
 
 **Importing options and seed configuration**

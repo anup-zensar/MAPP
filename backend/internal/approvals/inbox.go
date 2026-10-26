@@ -5,10 +5,10 @@ import (
 	"slices"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
 )
 
 // Inbox returns the rows of one tab of the Approvals page as a sees it (FR-029, FR-030): waiting — the

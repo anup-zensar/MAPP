@@ -47,7 +47,7 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
       'href',
       '/plans/P-1001',
     );
-    await waitFor(() => expect(document.title).toBe('Edit FY2026 Lubricants Europe · NorthStar'));
+    await waitFor(() => expect(document.title).toBe('Edit FY2026 Lubricants Europe · MAPP'));
   });
 
   it('saves the whole form with the version it started from', async () => {

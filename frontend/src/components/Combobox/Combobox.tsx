@@ -58,7 +58,7 @@ export interface ComboboxProps extends FieldFrameProps {
 }
 
 /**
- * The one searchable choice of NorthStar (feature 003 plan, ARIA 1.2 combobox): an input that
+ * The one searchable choice of MAPP (feature 003 plan, ARIA 1.2 combobox): an input that
  * filters the options by any part of their search text, a list below it, and the chosen values as
  * chips with a Remove button. ↓ ↑ move through the list, Enter chooses, Escape closes it and
  * Backspace in an empty input removes the last chip. The focus always stays in the input.

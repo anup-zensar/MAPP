@@ -16,7 +16,7 @@ const CURRENCIES = { items: [EUR, USD], total: 2 };
 const PRIYA_AS_PERSON = {
   id: 'U-1002',
   name: 'Priya Raman',
-  email: 'priya.raman@northstar.demo',
+  email: 'priya.raman@shell.com',
   jobTitle: 'Marketer',
   initials: 'PR',
   active: true,
@@ -72,12 +72,12 @@ describe('ProfilePage (feature 003, US4)', () => {
     renderProfile();
 
     expect(screen.getByRole('heading', { level: 1, name: 'My profile' })).toBeInTheDocument();
-    expect(document.title).toBe('My profile · NorthStar');
+    expect(document.title).toBe('My profile · MAPP');
 
     const details = card('Your details');
     expect(details).toHaveTextContent('Priya Raman');
     expect(details).toHaveTextContent('Marketer');
-    expect(details).toHaveTextContent('priya.raman@northstar.demo');
+    expect(details).toHaveTextContent('priya.raman@shell.com');
     expect(
       within(details).getByText(
         'Your e-mail is your sign-in name; it is changed in Settings › People.',

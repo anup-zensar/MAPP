@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
 )
 
 // A CSV file starts with the UTF-8 byte-order mark and the notes as label,value lines, then an empty line

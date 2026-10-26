@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/activities"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/platform/store"
-	"northstar/internal/settings"
+	"mapp/internal/activities"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/platform/store"
+	"mapp/internal/settings"
 )
 
 // An activity is saved in the table "activities" and read back exactly — dates, USD money, goals, Shell

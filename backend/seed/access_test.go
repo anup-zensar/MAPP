@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/access"
-	"northstar/internal/platform/authz"
+	"mapp/internal/access"
+	"mapp/internal/platform/authz"
 )
 
 // The seed holds the five roles of spec Table B (RL-1001 … RL-1005) with their permissions, descriptions and

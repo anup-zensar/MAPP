@@ -1,4 +1,4 @@
-# golangci-lint v2 configuration for the NorthStar backend.
+# golangci-lint v2 configuration for the MAPP backend.
 #
 # Enforces the machine-checkable rules of the constitution
 # (.specify/memory/constitution.md). Thresholds follow the quality metrics
@@ -146,7 +146,7 @@ linters:
               desc: "services must not depend on the transport (constitution B2)"
             - pkg: database/sql
               desc: "services reach the database only through their Store interface (constitution B2)"
-            - pkg: northstar/internal/platform/database
+            - pkg: mapp/internal/platform/database
               desc: "services reach the database only through their Store interface (constitution B2)"
     revive:
       rules:
@@ -198,4 +198,4 @@ formatters:
   settings:
     goimports:
       local-prefixes:
-        - northstar
+        - mapp

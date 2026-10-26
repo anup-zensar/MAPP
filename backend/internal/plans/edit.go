@@ -9,13 +9,13 @@ import (
 	"reflect"
 	"slices"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/rollup"
-	"northstar/internal/settings"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/rollup"
+	"mapp/internal/settings"
 )
 
 // msgReload asks for a version that was not sent.

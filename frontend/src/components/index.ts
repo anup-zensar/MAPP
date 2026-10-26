@@ -1,5 +1,5 @@
 /**
- * NorthStar's shared building blocks (FR-019, design system §5). Features import them from here
+ * MAPP's shared building blocks (FR-019, design system §5). Features import them from here
  * only, and reuse them instead of making their own:
  *
  *   import { Button, PageHeader, StatusChip } from '@/components';

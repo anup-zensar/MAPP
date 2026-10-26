@@ -8,10 +8,10 @@
 package budgets
 
 import (
-	"northstar/internal/people"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/settings"
+	"mapp/internal/people"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/settings"
 )
 
 // The readable-ID prefixes of global budgets and allocations (014 data model §1.6): GB-1001, BA-1001.

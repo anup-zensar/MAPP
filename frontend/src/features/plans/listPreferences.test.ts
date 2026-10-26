@@ -53,7 +53,7 @@ describe('listPreferences (FR-003)', () => {
 
   it('reads a single year, remembered before 016, as a one-year range (D-269)', () => {
     window.localStorage.setItem(
-      'northstar.plans.list.U-1002',
+      'mapp.plans.list.U-1002',
       JSON.stringify({ status: 'all', year: 2026, scope: 'all', layout: 'cards' }),
     );
 
@@ -78,7 +78,7 @@ describe('listPreferences (FR-003)', () => {
     expect(
       readFilters(new URLSearchParams('status=open&year=next&scope=mine&layout=grid'), 'U-1002'),
     ).toEqual(DEFAULT_FILTERS);
-    window.localStorage.setItem('northstar.plans.list.U-1002', '{not json');
+    window.localStorage.setItem('mapp.plans.list.U-1002', '{not json');
     expect(readRemembered('U-1002')).toEqual(DEFAULT_FILTERS);
   });
 

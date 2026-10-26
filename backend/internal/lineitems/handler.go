@@ -3,10 +3,10 @@ package lineitems
 import (
 	"net/http"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/web"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/web"
 )
 
 // Handler answers the HTTP requests about line items (contract tag "Line items").
@@ -80,7 +80,7 @@ func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 }
 
 // unreadableMessage is the answer to a query value the API cannot read (001's bad_request text).
-const unreadableMessage = "NorthStar couldn't read this request. Reload the page and try again."
+const unreadableMessage = "MAPP couldn't read this request. Reload the page and try again."
 
 // duplicate answers POST /api/line-items/{lineItemId}/duplicate with 201 and the copy.
 func (h *Handler) duplicate(w http.ResponseWriter, r *http.Request) {

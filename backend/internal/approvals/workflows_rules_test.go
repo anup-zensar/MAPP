@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/errs"
 )
 
 // days returns a pointer to n, for reminder and escalation days.

@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"slices"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/record"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/record"
 )
 
 // The methods below are what other packages ask of access control, through adapters in internal/app (plan

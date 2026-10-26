@@ -3,9 +3,9 @@ package seed
 import (
 	"context"
 
-	"northstar/internal/access"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/ids"
+	"mapp/internal/access"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/ids"
 )
 
 // The roles of feature 014 (spec Table B, plan "Demo data"), RL-1001 … RL-1005, with their permissions in

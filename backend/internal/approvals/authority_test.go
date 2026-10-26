@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
 )
 
 // Who may decide, step by step (017 FR-017, FR-018, FR-020, SC-002, data-model §6): a waiting approver who

@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/record"
-	"northstar/internal/platform/store"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/record"
+	"mapp/internal/platform/store"
 )
 
 // The sign-in page lists only the people who can sign in, sorted by name (FR-001).
@@ -40,7 +40,7 @@ func TestActivePeople_ExcludesInactive_FR001(t *testing.T) {
 	if want := []string{"Alex Morgan", "Daniel Okoro", "Sara Novak"}; !slices.Equal(names, want) {
 		t.Fatalf("ActivePeople names = %q, want %q", names, want)
 	}
-	alex := DemoPerson{ID: "U-1002", Name: "Alex Morgan", Email: "alex.morgan@northstar.demo", JobTitle: "Marketer", Initials: "AM"}
+	alex := DemoPerson{ID: "U-1002", Name: "Alex Morgan", Email: "alex.morgan@shell.com", JobTitle: "Marketer", Initials: "AM"}
 	if got[0] != alex {
 		t.Errorf("ActivePeople()[0] = %+v, want %+v", got[0], alex)
 	}
@@ -74,7 +74,7 @@ func TestCurrentUser_PersonWithPreferences_FR012(t *testing.T) {
 		ID:        "U-1002",
 		Name:      "Priya Raman",
 		FirstName: "Priya",
-		Email:     "priya.raman@northstar.demo",
+		Email:     "priya.raman@shell.com",
 		JobTitle:  "Marketer",
 		Initials:  "PR",
 		Preferences: PreferencesView{Theme: "system", SidebarCollapsed: false, DisplayCurrency: "USD", DateFormat: "DD MMM YYYY",
@@ -681,8 +681,8 @@ func newFixture(t *testing.T) *fixture {
 	return &fixture{service: service, history: hist, db: db, ids: generator, clock: clock}
 }
 
-// addPerson stores a person the way the seed does — an id from the counter U, made by NorthStar itself,
-// no log entry — with the e-mail "first.last@northstar.demo", and returns them.
+// addPerson stores a person the way the seed does — an id from the counter U, made by MAPP itself,
+// no log entry — with the e-mail "first.last@shell.com", and returns them.
 func (f *fixture) addPerson(t *testing.T, name, jobTitle string, active bool) Person {
 	t.Helper()
 	var p Person
@@ -846,9 +846,9 @@ type testClock struct {
 func (c *testClock) Now() time.Time          { return c.now }
 func (c *testClock) Advance(d time.Duration) { c.now = c.now.Add(d) }
 
-// newPerson returns a person with the e-mail "first.last@northstar.demo" and the job title Marketer.
+// newPerson returns a person with the e-mail "first.last@shell.com" and the job title Marketer.
 func newPerson(id, name string, active bool) Person {
-	email := strings.ToLower(strings.ReplaceAll(name, " ", ".")) + "@northstar.demo"
+	email := strings.ToLower(strings.ReplaceAll(name, " ", ".")) + "@shell.com"
 	created := time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 	return Person{ID: id, Name: name, Email: email, JobTitle: "Marketer", Active: active, Meta: record.NewMeta(actor.System, created)}
 }

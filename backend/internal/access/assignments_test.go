@@ -7,8 +7,8 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
 )
 
 // The People tab lists everyone, active people first and then by name, with their teams, roles and what
@@ -121,7 +121,7 @@ func TestSetPersonRoles_Problems_FR017(t *testing.T) {
 	}
 }
 
-// NorthStar always keeps an active administrator (FR-021, message 10): the only administrator can't lose
+// MAPP always keeps an active administrator (FR-021, message 10): the only administrator can't lose
 // the role or be deactivated; with a second administrator, both are possible.
 func TestLastAdministrator_Guarded_FR021(t *testing.T) {
 	f := newFixture(t)

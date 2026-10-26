@@ -1,4 +1,4 @@
-// Package store is NorthStar's JSON file store: the storage behind every repository until PostgreSQL
+// Package store is MAPP's JSON file store: the storage behind every repository until PostgreSQL
 // replaces it (ADR-0004, research R3).
 //
 // Every record type is a table. A normal table is kept in memory and saved as <data folder>/<table>.json:
@@ -44,7 +44,7 @@ import (
 	"sync"
 	"time"
 
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/errs"
 )
 
 // Transactor runs work in transactions. Services depend on this interface, never on the JSON store.
@@ -67,7 +67,7 @@ var (
 	ErrFailed = &errs.Error{
 		Status:  http.StatusInternalServerError,
 		Code:    errs.CodeInternalError,
-		Message: "NorthStar could not save its data folder — restart the API.",
+		Message: "MAPP could not save its data folder — restart the API.",
 		Fields:  []errs.FieldError{},
 	}
 )

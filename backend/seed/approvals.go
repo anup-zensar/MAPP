@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"northstar/internal/activities"
-	"northstar/internal/approvals"
-	"northstar/internal/people"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/record"
+	"mapp/internal/activities"
+	"mapp/internal/approvals"
+	"mapp/internal/people"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/record"
 )
 
 // day is 24 hours: the approval history is dated in days and hours before the seed time.

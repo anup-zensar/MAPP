@@ -1,8 +1,8 @@
 {
-  "name": "northstar-web",
+  "name": "mapp-web",
   "private": true,
   "version": "0.1.0",
-  "description": "NorthStar web app (React + TypeScript) - Shell's marketing planning application, Plan module.",
+  "description": "MAPP web app (React + TypeScript) - Shell's marketing planning application, Plan module.",
   "type": "module",
   "engines": {
     "node": ">=22.22"

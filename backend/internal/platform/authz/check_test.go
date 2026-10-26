@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"testing"
 
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
 )
 
 // A context without Grants is an internal call — the seed, a job, a service unit test — and is not

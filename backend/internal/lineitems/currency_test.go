@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // ukLaunchEvent is A-1012 of the 016 demo data: "UK launch event" in the GBP plan P-1004, 40,000.00 GBP,

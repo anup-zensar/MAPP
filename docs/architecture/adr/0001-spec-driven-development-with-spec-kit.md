@@ -3,7 +3,7 @@
 **Status:** Accepted · **Date:** 2026-10-18
 
 ## Context
-NorthStar replaces a large Shell application. Shell needs to see and agree what will be built, and the
+MAPP replaces a large Shell application. Shell needs to see and agree what will be built, and the
 team uses AI coding agents. Without a written, versioned intent, AI-generated code drifts and is hard to
 review.
 

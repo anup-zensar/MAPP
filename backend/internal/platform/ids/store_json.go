@@ -3,7 +3,7 @@ package ids
 import (
 	"context"
 
-	"northstar/internal/platform/store"
+	"mapp/internal/platform/store"
 )
 
 // countersTable is the JSON store table that keeps the counters. The store saves it before every other

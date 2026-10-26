@@ -28,11 +28,11 @@ cannot sign in and their records show "(inactive)"; reactivate them.
 **Acceptance Scenarios**:
 
 1. **Given** the People list, **When** the user chooses **New person**, enters "Jane Doe",
-   "jane.doe@northstar.demo", job title "Marketer", team "Lubricants Europe" and saves, **Then** she is listed
+   "jane.doe@shell.com", job title "Marketer", team "Lubricants Europe" and saves, **Then** she is listed
    as Active, the toast "Person 'Jane Doe' created — View" appears, and she can sign in with the demo password.
 2. **Given** an empty name and an e-mail without "@", **When** the user saves, **Then** "Enter a name" and "Enter
    a valid e-mail address" are shown together; an e-mail already used, in any letter case, by an inactive person
-   shows "jane.doe@northstar.demo already belongs to Jane Doe (inactive) — reactivate her instead."
+   shows "jane.doe@shell.com already belongs to Jane Doe (inactive) — reactivate her instead."
 3. **Given** a person, **When** the user selects them, **Then** the details show avatar, name, e-mail, job title,
    status, teams (as links), what they own or approve ("Owner of 2 plans and 5 activities · approver in 1
    approval workflow") and who created and last changed the record.
@@ -74,7 +74,7 @@ owns a plan, try to delete a team used by a plan, and delete an unused team and 
 4. **Given** a team, **When** the user renames it to a name another team has (any letter case), **Then** "A team
    called 'Mobility China' already exists." is shown; a unique new name appears on every plan using the team.
 5. **Given** Priya Raman owns "FY2026 Lubricants Europe" through the team "Lubricants Europe", **When** the user
-   removes her from that team, **Then** before saving NorthStar says "Priya Raman owns 1 plan that uses this
+   removes her from that team, **Then** before saving MAPP says "Priya Raman owns 1 plan that uses this
    team: FY2026 Lubricants Europe. She will no longer belong to its teams, so its owner will need attention."
    and lets the user save or keep editing.
 6. **Given** a team used by plans (including plans in the recycle bin), **When** the user chooses **Delete**,
@@ -195,7 +195,7 @@ in from another browser and see the same preferences.
 
 **Person picker**
 
-- **FR-016**: Every person field in NorthStar MUST use one person picker, in single or multiple mode.
+- **FR-016**: Every person field in MAPP MUST use one person picker, in single or multiple mode.
 - **FR-017**: The picker MUST match any part of the name, e-mail or job title, ignoring letter case; show avatar,
   full name and job title (or e-mail when there is no title) without truncating; show the number of matches and
   let every match be reached; and list the signed-in user first, marked "(you)", when they qualify.

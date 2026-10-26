@@ -1,4 +1,4 @@
-# CLAUDE.md — guidance for AI agents working on NorthStar
+# CLAUDE.md — guidance for AI agents working on MAPP
 
 Read this with `.specify/memory/constitution.md` (the rules, version 2.1) before doing anything. Where
 this file and the constitution disagree, the constitution wins and this file is corrected. Working in
@@ -6,7 +6,7 @@ this file and the constitution disagree, the constitution wins and this file is 
 
 ## Project
 
-NorthStar is Shell's marketing planning application replacing the Hive9 Plan module. This phase covers
+MAPP is Shell's marketing planning application replacing the Hive9 Plan module. This phase covers
 only the **Plan module**: demo sign-in, application shell, home dashboard, settings, people and teams,
 plans, campaigns, initiatives, activities, line items, activity approvals, planning views, activity log
 and recycle bin. Spec-driven development with GitHub Spec Kit. The constitution applies Shell's
@@ -33,7 +33,7 @@ Software Design & Construction Policy and SEMS, which are mandatory.
    one error envelope); the web app's API types are generated from it.
 7. **Demo sign-in, role- and team-based access** (D-004, D-223, ADR-0008): sign-in stays a demo until
    single sign-on; every action needs its permission (014 Table A) in the plan's scope, enforced by the
-   API through the route table (fail closed) and scoped service checks. NorthStar is for Shell only, so
+   API through the route table (fail closed) and scoped service checks. MAPP is for Shell only, so
    scopes play the part of tenants: the scope comes only from the signed-in actor, every query on
    plan-owned data filters by it, a record outside it answers 404 like a missing one, and 403
    `forbidden` refuses only an action on a record the actor can see. Give every new operation its route
@@ -107,7 +107,7 @@ Software Design & Construction Policy and SEMS, which are mandatory.
 
 - **API (`backend/`)**: Go (pinned in `go.mod`), Gin in the handler layer only, SQLite through a pure-Go
   `database/sql` driver, sqlc, goose, `log/slog` JSON, OpenTelemetry, `/healthz` and `/readyz`. Module
-  name `northstar`. Layout in `backend/docs/GO_STANDARDS.md` §2: `cmd/api`, `cmd/seed`,
+  name `mapp`. Layout in `backend/docs/GO_STANDARDS.md` §2: `cmd/api`, `cmd/seed`,
   `internal/app`, `internal/platform/{actor,authz,clock,errs,web,database,logging,telemetry,…}`, then
   one package per business area with `model.go · store.go · store_sqlite.go · service.go · handler.go`
   plus tests. Lint: `backend/.golangci.yml`.

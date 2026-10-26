@@ -4,13 +4,13 @@ import (
 	"cmp"
 	"context"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/people"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // Line items read activities, plans, Settings and people, while those features read line-item numbers. To

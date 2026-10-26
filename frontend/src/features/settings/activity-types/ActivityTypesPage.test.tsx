@@ -101,7 +101,7 @@ describe('ActivityTypesPage: the list (FR-002)', () => {
 
     expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('Settings');
     expect(screen.getByRole('heading', { level: 1, name: 'Activity types' })).toBeInTheDocument();
-    expect(document.title).toBe('Activity types · NorthStar');
+    expect(document.title).toBe('Activity types · MAPP');
     expect(screen.getByText('The kinds of work activities can be.')).toBeInTheDocument();
 
     await screen.findByRole('table');

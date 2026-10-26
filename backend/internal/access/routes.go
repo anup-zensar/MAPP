@@ -4,7 +4,7 @@ import (
 	"maps"
 	"slices"
 
-	"northstar/internal/platform/authz"
+	"mapp/internal/platform/authz"
 )
 
 // RuleKind says how the access middleware treats an operation (plan Table C).

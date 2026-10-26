@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"strings"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/sheet"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/sheet"
 )
 
 // Export of the current view to a spreadsheet or CSV file (FR-032 – FR-034, D-120): every matching and
@@ -40,7 +40,7 @@ var showLevelsWords = map[string]string{
 
 // File is an exported file.
 type File struct {
-	Name        string // "NorthStar All work – Grid – 2026 – 18 Oct 2026.xlsx"
+	Name        string // "MAPP All work – Grid – 2026 – 18 Oct 2026.xlsx"
 	ContentType string
 	Body        []byte
 }
@@ -168,10 +168,10 @@ func writeFile(r Result, in input, notes [][2]string, table [][]sheet.Cell, form
 	return file, nil
 }
 
-// fileName is "NorthStar All work – <view> – <year> – <DD MMM YYYY>.<format>" (FR-034); over several years
+// fileName is "MAPP All work – <view> – <year> – <DD MMM YYYY>.<format>" (FR-034); over several years
 // "2026–2027" (016).
 func fileName(r Result, in input, format string) string {
-	return fmt.Sprintf("NorthStar All work – %s – %s – %s.%s", viewNames[r.View], yearsText(r, "–"), date.Format(in.today), format)
+	return fmt.Sprintf("MAPP All work – %s – %s – %s.%s", viewNames[r.View], yearsText(r, "–"), date.Format(in.today), format)
 }
 
 // yearsText is the year of a view, or its range "2026<sep>2027" (016 FR-034).

@@ -23,7 +23,7 @@ function person(
   teams: (typeof EUROPE)[],
   active = true,
 ) {
-  const email = `${name.toLowerCase().replace(' ', '.')}@northstar.demo`;
+  const email = `${name.toLowerCase().replace(' ', '.')}@shell.com`;
   const initials = name
     .split(' ')
     .map((part) => part[0])
@@ -131,7 +131,7 @@ describe('PeoplePage (feature 003, US1)', () => {
       'href',
       '/settings/people/U-1002',
     );
-    expect(priya).toHaveTextContent('priya.raman@northstar.demo');
+    expect(priya).toHaveTextContent('priya.raman@shell.com');
     expect(priya).toHaveTextContent('Lubricants Europe');
     expect(priya).toHaveTextContent('Active');
     expect(rowOf('Daniel Okoro')).toHaveTextContent('—');
@@ -209,7 +209,7 @@ describe('PeoplePage (feature 003, US1)', () => {
             {
               field: 'email',
               message:
-                'jane.doe@northstar.demo already belongs to Jane Doe (inactive) — reactivate them instead.',
+                'jane.doe@shell.com already belongs to Jane Doe (inactive) — reactivate them instead.',
             },
           ]);
         }
@@ -232,18 +232,18 @@ describe('PeoplePage (feature 003, US1)', () => {
     expect(within(panel).getAllByText('Enter a valid e-mail address.')).toHaveLength(2);
 
     await user.type(within(panel).getByRole('textbox', { name: /Name/ }), 'Jane Smith');
-    await user.type(within(panel).getByRole('textbox', { name: /E-mail/ }), '.doe@northstar.demo');
+    await user.type(within(panel).getByRole('textbox', { name: /E-mail/ }), '.doe@shell.com');
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
     expect(
       await within(panel).findAllByText(
-        'jane.doe@northstar.demo already belongs to Jane Doe (inactive) — reactivate them instead.',
+        'jane.doe@shell.com already belongs to Jane Doe (inactive) — reactivate them instead.',
       ),
     ).toHaveLength(2);
     expect(within(panel).queryByText('Enter a name.')).not.toBeInTheDocument();
 
     const email = within(panel).getByRole('textbox', { name: /E-mail/ });
     await user.clear(email);
-    await user.type(email, 'jane.smith@northstar.demo');
+    await user.type(email, 'jane.smith@shell.com');
     await user.type(within(panel).getByRole('textbox', { name: /Job title/ }), 'Marketer');
     await user.type(await within(panel).findByRole('combobox', { name: 'Teams' }), 'europe');
     await user.keyboard('{Enter}');
@@ -252,7 +252,7 @@ describe('PeoplePage (feature 003, US1)', () => {
     expect(await screen.findByText("Person 'Jane Smith' created")).toBeInTheDocument();
     expect(api.bodiesOf('POST /api/people')[2]).toEqual({
       name: 'Jane Smith',
-      email: 'jane.smith@northstar.demo',
+      email: 'jane.smith@shell.com',
       jobTitle: 'Marketer',
       teamIds: ['T-1001'],
     });
@@ -286,7 +286,7 @@ describe('PeoplePage (feature 003, US1)', () => {
     );
 
     const panel = await screen.findByRole('dialog', { name: 'Alex Morgan' });
-    expect(await within(panel).findByText('alex.morgan@northstar.demo')).toBeInTheDocument();
+    expect(await within(panel).findByText('alex.morgan@shell.com')).toBeInTheDocument();
     expect(within(panel).getByText('Head of marketing')).toBeInTheDocument();
     expect(within(panel).getByRole('link', { name: 'Lubricants Europe' })).toHaveAttribute(
       'href',

@@ -8,7 +8,7 @@ import { CURRENCIES, deleted, EUR, JPY, validationFailed, versionConflict } from
 import { CurrenciesPage } from './CurrenciesPage';
 import { EUR_RATES, NO_IMPORTS, NO_RATES, RECENT_IMPORTS_PAGE } from './rateTestData';
 
-const USD_LOCK = "USD is NorthStar's base currency; its rate is always 1.";
+const USD_LOCK = "USD is MAPP's base currency; its rate is always 1.";
 
 function renderCurrencies(
   answers: Record<string, MockHandler> = {},
@@ -48,7 +48,7 @@ describe('CurrenciesPage: the list (FR-002, FR-028)', () => {
     renderCurrencies();
 
     expect(screen.getByRole('heading', { level: 1, name: 'Currencies' })).toBeInTheDocument();
-    expect(document.title).toBe('Currencies · NorthStar');
+    expect(document.title).toBe('Currencies · MAPP');
     await screen.findByRole('table');
 
     const eur = row('EUR');

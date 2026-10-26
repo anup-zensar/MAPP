@@ -4,7 +4,7 @@ import { usePageTitle } from '@/lib/usePageTitle';
 import { CentredMessage } from './CentredMessage';
 
 /**
- * Shown for an address NorthStar does not know (FR-015, US2 scenario 6), with a way back to
+ * Shown for an address MAPP does not know (FR-015, US2 scenario 6), with a way back to
  * Home. The not-found route puts it in the layout that fits the visitor.
  */
 export function NotFoundPage() {

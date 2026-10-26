@@ -1,7 +1,7 @@
 # Shell Target Architecture (summary)
 
 Summary of *Hive9 Final Architecture* (4 slides, Oct 2026). This is the **production target** for later;
-NorthStar's current phase runs locally (see the constitution's Technology Choices).
+MAPP's current phase runs locally (see the constitution's Technology Choices).
 
 ## Components
 

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
 )
 
 // US5 — Delete a campaign or initiative and undo it.

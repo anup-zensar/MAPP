@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // rangePlans stores plans of 2026, 2027 and 2028 of each type: P-1001 2026 Operational, P-1002 2027

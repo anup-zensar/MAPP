@@ -7,9 +7,9 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // AttributeValues are the Shell attribute values of one planning record — a plan, campaign, initiative,

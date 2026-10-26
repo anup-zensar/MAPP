@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
 )
 
 // The Approval section offers the actions of the activity's status: Submit for a Created one, Re-submit

@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
 )
 
 // The role page groups the fixed permissions as Table A does (FR-001).

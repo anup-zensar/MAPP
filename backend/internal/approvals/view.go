@@ -5,8 +5,8 @@ import (
 	"slices"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
 )
 
 // Approval returns the activity's Approval section as a sees it (FR-024, FR-025): the chain of every round

@@ -7,10 +7,10 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/record"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/record"
 )
 
 // pair is one person in one team: a membership without its id and bookkeeping.

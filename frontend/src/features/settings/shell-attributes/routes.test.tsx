@@ -26,7 +26,7 @@ describe('Shell attribute routes (feature 002)', () => {
     renderApp(path, ANSWERS);
 
     expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
-    await waitFor(() => expect(document.title).toBe(`${title} · NorthStar`));
+    await waitFor(() => expect(document.title).toBe(`${title} · MAPP`));
     expectCurrentSection('Settings');
   });
 });

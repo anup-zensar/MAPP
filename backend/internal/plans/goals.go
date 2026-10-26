@@ -3,8 +3,8 @@ package plans
 import (
 	"math/big"
 
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // Why a goal stage can't be worked out from the model (plan "User-visible messages"). Only working backwards

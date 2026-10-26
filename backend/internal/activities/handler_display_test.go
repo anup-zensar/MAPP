@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"northstar/internal/platform/apitest"
+	"mapp/internal/platform/apitest"
 )
 
 // amountOf is an amount as the API answers it.

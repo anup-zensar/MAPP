@@ -7,22 +7,22 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/activities"
-	"northstar/internal/approvals"
-	"northstar/internal/home"
-	"northstar/internal/plans"
-	"northstar/internal/platform/apitest"
-	"northstar/internal/platform/money"
+	"mapp/internal/activities"
+	"mapp/internal/approvals"
+	"mapp/internal/home"
+	"mapp/internal/plans"
+	"mapp/internal/platform/apitest"
+	"mapp/internal/platform/money"
 )
 
 // The demo people's e-mail addresses (demo-users-and-data.md).
 const (
-	alexsEmail   = "alex.morgan@northstar.demo"
-	priyasEmail  = "priya.raman@northstar.demo"
-	danielsEmail = "daniel.okoro@northstar.demo"
-	meisEmail    = "mei.lin@northstar.demo"
-	carlosEmail  = "carlos.mendes@northstar.demo"
-	sarasEmail   = "sara.novak@northstar.demo"
+	alexsEmail   = "alex.morgan@shell.com"
+	priyasEmail  = "priya.raman@shell.com"
+	danielsEmail = "daniel.okoro@shell.com"
+	meisEmail    = "mei.lin@shell.com"
+	carlosEmail  = "carlos.mendes@shell.com"
+	sarasEmail   = "sara.novak@shell.com"
 )
 
 // everyone is every seeded person.
@@ -120,7 +120,7 @@ func TestHomeSummary_Contract(t *testing.T) {
 func TestHomeSummary_GettingStartedForANewPerson_FR020(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
-	created := alex.Do(t, http.MethodPost, "/api/people", map[string]any{"name": "Nina Berg", "email": "nina.berg@northstar.demo"})
+	created := alex.Do(t, http.MethodPost, "/api/people", map[string]any{"name": "Nina Berg", "email": "nina.berg@shell.com"})
 	var nina struct {
 		ID      string `json:"id"`
 		Version int    `json:"version"`
@@ -129,11 +129,11 @@ func TestHomeSummary_GettingStartedForANewPerson_FR020(t *testing.T) {
 	if created.Status != http.StatusCreated && created.Status != http.StatusOK {
 		t.Fatalf("POST /api/people = %d %s", created.Status, created.Body)
 	}
-	newcomer := server.SignIn(t, "nina.berg@northstar.demo")
+	newcomer := server.SignIn(t, "nina.berg@shell.com")
 
 	alone := get[home.SummaryView](t, newcomer, "/api/home/summary?scope=myTeams")
 	joined := alex.Do(t, http.MethodPatch, "/api/people/"+nina.ID, map[string]any{"name": "Nina Berg",
-		"email": "nina.berg@northstar.demo", "jobTitle": "", "teamIds": []string{"T-1003"}, "version": nina.Version})
+		"email": "nina.berg@shell.com", "jobTitle": "", "teamIds": []string{"T-1003"}, "version": nina.Version})
 	inTeam := get[home.SummaryView](t, newcomer, "/api/home/summary?scope=myTeams")
 
 	if alone.GettingStarted == nil || *alone.GettingStarted != "notInTeam" {

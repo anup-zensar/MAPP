@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"northstar/internal/history"
-	"northstar/internal/plans"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
+	"mapp/internal/history"
+	"mapp/internal/plans"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
 )
 
 // historyAccess implements history.Access (feature 014, D-238, D-304): who sees which activity-log and

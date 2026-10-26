@@ -8,13 +8,13 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/record"
-	"northstar/internal/rollup"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/record"
+	"mapp/internal/rollup"
 )
 
 // The messages of a copy (plan "User-visible messages": API validation, copy notes, activity log).

@@ -7,7 +7,7 @@ import (
 	"syscall"
 	"testing"
 
-	"northstar/internal/app"
+	"mapp/internal/app"
 )
 
 // The API prints where it listens, in which environment, and whether demo sign-in is on.
@@ -18,11 +18,11 @@ func TestStartupLine(t *testing.T) {
 	}{
 		{
 			app.Config{Env: "local", Port: 8080},
-			"NorthStar API listening on http://127.0.0.1:8080 (environment: local, demo sign-in on)",
+			"MAPP API listening on http://127.0.0.1:8080 (environment: local, demo sign-in on)",
 		},
 		{
 			app.Config{Env: "production", Port: 18080},
-			"NorthStar API listening on http://127.0.0.1:18080 (environment: production, demo sign-in off)",
+			"MAPP API listening on http://127.0.0.1:18080 (environment: production, demo sign-in off)",
 		},
 	}
 	for _, tt := range tests {

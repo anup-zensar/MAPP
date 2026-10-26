@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
 )
 
 // Access is what history asks of access control (feature 014, D-238): which log entries and recycle-bin

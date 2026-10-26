@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/record"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/record"
 )
 
 // workflowField is the activity form field of the Approval workflow, the key of its problems.
@@ -98,8 +98,8 @@ func (s *Service) Submission(ctx context.Context, a actor.Actor, activityID stri
 // first level that needs a decision: the activity becomes Submitted, the round's history and the activity
 // log record it, and that level's approvers and their current delegates are notified (FR-035, 017 FR-032).
 // When no level needs a decision the activity is Approved at once: the log gets the submitter's
-// "submitted" and NorthStar's "approved automatically", and the owner is told when someone else submitted
-// (017 FR-014, 017-P4). Levels not needed or approved automatically get a history entry by NorthStar. The
+// "submitted" and MAPP's "approved automatically", and the owner is told when someone else submitted
+// (017 FR-014, 017-P4). Levels not needed or approved automatically get a history entry by MAPP. The
 // plan's status is not checked (FR-012, D-206).
 func (s *Service) Submit(ctx context.Context, a actor.Actor, activityID string, in SubmitInput) (ActivityApproval, error) {
 	comment := strings.TrimSpace(in.Comment)
@@ -234,7 +234,7 @@ func (s *Service) Submit(ctx context.Context, a actor.Actor, activityID string, 
 
 // approvedAtSubmission ends a submission whose round has no level that needs a decision (017 FR-014,
 // 017-P4), inside Submit's Write: the activity becomes Approved, the log gets the submitter's "submitted"
-// (to Submitted) and NorthStar's "approved automatically" (Submitted to Approved), and the owner is told
+// (to Submitted) and MAPP's "approved automatically" (Submitted to Approved), and the owner is told
 // when someone else submitted. automatic are the reasons of the levels approved automatically.
 func (s *Service) approvedAtSubmission(ctx context.Context, a actor.Actor, facts ActivityFacts, round Round, verb, comment, notes string,
 	automatic []string, approval *ActivityApproval) error {

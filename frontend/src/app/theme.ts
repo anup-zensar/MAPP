@@ -13,7 +13,7 @@ export type ThemePreference = 'system' | 'light' | 'dark';
 export type Theme = 'light' | 'dark';
 
 /** The localStorage key; index.html reads the same key. */
-const STORAGE_KEY = 'northstar.theme';
+const STORAGE_KEY = 'mapp.theme';
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
 /** The preference this browser remembers; "system" when there is none or storage is blocked. */

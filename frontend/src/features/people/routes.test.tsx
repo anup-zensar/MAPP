@@ -28,7 +28,7 @@ const TEAMS: Record<string, MockHandler> = {
 const PRIYA = {
   id: 'U-1002',
   name: 'Priya Raman',
-  email: 'priya.raman@northstar.demo',
+  email: 'priya.raman@shell.com',
   jobTitle: 'Marketer',
   initials: 'PR',
   active: true,
@@ -59,7 +59,7 @@ describe('People, teams and profile routes (feature 003)', () => {
     renderApp(path, answers);
 
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
-    expect(document.title).toBe(`${title} · NorthStar`);
+    expect(document.title).toBe(`${title} · MAPP`);
     expectCurrentSection('Settings');
   });
 
@@ -70,7 +70,7 @@ describe('People, teams and profile routes (feature 003)', () => {
     renderApp(path, answers);
 
     expect(await screen.findByRole('dialog', { name: record })).toBeInTheDocument();
-    expect(document.title).toBe(`${title} · NorthStar`);
+    expect(document.title).toBe(`${title} · MAPP`);
   });
 
   it('opens My profile, which is not in the sidebar (FR-012 of 001, FR-021)', async () => {
@@ -79,7 +79,7 @@ describe('People, teams and profile routes (feature 003)', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'My profile' }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('My profile · NorthStar');
+    expect(document.title).toBe('My profile · MAPP');
     expect(await screen.findByText('USD — US dollar')).toBeInTheDocument();
   });
 

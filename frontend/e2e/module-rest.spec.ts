@@ -38,12 +38,12 @@ import {
 // Region (depends on Cluster; the cluster "Retail – India" has no region yet) and Spend category (line
 // item, three options); and the rate EUR 0.92 per USD.
 
-const ALEX = 'alex.morgan@northstar.demo';
-const PRIYA = 'priya.raman@northstar.demo';
-const DANIEL = 'daniel.okoro@northstar.demo';
-const MEI = 'mei.lin@northstar.demo';
-const CARLOS = 'carlos.mendes@northstar.demo';
-const SARA = 'sara.novak@northstar.demo';
+const ALEX = 'alex.morgan@shell.com';
+const PRIYA = 'priya.raman@shell.com';
+const DANIEL = 'daniel.okoro@shell.com';
+const MEI = 'mei.lin@shell.com';
+const CARLOS = 'carlos.mendes@shell.com';
+const SARA = 'sara.novak@shell.com';
 
 /** The year of the demo plans FY2026 Lubricants Europe and FY2026 Mobility China. */
 const SEED_YEAR = 2026;
@@ -332,9 +332,7 @@ test('My profile: the display currency and date format follow on the Plans list 
   await expect(page).toHaveURL(/\/profile$/);
   await expect(page.getByRole('heading', { name: 'My profile', level: 1 })).toBeVisible();
   await expect(
-    page.getByText(
-      'Your details, teams and access, and how NorthStar shows dates and money to you.',
-    ),
+    page.getByText('Your details, teams and access, and how MAPP shows dates and money to you.'),
   ).toBeVisible();
   const preferences = page.getByRole('region', { name: 'Display preferences' });
   await expect(preferences).toContainText('USD — US dollar');
@@ -691,7 +689,7 @@ test('All work: filter and search the grid, the calendar, budget and cost by mon
   await page.getByRole('menuitem', { name: 'CSV (.csv)' }).click();
   const download = await downloading;
   const fileName = download.suggestedFilename();
-  expect(fileName).toMatch(new RegExp(`^NorthStar All work – Grid – ${SEED_YEAR} – .+\\.csv$`));
+  expect(fileName).toMatch(new RegExp(`^MAPP All work – Grid – ${SEED_YEAR} – .+\\.csv$`));
   await expectToast(page, `Exported '${fileName}'`);
   const csv = await readFile(await download.path(), 'utf8');
   expect(csv).toContain('View,Grid');

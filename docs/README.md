@@ -1,4 +1,4 @@
-# NorthStar documentation
+# MAPP documentation
 
 | Folder | What is in it |
 |---|---|

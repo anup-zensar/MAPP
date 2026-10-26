@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/budgets"
-	"northstar/internal/history"
-	"northstar/internal/platform/apitest"
-	"northstar/internal/platform/money"
+	"mapp/internal/budgets"
+	"mapp/internal/history"
+	"mapp/internal/platform/apitest"
+	"mapp/internal/platform/money"
 )
 
 // The handler tests run the real API on the demo data (apitest), and every request and answer is checked
@@ -22,9 +22,9 @@ import (
 // BA-1002 → P-1002 FY2026 Mobility China (800,000.00); P-1003 FY2027 Global Brand has none (FR-040).
 
 const (
-	carlosEmail = "carlos.mendes@northstar.demo"
-	priyaEmail  = "priya.raman@northstar.demo"
-	meiEmail    = "mei.lin@northstar.demo"
+	carlosEmail = "carlos.mendes@shell.com"
+	priyaEmail  = "priya.raman@shell.com"
+	meiEmail    = "mei.lin@shell.com"
 )
 
 const (

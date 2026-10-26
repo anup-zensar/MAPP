@@ -3,8 +3,8 @@ package home_test
 import (
 	"testing"
 
-	"northstar/internal/home"
-	"northstar/internal/platform/apitest"
+	"mapp/internal/home"
+	"mapp/internal/platform/apitest"
 )
 
 // Home adds up several plans, so every plan's amounts are converted to USD at the current rate before they are

@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/financials"
-	"northstar/internal/platform/apitest"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/web"
+	"mapp/internal/financials"
+	"mapp/internal/platform/apitest"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/web"
 )
 
 // The contract tests of feature 015: every operation on the seed's demo data (data model §6), checked
@@ -20,8 +20,8 @@ import (
 
 // The demo people's e-mail addresses (demo-users-and-data.md).
 const (
-	alexsEmail  = "alex.morgan@northstar.demo"
-	priyasEmail = "priya.raman@northstar.demo"
+	alexsEmail  = "alex.morgan@shell.com"
+	priyasEmail = "priya.raman@shell.com"
 )
 
 // get sends GET path as client, checks that it answers 200 and decodes the answer into a T.
@@ -349,13 +349,13 @@ func TestImportsAndTemplate_Contract_FR008(t *testing.T) {
 	page := get[financials.ImportPage](t, alex, "/api/financials/imports")
 	want := financials.ImportCounts{Rows: 11, New: 11, NotLinked: 1}
 	if page.Total != 1 || page.Items[0].ID != "FIM-1001" || page.Items[0].Source != financials.SourceDemo ||
-		page.Items[0].Counts != want || page.Items[0].ImportedBy.Name != "NorthStar" {
+		page.Items[0].Counts != want || page.Items[0].ImportedBy.Name != "MAPP" {
 		t.Errorf("imports = %+v", page)
 	}
 
 	response := alex.Do(t, http.MethodGet, "/api/financials/imports/template", nil)
 	if response.Status != http.StatusOK || response.Header.Get("Content-Type") != "text/csv" ||
-		response.Header.Get("Content-Disposition") != `attachment; filename="northstar-gsap-extract-sample.csv"` {
+		response.Header.Get("Content-Disposition") != `attachment; filename="mapp-gsap-extract-sample.csv"` {
 		t.Fatalf("template = %d %v", response.Status, response.Header)
 	}
 	lines := strings.Split(strings.TrimSpace(string(response.Body)), "\r\n")

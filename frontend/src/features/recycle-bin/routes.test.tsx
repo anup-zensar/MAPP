@@ -11,7 +11,7 @@ describe('Recycle bin route (feature 011)', () => {
       await screen.findByRole('heading', { level: 1, name: 'Recycle bin' }),
     ).toBeInTheDocument();
     expect(screen.queryByText('Coming soon')).not.toBeInTheDocument();
-    expect(document.title).toBe('Recycle bin · NorthStar');
+    expect(document.title).toBe('Recycle bin · MAPP');
     expectCurrentSection('Recycle bin');
   });
 });

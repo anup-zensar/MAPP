@@ -26,7 +26,7 @@ summary cards, saved views and export to a spreadsheet or CSV file.
 - **Web app** — the `/all-work` page (`src/features/all-work/`): page header, summary cards, filter bar
   with chips, pill tabs, the tree grid with a pager, the column chooser, the Budget & cost and Calendar
   views, the Views menu and Export. Filters live in a per-person session store, so they survive moving
-  around NorthStar; a new visit starts from the default saved view.
+  around MAPP; a new visit starts from the default saved view.
 
 All work reads the records of features 002–008 through one adapter (`allwork.Source`), so the
 calculations those features own (statuses, completeness, balances, spreads, goals) are reused, never
@@ -273,7 +273,7 @@ settings and are not logged (spec assumptions, D-121).
   Plan budget, the periods, Other years, No dates, Total. Money headings carry the currency ("Planned
   cost (USD)"); a local amount column is followed by "Currency". A "Shown for context" column ("Yes") is
   added when the export holds context rows. Unassigned rows follow the screen's switch (`unassigned`).
-- **File name**: `NorthStar All work – <Grid|Calendar|Budget & cost> – <year> – <DD MMM YYYY>.<xlsx|csv>`
+- **File name**: `MAPP All work – <Grid|Calendar|Budget & cost> – <year> – <DD MMM YYYY>.<xlsx|csv>`
   in `filename*` (UTF-8) with an ASCII fallback using "-".
 
 ### Wiring (`internal/app/app.go`)
@@ -295,7 +295,7 @@ both and that Daniel Okoro has none.
 
 | Path | Page | Tab title |
 |---|---|---|
-| `/all-work` | `AllWorkPage` (replaces the Coming-soon page; `handle: { title: 'All work' }`) | All work · NorthStar |
+| `/all-work` | `AllWorkPage` (replaces the Coming-soon page; `handle: { title: 'All work' }`) | All work · MAPP |
 
 `navigation.ts`: `ALL_WORK` becomes a `NavItem` and leaves `COMING_SOON_SECTIONS` (its sentence is
 removed). The page reads `?year=…&owner=…&activityStatus=…` (the API's parameter names) once on arrival,
@@ -532,7 +532,7 @@ then the toast "Exported '<file name>'".
 3. **US4**: Budget & cost → Quarterly → footer total equals the Planned cost card (FR-022 – FR-024).
 4. **US6**: save "E2E view <unique>" as default, sign in again → applied; sign in as Daniel → not listed;
    delete it with Undo (FR-029 – FR-031).
-5. **US7**: Export → Spreadsheet → a download named "NorthStar All work – Grid – …xlsx" (FR-034).
+5. **US7**: Export → Spreadsheet → a download named "MAPP All work – Grid – …xlsx" (FR-034).
 6. axe (WCAG 2.2 AA) on the Grid, Calendar, Budget & cost, the column chooser and the Views menu; the Grid
    used with the keyboard alone (SC-008).
 

@@ -3,8 +3,8 @@ package people
 import (
 	"context"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
 )
 
 // The hooks of feature 014 (access control), set by internal/app over the access service before the API

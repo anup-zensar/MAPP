@@ -6,15 +6,15 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/campaigns"
-	"northstar/internal/history"
-	"northstar/internal/people"
-	"northstar/internal/plans"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/store"
-	"northstar/internal/settings"
-	"northstar/seed"
+	"mapp/internal/campaigns"
+	"mapp/internal/history"
+	"mapp/internal/people"
+	"mapp/internal/plans"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/store"
+	"mapp/internal/settings"
+	"mapp/seed"
 )
 
 // The campaign and initiative levels add to a plan's facts for feature 004 its campaigns, initiatives and

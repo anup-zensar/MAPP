@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // The tree of one year (data model §2–§4): the plans by name, each with its campaigns, initiatives,

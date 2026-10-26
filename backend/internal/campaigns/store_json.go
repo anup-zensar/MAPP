@@ -4,7 +4,7 @@ import (
 	"context"
 	"slices"
 
-	"northstar/internal/platform/store"
+	"mapp/internal/platform/store"
 )
 
 // The JSON store tables of this package.

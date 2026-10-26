@@ -20,7 +20,7 @@ documents, backend, frontend) before tasks were written; their findings are fold
   (`mux.HandleFunc("POST /api/auth/sign-in", h.signIn)`, `r.PathValue("folderId")`), `encoding/json`,
   `log/slog`, `crypto/rand`, `crypto/sha256`.
 - **Rationale**: since Go 1.22 the standard mux matches methods and path parameters, which is all
-  NorthStar needs. Zero framework code means one less thing for beginners to learn (constitution VII).
+  MAPP needs. Zero framework code means one less thing for beginners to learn (constitution VII).
 - **Alternatives**: chi, gin, echo (rejected: extra concepts and dependencies for no gain).
 
 ## R2. Go dependencies
@@ -72,7 +72,7 @@ documents, backend, frontend) before tasks were written; their findings are fold
     4. append the new activity-log lines and `Sync`;
     5. only then apply the overlay to memory.
     If anything fails once files start changing (from the first rename on), memory and disk may differ:
-    the store logs it, returns the error and refuses every later `Write` with "NorthStar could not save
+    the store logs it, returns the error and refuses every later `Write` with "MAPP could not save
     its data folder — restart the API." (reads keep working).
   - **Opening**: `Open(dir)` creates the folder when it is missing, treats a table without a file as
     empty, deletes leftover `*.tmp` files, cuts a half-written last line off an append-only file, and
@@ -137,7 +137,7 @@ documents, backend, frontend) before tasks were written; their findings are fold
 
 - **Decision**:
   - Sign-in creates a **session**: a random 32-byte token (`crypto/rand`, base64url) sent to the browser
-    in an **HttpOnly** cookie `northstar_session` (`Path=/`, `SameSite=Strict`, `Secure` when served over
+    in an **HttpOnly** cookie `mapp_session` (`Path=/`, `SameSite=Strict`, `Secure` when served over
     HTTPS, no expiry date so it lasts for the browser session). The server stores only the token's
     **SHA-256 hash** (table `sessions`), so a copied data file cannot be used to sign in.
   - **Every signed-in request** is resolved by `auth.Authenticate` inside **one `Write` transaction**: no
@@ -154,7 +154,7 @@ documents, backend, frontend) before tasks were written; their findings are fold
     Signing in deletes the session named by the request's cookie (if any) and every expired session.
   - Choosing a demo person on the page signs in with that person's e-mail and the demo password, so there
     is one sign-in endpoint for both ways (FR-003).
-  - The demo password is `northstar` (configurable with `DEMO_PASSWORD`, which may not be blank) and is
+  - The demo password is `mapp` (configurable with `DEMO_PASSWORD`, which may not be blank) and is
     returned by `GET /api/auth/demo-people` so the page can show it (FR-002, D-004).
   - **Demo mode** (`APP_ENV` = `local`, the default, or `development`): `GET /api/auth/demo-people` and
     `POST /api/auth/sign-in` exist. In any other environment they are not registered (`404`) and the
@@ -261,7 +261,7 @@ documents, backend, frontend) before tasks were written; their findings are fold
   when there are no field problems). Messages are plain language for users; codes are for the web app's
   logic. Unknown `/api` paths (and wrong methods) answer JSON `404 not_found`; panics answer
   `500 internal_error` ("Something went wrong on our side. Please try again.") and the details go only to
-  the server log. An unreadable request answers `400 bad_request` with "NorthStar couldn't read this
+  the server log. An unreadable request answers `400 bad_request` with "MAPP couldn't read this
   request. Reload the page and try again." and the decoder's detail goes only to the log.
 
 | Code | HTTP | When |
@@ -316,7 +316,7 @@ documents, backend, frontend) before tasks were written; their findings are fold
 
 - **Decision**: `backend/api/openapi.yaml` (OpenAPI **3.1.0**) is the single source of truth. Feature 001
   writes it from [contracts/openapi.yaml](contracts/openapi.yaml); each later feature adds its paths and
-  schemas. The small Go package `northstar/api` embeds the file (`//go:embed`) for the tests.
+  schemas. The small Go package `mapp/api` embeds the file (`//go:embed`) for the tests.
   - **Contract-test helper** `internal/platform/apitest`: builds the real application (`app.New`) on a
     temporary data folder (seeded with the demo people unless `WithoutSeed()` is given or the folder
     already has data — seeding arrives with the seed package in US1), with a fixed clock that tests can
@@ -387,7 +387,7 @@ allows. Chosen 18 Oct 2026 from the npm registry, checking that peer dependencie
   its own `Name.module.css` (CSS Modules, built into Vite). Class names are combined with a 5-line
   `cx()` helper. No colour literals outside `tokens.css`.
 - **Rationale**: CSS that reads like the design system, scoped per component, no utility-class soup and
-  no runtime styling library. The look of NorthStar's design system version 1 (white, `#f5f5f7` sidebar,
+  no runtime styling library. The look of MAPP's design system version 1 (white, `#f5f5f7` sidebar,
   16 px cards, blue eyebrow, brand gradient) is reproduced as tokens. Superseded for the look by design system v2 (Shell's design language, D-310–D-314).
 - **Alternatives**: Tailwind (long class strings are hard for beginners to read and review), Material UI
   (heavy and opinionated), CSS-in-JS (runtime cost, extra library).
@@ -417,7 +417,7 @@ allows. Chosen 18 Oct 2026 from the npm registry, checking that peer dependencie
   `/sign-in?` + `new URLSearchParams({ next: pathname + search })` and comes back after signing in
   (FR-005). Where to go after sign-in is decided in one place, `safeNext(raw)`: it parses `raw` with
   `new URL(raw, location.origin)` and returns `pathname + search + hash` only when the origin is
-  NorthStar's own and the path is not `/sign-in`, otherwise `/` — so the sign-in page cannot send people
+  MAPP's own and the path is not `/sign-in`, otherwise `/` — so the sign-in page cannot send people
   to another site. Both the redirect to the sign-in page and the navigation after signing in **replace**
   the history entry.
 - **Session**: `useSession()` reads `GET /api/me` (query `['session']`, `staleTime` 30 seconds, checked
@@ -442,7 +442,7 @@ allows. Chosen 18 Oct 2026 from the npm registry, checking that peer dependencie
     `session_expired`; those run the session-lost flow alone.
 - **Unreachable server**: a network failure, or a non-JSON `5xx` answer (the development proxy answers
   that way when the API is not running), becomes the error kind `unreachable`, shown everywhere as
-  "NorthStar can't reach its server right now. Check that it is running and try again." with
+  "MAPP can't reach its server right now. Check that it is running and try again." with
   **Try again** (edge case).
 - **openapi-fetch details**: the client is created with `baseUrl: window.location.origin` (an absolute
   address — the test environment cannot build requests from a relative one) and with
@@ -550,7 +550,7 @@ for dots, bars, borders and tints.
   as well as `syscall.EADDRINUSE`, and the API prints "Port <APP_PORT> is already in use — stop the other
   program or set APP_PORT."
 - Web app: Vite on `127.0.0.1:5173` with `/api` proxied to the API; `vite preview` on `127.0.0.1:4173`.
-  The proxy target can be changed with `NORTHSTAR_API_URL`. Ports are strict: if a port is busy the
+  The proxy target can be changed with `MAPP_API_URL`. Ports are strict: if a port is busy the
   program stops with a clear message instead of silently moving.
 - `APP_ENV`: `local` (default) or `development` enable demo sign-in and the developer pages;
   `production` disables them. Any other value stops the API with a clear message.
@@ -566,8 +566,8 @@ for dots, bars, borders and tints.
   - a folder that already has data, unless `-reset` is given;
   - to run when `APP_ENV=production` (the demo data never goes into production);
   - to run while an API answers `GET http://127.0.0.1:<APP_PORT>/api/health` within 1 second with
-    `200 OK` and NorthStar's health answer (`{"status": "ok", …}`; another program on the port does not
-    count, whatever it answers) — "The NorthStar API is running — stop it, then run the seed again." —
+    `200 OK` and MAPP's health answer (`{"status": "ok", …}`; another program on the port does not
+    count, whatever it answers) — "The MAPP API is running — stop it, then run the seed again." —
     because the running API would overwrite the new files from its memory;
   - an unexpected extra argument ("Unexpected argument '<arg>' — the options are -data <folder> and
     -reset.").

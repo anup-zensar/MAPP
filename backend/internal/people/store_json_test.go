@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/record"
-	"northstar/internal/platform/store"
+	"mapp/internal/people"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/record"
+	"mapp/internal/platform/store"
 )
 
 // Teams and memberships are saved in their own tables and read back exactly; a team's and a person's

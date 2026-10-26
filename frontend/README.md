@@ -1,6 +1,6 @@
-# frontend — NorthStar web app
+# frontend — MAPP web app
 
-The NorthStar web app: React 19 + TypeScript (strict), built with Vite (ADR-0002). It talks to the Go API
+The MAPP web app: React 19 + TypeScript (strict), built with Vite (ADR-0002). It talks to the Go API
 only through a small client whose types are generated from the API contract. Styles are plain CSS
 Modules on the design tokens of `src/styles/tokens.css`; how screens look is in
 [docs/product/design-system.md](../docs/product/design-system.md).
@@ -8,7 +8,7 @@ Modules on the design tokens of `src/styles/tokens.css`; how screens look is in
 ## Commands
 
 Run them in this folder (`frontend/`). Start the API first (see [backend/README.md](../backend/README.md)):
-the development server forwards `/api` to <http://127.0.0.1:8080> (or to `NORTHSTAR_API_URL`).
+the development server forwards `/api` to <http://127.0.0.1:8080> (or to `MAPP_API_URL`).
 
 | Command             | What it does                                                                         |
 | ------------------- | ------------------------------------------------------------------------------------ |
@@ -78,7 +78,7 @@ next to the code they test (`Name.test.tsx`).
 
 1. Create the page in `src/features/<area>/`, for example `PlansPage.tsx` with `PlansPage.module.css` and
    `PlansPage.test.tsx`. Build it from the shared components of `@/components`, and name the browser
-   tab with `usePageTitle('Plans')` ("Plans · NorthStar").
+   tab with `usePageTitle('Plans')` ("Plans · MAPP").
 2. Add its route in `src/app/router.tsx`. A page for signed-in people goes inside the `RequireSignIn`
    group and needs `handle: { title: 'Plans' }`: the tab shows that title while the session is checked.
 3. Add or change its sidebar item in `src/app/navigation.ts`. When a section is built, it gets its real
@@ -136,7 +136,7 @@ Component and page tests use Vitest, Testing Library and jsdom, always in UTC.
 
 ## Look and feel
 
-NorthStar looks like a Shell enterprise tool (product owner decisions of 20 October 2026; design system
+MAPP looks like a Shell enterprise tool (product owner decisions of 20 October 2026; design system
 §2–§5): a white 56 px top bar and a white 240 px sidebar on a light grey page (`#F5F5F5`), white cards,
 Shell yellow (`#FFC800`, dark text) for the one primary button of a page or dialog and for the "you are
 here" bar, red only for danger and errors, Jost for headings and Arial for text. Every colour, size and

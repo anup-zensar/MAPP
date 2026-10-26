@@ -74,9 +74,7 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
     expect(field('SWBS code')).toHaveTextContent('GB01-M26-0006');
     expect(field('HX key')).toHaveTextContent('HX1006');
     expect(field('Matched by')).toHaveTextContent('HX key HX1006');
-    expect(field('From import')).toHaveTextContent(
-      /^Demo data \(simulated GSAP\) on .+ by NorthStar$/,
-    );
+    expect(field('From import')).toHaveTextContent(/^Demo data \(simulated GSAP\) on .+ by MAPP$/);
 
     const path = within(panel).getByRole('navigation', { name: 'Linked to' });
     expect(

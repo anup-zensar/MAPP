@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"strings"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/rollup"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/rollup"
 )
 
 // The history kind of plans (data model §4). Features 005–007 register their kinds below it.

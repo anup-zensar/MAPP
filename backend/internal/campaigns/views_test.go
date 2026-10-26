@@ -6,9 +6,9 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // US4 — Budget, cost and progress in the plan tree.

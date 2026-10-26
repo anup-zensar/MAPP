@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/errs"
 )
 
 // Messages of the plan's validation table (API) for the query of a view.

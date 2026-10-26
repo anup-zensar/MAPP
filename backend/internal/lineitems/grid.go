@@ -3,7 +3,7 @@ package lineitems
 import (
 	"slices"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // Grid builds the spread grid of the activity f from the views of its line items, in creation order (data

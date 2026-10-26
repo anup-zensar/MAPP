@@ -7,7 +7,7 @@ import (
 	"slices"
 	"time"
 
-	"northstar/internal/platform/actor"
+	"mapp/internal/platform/actor"
 )
 
 // Kind describes one record type to history, so that history can log its changes, move a record of it to

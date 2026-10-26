@@ -68,7 +68,7 @@ describe('AllWorkPage (US1)', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'All work' })).toBeInTheDocument();
     expect(screen.getByText('Filter, compare and export all planned work.')).toBeInTheDocument();
-    expect(document.title).toBe('All work · NorthStar');
+    expect(document.title).toBe('All work · MAPP');
     // Nothing is created here: Views and Export are the page's only actions (FR-002).
     expect(await screen.findByRole('button', { name: 'Export' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Views' })).toBeInTheDocument();
@@ -123,7 +123,7 @@ describe('AllWorkPage (US1)', () => {
     });
 
     expect(screen.getAllByText('Loading…').length).toBeGreaterThan(0);
-    expect(await screen.findByRole('alert')).toHaveTextContent("NorthStar can't reach its server");
+    expect(await screen.findByRole('alert')).toHaveTextContent("MAPP can't reach its server");
     await user.click(screen.getByRole('button', { name: 'Try again' }));
 
     expect(await screen.findByRole('link', { name: 'Helix launch' })).toBeInTheDocument();
@@ -396,7 +396,7 @@ describe('AllWorkPage filters and search (US2)', () => {
     ]);
   });
 
-  it('keeps the filters and the search while the person moves around NorthStar (FR-009)', async () => {
+  it('keeps the filters and the search while the person moves around MAPP (FR-009)', async () => {
     const { api, user, router } = renderPage({
       'GET /api/all-work': (request) =>
         new URL(request.url).searchParams.has('activityStatus')

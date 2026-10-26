@@ -8,7 +8,7 @@ import styles from './TopBar.module.css';
 
 /**
  * The white 56 px bar across the top of every signed-in page (FR-010, Shell's header): the
- * NorthStar mark on the left — with Open menu before it on screens too narrow for the sidebar —
+ * MAPP mark on the left — with Open menu before it on screens too narrow for the sidebar —
  * and on the right the light/dark switch, the bell and the account menu. It stays at the top
  * while the page scrolls.
  */
@@ -18,7 +18,7 @@ export function TopBar() {
       <div className={styles.menu}>
         <NavDrawer />
       </div>
-      <Link to="/" className={styles.homeLink} aria-label="NorthStar home">
+      <Link to="/" className={styles.homeLink} aria-label="MAPP home">
         <Logo withWordmark />
       </Link>
       <div className={styles.end}>

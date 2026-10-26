@@ -6,11 +6,11 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/campaigns"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/campaigns"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // Messages of the plan's "Ready to submit panel" row.

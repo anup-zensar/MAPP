@@ -52,7 +52,7 @@ describe('Campaign and initiative routes (feature 005)', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Plan page', hidden: true }),
     ).toBeInTheDocument();
-    await waitFor(() => expect(document.title).toBe(`${tab} · NorthStar`));
+    await waitFor(() => expect(document.title).toBe(`${tab} · MAPP`));
   });
 
   it('places feature 006’s activities in the initiative panel', async () => {

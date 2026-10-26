@@ -26,7 +26,7 @@ describe('PlanCreatePage (US1)', () => {
     renderPage();
 
     expect(screen.getByRole('heading', { level: 1, name: 'New plan' })).toBeInTheDocument();
-    expect(document.title).toBe('New plan · NorthStar');
+    expect(document.title).toBe('New plan · MAPP');
     expect(await screen.findByRole('combobox', { name: /Year/ })).toHaveValue('2026');
     expect(screen.getByRole('combobox', { name: /Goal stage/ })).toHaveValue('inq');
   });
@@ -111,6 +111,6 @@ describe('PlanCreatePage (US1)', () => {
     renderPage({ 'GET /api/plan-defaults': { status: 500 } });
 
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent("NorthStar can't reach its server");
+    expect(screen.getByRole('alert')).toHaveTextContent("MAPP can't reach its server");
   });
 });

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
 )
 
 // importFile is an import request for a file named name holding text.

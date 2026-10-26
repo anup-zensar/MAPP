@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"testing"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/apitest"
+	"mapp/internal/people"
+	"mapp/internal/platform/apitest"
 )
 
 // The line manager through the API (017 FR-016): a new person is created with one, the list shows each

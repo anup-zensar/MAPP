@@ -50,7 +50,7 @@ export interface AllWorkSession {
  * The person's All work visit (FR-009, D-122): it starts from the person's default saved view,
  * else the standard view — the current year with the remembered columns — or from the filters in
  * the address, which it then removes; afterwards it keeps the state while the person moves around
- * NorthStar.
+ * MAPP.
  */
 export function useAllWorkSession(): AllWorkSession {
   const user = useCurrentUser();

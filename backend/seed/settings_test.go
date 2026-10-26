@@ -4,10 +4,10 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // The Settings seed of 002 data model §13: 5 currencies with their rates, 6 activity types with their
@@ -228,7 +228,7 @@ func TestLoad_DependentOptions_FR022(t *testing.T) {
 	}
 }
 
-// The simulated GSAP rate history of 016 data-model §8: one import RI-1001 by NorthStar and, for each currency
+// The simulated GSAP rate history of 016 data-model §8: one import RI-1001 by MAPP and, for each currency
 // but USD, a GSAP-imported rate for each of the 30 days before the seed day, swinging −0.6 % … +0.6 % around the
 // seeded rate, and the seeded rate on the seed day — so the current rates stay the seeded ones (D-274).
 func TestLoad_RateHistory_016_D274(t *testing.T) {

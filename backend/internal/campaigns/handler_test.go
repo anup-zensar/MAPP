@@ -6,14 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/apitest"
+	"mapp/internal/platform/apitest"
 )
 
 // The demo people who sign in.
 const (
-	priyasEmail  = "priya.raman@northstar.demo"
-	danielsEmail = "daniel.okoro@northstar.demo"
-	meiLinsEmail = "mei.lin@northstar.demo"
+	priyasEmail  = "priya.raman@shell.com"
+	danielsEmail = "daniel.okoro@shell.com"
+	meiLinsEmail = "mei.lin@shell.com"
 )
 
 // The answers of the "no longer exists" cases (plan's message table).

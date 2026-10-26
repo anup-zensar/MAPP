@@ -3,8 +3,8 @@ package campaigns
 import (
 	"testing"
 
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // gbp returns the GBP amount text as money.

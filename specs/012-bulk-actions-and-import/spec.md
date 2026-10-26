@@ -47,11 +47,11 @@ code, and check each record, its history and the results summary.
 ### User Story 2 - Import activities from a template (Priority: P1)
 
 Mei has planned 60 activities for "FY2026 Mobility China" in a spreadsheet. She gets a template made
-for the plan, fills it in and uploads it. NorthStar lists every problem at once — "Row 14 · End date ·
+for the plan, fills it in and uploads it. MAPP lists every problem at once — "Row 14 · End date ·
 31 Feb 2026 · Not a real date" — and she imports the 57 ready rows, with **Undo import** if needed.
 
 **Why this priority**: Shell's users already plan in spreadsheets (PRISM); import turns that work into
-NorthStar records instead of retyping it. Hive9 offers the same import (FA §B8).
+MAPP records instead of retyping it. Hive9 offers the same import (FA §B8).
 
 **Independent Test**: Download the template for a seeded plan, fill 10 rows (2 deliberately wrong),
 upload, import the 8 valid rows, find them in the plan tree, then undo the import.

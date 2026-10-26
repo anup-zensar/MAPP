@@ -5,16 +5,16 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/activities"
-	"northstar/internal/history"
-	"northstar/internal/platform/apitest"
+	"mapp/internal/activities"
+	"mapp/internal/history"
+	"mapp/internal/platform/apitest"
 )
 
 // The contract tests of the activity operations: the real API on the demo data, every request and answer
 // checked against backend/api/openapi.yaml by apitest. They check the parts of each answer the operation is
 // about; the rules themselves are proven by the service tests.
 
-const priyasEmail = "priya.raman@northstar.demo"
+const priyasEmail = "priya.raman@shell.com"
 
 // The not-found answers.
 const (
@@ -138,7 +138,7 @@ func TestEditActivityForm_Contract_FR013(t *testing.T) {
 func TestUpdateActivity_Contract_FR026(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
-	daniel := server.SignIn(t, "daniel.okoro@northstar.demo")
+	daniel := server.SignIn(t, "daniel.okoro@shell.com")
 	var a1004 activities.View
 	priya.Do(t, http.MethodGet, "/api/activities/A-1004", nil).Decode(t, &a1004)
 	form := formOf(a1004)

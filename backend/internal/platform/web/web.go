@@ -31,12 +31,12 @@ import (
 	"strings"
 	"time"
 
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/errs"
 )
 
 // Messages of the plan's "User-visible messages" table.
 const (
-	unreadableMessage = "NorthStar couldn't read this request. Reload the page and try again."
+	unreadableMessage = "MAPP couldn't read this request. Reload the page and try again."
 	otherSiteMessage  = "This request came from another site and was refused."
 	notFoundMessage   = "This page or record doesn't exist."
 )

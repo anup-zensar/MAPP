@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
 )
 
 // The rule tests build their years by hand, dated 18 Oct 2026 (plan "Tests"), and read them through an

@@ -3,7 +3,7 @@ package plans
 import (
 	"context"
 
-	"northstar/internal/platform/store"
+	"mapp/internal/platform/store"
 )
 
 // plansTable is the JSON store table of this package.

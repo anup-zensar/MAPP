@@ -4,10 +4,10 @@ import (
 	"log/slog"
 	"net/http"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/web"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/web"
 )
 
 // noRuleMessage refuses an operation that has no access rule: a programming mistake that a test rules out,

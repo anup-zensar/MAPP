@@ -3,9 +3,9 @@ package auth
 import (
 	"net/http"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/web"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/web"
 )
 
 // RequireSignIn wraps the handler of every route that needs a signed-in person (FR-005, FR-007). It finds

@@ -7,11 +7,11 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/record"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/record"
 )
 
 // addOptions stores n options "<prefix><number>" (numbered from 1, four digits) for the attribute

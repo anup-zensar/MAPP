@@ -1,4 +1,4 @@
-// Command seed loads NorthStar's demo data into an empty data folder (FR-028, research R22). From the
+// Command seed loads MAPP's demo data into an empty data folder (FR-028, research R22). From the
 // backend folder, with the API stopped:
 //
 //	go run ./cmd/seed                   # into DATA_DIR, or the folder "data"
@@ -22,10 +22,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"northstar/internal/app"
-	"northstar/internal/platform/clock"
-	"northstar/internal/platform/store"
-	"northstar/seed"
+	"mapp/internal/app"
+	"mapp/internal/platform/clock"
+	"mapp/internal/platform/store"
+	"mapp/seed"
 )
 
 func main() {
@@ -57,7 +57,7 @@ func run(args []string, getenv func(string) string, out io.Writer) error {
 		return errors.New("The demo data is never loaded when APP_ENV is production.")
 	}
 	if apiIsRunning(cfg.Port) {
-		return errors.New("The NorthStar API is running — stop it, then run the seed again.")
+		return errors.New("The MAPP API is running — stop it, then run the seed again.")
 	}
 	if *reset {
 		if err := deleteData(*dataDir); err != nil {
@@ -80,7 +80,7 @@ func run(args []string, getenv func(string) string, out io.Writer) error {
 	return nil
 }
 
-// apiIsRunning reports whether a NorthStar API answers GET /api/health on port within one second: 200 OK
+// apiIsRunning reports whether a MAPP API answers GET /api/health on port within one second: 200 OK
 // with its health answer, {"status": "ok", ...}. Another program that happens to use the port does not
 // count, whatever it answers — an error, or a web page with 200 OK.
 func apiIsRunning(port int) bool {

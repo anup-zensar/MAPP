@@ -3,7 +3,7 @@ package allwork
 import (
 	"testing"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // allColumns asks for every column of the Standard group.

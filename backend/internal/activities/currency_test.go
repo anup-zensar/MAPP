@@ -3,8 +3,8 @@ package activities_test
 import (
 	"testing"
 
-	"northstar/internal/activities"
-	"northstar/internal/platform/money"
+	"mapp/internal/activities"
+	"mapp/internal/platform/money"
 )
 
 // Activities of a plan planned in another currency than USD (016 US2) on the demo data: P-1004 "FY2027

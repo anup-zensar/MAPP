@@ -59,7 +59,7 @@ const KIND_BY_CODE: Record<ErrorBody['code'], ApiErrorKind> = {
 };
 
 const UNREACHABLE =
-  "NorthStar can't reach its server right now. Check that it is running and try again.";
+  "MAPP can't reach its server right now. Check that it is running and try again.";
 const SOMETHING_WENT_WRONG = 'Something went wrong. Please try again.';
 
 /** Everything an ApiError carries besides its kind; all optional. */

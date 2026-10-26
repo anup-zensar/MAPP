@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // Split activity (feature 016, FR-026 – FR-030, D-267) moves whole line items from one activity to another of

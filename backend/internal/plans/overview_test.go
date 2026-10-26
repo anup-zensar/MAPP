@@ -4,10 +4,10 @@ import (
 	"reflect"
 	"testing"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/people"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // Feature 009's Home reads every plan with the figures, completeness and contents of the plan page, in US

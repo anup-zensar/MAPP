@@ -3,7 +3,7 @@ package approvals
 import (
 	"testing"
 
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/errs"
 )
 
 // Undo puts a deleted workflow back exactly; when another workflow has meanwhile taken its name, ignoring

@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/activities"
-	"northstar/internal/history"
-	"northstar/internal/platform/apitest"
-	"northstar/internal/platform/errs"
+	"mapp/internal/activities"
+	"mapp/internal/history"
+	"mapp/internal/platform/apitest"
+	"mapp/internal/platform/errs"
 )
 
 // Split activity (016 US4) on the demo data: A-1011 "UK launch event" of the GBP plan P-1004 in the

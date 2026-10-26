@@ -3,11 +3,11 @@ package activities
 import (
 	"context"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/people"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // derived are the values worked out from a stored activity when it is read (D-041).

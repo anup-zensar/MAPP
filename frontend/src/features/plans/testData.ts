@@ -47,7 +47,7 @@ function person(id: string, name: string, initials: string, teams: TeamRef[]): P
   return {
     id,
     name,
-    email: `${name.toLowerCase().replace(' ', '.')}@northstar.demo`,
+    email: `${name.toLowerCase().replace(' ', '.')}@shell.com`,
     jobTitle: 'Marketer',
     initials,
     active: true,

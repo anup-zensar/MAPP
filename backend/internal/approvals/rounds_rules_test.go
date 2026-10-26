@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
 )
 
 // standardFlow is the fixture's copy of the seeded "Standard marketing approval" (017 data-model §13).
@@ -116,7 +116,7 @@ func TestSubmission_OutcomesAndProblems_FR012_FR013_FR036(t *testing.T) {
 }
 
 // Submitting evaluates the rules once and keeps the outcome in the round with the values used and the
-// workflow's timings (017 FR-010); levels not needed get a history entry by NorthStar with the rule; the
+// workflow's timings (017 FR-010); levels not needed get a history entry by MAPP with the rule; the
 // round waits at the first level that needs a decision, whose approvers and their current delegates are
 // told (FR-014, FR-032); after it, the round moves to the next level that needs a decision.
 func TestSubmit_PartlyAutomatic_FR010_FR014(t *testing.T) {
@@ -146,7 +146,7 @@ func TestSubmit_PartlyAutomatic_FR010_FR014(t *testing.T) {
 	entries := f.actions(t, "A-1009")
 	if len(entries) != 2 || entries[0].Action != ActionSubmitted || entries[0].Level != 1 || entries[1].Action != ActionSkipped ||
 		entries[1].Level != 2 || entries[1].Actor != actor.System || entries[1].Rule != "only when planned cost is at least $100,000.00" {
-		t.Errorf("history = %+v, want submitted at level 1, then level 2 not needed by NorthStar", entries)
+		t.Errorf("history = %+v, want submitted at level 1, then level 2 not needed by MAPP", entries)
 	}
 	assertLog(t, f, "A-1009", []string{
 		"Mei Lin submitted activity 'Fleet card launch' [created → submitted] (Round 1 · Standard marketing approval · " +
@@ -170,8 +170,8 @@ func TestSubmit_PartlyAutomatic_FR010_FR014(t *testing.T) {
 }
 
 // When no level needs a decision the activity is Approved at submission (017 FR-014, 017-P4): the round ends
-// approved and approved automatically, the history has NorthStar's entries per level, the log has the
-// submitter's "submitted" and NorthStar's "approved automatically", and the owner is told only when someone
+// approved and approved automatically, the history has MAPP's entries per level, the log has the
+// submitter's "submitted" and MAPP's "approved automatically", and the owner is told only when someone
 // else submitted.
 func TestSubmit_ApprovedAtSubmission_FR014_017P4(t *testing.T) {
 	f := newFixture(t)
@@ -194,20 +194,20 @@ func TestSubmit_ApprovedAtSubmission_FR014_017P4(t *testing.T) {
 	for _, e := range f.actions(t, "A-1001") {
 		got = append(got, string(e.Action)+" "+e.Actor.Name+" "+e.Rule)
 	}
-	want := []string{"submitted Mei Lin ", "autoApproved NorthStar planned cost is below $10,000.00",
-		"skipped NorthStar only when planned cost is at least $100,000.00", "skipped NorthStar only when business unit is Mobility"}
+	want := []string{"submitted Mei Lin ", "autoApproved MAPP planned cost is below $10,000.00",
+		"skipped MAPP only when planned cost is at least $100,000.00", "skipped MAPP only when business unit is Mobility"}
 	if !slices.Equal(got, want) {
 		t.Errorf("history = %q, want %q", got, want)
 	}
 	assertLog(t, f, "A-1001", []string{
-		"NorthStar approved automatically activity 'Launch film' [submitted → approved] (Round 1 · level 1 approved automatically " +
+		"MAPP approved automatically activity 'Launch film' [submitted → approved] (Round 1 · level 1 approved automatically " +
 			"(planned cost is below $10,000.00); level 2 not needed (only when planned cost is at least $100,000.00); " +
 			"level 3 not needed (only when business unit is Mobility))",
 		"Mei Lin submitted activity 'Launch film' [created → submitted] (Round 1 · Standard marketing approval)",
 	})
 	assertNotified(t, f, priya, "autoApproved: Activity approved automatically — 'Launch film' (A-1001) was approved automatically: planned cost is below $10,000.00")
 	if n := f.notifications(t, priya.ID); n[0].Actor != actor.System {
-		t.Errorf("notification by %v, want NorthStar", n[0].Actor)
+		t.Errorf("notification by %v, want MAPP", n[0].Actor)
 	}
 	if states := chainStates(approval.Rounds[0]); states != "L1 autoApproved, L2 skipped, L3 skipped" {
 		t.Errorf("chain = %s", states)
@@ -217,7 +217,7 @@ func TestSubmit_ApprovedAtSubmission_FR014_017P4(t *testing.T) {
 	f.putWorkflow(t, "WF-1004", "Mobility only", nil, nil, Level{ApproverIDs: []string{daniel.ID}, AppliesWhen: &Condition{BusinessUnitIDs: []string{mobilityUnit}}})
 	f.addActivity(t, "A-1003", "Billboard winter wave", priya.ID, "WF-1004")
 	f.submit(t, mei, "A-1003", "")
-	if log := f.log(t, "A-1003"); logLine(log[0]) != "NorthStar approved automatically activity 'Billboard winter wave' [submitted → approved] (Round 1 · no level applies)" {
+	if log := f.log(t, "A-1003"); logLine(log[0]) != "MAPP approved automatically activity 'Billboard winter wave' [submitted → approved] (Round 1 · no level applies)" {
 		t.Errorf("log = %s", logLine(log[0]))
 	}
 }
@@ -418,7 +418,7 @@ func TestApproval_ChainRuleStates_FR033(t *testing.T) {
 }
 
 // The approval history shows the new entries and fields (017 FR-034): Not needed and Approved
-// automatically by NorthStar with their rule, Reminder sent and Escalated with the days waited and the
+// automatically by MAPP with their rule, Reminder sent and Escalated with the days waited and the
 // backup approver, each decision's capacity.
 func TestApproval_HistoryRuleEntries_FR034(t *testing.T) {
 	f := newFixture(t)
@@ -455,10 +455,10 @@ func TestApproval_HistoryRuleEntries_FR034(t *testing.T) {
 	}
 	want := []string{
 		"approved L3 Carlos Mendes as backup",
-		"escalated L3 NorthStar waited 5 days to Carlos Mendes",
-		"reminded L3 NorthStar waited 4 days",
-		"skipped L2 NorthStar rule only when planned cost is at least $100,000.00",
-		"autoApproved L1 NorthStar rule planned cost is below $10,000.00",
+		"escalated L3 MAPP waited 5 days to Carlos Mendes",
+		"reminded L3 MAPP waited 4 days",
+		"skipped L2 MAPP rule only when planned cost is at least $100,000.00",
+		"autoApproved L1 MAPP rule planned cost is below $10,000.00",
 		"submitted L3 Mei Lin",
 	}
 	if !slices.Equal(got, want) {

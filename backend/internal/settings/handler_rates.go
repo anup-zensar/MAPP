@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/web"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/web"
 )
 
 // The handlers of feature 016's exchange rates (FR-001 – FR-009) and Field help (FR-045, FR-046).

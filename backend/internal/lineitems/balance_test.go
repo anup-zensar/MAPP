@@ -3,7 +3,7 @@ package lineitems
 import (
 	"testing"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // rate returns the rate of a text known to be right, such as "0.92".

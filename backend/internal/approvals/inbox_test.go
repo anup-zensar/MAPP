@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/people"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // inboxIDs returns the activity ids of a's rows in tab, in order, and stops the test when Inbox fails.

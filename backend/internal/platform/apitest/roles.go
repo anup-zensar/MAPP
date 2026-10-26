@@ -7,12 +7,12 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/access"
-	"northstar/internal/people"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/record"
+	"mapp/internal/access"
+	"mapp/internal/people"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/record"
 )
 
 // GrantRole gives the person with e-mail email the built-in role builtIn ("administrator", "globalPlanner",
@@ -22,8 +22,8 @@ import (
 // person — so a test that is not about access control gives its persona the role its steps need (feature
 // 014 plan "Tests", D-228):
 //
-//	server.GrantRole(t, "priya.raman@northstar.demo", "administrator", "all")
-//	server.GrantRole(t, "sara.novak@northstar.demo", "planner", "teams", "Mobility China")
+//	server.GrantRole(t, "priya.raman@shell.com", "administrator", "all")
+//	server.GrantRole(t, "sara.novak@shell.com", "planner", "teams", "Mobility China")
 //
 // The role applies to the person's next request. It stops the test when the person, the role or a team is
 // unknown.

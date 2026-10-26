@@ -18,8 +18,8 @@ import {
 // demo history (seed/history.go) gives the log more than one page of entries. The whole log is read as
 // Alex Morgan, whose Administrator role sees every entry; Mei's own log holds only her market's (014).
 
-const MEI = 'mei.lin@northstar.demo';
-const ALEX = 'alex.morgan@northstar.demo';
+const MEI = 'mei.lin@shell.com';
+const ALEX = 'alex.morgan@shell.com';
 
 /** One entry of a list of log entries, found by the words of its sentence. */
 function entry(scope: Page | Locator, sentence: string): Locator {
@@ -56,7 +56,7 @@ test('US2: the cards, filters, chips, details and record links of the activity l
   await signInAs(page, ALEX);
   await page.goto('/activity-log');
   await expect(page.getByRole('heading', { level: 1, name: 'Activity log' })).toBeVisible();
-  await expect(page).toHaveTitle('Activity log · NorthStar');
+  await expect(page).toHaveTitle('Activity log · MAPP');
   await expect(
     page.getByText("See who changed what, and when. Entries can't be edited or removed."),
   ).toBeVisible();

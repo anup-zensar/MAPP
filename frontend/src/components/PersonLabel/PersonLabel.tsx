@@ -21,7 +21,7 @@ export interface PersonLabelProps {
 }
 
 /**
- * A person wherever NorthStar names one (feature 003, SC-003): avatar, full name, " (you)" and
+ * A person wherever MAPP names one (feature 003, SC-003): avatar, full name, " (you)" and
  * " (inactive)" written out — never shown by colour alone — and an optional second line.
  */
 export function PersonLabel({ person, you = false, detail, size = 'sm' }: PersonLabelProps) {

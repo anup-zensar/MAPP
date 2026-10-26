@@ -6,11 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/record"
-	"northstar/internal/rollup"
-	"northstar/internal/settings"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/record"
+	"mapp/internal/rollup"
+	"mapp/internal/settings"
 )
 
 // US1 — Add campaigns to a plan.

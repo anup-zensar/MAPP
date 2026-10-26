@@ -3,7 +3,7 @@ package financials
 import (
 	"testing"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // The figures of data model §5 (FR-010 – FR-014).

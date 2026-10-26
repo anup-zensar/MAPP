@@ -4,12 +4,12 @@ import (
 	"cmp"
 	"context"
 
-	"northstar/internal/campaigns"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/money"
-	"northstar/internal/rollup"
-	"northstar/internal/settings"
+	"mapp/internal/campaigns"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
+	"mapp/internal/rollup"
+	"mapp/internal/settings"
 )
 
 // demoCampaign is one campaign of 005 data model §9 with its initiatives. Dates are YYYY-MM-DD; "" means
@@ -132,7 +132,7 @@ func (d *demo) addCampaigns(ctx context.Context) error {
 }
 
 // initiativeOf builds the stored initiative i of the campaign campaignID, without its ID, looking up its
-// owner by name. NorthStar creates it at the seed time.
+// owner by name. MAPP creates it at the seed time.
 func (d *demo) initiativeOf(i demoInitiative, campaignID, currency string) (campaigns.Initiative, error) {
 	ownerID, err := find(d.people, "person", i.owner)
 	if err != nil {

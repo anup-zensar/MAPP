@@ -7,8 +7,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // The limits of a global budget (014 data model §1.4).

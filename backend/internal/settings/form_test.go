@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
 )
 
 // newFormFixture stores a small form of every kind of attribute, like the seed's (data model §13): the

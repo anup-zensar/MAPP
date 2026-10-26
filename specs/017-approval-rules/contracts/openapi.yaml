@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: NorthStar API — feature 017 Approval rules (fragment)
+  title: MAPP API — feature 017 Approval rules (fragment)
   version: 0.17.0
   license:
     name: Proprietary - internal use only
@@ -224,7 +224,7 @@ paths:
       tags: [Approvals]
       operationId: runApprovalEscalations
       summary: Send due reminders and escalations now (needs workflows.manage; stands in for the nightly job) (FR-026 – FR-028)
-      description: Safe to call any number of times; each level gets at most one reminder and one escalation. Events are recorded as made by NorthStar.
+      description: Safe to call any number of times; each level gets at most one reminder and one escalation. Events are recorded as made by MAPP.
       responses:
         "200":
           description: What was sent, and what could not be escalated.

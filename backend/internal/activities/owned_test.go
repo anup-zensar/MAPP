@@ -5,9 +5,9 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/activities"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/activities"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // Feature 009's Home reads the activities a person owns, in every plan, as their pages show them: path,

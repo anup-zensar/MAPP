@@ -8,9 +8,9 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/people"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // fallbackColour is the colour of a team that no longer resolves: a neutral one of the palette.

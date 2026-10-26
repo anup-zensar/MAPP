@@ -1,4 +1,4 @@
-// Package date is NorthStar's calendar date: a day without a time or a time zone, written "2026-03-01" in
+// Package date is MAPP's calendar date: a day without a time or a time zone, written "2026-03-01" in
 // JSON (feature 005's design, decision D-198; used by features 004–012). Campaign, initiative and activity
 // dates, plan years and "today" are dates; moments such as createdAt stay time.Time.
 package date

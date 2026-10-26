@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"northstar/internal/platform/apitest"
+	"mapp/internal/platform/apitest"
 )
 
 // pathStep is one step of a recycle-bin entry's path.
@@ -38,7 +38,7 @@ var globalBrand = pathStep{Type: "plan", ID: "P-1003", Name: "FY2027 Global Bran
 // Undo; the campaign is gone from the plan until Undo puts it back as it was (FR-028, FR-029).
 func TestDeleteCampaign_ContractAndUndo(t *testing.T) {
 	server := apitest.New(t)
-	alex := server.SignIn(t, "alex.morgan@northstar.demo")
+	alex := server.SignIn(t, "alex.morgan@shell.com")
 	var before campaign
 	alex.Do(t, http.MethodGet, "/api/campaigns/C-1004", nil).Decode(t, &before)
 
@@ -74,7 +74,7 @@ func TestDeleteCampaign_ContractAndUndo(t *testing.T) {
 // (FR-028).
 func TestDeleteInitiative_Contract(t *testing.T) {
 	server := apitest.New(t)
-	alex := server.SignIn(t, "alex.morgan@northstar.demo")
+	alex := server.SignIn(t, "alex.morgan@shell.com")
 
 	response := alex.Do(t, http.MethodDelete, "/api/initiatives/I-1007", nil)
 

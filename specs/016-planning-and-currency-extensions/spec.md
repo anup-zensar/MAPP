@@ -37,7 +37,7 @@ D-079, D-141, D-207, D-213, D-220 · Questions Q-009, Q-012, Q-013, Q-016, Q-017
 An administrator opens **Settings › Currencies › EUR** and sees the current rate with its date and source
 ("1 USD = 0.92 EUR · rate of 19 Oct 2026 · GSAP import") and a **Rate history**. Each day's rates arrive as
 the GSAP daily rate extract; until GSAP can deliver them automatically the administrator imports the file
-(the import is *simulated*: NorthStar reads the file, it connects to no system). A rate dated in the future
+(the import is *simulated*: MAPP reads the file, it connects to no system). A rate dated in the future
 (for example next year's opening rate) becomes current on its date by itself.
 
 **Why this priority**: Every other currency feature reads these rates; BUS.BUD.050 asks for rate management
@@ -64,7 +64,7 @@ check it is not used before its date.
    confirmation states the line items and the plans planned in EUR whose USD values change (before → after)
    and that no activity goes back for approval (002 FR-030).
 5. **Given** EUR has only one rate dated today or earlier, **When** the administrator deletes it, **Then**
-   NorthStar refuses: "EUR needs a rate dated today or earlier." Other rates move to the recycle bin with
+   MAPP refuses: "EUR needs a rate dated today or earlier." Other rates move to the recycle bin with
    **Undo**.
 
 ---
@@ -289,7 +289,7 @@ and see it on the next form; reset it.
   *(BUS.BUD.050; amends 002 FR-028)*
 - **FR-002**: A currency's **current rate** MUST be its rate with the latest date on or before today (the API's
   calendar date in UTC, D-091); a future-dated rate MUST become current on its date without anyone saving
-  anything. Every conversion in NorthStar MUST use the current rate. *(BUS.BUD.050; amends 002 FR-029,
+  anything. Every conversion in MAPP MUST use the current rate. *(BUS.BUD.050; amends 002 FR-029,
   007 FR-013; reopens D-027)*
 - **FR-003**: The currency's details MUST show the current rate both ways with its date and source, and a
   **Rate history** (newest first: date, rate, inverse, source, recorded by and when, "Current" on the rate in
@@ -299,7 +299,7 @@ and see it on the next form; reset it.
   (default today). *(BUS.BUD.050; amends 002 FR-028, US4)*
 - **FR-004**: Changing the rate in the currency form MUST set today's rate (add today's row or replace it).
   *(BUS.BUD.050; amends 002 FR-028)*
-- **FR-005**: Before saving a rate that changes a currency's current rate NorthStar MUST state the impact of
+- **FR-005**: Before saving a rate that changes a currency's current rate MAPP MUST state the impact of
   002 FR-030 and also the plans planned in that currency: "2 plans are planned in EUR. Their EUR amounts stay
   the same; their USD values change (1,304,347.83 → 1,263,157.89 USD)." No activity goes back for approval.
   *(BUS.BUD.050; amends 002 FR-030)*
@@ -313,9 +313,9 @@ and see it on the next form; reset it.
 - **FR-007**: Every import MUST be recorded (file name, who, when, first and last rate date, counts) and shown
   under **Recent imports** (last 10); imported rates show "GSAP import" and the file name as source; the
   import writes one activity-log entry. *(BUS.BUD.050; new)*
-- **FR-008**: Rates MUST reach NorthStar through one replaceable **rate feed** seam, so that an automatic daily
+- **FR-008**: Rates MUST reach MAPP through one replaceable **rate feed** seam, so that an automatic daily
   GSAP feed can later deliver rates under the same rules without changing screens or calculations. In this
-  phase the only feed is the file import; NorthStar connects to no external system. *(BUS.BUD.050; new;
+  phase the only feed is the file import; MAPP connects to no external system. *(BUS.BUD.050; new;
   reopens D-008 for rates only)*
 - **FR-009**: Every amount converted from another currency MUST say which rates it used: the converted amount
   (and its ⓘ) shows on hover and focus "1 USD = 0.79 GBP · rate of 19 Oct 2026 · GSAP import" for each
@@ -477,7 +477,7 @@ and see it on the next form; reset it.
 
 - **FR-045**: Settings MUST have a **Field help** section listing every built-in field and calculated value of
   the plan, campaign, initiative, activity and line-item levels and of the planning pages (the catalogue of
-  data-model §6), grouped by level, searchable, each with its help text (a default supplied by NorthStar) and a
+  data-model §6), grouped by level, searchable, each with its help text (a default supplied by MAPP) and a
   "Default" or "Edited" chip. Shell attributes' help stays on each attribute's page, linked from here.
   *(BUS.UX.020; amends 002 FR-001)*
 - **FR-046**: An administrator MUST be able to edit a help text (0–300 characters, plain text) and **Reset to
@@ -571,7 +571,7 @@ field help, split) with their own verbs (D-167); exchange rates are restorable f
 
 - **Exchange rate**: a currency's rate per 1 USD on a date, its source (entered by hand or GSAP import, with
   the import) and who recorded it; the latest on or before today is the current rate.
-- **Rate import**: one GSAP rate file read into NorthStar — file name, feed, who, when, rate dates, counts.
+- **Rate import**: one GSAP rate file read into MAPP — file name, feed, who, when, rate dates, counts.
 - **Plan currency** and **Plan type**: two new fields of the plan.
 - **Budget phasing**: a plan's, campaign's or initiative's budget by month of the plan's year (method and,
   for Custom, the months).
@@ -623,7 +623,7 @@ Each default is reversible and is a decision of [plan.md](plan.md) (D-258–D-27
 | 12 | Multi-year means views across plans: a year range on Plans and up to 5 years in All work. | Q-016 |
 | 13 | Budgets are reported by category (filters, Breakdown), not set per category. Multiple choices count in each group; % splits divide. | Q-017 |
 | 14 | Level names stay fixed (constitution II); hierarchies are modelled with dependent Shell attributes. | — |
-| 15 | Field help texts are plain text up to 300 characters, defaults written by NorthStar; empty hides the ⓘ. | — |
+| 15 | Field help texts are plain text up to 300 characters, defaults written by MAPP; empty hides the ⓘ. | — |
 
 ## Assumptions
 

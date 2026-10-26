@@ -6,12 +6,12 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/clock"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/store"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/clock"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/store"
 )
 
 // Person is a person as access needs them, read from feature 003 through the Directory.

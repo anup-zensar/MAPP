@@ -5,11 +5,11 @@ import (
 	"context"
 	"fmt"
 
-	"northstar/internal/history"
-	"northstar/internal/people"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/history"
+	"mapp/internal/people"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // Global-budget allocations (feature 014, BUS.BUD.040, D-235). A global planner shares a global budget out to

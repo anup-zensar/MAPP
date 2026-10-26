@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"northstar/internal/activities"
-	"northstar/internal/approvals"
-	"northstar/internal/platform/ids"
-	"northstar/internal/settings"
+	"mapp/internal/activities"
+	"mapp/internal/approvals"
+	"mapp/internal/platform/ids"
+	"mapp/internal/settings"
 )
 
 // demoWorkflows are the two approval workflows, WF-1001 and WF-1002, which feature 006 seeds in feature
@@ -169,7 +169,7 @@ func (d *demo) addActivities(ctx context.Context) error {
 }
 
 // activityOf builds the stored activity a of the initiative initiativeID, without its ID, looking up its
-// activity type, owner and approval workflow by name. NorthStar creates it at the seed time.
+// activity type, owner and approval workflow by name. MAPP creates it at the seed time.
 func (d *demo) activityOf(a demoActivity, initiativeID string) (activities.Activity, error) {
 	var r resolver
 	activity := activities.Activity{

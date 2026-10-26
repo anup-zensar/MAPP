@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"time"
 
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
 )
 
 // kind is what a cell holds.

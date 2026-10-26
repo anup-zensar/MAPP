@@ -12,7 +12,7 @@ describe('safeNext', () => {
     expect(safeNext('/settings#currencies')).toBe('/settings#currencies');
   });
 
-  it('turns a full address of NorthStar itself into its path (FR-005)', () => {
+  it('turns a full address of MAPP itself into its path (FR-005)', () => {
     expect(safeNext(`${window.location.origin}/approvals`)).toBe('/approvals');
   });
 

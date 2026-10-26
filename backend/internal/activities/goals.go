@@ -1,9 +1,9 @@
 package activities
 
 import (
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // Messages of the plan's "User-visible messages" table about goals.

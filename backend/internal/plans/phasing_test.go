@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/rollup"
-	"northstar/internal/settings"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/rollup"
+	"mapp/internal/settings"
 )
 
 // phasingOf is a phasing save of method with custom months as pairs of month and amount.

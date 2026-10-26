@@ -1,7 +1,7 @@
 package activities
 
 import (
-	"northstar/internal/platform/date"
+	"mapp/internal/platform/date"
 )
 
 // displayStatus is the status shown for a on the day today (FR-021, D-091): an approved activity shows

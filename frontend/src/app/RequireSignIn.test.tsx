@@ -10,7 +10,7 @@ import { testUser } from '@/test/users';
 
 const PRIYA: CurrentUser = testUser();
 
-const DEMO_PEOPLE = { password: 'northstar', people: [] };
+const DEMO_PEOPLE = { password: 'mapp', people: [] };
 
 const SIGN_IN_REQUIRED = {
   code: 'sign_in_required',
@@ -59,7 +59,7 @@ describe('RequireSignIn', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('Loading…');
     expect(screen.getByText(BANNER)).toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Main' })).not.toBeInTheDocument();
-    expect(document.title).toBe('Plans · NorthStar');
+    expect(document.title).toBe('Plans · MAPP');
   });
 
   it('shows a full-page error when the API cannot be reached, without leaving the page (edge case, FR-020)', async () => {
@@ -67,11 +67,11 @@ describe('RequireSignIn', () => {
     const { router } = renderRoutes(routes, { route: '/approvals' });
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      "NorthStar can't reach its server right now. Check that it is running and try again.",
+      "MAPP can't reach its server right now. Check that it is running and try again.",
     );
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
     expect(screen.getByText(BANNER)).toBeInTheDocument();
-    expect(document.title).toBe('Approvals · NorthStar');
+    expect(document.title).toBe('Approvals · MAPP');
     expect(router.state.location.pathname).toBe('/approvals');
   });
 
@@ -102,7 +102,7 @@ describe('RequireSignIn', () => {
     // The protected address is replaced, so Back does not return to it.
     expect(router.state.historyAction).toBe('REPLACE');
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Sign in to NorthStar' }),
+      await screen.findByRole('heading', { level: 1, name: 'Sign in to MAPP' }),
     ).toBeInTheDocument();
   });
 

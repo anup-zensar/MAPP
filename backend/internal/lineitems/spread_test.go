@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // dated returns facts with the dates start and end ("" for none) and ongoing.

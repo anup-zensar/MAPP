@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"slices"
 
-	"northstar/internal/platform/actor"
+	"mapp/internal/platform/actor"
 )
 
 // Approver resolution at submission (017 FR-011, FR-012, data-model §3 steps 3–6): who approves each level

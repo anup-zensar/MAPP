@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"northstar/internal/platform/authz"
+	"mapp/internal/platform/authz"
 )
 
 // The record types of the planning records whose path parameter the middleware resolves, as the no-access

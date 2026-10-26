@@ -47,7 +47,7 @@ describe('AppLayout', () => {
     expect(
       screen.getByText('Demo environment — sign-in and data are for demonstration only'),
     ).toBeInTheDocument();
-    expect(screen.getByRole('contentinfo')).toHaveTextContent('© NorthStar — demo data');
+    expect(screen.getByRole('contentinfo')).toHaveTextContent('© MAPP — demo data');
   });
 
   it('shows the sidebar, and the menu button that narrow screens use instead (FR-010, FR-011)', () => {

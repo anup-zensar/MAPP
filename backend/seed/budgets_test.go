@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/budgets"
-	"northstar/internal/platform/ids"
+	"mapp/internal/budgets"
+	"mapp/internal/platform/ids"
 )
 
 // The demo global budget of 014 (FR-040, plan "Demo data"): GB-1001 "FY2026 Global marketing budget", 2026,

@@ -8,12 +8,12 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
 )
 
 // The limits of a currency (data model §6).
@@ -26,7 +26,7 @@ const (
 const (
 	currencyGoneMessage = "This currency no longer exists — someone may have deleted it."
 	codeLockedMessage   = "The code can't change once the currency is saved."
-	usdLockedMessage    = "USD is NorthStar's base currency; its rate is always 1."
+	usdLockedMessage    = "USD is MAPP's base currency; its rate is always 1."
 	codeMessage         = "Enter a three-letter code such as JPY."
 	codeTakenMessage    = "A currency with the code '%s' already exists."
 	currencyNameTaken   = "A currency called '%s' already exists."

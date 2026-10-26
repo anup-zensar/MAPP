@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
 )
 
 // The two events of features 006 and 007 that change an activity's approval. internal/app passes them on
