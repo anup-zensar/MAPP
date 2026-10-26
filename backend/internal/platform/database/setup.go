@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"mapp/internal/platform/database/sqlcdb"
 )
@@ -15,10 +16,11 @@ const maintenanceDatabase = "postgres"
 // CreateIfMissing creates the database dsn names when its server does not have it, connected to the server's
 // maintenance database. Identifiers cannot be query parameters, so the statement is built here.
 func CreateIfMissing(ctx context.Context, dsn string) error {
-	cfg, err := pgx.ParseConfig(dsn)
+	poolConfig, err := pgxpool.ParseConfig(dsn) // takes the pool_* settings out, which a server would refuse
 	if err != nil {
 		return errMalformedURL
 	}
+	cfg := poolConfig.ConnConfig
 	name := cfg.Database
 	if name == "" {
 		return nil
