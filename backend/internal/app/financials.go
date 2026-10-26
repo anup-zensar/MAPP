@@ -28,10 +28,11 @@ import (
 // and 007's line items with their USD planned cost at the current rates. It reads inside the caller's
 // transaction and never writes.
 type financialPlanning struct {
-	plans      plans.Repository
-	campaigns  *campaigns.Service
-	activities *activities.Service
-	lineItems  lineitems.Repository
+	plans         plans.Repository
+	campaigns     *campaigns.Service
+	campaignsRepo campaigns.Repository
+	activities    activities.Repository
+	lineItems     lineitems.Repository
 	settings   *settings.Service
 	people     *people.Service
 	history    *history.Service
@@ -44,97 +45,6 @@ var (
 	_ financials.Access   = financialAccess{}
 	_ financials.Rates    = (*settings.Service)(nil)
 )
-
-// Nodes returns every live plan, campaign, initiative, activity and line item, in the plan tree's order.
-func (p financialPlanning) Nodes(ctx context.Context) ([]financials.Node, error) {
-	all, err := p.plans.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-	var nodes []financials.Node
-	planOf := map[string]plans.Plan{} // activity id → its plan
-	var rates money.Rates             // read once, for an activity planned in a plan currency other than USD
-	var activityIDs []string
-	for _, plan := range all {
-		nodes = append(nodes, financials.Node{
-			Level: financials.LevelPlan, ID: plan.ID, PlanID: plan.ID, Name: plan.Name, PlanYear: plan.Year,
-		})
-		tree, err := p.campaigns.ListPlanCampaigns(ctx, actor.System, plan.ID)
-		if err != nil {
-			return nil, err
-		}
-		for ci, c := range tree.Items {
-			nodes = append(nodes, financials.Node{
-				Level: financials.LevelCampaign, ID: c.ID, ParentID: plan.ID, PlanID: plan.ID, Name: c.Name,
-				PlanYear: plan.Year, Order: ci,
-			})
-			for ii, i := range c.Initiatives {
-				nodes = append(nodes, financials.Node{
-					Level: financials.LevelInitiative, ID: i.ID, ParentID: c.ID, PlanID: plan.ID, Name: i.Name,
-					PlanYear: plan.Year, Order: ii,
-				})
-			}
-		}
-		summaries, err := p.activities.ListForPlan(ctx, actor.System, plan.ID) // actor.System: amounts in USD
-		if err != nil {
-			return nil, err
-		}
-		for order, a := range summaries {
-			node := financials.Node{
-				Level: financials.LevelActivity, ID: a.ID, ParentID: a.InitiativeID, PlanID: plan.ID, Name: a.Name,
-				PlanYear: plan.Year, Order: order,
-			}
-			if a.PlannedCost != nil {
-				planned := a.PlannedCost.Amount
-				if c := a.PlannedCost.Currency; c != "" && c != money.BaseCurrency { // a plan currency (016) in USD
-					if rates == nil {
-						if rates, err = p.settings.Rates(ctx); err != nil {
-							return nil, err
-						}
-					}
-					if planned, err = rates.ToUSD(*a.PlannedCost); err != nil {
-						return nil, err
-					}
-				}
-				node.PlannedCost = &planned
-			}
-			nodes = append(nodes, node)
-			planOf[a.ID] = plan
-			activityIDs = append(activityIDs, a.ID)
-		}
-	}
-	return p.addLineItems(ctx, nodes, planOf, activityIDs)
-}
-
-// addLineItems adds the line items of the activities, in creation order, with their USD planned cost at
-// the current rate (007's PlannedCostUSD).
-func (p financialPlanning) addLineItems(ctx context.Context, nodes []financials.Node, planOf map[string]plans.Plan,
-	activityIDs []string) ([]financials.Node, error) {
-	if len(activityIDs) == 0 {
-		return nodes, nil
-	}
-	items, err := p.lineItems.ListByActivities(ctx, activityIDs) // ordered by id: creation order
-	if err != nil {
-		return nil, err
-	}
-	rates, err := p.settings.Rates(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for order, li := range items {
-		plan := planOf[li.ActivityID]
-		node := financials.Node{
-			Level: financials.LevelLineItem, ID: li.ID, ParentID: li.ActivityID, PlanID: plan.ID, Name: li.Name,
-			PlanYear: plan.Year, Order: order,
-		}
-		if rate, known := rates[li.Currency]; known { // Settings never deletes a currency in use
-			planned := lineitems.PlannedCostUSD(li, rate)
-			node.PlannedCost = &planned
-		}
-		nodes = append(nodes, node)
-	}
-	return nodes, nil
-}
 
 // LineItemsInBin returns the ids of the line items in the recycle bin: deleted themselves or with a record
 // above them, in entries not yet undone or restored (001's SnapshotsInBin).

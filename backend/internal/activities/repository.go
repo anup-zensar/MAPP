@@ -32,4 +32,6 @@ type Repository interface {
 	ListByIDs(ctx context.Context, ids []string) ([]Activity, error)
 	// DeleteMany removes the activities with ids all at once.
 	DeleteMany(ctx context.Context, ids []string) error
+	// CountOwnedBy counts the stored activities the person owns.
+	CountOwnedBy(ctx context.Context, personID string) (int, error)
 }

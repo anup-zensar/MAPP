@@ -26,4 +26,6 @@ type Repository interface {
 	ListByIDs(ctx context.Context, ids []string) ([]LineItem, error)
 	// DeleteMany removes the line items with ids all at once.
 	DeleteMany(ctx context.Context, ids []string) error
+	// CountOwnedBy counts the stored line items the person owns.
+	CountOwnedBy(ctx context.Context, personID string) (int, error)
 }

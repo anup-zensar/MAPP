@@ -84,6 +84,10 @@ func (noLineItems) CopyAll(context.Context, actor.Actor, string, string, int) (i
 	return 0, nil
 }
 
+func (noLineItems) CopyMany(context.Context, actor.Actor, []CopyPair, int) (int, error) {
+	return 0, nil
+}
+
 func (noLineItems) DatesChanged(context.Context, actor.Actor, Activity, Activity) error {
 	return nil
 }

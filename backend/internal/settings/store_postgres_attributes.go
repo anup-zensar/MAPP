@@ -79,11 +79,7 @@ func (s *PostgresStore) OptionsOf(ctx context.Context, attributeID string) ([]Op
 
 func (s *PostgresStore) PutOption(ctx context.Context, o Option) error {
 	q := s.change(ctx)
-	err := q.PutOption(ctx, sqlcdb.PutOptionParams{
-		ID: o.ID, AttributeID: o.AttributeID, Label: o.Label, Position: o.Position, Active: o.Active,
-		Version: o.Version, CreatedAt: o.CreatedAt, CreatedByID: o.CreatedBy.ID, CreatedByName: o.CreatedBy.Name,
-		UpdatedAt: o.UpdatedAt, UpdatedByID: o.UpdatedBy.ID, UpdatedByName: o.UpdatedBy.Name,
-	})
+	err := q.PutOption(ctx, optionParams(o))
 	if err == nil {
 		err = q.DeleteOptionParents(ctx, o.ID)
 	}

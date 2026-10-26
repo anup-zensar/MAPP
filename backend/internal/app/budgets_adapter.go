@@ -43,23 +43,25 @@ func (b budgetPlans) PlansOfYear(ctx context.Context, year int) ([]budgets.PlanI
 }
 
 // PlannedCosts returns the planned cost in USD of each plan, as the plan page works it out in the plan
-// currency (016), converted at the current rate.
+// currency (016), converted at the current rate. Every plan is read once first: its currency here, and the
+// plan levels below find each plan in the transaction instead of reading it on its own.
 func (b budgetPlans) PlannedCosts(ctx context.Context, planIDs []string) (map[string]*money.Amount, error) {
+	all, err := b.repo.List(ctx)
+	if err != nil {
+		return nil, err
+	}
 	costs, err := b.plans.PlannedCosts(ctx, planIDs)
 	if err != nil || b.rates == nil {
 		return costs, err
 	}
+	currencyOf := make(map[string]string, len(all))
+	for _, p := range all {
+		currencyOf[p.ID] = p.Normalised().Currency
+	}
 	var rates money.Rates
 	for id, cost := range costs {
-		if cost == nil {
-			continue
-		}
-		p, found, err := b.repo.Get(ctx, id)
-		if err != nil {
-			return nil, err
-		}
-		currency := p.Normalised().Currency
-		if !found || currency == money.BaseCurrency {
+		currency, found := currencyOf[id]
+		if cost == nil || !found || currency == money.BaseCurrency {
 			continue
 		}
 		if rates == nil {

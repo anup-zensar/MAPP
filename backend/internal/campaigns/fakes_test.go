@@ -392,6 +392,19 @@ func (a *fakeActivities) Summaries(_ context.Context, initiativeIDs []string) ([
 	return list, nil
 }
 
+func (a *fakeActivities) CopyMany(ctx context.Context, by actor.Actor, pairs []CopyPair, years int) (ActivityCopyCounts, error) {
+	var counts ActivityCopyCounts
+	for _, p := range pairs {
+		copied, err := a.CopyAll(ctx, by, p.FromID, p.ToID, years)
+		if err != nil {
+			return ActivityCopyCounts{}, err
+		}
+		counts.Activities += copied.Activities
+		counts.LineItems += copied.LineItems
+	}
+	return counts, nil
+}
+
 // CopyAll copies the summaries of fromInitiativeID into toInitiativeID with new IDs "<id>-copy", records the
 // call and counts the copies and their line items; copyErr, when set, makes it fail instead.
 func (a *fakeActivities) CopyAll(_ context.Context, _ actor.Actor, from, to string, years int) (ActivityCopyCounts, error) {

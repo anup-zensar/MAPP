@@ -41,4 +41,7 @@ type Repository interface {
 	// DeleteCampaigns and DeleteInitiatives remove the records with ids all at once.
 	DeleteCampaigns(ctx context.Context, ids []string) error
 	DeleteInitiatives(ctx context.Context, ids []string) error
+	// CountCampaignsOwnedBy and CountInitiativesOwnedBy count the stored records the person owns.
+	CountCampaignsOwnedBy(ctx context.Context, personID string) (int, error)
+	CountInitiativesOwnedBy(ctx context.Context, personID string) (int, error)
 }
