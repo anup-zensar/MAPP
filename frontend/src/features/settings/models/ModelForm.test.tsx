@@ -7,7 +7,7 @@ import { testUser } from '@/testing/fixtures/users';
 import { ACTIVITY_TYPES, LUBRICANTS, PRINT, ref, RETAIL } from '@/testing/fixtures/settings';
 import { reply } from '@/testing/replies';
 import { ModelForm } from './ModelForm';
-import type { ModelFormMode } from './ModelForm';
+import type { ModelFormMode } from './model-values';
 
 function renderForm(mode: ModelFormMode, answers: HttpHandler[] = []) {
   const onClose = vi.fn();

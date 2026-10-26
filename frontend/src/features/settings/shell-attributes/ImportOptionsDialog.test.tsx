@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { HttpHandler } from 'msw';
 import type { components } from '@/api/generated/schema';
+import { closestTo } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
@@ -96,10 +97,10 @@ describe('ImportOptionsDialog (US6, FR-031)', () => {
     expect(problems).toHaveTextContent('Longer than 120 characters.');
     expect(problems).toHaveTextContent('Row 17CN04000220Appears twice in the file (also row 4).');
     // The rows to add show the first 100, then how many more.
-    const toAdd = within(dialog).getByText('1,214 options to add').closest('details');
+    const toAdd = closestTo(within(dialog).getByText('1,214 options to add'), 'details');
     expect(toAdd).not.toHaveAttribute('open');
     await user.click(within(dialog).getByText('1,214 options to add'));
-    expect(within(toAdd as HTMLElement).getAllByRole('listitem')).toHaveLength(100);
+    expect(within(toAdd).getAllByRole('listitem')).toHaveLength(100);
     expect(toAdd).toHaveTextContent('and 1,114 more');
 
     const file = { fileName: 'cost-centres.csv', content: btoa(FILE_TEXT) };

@@ -7,36 +7,13 @@ import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { useToast } from '@/ui/Toast/useToast';
-import { formatRate, formatWhole } from '@/format/decimal';
-import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
-import settingsStyles from '@/ui/settings-table.module.css';
 import { CURRENCIES_PATH } from './currency-paths';
 import { checkRateImport, downloadRateSample, useImportRates } from './rates-api';
-import type {
-  RateImportCheck,
-  RateImportOutcome,
-  RateImportRow,
-  RateImportUpload,
-} from './rates-api';
-import {
-  FILE_TOO_LARGE,
-  importedMessage,
-  importLabel,
-  MAX_FILE_BYTES,
-  NOT_A_CSV,
-  NOTHING_TO_IMPORT,
-  OUTCOME_WORDS,
-  OUTCOMES,
-  rowsToImport,
-} from './rate-words';
+import type { RateImportCheck, RateImportUpload } from './rates-api';
+import { FILE_TOO_LARGE, importedMessage, MAX_FILE_BYTES, NOT_A_CSV } from './rate-words';
 import styles from './rates.module.css';
-
-/** A group of the review lists at most this many rows; the counts above cover all of them. */
-const ROWS_SHOWN = 200;
-
-/** The groups open at first: the rows that need a look. */
-const OPEN_AT_FIRST: RateImportOutcome[] = ['problem', 'notUsed', 'replace'];
+import { ReviewCard } from './ReviewCard';
 
 /**
  * Import GSAP rates (016 US1, FR-006 – FR-008), at /settings/currencies/import: choose the GSAP
@@ -200,128 +177,14 @@ export function ImportRatesPage() {
   );
 }
 
-interface ReviewCardProps {
-  review: RateImportCheck;
-  importing: boolean;
-  failure: string | null;
-  onImport: () => void;
-  onCancel: () => void;
-}
-
-/** The review of a file: the counts, each outcome's rows, then Import n rates and Cancel. */
-function ReviewCard({ review, importing, failure, onImport, onCancel }: ReviewCardProps) {
-  const toImport = rowsToImport(review.counts);
-
-  return (
-    <Card title={`Review of '${review.fileName}'`} subtitle="Nothing is saved until you import">
-      <ul className={styles.counts} aria-label="Rows by outcome">
-        {OUTCOMES.map((outcome) => (
-          <li key={outcome}>
-            <span className={styles.countLabel}>{OUTCOME_WORDS[outcome]}</span>
-            <span className={styles.countValue}>{formatWhole(review.counts[outcome])}</span>
-          </li>
-        ))}
-      </ul>
-      {OUTCOMES.map((outcome) => {
-        const rows = review.rows.filter((row) => row.outcome === outcome);
-        return rows.length === 0 ? null : (
-          <OutcomeGroup key={outcome} outcome={outcome} rows={rows} />
-        );
-      })}
-      {failure && (
-        <p role="alert" className={styles.error}>
-          <CircleAlert aria-hidden="true" />
-          {failure}
-        </p>
-      )}
-      <div className={styles.actions}>
-        {toImport > 0 ? (
-          <Button variant="primary" aria-busy={importing || undefined} onClick={onImport}>
-            {importLabel(toImport)}
-          </Button>
-        ) : (
-          <p className={styles.actionsNote}>{NOTHING_TO_IMPORT}</p>
-        )}
-        <Button onClick={onCancel}>Cancel</Button>
-      </div>
-    </Card>
-  );
-}
-
-/** One outcome's rows, with their row numbers, in a group that opens and closes. */
-function OutcomeGroup({ outcome, rows }: { outcome: RateImportOutcome; rows: RateImportRow[] }) {
-  const { date } = useFormatters();
-  const shown = rows.slice(0, ROWS_SHOWN);
-  const withNote = rows.some((row) => row.message || row.previousRate);
-
-  return (
-    <details className={styles.group} open={OPEN_AT_FIRST.includes(outcome)}>
-      <summary>{`${OUTCOME_WORDS[outcome]} (${formatWhole(rows.length)})`}</summary>
-      <div className={styles.groupBody}>
-        {/* Nothing in the table takes the focus: the scrolling area does, for the keyboard. */}
-        <div
-          className={settingsStyles.tableScroll}
-          role="region"
-          aria-label={`${OUTCOME_WORDS[outcome]}: rows`}
-          tabIndex={0}
-        >
-          <table className={settingsStyles.table}>
-            <thead>
-              <tr>
-                <th scope="col" className={settingsStyles.number}>
-                  Row
-                </th>
-                <th scope="col">Currency</th>
-                <th scope="col">Date</th>
-                <th scope="col" className={settingsStyles.number}>
-                  Rate per 1 USD
-                </th>
-                {withNote && <th scope="col">Note</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {shown.map((row) => (
-                <tr key={row.row}>
-                  <th scope="row" className={settingsStyles.number}>
-                    {formatWhole(row.row)}
-                  </th>
-                  <td>{row.currency ?? '—'}</td>
-                  <td className={settingsStyles.nowrap}>{row.date ? date(row.date) : '—'}</td>
-                  <td className={settingsStyles.number}>{row.rate ? formatRate(row.rate) : '—'}</td>
-                  {withNote && <td>{noteOf(row)}</td>}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {rows.length > shown.length && (
-          <p className={styles.more}>
-            {`Showing the first ${formatWhole(shown.length)} of ${formatWhole(rows.length)} rows.`}
-          </p>
-        )}
-      </div>
-    </details>
-  );
-}
-
-/** "0.9214 → 0.9230" for a rate that replaces another; why, for rows not used or with a problem. */
-function noteOf(row: RateImportRow): string {
-  if (row.previousRate && row.rate) {
-    return `${formatRate(row.previousRate)} → ${formatRate(row.rate)}`;
-  }
-  return row.message ?? '';
-}
-
 /** The API's plain-language message; nothing when the session has ended (the sign-in page says so). */
 function failureText(error: unknown): string | null {
   const failure = error instanceof ApiError ? error : new ApiError('other');
   if (failure.kind === 'signInRequired' || failure.kind === 'sessionExpired') {
     return null;
   }
-  if (failure.kind === 'validation' && failure.fields.length > 0) {
-    return failure.fields[0].message;
-  }
-  return failure.message;
+  const [first] = failure.fields;
+  return failure.kind === 'validation' && first ? first.message : failure.message;
 }
 
 /** The file's bytes in base64, as the API takes them. */

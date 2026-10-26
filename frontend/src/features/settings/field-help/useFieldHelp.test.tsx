@@ -2,11 +2,11 @@ import { screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
-import type { LooseAnswer } from '@/testing/replies';
+import type { Answer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { FIELD_HELP_PAGE, PLAN_BUDGET, PLAN_PLANNED_COST } from '@/testing/fixtures/field-help';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import { FieldHelpTip } from './FieldHelpTip';
 import { useFieldHelp } from './useFieldHelp';
 
@@ -22,8 +22,8 @@ function Texts({ keys, fallback }: { keys: string[]; fallback?: string }) {
   );
 }
 
-function renderWith(answer: LooseAnswer, ui: ReactElement) {
-  const api = mockApi([looseReply('GET /api/v1/field-help', answer)]);
+function renderWith(answer: Answer<'GET /api/v1/field-help'>, ui: ReactElement) {
+  const api = mockApi([reply('GET /api/v1/field-help', answer)]);
   renderWithProviders(ui, { user: testUser() });
   return api;
 }
@@ -77,7 +77,7 @@ describe('useFieldHelp (016 FR-047)', () => {
 
 describe('FieldHelpTip (016 FR-047)', () => {
   it('shows an ⓘ named after its label, with the Field help text', async () => {
-    mockApi([looseReply('GET /api/v1/field-help', { body: FIELD_HELP_PAGE })]);
+    mockApi([reply('GET /api/v1/field-help', { body: FIELD_HELP_PAGE })]);
     const { user } = renderWithProviders(
       <p>
         Planned cost <FieldHelpTip helpKey="plan.plannedCost" label="Planned cost" />

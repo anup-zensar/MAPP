@@ -6,7 +6,7 @@ import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { shellAttribute } from '@/testing/fixtures/shell-attributes';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import { AttributePreview } from './AttributePreview';
 
 /** Region, which depends on Cluster on the campaign form (campaignForm()). */
@@ -31,16 +31,12 @@ const CHECK = 'POST /api/v1/shell-attribute-forms/campaign/check';
 
 function renderPreview(answers: HttpHandler[], attribute = REGION) {
   const api = mockApi([
-    looseReply(
+    reply(
       'GET /api/v1/shell-attribute-forms/{level}',
       { body: campaignForm() },
       { level: 'campaign' },
     ),
-    looseReply(
-      'GET /api/v1/shell-attribute-forms/{level}',
-      { body: planForm() },
-      { level: 'plan' },
-    ),
+    reply('GET /api/v1/shell-attribute-forms/{level}', { body: planForm() }, { level: 'plan' }),
     ...answers,
   ]);
   return {
@@ -126,7 +122,7 @@ describe('AttributePreview (FR-020, US3)', () => {
 
   it('Try saving: says saving would work, what it would clear and what is still needed', async () => {
     const { user, api } = renderPreview([
-      looseReply(
+      reply(
         'POST /api/v1/shell-attribute-forms/{level}/check',
         {
           body: {
@@ -169,7 +165,7 @@ describe('AttributePreview (FR-020, US3)', () => {
 
   it('Try saving: shows every problem at once, at the fields', async () => {
     const { user } = renderPreview([
-      looseReply(
+      reply(
         'POST /api/v1/shell-attribute-forms/{level}/check',
         {
           body: {
@@ -199,12 +195,16 @@ describe('AttributePreview (FR-020, US3)', () => {
 
   it('Try saving: says when the check could not be made', async () => {
     const { user } = renderPreview([
-      looseReply(
+      reply(
         'POST /api/v1/shell-attribute-forms/{level}/check',
         {
           status: 500,
           body: {
-            error: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+            error: {
+              code: 'internal_error',
+              message: 'Something went wrong. Please try again.',
+              fields: [],
+            },
           },
         },
         { level: 'campaign' },
@@ -221,7 +221,7 @@ describe('AttributePreview (FR-020, US3)', () => {
   it('previews the plan form with its own Business unit deciding what is shown (FR-026)', async () => {
     const { user, api } = renderPreview(
       [
-        looseReply(
+        reply(
           'POST /api/v1/shell-attribute-forms/{level}/check',
           {
             body: { problems: [], missing: [], cleared: [], values: {} },
@@ -252,12 +252,16 @@ describe('AttributePreview (FR-020, US3)', () => {
 
   it('says when the form cannot be loaded, with Try again', async () => {
     renderPreview([
-      looseReply(
+      reply(
         'GET /api/v1/shell-attribute-forms/{level}',
         {
           status: 500,
           body: {
-            error: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+            error: {
+              code: 'internal_error',
+              message: 'Something went wrong. Please try again.',
+              fields: [],
+            },
           },
         },
         { level: 'campaign' },

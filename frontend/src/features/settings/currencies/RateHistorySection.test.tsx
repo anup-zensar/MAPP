@@ -6,6 +6,7 @@ import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { expectNoAxeViolations } from '@/testing/axe';
+import { nth } from '@/testing/dom';
 import { deleted, validationFailed, versionConflict } from '@/testing/fixtures/settings';
 import { EUR_CURRENT, EUR_FUTURE, EUR_ONLY_CURRENT, EUR_RATES } from '@/testing/fixtures/rates';
 import { reply } from '@/testing/replies';
@@ -41,7 +42,10 @@ describe('RateHistorySection (016 FR-001, FR-003)', () => {
 
     expect(screen.getByRole('heading', { level: 3, name: 'Rate history' })).toBeInTheDocument();
     await screen.findByRole('table');
-    const [future, current, older] = rows();
+    const listed = rows();
+    const future = nth(listed, 0);
+    const current = nth(listed, 1);
+    const older = nth(listed, 2);
     expect(future).toHaveTextContent('From 01 Jan 2027');
     expect(future).toHaveTextContent('0.951 EUR = 1.052632 USD');
     expect(future).toHaveTextContent('Entered by hand');
@@ -55,7 +59,7 @@ describe('RateHistorySection (016 FR-001, FR-003)', () => {
     expect(older).toHaveTextContent('0.9214');
     // The rate is a number: right-aligned under its header.
     const header = screen.getByRole('columnheader', { name: 'Rate per 1 USD' });
-    expect(within(current).getAllByRole('cell')[0].className).toBe(header.className);
+    expect(nth(within(current).getAllByRole('cell'), 0).className).toBe(header.className);
   });
 
   it('moves a rate to the recycle bin with Undo', async () => {

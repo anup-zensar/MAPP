@@ -11,7 +11,13 @@ export type AttributeType = components['schemas']['AttributeType'];
 export type AttributeMarking = components['schemas']['AttributeMarking'];
 
 /** The levels in the order of the planning hierarchy. */
-export const LEVELS: AttributeLevel[] = ['plan', 'campaign', 'initiative', 'activity', 'lineItem'];
+export const LEVELS = [
+  'plan',
+  'campaign',
+  'initiative',
+  'activity',
+  'lineItem',
+] as const satisfies readonly AttributeLevel[];
 
 export const LEVEL_WORDS: Record<AttributeLevel, string> = {
   plan: 'Plan',
@@ -38,7 +44,15 @@ export const MARKING_WORDS: Record<AttributeMarking, string> = {
 };
 
 /** The types in the order the editor offers them. */
-const TYPES = Object.keys(TYPE_WORDS) as AttributeType[];
+const TYPES: AttributeType[] = [
+  'singleChoice',
+  'multipleChoice',
+  'multipleChoiceSplit',
+  'yesNo',
+  'text',
+  'longText',
+  'number',
+];
 
 /** True for a level whose records carry cost: activities and line items (FR-017). */
 function carriesCost(level: AttributeLevel): boolean {
@@ -52,7 +66,7 @@ export function levelMidSentence(level: AttributeLevel): string {
 
 /** True when the value is one of the levels (a level from the address may be anything). */
 export function isLevel(value: string | null): value is AttributeLevel {
-  return LEVELS.includes(value as AttributeLevel);
+  return LEVELS.some((level) => level === value);
 }
 
 /** Choice types have options, at least one (FR-018). */

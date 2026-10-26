@@ -1,135 +1,19 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { HttpHandler } from 'msw';
-import type { components } from '@/api/generated/schema';
-import { mockApi } from '@/testing/mock-api';
-import type { LooseAnswer } from '@/testing/replies';
-import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/fixtures/users';
-import {
-  deleted,
-  MADE,
-  NOT_USED,
-  USED_BY_TWO_PLANS,
-  validationFailed,
-  versionConflict,
-} from '@/testing/fixtures/settings';
-import { looseReply } from '@/testing/replies';
-import { FinanceBudgetItemsPage } from './FinanceBudgetItemsPage';
-
-type FinanceBudget = components['schemas']['FinanceBudget'];
-type FinanceBudgetItem = components['schemas']['FinanceBudgetItem'];
-
-const YEAR_LOCK =
-  "The year can't change once the item is saved — create a new item for another year.";
-
-function item(overrides: Partial<FinanceBudgetItem> & { id: string; name: string }) {
-  return {
-    budgetId: 'FB-1001',
-    budgetName: '2026 Lubricants Budget',
-    year: 2026,
-    code: '',
-    active: true,
-    usage: NOT_USED,
-    locks: [{ field: 'year', reason: YEAR_LOCK }],
-    version: 1,
-    ...MADE,
-    ...overrides,
-  } satisfies FinanceBudgetItem;
-}
-
-const DIGITAL = item({
-  id: 'FBI-1001',
-  name: 'Europe – Digital',
-  code: 'LUB-EU-DIG',
-  usage: {
-    inUse: true,
-    summary: 'Linked to 6 line items',
-    parts: [{ kind: 'lineItem', text: 'Linked to 6 line items', count: 6, inRecycleBin: 0 }],
-    records: [],
-  },
-  version: 2,
-});
-const ASIA = item({ id: 'FBI-1002', name: 'Asia – Retail' });
-const OLD = item({ id: 'FBI-1003', name: 'Old item', active: false });
-const FLEET = item({
-  id: 'FBI-1004',
-  name: 'Fleet',
-  code: 'MOB-FLT',
-  budgetId: 'FB-1002',
-  budgetName: '2026 Mobility Budget',
-});
-
-/** "2026 Lubricants Budget", the default budget of two plans. */
-const LUBRICANTS_BUDGET: FinanceBudget = {
-  id: 'FB-1001',
-  year: 2026,
-  name: '2026 Lubricants Budget',
-  items: [ASIA, DIGITAL, OLD],
-  activeItemCount: 2,
-  usage: {
-    ...USED_BY_TWO_PLANS,
-    summary: 'Default finance budget of 2 plans',
-    parts: [{ kind: 'plan', text: 'Default finance budget of 2 plans', count: 2, inRecycleBin: 0 }],
-  },
-  version: 4,
-  ...MADE,
-};
-
-const MOBILITY_BUDGET: FinanceBudget = {
-  ...LUBRICANTS_BUDGET,
-  id: 'FB-1002',
-  name: '2026 Mobility Budget',
-  items: [FLEET],
-  activeItemCount: 1,
-  usage: NOT_USED,
-  version: 1,
-};
-
-const YEARS = [2025, 2026, 2027, 2028, 2029, 2030, 2031];
-
-const PAGE_2026 = {
-  items: [LUBRICANTS_BUDGET, MOBILITY_BUDGET],
-  total: 2,
-  year: 2026,
-  years: YEARS,
-};
-const PAGE_2027 = { items: [], total: 0, year: 2027, years: YEARS };
-
-/** The finance budgets of the year asked for (this year, 2026, when none is given). */
-const BUDGETS: LooseAnswer = (request) =>
-  new URL(request.url).searchParams.get('year') === '2027'
-    ? { body: PAGE_2027 }
-    : { body: PAGE_2026 };
-
-function renderItems(answers: HttpHandler[] = [], route = '/settings/finance-budget-items') {
-  const api = mockApi([looseReply('GET /api/v1/finance-budgets', BUDGETS), ...answers]);
-  return {
-    ...renderWithProviders(<FinanceBudgetItemsPage />, {
-      route,
-      user: testUser(),
-      path: '/settings/finance-budget-items',
-    }),
-    api,
-  };
-}
+import { closestTo } from '@/testing/dom';
+import { findMessages } from '@/testing/render';
+import { DIGITAL, OLD, PAGE_2026 } from '@/testing/fixtures/finance-budget-items';
+import { deleted } from '@/testing/fixtures/settings';
+import { chooseAction, renderFinanceBudgetItemsPage } from '@/testing/fixtures/settings-pages';
+import { reply } from '@/testing/replies';
 
 function budgetCard(name: string) {
   return screen.getByRole('region', { name });
 }
 
-async function chooseAction(
-  name: string,
-  action: string,
-  user: ReturnType<typeof renderItems>['user'],
-) {
-  await user.click(await screen.findByRole('button', { name: `Actions for ${name}` }));
-  await user.click(await screen.findByRole('menuitem', { name: action }));
-}
-
 describe('FinanceBudgetItemsPage: the list (FR-014, FR-015)', () => {
   it('shows the current year, one card per budget with its active items (US5 scenario 3)', async () => {
-    renderItems();
+    renderFinanceBudgetItemsPage();
 
     expect(
       screen.getByRole('heading', { level: 1, name: 'Finance budget items' }),
@@ -143,9 +27,10 @@ describe('FinanceBudgetItemsPage: the list (FR-014, FR-015)', () => {
 
     const lubricants = await screen.findByRole('region', { name: '2026 Lubricants Budget' });
     expect(lubricants).toHaveTextContent('3 items · Default finance budget of 2 plans');
-    const digital = within(lubricants)
-      .getByRole('rowheader', { name: 'Europe – Digital' })
-      .closest('tr') as HTMLElement;
+    const digital = closestTo(
+      within(lubricants).getByRole('rowheader', { name: 'Europe – Digital' }),
+      'tr',
+    );
     expect(digital).toHaveTextContent('LUB-EU-DIG');
     expect(digital).toHaveTextContent('Linked to 6 line items');
     expect(within(lubricants).queryByText('Old item')).not.toBeInTheDocument();
@@ -159,7 +44,7 @@ describe('FinanceBudgetItemsPage: the list (FR-014, FR-015)', () => {
   });
 
   it('switches the budget year, keeping it in the address', async () => {
-    const { user, router, api } = renderItems();
+    const { user, router, api } = renderFinanceBudgetItemsPage();
 
     await screen.findByRole('region', { name: '2026 Lubricants Budget' });
     await user.click(
@@ -177,7 +62,7 @@ describe('FinanceBudgetItemsPage: the list (FR-014, FR-015)', () => {
   });
 
   it('searches items, budgets and codes', async () => {
-    const { user } = renderItems();
+    const { user } = renderFinanceBudgetItemsPage();
 
     await screen.findByRole('region', { name: '2026 Lubricants Budget' });
     await user.type(
@@ -193,7 +78,7 @@ describe('FinanceBudgetItemsPage: the list (FR-014, FR-015)', () => {
   });
 
   it('says when nothing matches the filters, and clears them', async () => {
-    const { user } = renderItems([], '/settings/finance-budget-items?q=zzz');
+    const { user } = renderFinanceBudgetItemsPage([], '/settings/finance-budget-items?q=zzz');
 
     expect(await screen.findByText('Nothing matches these filters')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Clear filters' }));
@@ -203,8 +88,8 @@ describe('FinanceBudgetItemsPage: the list (FR-014, FR-015)', () => {
 
   it('says when the budgets cannot be loaded, and tries again', async () => {
     let calls = 0;
-    const { user } = renderItems([
-      looseReply('GET /api/v1/finance-budgets', () => {
+    const { user } = renderFinanceBudgetItemsPage([
+      reply('GET /api/v1/finance-budgets', () => {
         calls += 1;
         return calls === 1
           ? {
@@ -213,6 +98,7 @@ describe('FinanceBudgetItemsPage: the list (FR-014, FR-015)', () => {
                 error: {
                   code: 'internal_error',
                   message: 'Something went wrong. Please try again.',
+                  fields: [],
                 },
               },
             }
@@ -231,7 +117,7 @@ describe('FinanceBudgetItemsPage: the list (FR-014, FR-015)', () => {
 
 describe('FinanceBudgetItemsPage: details (US5 scenario 4)', () => {
   it('shows the line items linked to it and the plans using its budget', async () => {
-    const { user, router } = renderItems();
+    const { user, router } = renderFinanceBudgetItemsPage();
 
     await user.click(await screen.findByRole('button', { name: 'Europe – Digital' }));
 
@@ -252,7 +138,7 @@ describe('FinanceBudgetItemsPage: details (US5 scenario 4)', () => {
   });
 
   it('says when the item of the address no longer exists', async () => {
-    renderItems([], '/settings/finance-budget-items?id=FBI-9999');
+    renderFinanceBudgetItemsPage([], '/settings/finance-budget-items?id=FBI-9999');
 
     const panel = await screen.findByRole('dialog', { name: 'Finance budget item' });
     expect(panel).toHaveTextContent(
@@ -264,219 +150,10 @@ describe('FinanceBudgetItemsPage: details (US5 scenario 4)', () => {
   });
 });
 
-describe('FinanceBudgetItemsPage: create and edit (US5 scenarios 3 and 4, FR-014)', () => {
-  it('creates "Europe – Retail" in an existing budget, offering its name while typing', async () => {
-    const created = item({ id: 'FBI-1005', name: 'Europe – Retail', code: 'LUB-EU-RET' });
-    const { user, api } = renderItems([
-      looseReply('POST /api/v1/finance-budget-items', { status: 201, body: created }),
-    ]);
-
-    await screen.findByRole('region', { name: '2026 Lubricants Budget' });
-    await user.click(screen.getByRole('button', { name: 'New finance budget item' }));
-    const form = await screen.findByRole('dialog', { name: 'New finance budget item' });
-    expect(within(form).getByRole('combobox', { name: /^Budget year/ })).toHaveValue('2026');
-    const budgetName = within(form).getByRole('combobox', { name: /^Budget name/ });
-    expect(budgetName).toHaveAccessibleDescription(
-      expect.stringContaining('Items with the same year and budget name form one finance budget.'),
-    );
-    await waitFor(() =>
-      expect(
-        [...document.querySelectorAll('datalist option')].map((option) =>
-          option.getAttribute('value'),
-        ),
-      ).toEqual(['2026 Lubricants Budget', '2026 Mobility Budget']),
-    );
-    await user.type(budgetName, '2026 Lubricants Budget');
-    await user.type(within(form).getByRole('textbox', { name: /^Item name/ }), 'Europe – Retail');
-    await user.type(within(form).getByRole('textbox', { name: /^Code/ }), 'LUB-EU-RET');
-    await user.click(within(form).getByRole('button', { name: 'Save' }));
-
-    expect(await findMessages()).toHaveTextContent("Finance budget item 'Europe – Retail' created");
-    expect(api.bodiesOf('POST /api/v1/finance-budget-items')).toEqual([
-      {
-        year: 2026,
-        budgetName: '2026 Lubricants Budget',
-        name: 'Europe – Retail',
-        code: 'LUB-EU-RET',
-      },
-    ]);
-  });
-
-  it('shows every problem at once and saves nothing', async () => {
-    const { user } = renderItems([
-      looseReply('POST /api/v1/finance-budget-items', {
-        status: 400,
-        body: validationFailed([
-          { field: 'budgetName', message: 'Enter a budget name.' },
-          {
-            field: 'code',
-            message: "The code 'LUB-EU-DIG' is already used in 2026 by 'Europe – Digital'.",
-          },
-        ]),
-      }),
-    ]);
-
-    await screen.findByRole('region', { name: '2026 Lubricants Budget' });
-    await user.click(screen.getByRole('button', { name: 'New finance budget item' }));
-    const form = await screen.findByRole('dialog', { name: 'New finance budget item' });
-    await user.type(within(form).getByRole('textbox', { name: /^Code/ }), 'LUB-EU-DIG');
-    await user.click(within(form).getByRole('button', { name: 'Save' }));
-
-    expect(await within(form).findByText('2 problems need your attention')).toBeInTheDocument();
-    expect(within(form).getAllByText('Enter a budget name.')).toHaveLength(2);
-    expect(
-      within(form).getAllByText(
-        "The code 'LUB-EU-DIG' is already used in 2026 by 'Europe – Digital'.",
-      ),
-    ).toHaveLength(2);
-  });
-
-  it('locks the year of a saved item and saves only the changed fields', async () => {
-    const { user, api } = renderItems([
-      looseReply(
-        'PATCH /api/v1/finance-budget-items/{itemId}',
-        {
-          body: { ...DIGITAL, name: 'Europe – Online', version: 3 },
-        },
-        { itemId: 'FBI-1001' },
-      ),
-    ]);
-
-    await chooseAction('Europe – Digital', 'Edit', user);
-    const form = await screen.findByRole('dialog', { name: 'Edit finance budget item' });
-    expect(within(form).queryByRole('combobox', { name: /^Budget year/ })).not.toBeInTheDocument();
-    expect(form).toHaveTextContent(YEAR_LOCK);
-    const name = within(form).getByRole('textbox', { name: /^Item name/ });
-    await user.clear(name);
-    await user.type(name, 'Europe – Online');
-    await user.click(within(form).getByRole('button', { name: 'Save' }));
-
-    expect(await findMessages()).toHaveTextContent("Finance budget item 'Europe – Online' saved");
-    expect(api.bodiesOf('PATCH /api/v1/finance-budget-items/FBI-1001')).toEqual([
-      { name: 'Europe – Online', version: 2 },
-    ]);
-  });
-
-  it('keeps the typed values after a conflict and saves again over it (FR-007)', async () => {
-    let patches = 0;
-    const { user, api } = renderItems([
-      looseReply(
-        'PATCH /api/v1/finance-budget-items/{itemId}',
-        () => {
-          patches += 1;
-          return patches === 1
-            ? { status: 409, body: versionConflict() }
-            : { body: { ...ASIA, code: 'LUB-AS-RET' } };
-        },
-        { itemId: 'FBI-1002' },
-      ),
-      looseReply(
-        'GET /api/v1/finance-budget-items/{itemId}',
-        { body: { ...ASIA, version: 5 } },
-        { itemId: 'FBI-1002' },
-      ),
-    ]);
-
-    await chooseAction('Asia – Retail', 'Edit', user);
-    const form = await screen.findByRole('dialog', { name: 'Edit finance budget item' });
-    await user.type(within(form).getByRole('textbox', { name: /^Code/ }), 'LUB-AS-RET');
-    await user.click(within(form).getByRole('button', { name: 'Save' }));
-
-    expect(await within(form).findByRole('alert')).toHaveTextContent(
-      'Not saved — Daniel Okoro changed this finance budget item on 14 Mar 2026 at 10:42',
-    );
-    await waitFor(() =>
-      expect(
-        api.requests.some(
-          (r) => r.method === 'GET' && r.path === '/api/v1/finance-budget-items/FBI-1002',
-        ),
-      ).toBe(true),
-    );
-    await user.click(within(form).getByRole('button', { name: 'Save' }));
-
-    await findMessages();
-    expect(api.bodiesOf('PATCH /api/v1/finance-budget-items/FBI-1002')).toEqual([
-      { code: 'LUB-AS-RET', version: 1 },
-      { code: 'LUB-AS-RET', version: 5 },
-    ]);
-  });
-});
-
-describe('FinanceBudgetItemsPage: Rename budget (US5 scenario 4, FR-015)', () => {
-  it('renames the whole budget, saying what follows', async () => {
-    const { user, api } = renderItems([
-      looseReply(
-        'PATCH /api/v1/finance-budgets/{budgetId}',
-        {
-          body: { ...LUBRICANTS_BUDGET, name: '2026 Lubricants Budget (EU)', version: 5 },
-        },
-        { budgetId: 'FB-1001' },
-      ),
-    ]);
-
-    await screen.findByRole('region', { name: '2026 Lubricants Budget' });
-    await user.click(
-      screen.getByRole('button', { name: "Rename budget '2026 Lubricants Budget'" }),
-    );
-    const dialog = await screen.findByRole('dialog', {
-      name: "Rename budget '2026 Lubricants Budget'",
-    });
-    expect(dialog).toHaveTextContent(
-      'All 3 items move with it. 2 plans use it as their default finance budget and will show the new name.',
-    );
-    const name = within(dialog).getByRole('textbox', { name: /^New name/ });
-    expect(name).toHaveFocus();
-    await user.clear(name);
-    await user.type(name, '2026 Lubricants Budget (EU)');
-    await user.click(within(dialog).getByRole('button', { name: 'Rename budget' }));
-
-    expect(await findMessages()).toHaveTextContent(
-      "Budget renamed to '2026 Lubricants Budget (EU)'",
-    );
-    expect(api.bodiesOf('PATCH /api/v1/finance-budgets/FB-1001')).toEqual([
-      { name: '2026 Lubricants Budget (EU)', version: 4 },
-    ]);
-  });
-
-  it('shows a taken name at the field and keeps the dialog open', async () => {
-    const { user } = renderItems([
-      looseReply(
-        'PATCH /api/v1/finance-budgets/{budgetId}',
-        {
-          status: 400,
-          body: validationFailed([
-            {
-              field: 'name',
-              message: "2026 already has a budget called '2026 Lubricants Budget'.",
-            },
-          ]),
-        },
-        { budgetId: 'FB-1002' },
-      ),
-    ]);
-
-    await screen.findByRole('region', { name: '2026 Mobility Budget' });
-    await user.click(screen.getByRole('button', { name: "Rename budget '2026 Mobility Budget'" }));
-    const dialog = await screen.findByRole('dialog', {
-      name: "Rename budget '2026 Mobility Budget'",
-    });
-    expect(dialog).toHaveTextContent('All 1 item moves with it.');
-    const name = within(dialog).getByRole('textbox', { name: /^New name/ });
-    await user.clear(name);
-    await user.type(name, '2026 Lubricants Budget');
-    await user.click(within(dialog).getByRole('button', { name: 'Rename budget' }));
-
-    expect(
-      await within(dialog).findByText("2026 already has a budget called '2026 Lubricants Budget'."),
-    ).toBeInTheDocument();
-    expect(name).toHaveValue('2026 Lubricants Budget');
-  });
-});
-
 describe('FinanceBudgetItemsPage: status and delete (US5 scenario 5, FR-004)', () => {
   it('moves an unused item to the recycle bin and offers Undo', async () => {
-    const { user } = renderItems([
-      looseReply(
+    const { user } = renderFinanceBudgetItemsPage([
+      reply(
         'DELETE /api/v1/finance-budget-items/{itemId}',
         {
           body: deleted('finance budget item', 'FBI-1002', 'Asia – Retail'),
@@ -499,8 +176,8 @@ describe('FinanceBudgetItemsPage: status and delete (US5 scenario 5, FR-004)', (
   });
 
   it('offers Set inactive instead of deleting an item in use', async () => {
-    const { user, api } = renderItems([
-      looseReply(
+    const { user, api } = renderFinanceBudgetItemsPage([
+      reply(
         'POST /api/v1/finance-budget-items/{itemId}/status',
         { body: { ...DIGITAL, active: false } },
         { itemId: 'FBI-1001' },
@@ -523,9 +200,9 @@ describe('FinanceBudgetItemsPage: status and delete (US5 scenario 5, FR-004)', (
   });
 
   it('reactivates an inactive item', async () => {
-    const { user, api } = renderItems(
+    const { user, api } = renderFinanceBudgetItemsPage(
       [
-        looseReply(
+        reply(
           'POST /api/v1/finance-budget-items/{itemId}/status',
           { body: { ...OLD, active: true } },
           { itemId: 'FBI-1003' },

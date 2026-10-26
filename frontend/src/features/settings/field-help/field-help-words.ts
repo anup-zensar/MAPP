@@ -3,7 +3,7 @@ import { formatWhole } from '@/format/decimal';
 import type { FieldHelpLevel } from './api';
 
 /** The groups of the page, in the order of the catalogue (data-model §6). */
-export const HELP_LEVELS: FieldHelpLevel[] = [
+export const HELP_LEVELS = [
   'plan',
   'campaign',
   'initiative',
@@ -12,7 +12,7 @@ export const HELP_LEVELS: FieldHelpLevel[] = [
   'phasing',
   'common',
   'allWork',
-];
+] as const satisfies readonly FieldHelpLevel[];
 
 /** What each group is called. */
 export const HELP_LEVEL_WORDS: Record<FieldHelpLevel, string> = {
@@ -25,10 +25,6 @@ export const HELP_LEVEL_WORDS: Record<FieldHelpLevel, string> = {
   common: 'Every record',
   allWork: 'All work',
 };
-
-export function isHelpLevel(value: string | null): value is FieldHelpLevel {
-  return HELP_LEVELS.includes(value as FieldHelpLevel);
-}
 
 /** "Plan › Plan budget", as the activity log names an entry (data-model §7). */
 export function entryName(level: FieldHelpLevel, label: string): string {
