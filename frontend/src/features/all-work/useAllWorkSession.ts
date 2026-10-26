@@ -8,7 +8,8 @@ import { useAllWorkState } from './all-work-store';
 import type { AllWorkEntry } from './all-work-store';
 import { leftOutMessage } from './all-work-text';
 import type { SavedView, ViewState } from './all-work-types';
-import { fromAddress, hasAddressFilters, leftOutOf, standardState, yearRange } from './view-state';
+import { fromAddress, hasAddressFilters } from './schemas';
+import { leftOutOf, standardState, yearRange } from './view-state';
 import type { PageSize } from './view-state';
 
 /** A new state, or a change of the state as it is when the change applies. */
@@ -121,8 +122,7 @@ export function useAllWorkSession(): AllWorkSession {
   const setState = useCallback(
     (next: StateChange, { keepPage = false }: { keepPage?: boolean } = {}) =>
       update((entryNow) => ({
-        state:
-          typeof next === 'function' && entryNow.state ? next(entryNow.state) : (next as ViewState),
+        state: typeof next === 'function' ? entryNow.state && next(entryNow.state) : next,
         ...(keepPage ? {} : { page: 1 }),
       })),
     [update],

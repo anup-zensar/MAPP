@@ -16,7 +16,7 @@ import { RowName } from './RowName';
 import { rowHref } from './row-href';
 import { ScrollBox } from './ScrollBox';
 import { statusWord } from './status-words';
-import type { VisibleRow } from './view-state';
+import type { VisibleRow } from './view-rows';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4'];

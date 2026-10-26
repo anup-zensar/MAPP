@@ -3,7 +3,8 @@ import { Button } from '@/ui/Button/Button';
 import { formatWhole } from '@/format/decimal';
 import styles from './Pager.module.css';
 import { PAGE_SIZES } from './view-state';
-import type { PageSize, RowPage } from './view-state';
+import type { PageSize } from './view-state';
+import type { RowPage } from './view-rows';
 
 export interface PagerProps {
   page: RowPage;

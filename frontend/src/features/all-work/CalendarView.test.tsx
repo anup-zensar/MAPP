@@ -5,7 +5,7 @@ import { testUser } from '@/testing/fixtures/users';
 import { calendarResult, standard2026, usd } from '@/testing/fixtures/all-work';
 import type { AllWorkResult, AllWorkRow } from './all-work-types';
 import { CalendarView } from './CalendarView';
-import { visibleRows } from './view-state';
+import { visibleRows } from './view-rows';
 
 function renderCalendar(result: AllWorkResult = calendarResult()) {
   const onOpen = vi.fn();

@@ -9,7 +9,7 @@ import styles from './BudgetView.module.css';
 import { isControl, NOTHING } from './cell-text';
 import { RowName } from './RowName';
 import { ScrollBox } from './ScrollBox';
-import type { VisibleRow } from './view-state';
+import type { VisibleRow } from './view-rows';
 
 export interface BudgetViewProps {
   /** The answer for view=budget: its periods and each row's amounts. */

@@ -26,15 +26,8 @@ import type {
 } from './all-work-types';
 import { FilterMenu } from './FilterMenu';
 import type { FilterChoice } from './FilterMenu';
-import {
-  chipsOf,
-  choicesOf,
-  clearAll,
-  hasFilters,
-  removeChip,
-  withYears,
-  yearRange,
-} from './view-state';
+import { chipsOf, clearAll, hasFilters, removeChip } from './view-chips';
+import { choicesOf, withYears, yearRange } from './view-state';
 import type { IdFilter } from './view-state';
 import { YearRangeMenu } from './YearRangeMenu';
 

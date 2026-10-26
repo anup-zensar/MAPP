@@ -5,7 +5,7 @@ import type { AllWorkColumn, AllWorkRow } from './all-work-types';
 import { CellValue } from './CellValue';
 import { isControl, isNumeric, isSearched } from './cell-text';
 import { RowName } from './RowName';
-import type { VisibleRow } from './view-state';
+import type { VisibleRow } from './view-rows';
 
 export interface GridRowProps {
   visible: VisibleRow;

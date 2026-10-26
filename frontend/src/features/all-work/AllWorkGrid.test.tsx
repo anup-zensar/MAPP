@@ -6,7 +6,8 @@ import { testUser } from '@/testing/fixtures/users';
 import { gridResult, seedRows, standard2026, usd } from '@/testing/fixtures/all-work';
 import { AllWorkGrid } from './AllWorkGrid';
 import type { AllWorkResult, AllWorkRow, ViewState } from './all-work-types';
-import { continuedPath, nextSort, pageOf, toggleRow, visibleRows } from './view-state';
+import { continuedPath, pageOf, toggleRow, visibleRows } from './view-rows';
+import { nextSort } from './view-columns';
 
 /** The grid with its expansion kept the way the page keeps it. */
 function Harness({

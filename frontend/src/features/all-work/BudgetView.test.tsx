@@ -5,7 +5,7 @@ import { testUser } from '@/testing/fixtures/users';
 import { budgetResult, standard2026, usd } from '@/testing/fixtures/all-work';
 import type { AllWorkResult } from './all-work-types';
 import { BudgetView } from './BudgetView';
-import { visibleRows } from './view-state';
+import { visibleRows } from './view-rows';
 
 const OPEN_ALL = { ...standard2026(), expansion: { mode: 'allExpanded' as const, toggled: [] } };
 

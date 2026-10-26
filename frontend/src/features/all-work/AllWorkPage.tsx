@@ -30,18 +30,10 @@ import { useAllWorkSession } from './useAllWorkSession';
 import { useOpenRecord } from './useOpenRecord';
 import { ViewsControl } from './ViewsControl';
 import { ViewToolbar } from './ViewToolbar';
-import {
-  clearAll,
-  continuedPath,
-  nextSort,
-  pageOf,
-  standardState,
-  toggleRow,
-  toQueryParams,
-  visibleRows,
-  withoutRefused,
-  yearRange,
-} from './view-state';
+import { clearAll } from './view-chips';
+import { continuedPath, pageOf, toggleRow, visibleRows } from './view-rows';
+import { nextSort } from './view-columns';
+import { standardState, toQueryParams, withoutRefused, yearRange } from './view-state';
 
 /** The views as pill tabs (FR-001). */
 const TABS: TabItem<ViewType>[] = [
