@@ -101,7 +101,6 @@ func (s *Server) SignIn(tb testing.TB, email string) *Client {
 	return nil
 }
 
-// Do sends one request; an answer outside 2xx stops tb.
 func (c *Client) Do(tb testing.TB, method, path string, body any) Response {
 	tb.Helper()
 	answer := c.Send(tb, method, path, body)
@@ -111,7 +110,6 @@ func (c *Client) Do(tb testing.TB, method, path string, body any) Response {
 	return answer
 }
 
-// Send sends one request and returns the answer, whatever its status.
 func (c *Client) Send(tb testing.TB, method, path string, body any) Response {
 	tb.Helper()
 	ctx := querycount.With(tb.Context())
@@ -167,7 +165,6 @@ func (s *Server) do(ctx context.Context, r request) *httptest.ResponseRecorder {
 	return w
 }
 
-// Decode reads the answer's JSON body into v; a body that does not fit stops tb.
 func (r Response) Decode(tb testing.TB, v any) {
 	tb.Helper()
 	if err := json.Unmarshal(r.Body, v); err != nil {

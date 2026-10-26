@@ -12,7 +12,6 @@ import (
 	"mapp/internal/settings"
 )
 
-// CopyCounts is how many activities a copy made, and how many line items came with them.
 type CopyCounts struct {
 	Activities, LineItems int
 }
@@ -73,10 +72,7 @@ func lineItemCopyOrder(pairs []CopyPair, list []Activity, newIDs map[string]stri
 	return order
 }
 
-// CopyForInitiatives copies the activities of every initiative of newInitiativeIDs (the id of a copied
-// initiative → the id of its copy; other ids match no activity) into that copy, as CopyAll does but without
-// their line items, and returns the old → new ID of every activity it copied. It is the Copy of the
-// activity level of feature 004's plan copy (D-195): the line-item level copies the line items next.
+// CopyForInitiatives is CopyMany without the line items, which the line-item level of a plan copy copies next.
 func (s *Service) CopyForInitiatives(ctx context.Context, a actor.Actor, newInitiativeIDs map[string]string, yearShift int) (map[string]string, error) {
 	var newIDs map[string]string
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -118,10 +114,9 @@ func (s *Service) addCopies(ctx context.Context, by copyBy, list []Activity, new
 	return newIDs, nil
 }
 
-// copyOf returns a copy of the activity a that shares no pointer or map with it, its dates moved years on.
 func copyOf(a Activity, years int) Activity {
 	dup := a
-	dup.SplitFromID = "" // copies never carry the split link (016 FR-031)
+	dup.SplitFromID = "" // copies never carry the split link
 	dup.StartDate, dup.EndDate = shiftDate(a.StartDate, years), shiftDate(a.EndDate, years)
 	dup.PlannedCost, dup.Revenue = clonePtr(a.PlannedCost), clonePtr(a.Revenue)
 	dup.INQ, dup.MQL = clonePtr(a.INQ), clonePtr(a.MQL)
@@ -141,7 +136,6 @@ func shiftDate(d *date.Date, years int) *date.Date {
 	return &shifted
 }
 
-// clonePtr returns a pointer to a copy of what p points at, or nil.
 func clonePtr[T any](p *T) *T {
 	if p == nil {
 		return nil

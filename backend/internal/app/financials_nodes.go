@@ -142,7 +142,7 @@ func (p financialPlanning) addLineItems(ctx context.Context, nodes []financials.
 	if len(activityIDs) == 0 {
 		return nodes, nil
 	}
-	items, err := p.lineItems.ListByActivities(ctx, activityIDs) // ordered by id: creation order
+	items, err := p.lineItems.ListByActivities(ctx, activityIDs)
 	if err != nil {
 		return nil, err
 	}

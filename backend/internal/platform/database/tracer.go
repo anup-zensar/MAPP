@@ -10,6 +10,11 @@ import (
 
 type counter struct{}
 
+var (
+	_ pgx.QueryTracer    = counter{}
+	_ pgx.CopyFromTracer = counter{}
+)
+
 func (counter) TraceQueryStart(ctx context.Context, _ *pgx.Conn, _ pgx.TraceQueryStartData) context.Context {
 	querycount.Add(ctx)
 	return ctx

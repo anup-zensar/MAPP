@@ -8,7 +8,6 @@ type Table[R any] struct {
 	index map[string]int
 }
 
-// Find returns the row with id, and false when there is none.
 func (t Table[R]) Find(id string) (R, bool) {
 	i, found := t.index[id]
 	if !found {

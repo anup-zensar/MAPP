@@ -12,15 +12,13 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// place is where an initiative sits: its path from the plan down, and the plan.
 type place struct {
 	path []errs.RecordRef
 	plan plans.Plan
 }
 
 // readAround reads the line items of the activities and the initiatives, campaigns and plans above them, one
-// query each, so that the facts of every activity find them in the transaction's memo instead of reading
-// them one activity at a time.
+// query each, so that each activity's facts find them in the transaction's memo.
 func (p *approvalsActivities) readAround(ctx context.Context, list []activities.Activity) error {
 	activityIDs, initiativeIDs := make([]string, 0, len(list)), make([]string, 0, len(list))
 	for _, act := range list {

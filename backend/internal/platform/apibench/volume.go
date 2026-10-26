@@ -23,11 +23,11 @@ const volumeVersion = "1"
 // with 5,000 activities and 20,000 line items, one plan with 500 activities; Global Marketing Ops holds 50
 // plans in each of 2027 to 2030; 1,000 people, 5,000 GSAP rows and 50,000 log entries.
 const (
-	lubricantsPlans     = 48 // the template and its copies; P-1001 and the big plan make 50
-	activitiesPerTarget = 10 // per initiative of the template
-	initiativesPerGroup = 5  // per campaign of the template
-	lineItemsPerTarget  = 4  // per activity of the template
-	bigPlanCampaigns    = 5  // copies of each campaign of the template: 10 campaigns, 500 activities
+	lubricantsPlans     = 48
+	activitiesPerTarget = 10
+	initiativesPerGroup = 5
+	lineItemsPerTarget  = 4
+	bigPlanCampaigns    = 5
 	globalPlansPerYear  = 50
 	firstGlobalYear     = 2027
 	lastGlobalYear      = 2030
@@ -44,7 +44,6 @@ const (
 	BigPlan      = "Volume Lubricants big"
 )
 
-// The fields of the request bodies the volume sends.
 const (
 	fieldName     = "name"
 	fieldPlanID   = "planId"

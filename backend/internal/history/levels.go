@@ -236,7 +236,6 @@ type kindGroup struct {
 	positions []int
 }
 
-// groupsByKind groups snapshots by kind, kinds in the order they first appear: parents' kinds first.
 func groupsByKind(snapshots []Snapshot) []kindGroup {
 	var groups []kindGroup
 	for i, snapshot := range snapshots {

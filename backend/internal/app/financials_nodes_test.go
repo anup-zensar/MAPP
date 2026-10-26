@@ -66,7 +66,7 @@ func TestFinancialPlanning_PlanOfAndPlanNodes_028_FR002(t *testing.T) {
 		t.Fatalf("read: %v", err)
 	}
 	want := map[string]string{"L-1005": "P-1001", "A-1002": "P-1001", "I-1001": "P-1001", "C-1002": "P-1001", "P-1004": "P-1004"}
-	if diff := cmp.Diff(want, got); diff != "" { // L-1011 is in the recycle bin
+	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("plans of the records (-want +got):\n%s", diff)
 	}
 	inP1002 := slices.DeleteFunc(every, func(n financials.Node) bool { return n.PlanID != "P-1002" })
@@ -75,8 +75,6 @@ func TestFinancialPlanning_PlanOfAndPlanNodes_028_FR002(t *testing.T) {
 	}
 }
 
-// pageOrders puts each campaign's, initiative's and activity's place among its siblings on the plan pages into
-// orders.
 func pageOrders(ctx context.Context, adapter financialPlanning, activityService *activities.Service, orders map[string]int) error {
 	all, err := adapter.plans.List(ctx)
 	if err != nil {

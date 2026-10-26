@@ -7,9 +7,8 @@ import (
 	"strings"
 )
 
-// Records keeps the rows of one table of the planning tree, by id and by parent, for the rest of a
-// transaction, so that a page that reads a record's parent for each of its records reads each parent once.
-// Read reads the rows with the ids, or those of the parents: one of the two lists is given, never empty.
+// Records keeps the rows of one planning table by id and by parent for the rest of a transaction. Read reads
+// the rows with the ids, or those of the parents: one of the two lists is given, never empty.
 type Records[R any] struct {
 	Area   string
 	ID     func(R) string
@@ -39,7 +38,6 @@ func (r Records[R]) ByID(ctx context.Context, ids []string) ([]R, error) {
 	return r.inOrder(rows), nil
 }
 
-// ByParent returns the rows of the parents, in table order.
 func (r Records[R]) ByParent(ctx context.Context, parentIDs []string) ([]R, error) {
 	kept, err := Many(ctx, r.Area+":of:", parentIDs, func(ctx context.Context, missing []string) (map[string][]R, error) {
 		rows, err := r.read(ctx, nil, missing)

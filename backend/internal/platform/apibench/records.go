@@ -12,11 +12,9 @@ import (
 	"mapp/internal/stores"
 )
 
-// Tree names records of one plan that the benchmarks open, copy or move.
 type Tree struct {
 	Plan, Campaign, Initiative, Activity, LineItem string
-	// ActivityMove is an activity and another initiative of the plan whose dates hold it; InitiativeMove an
-	// initiative and another campaign whose dates hold it.
+	// an activity and an initiative that can move: each with another parent whose dates hold it
 	ActivityMove, ActivityTarget     string
 	InitiativeMove, InitiativeTarget string
 }
@@ -79,7 +77,6 @@ func (v *volume) initiativeAndOtherCampaign(_ context.Context, initiatives []cam
 	return "", ""
 }
 
-// named reports whether the campaign campaignID has an initiative called name: a move there is refused.
 func named(initiatives []campaigns.Initiative, campaignID, name string) bool {
 	return slices.ContainsFunc(initiatives, func(i campaigns.Initiative) bool {
 		return i.CampaignID == campaignID && strings.EqualFold(i.Name, name)
@@ -93,7 +90,6 @@ func holds(start, end, from, to *date.Date) bool {
 	return startOK && endOK
 }
 
-// Set gives the benchmarks the stores, to find what a request needs.
 func (s *Server) Set() stores.Set {
 	return s.set
 }

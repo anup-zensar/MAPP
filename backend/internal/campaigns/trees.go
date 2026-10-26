@@ -42,14 +42,12 @@ func (s *Service) planTrees(ctx context.Context, plans []PlanFacts) ([]PlanCampa
 	return trees, nil
 }
 
-// treeBelow is what is below the campaigns of some plans: the initiatives by campaign and the summaries of
-// their activities by initiative, each in id order.
+// treeBelow is the initiatives of some campaigns by campaign, and their activities by initiative, in id order.
 type treeBelow struct {
 	initiativesOf map[string][]Initiative
 	activitiesOf  map[string][]ActivitySummary
 }
 
-// below reads the initiatives of the campaigns and the summaries of their activities.
 func (s *Service) below(ctx context.Context, campaignIDs []string) (treeBelow, error) {
 	initiatives, err := s.repo.InitiativesOfCampaigns(ctx, campaignIDs)
 	if err != nil {
