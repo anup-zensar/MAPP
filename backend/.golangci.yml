@@ -1,0 +1,201 @@
+# golangci-lint v2 configuration for the MAPP backend.
+#
+# Enforces the machine-checkable rules of the constitution
+# (.specify/memory/constitution.md). Thresholds follow the quality metrics
+# table in Principle V:
+#   - The soft limits below (gocyclo 8, argument-limit 4, max-control-nesting 4,
+#     funlen 40 statements) mark the top of the "Acceptable" band. A finding
+#     means the value is in "Needs justification": fix it, or suppress it with
+#     //nolint:<linter> // <justification>.
+#   - cyclop at 14 is the hard limit. Reviewers reject any nolint for cyclop.
+#   - Function length has one counter, funlen. A //nolint:funlen must state the
+#     count it reports; reviewers reject any above 60 (the hard limit).
+#   - Fan-out and expression terms have no reliable linter; reviewers check them.
+#   - The comment budget (Principle VIII) has no linter either; quality gate 14
+#     checks it. revive's "exported" rule is off because it demands a doc
+#     comment on every exported identifier, which the budget forbids.
+#
+# Run: golangci-lint run ./...        Format: golangci-lint fmt ./...
+# Code written before constitution 2.0.0 still has findings until it is
+# aligned (Governance → Alignment), so pull-request CI runs with
+# --new-from-merge-base and reports only new and changed lines.
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+issues:
+  # Report every limit a function breaks. By default only one finding per
+  # line is shown, which hides funlen behind gocyclo on long, complex functions.
+  uniq-by-line: false
+
+linters:
+  default: none
+  enable:
+    # Correctness
+    - bodyclose
+    - errcheck
+    - errorlint
+    - exhaustive
+    - govet
+    - ineffassign
+    - nilerr
+    - noctx
+    - rowserrcheck
+    - sqlclosecheck
+    - staticcheck
+    - unused
+    # Security (Principle VII)
+    - gosec
+    # Complexity (Principle V)
+    - cyclop
+    - funlen
+    - gocyclo
+    - nakedret
+    # Construction rules (Principle VIII, B2, B8)
+    - depguard
+    - errname
+    - gochecknoglobals
+    - gochecknoinits
+    - goconst
+    - gocritic
+    - godot
+    - godox
+    - misspell
+    - nolintlint
+    - predeclared
+    - reassign
+    - revive
+    - sloglint
+    - unconvert
+    - unparam
+    - usestdlibvars
+    # Tests (Principle VI, B9)
+    - thelper
+    - tparallel
+    - usetesting
+
+  settings:
+    cyclop:
+      max-complexity: 14 # hard limit: 15+ is unacceptable
+    funlen:
+      statements: 40 # 41..60 needs justification; 61+ is rejected in review
+      lines: -1 # length is measured in statements, so comments, literals, and SQL do not count
+    gocyclo:
+      min-complexity: 9 # 9..14 needs justification
+    nakedret:
+      max-func-lines: 5
+    goconst:
+      min-occurrences: 2 # a literal used more than once is a constant
+    godox:
+      keywords: [TODO, FIXME, XXX, HACK, BUG]
+    godot:
+      scope: declarations
+    gocritic:
+      enabled-checks:
+        - commentedOutCode
+    govet:
+      enable:
+        - shadow
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+    exhaustive:
+      default-signifies-exhaustive: false
+    sloglint:
+      context: scope # use the *Context variants whenever a ctx is in scope
+      static-msg: true
+      key-naming-case: snake
+    gosec:
+      excludes:
+        - G104 # unchecked errors: errcheck reports these already
+    depguard:
+      rules:
+        banned:
+          files: ["$all"]
+          deny:
+            - pkg: gorm.io
+              desc: "ORMs are not allowed; write SQL for sqlc (constitution B1)"
+            - pkg: github.com/mattn/go-sqlite3
+              desc: "cgo driver; use the pure-Go SQLite driver (constitution B1, B8)"
+            - pkg: github.com/testcontainers
+              desc: "no Docker in this phase; test against SQLite files (constitution B1, B9)"
+            - pkg: github.com/sirupsen/logrus
+              desc: "use log/slog (constitution B7)"
+            - pkg: go.uber.org/zap
+              desc: "use log/slog (constitution B7)"
+            - pkg: github.com/rs/zerolog
+              desc: "use log/slog (constitution B7)"
+            - pkg: "log$"
+              desc: "use log/slog (constitution B7)"
+            - pkg: github.com/pkg/errors
+              desc: "use errors and fmt.Errorf with %w (constitution B4)"
+            - pkg: github.com/stretchr/testify
+              desc: "use testing and github.com/google/go-cmp (constitution B9)"
+            - pkg: io/ioutil
+              desc: "deprecated; use io and os"
+            - pkg: math/rand
+              desc: "use crypto/rand for anything security-related; justify math/rand/v2 otherwise"
+        service-layer:
+          files: ["**/service.go"]
+          deny:
+            - pkg: github.com/gin-gonic/gin
+              desc: "services must not depend on the transport (constitution B2)"
+            - pkg: net/http
+              desc: "services must not depend on the transport (constitution B2)"
+            - pkg: database/sql
+              desc: "services reach the database only through their Store interface (constitution B2)"
+            - pkg: mapp/internal/platform/database
+              desc: "services reach the database only through their Store interface (constitution B2)"
+    revive:
+      rules:
+        # Quality metrics (Principle V)
+        - name: argument-limit
+          arguments: [4]
+        - name: max-control-nesting
+          arguments: [4]
+        # Construction rules (Principle VIII)
+        - name: modifies-parameter
+        - name: unused-parameter
+        - name: redefines-builtin-id
+        - name: import-shadowing
+        - name: empty-block
+        - name: unreachable-code
+        - name: deep-exit # os.Exit and log.Fatal only in main (B3)
+        # Naming and documentation (B8); "exported" is left out on purpose (see header)
+        - name: package-comments
+        - name: var-naming
+        - name: receiver-naming
+        - name: error-naming
+        - name: error-strings
+        - name: error-return
+        - name: time-naming
+        - name: unexported-return
+        - name: blank-imports
+        - name: dot-imports
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: superfluous-else
+        - name: early-return
+        # Context (B3)
+        - name: context-as-argument
+        - name: context-keys-type
+
+  exclusions:
+    generated: lax # sqlc output carries a "Code generated" header
+    rules:
+      - path: _test\.go
+        linters:
+          - goconst
+          - gochecknoglobals
+          - funlen # table-driven tests are long by design
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - mapp
