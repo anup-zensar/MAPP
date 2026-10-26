@@ -1,7 +1,7 @@
 /**
  * The activity log's filters (feature 011, FR-002, FR-003, plan "Filters"): kept in the address,
- * so links, Back and **Open in activity log** work. This file turns the address into the filter
- * state, the state into the API's query and the chips, and works out the local date ranges.
+ * so links, Back and **Open in activity log** work. This file turns the filter state into the
+ * address and the API's query, and works out the local date ranges; schemas.ts reads the address.
  *
  * | Address                         | API                    |
  * | person=U-1003                   | actorId                |
@@ -13,13 +13,9 @@
  * | q=film                          | q                      |
  */
 import type { components, operations } from '@/api/generated/schema';
-import type { FilterChip } from '@/ui/FilterChips/FilterChips';
-import { ACTION_CHIPS, capitalise, planningLabel } from './log-text';
+import { ACTION_CHIPS } from './log-text';
 
 export type ActionFilter = components['schemas']['ActivityLogActionFilter'];
-type ActorRef = components['schemas']['ActorRef'];
-type RecordRef = components['schemas']['RecordRef'];
-type RecordTypeCount = components['schemas']['RecordTypeCount'];
 
 /** The Action filter's choices, in the order of the menu (FR-003). */
 export const ACTION_FILTERS: { value: ActionFilter; word: string }[] = (
@@ -35,7 +31,9 @@ export const ACTION_FILTERS: { value: ActionFilter; word: string }[] = (
   ] as const
 ).map((value) => ({ value, word: ACTION_CHIPS[value].word }));
 
-export type DateRangeKey = 'today' | 'week' | '30d' | 'year' | 'custom';
+export const DATE_RANGE_KEYS = ['today', 'week', '30d', 'year', 'custom'] as const;
+
+export type DateRangeKey = (typeof DATE_RANGE_KEYS)[number];
 
 /** The date-range pills; '' is "Any time" (FR-003). */
 export const DATE_RANGES: { value: DateRangeKey | ''; label: string }[] = [
@@ -83,32 +81,6 @@ export type LogApiQuery = Omit<
   NonNullable<operations['listActivityLog']['parameters']['query']>,
   'beforeSeq' | 'limit'
 >;
-
-const DATE = /^\d{4}-\d{2}-\d{2}$/;
-
-/** The filters in the address; anything it does not know is left out. */
-export function filtersFromParams(params: URLSearchParams): LogFilterState {
-  const range = params.get('range') ?? '';
-  const record = params.get('record') ?? '';
-  return {
-    person: params.get('person') ?? '',
-    type: params.get('type') ?? '',
-    actions: ACTION_FILTERS.map((choice) => choice.value).filter((value) =>
-      params.getAll('action').includes(value),
-    ),
-    plan: params.get('plan') ?? '',
-    record,
-    inside: record !== '' && params.get('inside') === '1',
-    range: DATE_RANGES.some((choice) => choice.value === range) ? (range as DateRangeKey) : '',
-    from: range === 'custom' ? dateParam(params.get('from')) : '',
-    to: range === 'custom' ? dateParam(params.get('to')) : '',
-    q: params.get('q') ?? '',
-  };
-}
-
-function dateParam(value: string | null): string {
-  return value && DATE.test(value) ? value : '';
-}
 
 /** The address of the filters, in a fixed order; filters not in use are left out. */
 export function filtersToParams(state: LogFilterState): URLSearchParams {
@@ -208,12 +180,7 @@ export function rangeBounds(
       if (!state.from || !state.to) {
         return {};
       }
-      const [fromYear, fromMonth, fromDay] = state.from.split('-').map(Number);
-      const [toYear, toMonth, toDay] = state.to.split('-').map(Number);
-      return {
-        from: localMidnight(fromYear, fromMonth - 1, fromDay),
-        to: localMidnight(toYear, toMonth - 1, toDay + 1),
-      };
+      return { from: midnightOf(state.from), to: midnightOf(state.to, 1) };
     }
   }
 }
@@ -233,96 +200,8 @@ function localMidnight(year: number, month: number, day: number): string {
   return new Date(year, month, day).toISOString();
 }
 
-/** What the chips need to name the filters: the summary's lists and the page's record. */
-export interface ChipNames {
-  people: ActorRef[];
-  recordTypes: RecordTypeCount[];
-  plans: RecordRef[];
-  /** The record of the Record filter, as GET /api/v1/activity-log answered it. */
-  record: RecordRef | null;
-  /** Shows a calendar date in the person's format. */
-  formatDate: (date: string) => string;
-}
-
-/** "Activity", "Line item": a record type's label for chips and selects. */
-export function typeLabel(type: string, recordTypes: RecordTypeCount[]): string {
-  const known = recordTypes.find((choice) => choice.type === type);
-  return capitalise(known?.label ?? planningLabel(type));
-}
-
-/**
- * Every filter in use as a chip (FR-003): "Person: Daniel Okoro", "Type: Activity", "Action:
- * Deleted" (one per action), "Plan: FY2026 Lubricants Europe", "Record: Activity 'Film shoot'
- * (A-1042) and items inside", "Date: This week" or "Date: 01 Oct 2026 – 12 Oct 2026", "Search:
- * 'film'". The chip's key says which filter removeFilter() takes away.
- */
-export function filterChips(state: LogFilterState, names: ChipNames): FilterChip[] {
-  const chips: FilterChip[] = [];
-  if (state.person) {
-    const person = names.people.find((choice) => choice.id === state.person);
-    chips.push({ key: 'person', label: `Person: ${person?.name ?? state.person}` });
-  }
-  if (state.type) {
-    chips.push({ key: 'type', label: `Type: ${typeLabel(state.type, names.recordTypes)}` });
-  }
-  for (const action of state.actions) {
-    chips.push({ key: `action:${action}`, label: `Action: ${ACTION_CHIPS[action].word}` });
-  }
-  if (state.plan) {
-    const plan = names.plans.find((choice) => choice.id === state.plan);
-    chips.push({ key: 'plan', label: `Plan: ${plan?.name ?? state.plan}` });
-  }
-  if (state.record) {
-    chips.push({ key: 'record', label: recordChip(state, names) });
-  }
-  const dateChip = dateChipLabel(state, names.formatDate);
-  if (dateChip) {
-    chips.push({ key: 'date', label: dateChip });
-  }
-  if (state.q.trim()) {
-    chips.push({ key: 'q', label: `Search: '${state.q.trim()}'` });
-  }
-  return chips;
-}
-
-function recordChip(state: LogFilterState, names: ChipNames): string {
-  const record = names.record?.id === state.record ? names.record : null;
-  const inside = state.inside ? ' and items inside' : '';
-  if (!record) {
-    return `Record: ${state.record}${inside}`;
-  }
-  return `Record: ${typeLabel(record.type, names.recordTypes)} '${record.name}' (${record.id})${inside}`;
-}
-
-function dateChipLabel(state: LogFilterState, formatDate: (date: string) => string): string {
-  if (state.range === 'custom') {
-    return state.from && state.to && !customRangeError(state)
-      ? `Date: ${formatDate(state.from)} – ${formatDate(state.to)}`
-      : '';
-  }
-  const range = DATE_RANGES.find((choice) => choice.value === state.range);
-  return state.range && range ? `Date: ${range.label}` : '';
-}
-
-/** The filters without the one a chip names. */
-export function removeFilter(state: LogFilterState, key: string): LogFilterState {
-  if (key.startsWith('action:')) {
-    return { ...state, actions: state.actions.filter((action) => `action:${action}` !== key) };
-  }
-  switch (key) {
-    case 'person':
-      return { ...state, person: '' };
-    case 'type':
-      return { ...state, type: '' };
-    case 'plan':
-      return { ...state, plan: '' };
-    case 'record':
-      return { ...state, record: '', inside: false };
-    case 'date':
-      return { ...state, range: '', from: '', to: '' };
-    case 'q':
-      return { ...state, q: '' };
-    default:
-      return state;
-  }
+/** The local midnight of a calendar date "YYYY-MM-DD", `daysLater` days on. */
+function midnightOf(date: string, daysLater = 0): string {
+  const [year = 0, month = 1, day = 1] = date.split('-').map(Number);
+  return localMidnight(year, month - 1, day + daysLater);
 }

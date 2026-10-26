@@ -1,23 +1,25 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HttpHandler } from 'msw';
+import { parentOf, nth } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { TODAY_NOON, logEntry, logPage, logSummary } from '@/testing/fixtures/activity-log';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import { ActivityLogPage } from './ActivityLogPage';
 
-const NOT_FOUND_BODY = {
+const SERVER_ERROR = {
   error: {
-    code: 'internal_error',
+    code: 'internal_error' as const,
     message: 'Something went wrong. Please try again.',
+    fields: [],
   },
 };
 
 function renderPage(route: string, answers: HttpHandler[]) {
   const api = mockApi([
-    looseReply('GET /api/v1/activity-log/summary', { body: logSummary() }),
+    reply('GET /api/v1/activity-log/summary', { body: logSummary() }),
     ...answers,
   ]);
   const rendered = renderWithProviders(<ActivityLogPage />, {
@@ -47,7 +49,7 @@ describe('ActivityLogPage', () => {
 
   it('shows the header and names the tab, with no create or edit action (FR-001, FR-010)', async () => {
     renderPage('/activity-log', [
-      looseReply('GET /api/v1/activity-log', { body: logPage([logEntry()]) }),
+      reply('GET /api/v1/activity-log', { body: logPage([logEntry()]) }),
     ]);
 
     expect(screen.getByRole('heading', { level: 1, name: 'Activity log' })).toBeInTheDocument();
@@ -61,7 +63,7 @@ describe('ActivityLogPage', () => {
 
   it('shows the four summary cards for today and this week, in local time (FR-002)', async () => {
     const { api } = renderPage('/activity-log', [
-      looseReply('GET /api/v1/activity-log', { body: logPage([logEntry()]) }),
+      reply('GET /api/v1/activity-log', { body: logPage([logEntry()]) }),
     ]);
 
     for (const name of [
@@ -84,7 +86,7 @@ describe('ActivityLogPage', () => {
 
   it('applies a card’s filters when it is clicked (FR-002)', async () => {
     const { user, router, api } = renderPage('/activity-log', [
-      looseReply('GET /api/v1/activity-log', { body: logPage([logEntry()]) }),
+      reply('GET /api/v1/activity-log', { body: logPage([logEntry()]) }),
     ]);
 
     await user.click(
@@ -97,20 +99,20 @@ describe('ActivityLogPage', () => {
       ),
     );
     await waitFor(() => expect(logSearches(api)).toHaveLength(2));
-    const search = logSearches(api)[1];
+    const search = nth(logSearches(api), 1);
     expect(search.getAll('action')).toEqual(['deleted', 'deletedPermanently']);
     expect(search.get('from')).toBe('2026-10-19T00:00:00.000Z');
   });
 
   it('asks the API for the filters in the address and counts the matches (FR-003)', async () => {
     const { api } = renderPage('/activity-log?person=U-1003&action=deleted&q=film', [
-      looseReply('GET /api/v1/activity-log', {
+      reply('GET /api/v1/activity-log', {
         body: logPage([logEntry()], { total: 1, unfilteredTotal: 140 }),
       }),
     ]);
 
     expect(await screen.findByText('1 of 140 entries')).toBeInTheDocument();
-    const search = logSearches(api)[0];
+    const search = nth(logSearches(api), 0);
     expect(search.get('actorId')).toBe('U-1003');
     expect(search.getAll('action')).toEqual(['deleted']);
     expect(search.get('q')).toBe('film');
@@ -123,7 +125,7 @@ describe('ActivityLogPage', () => {
 
   it('counts every entry when no filter is in use (FR-003)', async () => {
     renderPage('/activity-log', [
-      looseReply('GET /api/v1/activity-log', {
+      reply('GET /api/v1/activity-log', {
         body: logPage([logEntry()], { total: 140, unfilteredTotal: 140 }),
       }),
     ]);
@@ -133,7 +135,7 @@ describe('ActivityLogPage', () => {
 
   it('shows the Record filter of a History link as a chip named after the record (FR-013)', async () => {
     const { api } = renderPage('/activity-log?record=A-1042&inside=1', [
-      looseReply('GET /api/v1/activity-log', {
+      reply('GET /api/v1/activity-log', {
         body: logPage([logEntry()], {
           record: { type: 'activity', id: 'A-1042', name: 'Film shoot' },
         }),
@@ -145,14 +147,14 @@ describe('ActivityLogPage', () => {
         name: "Remove filter: Record: Activity 'Film shoot' (A-1042) and items inside",
       }),
     ).toBeInTheDocument();
-    const search = logSearches(api)[0];
+    const search = nth(logSearches(api), 0);
     expect(search.get('recordId')).toBe('A-1042');
     expect(search.get('includeInside')).toBe('true');
   });
 
   it('clears every filter at once (FR-003)', async () => {
     const { user, router } = renderPage('/activity-log?person=U-1003&range=week', [
-      looseReply('GET /api/v1/activity-log', {
+      reply('GET /api/v1/activity-log', {
         body: logPage([logEntry()], { unfilteredTotal: 140 }),
       }),
     ]);
@@ -164,7 +166,7 @@ describe('ActivityLogPage', () => {
 
   it('groups the entries by day (FR-004)', async () => {
     renderPage('/activity-log', [
-      looseReply('GET /api/v1/activity-log', {
+      reply('GET /api/v1/activity-log', {
         body: logPage([
           logEntry({ id: 'LOG-2', seq: 2 }),
           logEntry({ id: 'LOG-1', seq: 1, at: '2026-10-18T09:00:00Z' }),
@@ -181,7 +183,7 @@ describe('ActivityLogPage', () => {
       logEntry({ id: `LOG-${200 - index}`, seq: 200 - index }),
     );
     const { user, api } = renderPage('/activity-log', [
-      looseReply('GET /api/v1/activity-log', (request) => {
+      reply('GET /api/v1/activity-log', (request) => {
         const beforeSeq = new URL(request.url).searchParams.get('beforeSeq');
         return beforeSeq
           ? { body: logPage([logEntry({ id: 'LOG-150', seq: 150 })], { total: 51 }) }
@@ -193,14 +195,14 @@ describe('ActivityLogPage', () => {
     await user.click(screen.getByRole('button', { name: 'Load more' }));
 
     await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(51));
-    expect(logSearches(api)[1].get('beforeSeq')).toBe('151');
+    expect(nth(logSearches(api), 1).get('beforeSeq')).toBe('151');
     expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument();
   });
 
   it('shows placeholders while the log loads', () => {
     renderPage('/activity-log', [
-      looseReply('GET /api/v1/activity-log/summary', () => new Promise<never>(() => {})),
-      looseReply('GET /api/v1/activity-log', () => new Promise<never>(() => {})),
+      reply('GET /api/v1/activity-log/summary', () => new Promise<never>(() => {})),
+      reply('GET /api/v1/activity-log', () => new Promise<never>(() => {})),
     ]);
 
     expect(screen.getAllByRole('status').length).toBeGreaterThan(4);
@@ -209,11 +211,9 @@ describe('ActivityLogPage', () => {
   it('says why the log could not be loaded, with Try again', async () => {
     let calls = 0;
     const { user } = renderPage('/activity-log', [
-      looseReply('GET /api/v1/activity-log', () => {
+      reply('GET /api/v1/activity-log', () => {
         calls += 1;
-        return calls === 1
-          ? { status: 500, body: NOT_FOUND_BODY }
-          : { body: logPage([logEntry()]) };
+        return calls === 1 ? { status: 500, body: SERVER_ERROR } : { body: logPage([logEntry()]) };
       }),
     ]);
 
@@ -227,7 +227,7 @@ describe('ActivityLogPage', () => {
 
   it('says when the log is still empty', async () => {
     renderPage('/activity-log', [
-      looseReply('GET /api/v1/activity-log', {
+      reply('GET /api/v1/activity-log', {
         body: logPage([], { total: 0, unfilteredTotal: 0 }),
       }),
     ]);
@@ -240,12 +240,12 @@ describe('ActivityLogPage', () => {
 
   it('says when the filters hide everything, with Clear filters (FR-003)', async () => {
     const { user, router } = renderPage('/activity-log?q=zzz', [
-      looseReply('GET /api/v1/activity-log', {
+      reply('GET /api/v1/activity-log', {
         body: logPage([], { total: 0, unfilteredTotal: 140 }),
       }),
     ]);
 
-    const empty = (await screen.findByText('Nothing matches these filters')).parentElement!;
+    const empty = parentOf(await screen.findByText('Nothing matches these filters'));
     await user.click(within(empty).getByRole('button', { name: 'Clear filters' }));
 
     await waitFor(() => expect(router.state.location.search).toBe(''));
@@ -253,7 +253,7 @@ describe('ActivityLogPage', () => {
 
   it('asks nothing while the custom range ends before it starts (FR-003)', async () => {
     const { api } = renderPage('/activity-log?range=custom&from=2026-10-12&to=2026-10-01', [
-      looseReply('GET /api/v1/activity-log', { body: logPage([logEntry()]) }),
+      reply('GET /api/v1/activity-log', { body: logPage([logEntry()]) }),
     ]);
 
     expect(
