@@ -108,6 +108,9 @@ func (s allWorkSource) nodesOf(ctx context.Context, yearPlans []plans.Plan, year
 
 // addPlans adds the plans with their own missing fields and everything below them.
 func (y *yearReader) addPlans(ctx context.Context, yearPlans []plans.Plan, missing map[string]int) error {
+	if err := y.s.readTrees(ctx, yearPlans); err != nil {
+		return err
+	}
 	for _, p := range yearPlans {
 		if err := y.addPlan(ctx, p, missing[p.ID]); err != nil {
 			return err
