@@ -1,6 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { HttpHandler } from 'msw';
+import { nth } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
@@ -49,7 +50,10 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
     await user.click(await within(panel).findByRole('combobox', { name: /Approvers/ }));
     await user.click(screen.getByRole('option', { name: /Carlos Mendes/ }));
     await user.click(within(panel).getByRole('button', { name: 'Add level' }));
-    await user.type(within(panel).getAllByRole('textbox', { name: /Level name/ })[1], 'Global');
+    await user.type(
+      nth(within(panel).getAllByRole('textbox', { name: /Level name/ }), 1),
+      'Global',
+    );
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     expect(
@@ -194,8 +198,9 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
     ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await screen.findByText("Approval workflow 'Lubricants EU approval' saved");
-    expect(api.bodiesOf(UPDATE).map((body) => (body as { version: number }).version)).toEqual([
-      4, 5,
+    expect(api.bodiesOf(UPDATE)).toEqual([
+      expect.objectContaining({ version: 4 }),
+      expect.objectContaining({ version: 5 }),
     ]);
   });
 

@@ -2,6 +2,7 @@ import { screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { closestTo, nth } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
@@ -43,8 +44,8 @@ const levels = () => screen.getAllByRole('heading', { level: 3 }).map((h) => h.t
 const nameValues = () =>
   screen
     .getAllByRole('textbox', { name: /Level name/ })
-    .map((input) => (input as HTMLInputElement).value);
-const sent = () => JSON.parse(document.querySelector('output')?.textContent ?? '[]') as unknown[];
+    .map((input) => (input instanceof HTMLInputElement ? input.value : ''));
+const sent = (): unknown => JSON.parse(document.querySelector('output')?.textContent ?? '[]');
 
 describe('LevelsEditor (feature 008, US4)', () => {
   it('adds, moves and removes levels, each button named for its level (FR-002)', async () => {
@@ -67,7 +68,7 @@ describe('LevelsEditor (feature 008, US4)', () => {
   });
 
   it('hides Remove while there is only one level', async () => {
-    renderEditor([TWO[0]]);
+    renderEditor(TWO.slice(0, 1));
     await screen.findByRole('combobox', { name: /Approvers/ });
 
     expect(screen.queryByRole('button', { name: 'Remove level 1' })).not.toBeInTheDocument();
@@ -105,11 +106,11 @@ describe('LevelsEditor (feature 008, US4)', () => {
       expect.stringContaining('Level 2: choose at least one approver.'),
     );
     const names = screen.getAllByRole('textbox', { name: /Level name/ });
-    expect(names[0]).toHaveAccessibleDescription(
+    expect(nth(names, 0)).toHaveAccessibleDescription(
       expect.stringContaining('Level 1: use 60 characters or fewer.'),
     );
     expect(
-      within(names[0].closest('li') as HTMLElement).getByText("Shown as 'Level 1' when empty"),
+      within(closestTo(nth(names, 0), 'li')).getByText("Shown as 'Level 1' when empty"),
     ).toBeInTheDocument();
   });
 });
