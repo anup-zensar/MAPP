@@ -1,4 +1,3 @@
-/** The words of Needs your attention (feature 009, FR-011, FR-012). */
 import { formatWhole } from '@/format/decimal';
 import { localDate } from '@/format/intl';
 import type { HomeAttentionItem, HomeAttentionReason, Money } from './api';
