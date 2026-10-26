@@ -22,6 +22,8 @@ type Repository interface {
 	Delete(ctx context.Context, id string) error
 	// AddMany saves new line items, whose ids are not stored yet, all at once.
 	AddMany(ctx context.Context, list []LineItem) error
+	// ListByIDs returns the line items with ids that are stored.
+	ListByIDs(ctx context.Context, ids []string) ([]LineItem, error)
 	// DeleteMany removes the line items with ids all at once.
 	DeleteMany(ctx context.Context, ids []string) error
 }
