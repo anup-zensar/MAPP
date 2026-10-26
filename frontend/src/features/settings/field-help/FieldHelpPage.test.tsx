@@ -116,7 +116,7 @@ describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
     expect(panel).toHaveTextContent('This field uses the default text.');
     const text = within(panel).getByRole('textbox', { name: 'Help text' });
     await user.clear(text);
-    await user.type(text, newText);
+    await user.paste(newText);
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
