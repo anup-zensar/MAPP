@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"embed"
 	"errors"
 	"fmt"
@@ -50,13 +51,21 @@ func withMigrations(d *DB, fn func(provider *goose.Provider) error) (err error) 
 	sqlDB := stdlib.OpenDBFromPool(d.pool)
 	defer func() { err = errors.Join(err, sqlDB.Close()) }()
 
+	provider, err := newProvider(sqlDB)
+	if err != nil {
+		return err
+	}
+	return fn(provider)
+}
+
+func newProvider(sqlDB *sql.DB) (*goose.Provider, error) {
 	locker, err := lock.NewPostgresSessionLocker()
 	if err != nil {
-		return fmt.Errorf("create migration lock: %w", err)
+		return nil, fmt.Errorf("create migration lock: %w", err)
 	}
 	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, Migrations(), goose.WithSessionLocker(locker))
 	if err != nil {
-		return fmt.Errorf("load migrations: %w", err)
+		return nil, fmt.Errorf("load migrations: %w", err)
 	}
-	return fn(provider)
+	return provider, nil
 }

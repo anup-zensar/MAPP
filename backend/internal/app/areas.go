@@ -68,11 +68,7 @@ func (w *wiring) plansArea() error {
 // planningArea builds activities and line items before campaigns, which roll their summaries up.
 func (w *wiring) planningArea() error {
 	w.buildActivities()
-	w.campaigns = campaigns.NewService(w.set.Tx, w.set.Campaigns, w.generator, w.history, w.now, campaigns.Deps{
-		Plans: campaignPlans{repo: w.set.Plans}, People: w.set.People, Settings: w.settings,
-		Activities: activitiesForCampaigns{svc: w.activities},
-	})
-	w.campaigns.UseDisplayRates(w.people)
+	w.buildCampaigns()
 	if err := w.planningKinds(); err != nil {
 		return err
 	}
@@ -91,6 +87,14 @@ func (w *wiring) buildActivities() {
 		lineItemDeps(w.settings, s.Settings, w.activities, s.Activities, s.Campaigns, s.Plans, s.People, w.people), w.now)
 	w.activities.UseLineItems(lineItemsForActivities{svc: w.lineItems})
 	w.activities.UseDisplayRates(w.people)
+}
+
+func (w *wiring) buildCampaigns() {
+	w.campaigns = campaigns.NewService(w.set.Tx, w.set.Campaigns, w.generator, w.history, w.now, campaigns.Deps{
+		Plans: campaignPlans{repo: w.set.Plans}, People: w.set.People, Settings: w.settings,
+		Activities: activitiesForCampaigns{svc: w.activities},
+	})
+	w.campaigns.UseDisplayRates(w.people)
 }
 
 // planningKinds registers the kinds and the plan's levels top-down: campaign, initiative, activity, line item.
@@ -147,8 +151,7 @@ func (w *wiring) approvalsArea() error {
 		return err
 	}
 	w.connectApprovals()
-	w.access.UseTargets(planningTargets{db: s.Tx, plans: s.Plans, campaigns: s.Campaigns, activities: s.Activities,
-		lineItems: s.LineItems, approvals: s.Approvals}.finders())
+	w.accessTargets()
 	mount(w.signedIn, approvals.NewHandler(w.approvals))
 	return nil
 }
@@ -160,6 +163,12 @@ func (w *wiring) connectApprovals() {
 	w.approvals.UseRuleChoices(approvalRuleChoices{settings: w.settings})
 	w.access.UseApprovalFacts(accessApprovals{repo: w.set.Approvals})
 	w.approvals.UseApprovers(w.access)
+}
+
+func (w *wiring) accessTargets() {
+	s := w.set
+	w.access.UseTargets(planningTargets{db: s.Tx, plans: s.Plans, campaigns: s.Campaigns, activities: s.Activities,
+		lineItems: s.LineItems, approvals: s.Approvals}.finders())
 }
 
 func (w *wiring) financialsArea() error {

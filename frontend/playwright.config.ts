@@ -4,7 +4,8 @@ import { defineConfig, devices } from '@playwright/test';
 // their own (mapp_e2e, created when missing) that the seed empties and reloads, so a development server
 // and its database are never touched (research R19). E2E_API_PORT, E2E_WEB_PORT and E2E_DATABASE_URL move
 // them, so two checkouts can run their tests at once.
-const databaseURL = process.env.E2E_DATABASE_URL || 'postgres://mapp@127.0.0.1:5432/mapp_e2e?sslmode=disable';
+const databaseURL =
+  process.env.E2E_DATABASE_URL || 'postgres://mapp@127.0.0.1:5432/mapp_e2e?sslmode=disable';
 const apiPort = process.env.E2E_API_PORT || '18080';
 const webPort = process.env.E2E_WEB_PORT || '14173';
 

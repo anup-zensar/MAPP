@@ -29,6 +29,10 @@ func CreateIfMissing(ctx context.Context, dsn string) error {
 		return fmt.Errorf("connect to the database server: %w", err)
 	}
 	defer func() { _ = conn.Close(ctx) }()
+	return createDatabase(ctx, conn, name)
+}
+
+func createDatabase(ctx context.Context, conn *pgx.Conn, name string) error {
 	exists, err := sqlcdb.New(conn).DatabaseExists(ctx, name)
 	if err != nil {
 		return fmt.Errorf("look for database %s: %w", name, err)
