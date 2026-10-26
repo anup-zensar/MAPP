@@ -31,7 +31,8 @@ func BenchmarkChanges(b *testing.B) {
 	}
 	b.Run("submit and recall", func(b *testing.B) { c.submitAndRecall(b, records.Template.Activity) })
 	b.Run("approve", func(b *testing.B) { c.approve(b) })
-	b.Run("empty recycle bin", func(b *testing.B) { c.emptyBin(b, records.Template.Plan) })
+	b.Run("small/empty recycle bin", func(b *testing.B) { c.emptyBin(b, records.Small.Plan, false) })
+	b.Run("large/empty recycle bin", func(b *testing.B) { c.emptyBin(b, records.Template.Plan, true) })
 }
 
 type changes struct {
@@ -151,11 +152,26 @@ func (c *changes) purge(b *testing.B, planID string) {
 	})
 }
 
-func (c *changes) emptyBin(b *testing.B, planID string) {
+// emptyBin deletes a copy of the plan and empties the recycle bin of that entry alone or, with all, of every
+// entry in it.
+func (c *changes) emptyBin(b *testing.B, planID string, all bool) {
 	b.Helper()
 	c.measure(b, func() int64 {
-		c.alex.Do(b, http.MethodDelete, "/api/v1/plans/"+c.copyOf(b, planID), nil)
-		return c.alex.Do(b, http.MethodPost, "/api/v1/recycle-bin/empty", nil).Queries
+		deleted := c.alex.Do(b, http.MethodDelete, "/api/v1/plans/"+c.copyOf(b, planID), nil)
+		entries := []string{entryID(b, deleted)}
+		if all {
+			var bin struct {
+				Items []struct {
+					ID string `json:"id"`
+				} `json:"items"`
+			}
+			c.alex.Do(b, http.MethodGet, "/api/v1/recycle-bin", nil).Decode(b, &bin)
+			entries = entries[:0]
+			for _, item := range bin.Items {
+				entries = append(entries, item.ID)
+			}
+		}
+		return c.alex.Do(b, http.MethodPost, "/api/v1/recycle-bin/empty", map[string]any{"entryIds": entries}).Queries
 	})
 }
 
@@ -218,8 +234,10 @@ func (c *changes) approve(b *testing.B) {
 func entryID(b *testing.B, deleted apibench.Response) string {
 	b.Helper()
 	var entry struct {
-		ID string `json:"id"`
+		RecycleBinEntry struct {
+			ID string `json:"id"`
+		} `json:"recycleBinEntry"`
 	}
 	deleted.Decode(b, &entry)
-	return entry.ID
+	return entry.RecycleBinEntry.ID
 }
