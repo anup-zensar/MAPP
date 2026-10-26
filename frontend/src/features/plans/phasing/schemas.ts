@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { PhasingMethod } from './api';
 import { readAmount } from './phasing-math';
 
-export const PHASING_METHODS: readonly PhasingMethod[] = ['none', 'evenly', 'custom'];
+const PHASING_METHODS: readonly PhasingMethod[] = ['none', 'evenly', 'custom'];
 
 /** The problem of one month whose text is not an amount of 0.00 or more. */
 export const MONTH_PROBLEM = 'Type an amount of 0.00 or more.';
