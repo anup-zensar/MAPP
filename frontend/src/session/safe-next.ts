@@ -20,7 +20,12 @@ export function safeNext(raw: string | null | undefined): string {
     return '/';
   }
 
-  if (url.origin !== window.location.origin || isSignInPage(url.pathname)) {
+  // A path that starts with two slashes ("/.//evil.com" becomes "//evil.com") reads as another site.
+  if (
+    url.origin !== window.location.origin ||
+    isSignInPage(url.pathname) ||
+    url.pathname.startsWith('//')
+  ) {
     return '/';
   }
   return url.pathname + url.search + url.hash;

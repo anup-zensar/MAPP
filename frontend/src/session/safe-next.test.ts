@@ -23,12 +23,15 @@ describe('safeNext', () => {
     expect(safeNext('')).toBe('/');
   });
 
-  it.each([['//evil.com'], ['/\\evil.com'], ['https://evil.com'], ['javascript:alert(1)']])(
-    'never sends anyone to another site: %s → / (FR-005)',
-    (raw) => {
-      expect(safeNext(raw)).toBe('/');
-    },
-  );
+  it.each([
+    ['//evil.com'],
+    ['/\\evil.com'],
+    ['https://evil.com'],
+    ['javascript:alert(1)'],
+    ['/.//evil.com'],
+  ])('never sends anyone to another site: %s → / (FR-005)', (raw) => {
+    expect(safeNext(raw)).toBe('/');
+  });
 
   it('refuses the decoded forms of /%5Cevil.com and /%09/evil.com (FR-005)', () => {
     expect(safeNext(nextFrom('next=/%5Cevil.com'))).toBe('/');
