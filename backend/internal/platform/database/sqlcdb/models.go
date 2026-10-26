@@ -32,6 +32,33 @@ type Counter struct {
 	Last   int
 }
 
+type Person struct {
+	ID            string
+	Name          string
+	Email         string
+	JobTitle      string
+	Active        bool
+	ManagerID     *string
+	Version       int
+	CreatedAt     time.Time
+	CreatedByID   string
+	CreatedByName string
+	UpdatedAt     time.Time
+	UpdatedByID   string
+	UpdatedByName string
+}
+
+type Preference struct {
+	PersonID             string
+	Theme                string
+	SidebarCollapsed     bool
+	DisplayCurrency      string
+	DateFormat           string
+	HomeScope            string
+	HistoryIncludeInside bool
+	PinnedPlanIds        []string
+}
+
 type RecycleBin struct {
 	ID               string
 	RecordType       string
@@ -67,6 +94,34 @@ type SampleNote struct {
 	ID            string
 	FolderID      string
 	Title         string
+	Version       int
+	CreatedAt     time.Time
+	CreatedByID   string
+	CreatedByName string
+	UpdatedAt     time.Time
+	UpdatedByID   string
+	UpdatedByName string
+}
+
+type Team struct {
+	ID            string
+	Name          string
+	Description   string
+	Colour        string
+	Active        bool
+	Version       int
+	CreatedAt     time.Time
+	CreatedByID   string
+	CreatedByName string
+	UpdatedAt     time.Time
+	UpdatedByID   string
+	UpdatedByName string
+}
+
+type TeamMembership struct {
+	ID            string
+	TeamID        string
+	PersonID      string
 	Version       int
 	CreatedAt     time.Time
 	CreatedByID   string

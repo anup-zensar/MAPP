@@ -19,9 +19,9 @@ var (
 	savedAt = time.Date(2026, time.October, 26, 9, 30, 0, 0, time.UTC)
 )
 
-func folder(id string, at time.Time) sqlcdb.PutSampleFolderParams {
+func folder(at time.Time) sqlcdb.PutSampleFolderParams {
 	return sqlcdb.PutSampleFolderParams{
-		ID: id, Name: "Folder " + id, Version: 1,
+		ID: "SF-1001", Name: "Ideas", Version: 1,
 		CreatedAt: at, CreatedByID: "U-1001", CreatedByName: "Priya Raman",
 		UpdatedAt: at, UpdatedByID: "U-1001", UpdatedByName: "Priya Raman",
 	}
@@ -46,7 +46,7 @@ func TestWriteKeepsNothingWhenFnFailsFR006(t *testing.T) {
 			name: "the failing function's own change",
 			write: func(db *database.DB) func(ctx context.Context) error {
 				return func(ctx context.Context) error {
-					if err := db.Queries(ctx).PutSampleFolder(ctx, folder("SF-1001", savedAt)); err != nil {
+					if err := db.Queries(ctx).PutSampleFolder(ctx, folder(savedAt)); err != nil {
 						return err
 					}
 					return errStop
@@ -58,7 +58,7 @@ func TestWriteKeepsNothingWhenFnFailsFR006(t *testing.T) {
 			write: func(db *database.DB) func(ctx context.Context) error {
 				return func(ctx context.Context) error {
 					err := db.Write(ctx, func(ctx context.Context) error {
-						return db.Queries(ctx).PutSampleFolder(ctx, folder("SF-1001", savedAt))
+						return db.Queries(ctx).PutSampleFolder(ctx, folder(savedAt))
 					})
 					return errors.Join(err, errStop)
 				}
@@ -94,7 +94,7 @@ func TestWritesRunOneAtATimeFR006(t *testing.T) {
 	var secondSaw []string
 	var secondErr error
 	err := db.Write(ctx, func(ctx context.Context) error {
-		if err := db.Queries(ctx).PutSampleFolder(ctx, folder("SF-1001", savedAt)); err != nil {
+		if err := db.Queries(ctx).PutSampleFolder(ctx, folder(savedAt)); err != nil {
 			return err
 		}
 		second.Go(func() {
@@ -151,7 +151,7 @@ func TestTimestampsComeBackInUTCFR005(t *testing.T) {
 	t.Parallel()
 	db := dbtest.NewDB(t)
 	inIndia := time.Date(2026, time.October, 26, 15, 0, 0, 0, time.FixedZone("IST", 5*3600+1800))
-	if err := db.Queries(t.Context()).PutSampleFolder(t.Context(), folder("SF-1001", inIndia)); err != nil {
+	if err := db.Queries(t.Context()).PutSampleFolder(t.Context(), folder(inIndia)); err != nil {
 		t.Fatalf("PutSampleFolder() error: %v", err)
 	}
 
