@@ -27,18 +27,19 @@ func allWorkOf(t *testing.T, client *apitest.Client, path string) allwork.Result
 }
 
 // A range of years reads the plans of every year, each plan row with its year and type; Yearly gives one
-// period per year; Compare with phased budget gives the plans their phased budget per period (FR-034, FR-035,
-// FR-037, FR-038).
+// period per year, Quarterly of one year its quarters; Compare with phased budget gives the plans their phased
+// budget per period (FR-022, FR-034, FR-035, FR-037, FR-038).
 func TestGetAllWork_RangeYearlyCompare_Contract_FR034(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
 	r := allWorkOf(t, priya, "/api/v1/all-work?yearFrom=2026&yearTo=2027&view=budget&period=year&comparePhased=true")
+	quarters := allWorkOf(t, priya, "/api/v1/all-work?view=budget&period=quarter").Periods
 	gbp := allWorkOf(t, priya, "/api/v1/all-work?yearFrom=2026&yearTo=2027&planCurrency=GBP&planType=crossMarket")
 	tooLong := priya.Do(t, http.MethodGet, "/api/v1/all-work?yearFrom=2026&yearTo=2031", nil)
 
-	years := map[string]int{}
-	var uk allwork.Row
+	years, uk := map[string]int{}, allwork.Row{}
 	for _, row := range r.Rows {
 		if row.Level == allwork.LevelPlan && row.Year != nil {
 			years[row.RecordID] = *row.Year
@@ -54,8 +55,8 @@ func TestGetAllWork_RangeYearlyCompare_Contract_FR034(t *testing.T) {
 	for _, p := range r.Periods {
 		keys = append(keys, p.Key)
 	}
-	if !slices.Equal(keys, []string{"2026", "2027"}) {
-		t.Errorf("periods = %q, want 2026 and 2027", keys)
+	if !slices.Equal(keys, []string{"2026", "2027"}) || len(quarters) < 4 || quarters[0] != (allwork.Period{Key: "Q1-2026", Label: "Q1"}) {
+		t.Errorf("periods = %q, want 2026 and 2027; by quarter %+v, want Q1-2026 labelled Q1 first", keys, quarters)
 	}
 	if uk.PlanType != "crossMarket" || len(uk.PhasedBudget) != 2 || uk.PhasedBudget[0] != nil || uk.PhasedBudget[1] == nil ||
 		uk.PhasedBudget[1].Format() != "759,493.67 USD" {
@@ -77,6 +78,7 @@ func TestGetAllWork_RangeYearlyCompare_Contract_FR034(t *testing.T) {
 // The Breakdown of a filter set: its groups, its totals equal to the Planned cost card, the plan's own currency
 // for one plan, and the refusal without a grouping (FR-040 – FR-042, SC-007).
 func TestGetBreakdown_Contract_FR040(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -116,6 +118,7 @@ func TestGetBreakdown_Contract_FR040(t *testing.T) {
 // The export of the Breakdown view holds its group table, and "About this export" states the range and the
 // rates used (FR-009, FR-043).
 func TestExport_Breakdown_FR043(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -140,6 +143,7 @@ func TestExport_Breakdown_FR043(t *testing.T) {
 // filterable Shell attributes level by level — a yes/no attribute offers Yes and No. A range above 5 years is
 // refused.
 func TestGetOptions_RangeTypesCurrenciesAttributes_Contract_FR037_FR039(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 

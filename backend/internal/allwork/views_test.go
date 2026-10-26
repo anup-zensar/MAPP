@@ -19,6 +19,7 @@ var danielActs = actor.Actor{ID: "U-1003", Name: "Daniel Okoro"}
 // and the sort they choose are remembered for them alone, Name never among them, and the column chooser
 // keeps offering an inactive attribute they still use (FR-019, FR-021).
 func TestPreferences_DefaultsAndRemembered_FR019_FR021(t *testing.T) {
+	t.Parallel()
 	s, _ := newTestService(t, newFakeSource(seedYear()))
 	ctx := t.Context()
 
@@ -67,6 +68,7 @@ func TestPreferences_DefaultsAndRemembered_FR019_FR021(t *testing.T) {
 // More than 100 columns, a column chosen twice and a sort on no column of the grid are refused, all at
 // once (FR-021).
 func TestPreferences_RefusesDuplicatesAndTooMany_FR021(t *testing.T) {
+	t.Parallel()
 	s, _ := newTestService(t, newFakeSource(seedYear()))
 	many := make([]string, 101)
 	for i := range many {
@@ -110,6 +112,7 @@ func byMonth() *ViewState {
 // views ignoring letter case — another person may use it — with a state that holds only the listed values;
 // every problem comes at once (FR-029, US6 scenario 1).
 func TestCreateView_NameRequiredMax60UniquePerPersonIgnoringCase_FR029(t *testing.T) {
+	t.Parallel()
 	s, _ := newTestService(t, newFakeSource(seedYear()))
 	ctx := t.Context()
 
@@ -150,6 +153,7 @@ func TestCreateView_NameRequiredMax60UniquePerPersonIgnoringCase_FR029(t *testin
 // Saved views are personal (FR-030): Daniel lists none of Priya's, and cannot change or delete them — they
 // are "not found" for him.
 func TestViews_PersonalOnly_FR030(t *testing.T) {
+	t.Parallel()
 	s, _ := newTestService(t, newFakeSource(seedYear()))
 	ctx := t.Context()
 	priyas, err := s.CreateView(ctx, priyaActs, SavedViewCreate{Name: "Mine", State: byMonth()})
@@ -175,6 +179,7 @@ func TestViews_PersonalOnly_FR030(t *testing.T) {
 // One view at most is the default of each person (FR-031): making another the default takes the place,
 // and the default can be removed; another person's default is untouched.
 func TestViews_OneDefaultPerPerson_FR031(t *testing.T) {
+	t.Parallel()
 	s, _ := newTestService(t, newFakeSource(seedYear()))
 	ctx := t.Context()
 	first, _ := s.CreateView(ctx, priyaActs, SavedViewCreate{Name: "First", State: byMonth(), IsDefault: true})
@@ -218,6 +223,7 @@ func assertDefaults(t *testing.T, s *Service, a actor.Actor, want ...string) {
 // A view can be renamed, its state replaced (Update view) and deleted; deleting answers the view, so Undo
 // can save it again under a new ID; the list is by name (FR-031).
 func TestViews_RenameUpdateStateDelete_FR031(t *testing.T) {
+	t.Parallel()
 	s, _ := newTestService(t, newFakeSource(seedYear()))
 	ctx := t.Context()
 	v, _ := s.CreateView(ctx, priyaActs, SavedViewCreate{Name: "zeta", State: byMonth()})

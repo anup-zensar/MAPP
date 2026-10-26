@@ -41,6 +41,7 @@ func withAttr(nodes []Node, id, attributeID string, v AttrValue) []Node {
 // plans above keep only a match below; a line-item attribute is met by an activity one of whose line items
 // meets it (FR-039).
 func TestAttrFilter_TestedOnLevel_FR039(t *testing.T) {
+	t.Parallel()
 	europe := rangeView(twoYears(), attrQuery(AttrFilter{AttributeID: "SA-CL", Values: []string{"SO-EU"}}), 2026, 2027).result
 	event := attrActivities(twoYears(), AttrFilter{AttributeID: "SA-S", Values: []string{"SO-EV"}})
 	media := attrActivities(twoYears(), AttrFilter{AttributeID: "SA-S", Values: []string{"SO-ME"}})
@@ -58,6 +59,7 @@ func TestAttrFilter_TestedOnLevel_FR039(t *testing.T) {
 
 // Not filled in matches the records without a value, alone or beside chosen values (FR-039).
 func TestAttrFilter_NotFilledIn_FR039(t *testing.T) {
+	t.Parallel()
 	none := attrActivities(twoYears(), AttrFilter{AttributeID: "SA-B", Values: []string{AttrNotFilledIn}})
 	rimulaOrNone := attrActivities(twoYears(), AttrFilter{AttributeID: "SA-B", Values: []string{"SO-RM", AttrNotFilledIn}})
 
@@ -71,6 +73,7 @@ func TestAttrFilter_NotFilledIn_FR039(t *testing.T) {
 
 // A % split value matches an option only while its share is above 0 (FR-039).
 func TestAttrFilter_SplitShareAboveZero_FR039(t *testing.T) {
+	t.Parallel()
 	france := AttrFilter{AttributeID: "SA-C", Values: []string{"SO-FR"}}
 	zero := withAttr(twoYears(), "A-1", "SA-C", shares("SO-DE", "100", "SO-FR", "0"))
 
@@ -86,6 +89,7 @@ func TestAttrFilter_SplitShareAboveZero_FR039(t *testing.T) {
 // shows only for Mobility plans, so A-1's value in the Lubricants plan is not filled in, A-3's in the Mobility
 // plan is.
 func TestAttrFilter_HiddenCountsAsNotFilled_FR039(t *testing.T) {
+	t.Parallel()
 	nodes := withAttr(withAttr(twoYears(), "A-1", "SA-M", options("SO-X")), "A-3", "SA-M", options("SO-X"))
 
 	fleet := attrActivities(nodes, AttrFilter{AttributeID: "SA-M", Values: []string{"SO-X"}})
@@ -101,6 +105,7 @@ func TestAttrFilter_HiddenCountsAsNotFilled_FR039(t *testing.T) {
 
 // A yes/no attribute filters on Yes, No and Not filled in.
 func TestAttrFilter_YesNo(t *testing.T) {
+	t.Parallel()
 	yesAnswers := attrActivities(twoYears(), AttrFilter{AttributeID: "SA-F", Values: []string{AttrYes}})
 	noAnswers := attrActivities(twoYears(), AttrFilter{AttributeID: "SA-F", Values: []string{AttrNo}})
 	none := attrActivities(twoYears(), AttrFilter{AttributeID: "SA-F", Values: []string{AttrNotFilledIn}})
@@ -113,6 +118,7 @@ func TestAttrFilter_YesNo(t *testing.T) {
 // Filters of an attribute that cannot be filtered (a number) or no longer exists are ignored; two filters of
 // one attribute combine with OR, two attributes with AND.
 func TestAttrFilter_IgnoredAndCombined(t *testing.T) {
+	t.Parallel()
 	ignored := attrActivities(twoYears(), AttrFilter{AttributeID: "SA-N", Values: []string{"5"}}, AttrFilter{AttributeID: "SA-GONE", Values: []string{"x"}})
 	both := attrActivities(twoYears(), AttrFilter{AttributeID: "SA-B", Values: []string{"SO-HX"}}, AttrFilter{AttributeID: "SA-F", Values: []string{AttrNo}})
 
@@ -127,6 +133,7 @@ func TestAttrFilter_IgnoredAndCombined(t *testing.T) {
 // The attr parameter is "<attributeId>:<value>,<value>"; repeated for one attribute its values add up; any
 // other form is refused on attr (FR-039, D-219).
 func TestQuery_AttrParameterRefused(t *testing.T) {
+	t.Parallel()
 	q, err := ParseQuery(url.Values{"attr": {"SA-B:SO-HX,none", "SA-F:yes", "SA-B:SO-RM,SO-HX"}})
 	_, noColon := ParseQuery(url.Values{"attr": {"SA-B"}})
 	_, noValues := ParseQuery(url.Values{"attr": {"SA-B: , "}})

@@ -98,6 +98,7 @@ func plainTexts(amounts []money.Money) []string {
 // negative one never; an activity without dates and amounts that cannot be spread go to No dates, months of
 // other years to Other years (FR-024, data-model §3.4).
 func TestPlannedByMonth_PlanCurrency_FR024(t *testing.T) {
+	t.Parallel()
 	nodes := phasingNodes(
 		// 9,000.00 planned, 6,000.00 on a line item over Mar–May: 3,000.00 left, 1,000.00 a month.
 		activityNode("A-1", "9000.00", "2027-03", "2027-04", "2027-05"),
@@ -129,6 +130,7 @@ func TestPlannedByMonth_PlanCurrency_FR024(t *testing.T) {
 // children (plans and campaigns; null for initiatives) and the over flags; "2 campaigns are not phased" is
 // the count of children without phasing (FR-024).
 func TestBudgetByMonth_Rows_FR024(t *testing.T) {
+	t.Parallel()
 	nodes := phasingNodes(
 		activityNode("A-1", "15000.00", "2027-03"), // 15,000.00 in March in I-1
 	)
@@ -171,6 +173,7 @@ func TestBudgetByMonth_Rows_FR024(t *testing.T) {
 
 // The planned cost by month, with Other years and No dates, adds up to the plan's planned cost (SC-004).
 func TestBudgetByMonth_EqualsBudgetAndCost_SC004(t *testing.T) {
+	t.Parallel()
 	nodes := phasingNodes(
 		activityNode("A-1", "9000.00", "2027-03", "2027-04", "2027-05"),
 		lineItemNode("L-1", "A-1", "6000.00", "", "2027-03", "2000.00", "2027-04", "2000.00", "2027-05", "2000.00"),

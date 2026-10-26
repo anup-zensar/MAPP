@@ -15,6 +15,7 @@ import (
 // 40,000.00 GBP — Venue 15,000.00 GBP and Agency fee 23,000.00 EUR = 19,750.00 GBP spread evenly, 5,250.00
 // GBP unassigned spread evenly — and Dealer conference 25,000.00 GBP in September (FR-024).
 func TestGetBudgetByMonth_Contract_FR024(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 

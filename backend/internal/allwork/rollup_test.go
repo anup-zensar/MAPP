@@ -18,6 +18,7 @@ func allColumns() []string {
 // Containers add up the matching activities shown below them (FR-013, domain model §4.2–4.5): planned
 // cost, line items, the positive balances, the number of activities, INQ, MQL and revenue.
 func TestRollup_ContainersSumMatchesShown_FR013(t *testing.T) {
+	t.Parallel()
 	r := view(seedYear(), Query{Columns: allColumns()})
 
 	tests := []struct{ row, column, want string }{
@@ -62,6 +63,7 @@ func TestRollup_ContainersSumMatchesShown_FR013(t *testing.T) {
 // When filters hide activities below a container, its roll-ups count only the matching ones shown, are
 // marked Filtered, and carry the value without filters (FR-013).
 func TestRollup_UnfilteredValueWhenRecordsHidden_FR013(t *testing.T) {
+	t.Parallel()
 	data := seedYear().data()
 	tr := buildTree(data.Nodes)
 	matchEverything(tr)
@@ -92,6 +94,7 @@ func TestRollup_UnfilteredValueWhenRecordsHidden_FR013(t *testing.T) {
 // The six summary cards count the matching campaigns, initiatives and activities and add up their planned
 // cost, the matching plans' budgets and the positive balances (FR-003).
 func TestSummary_SixCards_FR003(t *testing.T) {
+	t.Parallel()
 	s := view(seedYear(), Query{}).Summary
 
 	if s.Campaigns != 3 || s.Initiatives != 7 || s.Activities != 10 || moneyText(s.PlannedCost) != "650000.00 USD" ||
@@ -105,6 +108,7 @@ func TestSummary_SixCards_FR003(t *testing.T) {
 // The Unassigned planned cost card adds only positive balances; a negative balance is counted apart, so the
 // card never shrinks because line items exceed a planned cost (FR-003, D-116).
 func TestSummary_UnassignedPositiveOnlyAndNegativeCount_FR003(t *testing.T) {
+	t.Parallel()
 	b := newYear()
 	p := b.plan("P-1001", "Plan")
 	c := b.campaign(p, "C-1001", "Campaign")
@@ -125,6 +129,7 @@ func TestSummary_UnassignedPositiveOnlyAndNegativeCount_FR003(t *testing.T) {
 // The totals row reads "Total · N activities"; its money sums the matching activities and its Plan budget
 // the matching plans, so it equals the summary cards (FR-014, SC-003).
 func TestRollup_TotalsEqualSummaryCards_FR014_SC003(t *testing.T) {
+	t.Parallel()
 	for _, q := range []Query{{}, {Columns: allColumns()}, {View: ViewCalendar}, {View: ViewBudget}} {
 		r := view(seedYear(), q)
 
@@ -173,6 +178,7 @@ func orDash(m *money.Money) string {
 // Money is shown in the person's display currency (FR-017): every sum is made in USD and converted once, so
 // the total of EUR amounts does not drift by the rounding of each converted value.
 func TestMoney_DisplayCurrency_SumInUSDThenConvert_FR017(t *testing.T) {
+	t.Parallel()
 	b := newYear()
 	p := b.plan("P-1001", "Plan", budget("0.01"))
 	c := b.campaign(p, "C-1001", "Campaign")
@@ -200,6 +206,7 @@ func TestMoney_DisplayCurrency_SumInUSDThenConvert_FR017(t *testing.T) {
 // An activity without a planned cost shows "—" and counts as zero; a sum of only empty values shows "—"
 // (edge case).
 func TestRollup_EmptyPlannedCostCountsZeroAllEmptyIsDash_EdgeCase(t *testing.T) {
+	t.Parallel()
 	b := newYear()
 	p := b.plan("P-1001", "Plan")
 	c := b.campaign(p, "C-1001", "Campaign")
