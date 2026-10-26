@@ -52,7 +52,7 @@ Blocks marked **✗ Avoid** show what not to do.
 | SonarQube | Quality gate; configured when CI is set up |
 
 Docker is optional (constitution, Current Phase & Scope): PostgreSQL runs natively or through
-`compose.yaml`, and no test requires Docker. Store tests use the PostgreSQL server named by
+`compose.yaml`, and no test requires Docker. Scope-isolation tests use the PostgreSQL server named by
 `TEST_DATABASE_URL` and skip under `-short` (§12).
 
 Install the command-line tools once:
@@ -73,7 +73,7 @@ golangci-lint run ./...            # all linters in .golangci.yml
 sqlc generate && sqlc vet          # regenerate queries; must leave no diff
 docker compose up -d postgres      # only if you run PostgreSQL in Docker (§6)
 go test -race -short ./...         # unit tests; no database needed
-go test -race -coverprofile=cover.out ./...   # everything, store tests on PostgreSQL included
+go test -race -coverprofile=cover.out ./...   # everything, scope-isolation tests on PostgreSQL included
 govulncheck ./...                  # reachable known vulnerabilities
 goose -dir internal/platform/database/migrations create add_campaigns sql   # new migration
 go run ./cmd/seed                  # create and migrate the local database, load the demo data
@@ -105,7 +105,7 @@ backend/
 │   │   ├── handler.go          # Gin handlers and request/response types
 │   │   ├── service_test.go     # unit tests with an in-memory fake Store
 │   │   ├── handler_test.go     # HTTP and contract tests with httptest
-│   │   └── store_postgres_test.go  # store tests against real PostgreSQL
+│   │   └── store_postgres_test.go  # scope-isolation tests against real PostgreSQL
 │   └── platform/               # cross-cutting infrastructure, one package per concern
 │       ├── actor/              # the signed-in person, from the request context
 │       ├── authz/              # permissions and the teams an actor may act in
@@ -498,7 +498,7 @@ two ways, and both listen on `127.0.0.1:5432`:
 - **Docker, if preferred:** `docker compose up -d postgres` with the repository's `compose.yaml`,
   which runs PostgreSQL and nothing else.
 
-The API reads `DATABASE_URL`; store tests read `TEST_DATABASE_URL` (§12). CI starts PostgreSQL as
+The API reads `DATABASE_URL`; scope-isolation tests read `TEST_DATABASE_URL` (§12). CI starts PostgreSQL as
 a service of the pipeline. No test and no command requires Docker.
 
 ```sh
@@ -1239,6 +1239,8 @@ needs no test of its own.
 - A test that `NewService` returns a non-nil service, that a getter returns its field, or that
   sqlc maps a column.
 - A test whose only assertion is that a fake was called.
+- A database test of a query, a constraint, a migration or a column mapping. Only the
+  scope-isolation tests and the end-to-end tests touch PostgreSQL.
 - A test per `if err != nil` that only passes an error up.
 - A handler test that repeats a rule the service test already proves: the handler test checks the
   translation (status, envelope, contract), not the rule.
@@ -1315,8 +1317,8 @@ func (f *fakeStore) Get(_ context.Context, scope authz.Scope, id string) (budget
 
 ### HTTP tests
 
-Test handlers through a real router with `httptest`, covering status codes and the error
-envelope, and validate every response against `api/openapi.yaml` through
+Test handlers through a real router with `httptest` and fakes behind the service (no database),
+covering status codes and the error envelope, and validate every response against `api/openapi.yaml` through
 `internal/platform/apitest`. That validation is the contract test every endpoint needs:
 
 ```go
@@ -1327,10 +1329,13 @@ envelope, and validate every response against `api/openapi.yaml` through
 `web.NewEngine` sets Gin's release mode, so Gin prints nothing; a test that builds its own
 `gin.New()` engine calls `gin.SetMode(gin.ReleaseMode)` first.
 
-### Store tests against real PostgreSQL
+### Scope-isolation tests against real PostgreSQL
 
-Mocks cannot prove that SQL is right, so stores are tested against PostgreSQL, the engine every
-environment runs (Principle VI). `dbtest.NewDB(t)` connects to the server in `TEST_DATABASE_URL`,
+The scope filter is a security boundary written in SQL, and a fake cannot prove SQL right, so each
+store read of scoped records gets an isolation test against PostgreSQL (Principle VI). They are the
+only Go tests on a database: queries, constraints and migrations are not tested one by one, because
+sqlc checks every query against the schema and the end-to-end tests run the migrations.
+`dbtest.NewDB(t)` connects to the server in `TEST_DATABASE_URL`,
 creates a database for the test from a template that already holds every migration (a fast
 `CREATE DATABASE … TEMPLATE …`), and drops it when the test ends. It skips under `-short`, so
 `go test -short ./...` needs no database. No test needs Docker: the server can be a native
