@@ -7,7 +7,8 @@ import {
   itemAt,
   signInAs,
 } from './fixtures';
-import { changeActivityPlannedCost, createInitiative, createPlanningRecords } from './planning';
+import { changeActivityPlannedCost } from './planning-changes';
+import { createInitiative, createPlanningRecords } from './planning';
 
 // End-to-end journeys across feature 011's Recycle bin, Activity log and History sections, and 009's
 // Recent changes card that reads the same log (011 T045, T046, T049; 009 T013, T017). They follow one

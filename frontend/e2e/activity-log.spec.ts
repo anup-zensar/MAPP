@@ -3,10 +3,9 @@ import { callApi, escapeRegExp, expectNoAxeViolations, signInAs } from './fixtur
 import {
   changeActivityPlannedCost,
   changeLineItemPlannedCost,
-  createInitiative,
   createLineItem,
-  createPlanningRecords,
-} from './planning';
+} from './planning-changes';
+import { createInitiative, createPlanningRecords } from './planning';
 
 // End-to-end journeys of feature 011's Activity log (US2) and the History sections of the record pages
 // (US3), against the real API with the demo data (011 plan "Tests", T046).

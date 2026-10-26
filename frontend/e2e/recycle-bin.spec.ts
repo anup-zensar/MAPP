@@ -7,7 +7,8 @@ import {
   itemAt,
   signInAs,
 } from './fixtures';
-import { approveThroughApi, createPlanningRecords } from './planning';
+import { approveThroughApi } from './planning-changes';
+import { createPlanningRecords } from './planning';
 
 // End-to-end journeys of feature 011's Recycle bin (US1 find and restore, US4 restore with its parent,
 // US5 delete permanently and empty), against the real API with the demo data (011 plan "Tests", T045).
