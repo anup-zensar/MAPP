@@ -20,9 +20,14 @@ import {
   UserRound,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { lazy } from 'react';
 import type { ComponentType } from 'react';
-import { ApprovalsNavBadge } from '@/features/approvals/ApprovalsNavBadge';
-import type { Permission } from '@/lib/access';
+import type { Permission } from '@/session/access';
+
+// The badge loads with the approvals code, after the frame is drawn, so it stays off the first page.
+const ApprovalsNavBadge = lazy(() =>
+  import('@/features/approvals').then((feature) => ({ default: feature.ApprovalsNavBadge })),
+);
 
 /** A page people reach from the sidebar or the account menu. */
 export interface NavItem {
@@ -106,14 +111,3 @@ export const MORE_ITEMS: NavItem[] = [SETTINGS, RECYCLE_BIN, ACTIVITY_LOG];
 
 /** Every section that shows a "Coming soon" page for now. */
 export const COMING_SOON_SECTIONS: ComingSoonSection[] = [];
-
-/**
- * The items the person's roles open (feature 014, FR-012): items without a permission, and those
- * whose permission `has` grants.
- */
-export function itemsFor<T extends { permission?: Permission }>(
-  items: T[],
-  has: (permission: Permission) => boolean,
-): T[] {
-  return items.filter((item) => !item.permission || has(item.permission));
-}

@@ -58,22 +58,28 @@ MAPP/
 │   │       each business package:  model.go · repository.go · store_postgres.go · store_json.go ·
 │   │                               service.go · service_test.go · handler.go · handler_test.go
 └── frontend/                    React + TypeScript web app
-    ├── src/
-    │   ├── app/                 routes, layout (sidebar, account menu, bell, theme), session          (001)
-    │   ├── components/          shared building blocks: Button, PageHeader, StatusChip, …             (001)
-    │   ├── features/<area>/     pages and components of one feature (sign-in, home, plans, …)
-    │   ├── api/                 generated types (schema.d.ts) + small typed client                    (001)
-    │   ├── lib/                 dates, money, page title, small helpers                               (001)
-    │   ├── styles/              tokens.css (design tokens) and global.css                             (001)
-    │   └── test/                test helpers (render, mock API)                                       (001)
+    ├── src/                     constitution F2 (feature 026)
+    │   ├── main.tsx             mounts <App /> and nothing else
+    │   ├── app/                 providers, routes (one module), lazy pages, layout, sidebar, bell
+    │   ├── features/<area>/     one business area each: index.ts (its only entry), api.ts (query
+    │   │                        hooks), schemas.ts (Zod), pages and components; plans holds
+    │   │                        campaigns/ and phasing/, people holds access/
+    │   ├── ui/                  design tokens and shared building blocks (Button, FormField, …)
+    │   ├── api/                 the typed client; generated/ holds the generated contract types
+    │   ├── session/             the signed-in person, route guards, permissions
+    │   ├── format/              Intl dates, times and money; exact decimals
+    │   └── testing/             test set-up, the fake API on MSW, render helpers, fixtures/
     └── e2e/                     browser end-to-end tests (Playwright)                                 (001+)
 ```
 
 Rules:
 
 - A feature touches only its own package/folder plus the shared files it is allowed to extend (OpenAPI
-  file, `internal/app/app.go`, `seed/seed.go`, `src/app/router.tsx`, `src/app/navigation.ts`). The plan of
-  each feature lists those shared files.
+  file, `internal/app/app.go`, `seed/seed.go`, `src/app/routes.tsx`, `src/app/pages.tsx`,
+  `src/app/navigation.ts`). The plan of each feature lists those shared files.
+- In the web app, dependencies point inward (`app` → `features` → `ui`, `api`, `session`, `format`),
+  a feature reaches another only through its `index.ts`, and there are no import cycles;
+  `frontend/eslint.config.js` enforces all three (feature 026).
 - Package names match business areas, not technical layers (`plans`, not `controllers`).
 - Tests sit next to the code they test. Handler (contract) tests are external test packages
   (`package plans_test`) because the contract-test helper builds the whole application.

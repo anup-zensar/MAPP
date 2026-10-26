@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { launchFilm } from '@/testing/fixtures/activities';
 import { DeleteActivityDialog } from './DeleteActivityDialog';
 import type { DeletedActivity } from './DeleteActivityDialog';
-import { launchFilm } from './testData';
 
 function ask(overrides: Partial<DeletedActivity> = {}, linkedTransactions?: number) {
   render(

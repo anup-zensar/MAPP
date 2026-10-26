@@ -1,17 +1,15 @@
 import { screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { SESSION_KEY } from '@/app/useSession';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { findMessages, renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import type { HttpHandler } from 'msw';
+import { SESSION_KEY } from '@/session/useSession';
+import { mockApi } from '@/testing/mock-api';
+import { findMessages, renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { binItem, errorBody, lineItemEntry, restorePreview } from '@/testing/fixtures/recycle-bin';
+import { reply } from '@/testing/replies';
 import { RestoreDialog } from './RestoreDialog';
-import type { BinItem } from './binText';
-import { binItem, lineItemEntry, restorePreview } from './testData';
-
-const PREVIEW = 'GET /api/v1/recycle-bin/BIN-1001/restore-preview';
-const RESTORE = 'POST /api/v1/recycle-bin/BIN-1001/restore';
+import type { BinItem } from './bin-text';
 
 const RESTORED = {
   recordType: 'initiative',
@@ -49,7 +47,7 @@ function Harness({
   );
 }
 
-function renderDialog(answers: Record<string, MockHandler>, item: BinItem = binItem()) {
+function renderDialog(answers: HttpHandler[], item: BinItem = binItem()) {
   const api = mockApi(answers);
   const onClose = vi.fn();
   const onPurge = vi.fn();
@@ -60,44 +58,48 @@ function renderDialog(answers: Record<string, MockHandler>, item: BinItem = binI
   return { ...rendered, api, onClose, onPurge };
 }
 
-function errorBody(code: string, message: string, extra: object = {}) {
-  return { error: { code, message, fields: [], ...extra } };
-}
-
 describe('RestoreDialog', () => {
   it('says where it returns, what changes and the notes, then restores (FR-018, FR-019, FR-022)', async () => {
-    const { user, api, onClose } = renderDialog({
-      [PREVIEW]: {
-        body: restorePreview({
-          changes: [
-            {
-              recordType: 'activity',
-              recordTypeLabel: 'activity',
-              recordId: 'A-1042',
-              recordName: 'Fleet expo stand',
-              restored: true,
-              field: 'status',
-              label: 'Status',
-              oldText: 'Approved',
-              newText: 'Created',
-            },
-            {
-              recordType: 'initiative',
-              recordTypeLabel: 'initiative',
-              recordId: 'I-1009',
-              recordName: 'Trade shows',
-              restored: true,
-              field: 'name',
-              label: 'Name',
-              oldText: 'Trade shows',
-              newText: 'Trade shows (restored)',
-            },
-          ],
-          notes: ["'Fleet expo stand' comes back as Created — submit it for approval again."],
-        }),
-      },
-      [RESTORE]: { body: RESTORED },
-    });
+    const { user, api, onClose } = renderDialog([
+      reply(
+        'GET /api/v1/recycle-bin/{entryId}/restore-preview',
+        {
+          body: restorePreview({
+            changes: [
+              {
+                recordType: 'activity',
+                recordTypeLabel: 'activity',
+                recordId: 'A-1042',
+                recordName: 'Fleet expo stand',
+                restored: true,
+                field: 'status',
+                label: 'Status',
+                oldText: 'Approved',
+                newText: 'Created',
+              },
+              {
+                recordType: 'initiative',
+                recordTypeLabel: 'initiative',
+                recordId: 'I-1009',
+                recordName: 'Trade shows',
+                restored: true,
+                field: 'name',
+                label: 'Name',
+                oldText: 'Trade shows',
+                newText: 'Trade shows (restored)',
+              },
+            ],
+            notes: ["'Fleet expo stand' comes back as Created — submit it for approval again."],
+          }),
+        },
+        { entryId: 'BIN-1001' },
+      ),
+      reply(
+        'POST /api/v1/recycle-bin/{entryId}/restore',
+        { body: RESTORED },
+        { entryId: 'BIN-1001' },
+      ),
+    ]);
 
     const dialog = await screen.findByRole('alertdialog', {
       name: "Restore initiative 'Trade shows'?",
@@ -126,10 +128,18 @@ describe('RestoreDialog', () => {
   });
 
   it('names the restored record with View, and asks every page again but the session (FR-026)', async () => {
-    const { user, router, queryClient } = renderDialog({
-      [PREVIEW]: { body: restorePreview() },
-      [RESTORE]: { body: RESTORED },
-    });
+    const { user, router, queryClient } = renderDialog([
+      reply(
+        'GET /api/v1/recycle-bin/{entryId}/restore-preview',
+        { body: restorePreview() },
+        { entryId: 'BIN-1001' },
+      ),
+      reply(
+        'POST /api/v1/recycle-bin/{entryId}/restore',
+        { body: RESTORED },
+        { entryId: 'BIN-1001' },
+      ),
+    ]);
     queryClient.setQueryData(['plans'], { items: [], total: 0 });
 
     await user.click(await screen.findByRole('button', { name: 'Restore initiative' }));
@@ -153,12 +163,20 @@ describe('RestoreDialog', () => {
       parentEntryIds: ['BIN-1000'],
     });
     const { user, api } = renderDialog(
-      {
-        [PREVIEW]: {
-          body: restorePreview({ entry: item, parentEntries: [binItem({ id: 'BIN-1000' })] }),
-        },
-        [RESTORE]: { body: { ...RESTORED, recordType: 'lineItem', recordTypeLabel: 'line item' } },
-      },
+      [
+        reply(
+          'GET /api/v1/recycle-bin/{entryId}/restore-preview',
+          {
+            body: restorePreview({ entry: item, parentEntries: [binItem({ id: 'BIN-1000' })] }),
+          },
+          { entryId: 'BIN-1001' },
+        ),
+        reply(
+          'POST /api/v1/recycle-bin/{entryId}/restore',
+          { body: { ...RESTORED, recordType: 'lineItem', recordTypeLabel: 'line item' } },
+          { entryId: 'BIN-1001' },
+        ),
+      ],
       item,
     );
 
@@ -181,14 +199,18 @@ describe('RestoreDialog', () => {
   });
 
   it('offers Restore all <N> when more parents come back first (FR-023)', async () => {
-    renderDialog({
-      [PREVIEW]: {
-        body: restorePreview({
-          entry: binItem({ missingParent: PARENT, restoreState: 'parentInRecycleBin' }),
-          parentEntries: [binItem({ id: 'BIN-998' }), binItem({ id: 'BIN-999' })],
-        }),
-      },
-    });
+    renderDialog([
+      reply(
+        'GET /api/v1/recycle-bin/{entryId}/restore-preview',
+        {
+          body: restorePreview({
+            entry: binItem({ missingParent: PARENT, restoreState: 'parentInRecycleBin' }),
+            parentEntries: [binItem({ id: 'BIN-998' }), binItem({ id: 'BIN-999' })],
+          }),
+        },
+        { entryId: 'BIN-1001' },
+      ),
+    ]);
 
     expect(await screen.findByRole('button', { name: 'Restore all 3' })).toBeInTheDocument();
   });
@@ -199,7 +221,7 @@ describe('RestoreDialog', () => {
       restoreState: 'parentDeletedPermanently',
       missingParent: PARENT,
     });
-    const { user, api, onClose, onPurge } = renderDialog({}, item);
+    const { user, api, onClose, onPurge } = renderDialog([], item);
 
     expect(
       screen.getByRole('alertdialog', { name: "This line item can't be restored" }),
@@ -215,18 +237,22 @@ describe('RestoreDialog', () => {
   });
 
   it('says who already resolved the entry, and closes (FR-032)', async () => {
-    const { onClose } = renderDialog({
-      [PREVIEW]: {
-        status: 409,
-        body: errorBody('already_resolved', 'This item is no longer in the recycle bin.', {
-          resolution: {
-            how: 'deletedPermanently',
-            by: { id: 'U-1003', name: 'Daniel Okoro' },
-            at: '2026-03-12T14:05:00Z',
-          },
-        }),
-      },
-    });
+    const { onClose } = renderDialog([
+      reply(
+        'GET /api/v1/recycle-bin/{entryId}/restore-preview',
+        {
+          status: 409,
+          body: errorBody('already_resolved', 'This item is no longer in the recycle bin.', {
+            resolution: {
+              how: 'deletedPermanently',
+              by: { id: 'U-1003', name: 'Daniel Okoro' },
+              at: '2026-03-12T14:05:00Z',
+            },
+          }),
+        },
+        { entryId: 'BIN-1001' },
+      ),
+    ]);
 
     await screen.findByText('Closed');
     const messages = await findMessages();
@@ -238,13 +264,21 @@ describe('RestoreDialog', () => {
 
   it('closes with the API’s words when the parent is missing after all (FR-023, FR-024)', async () => {
     const message = "Restore the initiative 'Trade shows' first.";
-    const { user, onClose } = renderDialog({
-      [PREVIEW]: { body: restorePreview() },
-      [RESTORE]: {
-        status: 409,
-        body: errorBody('restore_parent_first', message, { parent: PARENT }),
-      },
-    });
+    const { user, onClose } = renderDialog([
+      reply(
+        'GET /api/v1/recycle-bin/{entryId}/restore-preview',
+        { body: restorePreview() },
+        { entryId: 'BIN-1001' },
+      ),
+      reply(
+        'POST /api/v1/recycle-bin/{entryId}/restore',
+        {
+          status: 409,
+          body: errorBody('restore_parent_first', message, { parent: PARENT }),
+        },
+        { entryId: 'BIN-1001' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Restore initiative' }));
 
@@ -253,10 +287,18 @@ describe('RestoreDialog', () => {
   });
 
   it('shows any other failure in the dialog and stays open', async () => {
-    const { user, onClose } = renderDialog({
-      [PREVIEW]: { body: restorePreview() },
-      [RESTORE]: { status: 400, body: errorBody('bad_request', 'That did not work.') },
-    });
+    const { user, onClose } = renderDialog([
+      reply(
+        'GET /api/v1/recycle-bin/{entryId}/restore-preview',
+        { body: restorePreview() },
+        { entryId: 'BIN-1001' },
+      ),
+      reply(
+        'POST /api/v1/recycle-bin/{entryId}/restore',
+        { status: 400, body: errorBody('bad_request', 'That did not work.') },
+        { entryId: 'BIN-1001' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Restore initiative' }));
 
@@ -265,7 +307,13 @@ describe('RestoreDialog', () => {
   });
 
   it('shows placeholders while the preview loads', () => {
-    renderDialog({ [PREVIEW]: () => new Promise<never>(() => {}) });
+    renderDialog([
+      reply(
+        'GET /api/v1/recycle-bin/{entryId}/restore-preview',
+        () => new Promise<never>(() => {}),
+        { entryId: 'BIN-1001' },
+      ),
+    ]);
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading…');
     expect(screen.getByRole('button', { name: 'Restore initiative' })).toHaveAttribute(

@@ -4,4 +4,4 @@ test-results
 playwright-report
 node_modules
 package-lock.json
-src/api/schema.d.ts
+src/api/generated

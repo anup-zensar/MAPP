@@ -1,9 +1,10 @@
 import { SlidersHorizontal } from 'lucide-react';
 import { Popover } from 'radix-ui';
 import { useId } from 'react';
-import { Button, ChoiceField } from '@/components';
-import { NO_FILTERS, filtersInUse } from './approvalFilters';
-import type { ApprovalFilterOptions, ApprovalFilterValues } from './approvalFilters';
+import { Button } from '@/ui/Button/Button';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { NO_FILTERS, filtersInUse } from './approval-filters';
+import type { ApprovalFilterOptions, ApprovalFilterValues } from './approval-filters';
 import styles from './ApprovalsFilters.module.css';
 
 export interface ApprovalsFiltersProps {

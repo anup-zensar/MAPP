@@ -1,10 +1,11 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { closestTo, htmlElement, nth } from '@/testing/dom';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { seedList } from '@/testing/fixtures/plans';
 import { PlanTable } from './PlanTable';
-import type { PlanSummary } from './plansApi';
-import { seedList } from './testData';
+import type { PlanSummary } from './api';
 
 function renderTable(
   plans: PlanSummary[] = seedList().items,
@@ -21,7 +22,7 @@ function renderTable(
 }
 
 function row(name: string) {
-  return screen.getByRole('link', { name }).closest('tr') as HTMLElement;
+  return closestTo(screen.getByRole('link', { name }), 'tr');
 }
 
 describe('PlanTable (FR-002, design system §5.4)', () => {
@@ -53,10 +54,10 @@ describe('PlanTable (FR-002, design system §5.4)', () => {
     renderTable();
 
     const headers = screen.getAllByRole('columnheader');
-    const budget = headers.find((header) => header.textContent === 'Plan budget') as HTMLElement;
+    const budget = htmlElement(headers.find((header) => header.textContent === 'Plan budget'));
     const cells = within(row('FY2026 Lubricants Europe')).getAllByRole('cell');
     expect(budget.className).toMatch(/number/);
-    expect(cells[4].className).toMatch(/number/);
+    expect(nth(cells, 4).className).toMatch(/number/);
   });
 
   it('says over budget in words and "—" without a budget', () => {
@@ -66,7 +67,7 @@ describe('PlanTable (FR-002, design system §5.4)', () => {
       /problem/,
     );
     const china = within(row('FY2026 Mobility China')).getAllByRole('cell');
-    expect(china[4]).toHaveTextContent('—');
+    expect(nth(china, 4)).toHaveTextContent('—');
   });
 
   it('marks pinned rows with the filled star, named for the plan (018 FR-001, FR-003)', () => {
@@ -83,15 +84,17 @@ describe('PlanTable (FR-002, design system §5.4)', () => {
   });
 
   it('shows at most two teams, then "+n" with the other names', () => {
-    const [plan] = seedList().items;
-    const team = (id: string, name: string) => ({ ...plan.teams[0], id, name });
+    const plan = nth(seedList().items, 0);
+    const team = (id: string, name: string) => ({ ...nth(plan.teams, 0), id, name });
     renderTable([
       { ...plan, teams: [team('T-1', 'Alpha'), team('T-2', 'Beta'), team('T-3', 'Gamma')] },
     ]);
 
     const cells = within(row('FY2026 Lubricants Europe')).getAllByRole('cell');
-    expect(cells[3]).toHaveTextContent('AlphaBeta+1');
-    expect(within(cells[3]).getByRole('button', { name: '+1 more: Gamma' })).toBeInTheDocument();
+    expect(nth(cells, 3)).toHaveTextContent('AlphaBeta+1');
+    expect(
+      within(nth(cells, 3)).getByRole('button', { name: '+1 more: Gamma' }),
+    ).toBeInTheDocument();
   });
 
   it('links completeness to the field to fill in (FR-017)', async () => {

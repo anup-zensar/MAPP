@@ -1,20 +1,26 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { DecimalField, FormPanel, LockedNote, problemOf, TextField, useToast } from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
-import { inverseRate, parseDecimalInput } from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
-import { ImpactDialog } from '../shared/ImpactDialog';
-import { saveFailureOf } from '../shared/saveFailure';
-import styles from '../shared/SettingsTable.module.css';
-import {
-  checkCurrencyImpact,
-  fetchCurrency,
-  useCreateCurrency,
-  useUpdateCurrency,
-} from './currenciesApi';
-import type { ChangeImpact, Currency, CurrencyCreate, CurrencyUpdate } from './currenciesApi';
-import { inverseLine, lockOf, rateLine } from './currencyActions';
-import { rateSourceLine } from './rateWords';
+import { useForm, useWatch } from 'react-hook-form';
+import { DecimalField } from '@/ui/DecimalField/DecimalField';
+import { FormField } from '@/ui/FormField/FormField';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
+import { useFormatters } from '@/format/useFormatters';
+import styles from '@/ui/settings-table.module.css';
+import { ImpactDialog } from '../ImpactDialog';
+import { saveFailureOf } from '../save-failure';
+import { checkCurrencyImpact, fetchCurrency, useCreateCurrency, useUpdateCurrency } from './api';
+import type { ChangeImpact, Currency, CurrencyUpdate } from './api';
+import { lockOf, rateLine } from './currency-actions';
+import { changedFields, createBody, startValues } from './currency-values';
+import { liveRate } from './rate-input';
+import { rateSourceLine } from './rate-words';
+import { ReadOnlyField } from '../ReadOnlyField';
+import { currencySchema } from './schemas';
+import type { CurrencyValues } from './schemas';
 
 /** A changed rate becomes today's dated rate (016 FR-004). */
 const TODAYS_RATE_HINT = "A new rate is saved as today's rate; the rate history keeps the others.";
@@ -25,18 +31,12 @@ const FIRST_RATE_HINT = "Saved as the currency's first rate, dated today.";
 /** The code lock's reason before the API has given one (a new currency is not saved yet). */
 const CODE_LOCKED = "The code can't change once the currency is saved.";
 
+const FIELDS = ['code', 'name', 'symbol', 'rate'] as const;
+
 export interface CurrencyFormProps {
   /** The currency to change; without one, the form adds a new currency. */
   currency?: Currency;
   onClose: () => void;
-}
-
-/** The typed values, as text, exactly as they are in the fields. */
-interface CurrencyValues {
-  code: string;
-  name: string;
-  symbol: string;
-  rate: string;
 }
 
 /** A save that waits for "Save changes" in the impact dialog. */
@@ -55,26 +55,22 @@ export function CurrencyForm({ currency, onClose }: CurrencyFormProps) {
   const { dateFormat, date } = useFormatters();
   const createCurrency = useCreateCurrency();
   const updateCurrency = useUpdateCurrency();
-  // The edit-form rule: the currency is copied into the form once, when the panel opens.
-  const [start] = useState<CurrencyValues>(() => ({
-    code: currency?.code ?? '',
-    name: currency?.name ?? '',
-    symbol: currency?.symbol ?? '',
-    rate: currency?.rate ?? '',
-  }));
-  const [values, setValues] = useState(start);
+  const form = useForm<CurrencyValues>({
+    resolver: zodResolver(currencySchema),
+    // The edit-form rule: the currency is copied into the form once, when the panel opens.
+    defaultValues: startValues(currency),
+    ...CHECK_ON_SAVE,
+  });
+  const { problems, onInvalid, showServerProblems, clearProblems } = useFormProblems(form, FIELDS);
   const [version, setVersion] = useState(currency?.version ?? 0);
   const [saving, setSaving] = useState(false);
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
   const [pendingImpact, setPendingImpact] = useState<PendingImpact | null>(null);
+  const [typedCode, typedRate] = useWatch({ control: form.control, name: ['code', 'rate'] });
   const rateLock = currency ? lockOf(currency, 'rate') : undefined;
 
-  function set<K extends keyof CurrencyValues>(field: K, value: CurrencyValues[K]) {
-    setValues((previous) => ({ ...previous, [field]: value }));
-  }
-
-  async function save() {
+  async function save(values: CurrencyValues) {
+    clearProblems();
     setSaving(true);
     try {
       if (!currency) {
@@ -126,7 +122,7 @@ export function CurrencyForm({ currency, onClose }: CurrencyFormProps) {
 
   async function showFailure(error: unknown) {
     const view = saveFailureOf(error, 'currency', dateFormat);
-    setProblems(view.problems);
+    showServerProblems(view.problems);
     setFailure(view.failure);
     if (view.conflict && currency) {
       // Typed values stay; the next Save replaces the other person's change on purpose.
@@ -137,17 +133,18 @@ export function CurrencyForm({ currency, onClose }: CurrencyFormProps) {
     }
   }
 
-  const code = (currency?.code ?? values.code.trim()).toUpperCase();
+  const submit = form.handleSubmit(save, onInvalid);
+  const code = (currency?.code ?? typedCode.trim()).toUpperCase();
 
   return (
     <>
       <FormPanel
         title={currency ? 'Edit currency' : 'New currency'}
-        isDirty={!sameValues(values, start)}
+        isDirty={form.formState.isDirty}
         saving={saving}
         problems={problems}
         failure={failure}
-        onSave={() => void save()}
+        onSave={() => void submit()}
         onClose={onClose}
       >
         <div className={styles.formFields}>
@@ -156,30 +153,28 @@ export function CurrencyForm({ currency, onClose }: CurrencyFormProps) {
               {lockOf(currency, 'code') ?? CODE_LOCKED}
             </ReadOnlyField>
           ) : (
-            <TextField
-              label="Code"
+            <FormField
+              control={form.control}
               name="code"
-              marking="Required"
-              hint="Three letters, as in ISO 4217 (EUR, JPY)."
-              value={values.code}
-              onChange={(text) => set('code', text)}
-              error={problemOf(problems, 'code')}
+              render={(field) => (
+                <TextField
+                  label="Code"
+                  marking="Required"
+                  hint="Three letters, as in ISO 4217 (EUR, JPY)."
+                  {...field}
+                />
+              )}
             />
           )}
-          <TextField
-            label="Name"
+          <FormField
+            control={form.control}
             name="name"
-            marking="Required"
-            value={values.name}
-            onChange={(text) => set('name', text)}
-            error={problemOf(problems, 'name')}
+            render={(field) => <TextField label="Name" marking="Required" {...field} />}
           />
-          <TextField
-            label="Symbol"
+          <FormField
+            control={form.control}
             name="symbol"
-            value={values.symbol}
-            onChange={(text) => set('symbol', text)}
-            error={problemOf(problems, 'symbol')}
+            render={(field) => <TextField label="Symbol" {...field} />}
           />
           {rateLock && currency ? (
             <ReadOnlyField
@@ -189,17 +184,20 @@ export function CurrencyForm({ currency, onClose }: CurrencyFormProps) {
               {rateLock}
             </ReadOnlyField>
           ) : (
-            <DecimalField
-              label="Rate (units per 1 USD)"
+            <FormField
+              control={form.control}
               name="rate"
-              marking="Required"
-              decimals={6}
-              suffix="per USD"
-              hint={currency ? TODAYS_RATE_HINT : FIRST_RATE_HINT}
-              value={values.rate}
-              onChange={(text) => set('rate', text)}
-              note={liveRate(code, values.rate)}
-              error={problemOf(problems, 'rate')}
+              render={(field) => (
+                <DecimalField
+                  label="Rate (units per 1 USD)"
+                  marking="Required"
+                  decimals={6}
+                  suffix="per USD"
+                  hint={currency ? TODAYS_RATE_HINT : FIRST_RATE_HINT}
+                  note={liveRate(code, typedRate)}
+                  {...field}
+                />
+              )}
             />
           )}
           {currency && <p className={styles.meta}>{rateSourceLine(currency, date)}</p>}
@@ -217,79 +215,4 @@ export function CurrencyForm({ currency, onClose }: CurrencyFormProps) {
       )}
     </>
   );
-}
-
-interface ReadOnlyFieldProps {
-  label: string;
-  value: string;
-  /** Why it can't change. */
-  children: string;
-}
-
-/** A value that can't change, in place of its field, with the lock and the reason. */
-function ReadOnlyField({ label, value, children }: ReadOnlyFieldProps) {
-  return (
-    <div className={styles.readOnly}>
-      <span className={styles.readOnlyLabel}>{label}</span>
-      <span className={styles.readOnlyValue}>{value}</span>
-      <LockedNote>{children}</LockedNote>
-    </div>
-  );
-}
-
-/** "1 USD = 0.92 EUR · 1 EUR = 1.086957 USD" for a typed rate above 0; nothing otherwise. */
-function liveRate(code: string, typed: string): string | undefined {
-  const rate = parseDecimalInput(typed, 6);
-  const inverse = rate === null ? null : inverseRate(rate);
-  if (rate === null || inverse === null || code === '') {
-    return undefined;
-  }
-  return `${rateLine(code, rate)} · ${inverseLine(code, inverse)}`;
-}
-
-function sameValues(a: CurrencyValues, b: CurrencyValues): boolean {
-  return a.code === b.code && a.name === b.name && a.symbol === b.symbol && a.rate === b.rate;
-}
-
-/** A typed rate as the API takes it: grouping removed; anything else as typed, for the API to judge. */
-function rateText(text: string): string {
-  return parseDecimalInput(text, 6) ?? text.trim();
-}
-
-function createBody(values: CurrencyValues): CurrencyCreate {
-  return {
-    code: values.code.trim(),
-    name: values.name,
-    symbol: values.symbol,
-    rate: rateText(values.rate),
-  };
-}
-
-/** The fields people changed, with the version (D-203); null when nothing changed. */
-function changedFields(
-  currency: Currency,
-  values: CurrencyValues,
-  version: number,
-): CurrencyUpdate | null {
-  const body: CurrencyUpdate = { version };
-  if (values.name !== currency.name) {
-    body.name = values.name;
-  }
-  if (values.symbol !== currency.symbol) {
-    body.symbol = values.symbol;
-  }
-  if (!lockOf(currency, 'rate') && !sameRate(values.rate, currency.rate)) {
-    body.rate = rateText(values.rate);
-  }
-  return Object.keys(body).length > 1 ? body : null;
-}
-
-/** "0.920" and "0.92" are the same rate. */
-function sameRate(typed: string, saved: string): boolean {
-  const rate = parseDecimalInput(typed, 6);
-  return rate !== null && trimZeros(rate) === trimZeros(saved);
-}
-
-function trimZeros(rate: string): string {
-  return rate.includes('.') ? rate.replace(/\.?0+$/, '') : rate;
 }

@@ -1,25 +1,24 @@
 import { CircleAlert, Plus, ReceiptText } from 'lucide-react';
 import { useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
-import {
-  ActionsMenu,
-  Card,
-  CompletenessChip,
-  EmptyState,
-  ErrorState,
-  LinkButton,
-  Skeleton,
-} from '@/components';
-import type { components } from '@/api/schema';
-import { allows, gateItem } from '@/features/plans/gateAction';
-import { cx } from '@/lib/cx';
-import { fieldHref, recordHref } from '@/lib/recordLinks';
-import { useFinancialRecord } from './gsapFinancials';
-import type { FinancialFiguresData } from './gsapFinancials';
-import { moneyText } from './lineItemMath';
-import { useLineItemSection } from './lineItemsApi';
-import type { LineItem } from './lineItemsApi';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { CompletenessChip } from '@/ui/CompletenessChip/CompletenessChip';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import type { components } from '@/api/generated/schema';
+import { allows, gateItem } from '@/session/gate-action';
+import { cx } from '@/ui/cx';
+import { fieldHref, recordHref } from '@/ui/record-links';
+import { useFinancialRecord } from './gsap-financials';
+import type { FinancialFiguresData } from './gsap-financials';
+import { moneyText } from './line-item-math';
+import { useLineItemSection } from './api';
+import type { LineItem } from './api';
 import styles from './LineItemsSection.module.css';
+import { highlightedLineItemOf } from './schemas';
 import {
   ADD_LINE_ITEM,
   DELETE,
@@ -32,7 +31,7 @@ import {
   SPREAD_LABELS,
   usdColumn,
   VIEW,
-} from './lineItemText';
+} from './line-item-text';
 import { SpreadGrid } from './SpreadGrid';
 import { SwbsChip } from './SwbsChip';
 import { useLineItemActions } from './useLineItemActions';
@@ -58,8 +57,7 @@ export function LineItemsSection({ activityId }: LineItemsSectionProps) {
   const actions = useLineItemActions();
   const location = useLocation();
   const navigate = useNavigate();
-  const highlight = (location.state as { highlightLineItemId?: string } | null)
-    ?.highlightLineItemId;
+  const highlight = highlightedLineItemOf(location.state);
 
   useEffect(() => {
     if (highlight && section.data) {

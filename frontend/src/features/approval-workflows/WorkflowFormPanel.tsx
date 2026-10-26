@@ -1,57 +1,43 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { Info } from 'lucide-react';
 import { useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import type { Control } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { conflictMessage } from '@/api/errors';
-import {
-  CheckboxField,
-  DecimalField,
-  FormPanel,
-  FormSection,
-  problemOf,
-  TextAreaField,
-  TextField,
-  useToast,
-} from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
-import { asApiError, isSessionLost } from '@/features/approvals/messages';
-import { parseWholeInput } from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
-import { toDrafts, toInputs } from './levelDrafts';
-import type { LevelDraft } from './levelDrafts';
+import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
+import { DecimalField } from '@/ui/DecimalField/DecimalField';
+import { FormField } from '@/ui/FormField/FormField';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problem-of';
+import { FormSection } from '@/ui/FormSection/FormSection';
+import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
+import { asApiError, isSessionLost } from '@/api/errors';
+import { useFormatters } from '@/format/useFormatters';
 import { LevelsEditor } from './LevelsEditor';
-import { openRoundsNote } from './workflowTexts';
-import { fetchLatestWorkflow, useCreateWorkflow, useUpdateWorkflow } from './workflowsApi';
-import type { ApprovalWorkflow, WorkflowUpdate } from './workflowsApi';
+import {
+  isWorkflowChanged,
+  newWorkflow,
+  workflowChanges,
+  workflowSchema,
+  workflowValuesOf,
+} from './schemas';
+import type { WorkflowValues } from './schemas';
+import { openRoundsNote } from './workflow-texts';
+import { fetchLatestWorkflow, useCreateWorkflow, useUpdateWorkflow } from './api';
+import type { ApprovalWorkflow } from './api';
 import styles from './WorkflowFormPanel.module.css';
 
 const CONFLICT_NEXT_STEP =
   'Your changes are still here. Save again to replace their changes, or Cancel to see theirs.';
 const LEVELS_HINT =
   'Levels are checked in order. A level can be needed only sometimes, approved automatically, or need every approver. Nobody approves an activity they own or submitted.';
-
-/** New workflows start with a reminder after 3 days and escalation after 5 (017 FR-007). */
-const NEW_REMINDER_DAYS = 3;
-const NEW_ESCALATION_DAYS = 5;
-
-/** The days of a reminder or an escalation as the form holds them: ticked, and the days as typed. */
-interface TimingDraft {
-  on: boolean;
-  days: string;
-}
-
-function timingDraft(days: number | null | undefined, fallback: number): TimingDraft {
-  return days ? { on: true, days: String(days) } : { on: false, days: String(fallback) };
-}
-
-/** The days for the API: null when unticked; undefined when the typed text is no whole number. */
-function timingValue(timing: TimingDraft): number | null | undefined {
-  if (!timing.on) {
-    return null;
-  }
-  const days = parseWholeInput(timing.days);
-  return days === null ? undefined : Number(days);
-}
+const FIELDS = ['name', 'description', 'reminderDays', 'escalationDays'] as const;
 
 export interface WorkflowFormPanelProps {
   /** The workflow to edit; without one, the panel creates a new workflow. */
@@ -73,93 +59,30 @@ export function WorkflowFormPanel({ workflow, onClose }: WorkflowFormPanelProps)
   const createWorkflow = useCreateWorkflow();
   const updateWorkflow = useUpdateWorkflow();
   // The edit-form rule: the workflow, its version included, is copied into the form once.
-  const [start] = useState(() => ({
-    name: workflow?.name ?? '',
-    description: workflow?.description ?? '',
-    levels: toDrafts(workflow),
-    reminder: workflow
-      ? timingDraft(workflow.reminderDays, NEW_REMINDER_DAYS)
-      : { on: true, days: String(NEW_REMINDER_DAYS) },
-    escalation: workflow
-      ? timingDraft(workflow.escalationDays, NEW_ESCALATION_DAYS)
-      : { on: true, days: String(NEW_ESCALATION_DAYS) },
-  }));
-  const [name, setName] = useState(start.name);
-  const [description, setDescription] = useState(start.description);
-  const [levels, setLevels] = useState<LevelDraft[]>(start.levels);
-  const [reminder, setReminder] = useState<TimingDraft>(start.reminder);
-  const [escalation, setEscalation] = useState<TimingDraft>(start.escalation);
+  const [start] = useState(() => workflowValuesOf(workflow));
+  const form = useForm<WorkflowValues>({
+    resolver: zodResolver(workflowSchema),
+    defaultValues: start,
+    ...CHECK_ON_SAVE,
+  });
+  const { problems, onInvalid, showServerProblems, clearProblems } = useFormProblems(form, FIELDS);
+  const isDirty = useWatch({
+    control: form.control,
+    compute: (values) => isWorkflowChanged(values, start),
+  });
   const [version, setVersion] = useState(workflow?.version ?? 0);
   const [saving, setSaving] = useState(false);
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
 
-  const levelsChanged = JSON.stringify(toInputs(levels)) !== JSON.stringify(toInputs(start.levels));
-  const reminderDays = timingValue(reminder);
-  const escalationDays = timingValue(escalation);
-  const isDirty =
-    name !== start.name ||
-    description !== start.description ||
-    levelsChanged ||
-    reminder.on !== start.reminder.on ||
-    reminder.days !== start.reminder.days ||
-    escalation.on !== start.escalation.on ||
-    escalation.days !== start.escalation.days;
-
-  /** Days that are no whole number can't be sent: said at once, in the API's words. */
-  function timingProblems(): FieldProblem[] {
-    const found: FieldProblem[] = [];
-    if (reminderDays === undefined) {
-      found.push({
-        field: 'reminderDays',
-        message: 'Remind after: enter a whole number of days from 1 to 60.',
-      });
-    }
-    if (escalationDays === undefined) {
-      found.push({
-        field: 'escalationDays',
-        message: 'Escalate after: enter a whole number of days from 1 to 90.',
-      });
-    }
-    return found;
-  }
-
-  async function save() {
-    const typed = timingProblems();
-    if (typed.length > 0) {
-      setProblems(typed);
-      setFailure(null);
-      return;
-    }
+  async function save(values: WorkflowValues) {
     setSaving(true);
     try {
       if (workflow) {
-        const changes: WorkflowUpdate = { version };
-        if (name !== start.name) {
-          changes.name = name;
-        }
-        if (description !== start.description) {
-          changes.description = description;
-        }
-        if (levelsChanged) {
-          changes.levels = toInputs(levels);
-        }
-        if (reminderDays !== timingValue(start.reminder)) {
-          changes.reminderDays = reminderDays ?? null;
-        }
-        if (escalationDays !== timingValue(start.escalation)) {
-          changes.escalationDays = escalationDays ?? null;
-        }
+        const changes = workflowChanges(values, start, version);
         const saved = await updateWorkflow.mutateAsync({ id: workflow.id, changes });
         show({ message: `Approval workflow '${saved.name}' saved` });
       } else {
-        const created = await createWorkflow.mutateAsync({
-          name,
-          description,
-          levels: toInputs(levels),
-          reminderDays: reminderDays ?? null,
-          escalationDays: escalationDays ?? null,
-        });
+        const created = await createWorkflow.mutateAsync(newWorkflow(values));
         show({
           message: `Approval workflow '${created.name}' created`,
           action: {
@@ -180,11 +103,11 @@ export function WorkflowFormPanel({ workflow, onClose }: WorkflowFormPanelProps)
   async function showFailure(error: unknown) {
     const apiError = asApiError(error);
     if (apiError.kind === 'validation') {
-      setProblems(apiError.fields);
+      showServerProblems(apiError.fields);
       setFailure(null);
       return;
     }
-    setProblems([]);
+    clearProblems();
     if (isSessionLost(apiError)) {
       setFailure(null);
       return;
@@ -205,6 +128,11 @@ export function WorkflowFormPanel({ workflow, onClose }: WorkflowFormPanelProps)
     setFailure({ message: apiError.message });
   }
 
+  function showTypedProblems() {
+    onInvalid();
+    setFailure(null);
+  }
+
   return (
     <FormPanel
       title={workflow ? 'Edit approval workflow' : 'New approval workflow'}
@@ -212,7 +140,7 @@ export function WorkflowFormPanel({ workflow, onClose }: WorkflowFormPanelProps)
       saving={saving}
       problems={problems}
       failure={failure}
-      onSave={() => void save()}
+      onSave={() => void form.handleSubmit(save, showTypedProblems)()}
       onClose={onClose}
     >
       {workflow && workflow.waitingCount > 0 && (
@@ -221,23 +149,17 @@ export function WorkflowFormPanel({ workflow, onClose }: WorkflowFormPanelProps)
           <span>{openRoundsNote(workflow.waitingCount)}</span>
         </p>
       )}
-      <TextField
-        label="Name"
+      <FormField
+        control={form.control}
         name="name"
-        marking="Required"
-        maxLength={120}
-        value={name}
-        onChange={setName}
-        error={problemOf(problems, 'name')}
+        render={(field) => <TextField label="Name" marking="Required" maxLength={120} {...field} />}
       />
-      <TextAreaField
-        label="Description"
+      <FormField
+        control={form.control}
         name="description"
-        maxLength={2000}
-        rows={3}
-        value={description}
-        onChange={setDescription}
-        error={problemOf(problems, 'description')}
+        render={(field) => (
+          <TextAreaField label="Description" maxLength={2000} rows={3} {...field} />
+        )}
       />
       <FormSection title="Levels" description={LEVELS_HINT}>
         {problemOf(problems, 'levels') && (
@@ -245,26 +167,28 @@ export function WorkflowFormPanel({ workflow, onClose }: WorkflowFormPanelProps)
             {problemOf(problems, 'levels')}
           </p>
         )}
-        <LevelsEditor levels={levels} onChange={setLevels} problems={problems} />
+        <FormField
+          control={form.control}
+          name="levels"
+          render={(field) => (
+            <LevelsEditor levels={field.value} onChange={field.onChange} problems={problems} />
+          )}
+        />
       </FormSection>
       <FormSection title="Reminders and escalation" description="Days are calendar days.">
         <TimingFields
+          control={form.control}
           checkLabel="Send a reminder"
           checkName="sendReminder"
           daysLabel="Remind after"
           daysName="reminderDays"
-          value={reminder}
-          onChange={setReminder}
-          error={problemOf(problems, 'reminderDays')}
         />
         <TimingFields
+          control={form.control}
           checkLabel="Escalate to the backup approver"
           checkName="escalate"
           daysLabel="Escalate after"
           daysName="escalationDays"
-          value={escalation}
-          onChange={setEscalation}
-          error={problemOf(problems, 'escalationDays')}
         />
       </FormSection>
     </FormPanel>
@@ -272,45 +196,40 @@ export function WorkflowFormPanel({ workflow, onClose }: WorkflowFormPanelProps)
 }
 
 interface TimingFieldsProps {
+  control: Control<WorkflowValues>;
   checkLabel: string;
-  checkName: string;
+  checkName: 'sendReminder' | 'escalate';
   daysLabel: string;
-  /** The API's key of the days ("reminderDays"), also the input's id. */
-  daysName: string;
-  value: TimingDraft;
-  onChange: (value: TimingDraft) => void;
-  error?: string;
+  /** The API's key of the days, also the input's id. */
+  daysName: 'reminderDays' | 'escalationDays';
 }
 
 /** A check box and, while ticked, its days ("Remind after 3 days waiting"). */
-function TimingFields({
-  checkLabel,
-  checkName,
-  daysLabel,
-  daysName,
-  value,
-  onChange,
-  error,
-}: TimingFieldsProps) {
+function TimingFields({ control, checkLabel, checkName, daysLabel, daysName }: TimingFieldsProps) {
+  const on = useWatch({ control, name: checkName });
   return (
     <div className={styles.timing}>
-      <CheckboxField
-        label={checkLabel}
+      <FormField
+        control={control}
         name={checkName}
-        checked={value.on}
-        onChange={(on) => onChange({ ...value, on })}
+        render={({ value, ...field }) => (
+          <CheckboxField label={checkLabel} checked={value} {...field} />
+        )}
       />
-      {value.on && (
+      {on && (
         <div className={styles.days}>
-          <DecimalField
-            label={daysLabel}
+          <FormField
+            control={control}
             name={daysName}
-            decimals={0}
-            suffix="days waiting"
-            compact
-            value={value.days}
-            onChange={(days) => onChange({ ...value, days })}
-            error={error}
+            render={(field) => (
+              <DecimalField
+                label={daysLabel}
+                decimals={0}
+                suffix="days waiting"
+                compact
+                {...field}
+              />
+            )}
           />
         </div>
       )}

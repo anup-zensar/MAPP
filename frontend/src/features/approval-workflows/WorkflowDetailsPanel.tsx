@@ -1,20 +1,23 @@
 import { Link } from 'react-router';
-import { ApiError } from '@/api/errors';
 import { Pencil } from 'lucide-react';
-import { ActionsMenu, Button, ErrorState, SidePanel, Skeleton, StatusChip } from '@/components';
-import { ApprovalAlert } from '@/features/approvals/ApprovalAlert';
-import { ActivityStatusChip } from '@/features/activities/ActivityStatusChip';
-import { ApprovalChain } from '@/features/approvals/ApprovalChain';
-import { timingsText } from '@/features/approvals/messages';
-import { localDate } from '@/lib/format';
-import { recordHref } from '@/lib/recordLinks';
-import { useFormatters } from '@/lib/useFormatters';
-import { workflowMoreItems } from './workflowActions';
-import type { WorkflowActions } from './workflowActions';
-import { usedByText, WORKFLOW_GONE } from './workflowTexts';
-import { useWorkflowDetails } from './workflowsApi';
-import type { ApprovalWorkflowDetails } from './workflowsApi';
-import { CanChange } from '../settings/shared/CanChange';
+import { ApiError } from '@/api/errors';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button } from '@/ui/Button/Button';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { SidePanel } from '@/ui/SidePanel/SidePanel';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { ApprovalAlert, ApprovalChain, timingsText } from '@/features/approvals';
+import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
+import { localDate } from '@/format/intl';
+import { recordHref } from '@/ui/record-links';
+import { useFormatters } from '@/format/useFormatters';
+import { CanChange } from '@/ui/CanChange/CanChange';
+import { workflowMoreItems } from './workflow-actions';
+import type { WorkflowActions } from './workflow-actions';
+import { usedByText, WORKFLOW_GONE } from './workflow-texts';
+import { useWorkflowDetails } from './api';
+import type { ApprovalWorkflowDetails } from './api';
 import styles from './WorkflowDetailsPanel.module.css';
 
 export interface WorkflowDetailsPanelProps {

@@ -1,13 +1,17 @@
 import { TriangleAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { LevelTag, LinkButton, PageHeader, PersonLabel, TeamPills } from '@/components';
-import type { ActionsMenuItem } from '@/components';
-import { useFormatters } from '@/lib/useFormatters';
-import { allows } from './gateAction';
+import { LinkButton } from '@/ui/Button/Button';
+import { LevelTag } from '@/ui/LevelTag/LevelTag';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { TeamPills } from '@/ui/TeamPill/TeamPill';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
+import { useFormatters } from '@/format/useFormatters';
+import { allows } from '@/session/gate-action';
 import { BusinessUnitText, PlanCompleteness, PlanStatusChip } from './PlanFacts';
 import styles from './PlanHeader.module.css';
-import type { Plan } from './plansApi';
-import { yearDates } from './planText';
+import type { Plan } from './api';
+import { yearDates } from './plan-text';
 import { PlanTypeTag } from './PlanTypeTag';
 
 export interface PlanHeaderProps {

@@ -1,9 +1,10 @@
 import { fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import { renderWithProviders } from '@/test/render';
+import { nth } from '@/testing/dom';
+import { renderWithProviders } from '@/testing/render';
+import { allWorkOptions } from '@/testing/fixtures/all-work';
 import { ColumnChooser } from './ColumnChooser';
-import { allWorkOptions } from './testData';
 
 function Harness({ initial = ['id', 'status', 'owner'] }: { initial?: string[] }) {
   const [columns, setColumns] = useState(initial);
@@ -95,9 +96,9 @@ describe('ColumnChooser (US3)', () => {
     const items = within(
       screen.getByRole('region', { name: 'Shown columns, in order' }),
     ).getAllByRole('listitem');
-    fireEvent.dragStart(items[2]);
-    fireEvent.dragOver(items[0]);
-    fireEvent.drop(items[0]);
+    fireEvent.dragStart(nth(items, 2));
+    fireEvent.dragOver(nth(items, 0));
+    fireEvent.drop(nth(items, 0));
 
     expect(shownInOrder()).toEqual(['Owner', 'ID', 'Status']);
   });

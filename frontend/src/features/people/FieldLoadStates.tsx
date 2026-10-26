@@ -1,5 +1,6 @@
 import { RotateCw } from 'lucide-react';
-import { Button, Skeleton } from '@/components';
+import { Button } from '@/ui/Button/Button';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import styles from './FieldLoadStates.module.css';
 
 /** A field whose choices are still loading: its label over a field-sized grey shape. */

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { TreeNode } from '@/components';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
-import { plan } from '../testData';
+import type { TreeNode } from '@/ui/TreeTable/TreeTable';
+import { nth } from '@/testing/dom';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { plan } from '@/testing/fixtures/plans';
 import { PlanTree } from './PlanTree';
 
 /** Two campaigns, one with an initiative: the rows feature 005 adds under the plan. */
@@ -114,13 +115,14 @@ describe('PlanTree (FR-013, FR-014)', () => {
   });
 
   it('keeps rows open that get rows below them after Expand all (activities load after campaigns)', async () => {
-    const [retail, fleet] = CAMPAIGNS;
+    const retail = nth(CAMPAIGNS, 0);
+    const fleet = nth(CAMPAIGNS, 1);
     const withActivity: TreeNode[] = [
       {
         ...retail,
         children: [
           {
-            ...retail.children[0],
+            ...nth(retail.children, 0),
             children: [
               { id: 'A-1001', level: 'activity', name: 'Launch film', cells: {}, children: [] },
             ],
@@ -169,13 +171,14 @@ describe('PlanTree (FR-013, FR-014)', () => {
   });
 
   it('opens the path to the highlighted row (005 FR-004)', () => {
-    const [retail, fleet] = CAMPAIGNS;
+    const retail = nth(CAMPAIGNS, 0);
+    const fleet = nth(CAMPAIGNS, 1);
     renderTree([
       {
         ...retail,
         children: [
           {
-            ...retail.children[0],
+            ...nth(retail.children, 0),
             children: [
               {
                 id: 'A-1001',

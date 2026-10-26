@@ -1,18 +1,25 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { PEOPLE } from '@/features/approval-workflows/testData';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import type { HttpHandler } from 'msw';
+import { PEOPLE } from '@/testing/fixtures/approval-workflows';
+import { mockApi } from '@/testing/mock-api';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import {
+  ALEX,
+  CARLOS,
+  DANIEL,
+  delegationOf,
+  NO_DELEGATIONS,
+  PRIYA,
+} from '@/testing/fixtures/approvals';
+import { reply } from '@/testing/replies';
 import { DelegationPanel } from './DelegationPanel';
-import { ALEX, CARLOS, DANIEL, delegationOf, NO_DELEGATIONS, PRIYA } from './testData';
 
-const LIST = 'GET /api/v1/approval-delegations';
 const CREATE = 'POST /api/v1/approval-delegations';
 
-function renderPanel(answers: Record<string, MockHandler>) {
-  const api = mockApi({ 'GET /api/v1/people': PEOPLE, ...answers });
+function renderPanel(answers: HttpHandler[]) {
+  const api = mockApi([reply('GET /api/v1/people', PEOPLE), ...answers]);
   const onClose = vi.fn();
   const rendered = renderWithProviders(<DelegationPanel onClose={onClose} />, {
     user: testUser(),
@@ -26,20 +33,23 @@ const listOf = (items: ReturnType<typeof delegationOf>[], canManageOthers = fals
 
 describe('DelegationPanel (feature 017, US4)', () => {
   it('groups the delegations, with Edit and Cancel only where they may change (FR-024)', async () => {
-    renderPanel({
-      [LIST]: listOf([
-        delegationOf({ id: 'DLG-1002', state: 'current', startDate: '2026-10-19' }),
-        delegationOf(),
-        delegationOf({
-          id: 'DLG-1000',
-          person: PRIYA,
-          delegate: ALEX,
-          state: 'cancelled',
-          canChange: false,
-          note: '',
-        }),
-      ]),
-    });
+    renderPanel([
+      reply(
+        'GET /api/v1/approval-delegations',
+        listOf([
+          delegationOf({ id: 'DLG-1002', state: 'current', startDate: '2026-10-19' }),
+          delegationOf(),
+          delegationOf({
+            id: 'DLG-1000',
+            person: PRIYA,
+            delegate: ALEX,
+            state: 'cancelled',
+            canChange: false,
+            note: '',
+          }),
+        ]),
+      ),
+    ]);
 
     const panel = await screen.findByRole('dialog', { name: 'Approval delegation' });
     const current = await within(panel).findByRole('region', { name: 'Current' });
@@ -59,7 +69,7 @@ describe('DelegationPanel (feature 017, US4)', () => {
   });
 
   it('says what to do when there is no delegation yet', async () => {
-    renderPanel({ [LIST]: NO_DELEGATIONS });
+    renderPanel([reply('GET /api/v1/approval-delegations', NO_DELEGATIONS)]);
 
     expect(
       await screen.findByText(
@@ -69,10 +79,13 @@ describe('DelegationPanel (feature 017, US4)', () => {
   });
 
   it('adds a delegation and says so (FR-022)', async () => {
-    const { user, api } = renderPanel({
-      [LIST]: NO_DELEGATIONS,
-      [CREATE]: { status: 201, body: delegationOf({ person: PRIYA, delegate: DANIEL }) },
-    });
+    const { user, api } = renderPanel([
+      reply('GET /api/v1/approval-delegations', NO_DELEGATIONS),
+      reply('POST /api/v1/approval-delegations', {
+        status: 201,
+        body: delegationOf({ person: PRIYA, delegate: DANIEL }),
+      }),
+    ]);
     await screen.findByText(/You haven't delegated/);
 
     await user.click(screen.getByRole('button', { name: 'Add delegation' }));
@@ -98,9 +111,9 @@ describe('DelegationPanel (feature 017, US4)', () => {
   });
 
   it('shows every problem of the API at its field (FR-022)', async () => {
-    const { user } = renderPanel({
-      [LIST]: NO_DELEGATIONS,
-      [CREATE]: {
+    const { user } = renderPanel([
+      reply('GET /api/v1/approval-delegations', NO_DELEGATIONS),
+      reply('POST /api/v1/approval-delegations', {
         status: 400,
         body: {
           error: {
@@ -113,8 +126,8 @@ describe('DelegationPanel (feature 017, US4)', () => {
             ],
           },
         },
-      },
-    });
+      }),
+    ]);
     await screen.findByText(/You haven't delegated/);
 
     await user.click(screen.getByRole('button', { name: 'Add delegation' }));
@@ -135,12 +148,13 @@ describe('DelegationPanel (feature 017, US4)', () => {
   });
 
   it('lets someone who manages delegations see everyone and add one for another person (FR-022, FR-024)', async () => {
-    const { user, api } = renderPanel({
-      [LIST]: (request) =>
+    const { user, api } = renderPanel([
+      reply('GET /api/v1/approval-delegations', (request) =>
         new URL(request.url).searchParams.get('scope') === 'all'
           ? listOf([delegationOf({ person: CARLOS, delegate: ALEX })], true)
           : listOf([], true),
-    });
+      ),
+    ]);
 
     const everyone = await screen.findByRole('checkbox', { name: 'Everyone' });
     await user.click(everyone);
@@ -152,12 +166,16 @@ describe('DelegationPanel (feature 017, US4)', () => {
   });
 
   it('cancels a delegation after asking, and says so (FR-024)', async () => {
-    const { user, api } = renderPanel({
-      [LIST]: listOf([delegationOf()]),
-      'POST /api/v1/approval-delegations/DLG-1001/cancel': {
-        body: delegationOf({ state: 'cancelled', canChange: false }),
-      },
-    });
+    const { user, api } = renderPanel([
+      reply('GET /api/v1/approval-delegations', listOf([delegationOf()])),
+      reply(
+        'POST /api/v1/approval-delegations/{delegationId}/cancel',
+        {
+          body: delegationOf({ state: 'cancelled', canChange: false }),
+        },
+        { delegationId: 'DLG-1001' },
+      ),
+    ]);
 
     await user.click(
       await screen.findByRole('button', { name: /^Cancel delegation Daniel Okoro → Carlos/ }),
@@ -178,10 +196,14 @@ describe('DelegationPanel (feature 017, US4)', () => {
   });
 
   it('changes a delegation, sending only what changed', async () => {
-    const { user, api } = renderPanel({
-      [LIST]: listOf([delegationOf()]),
-      'PATCH /api/v1/approval-delegations/DLG-1001': { body: delegationOf() },
-    });
+    const { user, api } = renderPanel([
+      reply('GET /api/v1/approval-delegations', listOf([delegationOf()])),
+      reply(
+        'PATCH /api/v1/approval-delegations/{delegationId}',
+        { body: delegationOf() },
+        { delegationId: 'DLG-1001' },
+      ),
+    ]);
 
     await user.click(
       await screen.findByRole('button', { name: /^Edit delegation Daniel Okoro → Carlos/ }),

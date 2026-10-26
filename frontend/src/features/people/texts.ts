@@ -2,7 +2,7 @@
  * The sentences of feature 003 that are put together from data (plan "User-visible messages"):
  * counts, what a person owns and approves, the deactivate dialog and the delete-team dialog.
  */
-import type { Team, UsageCount } from './peopleApi';
+import type { Team, UsageCount } from './api';
 
 /** "2 plans and 5 activities", "2 plans, 5 activities and 1 initiative". */
 const AND_LIST = new Intl.ListFormat('en-GB', { type: 'conjunction' });

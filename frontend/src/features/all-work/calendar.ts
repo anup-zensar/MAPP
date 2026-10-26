@@ -3,7 +3,7 @@
  * ("YYYY-MM-DD", read as days, never as local times): bars on the year's timeline, the Today line,
  * and the weeks of one month.
  */
-import type { AllWorkRow } from './allWorkTypes';
+import type { AllWorkRow } from './all-work-types';
 
 const DAY_MS = 86_400_000;
 
@@ -44,7 +44,9 @@ export function yearDays(from: number, to: number): number[] {
 /** The days of each quarter of a year, for the quarter columns of a timeline over several years. */
 export function quarterDays(year: number): number[] {
   const months = monthDays(year);
-  return [0, 3, 6, 9].map((first) => months[first] + months[first + 1] + months[first + 2]);
+  return [0, 3, 6, 9].map((first) =>
+    months.slice(first, first + 3).reduce((sum, days) => sum + days, 0),
+  );
 }
 
 /** A record's bar on the timeline, in per cent of the timeline's width. */
@@ -69,12 +71,13 @@ export function barOf(
   year: number,
   yearTo: number = year,
 ): Bar | null {
-  if (row.level === 'plan' || !row.startDate || (!row.endDate && !row.ongoing)) {
+  const { startDate, endDate } = row;
+  if (row.level === 'plan' || !startDate || (!endDate && !row.ongoing)) {
     return null;
   }
   const { first, last, days } = rangeSpan(year, yearTo);
-  const start = dayNumber(row.startDate);
-  const end = row.ongoing ? last : dayNumber(row.endDate as string);
+  const start = dayNumber(startDate);
+  const end = endDate && !row.ongoing ? dayNumber(endDate) : last;
   if (end < first || start > last) {
     return null;
   }
@@ -116,7 +119,7 @@ export function todayOffset(today: string, year: number, yearTo: number = year):
  */
 export function monthWeeks(year: number, month: number): (string | null)[][] {
   const first = dayNumber(`${year}-${String(month).padStart(2, '0')}-01`);
-  const count = monthDays(year)[month - 1];
+  const count = monthDays(year)[month - 1] ?? 0;
   // getUTCDay: Sunday 0 … Saturday 6; Monday first means Monday 0 … Sunday 6.
   const lead = (new Date(first * DAY_MS).getUTCDay() + 6) % 7;
   const cells: (string | null)[] = [
@@ -135,9 +138,10 @@ export function runsOn(
   date: string,
   year: number,
 ): boolean {
-  if (!row.startDate || (!row.endDate && !row.ongoing)) {
+  const { startDate, endDate } = row;
+  if (!startDate || (!endDate && !row.ongoing)) {
     return false;
   }
-  const end = row.ongoing ? `${year}-12-31` : (row.endDate as string);
-  return row.startDate <= date && date <= end;
+  const end = endDate && !row.ongoing ? endDate : `${year}-12-31`;
+  return startDate <= date && date <= end;
 }

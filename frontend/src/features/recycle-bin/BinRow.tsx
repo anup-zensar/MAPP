@@ -1,14 +1,24 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { ActionsMenu, Avatar, Button, LevelTag, StatusChip, Tooltip } from '@/components';
-import type { ActionsMenuItem, PlanningLevel } from '@/components';
-import { availabilityProps, isShown } from '@/lib/access';
-import { initialsOf } from '@/features/activity-log/logText';
-import { useFormatters } from '@/lib/useFormatters';
-import { capitalise, insideRecords, restoreStateLine, rowContentsText, wasInText } from './binText';
-import type { BinItem, BinRecord } from './binText';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Avatar } from '@/ui/Avatar/Avatar';
+import { Button } from '@/ui/Button/Button';
+import { LevelTag } from '@/ui/LevelTag/LevelTag';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
+import { isPlanningType } from '@/ui/record-links';
+import { availabilityProps, isShown } from '@/session/access';
+import { initialsOf } from '@/features/activity-log';
+import { useFormatters } from '@/format/useFormatters';
+import {
+  capitalise,
+  insideRecords,
+  restoreStateLine,
+  rowContentsText,
+  wasInText,
+} from './bin-text';
+import type { BinItem, BinRecord } from './bin-text';
 import styles from './BinRow.module.css';
-
-const LEVELS: string[] = ['plan', 'campaign', 'initiative', 'activity', 'lineItem'];
 
 export interface BinRowProps {
   item: BinItem;
@@ -75,8 +85,8 @@ export function BinRow({
     <li className={styles.row} data-highlighted={highlighted || undefined}>
       <div className={styles.main}>
         <div className={styles.title}>
-          {LEVELS.includes(item.recordType) ? (
-            <LevelTag level={item.recordType as PlanningLevel} />
+          {isPlanningType(item.recordType) ? (
+            <LevelTag level={item.recordType} />
           ) : (
             <StatusChip tone="neutral">{capitalise(item.recordTypeLabel)}</StatusChip>
           )}

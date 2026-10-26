@@ -1,35 +1,25 @@
-import { useQuery } from '@tanstack/react-query';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { CircleAlert, Info } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
-import type { FormEvent } from 'react';
 import { Navigate, useLocation, useSearchParams } from 'react-router';
-import { api, call } from '@/api/client';
 import { ApiError } from '@/api/errors';
-import type { components } from '@/api/schema';
-import { PublicLayout } from '@/app/PublicLayout';
-import { SessionCheckPage } from '@/app/SessionCheckPage';
-import { useSession } from '@/app/useSession';
-import type { SessionEnd } from '@/app/useSession';
-import {
-  Avatar,
-  Button,
-  ErrorState,
-  FormErrorSummary,
-  PasswordField,
-  Skeleton,
-  TextField,
-} from '@/components';
-import type { FieldProblem } from '@/components';
-import { safeNext } from '@/lib/safeNext';
-import { usePageTitle } from '@/lib/usePageTitle';
+import type { components } from '@/api/generated/schema';
+import { PublicLayout } from '@/ui/PublicLayout/PublicLayout';
+import { SessionCheckPage } from '@/session/SessionCheckPage';
+import { useSession } from '@/session/useSession';
+import type { SessionEnd } from '@/session/useSession';
+import { Avatar } from '@/ui/Avatar/Avatar';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { safeNext } from '@/session/safe-next';
+import { usePageTitle } from '@/ui/usePageTitle';
+import { useDemoPeople } from './api';
+import { noticeOf } from './schemas';
+import { SignInForm } from './SignInForm';
 import styles from './SignInPage.module.css';
 
 type DemoPeople = components['schemas']['DemoPeople'];
 type DemoPerson = components['schemas']['DemoPerson'];
-
-/** Signs in; resolves to the error when that failed, or to null when it worked. */
-type SignInAttempt = (email: string, password: string) => Promise<ApiError | null>;
 
 /** The notice the page can be opened with, after a session ended (plan "Session"). */
 const NOTICES: Record<SessionEnd, string> = {
@@ -91,7 +81,7 @@ function Notice() {
 
 /** The notice's text from the router state that endSession sends along ("" for none). */
 function noticeText(routerState: unknown): string {
-  const notice = (routerState as { notice?: SessionEnd } | null)?.notice;
+  const notice = noticeOf(routerState);
   return notice ? NOTICES[notice] : '';
 }
 
@@ -101,10 +91,7 @@ function noticeText(routerState: unknown): string {
  */
 function SignInChoices() {
   const { signIn } = useSession();
-  const demoPeople = useQuery({
-    queryKey: ['demo-people'],
-    queryFn: () => call(api.GET('/api/v1/auth/demo-people')),
-  });
+  const demoPeople = useDemoPeople();
   // While a sign-in is on its way, further clicks are ignored; nothing is greyed out.
   const [signingIn, setSigningIn] = useState(false);
   // A failure shown above the form, such as "Incorrect e-mail or password.".
@@ -167,81 +154,6 @@ function SignInChoices() {
       <DemoPeopleSection query={demoPeople} onChoose={signInAs} />
     </>
   );
-}
-
-interface SignInFormProps {
-  signingIn: boolean;
-  onSignIn: SignInAttempt;
-}
-
-/** E-mail, password and Sign in. Every empty field is reported at once (FR-004). */
-function SignInForm({ signingIn, onSignIn }: SignInFormProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  // Every problem of the last attempt; a new list each time, so the summary takes the focus.
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (signingIn) {
-      return;
-    }
-    // Empty fields are reported before the API is asked anything.
-    const emptyFields = findEmptyFields(email, password);
-    setProblems(emptyFields);
-    if (emptyFields.length > 0) {
-      return;
-    }
-    const error = await onSignIn(email, password);
-    if (error?.kind === 'validation') {
-      setProblems(error.fields);
-    } else if (error?.kind === 'incorrectCredentials') {
-      // The e-mail stays, so only the password is typed again (US1 scenario 4).
-      setPassword('');
-    }
-  }
-
-  function problemOf(field: string): string | undefined {
-    return problems.find((problem) => problem.field === field)?.message;
-  }
-
-  return (
-    <form noValidate aria-busy={signingIn} className={styles.form} onSubmit={handleSubmit}>
-      <FormErrorSummary errors={problems} />
-      <TextField
-        label="E-mail"
-        name="email"
-        type="email"
-        autoComplete="username"
-        value={email}
-        onChange={setEmail}
-        error={problemOf('email')}
-      />
-      <PasswordField
-        label="Password"
-        name="password"
-        autoComplete="current-password"
-        value={password}
-        onChange={setPassword}
-        error={problemOf('password')}
-      />
-      <Button type="submit" variant="primary" size="lg" className={styles.submit}>
-        {signingIn ? 'Signing in…' : 'Sign in'}
-      </Button>
-    </form>
-  );
-}
-
-/** The messages of the empty fields, in the order of the form. */
-function findEmptyFields(email: string, password: string): FieldProblem[] {
-  const problems: FieldProblem[] = [];
-  if (email.trim() === '') {
-    problems.push({ field: 'email', message: 'Enter your e-mail' });
-  }
-  if (password === '') {
-    problems.push({ field: 'password', message: 'Enter the password' });
-  }
-  return problems;
 }
 
 interface DemoPeopleSectionProps {

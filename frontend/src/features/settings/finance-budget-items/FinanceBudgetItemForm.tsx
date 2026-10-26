@@ -1,17 +1,30 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { ChoiceField, FormPanel, LockedNote, problemOf, TextField, useToast } from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
-import { useFormatters } from '@/lib/useFormatters';
-import { saveFailureOf } from '../shared/saveFailure';
-import styles from '../shared/SettingsTable.module.css';
+import { useForm, useWatch } from 'react-hook-form';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { FormField } from '@/ui/FormField/FormField';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
+import { useFormatters } from '@/format/useFormatters';
+import styles from '@/ui/settings-table.module.css';
+import { ReadOnlyField } from '../ReadOnlyField';
+import { saveFailureOf } from '../save-failure';
 import {
   fetchFinanceBudgetItem,
   useCreateFinanceBudgetItem,
   useFinanceBudgetPage,
   useUpdateFinanceBudgetItem,
-} from './financeBudgetsApi';
-import type { FinanceBudgetItem, FinanceBudgetItemUpdate } from './financeBudgetsApi';
-import { yearLock } from './financeItemActions';
+} from './api';
+import type { FinanceBudgetItem } from './api';
+import { yearLock } from './finance-item-actions';
+import { changedFields, createBody, startValues } from './item-values';
+import { financeBudgetItemSchema } from './schemas';
+import type { FinanceBudgetItemValues } from './schemas';
+
+const FIELDS = ['year', 'budgetName', 'name', 'code'] as const;
 
 export interface FinanceBudgetItemFormProps {
   /** The item to change; without one, the form adds a new item. */
@@ -21,14 +34,6 @@ export interface FinanceBudgetItemFormProps {
   /** The budget years that can be chosen. */
   years: number[];
   onClose: () => void;
-}
-
-/** The typed values, as text, exactly as they are in the fields. */
-interface ItemValues {
-  year: string;
-  budgetName: string;
-  name: string;
-  code: string;
 }
 
 /**
@@ -43,38 +48,30 @@ export function FinanceBudgetItemForm({ item, year, years, onClose }: FinanceBud
   const createItem = useCreateFinanceBudgetItem();
   const updateItem = useUpdateFinanceBudgetItem();
   // The edit-form rule: the item is copied into the form once, when the panel opens.
-  const [start] = useState<ItemValues>(() => ({
-    year: String(item?.year ?? year),
-    budgetName: item?.budgetName ?? '',
-    name: item?.name ?? '',
-    code: item?.code ?? '',
-  }));
-  const [values, setValues] = useState(start);
+  const [start] = useState(() => startValues(item, year));
+  const form = useForm<FinanceBudgetItemValues>({
+    resolver: zodResolver(financeBudgetItemSchema),
+    defaultValues: start,
+    ...CHECK_ON_SAVE,
+  });
+  const { problems, onInvalid, showServerProblems, clearProblems } = useFormProblems(form, FIELDS);
   const [version, setVersion] = useState(item?.version ?? 0);
   const [saving, setSaving] = useState(false);
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
+  const chosenYear = useWatch({ control: form.control, name: 'year' });
   // The budget names already used in the chosen year, offered while typing (FR-014).
-  const yearBudgets = useFinanceBudgetPage(Number(values.year));
+  const yearBudgets = useFinanceBudgetPage(Number(chosenYear));
   const budgetNames =
     yearBudgets.data && !yearBudgets.isPlaceholderData
       ? yearBudgets.data.items.map((budget) => budget.name)
       : [];
 
-  function set<K extends keyof ItemValues>(field: K, value: ItemValues[K]) {
-    setValues((previous) => ({ ...previous, [field]: value }));
-  }
-
-  async function save() {
+  async function save(values: FinanceBudgetItemValues) {
+    clearProblems();
     setSaving(true);
     try {
       if (!item) {
-        const created = await createItem.mutateAsync({
-          year: Number(values.year),
-          budgetName: values.budgetName,
-          name: values.name,
-          code: values.code,
-        });
+        const created = await createItem.mutateAsync(createBody(values));
         show({ message: `Finance budget item '${created.name}' created` });
         onClose();
         return;
@@ -96,7 +93,7 @@ export function FinanceBudgetItemForm({ item, year, years, onClose }: FinanceBud
 
   async function showFailure(error: unknown) {
     const view = saveFailureOf(error, 'financeBudgetItem', dateFormat);
-    setProblems(view.problems);
+    showServerProblems(view.problems);
     setFailure(view.failure);
     if (view.conflict && item) {
       // Typed values stay; the next Save replaces the other person's change on purpose.
@@ -107,88 +104,68 @@ export function FinanceBudgetItemForm({ item, year, years, onClose }: FinanceBud
     }
   }
 
+  const submit = form.handleSubmit(save, onInvalid);
+
   return (
     <FormPanel
       title={item ? 'Edit finance budget item' : 'New finance budget item'}
-      isDirty={!sameValues(values, start)}
+      isDirty={form.formState.isDirty}
       saving={saving}
       problems={problems}
       failure={failure}
-      onSave={() => void save()}
+      onSave={() => void submit()}
       onClose={onClose}
     >
       <div className={styles.formFields}>
         {item ? (
-          <div className={styles.readOnly}>
-            <span className={styles.readOnlyLabel}>Budget year</span>
-            <span className={styles.readOnlyValue}>{item.year}</span>
-            <LockedNote>{yearLock(item)}</LockedNote>
-          </div>
+          <ReadOnlyField label="Budget year" value={String(item.year)}>
+            {yearLock(item)}
+          </ReadOnlyField>
         ) : (
-          <ChoiceField
-            label="Budget year"
+          <FormField
+            control={form.control}
             name="year"
-            marking="Required"
-            options={years.map((each) => ({ id: String(each), label: String(each), active: true }))}
-            value={values.year}
-            onChange={(next) => set('year', next)}
-            error={problemOf(problems, 'year')}
+            render={(field) => (
+              <ChoiceField
+                label="Budget year"
+                marking="Required"
+                options={years.map((each) => ({
+                  id: String(each),
+                  label: String(each),
+                  active: true,
+                }))}
+                {...field}
+              />
+            )}
           />
         )}
-        <TextField
-          label="Budget name"
+        <FormField
+          control={form.control}
           name="budgetName"
-          marking="Required"
-          hint="Items with the same year and budget name form one finance budget."
-          maxLength={120}
-          suggestions={budgetNames}
-          value={values.budgetName}
-          onChange={(budgetName) => set('budgetName', budgetName)}
-          error={problemOf(problems, 'budgetName')}
+          render={(field) => (
+            <TextField
+              label="Budget name"
+              marking="Required"
+              hint="Items with the same year and budget name form one finance budget."
+              maxLength={120}
+              suggestions={budgetNames}
+              {...field}
+            />
+          )}
         />
-        <TextField
-          label="Item name"
+        <FormField
+          control={form.control}
           name="name"
-          marking="Required"
-          maxLength={120}
-          value={values.name}
-          onChange={(name) => set('name', name)}
-          error={problemOf(problems, 'name')}
+          render={(field) => (
+            <TextField label="Item name" marking="Required" maxLength={120} {...field} />
+          )}
         />
-        <TextField
-          label="Code"
+        <FormField
+          control={form.control}
           name="code"
-          maxLength={40}
-          value={values.code}
-          onChange={(code) => set('code', code)}
-          error={problemOf(problems, 'code')}
+          render={(field) => <TextField label="Code" maxLength={40} {...field} />}
         />
       </div>
     </FormPanel>
   );
-}
-
-function sameValues(a: ItemValues, b: ItemValues): boolean {
-  return (
-    a.year === b.year && a.budgetName === b.budgetName && a.name === b.name && a.code === b.code
-  );
-}
-
-/** The fields people changed, with the version (D-203); null when nothing changed. */
-function changedFields(
-  values: ItemValues,
-  start: ItemValues,
-  version: number,
-): FinanceBudgetItemUpdate | null {
-  const body: FinanceBudgetItemUpdate = { version };
-  if (values.budgetName !== start.budgetName) {
-    body.budgetName = values.budgetName;
-  }
-  if (values.name !== start.name) {
-    body.name = values.name;
-  }
-  if (values.code !== start.code) {
-    body.code = values.code;
-  }
-  return Object.keys(body).length > 1 ? body : null;
 }

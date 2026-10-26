@@ -1,11 +1,12 @@
 import { screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import { renderWithProviders } from '@/test/render';
-import { emptyGoals } from './activityFormState';
-import type { GoalsState } from './activityFormState';
+import { nextOf } from '@/testing/dom';
+import { renderWithProviders } from '@/testing/render';
+import { MODEL } from '@/testing/fixtures/activities';
+import { emptyGoals } from './activity-form-state';
+import type { GoalsState } from './activity-form-state';
 import { GoalsFields } from './GoalsFields';
-import { MODEL } from './testData';
 
 function Goals({ start = emptyGoals() }: { start?: GoalsState }) {
   const [goals, setGoals] = useState(start);
@@ -13,7 +14,7 @@ function Goals({ start = emptyGoals() }: { start?: GoalsState }) {
 }
 
 function stage(label: string): HTMLElement {
-  return screen.getByText(label, { selector: 'dt' }).nextElementSibling as HTMLElement;
+  return nextOf(screen.getByText(label, { selector: 'dt' }));
 }
 
 describe('GoalsFields (feature 006, FR-018)', () => {

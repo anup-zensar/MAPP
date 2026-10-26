@@ -1,17 +1,16 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { mockApi } from '@/testing/mock-api';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { CARLOS, DANIEL, delegationOf, NO_DELEGATIONS, PRIYA } from '@/testing/fixtures/approvals';
+import { reply } from '@/testing/replies';
 import { DelegationBanner } from './DelegationBanner';
-import { CARLOS, DANIEL, delegationOf, NO_DELEGATIONS, PRIYA } from './testData';
-
-const LIST = 'GET /api/v1/approval-delegations';
 
 describe('DelegationBanner (feature 017, US4)', () => {
   it('names each current delegation that concerns the person, one line each (FR-024)', async () => {
-    mockApi({
-      [LIST]: {
+    mockApi([
+      reply('GET /api/v1/approval-delegations', {
         body: {
           items: [
             delegationOf({ person: PRIYA, delegate: CARLOS, state: 'current' }),
@@ -21,8 +20,8 @@ describe('DelegationBanner (feature 017, US4)', () => {
           total: 3,
           canManageOthers: false,
         },
-      },
-    });
+      }),
+    ]);
     renderWithProviders(<DelegationBanner />, { user: testUser() });
 
     const banner = await screen.findByRole('status');
@@ -32,7 +31,7 @@ describe('DelegationBanner (feature 017, US4)', () => {
   });
 
   it('shows nothing without a current delegation', async () => {
-    const api = mockApi({ [LIST]: NO_DELEGATIONS });
+    const api = mockApi([reply('GET /api/v1/approval-delegations', NO_DELEGATIONS)]);
     renderWithProviders(<DelegationBanner />, { user: testUser() });
 
     await vi.waitFor(() => expect(api.requests).toHaveLength(1));

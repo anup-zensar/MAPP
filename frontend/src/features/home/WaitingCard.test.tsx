@@ -1,19 +1,23 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
-import type { WaitingItem } from './homeApi';
-import { waitingItemOf } from './testData';
+import { closestTo } from '@/testing/dom';
+import { mockApi } from '@/testing/mock-api';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { waitingItemOf } from '@/testing/fixtures/home';
+import { reply } from '@/testing/replies';
+import type { Answer } from '@/testing/replies';
+import type { WaitingItem } from './api';
 import { WaitingCard } from './WaitingCard';
 
 const daysAgo = (days: number) => new Date(Date.now() - (days * 24 + 1) * 3_600_000).toISOString();
 
 const page = (items: WaitingItem[], total = items.length) => ({ body: { items, total } });
 
-function renderCard(answer: MockHandler = page([waitingItemOf({ waitingSince: daysAgo(3) })])) {
-  mockApi({ 'GET /api/v1/home/waiting': answer });
+function renderCard(
+  answer: Answer<'GET /api/v1/home/waiting'> = page([waitingItemOf({ waitingSince: daysAgo(3) })]),
+) {
+  mockApi([reply('GET /api/v1/home/waiting', answer)]);
   return renderWithProviders(<WaitingCard />, { user: testUser(), path: '/' });
 }
 
@@ -27,7 +31,7 @@ describe('WaitingCard', () => {
 
     const name = await within(card()).findByRole('link', { name: 'Dealer summit' });
     expect(name).toHaveAttribute('href', '/plans/P-1001/activities/A-1045');
-    const row = within(name.closest('li') as HTMLElement);
+    const row = within(closestTo(name, 'li'));
     expect(row.getByText('A-1045')).toBeInTheDocument();
     expect(
       row.getByText('FY2026 Lubricants Europe · Priya Raman · $48,000.00'),
@@ -51,7 +55,7 @@ describe('WaitingCard', () => {
 
     const name = await within(card()).findByRole('link', { name: 'Dealer summit' });
     expect(
-      within(name.closest('li') as HTMLElement).getByText('FY2026 Lubricants Europe · —'),
+      within(closestTo(name, 'li')).getByText('FY2026 Lubricants Europe · —'),
     ).toBeInTheDocument();
   });
 

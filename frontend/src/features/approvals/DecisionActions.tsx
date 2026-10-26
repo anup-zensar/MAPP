@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { ActionsMenu } from '@/components';
-import type { ActivityApproval } from './approvalsApi';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import type { ActivityApproval } from './api';
 import { DecisionButton } from './DecisionButton';
 import { DecisionDialog } from './DecisionDialog';
 

@@ -1,7 +1,7 @@
-import { TeamPicker } from '@/components';
 import type { ComponentProps } from 'react';
+import { TeamPicker } from '@/ui/TeamPicker/TeamPicker';
 import { FieldLoadFailed, FieldLoading } from './FieldLoadStates';
-import { useTeams } from './peopleApi';
+import { useTeams } from './api';
 
 /** TeamPicker's props, without the teams, which it loads itself. */
 export type TeamFieldProps = Omit<ComponentProps<typeof TeamPicker>, 'teams'>;

@@ -1,20 +1,23 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { findMessages, renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
-import { expectNoAxeViolations } from '../shared/axeCheck';
-import { validationFailed } from '../testRecords';
-import { ImportRatesPage } from './ImportRatesPage';
-import { RecentImports } from './RecentImports';
+import type { HttpHandler } from 'msw';
+import { mockApi } from '@/testing/mock-api';
+import type { Answer } from '@/testing/replies';
+import { findMessages, renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { expectNoAxeViolations } from '@/testing/axe';
+import { parentOf } from '@/testing/dom';
+import { validationFailed } from '@/testing/fixtures/settings';
 import {
   IMPORTED,
   NO_IMPORTS,
   RECENT_IMPORTS_PAGE,
   REVIEW,
   REVIEW_NOTHING_NEW,
-} from './rateTestData';
+} from '@/testing/fixtures/rates';
+import { reply } from '@/testing/replies';
+import { ImportRatesPage } from './ImportRatesPage';
+import { RecentImports } from './RecentImports';
 
 const CSV = 'rate_type,from_currency,to_currency,valid_from,rate\nM,USD,EUR,2026-10-20,0.9230\n';
 
@@ -22,8 +25,11 @@ function rateFile(name = 'gsap_rates_2026-10-20.csv', content = CSV): File {
   return new File([content], name, { type: 'text/csv' });
 }
 
-function renderImport(answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({ 'POST /api/v1/exchange-rates/import-check': { body: REVIEW }, ...answers });
+function renderImport(answers: HttpHandler[] = []) {
+  const api = mockApi([
+    reply('POST /api/v1/exchange-rates/import-check', { body: REVIEW }),
+    ...answers,
+  ]);
   const rendered = renderWithProviders(<ImportRatesPage />, {
     route: '/settings/currencies/import',
     path: '/settings/currencies/import',
@@ -72,9 +78,9 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
   });
 
   it('imports the rows to add and replace in one step, then goes back to Currencies (FR-007)', async () => {
-    const { user, api, router } = renderImport({
-      'POST /api/v1/exchange-rates/import': { body: IMPORTED },
-    });
+    const { user, api, router } = renderImport([
+      reply('POST /api/v1/exchange-rates/import', { body: IMPORTED }),
+    ]);
     await user.upload(fileField(), rateFile());
 
     await user.click(await screen.findByRole('button', { name: 'Import 5 rates' }));
@@ -103,9 +109,9 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
   });
 
   it('says when nothing in the file would change a rate', async () => {
-    const { user } = renderImport({
-      'POST /api/v1/exchange-rates/import-check': { body: REVIEW_NOTHING_NEW },
-    });
+    const { user } = renderImport([
+      reply('POST /api/v1/exchange-rates/import-check', { body: REVIEW_NOTHING_NEW }),
+    ]);
     await user.upload(fileField(), rateFile('gsap_rates_2026-10-19.csv'));
 
     expect(
@@ -133,14 +139,14 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
   });
 
   it("shows the API's message for a file it can't read", async () => {
-    const { user } = renderImport({
-      'POST /api/v1/exchange-rates/import-check': {
+    const { user } = renderImport([
+      reply('POST /api/v1/exchange-rates/import-check', {
         status: 400,
         body: validationFailed([
           { field: 'content', message: 'The file has no column "valid_from".' },
         ]),
-      },
-    });
+      }),
+    ]);
 
     await user.upload(fileField(), rateFile());
 
@@ -167,15 +173,18 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
     afterEach(() => vi.restoreAllMocks());
 
     it('downloads a file of today’s rates', async () => {
-      const { user } = renderImport({
-        'GET /api/v1/exchange-rates/import-sample': () =>
-          new Response('rate_type,from_currency\n', {
-            headers: {
-              'Content-Type': 'text/csv',
-              'Content-Disposition': 'attachment; filename="gsap_rates_sample.csv"',
-            },
-          }),
-      });
+      const { user } = renderImport([
+        reply(
+          'GET /api/v1/exchange-rates/import-sample',
+          () =>
+            new Response('rate_type,from_currency\n', {
+              headers: {
+                'Content-Type': 'text/csv',
+                'Content-Disposition': 'attachment; filename="gsap_rates_sample.csv"',
+              },
+            }),
+        ),
+      ]);
 
       await user.click(screen.getByRole('button', { name: 'Download a sample file' }));
 
@@ -193,16 +202,17 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
 });
 
 describe('RecentImports (016 FR-007, US1-3)', () => {
-  function renderRecent(answer: MockHandler) {
-    mockApi({ 'GET /api/v1/exchange-rates/imports': answer });
+  function renderRecent(answer: Answer<'GET /api/v1/exchange-rates/imports'>) {
+    mockApi([reply('GET /api/v1/exchange-rates/imports', answer)]);
     return renderWithProviders(<RecentImports />, { user: testUser() });
   }
 
   it('lists each file with who imported it, when, the dates of its rates and its counts', async () => {
     renderRecent({ body: RECENT_IMPORTS_PAGE });
 
-    const row = (await screen.findByRole('rowheader', { name: 'gsap_rates_2026-10-20.csv' }))
-      .parentElement as HTMLElement;
+    const row = parentOf(
+      await screen.findByRole('rowheader', { name: 'gsap_rates_2026-10-20.csv' }),
+    );
     expect(row).toHaveTextContent('Alex Morgan');
     expect(row).toHaveTextContent('21 Sep – 20 Oct 2026');
     expect(

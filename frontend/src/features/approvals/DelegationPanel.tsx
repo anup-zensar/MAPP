@@ -1,23 +1,21 @@
 import { CalendarX, Pencil, Plus, UserRoundX } from 'lucide-react';
 import { useId, useState } from 'react';
 import type { ReactNode } from 'react';
-import {
-  Button,
-  CheckboxField,
-  ConfirmDialog,
-  EmptyState,
-  ErrorState,
-  SidePanel,
-  Skeleton,
-  StatusChip,
-  useToast,
-} from '@/components';
-import type { StatusTone } from '@/components';
-import { useFormatters } from '@/lib/useFormatters';
+import { Button } from '@/ui/Button/Button';
+import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { SidePanel } from '@/ui/SidePanel/SidePanel';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { useToast } from '@/ui/Toast/useToast';
+import type { StatusTone } from '@/ui/StatusChip/StatusChip';
+import { useFormatters } from '@/format/useFormatters';
+import { asApiError, isSessionLost } from '@/api/errors';
 import { DelegationForm } from './DelegationForm';
-import { useCancelDelegation, useDelegations } from './delegationsApi';
-import type { ApprovalDelegation, DelegationScope } from './delegationsApi';
-import { asApiError, isSessionLost } from './messages';
+import { useCancelDelegation, useDelegations } from './delegations-api';
+import type { ApprovalDelegation, DelegationScope } from './delegations-api';
 import styles from './DelegationPanel.module.css';
 
 /** How many ended and cancelled delegations show before "Show all". */

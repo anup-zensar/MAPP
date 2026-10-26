@@ -1,5 +1,5 @@
-import { SettingsCount } from '@/features/settings/shared/SettingsCount';
-import { useWorkflows } from './workflowsApi';
+import { SettingsCount } from '@/ui/SettingsCount/SettingsCount';
+import { useWorkflows } from './api';
 
 /**
  * "2 active" on the Approval workflows card of the Settings page (002 FR-001), as every Settings

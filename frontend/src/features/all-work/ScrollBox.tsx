@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cx } from '@/lib/cx';
+import { cx } from '@/ui/cx';
 import styles from './ScrollBox.module.css';
 import { useSideScroll } from './useSideScroll';
 

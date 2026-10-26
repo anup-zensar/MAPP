@@ -1,19 +1,24 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { localDate } from '@/lib/format';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { findMessages, renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
-import { expectNoAxeViolations } from '../shared/axeCheck';
-import { deleted, validationFailed, versionConflict } from '../testRecords';
+import type { HttpHandler } from 'msw';
+import { localDate } from '@/format/intl';
+import { mockApi } from '@/testing/mock-api';
+import { findMessages, renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { expectNoAxeViolations } from '@/testing/axe';
+import { nth } from '@/testing/dom';
+import { deleted, validationFailed, versionConflict } from '@/testing/fixtures/settings';
+import { EUR_CURRENT, EUR_FUTURE, EUR_ONLY_CURRENT, EUR_RATES } from '@/testing/fixtures/rates';
+import { reply } from '@/testing/replies';
 import { RateHistorySection } from './RateHistorySection';
-import { EUR_CURRENT, EUR_FUTURE, EUR_ONLY_CURRENT, EUR_RATES } from './rateTestData';
 
 const NO_IMPACT = { body: { warnings: [] } };
 
-function renderHistory(answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({ 'GET /api/v1/currencies/EUR/rates': { body: EUR_RATES }, ...answers });
+function renderHistory(answers: HttpHandler[] = []) {
+  const api = mockApi([
+    reply('GET /api/v1/currencies/{code}/rates', { body: EUR_RATES }, { code: 'EUR' }),
+    ...answers,
+  ]);
   const rendered = renderWithProviders(<RateHistorySection code="EUR" />, { user: testUser() });
   return { ...rendered, api };
 }
@@ -37,7 +42,10 @@ describe('RateHistorySection (016 FR-001, FR-003)', () => {
 
     expect(screen.getByRole('heading', { level: 3, name: 'Rate history' })).toBeInTheDocument();
     await screen.findByRole('table');
-    const [future, current, older] = rows();
+    const listed = rows();
+    const future = nth(listed, 0);
+    const current = nth(listed, 1);
+    const older = nth(listed, 2);
     expect(future).toHaveTextContent('From 01 Jan 2027');
     expect(future).toHaveTextContent('0.951 EUR = 1.052632 USD');
     expect(future).toHaveTextContent('Entered by hand');
@@ -51,15 +59,19 @@ describe('RateHistorySection (016 FR-001, FR-003)', () => {
     expect(older).toHaveTextContent('0.9214');
     // The rate is a number: right-aligned under its header.
     const header = screen.getByRole('columnheader', { name: 'Rate per 1 USD' });
-    expect(within(current).getAllByRole('cell')[0].className).toBe(header.className);
+    expect(nth(within(current).getAllByRole('cell'), 0).className).toBe(header.className);
   });
 
   it('moves a rate to the recycle bin with Undo', async () => {
-    const { user, api } = renderHistory({
-      'DELETE /api/v1/exchange-rates/XR-1101': {
-        body: deleted('Exchange rate', 'XR-1101', 'EUR, 18 Oct 2026'),
-      },
-    });
+    const { user, api } = renderHistory([
+      reply(
+        'DELETE /api/v1/exchange-rates/{rateId}',
+        {
+          body: deleted('Exchange rate', 'XR-1101', 'EUR, 18 Oct 2026'),
+        },
+        { rateId: 'XR-1101' },
+      ),
+    ]);
     await screen.findByRole('table');
 
     await chooseAction('the rate of 18 Oct 2026', 'Delete', user);
@@ -75,9 +87,9 @@ describe('RateHistorySection (016 FR-001, FR-003)', () => {
   });
 
   it('refuses to delete the last rate dated today or earlier, and says why (US1-5)', async () => {
-    const { user, api } = renderHistory({
-      'GET /api/v1/currencies/EUR/rates': { body: EUR_ONLY_CURRENT },
-    });
+    const { user, api } = renderHistory([
+      reply('GET /api/v1/currencies/{code}/rates', { body: EUR_ONLY_CURRENT }, { code: 'EUR' }),
+    ]);
     await screen.findByRole('table');
 
     await user.click(screen.getByRole('button', { name: 'Actions for the rate of 19 Oct 2026' }));
@@ -101,13 +113,17 @@ describe('RateHistorySection (016 FR-001, FR-003)', () => {
 
 describe('RateDialog: Add rate (016 FR-003, FR-005)', () => {
   it('adds a rate dated today, with the rate both ways while it is typed', async () => {
-    const { user, api } = renderHistory({
-      'POST /api/v1/currencies/EUR/rates/impact': NO_IMPACT,
-      'POST /api/v1/currencies/EUR/rates': {
-        status: 201,
-        body: { ...EUR_CURRENT, id: 'XR-1104', date: localDate(new Date()), rate: '0.93' },
-      },
-    });
+    const { user, api } = renderHistory([
+      reply('POST /api/v1/currencies/{code}/rates/impact', NO_IMPACT, { code: 'EUR' }),
+      reply(
+        'POST /api/v1/currencies/{code}/rates',
+        {
+          status: 201,
+          body: { ...EUR_CURRENT, id: 'XR-1104', date: localDate(new Date()), rate: '0.93' },
+        },
+        { code: 'EUR' },
+      ),
+    ]);
     await screen.findByRole('table');
 
     await user.click(screen.getByRole('button', { name: 'Add rate' }));
@@ -139,17 +155,25 @@ describe('RateDialog: Add rate (016 FR-003, FR-005)', () => {
     const impact = 'Recalculates the USD values of 14 line items in EUR.';
     const plans =
       '2 plans are planned in EUR. Their EUR amounts stay the same; their USD values change (1,304,347.83 → 1,263,157.89 USD).';
-    const { user, api } = renderHistory({
-      'POST /api/v1/currencies/EUR/rates/impact': {
-        body: {
-          warnings: [
-            { kind: 'amountsRecalculated', message: impact, count: 14 },
-            { kind: 'amountsRecalculated', message: plans, count: 2 },
-          ],
+    const { user, api } = renderHistory([
+      reply(
+        'POST /api/v1/currencies/{code}/rates/impact',
+        {
+          body: {
+            warnings: [
+              { kind: 'amountsRecalculated', message: impact, count: 14 },
+              { kind: 'amountsRecalculated', message: plans, count: 2 },
+            ],
+          },
         },
-      },
-      'POST /api/v1/currencies/EUR/rates': { status: 201, body: { ...EUR_CURRENT, rate: '0.95' } },
-    });
+        { code: 'EUR' },
+      ),
+      reply(
+        'POST /api/v1/currencies/{code}/rates',
+        { status: 201, body: { ...EUR_CURRENT, rate: '0.95' } },
+        { code: 'EUR' },
+      ),
+    ]);
     await screen.findByRole('table');
 
     await user.click(screen.getByRole('button', { name: 'Add rate' }));
@@ -172,14 +196,18 @@ describe('RateDialog: Add rate (016 FR-003, FR-005)', () => {
   });
 
   it('shows the problems the API finds under their fields', async () => {
-    const { user } = renderHistory({
-      'POST /api/v1/currencies/EUR/rates/impact': {
-        status: 400,
-        body: validationFailed([
-          { field: 'date', message: 'EUR already has a rate on 19 Oct 2026. Edit that one.' },
-        ]),
-      },
-    });
+    const { user } = renderHistory([
+      reply(
+        'POST /api/v1/currencies/{code}/rates/impact',
+        {
+          status: 400,
+          body: validationFailed([
+            { field: 'date', message: 'EUR already has a rate on 19 Oct 2026. Edit that one.' },
+          ]),
+        },
+        { code: 'EUR' },
+      ),
+    ]);
     await screen.findByRole('table');
 
     await user.click(screen.getByRole('button', { name: 'Add rate' }));
@@ -196,10 +224,14 @@ describe('RateDialog: Add rate (016 FR-003, FR-005)', () => {
 
 describe('RateDialog: Edit (016 FR-003)', () => {
   it("keeps the rate's date and saves the rate with its version", async () => {
-    const { user, api } = renderHistory({
-      'POST /api/v1/exchange-rates/XR-1103/impact': NO_IMPACT,
-      'PATCH /api/v1/exchange-rates/XR-1103': { body: { ...EUR_FUTURE, rate: '0.96', version: 2 } },
-    });
+    const { user, api } = renderHistory([
+      reply('POST /api/v1/exchange-rates/{rateId}/impact', NO_IMPACT, { rateId: 'XR-1103' }),
+      reply(
+        'PATCH /api/v1/exchange-rates/{rateId}',
+        { body: { ...EUR_FUTURE, rate: '0.96', version: 2 } },
+        { rateId: 'XR-1103' },
+      ),
+    ]);
     await screen.findByRole('table');
 
     await chooseAction('the rate of 01 Jan 2027', 'Edit', user);
@@ -220,22 +252,29 @@ describe('RateDialog: Edit (016 FR-003)', () => {
   it('names who saved first, keeps the typed rate and saves over it next time', async () => {
     let conflicted = false;
     const savedByDaniel = { ...EUR_FUTURE, version: 2 };
-    const { user, api } = renderHistory({
-      // Once Daniel has saved, the stored rate is at version 2.
-      'GET /api/v1/currencies/EUR/rates': () => ({
-        body: conflicted
-          ? { ...EUR_RATES, items: [savedByDaniel, ...EUR_RATES.items.slice(1)] }
-          : EUR_RATES,
-      }),
-      'POST /api/v1/exchange-rates/XR-1103/impact': NO_IMPACT,
-      'PATCH /api/v1/exchange-rates/XR-1103': () => {
-        if (!conflicted) {
-          conflicted = true;
-          return { status: 409, body: versionConflict() };
-        }
-        return { body: { ...EUR_FUTURE, rate: '0.97', version: 3 } };
-      },
-    });
+    const { user, api } = renderHistory([
+      reply(
+        'GET /api/v1/currencies/{code}/rates',
+        () => ({
+          body: conflicted
+            ? { ...EUR_RATES, items: [savedByDaniel, ...EUR_RATES.items.slice(1)] }
+            : EUR_RATES,
+        }),
+        { code: 'EUR' },
+      ),
+      reply('POST /api/v1/exchange-rates/{rateId}/impact', NO_IMPACT, { rateId: 'XR-1103' }),
+      reply(
+        'PATCH /api/v1/exchange-rates/{rateId}',
+        () => {
+          if (!conflicted) {
+            conflicted = true;
+            return { status: 409, body: versionConflict() };
+          }
+          return { body: { ...EUR_FUTURE, rate: '0.97', version: 3 } };
+        },
+        { rateId: 'XR-1103' },
+      ),
+    ]);
     await screen.findByRole('table');
 
     await chooseAction('the rate of 01 Jan 2027', 'Edit', user);

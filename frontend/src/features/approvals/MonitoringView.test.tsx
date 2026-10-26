@@ -1,16 +1,16 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import type { HttpHandler } from 'msw';
+import { mockApi } from '@/testing/mock-api';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { ALEX, monitoringOf } from '@/testing/fixtures/approvals';
+import { reply } from '@/testing/replies';
 import { MonitoringView } from './MonitoringView';
-import { ALEX, monitoringOf } from './testData';
 
-const MONITORING = 'GET /api/v1/approvals/monitoring';
 const RUN = 'POST /api/v1/approvals/escalations/run';
 
-function renderView(answers: Record<string, MockHandler>) {
+function renderView(answers: HttpHandler[]) {
   const api = mockApi(answers);
   const onOpen = vi.fn();
   const rendered = renderWithProviders(<MonitoringView onOpen={onOpen} />, { user: testUser() });
@@ -19,7 +19,9 @@ function renderView(answers: Record<string, MockHandler>) {
 
 describe('MonitoringView (feature 017, US6)', () => {
   it('shows the cards, the ageing with counts in words, waiting by level and the overdue rows (FR-030)', async () => {
-    const { user, onOpen } = renderView({ [MONITORING]: { body: monitoringOf() } });
+    const { user, onOpen } = renderView([
+      reply('GET /api/v1/approvals/monitoring', { body: monitoringOf() }),
+    ]);
 
     expect(await screen.findByText('Average time to decision')).toBeInTheDocument();
     expect(screen.getByText('2.4 days')).toBeInTheDocument();
@@ -64,8 +66,8 @@ describe('MonitoringView (feature 017, US6)', () => {
   });
 
   it('says when nothing waits, and when nothing is overdue', async () => {
-    renderView({
-      [MONITORING]: {
+    renderView([
+      reply('GET /api/v1/approvals/monitoring', {
         body: monitoringOf({
           cards: {
             overdue: 0,
@@ -78,23 +80,28 @@ describe('MonitoringView (feature 017, US6)', () => {
           byLevel: [],
           overdue: [],
         }),
-      },
-    });
+      }),
+    ]);
 
     expect(await screen.findByText('Nothing is waiting for approval.')).toBeInTheDocument();
     expect(screen.getByText('—')).toBeInTheDocument();
   });
 
   it('says Nothing is overdue while approvals wait in time', async () => {
-    renderView({ [MONITORING]: { body: monitoringOf({ overdue: [] }) } });
+    renderView([
+      reply('GET /api/v1/approvals/monitoring', { body: monitoringOf({ overdue: [] }) }),
+    ]);
 
     expect(await screen.findByText('Nothing is overdue.')).toBeInTheDocument();
   });
 
   it('says when the figures could not be loaded, with Try again', async () => {
-    renderView({
-      [MONITORING]: { status: 500, body: { error: { code: 'internal', message: 'Boom' } } },
-    });
+    renderView([
+      reply('GET /api/v1/approvals/monitoring', {
+        status: 500,
+        body: { error: { code: 'internal_error', message: 'Boom', fields: [] } },
+      }),
+    ]);
 
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });
@@ -102,9 +109,11 @@ describe('MonitoringView (feature 017, US6)', () => {
 
 describe('RunEscalationsButton (feature 017, US5)', () => {
   it('asks first, then says what was sent and what could not be escalated (FR-028)', async () => {
-    const { user, api } = renderView({
-      [MONITORING]: { body: monitoringOf({ canRunEscalations: true }) },
-      [RUN]: {
+    const { user, api } = renderView([
+      reply('GET /api/v1/approvals/monitoring', {
+        body: monitoringOf({ canRunEscalations: true }),
+      }),
+      reply('POST /api/v1/approvals/escalations/run', {
         body: {
           reminded: 2,
           escalated: 1,
@@ -129,8 +138,8 @@ describe('RunEscalationsButton (feature 017, US5)', () => {
             },
           ],
         },
-      },
-    });
+      }),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Run reminders and escalations' }));
     const dialog = await screen.findByRole('alertdialog', {
@@ -152,10 +161,14 @@ describe('RunEscalationsButton (feature 017, US5)', () => {
   });
 
   it('says when nothing was due', async () => {
-    const { user } = renderView({
-      [MONITORING]: { body: monitoringOf({ canRunEscalations: true }) },
-      [RUN]: { body: { reminded: 0, escalated: 0, events: [], notEscalated: [] } },
-    });
+    const { user } = renderView([
+      reply('GET /api/v1/approvals/monitoring', {
+        body: monitoringOf({ canRunEscalations: true }),
+      }),
+      reply('POST /api/v1/approvals/escalations/run', {
+        body: { reminded: 0, escalated: 0, events: [], notEscalated: [] },
+      }),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Run reminders and escalations' }));
     await user.click(await screen.findByRole('button', { name: 'Run now' }));

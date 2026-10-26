@@ -1,50 +1,41 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { useActivityTypes } from '@/api/settingsQueries';
-import {
-  ChoiceField,
-  DecimalField,
-  ErrorState,
-  FormPanel,
-  MoneyField,
-  problemOf,
-  Skeleton,
-  TextField,
-  useToast,
-} from '@/components';
-import type { ChoiceOption, FieldProblem, SaveFailure } from '@/components';
-import {
-  formatAmount,
-  parseDecimalInput,
-  parseMoneyInput,
-  toCents,
-  toHundredths,
-} from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
-import { ImpactDialog } from '../shared/ImpactDialog';
-import { saveFailureOf } from '../shared/saveFailure';
-import styles from '../shared/SettingsTable.module.css';
-import { checkModelImpact, fetchModel, useCreateModel, useUpdateModel } from './modelsApi';
-import type { ChangeImpact, Model, ModelCreate, ModelUpdate } from './modelsApi';
+import { useForm, useWatch } from 'react-hook-form';
+import { DecimalField } from '@/ui/DecimalField/DecimalField';
+import { FormField } from '@/ui/FormField/FormField';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
+import { parseDecimalInput, parseMoneyInput } from '@/format/decimal';
+import { useFormatters } from '@/format/useFormatters';
+import styles from '@/ui/settings-table.module.css';
+import { ImpactDialog } from '../ImpactDialog';
+import { saveFailureOf } from '../save-failure';
+import { ActivityTypesField } from './ActivityTypesField';
+import { checkModelImpact, fetchModel, useCreateModel, useUpdateModel } from './api';
+import type { ChangeImpact, Model, ModelUpdate } from './api';
+import { affectsOthers, changedFields, createBody, startValues } from './model-values';
+import type { ModelFormMode } from './model-values';
+import { modelSchema } from './schemas';
+import type { ModelValues } from './schemas';
 import { WaterfallExample } from './WaterfallExample';
 
-/** What the form does: create a new model (blank or a copy of another) or change one. */
-export type ModelFormMode =
-  { kind: 'new' } | { kind: 'duplicate'; model: Model } | { kind: 'edit'; model: Model };
+const FIELDS = [
+  'name',
+  'inqToMqlRate',
+  'mqlToDealRate',
+  'averageDealSize',
+  'activityTypeIds',
+] as const;
 
 export interface ModelFormProps {
   mode: ModelFormMode;
   /** Opens a model's details: the View of the "created" message. */
   onView: (id: string) => void;
   onClose: () => void;
-}
-
-/** The typed values, as text, exactly as they are in the fields. */
-interface ModelValues {
-  name: string;
-  inqToMqlRate: string;
-  mqlToDealRate: string;
-  averageDealSize: string;
-  activityTypeIds: string[];
 }
 
 /** A save that waits for "Save changes" in the impact dialog. */
@@ -67,18 +58,23 @@ export function ModelForm({ mode, onView, onClose }: ModelFormProps) {
   const editing = mode.kind === 'edit' ? mode.model : null;
   // The edit-form rule: the model is copied into the form once, when the panel opens.
   const [start] = useState(() => startValues(mode));
-  const [values, setValues] = useState(start);
+  const form = useForm<ModelValues>({
+    resolver: zodResolver(modelSchema),
+    defaultValues: start,
+    ...CHECK_ON_SAVE,
+  });
+  const { problems, onInvalid, showServerProblems, clearProblems } = useFormProblems(form, FIELDS);
   const [version, setVersion] = useState(editing?.version ?? 0);
   const [saving, setSaving] = useState(false);
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
   const [pendingImpact, setPendingImpact] = useState<PendingImpact | null>(null);
+  const [inqToMqlRate, mqlToDealRate, averageDealSize] = useWatch({
+    control: form.control,
+    name: ['inqToMqlRate', 'mqlToDealRate', 'averageDealSize'],
+  });
 
-  function set<K extends keyof ModelValues>(field: K, value: ModelValues[K]) {
-    setValues((previous) => ({ ...previous, [field]: value }));
-  }
-
-  async function save() {
+  async function save(values: ModelValues) {
+    clearProblems();
     setSaving(true);
     try {
       if (!editing) {
@@ -137,7 +133,7 @@ export function ModelForm({ mode, onView, onClose }: ModelFormProps) {
 
   async function showFailure(error: unknown) {
     const view = saveFailureOf(error, 'model', dateFormat);
-    setProblems(view.problems);
+    showServerProblems(view.problems);
     setFailure(view.failure);
     if (view.conflict && editing) {
       // Typed values stay; the next Save replaces the other person's change on purpose.
@@ -148,67 +144,67 @@ export function ModelForm({ mode, onView, onClose }: ModelFormProps) {
     }
   }
 
-  const dealSize = parseMoneyInput(values.averageDealSize)?.amount ?? null;
+  const submit = form.handleSubmit(save, onInvalid);
 
   return (
     <>
       <FormPanel
         title={editing ? 'Edit model' : 'New model'}
-        isDirty={!sameValues(values, start)}
+        isDirty={form.formState.isDirty}
         saving={saving}
         problems={problems}
         failure={failure}
-        onSave={() => void save()}
+        onSave={() => void submit()}
         onClose={onClose}
       >
         <div className={styles.formFields}>
-          <TextField
-            label="Name"
+          <FormField
+            control={form.control}
             name="name"
-            marking="Required"
-            value={values.name}
-            onChange={(name) => set('name', name)}
-            error={problemOf(problems, 'name')}
+            render={(field) => <TextField label="Name" marking="Required" {...field} />}
           />
-          <DecimalField
-            label="INQ→MQL rate"
+          <FormField
+            control={form.control}
             name="inqToMqlRate"
-            marking="Required"
-            decimals={2}
-            suffix="%"
-            value={values.inqToMqlRate}
-            onChange={(rate) => set('inqToMqlRate', rate)}
-            error={problemOf(problems, 'inqToMqlRate')}
+            render={(field) => (
+              <DecimalField
+                label="INQ→MQL rate"
+                marking="Required"
+                decimals={2}
+                suffix="%"
+                {...field}
+              />
+            )}
           />
-          <DecimalField
-            label="MQL→deal rate"
+          <FormField
+            control={form.control}
             name="mqlToDealRate"
-            marking="Required"
-            decimals={2}
-            suffix="%"
-            value={values.mqlToDealRate}
-            onChange={(rate) => set('mqlToDealRate', rate)}
-            error={problemOf(problems, 'mqlToDealRate')}
+            render={(field) => (
+              <DecimalField
+                label="MQL→deal rate"
+                marking="Required"
+                decimals={2}
+                suffix="%"
+                {...field}
+              />
+            )}
           />
-          <MoneyField
-            label="Average deal size"
+          <FormField
+            control={form.control}
             name="averageDealSize"
-            marking="Required"
-            currency="USD"
-            value={values.averageDealSize}
-            onChange={(amount) => set('averageDealSize', amount)}
-            error={problemOf(problems, 'averageDealSize')}
+            render={(field) => (
+              <MoneyField label="Average deal size" marking="Required" currency="USD" {...field} />
+            )}
           />
-          <ActivityTypesField
-            model={editing}
-            value={values.activityTypeIds}
-            onChange={(ids) => set('activityTypeIds', ids)}
-            error={problemOf(problems, 'activityTypeIds')}
+          <FormField
+            control={form.control}
+            name="activityTypeIds"
+            render={(field) => <ActivityTypesField model={editing} {...field} />}
           />
           <WaterfallExample
-            inqToMqlRate={parseDecimalInput(values.inqToMqlRate, 2)}
-            mqlToDealRate={parseDecimalInput(values.mqlToDealRate, 2)}
-            averageDealSize={dealSize}
+            inqToMqlRate={parseDecimalInput(inqToMqlRate, 2)}
+            mqlToDealRate={parseDecimalInput(mqlToDealRate, 2)}
+            averageDealSize={parseMoneyInput(averageDealSize)?.amount ?? null}
           />
         </div>
       </FormPanel>
@@ -224,156 +220,4 @@ export function ModelForm({ mode, onView, onClose }: ModelFormProps) {
       )}
     </>
   );
-}
-
-interface ActivityTypesFieldProps {
-  /** The model being edited: its allowed types stay offered even when inactive. */
-  model: Model | null;
-  value: string[];
-  onChange: (ids: string[]) => void;
-  error?: string;
-}
-
-/** Allowed activity types: the active types, plus those the model already allows. */
-function ActivityTypesField({ model, value, onChange, error }: ActivityTypesFieldProps) {
-  const activityTypes = useActivityTypes();
-
-  if (!activityTypes.data) {
-    return activityTypes.isError ? (
-      <ErrorState error={activityTypes.error} onRetry={() => void activityTypes.refetch()} />
-    ) : (
-      <Skeleton lines={3} />
-    );
-  }
-
-  const options: ChoiceOption[] = activityTypes.data.items.map((type) => ({
-    id: type.id,
-    label: type.name,
-    active: type.active,
-  }));
-  for (const allowed of model?.activityTypes ?? []) {
-    if (!options.some((option) => option.id === allowed.id)) {
-      options.push({ id: allowed.id, label: allowed.name, active: allowed.active });
-    }
-  }
-
-  return (
-    <ChoiceField
-      label="Allowed activity types"
-      name="activityTypeIds"
-      marking="Required"
-      hint="Activities in plans using this model can be of these types."
-      multiple
-      options={options}
-      value={value}
-      onChange={onChange}
-      error={error}
-    />
-  );
-}
-
-function startValues(mode: ModelFormMode): ModelValues {
-  if (mode.kind === 'new') {
-    return {
-      name: '',
-      inqToMqlRate: '',
-      mqlToDealRate: '',
-      averageDealSize: '',
-      activityTypeIds: [],
-    };
-  }
-  const { model } = mode;
-  return {
-    name: mode.kind === 'duplicate' ? `${model.name} (copy)` : model.name,
-    inqToMqlRate: model.inqToMqlRate,
-    mqlToDealRate: model.mqlToDealRate,
-    averageDealSize: formatAmount(model.averageDealSize.amount),
-    // A new model can allow active types only.
-    activityTypeIds: model.activityTypes
-      .filter((type) => mode.kind === 'edit' || type.active)
-      .map((type) => type.id),
-  };
-}
-
-function sameValues(a: ModelValues, b: ModelValues): boolean {
-  return (
-    a.name === b.name &&
-    a.inqToMqlRate === b.inqToMqlRate &&
-    a.mqlToDealRate === b.mqlToDealRate &&
-    a.averageDealSize === b.averageDealSize &&
-    sameIds(a.activityTypeIds, b.activityTypeIds)
-  );
-}
-
-function sameIds(a: string[], b: string[]): boolean {
-  return a.length === b.length && a.every((id) => b.includes(id));
-}
-
-/** A typed rate as the API takes it: "2,5" stays as typed, so the API says what is wrong. */
-function rateText(text: string): string {
-  return parseDecimalInput(text, 2) ?? text.trim();
-}
-
-/** A typed amount as the API takes it; null when nothing is typed. */
-function dealSizeInput(text: string): ModelCreate['averageDealSize'] {
-  if (text.trim() === '') {
-    return null;
-  }
-  return { amount: parseMoneyInput(text)?.amount ?? text.trim(), currency: 'USD' };
-}
-
-function createBody(values: ModelValues): ModelCreate {
-  return {
-    name: values.name,
-    inqToMqlRate: rateText(values.inqToMqlRate),
-    mqlToDealRate: rateText(values.mqlToDealRate),
-    averageDealSize: dealSizeInput(values.averageDealSize),
-    activityTypeIds: values.activityTypeIds,
-  };
-}
-
-/** The fields people changed, with the version (D-203); null when nothing changed. */
-function changedFields(
-  model: Model,
-  start: ModelValues,
-  values: ModelValues,
-  version: number,
-): ModelUpdate | null {
-  const body: ModelUpdate = { version };
-  if (values.name !== start.name) {
-    body.name = values.name;
-  }
-  if (!sameRate(values.inqToMqlRate, model.inqToMqlRate)) {
-    body.inqToMqlRate = rateText(values.inqToMqlRate);
-  }
-  if (!sameRate(values.mqlToDealRate, model.mqlToDealRate)) {
-    body.mqlToDealRate = rateText(values.mqlToDealRate);
-  }
-  if (!sameAmount(values.averageDealSize, model.averageDealSize.amount)) {
-    body.averageDealSize = dealSizeInput(values.averageDealSize);
-  }
-  if (!sameIds(values.activityTypeIds, start.activityTypeIds)) {
-    body.activityTypeIds = values.activityTypeIds;
-  }
-  return Object.keys(body).length > 1 ? body : null;
-}
-
-/** Changes that may affect plans and activities, checked with …/impact first (FR-011, FR-012). */
-function affectsOthers(body: ModelUpdate): boolean {
-  return (
-    body.inqToMqlRate !== undefined ||
-    body.mqlToDealRate !== undefined ||
-    body.averageDealSize !== undefined ||
-    body.activityTypeIds !== undefined
-  );
-}
-
-function sameRate(typed: string, saved: string): boolean {
-  const rate = parseDecimalInput(typed, 2);
-  return rate !== null && toHundredths(rate) === toHundredths(saved);
-}
-
-function sameAmount(typed: string, saved: string): boolean {
-  const amount = parseMoneyInput(typed);
-  return amount !== null && toCents(amount.amount) === toCents(saved);
 }

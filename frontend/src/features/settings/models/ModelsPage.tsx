@@ -1,34 +1,32 @@
 import { Calculator, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { useModels } from '@/api/settingsQueries';
-import {
-  ActionsMenu,
-  Button,
-  Card,
-  EmptyState,
-  ErrorState,
-  PageHeader,
-  Skeleton,
-  StatusChip,
-} from '@/components';
-import { formatPercent } from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
-import { usePageTitle } from '@/lib/usePageTitle';
-import { ListToolbar } from '../shared/ListToolbar';
-import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
-import styles from '../shared/SettingsTable.module.css';
-import { filterRecords, useListFilters } from '../shared/useListFilters';
-import type { ListFilters } from '../shared/useListFilters';
-import { useSettingStatus } from '../shared/useSettingStatus';
-import { moreActions } from './modelActions';
-import type { ModelActions } from './modelActions';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { formatPercent } from '@/format/decimal';
+import { useFormatters } from '@/format/useFormatters';
+import { usePageTitle } from '@/ui/usePageTitle';
+import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
+import styles from '@/ui/settings-table.module.css';
+import { filterRecords, useListFilters } from '@/ui/useListFilters';
+import type { ListFilters } from '@/ui/useListFilters';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { useCanChange } from '@/ui/useCanChange';
+import { SettingDeleteDialog } from '../SettingDeleteDialog';
+import { useSettingStatus } from '../useSettingStatus';
+import { moreActions } from './model-actions';
+import type { ModelActions } from './model-actions';
 import { ModelDetails } from './ModelDetails';
 import { ModelForm } from './ModelForm';
-import type { ModelFormMode } from './ModelForm';
-import { MODEL_LISTS, setModelStatus, useDeleteModel } from './modelsApi';
-import type { Model } from './modelsApi';
-import { CanChange, SettingsViewOnlyNote } from '../shared/CanChange';
-import { useCanChange } from '../shared/useCanChange';
+import type { ModelFormMode } from './model-values';
+import { MODEL_LISTS, setModelStatus, useDeleteModel } from './api';
+import type { Model } from './api';
+import { useModels } from '../api';
 
 const MODEL_NOUN = { one: 'model', many: 'models' };
 

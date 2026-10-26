@@ -1,8 +1,9 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { expectCurrentSection, renderApp } from '@/test/app';
-import type { MockHandler } from '@/test/mockApi';
-import { testUser } from '@/test/users';
+import type { HttpHandler } from 'msw';
+import { expectCurrentSection, renderApp } from '@/testing/app';
+import { testUser } from '@/testing/fixtures/users';
+import { reply } from '@/testing/replies';
 
 const META = {
   version: 1,
@@ -15,16 +16,16 @@ const EUROPE = {
   id: 'T-1001',
   name: 'Lubricants Europe',
   description: '',
-  colour: 'blue',
+  colour: 'blue' as const,
   active: true,
   members: [],
   plans: [],
   ...META,
 };
-const TEAMS: Record<string, MockHandler> = {
-  'GET /api/v1/teams': { body: { items: [EUROPE], total: 1 } },
-  'GET /api/v1/teams/T-1001': { body: EUROPE },
-};
+const TEAMS: HttpHandler[] = [
+  reply('GET /api/v1/teams', { body: { items: [EUROPE], total: 1 } }),
+  reply('GET /api/v1/teams/{teamId}', { body: EUROPE }, { teamId: 'T-1001' }),
+];
 const PRIYA = {
   id: 'U-1002',
   name: 'Priya Raman',
@@ -35,19 +36,23 @@ const PRIYA = {
   teams: [],
   ...META,
 };
-const PEOPLE: Record<string, MockHandler> = {
-  'GET /api/v1/people': { body: { items: [PRIYA], total: 1 } },
-  'GET /api/v1/people/U-1002': { body: { ...PRIYA, usage: [] } },
-  'GET /api/v1/people/U-1002/roles': {
-    status: 403,
-    body: { error: { code: 'forbidden', message: 'No access', fields: [] } },
-  },
-};
-const CURRENCIES: Record<string, MockHandler> = {
-  'GET /api/v1/me/display-currencies': {
+const PEOPLE: HttpHandler[] = [
+  reply('GET /api/v1/people', { body: { items: [PRIYA], total: 1 } }),
+  reply('GET /api/v1/people/{personId}', { body: { ...PRIYA, usage: [] } }, { personId: 'U-1002' }),
+  reply(
+    'GET /api/v1/people/{personId}/roles',
+    {
+      status: 403,
+      body: { error: { code: 'forbidden', message: 'No access', fields: [] } },
+    },
+    { personId: 'U-1002' },
+  ),
+];
+const CURRENCIES: HttpHandler[] = [
+  reply('GET /api/v1/me/display-currencies', {
     body: { items: [{ code: 'USD', name: 'US dollar', active: true }], total: 1 },
-  },
-};
+  }),
+];
 
 // Feature 003's addresses (build guide §5). Feature 003 keeps this file up to date as it replaces
 // the stub pages (their own requests go into renderApp's answers).
@@ -91,15 +96,14 @@ describe('People, teams and profile routes (feature 003)', () => {
       version: 2,
     });
     let saved = false;
-    const { user } = renderApp('/profile', {
+    const { user } = renderApp('/profile', [
       ...CURRENCIES,
-      'PATCH /api/v1/me': () => {
+      reply('PATCH /api/v1/me', () => {
         saved = true;
         return { body: renamed };
-      },
-      // The session is asked again after the change; by then it has the new name.
-      'GET /api/v1/me': () => ({ body: saved ? renamed : testUser() }),
-    });
+      }),
+      reply('GET /api/v1/me', () => ({ body: saved ? renamed : testUser() })),
+    ]);
     const accountButtons = () => screen.getAllByRole('button', { name: 'Priya — account menu' });
     const editDetails = await screen.findByRole('button', { name: 'Edit details' });
     expect(accountButtons()[0]).toHaveTextContent('PR');

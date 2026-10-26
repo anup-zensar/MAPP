@@ -1,13 +1,23 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { ApiError, conflictMessage } from '@/api/errors';
-import { FailureMessage, FormDialog, problemOf, TextField, useToast } from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
-import { plural } from '@/lib/text';
-import { useFormatters } from '@/lib/useFormatters';
-import { CONFLICT_NEXT_STEP } from '../shared/saveFailure';
-import styles from '../shared/SettingsTable.module.css';
-import { fetchFinanceBudget, useRenameFinanceBudget } from './financeBudgetsApi';
-import type { FinanceBudget } from './financeBudgetsApi';
+import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { FormField } from '@/ui/FormField/FormField';
+import { FailureMessage } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problem-of';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import { CHECK_ON_SAVE } from '@/ui/useFormProblems';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
+import { plural } from '@/format/text';
+import { useFormatters } from '@/format/useFormatters';
+import styles from '@/ui/settings-table.module.css';
+import { CONFLICT_NEXT_STEP } from '../save-failure';
+import { fetchFinanceBudget, useRenameFinanceBudget } from './api';
+import type { FinanceBudget } from './api';
+import { renameBudgetSchema } from './schemas';
+import type { RenameBudgetValues } from './schemas';
 
 const NOT_FOUND = 'This finance budget no longer exists — someone may have deleted it.';
 
@@ -24,17 +34,20 @@ export function RenameBudgetDialog({ budget, onClose }: RenameBudgetDialogProps)
   const { show } = useToast();
   const { dateFormat } = useFormatters();
   const rename = useRenameFinanceBudget();
-  const [name, setName] = useState(budget.name);
+  const form = useForm<RenameBudgetValues>({
+    resolver: zodResolver(renameBudgetSchema),
+    defaultValues: { name: budget.name },
+    ...CHECK_ON_SAVE,
+  });
   // The version the person started from; after a conflict, the one with the other change.
   const [version, setVersion] = useState(budget.version);
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
   const plans = budget.usage.parts
     .filter((part) => part.kind === 'plan')
     .reduce((sum, part) => sum + part.count, 0);
   const itemCount = budget.items.length;
 
-  async function submit() {
+  async function renameTo({ name }: RenameBudgetValues) {
     if (name === budget.name) {
       onClose();
       return;
@@ -44,34 +57,46 @@ export function RenameBudgetDialog({ budget, onClose }: RenameBudgetDialogProps)
       show({ message: `Budget renamed to '${saved.name}'` });
       onClose();
     } catch (error) {
-      const apiError = error instanceof ApiError ? error : new ApiError('other');
-      setProblems(apiError.kind === 'validation' ? apiError.fields : []);
-      switch (apiError.kind) {
-        case 'validation':
-        case 'signInRequired':
-        case 'sessionExpired':
-          setFailure(null);
-          break;
-        case 'conflict': {
-          setFailure({
-            message: conflictMessage(apiError, 'finance budget', dateFormat),
-            nextStep: CONFLICT_NEXT_STEP,
-          });
-          // The typed name stays; Rename budget again replaces the other change on purpose.
-          const latest = await fetchFinanceBudget(budget.year, budget.id).catch(() => undefined);
-          if (latest) {
-            setVersion(latest.version);
-          }
-          break;
-        }
-        case 'notFound':
-          setFailure({ message: NOT_FOUND });
-          break;
-        default:
-          setFailure({ message: apiError.message });
-      }
+      await showFailure(error);
     }
   }
+
+  async function showFailure(error: unknown) {
+    const apiError = error instanceof ApiError ? error : new ApiError('other');
+    switch (apiError.kind) {
+      case 'validation': {
+        const message = problemOf(apiError.fields, 'name');
+        if (message) {
+          form.setError('name', { message });
+        }
+        setFailure(null);
+        break;
+      }
+      case 'signInRequired':
+      case 'sessionExpired':
+        setFailure(null);
+        break;
+      case 'conflict': {
+        setFailure({
+          message: conflictMessage(apiError, 'finance budget', dateFormat),
+          nextStep: CONFLICT_NEXT_STEP,
+        });
+        // The typed name stays; Rename budget again replaces the other change on purpose.
+        const latest = await fetchFinanceBudget(budget.year, budget.id).catch(() => undefined);
+        if (latest) {
+          setVersion(latest.version);
+        }
+        break;
+      }
+      case 'notFound':
+        setFailure({ message: NOT_FOUND });
+        break;
+      default:
+        setFailure({ message: apiError.message });
+    }
+  }
+
+  const submit = form.handleSubmit(renameTo);
 
   return (
     <FormDialog
@@ -83,14 +108,12 @@ export function RenameBudgetDialog({ budget, onClose }: RenameBudgetDialogProps)
       onSubmit={() => void submit()}
     >
       {failure && <FailureMessage failure={failure} />}
-      <TextField
-        label="New name"
+      <FormField
+        control={form.control}
         name="name"
-        marking="Required"
-        maxLength={120}
-        value={name}
-        onChange={setName}
-        error={problemOf(problems, 'name')}
+        render={(field) => (
+          <TextField label="New name" marking="Required" maxLength={120} {...field} />
+        )}
       />
       <p className={styles.muted}>
         {`All ${plural(itemCount, 'item')} ${itemCount === 1 ? 'moves' : 'move'} with it.`}

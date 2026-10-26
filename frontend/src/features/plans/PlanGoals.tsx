@@ -1,11 +1,12 @@
-import { Card, InfoTip } from '@/components';
-import { formatWhole } from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
-import { goalRows } from './goalWaterfall';
+import { Card } from '@/ui/Card/Card';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { formatWhole } from '@/format/decimal';
+import { useFormatters } from '@/format/useFormatters';
+import { goalRows } from './goal-waterfall';
 import styles from './PlanGoals.module.css';
-import type { Plan } from './plansApi';
-import { STAGE_WORDS } from './planText';
-import type { GoalStage } from './planText';
+import type { Plan } from './api';
+import { STAGE_WORDS } from './plan-text';
+import type { GoalStage } from './plan-text';
 
 const STAGES: GoalStage[] = ['inq', 'mql', 'revenue'];
 

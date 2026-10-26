@@ -1,22 +1,27 @@
 import { History, SearchX } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router';
-import { Button, EmptyState, ErrorState, PageHeader, Skeleton, SummaryCard } from '@/components';
-import { formatWhole } from '@/lib/decimal';
-import { usePageTitle } from '@/lib/usePageTitle';
-import { LOG_PAGE_SIZE, logEntriesKey, useLogEntries, useLogSummary } from './activityLogApi';
+import { Button } from '@/ui/Button/Button';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
+import { formatWhole } from '@/format/decimal';
+import { usePageTitle } from '@/ui/usePageTitle';
+import { LOG_PAGE_SIZE, logEntriesKey, useLogEntries, useLogSummary } from './api';
 import { LogEntryList } from './LogEntryList';
 import { LogFilterBar } from './LogFilterBar';
 import {
   NO_FILTERS,
   apiQuery,
-  filtersFromParams,
   filtersToParams,
   isFiltered,
   todayStart,
   weekStart,
-} from './logFilters';
-import type { LogFilterState } from './logFilters';
-import { countLine } from './logText';
+} from './log-filters';
+import type { LogFilterState } from './log-filters';
+import { countLine } from './log-text';
+import { filtersFromParams } from './schemas';
 import styles from './ActivityLogPage.module.css';
 
 /** The four summary cards (FR-002): label, tip and the filters a click applies. */

@@ -1,15 +1,11 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
-import { useToast } from '@/components';
-import { plural } from '@/lib/text';
-import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
-import { lockReason } from './attributeWords';
-import {
-  CHANGED_BY_ANY_CHANGE,
-  useDeleteAttribute,
-  useSetAttributeStatus,
-} from './shellAttributesApi';
-import type { ShellAttribute } from './shellAttributesApi';
+import { useToast } from '@/ui/Toast/useToast';
+import { plural } from '@/format/text';
+import { SettingDeleteDialog } from '../SettingDeleteDialog';
+import { lockReason } from './attribute-words';
+import { CHANGED_BY_ANY_CHANGE, useDeleteAttribute, useSetAttributeStatus } from './api';
+import type { ShellAttribute } from './api';
 import { useStatusChange } from './useStatusChange';
 
 /** What the list and the attribute page can do with an attribute besides opening it. */

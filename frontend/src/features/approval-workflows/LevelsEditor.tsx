@@ -1,12 +1,17 @@
-import { ArrowDown, ArrowUp, CircleAlert, Plus, Trash2 } from 'lucide-react';
-import { Button, CheckboxField, ChoiceField, problemOf, TextField } from '@/components';
-import type { FieldProblem } from '@/components';
+import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
+import { Button } from '@/ui/Button/Button';
+import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { problemOf } from '@/ui/FormPanel/problem-of';
+import { TextField } from '@/ui/TextField/TextField';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { PersonField } from '@/features/people';
-import { emptyLevel, levelFieldName } from './levelDrafts';
-import type { ApproverType, LevelDraft, LevelField, LevelMode } from './levelDrafts';
+import { emptyLevel, levelFieldName } from './level-drafts';
+import type { ApproverType, LevelDraft, LevelField, LevelMode } from './level-drafts';
+import { RadioGroup } from './RadioGroup';
 import { RuleConditionFields } from './RuleConditionFields';
-import { useRuleOptions } from './workflowsApi';
-import type { ApprovalRuleOptions } from './workflowsApi';
+import { useRuleOptions } from './api';
+import type { ApprovalRuleOptions } from './api';
 import styles from './LevelsEditor.module.css';
 
 export interface LevelsEditorProps {
@@ -53,9 +58,11 @@ export function LevelsEditor({ levels, onChange, problems }: LevelsEditorProps) 
   }
 
   function move(index: number, by: -1 | 1) {
-    const next = [...levels];
-    [next[index], next[index + by]] = [next[index + by], next[index]];
-    onChange(next);
+    const level = levels[index];
+    const other = levels[index + by];
+    if (level && other) {
+      onChange(levels.map((each, i) => (i === index ? other : i === index + by ? level : each)));
+    }
   }
 
   return (
@@ -252,57 +259,5 @@ function LevelFields({
         error={problem('backupApproverId')}
       />
     </>
-  );
-}
-
-interface RadioGroupProps<T extends string> {
-  legend: string;
-  /** The group's name and id, so the form's problem summary can bring the focus here. */
-  name: string;
-  options: { value: T; label: string }[];
-  value: T;
-  onChange: (value: T) => void;
-  error?: string;
-}
-
-/** A small set of choices shown at once, named by its legend; its problem under it. */
-function RadioGroup<T extends string>({
-  legend,
-  name,
-  options,
-  value,
-  onChange,
-  error,
-}: RadioGroupProps<T>) {
-  const errorId = `${name}-error`;
-  return (
-    <fieldset
-      id={name}
-      tabIndex={-1}
-      className={styles.radioGroup}
-      aria-describedby={error ? errorId : undefined}
-    >
-      <legend className={styles.legend}>{legend}</legend>
-      <div className={styles.radios}>
-        {options.map((option) => (
-          <label key={option.value} className={styles.radio}>
-            <input
-              type="radio"
-              name={name}
-              value={option.value}
-              checked={value === option.value}
-              onChange={() => onChange(option.value)}
-            />
-            {option.label}
-          </label>
-        ))}
-      </div>
-      {error && (
-        <p id={errorId} className={styles.problem}>
-          <CircleAlert aria-hidden="true" />
-          {error}
-        </p>
-      )}
-    </fieldset>
   );
 }

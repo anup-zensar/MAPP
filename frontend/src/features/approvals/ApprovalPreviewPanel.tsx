@@ -1,28 +1,26 @@
 import { ExternalLink } from 'lucide-react';
 import { useId } from 'react';
 import { ApiError } from '@/api/errors';
-import {
-  Button,
-  CompletenessChip,
-  ErrorState,
-  LinkButton,
-  PersonLabel,
-  SidePanel,
-  Skeleton,
-} from '@/components';
-import { ActivityStatusChip } from '@/features/activities/ActivityStatusChip';
-import { activityStatusWord } from '@/features/activities/activityStatus';
-import { formatDate } from '@/lib/format';
-import { recordHref } from '@/lib/recordLinks';
-import { useFormatters } from '@/lib/useFormatters';
+import { Button, LinkButton } from '@/ui/Button/Button';
+import { CompletenessChip } from '@/ui/CompletenessChip/CompletenessChip';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { SidePanel } from '@/ui/SidePanel/SidePanel';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
+import { activityStatusWord } from '@/ui/ActivityStatusChip/activity-status';
+import { formatDate } from '@/format/intl';
+import { recordHref } from '@/ui/record-links';
+import { useFormatters } from '@/format/useFormatters';
 import { ApprovalChain } from './ApprovalChain';
 import { ApprovalHistory } from './ApprovalHistory';
-import { useApprovalPreview } from './approvalsApi';
-import type { ApprovalPreview } from './approvalsApi';
+import { useApprovalPreview } from './api';
+import type { ApprovalPreview } from './api';
 import { DecisionButton } from './DecisionButton';
 import { OwnerDecisionMenu } from './DecisionActions';
-import { decisionRole } from './decisionRole';
-import { ACTIVITY_GONE, roundOutcomeText } from './messages';
+import { decisionRole } from './decision-role';
+import { roundOutcomeText } from './history-messages';
+import { ACTIVITY_GONE } from './messages';
 import { useIsPhone } from './useIsPhone';
 import styles from './ApprovalPreviewPanel.module.css';
 

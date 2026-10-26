@@ -1,13 +1,14 @@
 import { ChevronsLeft, ChevronsRight } from 'lucide-react';
-import { useId } from 'react';
+import { Suspense, useId } from 'react';
 import { Link, useLocation, useMatch } from 'react-router';
-import { Logo, Tooltip } from '@/components';
-import { useAccess } from '@/lib/access';
-import { cx } from '@/lib/cx';
-import { itemsFor, MAIN_ITEMS, MORE_ITEMS } from './navigation';
+import { Logo } from '@/ui/Logo/Logo';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
+import { itemsFor, useAccess } from '@/session/access';
+import { cx } from '@/ui/cx';
+import { useCurrentUser, useSession } from '@/session/useSession';
+import { MAIN_ITEMS, MORE_ITEMS } from './navigation';
 import type { NavItem } from './navigation';
 import styles from './Sidebar.module.css';
-import { useCurrentUser, useSession } from './useSession';
 
 export interface SidebarProps {
   /**
@@ -103,10 +104,10 @@ function NavItemLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
       <span className={collapsed ? 'visually-hidden' : styles.label}>{item.label}</span>
       {/* A count after the label, inside the link, so it is part of the link's name (feature 008). */}
       {item.Badge && (
-        <>
+        <Suspense fallback={null}>
           {' '}
           <item.Badge collapsed={collapsed} />
-        </>
+        </Suspense>
       )}
     </Link>
   );

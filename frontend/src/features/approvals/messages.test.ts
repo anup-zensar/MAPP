@@ -1,16 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/api/errors';
+import { ALEX, CARLOS, DANIEL, roundOf } from '@/testing/fixtures/approvals';
+import { chainStateText } from './chain-messages';
 import {
-  activitiesCount,
   alreadyDecidedMessage,
   approvedToast,
-  approversText,
-  chainStateText,
   declineBoxText,
-  roundOutcomeText,
   submitConflictMessage,
-} from './messages';
-import { ALEX, CARLOS, DANIEL, roundOf } from './testData';
+} from './decision-messages';
+import { roundOutcomeText } from './history-messages';
+import { activitiesCount, approversText } from './messages';
 
 function conflict(message: string, changedAt: string) {
   return new ApiError('conflict', {

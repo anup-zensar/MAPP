@@ -3,10 +3,12 @@ import { CircleAlert } from 'lucide-react';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { ApiError } from '@/api/errors';
-import { ErrorState, LockedNote, Skeleton } from '@/components';
-import { useFormatters } from '@/lib/useFormatters';
-import type { ActivityDestination } from './activitiesApi';
-import { datesText, THIS_INITIATIVE } from './activityText';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { LockedNote } from '@/ui/LockedNote/LockedNote';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { useFormatters } from '@/format/useFormatters';
+import type { ActivityDestination } from './api';
+import { datesText, THIS_INITIATIVE } from './activity-text';
 import styles from './DestinationList.module.css';
 
 type DestinationPage = { items: ActivityDestination[]; total: number };

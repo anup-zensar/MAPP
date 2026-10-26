@@ -1,16 +1,27 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { RotateCcw } from 'lucide-react';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { ApiError, conflictMessage } from '@/api/errors';
-import { Button, FormPanel, problemOf, TextAreaField, useToast } from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
-import { useFormatters } from '@/lib/useFormatters';
-import { CONFLICT_NEXT_STEP } from '../shared/saveFailure';
-import { useCloseAfterSave } from '../shared/useCloseAfterSave';
-import { fetchFieldHelp, HELP_MAX_LENGTH, useUpdateFieldHelp } from './fieldHelpApi';
-import type { FieldHelpEntry } from './fieldHelpApi';
-import { entryName, TOO_LONG } from './fieldHelpWords';
+import { Button } from '@/ui/Button/Button';
+import { FormField } from '@/ui/FormField/FormField';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
+import { useToast } from '@/ui/Toast/useToast';
+import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
+import { useFormatters } from '@/format/useFormatters';
+import { useCloseAfterSave } from '@/ui/useCloseAfterSave';
+import { CONFLICT_NEXT_STEP } from '../save-failure';
+import { fetchFieldHelp, HELP_MAX_LENGTH, useUpdateFieldHelp } from './api';
+import type { FieldHelpEntry } from './api';
+import { entryName } from './field-help-words';
 import { ResetHelpDialog } from './ResetHelpDialog';
-import styles from './fieldHelp.module.css';
+import { fieldHelpSchema, oneParagraph } from './schemas';
+import type { FieldHelpValues } from './schemas';
+import styles from './field-help.module.css';
+
+const FIELDS = ['text'] as const;
 
 export interface FieldHelpPanelProps {
   entry: FieldHelpEntry;
@@ -27,29 +38,28 @@ export function FieldHelpPanel({ entry, onClose }: FieldHelpPanelProps) {
   const { dateFormat, dateTime } = useFormatters();
   const update = useUpdateFieldHelp();
   const [start] = useState(entry.text);
-  const [text, setText] = useState(entry.text);
+  const form = useForm<FieldHelpValues>({
+    resolver: zodResolver(fieldHelpSchema),
+    defaultValues: { text: entry.text },
+    ...CHECK_ON_SAVE,
+  });
+  const { problems, onInvalid, showServerProblems, clearProblems } = useFormProblems(form, FIELDS);
   const [version, setVersion] = useState(entry.version);
   const [saving, setSaving] = useState(false);
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
   const [askReset, setAskReset] = useState(false);
   // The panel is open while the address names the entry: it closes once the save is known.
   const { saved, closeAfterSave } = useCloseAfterSave(onClose);
   const name = `'${entry.label}'`;
 
-  async function save() {
-    // Line breaks are not kept: the tip is one paragraph (data-model §2.5).
-    const typed = text.replace(/\s*\n\s*/g, ' ').trim();
-    if ([...typed].length > HELP_MAX_LENGTH) {
-      setProblems([{ field: 'text', message: TOO_LONG }]);
-      setFailure(null);
-      return;
-    }
+  async function save(values: FieldHelpValues) {
+    const typed = oneParagraph(values.text);
     if (typed === start.trim()) {
       // Only spaces or line breaks changed: nothing to save.
       closeAfterSave();
       return;
     }
+    clearProblems();
     setSaving(true);
     try {
       await update.mutateAsync({ key: entry.key, body: { text: typed, version } });
@@ -68,11 +78,10 @@ export function FieldHelpPanel({ entry, onClose }: FieldHelpPanelProps) {
       return;
     }
     if (apiError.kind === 'validation') {
-      setProblems(apiError.fields);
+      showServerProblems(apiError.fields);
       setFailure(null);
       return;
     }
-    setProblems([]);
     if (apiError.kind === 'conflict') {
       setFailure({
         message: conflictMessage(apiError, 'help text', dateFormat),
@@ -87,28 +96,36 @@ export function FieldHelpPanel({ entry, onClose }: FieldHelpPanelProps) {
     setFailure({ message: apiError.message });
   }
 
+  const submit = form.handleSubmit(save, () => {
+    onInvalid();
+    setFailure(null);
+  });
+
   return (
     <>
       <FormPanel
         title="Edit field help"
         description={entryName(entry.level, entry.label)}
-        isDirty={!saved && text !== start}
+        isDirty={!saved && form.formState.isDirty}
         saving={saving}
         problems={problems}
         failure={failure}
-        onSave={() => void save()}
+        onSave={() => void submit()}
         onClose={onClose}
       >
         <div className={styles.form}>
-          <TextAreaField
-            label="Help text"
+          <FormField
+            control={form.control}
             name="text"
-            hint="Plain text, shown in the ⓘ beside the field. Leave it empty to hide the ⓘ."
-            value={text}
-            onChange={setText}
-            maxLength={HELP_MAX_LENGTH}
-            rows={5}
-            error={problemOf(problems, 'text')}
+            render={(field) => (
+              <TextAreaField
+                label="Help text"
+                hint="Plain text, shown in the ⓘ beside the field. Leave it empty to hide the ⓘ."
+                maxLength={HELP_MAX_LENGTH}
+                rows={5}
+                {...field}
+              />
+            )}
           />
           <div className={styles.defaultText}>
             <h3>Default text</h3>

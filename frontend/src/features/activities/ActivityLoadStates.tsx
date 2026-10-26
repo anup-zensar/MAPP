@@ -1,6 +1,10 @@
 import { SearchX } from 'lucide-react';
 import { ApiError } from '@/api/errors';
-import { Card, EmptyState, ErrorState, LinkButton, Skeleton } from '@/components';
+import { LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import styles from './ActivityLoadStates.module.css';
 
 export interface LoadFailedProps {

@@ -1,23 +1,28 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
+import { mockApi } from '@/testing/mock-api';
+import { renderWithProviders } from '@/testing/render';
+import { launchFilmRow } from '@/testing/fixtures/activities';
+import { reply } from '@/testing/replies';
 import { InitiativeActivities } from './InitiativeActivities';
-import { launchFilmRow } from './testData';
 
 describe('InitiativeActivities (feature 006, FR-001)', () => {
   it("lists the initiative's activities with their status, and offers Add activity", async () => {
-    mockApi({
-      'GET /api/v1/plans/P-1001/activities': {
-        body: {
-          items: [
-            launchFilmRow(),
-            launchFilmRow({ id: 'A-1050', name: 'Elsewhere', initiativeId: 'I-1002' }),
-          ],
-          total: 2,
+    mockApi([
+      reply(
+        'GET /api/v1/plans/{planId}/activities',
+        {
+          body: {
+            items: [
+              launchFilmRow(),
+              launchFilmRow({ id: 'A-1050', name: 'Elsewhere', initiativeId: 'I-1002' }),
+            ],
+            total: 2,
+          },
         },
-      },
-    });
+        { planId: 'P-1001' },
+      ),
+    ]);
     renderWithProviders(<InitiativeActivities planId="P-1001" initiativeId="I-1001" />);
 
     const card = await screen.findByRole('region', { name: 'Activities' });
@@ -32,7 +37,13 @@ describe('InitiativeActivities (feature 006, FR-001)', () => {
   });
 
   it('says when the initiative has no activities yet', async () => {
-    mockApi({ 'GET /api/v1/plans/P-1001/activities': { body: { items: [], total: 0 } } });
+    mockApi([
+      reply(
+        'GET /api/v1/plans/{planId}/activities',
+        { body: { items: [], total: 0 } },
+        { planId: 'P-1001' },
+      ),
+    ]);
     renderWithProviders(<InitiativeActivities planId="P-1001" initiativeId="I-1001" />);
 
     expect(await screen.findByText('No activities yet.')).toBeVisible();

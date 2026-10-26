@@ -1,10 +1,10 @@
 import { screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
-import type { ApprovalTab } from './approvalsApi';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { ALEX, CARLOS, DANIEL, rowOf } from '@/testing/fixtures/approvals';
+import type { ApprovalTab } from './api';
 import { ApprovalsTable } from './ApprovalsTable';
-import { ALEX, CARLOS, DANIEL, rowOf } from './testData';
 
 function renderTable(rows = [rowOf()], tab: ApprovalTab = 'waiting') {
   const onOpen = vi.fn();
@@ -152,7 +152,10 @@ function visibleText(element: Element | null): string {
   if (!element) {
     return '';
   }
-  const copy = element.cloneNode(true) as Element;
+  const copy = element.cloneNode(true);
+  if (!(copy instanceof Element)) {
+    return '';
+  }
   copy.querySelectorAll('[aria-hidden="true"]').forEach((hidden) => hidden.remove());
   return copy.textContent ?? '';
 }

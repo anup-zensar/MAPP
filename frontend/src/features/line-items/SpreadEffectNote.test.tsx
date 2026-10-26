@@ -1,13 +1,12 @@
 import { screen, waitFor } from '@testing-library/react';
 import type { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { mockApi } from '@/testing/mock-api';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { eur, launchFilmSection, lineItem, spreadMonth, usd } from '@/testing/fixtures/line-items';
+import { reply } from '@/testing/replies';
 import { SpreadEffectNote } from './SpreadEffectNote';
-import { eur, launchFilmSection, lineItem, spreadMonth, usd } from './testData';
-
-const SECTION = 'GET /api/v1/activities/A-1001/line-items';
 
 function custom(id: string, months: string[]) {
   return lineItem({
@@ -31,7 +30,13 @@ function renderNote(
     custom('L-3', ['2026-03', '2026-04']),
   ],
 ) {
-  mockApi({ [SECTION]: { body: launchFilmSection({ items }) } });
+  mockApi([
+    reply(
+      'GET /api/v1/activities/{activityId}/line-items',
+      { body: launchFilmSection({ items }) },
+      { activityId: 'A-1001' },
+    ),
+  ]);
   return renderWithProviders(<SpreadEffectNote activityId="A-1001" {...dates} />, {
     user: testUser(),
   });

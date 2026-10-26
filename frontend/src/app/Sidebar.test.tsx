@@ -1,11 +1,12 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
+import { mockApi } from '@/testing/mock-api';
+import { renderWithProviders } from '@/testing/render';
+import type { CurrentUser } from '@/session/useSession';
+import { testUser } from '@/testing/fixtures/users';
+import { reply } from '@/testing/replies';
 import { Sidebar } from './Sidebar';
 import styles from './Sidebar.module.css';
-import type { CurrentUser } from './useSession';
-import { testUser } from '@/test/users';
 
 const PRIYA: CurrentUser = testUser();
 
@@ -67,9 +68,11 @@ describe('Sidebar', () => {
   });
 
   it('collapses and saves that for the person (FR-011, US2 scenario 3)', async () => {
-    const api = mockApi({
-      'PATCH /api/v1/me/preferences': { body: { theme: 'system', sidebarCollapsed: true } },
-    });
+    const api = mockApi([
+      reply('PATCH /api/v1/me/preferences', {
+        body: { ...PRIYA.preferences, theme: 'system', sidebarCollapsed: true },
+      }),
+    ]);
     const { user } = renderWithProviders(<Sidebar />, { user: PRIYA });
 
     await user.click(screen.getByRole('button', { name: 'Collapse' }));
@@ -92,9 +95,9 @@ describe('Sidebar', () => {
     renderWithProviders(<Sidebar />, { user: COLLAPSED, route: '/plans' });
 
     const plans = screen.getByRole('link', { name: 'Plans' });
-    expect(plans).toHaveClass(styles.item);
+    expect(plans).toHaveClass(String(styles.item));
     expect(plans).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Home' })).toHaveClass(styles.item);
+    expect(screen.getByRole('link', { name: 'Home' })).toHaveClass(String(styles.item));
   });
 
   it('shows each item’s name in a tooltip in the icon rail (FR-011)', async () => {
@@ -106,9 +109,11 @@ describe('Sidebar', () => {
   });
 
   it('expands again and saves that for the person (FR-011)', async () => {
-    const api = mockApi({
-      'PATCH /api/v1/me/preferences': { body: { theme: 'system', sidebarCollapsed: false } },
-    });
+    const api = mockApi([
+      reply('PATCH /api/v1/me/preferences', {
+        body: { ...PRIYA.preferences, theme: 'system', sidebarCollapsed: false },
+      }),
+    ]);
     const { user } = renderWithProviders(<Sidebar />, { user: COLLAPSED });
 
     await user.click(screen.getByRole('button', { name: 'Expand sidebar' }));

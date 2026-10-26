@@ -1,8 +1,11 @@
 import { BellRing } from 'lucide-react';
 import { useState } from 'react';
-import { Button, ConfirmDialog, useToast } from '@/components';
-import { useRunEscalations } from './approvalsApi';
-import { asApiError, escalationRunText, isSessionLost, notEscalatedText } from './messages';
+import { Button } from '@/ui/Button/Button';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { useToast } from '@/ui/Toast/useToast';
+import { asApiError, isSessionLost } from '@/api/errors';
+import { useRunEscalations } from './api';
+import { escalationRunText, notEscalatedText } from './decision-messages';
 
 /** Long enough to read a list of activities that could not be escalated. */
 const NOT_ESCALATED_MS = 10_000;

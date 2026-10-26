@@ -2,27 +2,22 @@ import { Pencil } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import {
-  ActionsMenu,
-  CompletenessChip,
-  LevelTag,
-  LinkButton,
-  PageHeader,
-  PersonLabel,
-} from '@/components';
-import type { ActionsMenuItem } from '@/components';
-import type { ActivityApproval } from '@/features/approvals/approvalsApi';
-import type { ShowSubmitProblems } from '@/features/approvals/approvalTypes';
-import { DecisionButton } from '@/features/approvals/DecisionButton';
-import { DecisionDialog } from '@/features/approvals/DecisionDialog';
-import { SubmitButton } from '@/features/approvals/SubmitButton';
-import { allows, gateItem } from '@/features/plans/gateAction';
-import { recordHref } from '@/lib/recordLinks';
-import { useFormatters } from '@/lib/useFormatters';
-import type { Activity } from './activitiesApi';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { LinkButton } from '@/ui/Button/Button';
+import { CompletenessChip } from '@/ui/CompletenessChip/CompletenessChip';
+import { LevelTag } from '@/ui/LevelTag/LevelTag';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
+import type { ActivityApproval, ShowSubmitProblems } from '@/features/approvals';
+import { DecisionButton, DecisionDialog, SubmitButton } from '@/features/approvals';
+import { allows, gateItem } from '@/session/gate-action';
+import { recordHref } from '@/ui/record-links';
+import { useFormatters } from '@/format/useFormatters';
+import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
+import type { Activity } from './api';
 import styles from './ActivityHeader.module.css';
-import { ActivityStatusChip } from './ActivityStatusChip';
-import { activityEditHref, datesText, lineItemsAttentionText } from './activityText';
+import { activityEditHref, datesText, lineItemsAttentionText } from './activity-text';
 
 export interface ActivityHeaderProps {
   activity: Activity;

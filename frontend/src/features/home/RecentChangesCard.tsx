@@ -1,12 +1,16 @@
 import { History } from 'lucide-react';
 import { Link } from 'react-router';
-import { Avatar, Card, EmptyState, LinkButton, Skeleton, Tooltip } from '@/components';
-import { recordHref } from '@/lib/recordLinks';
-import type { PlanningRecordType } from '@/lib/recordLinks';
-import { useFormatters } from '@/lib/useFormatters';
-import { useHomeRecentChanges } from './homeApi';
-import type { ActivityLogEntry, HomeScope } from './homeApi';
-import { RECENT_CHANGES, initialsOf, recentSentence } from './homeText';
+import { Avatar } from '@/ui/Avatar/Avatar';
+import { LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
+import { isPlanningType, recordHref } from '@/ui/record-links';
+import { useFormatters } from '@/format/useFormatters';
+import { useHomeRecentChanges } from './api';
+import type { ActivityLogEntry, HomeScope } from './api';
+import { RECENT_CHANGES, initialsOf, recentSentence } from './home-text';
 import styles from './RecentChangesCard.module.css';
 import { SectionError } from './SectionError';
 
@@ -44,22 +48,14 @@ export function RecentChangesCard({ scope }: { scope: HomeScope }) {
   );
 }
 
-const PLANNING_TYPES: PlanningRecordType[] = [
-  'plan',
-  'campaign',
-  'initiative',
-  'activity',
-  'lineItem',
-];
-
 /** Where an entry's record is now: its page while it exists (D-194), otherwise no address. */
 function hrefOf(entry: ActivityLogEntry): string | null {
   const now = entry.recordNow;
   if (now && now.state !== 'exists') {
     return null;
   }
-  const type = entry.recordType as PlanningRecordType;
-  if (!PLANNING_TYPES.includes(type)) {
+  const type = entry.recordType;
+  if (!isPlanningType(type)) {
     return null;
   }
   const planId = (now?.path ?? entry.path).find((ancestor) => ancestor.type === 'plan')?.id;

@@ -1,10 +1,11 @@
-import { useCurrentUser } from '@/app/useSession';
-import { ProgressBar, Skeleton } from '@/components';
-import { cx } from '@/lib/cx';
-import { formatWhole } from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
-import { useHomeSummary } from './homeApi';
-import type { HomeScope, HomeSummary } from './homeApi';
+import { useCurrentUser } from '@/session/useSession';
+import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { cx } from '@/ui/cx';
+import { formatWhole } from '@/format/decimal';
+import { useFormatters } from '@/format/useFormatters';
+import { useHomeSummary } from './api';
+import type { HomeScope, HomeSummary } from './api';
 import {
   NOTHING_PLANNED,
   PLANS_CARD,
@@ -15,8 +16,8 @@ import {
   percentUsedText,
   planCountsText,
   plansWithoutBudgetText,
-} from './homeText';
-import { myActivitiesHref, plansListHref, waitingForMeHref } from './homeLinks';
+} from './home-text';
+import { myActivitiesHref, plansListHref, waitingForMeHref } from './home-links';
 import { SectionError } from './SectionError';
 import styles from './SummaryCards.module.css';
 import { SummaryLinkCard } from './SummaryLinkCard';

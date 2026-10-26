@@ -1,16 +1,15 @@
 import { SearchX, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
-import {
-  Button,
-  EmptyState,
-  ErrorState,
-  PageHeader,
-  SearchField,
-  SegmentedFilter,
-  Skeleton,
-} from '@/components';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { Button } from '@/ui/Button/Button';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { SearchField } from '@/ui/SearchField/SearchField';
+import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { usePageTitle } from '@/ui/usePageTitle';
+import { useAccess } from '@/session/access';
 import { BinRow } from './BinRow';
 import {
   BIN_DESCRIPTION,
@@ -19,14 +18,14 @@ import {
   matchSearch,
   showingLine,
   typePills,
-} from './binText';
-import type { BinItem } from './binText';
+} from './bin-text';
+import type { BinItem } from './bin-text';
 import { EmptyBinDialog } from './EmptyBinDialog';
 import { PurgeDialog } from './PurgeDialog';
-import { useRecycleBin } from './recycleBinApi';
+import { useRecycleBin } from './api';
 import { RestoreDialog } from './RestoreDialog';
+import { highlightedRecordOf } from './schemas';
 import styles from './RecycleBinPage.module.css';
-import { useAccess } from '@/lib/access';
 
 /** The dialog the page shows, if any. */
 type OpenDialog =
@@ -91,7 +90,7 @@ export function RecycleBinPage() {
           onSearch={setSearch}
           type={type}
           onType={setType}
-          highlight={params.get('record') ?? ''}
+          highlight={highlightedRecordOf(params)}
           onRestore={(item) => setDialog({ kind: 'restore', item })}
           onPurge={(item) => setDialog({ kind: 'purge', item })}
         />

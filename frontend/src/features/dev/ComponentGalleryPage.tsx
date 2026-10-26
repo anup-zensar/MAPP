@@ -1,35 +1,31 @@
-import { ClipboardList, Copy, ListChecks, Plus } from 'lucide-react';
+import { ClipboardList, Copy, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { ApiError } from '@/api/errors';
-import {
-  ActionsMenu,
-  Avatar,
-  Button,
-  Card,
-  CompletenessChip,
-  ConfirmDialog,
-  DemoBanner,
-  EmptyState,
-  ErrorState,
-  FormErrorSummary,
-  InfoTip,
-  LinkButton,
-  LinkSummaryCard,
-  Logo,
-  PageHeader,
-  PasswordField,
-  SidePanel,
-  Skeleton,
-  StatusChip,
-  SummaryCard,
-  TextField,
-  Tooltip,
-  useToast,
-} from '@/components';
-import type { FieldProblem, MissingField, StatusTone } from '@/components';
-import { useFormatters } from '@/lib/useFormatters';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Avatar } from '@/ui/Avatar/Avatar';
+import { Button, LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { CompletenessChip } from '@/ui/CompletenessChip/CompletenessChip';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { DemoBanner } from '@/ui/DemoBanner/DemoBanner';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { Logo } from '@/ui/Logo/Logo';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { SidePanel } from '@/ui/SidePanel/SidePanel';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { useToast } from '@/ui/Toast/useToast';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
+import type { MissingField } from '@/ui/CompletenessChip/CompletenessChip';
+import type { StatusTone } from '@/ui/StatusChip/StatusChip';
+import { usePageTitle } from '@/ui/usePageTitle';
 import styles from './ComponentGalleryPage.module.css';
+import { ErrorSummaryExample } from './ErrorSummaryExample';
+import { FieldExamples } from './FieldExamples';
+import { PanelField } from './PanelField';
+import { SummaryExamples } from './SummaryExamples';
 import { PlanModuleGallery } from './PlanModuleGallery';
 
 /** The six status families with a status of each, as a word (design system §4). */
@@ -46,15 +42,6 @@ const STATUSES: { tone: StatusTone; word: string }[] = [
 const MISSING_FIELDS: MissingField[] = [
   { id: 'campaignName', label: 'Campaign name' },
   { id: 'budgetOwner', label: 'Budget owner' },
-];
-
-/**
- * The problems the error summary lists. One list for the whole page: the summary takes the focus
- * whenever it is given a new list, so a list made anew on every render would keep taking it.
- */
-const SUMMARY_ERRORS: FieldProblem[] = [
-  { field: 'campaignName', message: 'Enter a name.' },
-  { field: 'budgetOwner', message: 'Choose a budget owner.' },
 ];
 
 const TOOLTIP_SIDES = [
@@ -75,8 +62,6 @@ function doNothing() {}
 export function ComponentGalleryPage() {
   usePageTitle('Shared building blocks');
   const { show } = useToast();
-  // Amounts as the signed-in person shows them (feature 003, FR-023).
-  const { money, moneyCompact } = useFormatters();
   const [panelOpen, setPanelOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -136,54 +121,7 @@ export function ComponentGalleryPage() {
           />
         </Card>
 
-        <Card title="SummaryCard">
-          <div className={styles.summaries}>
-            <SummaryCard label="Plans" value={6} tip="The plans of this year that you can see." />
-            <SummaryCard
-              label="Planned cost"
-              value={moneyCompact({ amount: '1250000', currency: 'USD' })}
-              fullValue={money({ amount: '1250000', currency: 'USD' })}
-              tip="The planned cost of every activity in these plans."
-            />
-            <SummaryCard
-              label="Waiting for approval"
-              value={3}
-              tone="review"
-              tip="Activities sent for approval that are not approved or declined yet."
-            />
-            <SummaryCard
-              label="Over budget"
-              value={money({ amount: '-12500', currency: 'USD' })}
-              tone="problem"
-              tip="How much the planned cost is above the budget."
-            />
-          </div>
-        </Card>
-
-        <Card title="LinkSummaryCard" subtitle="The link variant: the whole card opens its list">
-          <div className={styles.summaries}>
-            <LinkSummaryCard
-              icon={<ClipboardList />}
-              tint="var(--info)"
-              label="My teams' plans"
-              tip="Plans that have at least one of your teams."
-              value="3"
-              detail={<span>2 published · 1 draft</span>}
-              to="/plans?scope=myTeams"
-              linkLabel="open the Plans list"
-            />
-            <LinkSummaryCard
-              icon={<ListChecks />}
-              tint="var(--level-campaign)"
-              label="Planned cost"
-              tip="The planned cost of every activity in these plans."
-              value={moneyCompact({ amount: '1250000', currency: 'USD' })}
-              fullValue={money({ amount: '1250000', currency: 'USD' })}
-              to="#main"
-              linkLabel="go to the top of this page"
-            />
-          </div>
-        </Card>
+        <SummaryExamples />
 
         <Card
           title="Card"
@@ -358,60 +296,6 @@ export function ComponentGalleryPage() {
         It goes to the recycle bin together with its 3 initiatives. You can restore it.
       </ConfirmDialog>
     </>
-  );
-}
-
-/** The text fields: with a marking and an error, with a hint, and a password. */
-function FieldExamples() {
-  const [campaignName, setCampaignName] = useState('');
-  const [budgetOwner, setBudgetOwner] = useState('Priya Raman');
-  const [password, setPassword] = useState('');
-
-  return (
-    <div className={styles.fields}>
-      <TextField
-        label="Campaign name"
-        name="campaignName"
-        marking="Required"
-        value={campaignName}
-        onChange={setCampaignName}
-        error="Enter a name."
-      />
-      <TextField
-        label="Budget owner"
-        name="budgetOwner"
-        marking="Needed to publish"
-        hint="The person who answers for the budget."
-        value={budgetOwner}
-        onChange={setBudgetOwner}
-      />
-      <PasswordField label="Password" name="password" value={password} onChange={setPassword} />
-    </div>
-  );
-}
-
-/**
- * The error summary appears when asked for: it takes the focus when it appears, which on page
- * load would move the focus, and the scroll position, away from the top of the page.
- */
-function ErrorSummaryExample() {
-  const [shown, setShown] = useState(false);
-
-  return (
-    <div className={styles.stack}>
-      <div>
-        <Button onClick={() => setShown(true)}>Show the error summary</Button>
-      </div>
-      {shown && <FormErrorSummary errors={SUMMARY_ERRORS} />}
-    </div>
-  );
-}
-
-/** The one field of the example side panel. */
-function PanelField() {
-  const [name, setName] = useState('Helix launch');
-  return (
-    <TextField label="Name" name="panelName" marking="Required" value={name} onChange={setName} />
   );
 }
 

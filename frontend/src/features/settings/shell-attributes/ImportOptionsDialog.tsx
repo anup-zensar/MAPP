@@ -3,16 +3,13 @@ import { Dialog } from 'radix-ui';
 import { useId, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { ApiError } from '@/api/errors';
-import { Button, useToast } from '@/components';
-import { formatWhole } from '@/lib/decimal';
-import { midSentence, plural } from '@/lib/text';
-import { checkOptionImport, useImportOptions } from './shellAttributesApi';
-import type {
-  ImportRow,
-  OptionImportCheck,
-  OptionImportRequest,
-  ShellAttribute,
-} from './shellAttributesApi';
+import { Button } from '@/ui/Button/Button';
+import { useToast } from '@/ui/Toast/useToast';
+import { formatWhole } from '@/format/decimal';
+import { midSentence, plural } from '@/format/text';
+import type { ShellAttribute } from './api';
+import { checkOptionImport, useImportOptions } from './options-api';
+import type { ImportRow, OptionImportCheck, OptionImportRequest } from './options-api';
 import styles from './ImportOptionsDialog.module.css';
 
 /** The largest file the API takes: 700 KB, which is about 950 KB once encoded (plan, D-051). */

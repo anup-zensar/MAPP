@@ -1,7 +1,7 @@
 import { ChevronDown } from 'lucide-react';
 import { Popover } from 'radix-ui';
 import { Fragment, useId, useState } from 'react';
-import { cx } from '@/lib/cx';
+import { cx } from '@/ui/cx';
 import styles from './FilterMenu.module.css';
 
 /** One choice of a filter. */

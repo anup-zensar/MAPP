@@ -1,12 +1,14 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
-import type { MyActivityGroup } from './homeApi';
+import { closestTo } from '@/testing/dom';
+import { mockApi } from '@/testing/mock-api';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { groupOf, myActivityOf, usd } from '@/testing/fixtures/home';
+import { reply } from '@/testing/replies';
+import type { Answer } from '@/testing/replies';
+import type { MyActivityGroup } from './api';
 import { MyActivitiesCard } from './MyActivitiesCard';
-import { groupOf, myActivityOf, usd } from './testData';
 
 const GROUPS: MyActivityGroup[] = [
   groupOf('declined', [myActivityOf({ id: 'A-1043', name: 'Trade show' })]),
@@ -24,8 +26,8 @@ const page = (groups: MyActivityGroup[]) => ({
   body: { groups, total: groups.reduce((sum, group) => sum + group.count, 0) },
 });
 
-function renderCard(answer: MockHandler = page(GROUPS)) {
-  mockApi({ 'GET /api/v1/home/my-activities': answer });
+function renderCard(answer: Answer<'GET /api/v1/home/my-activities'> = page(GROUPS)) {
+  mockApi([reply('GET /api/v1/home/my-activities', answer)]);
   return renderWithProviders(<MyActivitiesCard />, { user: testUser(), path: '/' });
 }
 
@@ -34,7 +36,7 @@ function card() {
 }
 
 function rowOf(name: string): HTMLElement {
-  return within(card()).getByRole('link', { name }).closest('li') as HTMLElement;
+  return closestTo(within(card()).getByRole('link', { name }), 'li');
 }
 
 describe('MyActivitiesCard', () => {

@@ -1,12 +1,15 @@
 import { Link } from 'react-router';
-import { ActionsMenu, PersonLabel, ProgressBar, TeamPills } from '@/components';
-import type { ActionsMenuItem } from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
+import { TeamPills } from '@/ui/TeamPill/TeamPill';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import { AmountPair } from './AmountPair';
 import { PinButton } from './PinButton';
 import styles from './PlanCard.module.css';
 import { BusinessUnitText, PlanCompleteness, PlanStatusChip } from './PlanFacts';
-import type { PlanSummary } from './plansApi';
-import { activitiesApprovedText } from './planText';
+import type { PlanSummary } from './api';
+import { activitiesApprovedText } from './plan-text';
 import { PlanTypeTag } from './PlanTypeTag';
 
 export interface PlanCardProps {

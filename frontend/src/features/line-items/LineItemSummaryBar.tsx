@@ -1,9 +1,9 @@
-import type { components } from '@/api/schema';
-import { cx } from '@/lib/cx';
-import { toCents } from '@/lib/decimal';
+import type { components } from '@/api/generated/schema';
+import { cx } from '@/ui/cx';
+import { toCents } from '@/format/decimal';
 import styles from './LineItemForm.module.css';
-import { amountText, moneyText } from './lineItemMath';
-import { SUMMARY_NO_COST } from './lineItemText';
+import { amountText, moneyText } from './line-item-math';
+import { SUMMARY_NO_COST } from './line-item-text';
 
 type UnassignedBalance = components['schemas']['UnassignedBalance'];
 

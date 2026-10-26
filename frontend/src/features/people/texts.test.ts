@@ -11,7 +11,7 @@ import {
   usageText,
   usedByText,
 } from './texts';
-import type { UsageCount } from './peopleApi';
+import type { UsageCount } from './api';
 
 const use = (role: UsageCount['role'], count: number, label: string): UsageCount => ({
   role,

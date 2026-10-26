@@ -2,35 +2,34 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { useCurrentUser } from '@/app/useSession';
-import {
-  ActionsMenu,
-  Button,
-  Card,
-  EmptyState,
-  ErrorState,
-  PageHeader,
-  PersonLabel,
-  Skeleton,
-  StatusChip,
-  TeamPills,
-  useToast,
-} from '@/components';
-import { ListToolbar } from '@/features/settings/shared/ListToolbar';
-import styles from '@/features/settings/shared/SettingsTable.module.css';
+import { useCurrentUser } from '@/session/useSession';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { TeamPills } from '@/ui/TeamPill/TeamPill';
+import { useToast } from '@/ui/Toast/useToast';
+import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
+import styles from '@/ui/settings-table.module.css';
+import { filterRecords, useListFilters } from '@/ui/useListFilters';
+import { useStatusFlow } from '@/ui/useStatusFlow';
+import { usePageTitle } from '@/ui/usePageTitle';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { useCanChange } from '@/ui/useCanChange';
 import lists from './lists.module.css';
-import { filterRecords, useListFilters } from '@/features/settings/shared/useListFilters';
-import { useStatusFlow } from '@/features/settings/shared/useStatusFlow';
-import { usePageTitle } from '@/lib/usePageTitle';
 import { useShowFailure } from './feedback';
-import { fetchLatestPerson, usePeople, useSetPersonStatus } from './peopleApi';
-import type { Person, PersonDetails } from './peopleApi';
-import { personStatusItem } from './personActions';
-import type { PersonActions } from './personActions';
-import { PersonDetailsPanel, PersonFormPanel } from './PersonPanels';
+import { fetchLatestPerson, usePeople, useSetPersonStatus } from './api';
+import type { Person, PersonDetails } from './api';
+import { personStatusItem } from './person-actions';
+import type { PersonActions } from './person-actions';
+import { PersonDetailsPanel } from './PersonDetailsPanel';
+import { PersonFormPanel } from './PersonFormPanel';
 import { deactivateSentences, isInUse, SELF_DEACTIVATION } from './texts';
-import { CanChange, SettingsViewOnlyNote } from '../settings/shared/CanChange';
-import { useCanChange } from '../settings/shared/useCanChange';
 
 const PERSON_NOUN = { one: 'person', many: 'people' };
 

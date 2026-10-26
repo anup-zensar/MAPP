@@ -1,41 +1,38 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, useOutlet, useParams, useSearchParams } from 'react-router';
 import { ApiError } from '@/api/errors';
-import { Button, ErrorState, Skeleton, Tabs, ViewOnlyNote } from '@/components';
-import type { ActionsMenuItem, TabItem } from '@/components';
-import { HistorySection } from '@/features/activity-log/HistorySection';
-import { showHistory } from '@/features/activity-log/showHistory';
-import { BudgetByMonthCard } from '@/features/budget-phasing/BudgetByMonthCard';
-import { useCampaignTreeContent } from '@/features/campaigns/useCampaignTreeContent';
-import { usePageTitle } from '@/lib/usePageTitle';
-import { allows } from './gateAction';
+import { Button } from '@/ui/Button/Button';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { Tabs } from '@/ui/Tabs/Tabs';
+import { ViewOnlyNote } from '@/ui/ViewOnlyNote/ViewOnlyNote';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
+import type { TabItem } from '@/ui/Tabs/Tabs';
+import { HistorySection, showHistory } from '@/features/activity-log';
+import { usePageTitle } from '@/ui/usePageTitle';
+import { allows } from '@/session/gate-action';
+import { BudgetByMonthCard } from './phasing/BudgetByMonthCard';
+import { useCampaignTreeContent } from './campaigns/useCampaignTreeContent';
 import { PlanDetails } from './PlanDetails';
 import { PlanGoals } from './PlanGoals';
 import { PlanHeader } from './PlanHeader';
 import { PlanNotFound } from './PlanNotFound';
 import styles from './PlanPage.module.css';
-import { usePlan } from './plansApi';
-import type { Plan } from './plansApi';
-import { planCurrencyOf } from './planCurrency';
+import { usePlan } from './api';
+import type { Plan } from './api';
+import { planCurrencyOf } from './plan-currency';
 import { PlanSummaryCards } from './PlanSummaryCards';
 import { RecordFinancials } from './RecordFinancials';
+import { planTabOf } from './schemas';
+import type { PlanTab } from './schemas';
 import { PlanTree } from './tree/PlanTree';
 import { usePlanActions } from './usePlanActions';
-
-/** The plan page's tabs (design system §2.4 B): the tree is the working view. */
-export type PlanTab = 'tree' | 'details' | 'history';
 
 const TABS: TabItem<PlanTab>[] = [
   { value: 'tree', label: 'Plan tree' },
   { value: 'details', label: 'Details' },
   { value: 'history', label: 'History' },
 ];
-
-/** The chosen tab, kept in the address (?tab=details); the tree when none or an unknown one. */
-function tabOf(search: URLSearchParams): PlanTab {
-  const tab = search.get('tab');
-  return tab === 'details' || tab === 'history' ? tab : 'tree';
-}
 
 /**
  * A plan's page (US3, FR-011 – FR-017), the layout route of /plans/:planId, on the record template
@@ -51,7 +48,7 @@ export function PlanPage() {
   const campaigns = useCampaignTreeContent(planId, plan.data?.access?.content.addCampaign);
   const panel = useOutlet();
   const [search, setSearch] = useSearchParams();
-  const tab = tabOf(search);
+  const tab = planTabOf(search);
   // View history: once the History tab is shown, its heading takes the focus (feature 011).
   const focusHistory = useRef(false);
   usePageTitle(panel ? null : (plan.data?.name ?? 'Plan'));

@@ -1,20 +1,25 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { formatDateTime } from '@/lib/format';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
-import type { ActivityLogEntry, HomeScope } from './homeApi';
+import { formatDateTime } from '@/format/intl';
+import { nth } from '@/testing/dom';
+import { mockApi } from '@/testing/mock-api';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { LUBRICANTS_PLAN, logEntryOf } from '@/testing/fixtures/home';
+import { reply } from '@/testing/replies';
+import type { Answer } from '@/testing/replies';
+import type { ActivityLogEntry, HomeScope } from './api';
 import { RecentChangesCard } from './RecentChangesCard';
-import { LUBRICANTS_PLAN, logEntryOf } from './testData';
 
 const page = (items: ActivityLogEntry[]) => ({ body: { items, total: items.length } });
 
 const secondsAgo = (seconds: number) => new Date(Date.now() - seconds * 1000).toISOString();
 
-function renderCard(scope: HomeScope = 'myTeams', answer: MockHandler = page([])) {
-  const api = mockApi({ 'GET /api/v1/home/recent-changes': answer });
+function renderCard(
+  scope: HomeScope = 'myTeams',
+  answer: Answer<'GET /api/v1/home/recent-changes'> = page([]),
+) {
+  const api = mockApi([reply('GET /api/v1/home/recent-changes', answer)]);
   const rendered = renderWithProviders(<RecentChangesCard scope={scope} />, {
     user: testUser(),
     path: '/',
@@ -41,7 +46,7 @@ describe('RecentChangesCard', () => {
     renderCard('myTeams', page([logEntryOf({ at })]));
 
     await within(card()).findByRole('link', { name: 'Launch film' });
-    const [entry] = entries();
+    const entry = nth(entries(), 0);
     expect(sentenceOf(entry)).toBe(
       "Priya Raman changed planned cost of activity 'Launch film' (A-1042)",
     );

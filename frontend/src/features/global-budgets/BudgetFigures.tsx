@@ -1,26 +1,34 @@
 import { TriangleAlert } from 'lucide-react';
-import { SummaryCard } from '@/components';
-import { cx } from '@/lib/cx';
-import { useFormatters } from '@/lib/useFormatters';
-import type { GlobalBudgetFigures } from './globalBudgetsApi';
-import { FIGURE_TIPS, overAllocatedText } from './globalBudgetsText';
+import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
+import { cx } from '@/ui/cx';
+import { useFormatters } from '@/format/useFormatters';
+import type { GlobalBudgetFigures } from './api';
+import { FIGURE_TIPS, overAllocatedText } from './global-budgets-text';
 import styles from './BudgetFigures.module.css';
 
+interface Figure {
+  label: string;
+  tip: string;
+  value: string;
+  short: string;
+  problem: boolean;
+  detail?: string;
+}
+
 /** The four figures with "Over-allocated by X" when Unallocated is below zero (D-015). */
-function useFigureItems(figures: GlobalBudgetFigures) {
+function useFigureItems(figures: GlobalBudgetFigures): Figure[] {
   const { money, moneyCompact } = useFormatters();
   const over = figures.overAllocated || figures.unallocated.amount.startsWith('-');
   const overBy = over
     ? money({ ...figures.unallocated, amount: figures.unallocated.amount.replace(/^-/, '') })
     : null;
 
-  const item = (label: string, value: GlobalBudgetFigures['amount'], tip: string) => ({
+  const item = (label: string, value: GlobalBudgetFigures['amount'], tip: string): Figure => ({
     label,
     tip,
     value: money(value),
     short: moneyCompact(value),
     problem: false,
-    detail: undefined as string | undefined,
   });
 
   return [

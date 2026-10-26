@@ -2,15 +2,17 @@ import { TriangleAlert } from 'lucide-react';
 import { useId } from 'react';
 import { Link } from 'react-router';
 import { ApiError } from '@/api/errors';
-import type { components } from '@/api/schema';
-import { ErrorState, InfoTip, ProgressBar, Skeleton } from '@/components';
-import { recordHref } from '@/lib/recordLinks';
-import type { PlanningRecordType } from '@/lib/recordLinks';
-import { useFormatters } from '@/lib/useFormatters';
-import { financialsHref, useRecordFinancials } from './financialsApi';
+import type { components } from '@/api/generated/schema';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { recordHref } from '@/ui/record-links';
+import { useFormatters } from '@/format/useFormatters';
+import { financialsHref, useRecordFinancials } from './financials-api';
+import { FinancialsBreakdown } from './FinancialsBreakdown';
 import styles from './RecordFinancials.module.css';
 
-type FinancialRecordView = components['schemas']['FinancialRecordView'];
 type FinancialFigures = components['schemas']['FinancialFigures'];
 type Level = components['schemas']['AttributeLevel'];
 
@@ -20,14 +22,6 @@ const LEVEL_WORD: Record<Level, string> = {
   initiative: 'initiative',
   activity: 'activity',
   lineItem: 'line item',
-};
-
-const BREAKDOWN_HEADING: Record<Level, string> = {
-  plan: 'By campaign',
-  campaign: 'By initiative',
-  initiative: 'By activity',
-  activity: 'By line item',
-  lineItem: '',
 };
 
 const TIPS = {
@@ -89,7 +83,7 @@ export function RecordFinancials({ recordId, planId, variant }: RecordFinancials
           </p>
         )}
         {data.breakdownLevel && data.breakdown.length > 0 && (
-          <Breakdown view={data} planId={planId} />
+          <FinancialsBreakdown view={data} planId={planId} />
         )}
         <div className={styles.footer}>
           {data.figures.transactionCount > 0 && (
@@ -246,7 +240,7 @@ function Warnings({ figures, planId }: { figures: FinancialFigures; planId: stri
         <p className={styles.warning}>
           <TriangleAlert aria-hidden="true" />
           {first ? (
-            <Link to={recordHref(first.type as PlanningRecordType, first.id, planId)}>
+            <Link to={recordHref(first.type, first.id, planId)}>
               Committed above planned cost on {figures.lineItemsAbovePlanned}{' '}
               {figures.lineItemsAbovePlanned === 1 ? 'line item' : 'line items'}
             </Link>
@@ -258,54 +252,6 @@ function Warnings({ figures, planId }: { figures: FinancialFigures; planId: stri
           )}
         </p>
       )}
-    </div>
-  );
-}
-
-/** "By campaign" / "By initiative" / "By activity": each child with its four figures. */
-function Breakdown({ view, planId }: { view: FinancialRecordView; planId: string }) {
-  const { money } = useFormatters();
-  const heading = BREAKDOWN_HEADING[view.record.type];
-  return (
-    <div className={styles.scroll}>
-      <table className={styles.table}>
-        <caption className={styles.tableTitle}>{heading}</caption>
-        <thead>
-          <tr>
-            <th scope="col">Name</th>
-            <th scope="col" className={styles.number}>
-              Committed
-            </th>
-            <th scope="col" className={styles.number}>
-              Invoiced
-            </th>
-            <th scope="col" className={styles.number}>
-              Paid
-            </th>
-            <th scope="col" className={styles.number}>
-              Accrued
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {view.breakdown.map(({ record, figures }) => (
-            <tr key={record.id}>
-              <th scope="row">
-                <Link to={recordHref(record.type as PlanningRecordType, record.id, planId)}>
-                  {record.name}
-                </Link>
-                {figures.committedAbovePlanned && (
-                  <span className={styles.rowProblem}> · Committed above planned cost</span>
-                )}
-              </th>
-              <td className={styles.number}>{money(figures.committed)}</td>
-              <td className={styles.number}>{money(figures.invoiced)}</td>
-              <td className={styles.number}>{money(figures.paid)}</td>
-              <td className={styles.number}>{money(figures.accrued)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 }

@@ -1,10 +1,10 @@
 import { useLocation, useNavigate } from 'react-router';
 import { ApiError } from '@/api/errors';
-import { useToast } from '@/components';
-import { useFinancialRecord } from '@/features/line-items/gsapFinancials';
-import { useUndoableDelete } from '@/lib/useUndoableDelete';
-import { ACTIVITY_PLANNING_KEYS, useDeleteActivity } from './activitiesApi';
-import type { Activity } from './activitiesApi';
+import { useToast } from '@/ui/Toast/useToast';
+import { useFinancialRecord } from '@/features/line-items';
+import { useUndoableDelete } from '@/ui/useUndoableDelete';
+import { ACTIVITY_PLANNING_KEYS, useDeleteActivity } from './api';
+import type { Activity } from './api';
 import { DeleteActivityDialog } from './DeleteActivityDialog';
 
 export interface ActivityDeleteQuestionProps {

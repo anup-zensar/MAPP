@@ -1,8 +1,8 @@
-import type { components } from '@/api/schema';
-import { formatMoneyText } from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
+import type { components } from '@/api/generated/schema';
+import { formatMoneyText } from '@/format/decimal';
+import { useFormatters } from '@/format/useFormatters';
 import styles from './AmountPair.module.css';
-import { differentCurrency } from './planCurrency';
+import { differentCurrency } from './plan-currency';
 
 type Money = components['schemas']['Money'];
 

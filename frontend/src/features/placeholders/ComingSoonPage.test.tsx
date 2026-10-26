@@ -1,10 +1,9 @@
 import { screen } from '@testing-library/react';
 import { Sparkles } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
-import { COMING_SOON_SECTIONS } from '@/app/navigation';
-import type { ComingSoonSection } from '@/app/navigation';
-import { renderWithProviders } from '@/test/render';
+import { renderWithProviders } from '@/testing/render';
 import { ComingSoonPage } from './ComingSoonPage';
+import type { ComingSoonSection } from './ComingSoonPage';
 
 /**
  * Every section of the Plan module has its page since 011 built Recycle bin and Activity log, so
@@ -12,7 +11,6 @@ import { ComingSoonPage } from './ComingSoonPage';
  */
 const LATER: ComingSoonSection = {
   label: 'Later section',
-  path: '/later-section',
   icon: Sparkles,
   comingSoon: 'Do something useful that is not built yet.',
 };
@@ -24,10 +22,6 @@ describe('ComingSoonPage', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Later section' })).toBeInTheDocument();
     expect(screen.getByText('Do something useful that is not built yet.')).toBeInTheDocument();
     expect(document.title).toBe('Later section · MAPP');
-  });
-
-  it('is for no section of the Plan module any more: 011 built the last two (FR-001, FR-014)', () => {
-    expect(COMING_SOON_SECTIONS).toEqual([]);
   });
 
   it('says that the section is coming soon, under the section name as the title (FR-015)', () => {

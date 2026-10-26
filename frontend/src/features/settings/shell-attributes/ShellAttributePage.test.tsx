@@ -1,10 +1,9 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { findMessages, renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
-import { ShellAttributePage } from './ShellAttributePage';
+import type { HttpHandler } from 'msw';
+import { mockApi } from '@/testing/mock-api';
+import { findMessages, renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
 import {
   BUSINESS_UNIT,
   BUSINESS_UNIT_LOCK,
@@ -14,13 +13,15 @@ import {
   page,
   PIR,
   shellOption,
-} from './testData';
+} from '@/testing/fixtures/shell-attributes';
+import { reply } from '@/testing/replies';
+import { ShellAttributePage } from './ShellAttributePage';
 
 const TV = shellOption({ id: 'SO-1101', label: 'TV', attributeId: 'SA-1010' });
 
 /** The attribute page; the preview asks for the level's form (FORM_ANSWERS). */
-function renderPage(id: string, answers: Record<string, MockHandler>) {
-  const api = mockApi({ ...FORM_ANSWERS, ...answers });
+function renderPage(id: string, answers: HttpHandler[]) {
+  const api = mockApi([...FORM_ANSWERS, ...answers]);
   const rendered = renderWithProviders(<ShellAttributePage />, {
     route: `/settings/shell-attributes/${id}`,
     user: testUser(),
@@ -31,10 +32,18 @@ function renderPage(id: string, answers: Record<string, MockHandler>) {
 
 describe('ShellAttributePage (FR-020)', () => {
   it('shows the settings with where the attribute is used, and its options', async () => {
-    renderPage('SA-1010', {
-      'GET /api/v1/shell-attributes/SA-1010': { body: MEDIA_CHANNEL },
-      'GET /api/v1/shell-attributes/SA-1010/options': { body: page([TV]) },
-    });
+    renderPage('SA-1010', [
+      reply(
+        'GET /api/v1/shell-attributes/{attributeId}',
+        { body: MEDIA_CHANNEL },
+        { attributeId: 'SA-1010' },
+      ),
+      reply(
+        'GET /api/v1/shell-attributes/{attributeId}/options',
+        { body: page([TV]) },
+        { attributeId: 'SA-1010' },
+      ),
+    ]);
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Media channel' }),
@@ -84,16 +93,24 @@ describe('ShellAttributePage (FR-020)', () => {
   });
 
   it('shows what the attribute depends on and when it is shown (US3)', async () => {
-    renderPage('SA-1011', {
-      'GET /api/v1/shell-attributes/SA-1011': {
-        body: {
-          ...PIR,
-          parentAttribute: { id: 'SA-1010', name: 'Media channel', active: true },
-          condition: [{ id: 'SO-BU-LUB', name: 'Lubricants', active: true }],
+    renderPage('SA-1011', [
+      reply(
+        'GET /api/v1/shell-attributes/{attributeId}',
+        {
+          body: {
+            ...PIR,
+            parentAttribute: { id: 'SA-1010', name: 'Media channel', active: true },
+            condition: [{ id: 'SO-BU-LUB', name: 'Lubricants', active: true }],
+          },
         },
-      },
-      'GET /api/v1/shell-attributes/SA-1011/options': { body: page([]) },
-    });
+        { attributeId: 'SA-1011' },
+      ),
+      reply(
+        'GET /api/v1/shell-attributes/{attributeId}/options',
+        { body: page([]) },
+        { attributeId: 'SA-1011' },
+      ),
+    ]);
 
     const settings = await screen.findByRole('region', { name: 'Settings' });
     const facts = within(settings)
@@ -104,7 +121,13 @@ describe('ShellAttributePage (FR-020)', () => {
   });
 
   it('says that types without options have none', async () => {
-    renderPage('SA-1013', { 'GET /api/v1/shell-attributes/SA-1013': { body: OLD_NOTES } });
+    renderPage('SA-1013', [
+      reply(
+        'GET /api/v1/shell-attributes/{attributeId}',
+        { body: OLD_NOTES },
+        { attributeId: 'SA-1013' },
+      ),
+    ]);
 
     const options = await screen.findByRole('region', { name: 'Options' });
     expect(options).toHaveTextContent('Long text attributes have no options.');
@@ -112,21 +135,39 @@ describe('ShellAttributePage (FR-020)', () => {
   });
 
   it('shows each lock once, with its reason (FR-021, FR-023)', async () => {
-    renderPage('SA-1001', {
-      'GET /api/v1/shell-attributes/SA-1001': { body: BUSINESS_UNIT },
-      'GET /api/v1/shell-attributes/SA-1001/options': { body: page([]) },
-    });
+    renderPage('SA-1001', [
+      reply(
+        'GET /api/v1/shell-attributes/{attributeId}',
+        { body: BUSINESS_UNIT },
+        { attributeId: 'SA-1001' },
+      ),
+      reply(
+        'GET /api/v1/shell-attributes/{attributeId}/options',
+        { body: page([]) },
+        { attributeId: 'SA-1001' },
+      ),
+    ]);
 
     expect(await screen.findAllByText(BUSINESS_UNIT_LOCK)).toHaveLength(1);
   });
 
   it('says when the attribute no longer exists, with the way back', async () => {
-    renderPage('SA-9999', {
-      'GET /api/v1/shell-attributes/SA-9999': {
-        status: 404,
-        body: { error: { code: 'not_found', message: 'This Shell attribute no longer exists.' } },
-      },
-    });
+    renderPage('SA-9999', [
+      reply(
+        'GET /api/v1/shell-attributes/{attributeId}',
+        {
+          status: 404,
+          body: {
+            error: {
+              code: 'not_found',
+              message: 'This Shell attribute no longer exists.',
+              fields: [],
+            },
+          },
+        },
+        { attributeId: 'SA-9999' },
+      ),
+    ]);
 
     expect(
       await screen.findByText(
@@ -140,39 +181,59 @@ describe('ShellAttributePage (FR-020)', () => {
   });
 
   it('shows a failure with Try again', async () => {
-    renderPage('SA-1010', {
-      'GET /api/v1/shell-attributes/SA-1010': {
-        status: 500,
-        body: {
-          error: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+    renderPage('SA-1010', [
+      reply(
+        'GET /api/v1/shell-attributes/{attributeId}',
+        {
+          status: 500,
+          body: {
+            error: {
+              code: 'internal_error',
+              message: 'Something went wrong. Please try again.',
+              fields: [],
+            },
+          },
         },
-      },
-    });
+        { attributeId: 'SA-1010' },
+      ),
+    ]);
 
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });
 
   it('deletes an unused attribute and goes back to its level, with Undo (FR-004)', async () => {
-    const { user, router } = renderPage('SA-1011', {
-      'GET /api/v1/shell-attributes/SA-1011': { body: { ...PIR, optionCount: 0 } },
-      'GET /api/v1/shell-attributes/SA-1011/options': { body: page([]) },
-      'DELETE /api/v1/shell-attributes/SA-1011': {
-        body: {
-          recycleBinEntry: {
-            id: 'BIN-1002',
-            recordType: 'shellAttribute',
-            recordTypeLabel: 'Shell attribute',
-            recordId: 'SA-1011',
-            recordName: 'PIR',
-            path: [],
-            parent: null,
-            deletedAt: '2026-03-14T10:00:00Z',
-            deletedBy: { id: 'U-1002', name: 'Priya Raman' },
-            contents: [],
+    const { user, router } = renderPage('SA-1011', [
+      reply(
+        'GET /api/v1/shell-attributes/{attributeId}',
+        { body: { ...PIR, optionCount: 0 } },
+        { attributeId: 'SA-1011' },
+      ),
+      reply(
+        'GET /api/v1/shell-attributes/{attributeId}/options',
+        { body: page([]) },
+        { attributeId: 'SA-1011' },
+      ),
+      reply(
+        'DELETE /api/v1/shell-attributes/{attributeId}',
+        {
+          body: {
+            recycleBinEntry: {
+              id: 'BIN-1002',
+              recordType: 'shellAttribute',
+              recordTypeLabel: 'Shell attribute',
+              recordId: 'SA-1011',
+              recordName: 'PIR',
+              path: [],
+              parent: null,
+              deletedAt: '2026-03-14T10:00:00Z',
+              deletedBy: { id: 'U-1002', name: 'Priya Raman' },
+              contents: [],
+            },
           },
         },
-      },
-    });
+        { attributeId: 'SA-1011' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Actions for PIR' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));

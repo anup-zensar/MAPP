@@ -1,12 +1,14 @@
 import { screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
-import { FieldHelpTip, useFieldHelp } from '.';
-import { FIELD_HELP_PAGE, PLAN_BUDGET, PLAN_PLANNED_COST } from './fieldHelpTestData';
+import { mockApi } from '@/testing/mock-api';
+import type { Answer } from '@/testing/replies';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { FIELD_HELP_PAGE, PLAN_BUDGET, PLAN_PLANNED_COST } from '@/testing/fixtures/field-help';
+import { reply } from '@/testing/replies';
+import { FieldHelpTip } from './FieldHelpTip';
+import { useFieldHelp } from './useFieldHelp';
 
 /** Shows what help() answers for each key, as a page would pass it to a field's tip. */
 function Texts({ keys, fallback }: { keys: string[]; fallback?: string }) {
@@ -20,8 +22,8 @@ function Texts({ keys, fallback }: { keys: string[]; fallback?: string }) {
   );
 }
 
-function renderWith(answer: MockHandler, ui: ReactElement) {
-  const api = mockApi({ 'GET /api/v1/field-help': answer });
+function renderWith(answer: Answer<'GET /api/v1/field-help'>, ui: ReactElement) {
+  const api = mockApi([reply('GET /api/v1/field-help', answer)]);
   renderWithProviders(ui, { user: testUser() });
   return api;
 }
@@ -75,7 +77,7 @@ describe('useFieldHelp (016 FR-047)', () => {
 
 describe('FieldHelpTip (016 FR-047)', () => {
   it('shows an ⓘ named after its label, with the Field help text', async () => {
-    mockApi({ 'GET /api/v1/field-help': { body: FIELD_HELP_PAGE } });
+    mockApi([reply('GET /api/v1/field-help', { body: FIELD_HELP_PAGE })]);
     const { user } = renderWithProviders(
       <p>
         Planned cost <FieldHelpTip helpKey="plan.plannedCost" label="Planned cost" />

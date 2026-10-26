@@ -1,11 +1,10 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
-import type { ApprovalRow } from './approvalsApi';
-import { ApprovalsPage } from './ApprovalsPage';
+import type { HttpHandler } from 'msw';
+import { nth } from '@/testing/dom';
+import { mockApi } from '@/testing/mock-api';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
 import {
   CARLOS,
   DANIEL,
@@ -17,7 +16,10 @@ import {
   previewOf,
   roundOf,
   rowOf,
-} from './testData';
+} from '@/testing/fixtures/approvals';
+import { reply } from '@/testing/replies';
+import type { ApprovalRow } from './api';
+import { ApprovalsPage } from './ApprovalsPage';
 
 const SUMMARY = {
   body: { waitingForMe: 3, allOpen: 5, approvedThisMonth: 2, declinedThisMonth: 1 },
@@ -51,13 +53,13 @@ const ROWS: ApprovalRow[] = [
 
 const page = (items: ApprovalRow[]) => ({ body: { items, total: items.length } });
 
-function renderPage(route = '/approvals', answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({
-    'GET /api/v1/approvals/summary': SUMMARY,
-    'GET /api/v1/approvals': page(ROWS),
-    'GET /api/v1/approval-delegations': NO_DELEGATIONS,
+function renderPage(route = '/approvals', answers: HttpHandler[] = []) {
+  const api = mockApi([
+    reply('GET /api/v1/approvals/summary', SUMMARY),
+    reply('GET /api/v1/approvals', page(ROWS)),
+    reply('GET /api/v1/approval-delegations', NO_DELEGATIONS),
     ...answers,
-  });
+  ]);
   const rendered = renderWithProviders(<ApprovalsPage />, {
     route,
     path: '/approvals',
@@ -99,10 +101,11 @@ describe('ApprovalsPage (feature 008, US3)', () => {
   });
 
   it('switches tabs through the address, keeping the search (FR-029)', async () => {
-    const { user, router, api } = renderPage('/approvals', {
-      'GET /api/v1/approvals': (request) =>
-        new URL(request.url).searchParams.get('tab') === 'open' ? page(ROWS) : page([ROWS[0]]),
-    });
+    const { user, router, api } = renderPage('/approvals', [
+      reply('GET /api/v1/approvals', (request) =>
+        new URL(request.url).searchParams.get('tab') === 'open' ? page(ROWS) : page([nth(ROWS, 0)]),
+      ),
+    ]);
 
     await screen.findByRole('button', { name: 'Launch film' });
     await user.type(screen.getByRole('searchbox', { name: 'Search activity name or ID' }), 'radio');
@@ -121,7 +124,7 @@ describe('ApprovalsPage (feature 008, US3)', () => {
     ['open', 'No activities are waiting for approval.'],
     ['decided', "You haven't approved or declined any activities yet."],
   ])('says when the %s tab is empty', async (tab, text) => {
-    renderPage(`/approvals?tab=${tab}`, { 'GET /api/v1/approvals': page([]) });
+    renderPage(`/approvals?tab=${tab}`, [reply('GET /api/v1/approvals', page([]))]);
 
     expect(await screen.findByText(text)).toBeInTheDocument();
   });
@@ -174,9 +177,13 @@ describe('ApprovalsPage (feature 008, US3)', () => {
   });
 
   it('opens the preview from a row, through the address (FR-032)', async () => {
-    const { user, router } = renderPage('/approvals', {
-      'GET /api/v1/approvals/activities/A-1042': { body: previewOf() },
-    });
+    const { user, router } = renderPage('/approvals', [
+      reply(
+        'GET /api/v1/approvals/activities/{activityId}',
+        { body: previewOf() },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Launch film' }));
 
@@ -185,9 +192,13 @@ describe('ApprovalsPage (feature 008, US3)', () => {
   });
 
   it('?activity= opens the preview at once', async () => {
-    renderPage('/approvals?tab=waiting&activity=A-1042', {
-      'GET /api/v1/approvals/activities/A-1042': { body: previewOf() },
-    });
+    renderPage('/approvals?tab=waiting&activity=A-1042', [
+      reply(
+        'GET /api/v1/approvals/activities/{activityId}',
+        { body: previewOf() },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     const preview = await screen.findByRole('dialog', { name: 'Launch film' });
     expect(preview).toHaveTextContent('A-1042 · Waiting at level 1 of 2');
@@ -197,13 +208,25 @@ describe('ApprovalsPage (feature 008, US3)', () => {
     const next = previewOf({
       activity: { ...previewOf().activity, id: 'A-1043', name: 'Spring radio' },
     });
-    const { user, router } = renderPage('/approvals?activity=A-1042', {
-      'GET /api/v1/approvals/activities/A-1042': { body: previewOf() },
-      'GET /api/v1/approvals/activities/A-1043': { body: next },
-      'POST /api/v1/activities/A-1042/approval/approve': {
-        body: approvalOf({ status: 'approved', rounds: [roundOf({ outcome: 'approved' })] }),
-      },
-    });
+    const { user, router } = renderPage('/approvals?activity=A-1042', [
+      reply(
+        'GET /api/v1/approvals/activities/{activityId}',
+        { body: previewOf() },
+        { activityId: 'A-1042' },
+      ),
+      reply(
+        'GET /api/v1/approvals/activities/{activityId}',
+        { body: next },
+        { activityId: 'A-1043' },
+      ),
+      reply(
+        'POST /api/v1/activities/{activityId}/approval/approve',
+        {
+          body: approvalOf({ status: 'approved', rounds: [roundOf({ outcome: 'approved' })] }),
+        },
+        { activityId: 'A-1042' },
+      ),
+    ]);
     await screen.findByRole('button', { name: 'Launch film', hidden: true });
     const preview = await screen.findByRole('dialog', { name: 'Launch film' });
 
@@ -218,12 +241,12 @@ describe('ApprovalsPage (feature 008, US3)', () => {
 
   it('says when the rows could not be loaded, with Try again', async () => {
     let calls = 0;
-    const { user } = renderPage('/approvals', {
-      'GET /api/v1/approvals': () => {
+    const { user } = renderPage('/approvals', [
+      reply('GET /api/v1/approvals', () => {
         calls += 1;
         return calls === 1 ? { status: 500 } : page(ROWS);
-      },
-    });
+      }),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Try again' }));
 
@@ -231,11 +254,11 @@ describe('ApprovalsPage (feature 008, US3)', () => {
   });
 
   it('opens All open when nothing waits for the person (UI audit AP-03)', async () => {
-    const { api } = renderPage('/approvals', {
-      'GET /api/v1/approvals/summary': {
+    const { api } = renderPage('/approvals', [
+      reply('GET /api/v1/approvals/summary', {
         body: { waitingForMe: 0, allOpen: 3, approvedThisMonth: 0, declinedThisMonth: 0 },
-      },
-    });
+      }),
+    ]);
 
     expect(await screen.findByRole('tab', { name: 'All open (3)' })).toHaveAttribute(
       'aria-selected',
@@ -248,12 +271,12 @@ describe('ApprovalsPage (feature 008, US3)', () => {
   });
 
   it('keeps the tab the address names, even when nothing waits (UI audit AP-03)', async () => {
-    renderPage('/approvals?tab=waiting', {
-      'GET /api/v1/approvals/summary': {
+    renderPage('/approvals?tab=waiting', [
+      reply('GET /api/v1/approvals/summary', {
         body: { waitingForMe: 0, allOpen: 3, approvedThisMonth: 0, declinedThisMonth: 0 },
-      },
-      'GET /api/v1/approvals': page([]),
-    });
+      }),
+      reply('GET /api/v1/approvals', page([])),
+    ]);
 
     expect(
       await screen.findByText("Nothing is waiting for you. You're all caught up."),
@@ -267,9 +290,9 @@ describe('ApprovalsPage (feature 008, US3)', () => {
 
 describe('ApprovalsPage rules (feature 017, US4 and US6)', () => {
   it('opens Monitoring as the fourth tab, without search or filters (FR-030)', async () => {
-    const { user, api } = renderPage('/approvals?tab=waiting', {
-      'GET /api/v1/approvals/monitoring': { body: monitoringOf() },
-    });
+    const { user, api } = renderPage('/approvals?tab=waiting', [
+      reply('GET /api/v1/approvals/monitoring', { body: monitoringOf() }),
+    ]);
     await screen.findByRole('row', { name: /Launch film/ });
 
     await user.click(screen.getByRole('tab', { name: 'Monitoring' }));
@@ -287,15 +310,15 @@ describe('ApprovalsPage rules (feature 017, US4 and US6)', () => {
 
     const panel = await screen.findByRole('dialog', { name: 'Approval delegation' });
     const closes = within(panel).getAllByRole('button', { name: 'Close' });
-    await user.click(closes[closes.length - 1]);
+    await user.click(nth(closes, -1));
     await waitFor(() =>
       expect(screen.queryByRole('dialog', { name: 'Approval delegation' })).not.toBeInTheDocument(),
     );
   });
 
   it('says above the cards who approves for whom today (FR-024)', async () => {
-    renderPage('/approvals', {
-      'GET /api/v1/approval-delegations': {
+    renderPage('/approvals', [
+      reply('GET /api/v1/approval-delegations', {
         body: {
           items: [
             delegationOf({ person: PRIYA, delegate: CARLOS, state: 'current' }),
@@ -304,8 +327,8 @@ describe('ApprovalsPage rules (feature 017, US4 and US6)', () => {
           total: 2,
           canManageOthers: false,
         },
-      },
-    });
+      }),
+    ]);
 
     expect(
       await screen.findByText('Carlos Mendes approves for you until 14 Nov 2026.'),

@@ -1,7 +1,8 @@
 import { screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
+import { nth } from '@/testing/dom';
+import { renderWithProviders } from '@/testing/render';
 import { FilterMenu } from './FilterMenu';
 import type { FilterChoice, FilterMenuProps } from './FilterMenu';
 
@@ -123,7 +124,7 @@ describe('FilterMenu (FR-004, FR-009)', () => {
     const menu = await screen.findByRole('dialog');
     const boxes = within(menu).getAllByRole('checkbox');
     expect(boxes[0]).toHaveAccessibleName('My teams');
-    await user.click(boxes[0]);
+    await user.click(nth(boxes, 0));
     expect(chosen()).toBe('T-1001,T-1003,T-1002');
     expect(within(menu).getByRole('checkbox', { name: 'My teams' })).toBeChecked();
 

@@ -2,19 +2,19 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import { FinanceBudgetFields } from './FinanceBudgetFields';
-import { changeBudgetYear, newFormState, withField } from './lineItemFormState';
-import type { LineItemFormState } from './lineItemFormState';
-import type { FinanceBudgetItemRef } from './lineItemsApi';
 import {
   activity,
   BRAND_INACTIVE,
   DIGITAL,
   DIGITAL_2027,
   EVENTS,
-  formOptions,
   MOBILITY_RETAIL,
-} from './testData';
+} from '@/testing/fixtures/line-items';
+import { formOptions } from '@/testing/fixtures/line-item-forms';
+import { FinanceBudgetFields } from './FinanceBudgetFields';
+import { changeBudgetYear, newFormState, withField } from './line-item-form-state';
+import type { LineItemFormState } from './line-item-form-state';
+import type { FinanceBudgetItemRef } from './api';
 
 const ITEMS = [DIGITAL, EVENTS, MOBILITY_RETAIL, DIGITAL_2027];
 

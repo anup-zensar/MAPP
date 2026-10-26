@@ -1,34 +1,22 @@
 import { configure, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
-import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
-import { approvalOf } from '@/features/approvals/testData';
-import { activityRecord } from '@/features/line-items/testData';
-import type { ShowSubmitProblems } from '@/features/approvals/approvalTypes';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { describe, expect, it } from 'vitest';
+import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
+import { approvalOf, submissionOf } from '@/testing/fixtures/approvals';
+import { activityRecord } from '@/testing/fixtures/line-item-financials';
+import { closestTo } from '@/testing/dom';
+import { mockApi } from '@/testing/mock-api';
+import type { Answer } from '@/testing/replies';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { FIVE_PROBLEMS, incompleteLaunchFilm, launchFilm } from '@/testing/fixtures/activities';
+import { activity, launchFilmSection } from '@/testing/fixtures/line-items';
+import { currentRates } from '@/testing/fixtures/line-item-forms';
+import { activityAttributeForm, editForm } from '@/testing/fixtures/activity-forms';
+import { reply } from '@/testing/replies';
 import { ActivityPage } from './ActivityPage';
-import { activityAttributeForm, editForm, incompleteLaunchFilm, launchFilm } from './testData';
 
 // The whole form renders in each test: on a busy computer the first render can take a while.
 configure({ asyncUtilTimeout: 10_000 });
-
-// Features 007 and 008 test their own parts; here they stand in. The status action stands in for
-// 008's Submit for approval, which finds five problems and hands them to this page.
-vi.mock('@/features/line-items/LineItemsSection', () => ({
-  LineItemsSection: () => <section aria-label="Line items">Line items</section>,
-}));
-vi.mock('@/features/approvals/ApprovalSection', () => ({
-  ApprovalSection: () => <section aria-label="Approval">Approval</section>,
-}));
-vi.mock('@/features/approvals/SubmitButton', () => ({
-  SubmitButton: ({ onShowProblems }: { onShowProblems: ShowSubmitProblems }) => (
-    <button type="button" onClick={() => onShowProblems(5)}>
-      Submit for approval
-    </button>
-  ),
-}));
 
 const PATH = '/plans/:planId/activities/:activityId';
 
@@ -46,46 +34,55 @@ const NOT_SUBMITTED = approvalOf({
   },
 });
 
-/** Today's rates, for the ⓘ beside an amount in another currency (016 FR-009). */
-const RATES = {
-  today: '2026-03-12',
-  total: 2,
-  items: [
-    {
-      currency: 'USD',
-      rate: '1',
-      inverseRate: '1',
-      rateDate: null,
-      source: null,
-      importFileName: null,
-    },
-    {
-      currency: 'EUR',
-      rate: '0.92',
-      inverseRate: '1.086957',
-      rateDate: '2026-03-01',
-      source: 'settings',
-      importFileName: null,
-    },
-  ],
-};
+/** What Submit for approval finds for "Launch film": five problems (feature 008). */
+const FIVE_MISSING = submissionOf({
+  ready: false,
+  problems: [...FIVE_PROBLEMS.activity, ...FIVE_PROBLEMS.lineItems].map((problem) => ({
+    field: problem.field,
+    group: problem.lineItemId ? ('lineItem' as const) : ('activity' as const),
+    lineItemId: problem.lineItemId ?? '',
+    message: problem.message,
+  })),
+});
 
 function openPage(
-  answer: MockHandler,
+  answer: Answer<'GET /api/v1/activities/{activityId}'>,
   route = '/plans/P-1001/activities/A-1042',
-  approval: MockHandler = { body: NOT_SUBMITTED },
+  approval: Answer<'GET /api/v1/activities/{activityId}/approval'> = { body: NOT_SUBMITTED },
 ) {
-  const api = mockApi({
+  const api = mockApi([
     ...HISTORY_ANSWERS,
-    'GET /api/v1/activities/A-1042': answer,
-    'GET /api/v1/activities/A-1042/approval': approval,
-    'GET /api/v1/exchange-rates/current': { body: RATES },
-    'GET /api/v1/financials/records/A-1042': {
-      body: activityRecord({ record: { type: 'activity', id: 'A-1042', name: 'Launch film' } }),
-    },
-    'GET /api/v1/activities/A-1042/form': { body: editForm() },
-    'GET /api/v1/shell-attribute-forms/activity': { body: activityAttributeForm() },
-  });
+    reply('GET /api/v1/activities/{activityId}', answer, { activityId: 'A-1042' }),
+    reply('GET /api/v1/activities/{activityId}/approval', approval, { activityId: 'A-1042' }),
+    reply('GET /api/v1/exchange-rates/current', { body: currentRates() }),
+    reply(
+      'GET /api/v1/activities/{activityId}/line-items',
+      { body: launchFilmSection({ activity: activity({ id: 'A-1042' }) }) },
+      { activityId: 'A-1042' },
+    ),
+    reply(
+      'GET /api/v1/activities/{activityId}/approval/submission',
+      { body: FIVE_MISSING },
+      { activityId: 'A-1042' },
+    ),
+    reply(
+      'GET /api/v1/financials/records/{recordId}',
+      {
+        body: activityRecord({ record: { type: 'activity', id: 'A-1042', name: 'Launch film' } }),
+      },
+      { recordId: 'A-1042' },
+    ),
+    reply(
+      'GET /api/v1/activities/{activityId}/form',
+      { body: editForm() },
+      { activityId: 'A-1042' },
+    ),
+    reply(
+      'GET /api/v1/shell-attribute-forms/{level}',
+      { body: activityAttributeForm() },
+      { level: 'activity' },
+    ),
+  ]);
   return { ...renderWithProviders(<ActivityPage />, { route, path: PATH, user: testUser() }), api };
 }
 
@@ -163,11 +160,11 @@ describe('ActivityPage (feature 006, US2)', () => {
   it('opens Ready to submit and says how many things are missing when submitting finds problems (FR-025)', async () => {
     const { user } = openPage({ body: incompleteLaunchFilm() });
 
-    const summary = (await screen.findByText('Submitting needs 5 things')).closest('summary');
+    const summary = closestTo(await screen.findByText('Submitting needs 5 things'), 'summary');
     const panel = screen.getByRole('region', { name: 'Ready to submit' });
     const owner = within(panel).getByRole('link', { name: 'Owner — needed to submit' });
     expect(owner).toBeVisible();
-    await user.click(summary as HTMLElement);
+    await user.click(summary);
     expect(owner).not.toBeVisible();
 
     await user.click(screen.getByRole('button', { name: 'Submit for approval' }));

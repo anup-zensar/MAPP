@@ -1,8 +1,9 @@
 import { ApiError, conflictMessage } from '@/api/errors';
-import { ConfirmDialog, useToast } from '@/components';
-import { useFormatters } from '@/lib/useFormatters';
-import { useUpdateFieldHelp } from './fieldHelpApi';
-import type { FieldHelpEntry } from './fieldHelpApi';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { useToast } from '@/ui/Toast/useToast';
+import { useFormatters } from '@/format/useFormatters';
+import { useUpdateFieldHelp } from './api';
+import type { FieldHelpEntry } from './api';
 
 export interface ResetHelpDialogProps {
   entry: FieldHelpEntry;

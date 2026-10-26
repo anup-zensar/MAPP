@@ -3,13 +3,13 @@ import { Popover } from 'radix-ui';
 import { useState } from 'react';
 import type { MouseEvent } from 'react';
 import { Link } from 'react-router';
-import { Button } from '@/components';
-import { cx } from '@/lib/cx';
-import { useFormatters } from '@/lib/useFormatters';
-import type { AllWorkResult, AllWorkRow } from './allWorkTypes';
+import { Button } from '@/ui/Button/Button';
+import { cx } from '@/ui/cx';
+import { useFormatters } from '@/format/useFormatters';
+import type { AllWorkResult, AllWorkRow } from './all-work-types';
 import { monthWeeks, runsOn } from './calendar';
 import styles from './MonthCalendar.module.css';
-import { rowHref } from './rowHref';
+import { rowHref } from './row-href';
 
 const MONTH_NAMES = [
   'January',

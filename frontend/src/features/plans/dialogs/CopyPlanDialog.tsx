@@ -1,21 +1,26 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { CircleAlert } from 'lucide-react';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import type { Control } from 'react-hook-form';
 import { ApiError } from '@/api/errors';
-import {
-  CheckboxField,
-  ErrorState,
-  FailureMessage,
-  FormDialog,
-  LockedNote,
-  Skeleton,
-  TextField,
-  problemOf,
-} from '@/components';
-import type { FieldProblem } from '@/components';
-import { useCopyOptions } from '../plansApi';
-import type { PlanCopyOptions, PlanCopyRequest } from '../plansApi';
-import { contentsText } from '../planText';
+import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { FormField } from '@/ui/FormField/FormField';
+import { FailureMessage } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problem-of';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { TextField } from '@/ui/TextField/TextField';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { CHECK_ON_SAVE } from '@/ui/useFormProblems';
+import { useCopyOptions } from '../api';
+import type { PlanCopyOptions, PlanCopyRequest } from '../api';
+import { contentsText } from '../plan-text';
+import { copyPlanSchema } from '../schemas';
+import type { CopyPlanValues } from '../schemas';
 import styles from './dialogs.module.css';
+import { YearChoice } from './YearChoice';
 
 /** Why the API did not copy: problems for the fields, or a message for the whole form. */
 export interface CopyRefusal {
@@ -36,7 +41,7 @@ export interface CopyPlanDialogProps {
 }
 
 /** Fields the dialog shows a problem under; any other problem is shown above the form. */
-const DIALOG_FIELDS = ['name', 'year', 'includeContents'];
+const DIALOG_FIELDS = ['name', 'year', 'includeContents'] as const;
 
 /**
  * Copy a plan (FR-026 – FR-028): the copy's name (suggested "<name> (copy)" or the next free
@@ -46,18 +51,20 @@ const DIALOG_FIELDS = ['name', 'year', 'includeContents'];
  */
 export function CopyPlanDialog({ open, planId, planName, onCopy, onClose }: CopyPlanDialogProps) {
   const options = useCopyOptions(planId, open);
-  // What the person changed; until then the dialog shows the API's suggestion. The suggestion is
-  // asked again on every opening, so it may arrive after the cached one and replace it.
-  const [name, setName] = useState<string | null>(null);
-  const [year, setYear] = useState<number | null>(null);
-  const [includeContents, setIncludeContents] = useState(true);
-  const [refusal, setRefusal] = useState<CopyRefusal | null>(null);
+  // What the person changed; until then (null) the dialog shows the API's suggestion. The
+  // suggestion is asked again on every opening, so it may arrive after the cached one and replace it.
+  const form = useForm<CopyPlanValues>({
+    resolver: zodResolver(copyPlanSchema),
+    defaultValues: { name: null, year: null, includeContents: true },
+    ...CHECK_ON_SAVE,
+  });
+  const [failure, setFailure] = useState('');
   const [busy, setBusy] = useState(false);
 
-  async function submit(loaded: PlanCopyOptions) {
+  async function copy(loaded: PlanCopyOptions, { name, year, includeContents }: CopyPlanValues) {
     setBusy(true);
     try {
-      setRefusal(
+      showRefusal(
         await onCopy({
           name: name ?? loaded.name,
           year: year ?? loaded.sameYear,
@@ -69,20 +76,29 @@ export function CopyPlanDialog({ open, planId, planName, onCopy, onClose }: Copy
     }
   }
 
+  function showRefusal(refusal: CopyRefusal | null) {
+    const problems = refusal?.problems ?? [];
+    for (const field of DIALOG_FIELDS) {
+      const message = problemOf(problems, field);
+      if (message) {
+        form.setError(field, { message });
+      }
+    }
+    const others = problems.filter((problem) => !DIALOG_FIELDS.some((f) => f === problem.field));
+    setFailure(refusal?.message ?? others.map((problem) => problem.message).join(' '));
+  }
+
+  function submit() {
+    const loaded = options.data;
+    // Nothing to copy with until the options are there; the dialog says why meanwhile.
+    if (loaded) {
+      void form.handleSubmit((values) => copy(loaded, values))();
+    }
+  }
+
   function content() {
     if (options.data) {
-      return (
-        <CopyFields
-          options={options.data}
-          name={name ?? options.data.name}
-          year={year ?? options.data.sameYear}
-          includeContents={includeContents}
-          refusal={refusal}
-          onNameChange={setName}
-          onYearChange={setYear}
-          onIncludeContentsChange={setIncludeContents}
-        />
-      );
+      return <CopyFields options={options.data} control={form.control} failure={failure} />;
     }
     if (options.isError) {
       // A plan that is gone stays gone: its message alone, and Cancel closes the dialog.
@@ -104,8 +120,7 @@ export function CopyPlanDialog({ open, planId, planName, onCopy, onClose }: Copy
       onOpenChange={(next) => !next && onClose()}
       title={`Copy plan '${planName}'`}
       submitLabel="Copy plan"
-      // Nothing to copy with until the options are there; the dialog says why meanwhile.
-      onSubmit={() => options.data && void submit(options.data)}
+      onSubmit={submit}
       busy={busy}
     >
       {content()}
@@ -115,96 +130,56 @@ export function CopyPlanDialog({ open, planId, planName, onCopy, onClose }: Copy
 
 interface CopyFieldsProps {
   options: PlanCopyOptions;
-  name: string;
-  year: number;
-  includeContents: boolean;
-  refusal: CopyRefusal | null;
-  onNameChange: (name: string) => void;
-  onYearChange: (year: number) => void;
-  onIncludeContentsChange: (include: boolean) => void;
+  control: Control<CopyPlanValues>;
+  /** A refusal that is not about one of the fields; "" for none. */
+  failure: string;
 }
 
 /** The dialog's fields, once the options are loaded. */
-function CopyFields({
-  options,
-  name,
-  year,
-  includeContents,
-  refusal,
-  onNameChange,
-  onYearChange,
-  onIncludeContentsChange,
-}: CopyFieldsProps) {
-  const problems = refusal?.problems ?? [];
-  const otherProblems = problems.filter((problem) => !DIALOG_FIELDS.includes(problem.field));
-  const failure = refusal?.message ?? otherProblems.map((problem) => problem.message).join(' ');
+function CopyFields({ options, control, failure }: CopyFieldsProps) {
   const counts = contentsText(options.contents);
-  const nextYear = options.nextYear;
-  const yearError = problemOf(problems, 'year');
 
   return (
     // The fields arrive after the dialog has opened, so the name takes the focus when it appears
     // (FormDialog had put it on Copy plan while the options loaded).
     <div className={styles.stack} ref={focusNameOnArrival}>
       {failure && <FailureMessage failure={{ message: failure }} />}
-      <TextField
-        label="Name of the copy"
+      <FormField
+        control={control}
         name="name"
-        marking="Required"
-        maxLength={120}
-        value={name}
-        onChange={onNameChange}
-        error={problemOf(problems, 'name')}
-      />
-      <fieldset
-        className={styles.radioGroup}
-        aria-describedby={yearError ? 'year-error' : undefined}
-      >
-        <legend className={styles.legend}>Year</legend>
-        <label className={styles.radio}>
-          <input
-            type="radio"
-            name="year"
-            value={options.sameYear}
-            checked={year === options.sameYear}
-            onChange={() => onYearChange(options.sameYear)}
+        render={(field) => (
+          <TextField
+            label="Name of the copy"
+            marking="Required"
+            maxLength={120}
+            {...field}
+            value={field.value ?? options.name}
           />
-          Same year ({options.sameYear})
-        </label>
-        <div>
-          <label className={styles.radio}>
-            <input
-              type="radio"
-              name="year"
-              value={nextYear.year}
-              checked={year === nextYear.year}
-              disabled={!nextYear.available}
-              aria-describedby={nextYear.available ? undefined : 'next-year-reason'}
-              onChange={() => onYearChange(nextYear.year)}
-            />
-            Next year ({nextYear.year})
-          </label>
-          {!nextYear.available && (
-            <div className={styles.radioNote}>
-              <LockedNote id="next-year-reason">{nextYear.reason}</LockedNote>
-            </div>
-          )}
-        </div>
-        {year === nextYear.year && <p className={styles.note}>Every date moves one year later.</p>}
-        {yearError && (
-          <p id="year-error" className={styles.problem}>
-            <CircleAlert aria-hidden="true" />
-            {yearError}
-          </p>
         )}
-      </fieldset>
-      <CheckboxField
-        label="Include campaigns, initiatives, activities and line items"
+      />
+      <FormField
+        control={control}
+        name="year"
+        render={(field) => (
+          <YearChoice
+            options={options}
+            year={field.value ?? options.sameYear}
+            error={field.error}
+            onChange={field.onChange}
+          />
+        )}
+      />
+      <FormField
+        control={control}
         name="includeContents"
-        checked={includeContents}
-        onChange={onIncludeContentsChange}
-        hint={counts || 'This plan has nothing inside yet.'}
-        error={problemOf(problems, 'includeContents')}
+        render={({ value, ...field }) => (
+          <CheckboxField
+            label="Include campaigns, initiatives, activities and line items"
+            checked={value}
+            hint={counts || 'This plan has nothing inside yet.'}
+            {...field}
+          />
+        )}
       />
     </div>
   );

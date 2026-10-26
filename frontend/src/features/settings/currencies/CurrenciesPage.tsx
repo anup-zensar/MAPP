@@ -1,37 +1,34 @@
 import { Plus, Upload } from 'lucide-react';
 import { useState } from 'react';
-import { useCurrencies } from '@/api/settingsQueries';
-import {
-  ActionsMenu,
-  Button,
-  Card,
-  ErrorState,
-  LinkButton,
-  PageHeader,
-  Skeleton,
-  StatusChip,
-  useToast,
-} from '@/components';
-import { useFormatters } from '@/lib/useFormatters';
-import { usePageTitle } from '@/lib/usePageTitle';
-import { ListToolbar } from '../shared/ListToolbar';
-import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
-import styles from '../shared/SettingsTable.module.css';
-import { filterRecords, useListFilters } from '../shared/useListFilters';
-import type { ListFilters } from '../shared/useListFilters';
-import { useSettingStatus } from '../shared/useSettingStatus';
-import { CURRENCY_LISTS, setCurrencyStatus, useDeleteCurrency } from './currenciesApi';
-import type { Currency } from './currenciesApi';
-import { inverseLine, moreActions, rateLine } from './currencyActions';
-import type { CurrencyActions } from './currencyActions';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button, LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { useToast } from '@/ui/Toast/useToast';
+import { useFormatters } from '@/format/useFormatters';
+import { usePageTitle } from '@/ui/usePageTitle';
+import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
+import styles from '@/ui/settings-table.module.css';
+import { filterRecords, useListFilters } from '@/ui/useListFilters';
+import type { ListFilters } from '@/ui/useListFilters';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { useCanChange } from '@/ui/useCanChange';
+import { SettingDeleteDialog } from '../SettingDeleteDialog';
+import { useSettingStatus } from '../useSettingStatus';
+import { CURRENCY_LISTS, setCurrencyStatus, useDeleteCurrency } from './api';
+import type { Currency } from './api';
+import { inverseLine, moreActions, rateLine } from './currency-actions';
+import type { CurrencyActions } from './currency-actions';
 import { CurrencyDetails } from './CurrencyDetails';
 import { CurrencyForm } from './CurrencyForm';
-import { CURRENCY_IMPORT_PATH } from './currencyPaths';
-import { rateDateOf, SOURCE_WORDS } from './rateWords';
+import { CURRENCY_IMPORT_PATH } from './currency-paths';
+import { rateDateOf, SOURCE_WORDS } from './rate-words';
 import styles016 from './rates.module.css';
 import { RecentImports } from './RecentImports';
-import { CanChange, SettingsViewOnlyNote } from '../shared/CanChange';
-import { useCanChange } from '../shared/useCanChange';
+import { useCurrencies } from '../api';
 
 const CURRENCY_NOUN = { one: 'currency', many: 'currencies' };
 

@@ -1,36 +1,30 @@
 import { Plus, Shapes } from 'lucide-react';
 import { useState } from 'react';
-import { useActivityTypes } from '@/api/settingsQueries';
-import {
-  ActionsMenu,
-  Button,
-  Card,
-  EmptyState,
-  ErrorState,
-  PageHeader,
-  Skeleton,
-  StatusChip,
-} from '@/components';
-import { useFormatters } from '@/lib/useFormatters';
-import { usePageTitle } from '@/lib/usePageTitle';
-import { ListToolbar } from '../shared/ListToolbar';
-import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
-import styles from '../shared/SettingsTable.module.css';
-import { filterRecords, useListFilters } from '../shared/useListFilters';
-import type { ListFilters } from '../shared/useListFilters';
-import { useSettingStatus } from '../shared/useSettingStatus';
-import { modelNames, moreActions } from './activityTypeActions';
-import type { ActivityTypeActions } from './activityTypeActions';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { useFormatters } from '@/format/useFormatters';
+import { usePageTitle } from '@/ui/usePageTitle';
+import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
+import styles from '@/ui/settings-table.module.css';
+import { filterRecords, useListFilters } from '@/ui/useListFilters';
+import type { ListFilters } from '@/ui/useListFilters';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { useCanChange } from '@/ui/useCanChange';
+import { SettingDeleteDialog } from '../SettingDeleteDialog';
+import { useSettingStatus } from '../useSettingStatus';
+import { modelNames, moreActions } from './activity-type-actions';
+import type { ActivityTypeActions } from './activity-type-actions';
 import { ActivityTypeDetails } from './ActivityTypeDetails';
 import { ActivityTypeForm } from './ActivityTypeForm';
-import {
-  ACTIVITY_TYPE_LISTS,
-  setActivityTypeStatus,
-  useDeleteActivityType,
-} from './activityTypesApi';
-import type { ActivityType } from './activityTypesApi';
-import { CanChange, SettingsViewOnlyNote } from '../shared/CanChange';
-import { useCanChange } from '../shared/useCanChange';
+import { ACTIVITY_TYPE_LISTS, setActivityTypeStatus, useDeleteActivityType } from './api';
+import type { ActivityType } from './api';
+import { useActivityTypes } from '../api';
 
 const TYPE_NOUN = { one: 'activity type', many: 'activity types' };
 

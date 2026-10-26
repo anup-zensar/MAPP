@@ -3,9 +3,9 @@
  * Technical details never reach the screen: every failure becomes an ApiError with a kind (for the
  * code to choose what to show) and a plain-language message (research R9, R15).
  */
-import { formatDate, formatTime, localDate } from '@/lib/format';
-import type { DateFormat } from '@/lib/format';
-import type { components } from './schema';
+import { formatDate, formatTime, localDate } from '@/format/intl';
+import type { DateFormat } from '@/format/intl';
+import type { components } from './generated/schema';
 
 type ErrorBody = components['schemas']['Error'];
 type ErrorDetail = components['schemas']['ErrorDetail'];
@@ -153,6 +153,16 @@ export function resolvedMessage(error: ApiError, name: string, dateFormat?: Date
         ? 'deleted it permanently' // feature 011 (FR-032)
         : 'restored it';
   return `'${name}' is no longer in the recycle bin — ${by.name} ${what} ${when(at, dateFormat)}`;
+}
+
+/** Any thrown value as an ApiError; anything that is not one is the general failure. */
+export function asApiError(error: unknown): ApiError {
+  return error instanceof ApiError ? error : new ApiError('other');
+}
+
+/** The session ended: the sign-in page says so, so nothing else needs to. */
+export function isSessionLost(error: ApiError): boolean {
+  return error.kind === 'signInRequired' || error.kind === 'sessionExpired';
 }
 
 /** "at 14:32" today, otherwise "on 12 Mar 2026 at 14:32", in the user's own time zone. */

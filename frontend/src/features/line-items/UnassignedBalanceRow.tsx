@@ -1,8 +1,9 @@
-import { InfoTip, ProgressBar } from '@/components';
-import { cx } from '@/lib/cx';
-import { toCents } from '@/lib/decimal';
-import { amountText, centsInput } from './lineItemMath';
-import type { UnassignedBalance } from './lineItemsApi';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
+import { cx } from '@/ui/cx';
+import { toCents } from '@/format/decimal';
+import { amountText, centsInput } from './line-item-math';
+import type { UnassignedBalance } from './api';
 import {
   ALL_ASSIGNED,
   BALANCE_LABEL,
@@ -13,7 +14,7 @@ import {
   meterText,
   NO_PLANNED_COST,
   ROUNDING_HINT,
-} from './lineItemText';
+} from './line-item-text';
 import styles from './UnassignedBalanceRow.module.css';
 
 /**

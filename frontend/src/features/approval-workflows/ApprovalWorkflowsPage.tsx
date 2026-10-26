@@ -1,48 +1,29 @@
-import { CircleAlert, Plus, Workflow } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { conflictMessage } from '@/api/errors';
-import {
-  ActionsMenu,
-  Button,
-  Card,
-  ConfirmDialog,
-  EmptyState,
-  ErrorState,
-  PageHeader,
-  Skeleton,
-  StatusChip,
-  Tooltip,
-  useToast,
-} from '@/components';
-import { asApiError, isSessionLost } from '@/features/approvals/messages';
-import { ListToolbar } from '@/features/settings/shared/ListToolbar';
-import list from '@/features/settings/shared/SettingsTable.module.css';
-import { filterRecords, useListFilters } from '@/features/settings/shared/useListFilters';
-import type { ListFilters } from '@/features/settings/shared/useListFilters';
-import { useStatusFlow } from '@/features/settings/shared/useStatusFlow';
-import { useFormatters } from '@/lib/useFormatters';
-import { usePageTitle } from '@/lib/usePageTitle';
-import { useUndoableDelete } from '@/lib/useUndoableDelete';
-import { workflowMoreItems } from './workflowActions';
-import type { WorkflowActions } from './workflowActions';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { useToast } from '@/ui/Toast/useToast';
+import { asApiError, isSessionLost } from '@/api/errors';
+import { useListFilters } from '@/ui/useListFilters';
+import { useStatusFlow } from '@/ui/useStatusFlow';
+import { useFormatters } from '@/format/useFormatters';
+import { usePageTitle } from '@/ui/usePageTitle';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { DeleteWorkflowDialog } from './DeleteWorkflowDialog';
+import { WORKFLOWS_PATH } from './workflow-actions';
+import type { WorkflowActions } from './workflow-actions';
 import { WorkflowDetailsPanel } from './WorkflowDetailsPanel';
 import { WorkflowFormPanel } from './WorkflowFormPanel';
-import { cantDeleteText, setInactiveEffects, usedByText } from './workflowTexts';
-import {
-  WORKFLOWS_KEY,
-  useDeleteWorkflow,
-  useSetWorkflowActive,
-  useWorkflows,
-} from './workflowsApi';
-import type { ApprovalWorkflow } from './workflowsApi';
-import styles from './ApprovalWorkflowsPage.module.css';
-import { CanChange, SettingsViewOnlyNote } from '../settings/shared/CanChange';
-import { useCanChange } from '../settings/shared/useCanChange';
-
-const WORKFLOW_NOUN = { one: 'approval workflow', many: 'approval workflows' };
-
-const LIST_PATH = '/settings/approval-workflows';
+import { WorkflowList } from './WorkflowList';
+import { cantDeleteText, setInactiveEffects } from './workflow-texts';
+import { useSetWorkflowActive, useWorkflows } from './api';
+import type { ApprovalWorkflow } from './api';
 
 /** The side panel that is open besides the details (which have their own address). */
 type OpenForm = { kind: 'new' } | { kind: 'edit'; workflow: ApprovalWorkflow };
@@ -100,7 +81,7 @@ export function ApprovalWorkflowsPage() {
   const actions: WorkflowActions = {
     edit: (workflow) => {
       if (workflowId) {
-        void navigate(LIST_PATH);
+        void navigate(WORKFLOWS_PATH);
       }
       setForm({ kind: 'edit', workflow });
     },
@@ -144,7 +125,7 @@ export function ApprovalWorkflowsPage() {
         <WorkflowDetailsPanel
           workflowId={workflowId}
           actions={actions}
-          onClose={() => void navigate(LIST_PATH)}
+          onClose={() => void navigate(WORKFLOWS_PATH)}
         />
       )}
       {form?.kind === 'new' && <WorkflowFormPanel onClose={() => setForm(null)} />}
@@ -169,12 +150,12 @@ export function ApprovalWorkflowsPage() {
         </ConfirmDialog>
       )}
       {dialog?.kind === 'delete' && (
-        <DeleteDialog
+        <DeleteWorkflowDialog
           workflow={dialog.workflow}
           onInUse={(workflow) => setDialog({ kind: 'cantDelete', workflow })}
           onDeleted={() => {
             if (workflowId) {
-              void navigate(LIST_PATH);
+              void navigate(WORKFLOWS_PATH);
             }
           }}
           onClose={() => setDialog(null)}
@@ -182,186 +163,5 @@ export function ApprovalWorkflowsPage() {
       )}
       {status.dialog}
     </>
-  );
-}
-
-interface WorkflowListProps {
-  all: ApprovalWorkflow[];
-  filters: ListFilters;
-  onNew: () => void;
-  actions: WorkflowActions;
-}
-
-/** The toolbar and the table, or what to do when there is nothing to show. */
-function WorkflowList({ all, filters, onNew, actions }: WorkflowListProps) {
-  if (all.length === 0) {
-    return (
-      <EmptyState
-        icon={<Workflow />}
-        title="No approval workflows yet — create your first approval workflow"
-        action={
-          <CanChange permission="workflows.manage">
-            <Button icon={<Plus />} onClick={onNew}>
-              New approval workflow
-            </Button>
-          </CanChange>
-        }
-      />
-    );
-  }
-  const { shown, counts } = filterRecords(all, filters, (workflow) => workflow.name);
-
-  return (
-    <>
-      <ListToolbar
-        search={{
-          label: 'Search approval workflows',
-          placeholder: 'Search name',
-          value: filters.q,
-          onChange: filters.setQ,
-        }}
-        status={{ value: filters.status, onChange: filters.setStatus, counts }}
-        count={{ shown: shown.length, total: all.length, noun: WORKFLOW_NOUN }}
-      />
-      {shown.length === 0 ? (
-        <div className={list.noMatch}>
-          <p>Nothing matches these filters</p>
-          <Button onClick={filters.clear}>Clear filters</Button>
-        </div>
-      ) : (
-        <div className={list.tableScroll}>
-          <table className={list.table}>
-            <thead>
-              <tr>
-                <th scope="col" className={styles.nameCol}>
-                  Name
-                </th>
-                <th scope="col" className={styles.levelsCol}>
-                  Levels
-                </th>
-                <th scope="col" className={styles.usedByCol}>
-                  Used by
-                </th>
-                <th scope="col">Status</th>
-                <th scope="col" className={styles.actionsCell}>
-                  <span className="visually-hidden">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {shown.map((workflow) => (
-                <WorkflowRow key={workflow.id} workflow={workflow} actions={actions} />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </>
-  );
-}
-
-function WorkflowRow({
-  workflow,
-  actions,
-}: {
-  workflow: ApprovalWorkflow;
-  actions: WorkflowActions;
-}) {
-  const canChange = useCanChange('workflows.manage');
-  const navigate = useNavigate();
-  const details = `${LIST_PATH}/${workflow.id}`;
-
-  return (
-    <tr>
-      <th scope="row" className={list.nameCell}>
-        <span className={styles.name}>
-          <Link to={details}>{workflow.name}</Link>
-          {workflow.warnings.length > 0 && (
-            <Tooltip content={workflow.warnings.join(' · ')}>
-              <button
-                type="button"
-                className={styles.warning}
-                aria-label={`Warnings: ${workflow.warnings.join(', ')}`}
-              >
-                <CircleAlert aria-hidden="true" />
-              </button>
-            </Tooltip>
-          )}
-        </span>
-      </th>
-      <td>{workflow.levelsText}</td>
-      <td>{usedByText(workflow.usedByCount, workflow.waitingCount)}</td>
-      <td className={list.nowrap}>
-        {workflow.active ? (
-          <StatusChip tone="positive">Active</StatusChip>
-        ) : (
-          <StatusChip tone="neutral">Inactive</StatusChip>
-        )}
-      </td>
-      <td className={list.actionsCell}>
-        <ActionsMenu
-          label={workflow.name}
-          items={[
-            { label: 'View', onSelect: () => void navigate(details) },
-            ...(canChange
-              ? [
-                  { label: 'Edit', onSelect: () => actions.edit(workflow) },
-                  ...workflowMoreItems(workflow, actions),
-                ]
-              : []),
-          ]}
-        />
-      </td>
-    </tr>
-  );
-}
-
-interface DeleteDialogProps {
-  workflow: ApprovalWorkflow;
-  /** The API says the workflow is in use after all. */
-  onInUse: (workflow: ApprovalWorkflow) => void;
-  onDeleted: () => void;
-  onClose: () => void;
-}
-
-/** "Delete approval workflow '<name>'?" — then the message with Undo (FR-008). */
-function DeleteDialog({ workflow, onInUse, onDeleted, onClose }: DeleteDialogProps) {
-  const { show } = useToast();
-  const deleteWorkflow = useDeleteWorkflow();
-  const afterDelete = useUndoableDelete({ invalidate: [WORKFLOWS_KEY] });
-
-  async function confirm() {
-    if (deleteWorkflow.isPending) {
-      return;
-    }
-    try {
-      afterDelete(await deleteWorkflow.mutateAsync(workflow.id));
-      onDeleted();
-      onClose();
-    } catch (error) {
-      const failure = asApiError(error);
-      if (failure.kind === 'inUse') {
-        onInUse(workflow);
-        return;
-      }
-      if (!isSessionLost(failure)) {
-        show({ message: failure.message });
-      }
-      onClose();
-    }
-  }
-
-  return (
-    <ConfirmDialog
-      open
-      onOpenChange={(open) => !open && onClose()}
-      title={`Delete approval workflow '${workflow.name}'?`}
-      confirmLabel="Delete approval workflow"
-      tone="danger"
-      busy={deleteWorkflow.isPending}
-      onConfirm={() => void confirm()}
-    >
-      It moves to the recycle bin; you can restore it.
-    </ConfirmDialog>
   );
 }
