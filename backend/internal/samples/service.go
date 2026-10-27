@@ -49,11 +49,9 @@ type Service struct {
 	now     clock.Clock
 }
 
-// NewService returns the samples service. It keeps the records in repo, gives them readable IDs with
-// generator, logs their changes and deletes them through hist, works in transactions of tx and reads the
-// time from now.
-func NewService(tx store.Transactor, repo Store, generator *ids.Generator, hist *history.Service, now clock.Clock) *Service {
-	return &Service{tx: tx, repo: repo, ids: generator, history: hist, now: now}
+// NewService returns the samples service. It keeps the records in repo and changes them with tools.
+func NewService(tools history.Tools, repo Store) *Service {
+	return &Service{tx: tools.Tx, repo: repo, ids: tools.IDs, history: tools.Log, now: tools.Now}
 }
 
 // ListFolders returns every sample folder with its notes, sorted by name the way people sort names:

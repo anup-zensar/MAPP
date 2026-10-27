@@ -55,12 +55,12 @@ type Service struct {
 	now       clock.Clock
 }
 
-// NewService returns the access service. It keeps its records in repo, gives them readable IDs with
-// generator, logs their changes through hist, reads people and teams through directory, works in
-// transactions of tx and reads the time from now.
-func NewService(tx store.Transactor, repo Store, generator *ids.Generator, hist *history.Service,
-	directory Directory, now clock.Clock) *Service {
-	return &Service{tx: tx, repo: repo, ids: generator, history: hist, directory: directory, now: now}
+// NewService returns the access service. It keeps its records in repo, changes them with tools and reads
+// people and teams through directory.
+func NewService(tools history.Tools, repo Store, directory Directory) *Service {
+	return &Service{
+		tx: tools.Tx, repo: repo, ids: tools.IDs, history: tools.Log, directory: directory, now: tools.Now,
+	}
 }
 
 // UseApprovalFacts tells access where approvals are (feature 008), for the warnings of the roles impact

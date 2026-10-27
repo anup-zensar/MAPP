@@ -9,6 +9,7 @@ import (
 	"mapp/internal/budgets"
 	"mapp/internal/campaigns"
 	"mapp/internal/financials"
+	"mapp/internal/history"
 	"mapp/internal/home"
 	"mapp/internal/lineitems"
 	"mapp/internal/plans"
@@ -133,7 +134,8 @@ func (w *wiring) samplesArea() error {
 	if !w.cfg.DemoMode() {
 		return nil
 	}
-	samplesService := samples.NewService(w.set.Tx, w.set.Samples, w.generator, w.history, w.now)
+	tools := history.Tools{Tx: w.set.Tx, IDs: w.generator, Log: w.history, Now: w.now}
+	samplesService := samples.NewService(tools, w.set.Samples)
 	if err := w.register(samplesService.Kinds()); err != nil {
 		return err
 	}

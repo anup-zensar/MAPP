@@ -40,7 +40,7 @@ func newFixture(t *testing.T) *fixture {
 	clock := &testClock{now: start}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	hist := history.NewService(db, history.NewJSONStore(), generator, clock.Now)
-	service := NewService(db, NewJSONStore(), generator, hist, clock.Now)
+	service := NewService(history.Tools{Tx: db, IDs: generator, Log: hist, Now: clock.Now}, NewJSONStore())
 	for _, kind := range service.Kinds() {
 		if err := hist.Register(kind); err != nil {
 			t.Fatalf("Register(%s): %v", kind.Name, err)
