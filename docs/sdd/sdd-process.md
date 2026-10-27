@@ -84,4 +84,6 @@ Tip: when running a command for an existing spec on its branch, Spec Kit finds t
 - **Ready** (before `/speckit-plan`): spec agreed, quality checklist passing, no open question that
   changes scope, dependencies Done or planned.
 - **Done:** all tasks complete, all tests green, OpenAPI and docs updated, screens checked against the
-  design system, demonstrated with the seed data, feature map status set to Done.
+  design system, demonstrated with the seed data, feature map status set to Done. A feature that changes
+  the stack, the backend layout or the storage updates `docs/architecture/overview.md` in the same pull
+  request — that page is what a Shell reviewer reads first.
