@@ -12,37 +12,29 @@ import (
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/ids"
-	"mapp/internal/platform/store"
 )
 
-// Messages of the plan's "User-visible messages" table.
 const (
 	msgRecordInBin   = "This %s was deleted — it is in the recycle bin"
 	msgRecordGone    = "This %s no longer exists — someone may have deleted it."
 	msgSomethingGone = "This record no longer exists — someone may have deleted it."
 )
 
-// Service holds the rules of All work (feature 010). Every method takes the actor and runs in one
-// transaction. Query, Options, Export and Locate only read: All work never creates, changes or deletes a
-// business record (FR-002).
+// Service never creates, changes or deletes a business record: Query, Options, Export and Locate only read.
 type Service struct {
-	tx   store.Transactor
+	tx   Transactor
 	repo Store
 	src  Source
 	ids  *ids.Generator
 	now  clock.Clock
 }
 
-// NewService returns the All work service. It reads the planning records through src, keeps saved views and
-// preferences in repo, gives saved views readable IDs with the tools' generator, works in their transactions
-// and reads the time from their clock; All work writes no activity log, so it leaves the tools' log alone.
+// NewService leaves the tools' log alone: All work writes no activity log.
 func NewService(tools history.Tools, repo Store, src Source) *Service {
 	return &Service{tx: tools.Tx, repo: repo, src: src, ids: tools.IDs, now: tools.Now}
 }
 
-// Query returns everything one view shows for q (FR-001 – FR-017, FR-025, FR-026), read in one transaction:
-// the year is q's or the current year (FR-004); money is in a's display currency (FR-017); the answer says
-// when it was read ("Updated at", edge case).
+// Query reads q's year, or the current year, in one transaction; money is in a's display currency.
 func (s *Service) Query(ctx context.Context, a actor.Actor, q Query) (Result, error) {
 	var result Result
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -59,7 +51,6 @@ func (s *Service) Query(ctx context.Context, a actor.Actor, q Query) (Result, er
 	return result, nil
 }
 
-// input reads what the view of q is worked out from, inside the caller's transaction.
 func (s *Service) input(ctx context.Context, a actor.Actor, q Query) (input, error) {
 	now := s.now()
 	today := date.Today(now)
@@ -93,8 +84,7 @@ func (s *Service) input(ctx context.Context, a actor.Actor, q Query) (input, err
 	}, nil
 }
 
-// rangeData reads the nodes of every year from from to to (016 FR-034): Source.Year once per year, each node
-// knowing its plan's year.
+// rangeData calls Source.Year once per year from from to to, each node knowing its plan's year.
 func (s *Service) rangeData(ctx context.Context, from, to int, today date.Date, columns []string) (YearData, error) {
 	all := YearData{Nodes: []Node{}}
 	for year := from; year <= to; year++ {
@@ -115,8 +105,7 @@ func (s *Service) rangeData(ctx context.Context, from, to int, today date.Date, 
 	return all, nil
 }
 
-// shownColumns returns the column keys the view of q shows or sorts by: its columns (the default ones when
-// it names none) and its sort column.
+// shownColumns are q's columns, the default ones when it names none, and its sort column.
 func shownColumns(q Query) []string {
 	keys := q.Columns
 	if keys == nil {
@@ -129,8 +118,7 @@ func shownColumns(q Query) []string {
 	return keys
 }
 
-// catalogue returns every column of the grid, the Shell attributes of Settings included (FR-018), inside
-// the caller's transaction.
+// catalogue includes the Shell attributes of Settings.
 func (s *Service) catalogue(ctx context.Context) ([]Column, error) {
 	attributes, err := s.src.Attributes(ctx)
 	if err != nil {
@@ -139,9 +127,7 @@ func (s *Service) catalogue(ctx context.Context) ([]Column, error) {
 	return catalogue(attributes), nil
 }
 
-// Options returns the choices of the filter bar for year (0: the current year) and the column catalogue
-// (FR-004, FR-018): years, plans of the year, owners, teams with a's own first, business units, activity
-// types, the column groups and the default columns.
+// Options are the filter bar's choices for year (0: the current year), with a's own teams first.
 func (s *Service) Options(ctx context.Context, a actor.Actor, year int, yearTo ...int) (Options, error) {
 	today := date.Today(s.now())
 	if year == 0 {
@@ -199,9 +185,7 @@ func (s *Service) Options(ctx context.Context, a actor.Actor, year int, yearTo .
 	return options, nil
 }
 
-// Locate returns the record a row opens, when it still exists (FR-016, D-123). A record that is gone is
-// not_found, with "This <level> was deleted — it is in the recycle bin" while a recycle-bin entry holds it,
-// and "This <level> no longer exists — someone may have deleted it." otherwise (edge case).
+// Locate answers a record that is gone with not_found, saying whether the recycle bin holds it.
 func (s *Service) Locate(ctx context.Context, a actor.Actor, recordID string) (RecordLocation, error) {
 	var location RecordLocation
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -234,7 +218,6 @@ func (s *Service) Locate(ctx context.Context, a actor.Actor, recordID string) (R
 	return location, nil
 }
 
-// recordWords name the levels by their readable-ID prefixes, mid-sentence.
 var recordWords = map[string]string{
 	ids.PrefixPlan:       "plan",
 	ids.PrefixCampaign:   "campaign",
@@ -243,7 +226,7 @@ var recordWords = map[string]string{
 	ids.PrefixLineItem:   "line item",
 }
 
-// recordWord returns the level of a record ID, mid-sentence, and false for an ID of no planning level.
+// recordWord is false for an ID of no planning level.
 func recordWord(recordID string) (string, bool) {
 	prefix, _, found := strings.Cut(recordID, "-")
 	if !found {
