@@ -131,7 +131,7 @@ func newFixture(t *testing.T) *fixture {
 		unassigned: map[string]*money.Money{}, lineItems: map[string][]PreviewLineItem{},
 	}
 	peopleRepo := people.NewJSONStore()
-	service := NewService(db, NewJSONStore(), peopleRepo, fake, generator, hist, clock.Now)
+	service := NewService(history.Tools{Tx: db, IDs: generator, Log: hist, Now: clock.Now}, NewJSONStore(), peopleRepo, fake)
 	access := &fakeAccess{rule: true, cannotApprove: map[string]bool{}, holders: map[string][]string{}}
 	service.UseAccess(access)
 	service.UseRuleChoices(fakeChoices{})
