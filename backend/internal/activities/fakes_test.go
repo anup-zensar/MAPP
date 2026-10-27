@@ -41,7 +41,7 @@ func (l *fakeLineItems) CopyMany(ctx context.Context, by actor.Actor, pairs []ac
 }
 
 // CopyAll records the call and answers the activity's line-item count of facts.
-func (l *fakeLineItems) CopyAll(_ context.Context, _ actor.Actor, from, to string, years int) (int, error) {
+func (l *fakeLineItems) CopyAll(_ context.Context, _ actor.Actor, from, to string, years int) (int, error) { //nolint:revive // argument-limit 5: the signature of activities.LineItems
 	l.copies = append(l.copies, fmt.Sprintf("%s → %s +%d", from, to, years))
 	return l.facts[from].Count, nil
 }
@@ -102,7 +102,7 @@ type fakeHooks struct {
 	restored  []string
 }
 
-func (h *fakeHooks) ApprovalRestarted(_ context.Context, _ actor.Actor, before, after activities.Activity, changes []history.Change) error {
+func (h *fakeHooks) ApprovalRestarted(_ context.Context, _ actor.Actor, before, after activities.Activity, changes []history.Change) error { //nolint:revive // argument-limit 5: the signature of activities.ApprovalHooks
 	h.restarted = append(h.restarted, after.ID+": "+string(before.Status)+" → "+string(after.Status))
 	for _, c := range changes {
 		h.changes = append(h.changes, c.Label+": "+c.OldText+" → "+c.NewText)
