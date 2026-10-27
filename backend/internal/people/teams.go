@@ -4,20 +4,12 @@ import (
 	"context"
 	"fmt"
 	"slices"
-	"strings"
-	"unicode/utf8"
 
 	"mapp/internal/history"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/record"
-)
-
-// The longest team name and description, in characters (003 data model §2).
-const (
-	maxTeamNameLength    = 80
-	maxDescriptionLength = 300
 )
 
 // ListTeams returns every team, active or not, sorted by name ignoring letter case, each with its members
@@ -74,7 +66,7 @@ func (s *Service) CreateTeam(ctx context.Context, a actor.Actor, input TeamInput
 			return err
 		}
 		var problems errs.Problems
-		form := checkTeamForm(&problems, d, "", teamForm{input.Name, input.Description, input.Colour, input.MemberIDs}, false)
+		form := checkTeamForm(&problems, d, "", teamForm(input))
 		if err := problems.Err(); err != nil {
 			return err
 		}
@@ -129,7 +121,7 @@ func (s *Service) UpdateTeam(ctx context.Context, a actor.Actor, id string, upda
 			return err
 		}
 		var problems errs.Problems
-		form := checkTeamForm(&problems, d, team.ID, update.applyTo(storedTeamForm(team, d)), true)
+		form := checkTeamForm(&problems, d, team.ID, update.applyTo(storedTeamForm(team, d)))
 		checkVersionSent(&problems, update.Version)
 		if err := problems.Err(); err != nil {
 			return err
@@ -186,7 +178,7 @@ func (s *Service) TeamImpact(ctx context.Context, a actor.Actor, id string, upda
 			return err
 		}
 		var problems errs.Problems
-		form := checkTeamForm(&problems, d, team.ID, update.applyTo(storedTeamForm(team, d)), true)
+		form := checkTeamForm(&problems, d, team.ID, update.applyTo(storedTeamForm(team, d)))
 		if err := problems.Err(); err != nil {
 			return err
 		}
@@ -205,56 +197,6 @@ func (s *Service) TeamImpact(ctx context.Context, a actor.Actor, id string, upda
 		return ChangeImpact{}, err
 	}
 	return impact, nil
-}
-
-// SetTeamStatus sets the team id inactive (active false) or reactivates it (FR-014). An inactive team is
-// not offered for new plans; its members and the plans that use it keep it, and its members still count for
-// R1. A team already in that status is answered unchanged: no new version, no log entry.
-func (s *Service) SetTeamStatus(ctx context.Context, a actor.Actor, id string, update StatusUpdate) (TeamView, error) {
-	if err := checkStatusUpdate(update); err != nil {
-		return TeamView{}, err
-	}
-	var view TeamView
-	err := s.tx.Write(ctx, func(ctx context.Context) error {
-		team, err := s.storedTeam(ctx, id)
-		if err != nil {
-			return err
-		}
-		if err := team.CheckVersion(*update.Version, teamSingular); err != nil {
-			return err
-		}
-		if team.Active != *update.Active {
-			if team, err = s.changeTeamStatus(ctx, a, team, *update.Active); err != nil {
-				return err
-			}
-		}
-		view, err = s.teamDetails(ctx, team)
-		return err
-	})
-	if err != nil {
-		return TeamView{}, err
-	}
-	return view, nil
-}
-
-// changeTeamStatus saves team with the status active, a new version and a "deactivated" or "reactivated"
-// log entry, inside the caller's Write, and returns the team as it is stored now.
-func (s *Service) changeTeamStatus(ctx context.Context, a actor.Actor, team Team, active bool) (Team, error) {
-	changed := team
-	changed.Active = active
-	changes, err := history.Diff(team.logView(nil), changed.logView(nil))
-	if err != nil {
-		return Team{}, err
-	}
-	changed.Touch(a, s.now())
-	if err := s.repo.PutTeam(ctx, changed); err != nil {
-		return Team{}, err
-	}
-	_, err = s.history.Log(ctx, a, history.LogInput{
-		Kind: teamKind, RecordID: changed.ID, RecordName: changed.Name,
-		Action: history.ActionStatusChanged, Verb: statusVerb(active), Changes: changes,
-	})
-	return changed, err
 }
 
 // DeleteTeam moves the team id, together with its memberships, to the recycle bin (FR-015), and returns
@@ -315,73 +257,4 @@ func (s *Service) teamDetails(ctx context.Context, t Team) (TeamView, error) {
 		return TeamView{}, err
 	}
 	return d.teamView(t, plans), nil
-}
-
-// teamForm is what the team form sends: the fields of TeamInput and TeamUpdate without the version.
-type teamForm struct {
-	Name, Description, Colour string
-	MemberIDs                 []string
-}
-
-// storedTeamForm is the team t as its form starts: the stored name, description, colour and members.
-// TeamUpdate.applyTo puts the sent fields in place.
-func storedTeamForm(t Team, d directory) teamForm {
-	return teamForm{Name: t.Name, Description: t.Description, Colour: t.Colour, MemberIDs: d.memberIDsOf(t.ID)}
-}
-
-// checkTeamForm returns form with its texts trimmed and its member ids without repeats, and adds every
-// problem to problems (FR-011, 003 data model §2): the name is required, has at most 80 characters and no
-// other team has it, ignoring letter case; the description has at most 300 characters; the colour is one of
-// the palette — or empty, when colourRequired is false (create picks one); every member is a person, and a
-// person who is not a member yet must be active (D-070). teamID is the team being edited, "" on create: it
-// may keep its name and its inactive members.
-func checkTeamForm(problems *errs.Problems, d directory, teamID string, form teamForm, colourRequired bool) teamForm {
-	form.Name = strings.TrimSpace(form.Name)
-	form.Description = strings.TrimSpace(form.Description)
-	form.MemberIDs = uniqueIDs(form.MemberIDs)
-
-	other, taken := teamNamed(d.sortedTeams(), form.Name, teamID)
-	switch {
-	case form.Name == "":
-		problems.Add("name", enterNameMessage)
-	case utf8.RuneCountInString(form.Name) > maxTeamNameLength:
-		problems.Add("name", use80Message)
-	case taken:
-		problems.Add("name", fmt.Sprintf(teamNameTakenMessage, other.Name))
-	}
-	checkLength(problems, "description", form.Description, maxDescriptionLength, use300Message)
-	if form.Colour != "" || colourRequired {
-		if !slices.ContainsFunc(Palette, func(c Colour) bool { return c.Key == form.Colour }) {
-			problems.Add("colour", chooseColourMessage)
-		}
-	}
-
-	members := d.memberIDsOf(teamID)
-	if slices.ContainsFunc(form.MemberIDs, func(id string) bool { _, known := d.people[id]; return !known }) {
-		problems.Add("memberIds", unknownPersonMessage)
-	}
-	for _, id := range form.MemberIDs {
-		if p, known := d.people[id]; known && !p.Active && !slices.Contains(members, id) {
-			problems.Add("memberIds", fmt.Sprintf(inactivePersonMessage, p.Name))
-		}
-	}
-	return form
-}
-
-// leastUsedColour returns the palette colour the fewest of teams have, the first in palette order when
-// several have as few (D-025, D-065).
-func leastUsedColour(teams []Team) string {
-	best, fewest := Palette[0].Key, len(teams)+1
-	for _, c := range Palette {
-		used := 0
-		for _, t := range teams {
-			if t.Colour == c.Key {
-				used++
-			}
-		}
-		if used < fewest {
-			best, fewest = c.Key, used
-		}
-	}
-	return best
 }

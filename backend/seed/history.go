@@ -1,7 +1,6 @@
 package seed
 
 import (
-	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,13 +9,11 @@ import (
 	"time"
 
 	"mapp/internal/activities"
-	"mapp/internal/approvals"
 	"mapp/internal/history"
 	"mapp/internal/lineitems"
 	"mapp/internal/plans"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/ids"
-	"mapp/internal/platform/money"
 	"mapp/internal/platform/record"
 )
 
@@ -188,194 +185,6 @@ func deref(p *string) string {
 		return ""
 	}
 	return *p
-}
-
-// addCreated keeps one "created" entry per seeded planning record, by its owner, spread evenly between 14
-// and 10 days before the seed time in tree order, so parents come before their children (step 1).
-func (h *demoHistory) addCreated(context.Context) error {
-	first, last := h.at.Add(-createdFrom), h.at.Add(-createdUntil)
-	step := time.Duration(0)
-	if n := len(h.records); n > 1 {
-		step = last.Sub(first) / time.Duration(n-1)
-	}
-	for i, r := range h.records {
-		at := wholeMinuteFrom(first.Add(time.Duration(i) * step))
-		h.add(at, h.ownerOrAlex(r.ownerID), history.ActionCreated, string(history.ActionCreated), r.kind, r.id, r.name,
-			r.path, nil, "", "")
-	}
-	return nil
-}
-
-// wholeMinuteFrom returns t, or the next whole minute when t has seconds: a time on the minute that is never
-// earlier than t, so the first entry stays within the 14 days whatever the seed time's seconds are.
-func wholeMinuteFrom(t time.Time) time.Time {
-	if minute := t.Truncate(time.Minute); minute.Before(t) {
-		return minute.Add(time.Minute)
-	}
-	return t
-}
-
-// addPublished keeps one "published" entry for every Published plan, by its owner, 7 days before (step 2).
-func (h *demoHistory) addPublished(context.Context) error {
-	for _, r := range h.records {
-		if r.plan == nil || r.plan.Status != plans.StatusPublished {
-			continue
-		}
-		change, err := statusChange(plans.StatusDraft, plans.StatusPublished, planStatusWords)
-		if err != nil {
-			return err
-		}
-		h.add(h.at.Add(-publishedAgo), h.ownerOrAlex(r.ownerID), history.ActionStatusChanged, "published",
-			r.kind, r.id, r.name, r.path, []history.Change{change}, "", "")
-	}
-	return nil
-}
-
-// statusChange is the change of a record's "status" field from one stored status to another, with the
-// words people read.
-func statusChange[S ~string](from, to S, words map[S]string) (history.Change, error) {
-	oldValue, err := json.Marshal(from)
-	if err != nil {
-		return history.Change{}, err
-	}
-	newValue, err := json.Marshal(to)
-	if err != nil {
-		return history.Change{}, err
-	}
-	return history.Change{Field: "status", Label: "Status", Old: oldValue, New: newValue, OldText: words[from], NewText: words[to]}, nil
-}
-
-// addApprovalActions keeps one "statusChanged" entry for every approval action of 008's seed in the last 14
-// days, as 008 logs it on the activity: the verb ("submitted", "re-submitted", "approved", "approved level
-// 1 of", "declined"), the actor, the time, the comment, the round's details and the status change (step 3).
-// Rounds that ended before the log starts are left out; the activity's own approval history keeps them.
-func (h *demoHistory) addApprovalActions(ctx context.Context) error {
-	repo := h.stores.Approvals
-	rounds, err := repo.ListRounds(ctx)
-	if err != nil {
-		return err
-	}
-	actions, err := repo.ListActions(ctx)
-	if err != nil {
-		return err
-	}
-	roundByID := map[string]approvals.Round{}
-	for _, round := range rounds {
-		roundByID[round.ID] = round
-	}
-	activityByID := map[string]treeRecord{}
-	for _, r := range h.records {
-		if r.activity != nil {
-			activityByID[r.id] = r
-		}
-	}
-
-	// Every action in time order, so each one knows the status the activity had before it.
-	// The repository lists them by ID; a stable sort keeps that order for actions of the same moment.
-	slices.SortStableFunc(actions, func(x, y approvals.Action) int { return x.At.Compare(y.At) })
-	logStart := h.at.Add(-HistoryDays * day)
-	status := map[string]activities.Status{} // activity ID → its status after the actions so far
-	for _, action := range actions {
-		round, found := roundByID[action.RoundID]
-		activity, stored := activityByID[action.ActivityID]
-		if !found || !stored {
-			return fmt.Errorf("seed: approval action %s has no round or activity", action.ID)
-		}
-		before := cmp.Or(status[action.ActivityID], activities.StatusCreated)
-		after, verb, details := approvalStep(action, round, before)
-		status[action.ActivityID] = after
-		if action.At.Before(logStart) {
-			continue
-		}
-		changes := []history.Change{}
-		if after != before {
-			change, err := statusChange(before, after, activityStatusWords)
-			if err != nil {
-				return err
-			}
-			changes = append(changes, change)
-		}
-		h.add(action.At, action.Actor, history.ActionStatusChanged, verb, activity.kind, activity.id, activity.name,
-			activity.path, changes, action.Comment, details)
-	}
-	return nil
-}
-
-// approvalStep returns what one approval action did, as 008 logs it (approvals rounds.go): the activity's
-// status after it, the verb and the details.
-func approvalStep(action approvals.Action, round approvals.Round, before activities.Status) (activities.Status, string, string) {
-	approverNames := func(level int) string {
-		list := make([]string, 0, len(round.Levels[level-1].Approvers))
-		for _, a := range round.Levels[level-1].Approvers {
-			list = append(list, a.Name)
-		}
-		return strings.Join(list, ", ")
-	}
-	switch action.Action {
-	case approvals.ActionSubmitted, approvals.ActionResubmitted:
-		verb := "submitted"
-		if action.Action == approvals.ActionResubmitted {
-			verb = "re-submitted"
-		}
-		return activities.StatusSubmitted, verb,
-			fmt.Sprintf("Round %d · %s · waiting for level 1 (%s)", round.Number, round.WorkflowName, approverNames(1))
-	}
-	decided := fmt.Sprintf("Round %d · level %d of %d", round.Number, action.Level, len(round.Levels))
-	suffix := ""
-	if len(action.OnBehalfOf) > 0 {
-		names := make([]string, 0, len(action.OnBehalfOf))
-		for _, a := range action.OnBehalfOf {
-			names = append(names, a.Name)
-		}
-		suffix = "; on behalf of " + strings.Join(names, ", ")
-	}
-	switch {
-	case action.Action == approvals.ActionDeclined:
-		return activities.StatusDeclined, "declined", decided + suffix
-	case action.Level == len(round.Levels):
-		return activities.StatusApproved, "approved", decided + suffix
-	default:
-		next := action.Level + 1
-		return before, fmt.Sprintf("approved level %d of", action.Level),
-			fmt.Sprintf("%s · now waiting for level %d (%s)%s", decided, next, approverNames(next), suffix)
-	}
-}
-
-// addCostChange keeps one "changed" entry by Priya Raman 5 days before: the planned cost of her first
-// FY2026 Lubricants Europe activity with a planned cost went up by 5,000.00 USD to what is stored (step 4).
-func (h *demoHistory) addCostChange(context.Context) error {
-	var r resolver
-	priyaID := r.id(h.demo.people, "person", "Priya Raman")
-	planID := r.id(h.plans, "plan", lubricantsPlan)
-	if r.err != nil {
-		return r.err
-	}
-	i := slices.IndexFunc(h.records, func(rec treeRecord) bool {
-		return rec.activity != nil && rec.ownerID == priyaID && rec.activity.PlannedCost != nil && rec.path[0].ID == planID
-	})
-	if i < 0 {
-		return fmt.Errorf("seed: Priya Raman has no activity with a planned cost in %s", lubricantsPlan)
-	}
-	activity := h.records[i]
-	now := *activity.activity.PlannedCost
-	by, err := money.ParseAmount(costChangedBy)
-	if err != nil {
-		return err
-	}
-	before := money.Money{Amount: now.Amount.Sub(by), Currency: now.Currency}
-	oldValue, err := json.Marshal(before)
-	if err != nil {
-		return err
-	}
-	newValue, err := json.Marshal(now)
-	if err != nil {
-		return err
-	}
-	change := history.Change{Field: "plannedCost", Label: "Planned cost", Old: oldValue, New: newValue,
-		OldText: before.Format(), NewText: now.Format()}
-	h.add(h.at.Add(-costChangedAgo), h.people[priyaID], history.ActionChanged, string(history.ActionChanged),
-		activity.kind, activity.id, activity.name, activity.path, []history.Change{change}, "", "")
-	return nil
 }
 
 // addDeletedInitiative builds the deleted initiative "Trade shows" with its activity and line item, keeps

@@ -78,7 +78,7 @@ func (f *fixture) addPerson(t *testing.T, name, jobTitle string, active bool) Pe
 }
 
 // addTeam stores a team with its members the way the seed does, and returns it.
-func (f *fixture) addTeam(t *testing.T, name, colour string, active bool, members ...Person) Team {
+func (f *fixture) addTeam(t *testing.T, name, colour string, active bool, members ...Person) Team { //nolint:revive // argument-limit 5: name, colour and status say which team; most callers add members
 	t.Helper()
 	var team Team
 	err := f.db.Write(t.Context(), func(ctx context.Context) error {

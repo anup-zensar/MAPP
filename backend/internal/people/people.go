@@ -4,22 +4,12 @@ import (
 	"context"
 	"fmt"
 	"slices"
-	"strings"
-	"unicode"
-	"unicode/utf8"
 
 	"mapp/internal/history"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/record"
-)
-
-// The longest name, job title and e-mail of a person, in characters (003 data model §1, FR-002).
-const (
-	maxPersonNameLength = 120
-	maxJobTitleLength   = 120
-	maxEmailLength      = 254
 )
 
 // ListPeople returns everyone, active or not, with their teams, sorted by name ignoring letter case, then
@@ -221,67 +211,6 @@ func (s *Service) PersonImpact(ctx context.Context, a actor.Actor, id string, up
 	return impact, nil
 }
 
-// SetPersonStatus deactivates (active false) or reactivates (active true) the person id: people are never
-// deleted (FR-005 – FR-008). A deactivated person can no longer sign in — feature 001's sign-in check ends
-// their open sessions at their next request — and is no longer offered in pickers; every record that names
-// them keeps them, and so do their teams. Nobody may deactivate themselves (FR-006). A person already in
-// that status is answered unchanged: no new version, no log entry.
-func (s *Service) SetPersonStatus(ctx context.Context, a actor.Actor, id string, update StatusUpdate) (PersonDetails, error) {
-	if err := checkStatusUpdate(update); err != nil {
-		return PersonDetails{}, err
-	}
-	var details PersonDetails
-	err := s.tx.Write(ctx, func(ctx context.Context) error {
-		p, err := s.storedPerson(ctx, id)
-		if err != nil {
-			return err
-		}
-		if p.ID == a.ID && !*update.Active {
-			return errs.NotAllowed(deactivateYourselfMessage)
-		}
-		if p.Active && !*update.Active && s.access.CanDeactivate != nil { // the last administrator (014 FR-021)
-			if err := s.access.CanDeactivate(ctx, p.ID); err != nil {
-				return err
-			}
-		}
-		if err := p.CheckVersion(*update.Version, personSingular); err != nil {
-			return err
-		}
-		if p.Active != *update.Active {
-			if p, err = s.changePersonStatus(ctx, a, p, *update.Active); err != nil {
-				return err
-			}
-		}
-		details, err = s.details(ctx, p)
-		return err
-	})
-	if err != nil {
-		return PersonDetails{}, err
-	}
-	return details, nil
-}
-
-// changePersonStatus saves p with the status active, a new version and a "deactivated" or "reactivated"
-// log entry, inside the caller's Write, and returns the person as they are stored now. Memberships are
-// kept (FR-005, FR-007).
-func (s *Service) changePersonStatus(ctx context.Context, a actor.Actor, p Person, active bool) (Person, error) {
-	changed := p
-	changed.Active = active
-	changes, err := history.Diff(p.logView(nil), changed.logView(nil))
-	if err != nil {
-		return Person{}, err
-	}
-	changed.Touch(a, s.now())
-	if err := s.repo.Put(ctx, changed); err != nil {
-		return Person{}, err
-	}
-	_, err = s.history.Log(ctx, a, history.LogInput{
-		Kind: personKind, RecordID: changed.ID, RecordName: changed.Name,
-		Action: history.ActionStatusChanged, Verb: statusVerb(active), Changes: changes,
-	})
-	return changed, err
-}
-
 // storedPerson returns the stored person id, or not_found with the message the web app shows.
 func (s *Service) storedPerson(ctx context.Context, id string) (Person, error) {
 	p, found, err := s.repo.Get(ctx, id)
@@ -310,137 +239,4 @@ func (s *Service) details(ctx context.Context, p Person) (PersonDetails, error) 
 		return PersonDetails{}, err
 	}
 	return PersonDetails{PersonView: d.personView(p), Usage: usage}, nil
-}
-
-// personForm is what the person form sends: the fields of PersonInput and PersonUpdate without the version.
-type personForm struct {
-	Name, Email, JobTitle string
-	TeamIDs               []string
-	ManagerID             string // "" = no line manager (017 FR-016)
-}
-
-// storedPersonForm is the person p as their form starts: the stored name, e-mail, job title, teams and line
-// manager. PersonUpdate.applyTo puts the sent fields in place.
-func storedPersonForm(p Person, d directory) personForm {
-	return personForm{Name: p.Name, Email: p.Email, JobTitle: p.JobTitle, TeamIDs: d.teamIDsOf(p.ID), ManagerID: p.ManagerID}
-}
-
-// checkPersonForm returns form with its texts trimmed, the e-mail in lower case and the team ids without
-// repeats, and adds every problem to problems (FR-002, FR-011, 003 data model §1): the name is required with
-// at most 120 characters; the e-mail is required, valid, at most 254 characters and no other person has it,
-// active or not, in any letter case — the message names who has it; the job title has at most 120
-// characters; every team exists, and a team the person is not in yet must be active (D-070). personID is
-// the person being edited, "" on create: they keep their own e-mail and their inactive teams.
-func checkPersonForm(problems *errs.Problems, d directory, personID string, form personForm) personForm {
-	form.Name = checkPersonName(problems, form.Name)
-	form.Email = strings.ToLower(strings.TrimSpace(form.Email))
-	form.TeamIDs = uniqueIDs(form.TeamIDs)
-
-	holder, taken := personWithEmail(d, form.Email, personID)
-	switch {
-	case form.Email == "":
-		problems.Add("email", enterEmailMessage)
-	case !validEmail(form.Email):
-		problems.Add("email", invalidEmailMessage)
-	case utf8.RuneCountInString(form.Email) > maxEmailLength:
-		problems.Add("email", use254Message)
-	case taken && holder.Active:
-		problems.Add("email", fmt.Sprintf(emailTakenMessage, form.Email, holder.Name))
-	case taken:
-		problems.Add("email", fmt.Sprintf(emailTakenInactiveMessage, form.Email, holder.Name))
-	}
-
-	form.JobTitle = checkJobTitle(problems, form.JobTitle)
-
-	teams := d.teamIDsOf(personID)
-	if slices.ContainsFunc(form.TeamIDs, func(id string) bool { _, known := d.teams[id]; return !known }) {
-		problems.Add("teamIds", unknownTeamMessage)
-	}
-	for _, id := range form.TeamIDs {
-		if t, known := d.teams[id]; known && !t.Active && !slices.Contains(teams, id) {
-			problems.Add("teamIds", fmt.Sprintf(inactiveTeamMessage, t.Name))
-		}
-	}
-	form.ManagerID = checkManager(problems, d, personID, form.ManagerID)
-	return form
-}
-
-// checkManager returns managerID trimmed and adds its problem to problems (017 FR-016, data-model §9): the
-// line manager is optional; when chosen, a known person, not the person themselves, active when added or
-// changed (a manager who became inactive may stay), and not someone who reports to the person, directly or
-// through other managers — that would make a loop. personID is the person being edited, "" on create (a
-// new person has nobody reporting to them yet).
-func checkManager(problems *errs.Problems, d directory, personID, managerID string) string {
-	managerID = strings.TrimSpace(managerID)
-	if managerID == "" {
-		return ""
-	}
-	manager, known := d.people[managerID]
-	switch {
-	case !known:
-		problems.Add("managerId", chooseManagerMessage)
-	case managerID == personID:
-		problems.Add("managerId", ownManagerMessage)
-	case !manager.Active && d.people[personID].ManagerID != managerID:
-		problems.Add("managerId", fmt.Sprintf(inactiveManagerMessage, manager.Name))
-	case personID != "" && reportsTo(d, managerID, personID):
-		name := d.people[personID].Name
-		problems.Add("managerId", fmt.Sprintf(managerLoopMessage, manager.Name, name, name, manager.Name))
-	}
-	return managerID
-}
-
-// reportsTo reports whether the person personID reaches bossID by following line managers upwards. The walk
-// stops after as many steps as there are people, so data that already holds a loop cannot hang it.
-func reportsTo(d directory, personID, bossID string) bool {
-	current := d.people[personID].ManagerID
-	for range len(d.people) {
-		if current == "" {
-			return false
-		}
-		if current == bossID {
-			return true
-		}
-		current = d.people[current].ManagerID
-	}
-	return false
-}
-
-// checkPersonName returns name trimmed and adds its problem to problems: a person's name is required, with
-// at most 120 characters (FR-002). People and My profile share it (FR-022).
-func checkPersonName(problems *errs.Problems, name string) string {
-	name = strings.TrimSpace(name)
-	if name == "" {
-		problems.Add("name", enterNameMessage)
-	} else {
-		checkLength(problems, "name", name, maxPersonNameLength, use120Message)
-	}
-	return name
-}
-
-// checkJobTitle returns jobTitle trimmed and adds its problem to problems: a job title may be empty and has
-// at most 120 characters (FR-002). People and My profile share it (FR-022).
-func checkJobTitle(problems *errs.Problems, jobTitle string) string {
-	jobTitle = strings.TrimSpace(jobTitle)
-	checkLength(problems, "jobTitle", jobTitle, maxJobTitleLength, use120Message)
-	return jobTitle
-}
-
-// personWithEmail returns the person, other than exceptID, whose e-mail is email ignoring letter case, and
-// false when there is none. E-mails are stored in lower case without surrounding spaces.
-func personWithEmail(d directory, email, exceptID string) (Person, bool) {
-	for _, p := range d.sortedPeople() {
-		if p.ID != exceptID && strings.EqualFold(p.Email, email) {
-			return p, true
-		}
-	}
-	return Person{}, false
-}
-
-// validEmail reports whether email has the form local@domain.tld (003 data model §1): exactly one "@",
-// something before it, no spaces, and a "." inside the domain but not at either of its ends.
-func validEmail(email string) bool {
-	local, domain, found := strings.Cut(email, "@")
-	return found && local != "" && !strings.Contains(domain, "@") && !strings.ContainsFunc(email, unicode.IsSpace) &&
-		strings.Contains(domain, ".") && !strings.HasPrefix(domain, ".") && !strings.HasSuffix(domain, ".")
 }

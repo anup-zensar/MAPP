@@ -44,7 +44,7 @@ func TestUpdatePerson_ChangesLoggedOldAndNew_FR028(t *testing.T) {
 // An update sends only the fields to change (D-203, D-210): the fields left out keep their values, the
 // person keeps their teams, and the log lists only what changed. The impact check of such an update does not
 // treat the teams that were not sent as removed.
-func TestUpdatePerson_OnlySentFieldsChange_D210(t *testing.T) {
+func TestUpdatePerson_OnlySentFieldsChange_D210(t *testing.T) { //nolint:gocyclo // 11: one update and its impact check, then the fields, the log and the memberships in turn
 	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)

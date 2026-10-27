@@ -12,7 +12,7 @@ import (
 // The deleted initiative's snapshots are records of features 005–007 as they store them: the restore preview
 // works, and Restore brings the initiative back with its activity and line item, under Rimula fleet (011
 // FR-018, FR-021).
-func TestSeed_DeletedInitiative_Restores_011(t *testing.T) {
+func TestSeed_DeletedInitiative_Restores_011(t *testing.T) { //nolint:gocyclo // 10: the preview, the restore, then each record it brought back
 	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, "priya.raman@shell.com")
