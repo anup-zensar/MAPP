@@ -11,7 +11,7 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// People are never deleted (FR-008): even history cannot move one to the recycle bin, and nothing changes.
+// Even history cannot move a person to the recycle bin, and nothing changes.
 func TestPersonKind_RemoveRefused_FR008(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -34,7 +34,6 @@ func TestPersonKind_RemoveRefused_FR008(t *testing.T) {
 	}
 }
 
-// Undo puts a deleted team and its memberships back exactly as they were (FR-015).
 func TestTeamDelete_UndoRestoresMembershipsExactly_FR015(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -67,8 +66,7 @@ func TestTeamDelete_UndoRestoresMembershipsExactly_FR015(t *testing.T) {
 	}
 }
 
-// Undo must put the team back exactly, so it is refused when another team has meanwhile taken the name
-// (FR-015, 001 D-037); the team stays in the recycle bin.
+// Undo puts the team back exactly, so it is refused while another team has taken the name.
 func TestTeamUndo_NameTakenRefused_FR015(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -89,8 +87,7 @@ func TestTeamUndo_NameTakenRefused_FR015(t *testing.T) {
 	}
 }
 
-// A Restore from the recycle bin renames a team whose name was taken to "<name> (restored)", with a new
-// version and a note, and brings its memberships back (FR-015, feature 011 FR-022).
+// Restore renames a team whose name was taken to "<name> (restored)", with a new version and a note.
 func TestTeamRestore_NameTakenGetsSuffix_FR015(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -122,8 +119,6 @@ func TestTeamRestore_NameTakenGetsSuffix_FR015(t *testing.T) {
 	}
 }
 
-// The log names a team's members, colour and status in words, and a person's teams by name (FR-028, 003
-// data model §6).
 func TestDescribe_TeamsMembersStatusColour_FR028(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -152,7 +147,6 @@ func TestDescribe_TeamsMembersStatusColour_FR028(t *testing.T) {
 	})
 }
 
-// createTeam creates a team through the service as a and stops the test when that fails.
 func (f *fixture) createTeam(t *testing.T, a Person, input TeamInput) TeamView {
 	t.Helper()
 	team, err := f.service.CreateTeam(t.Context(), a.Actor(), input)
@@ -162,11 +156,10 @@ func (f *fixture) createTeam(t *testing.T, a Person, input TeamInput) TeamView {
 	return team
 }
 
-// storedMemberships returns every stored membership, ordered by id.
 func (f *fixture) storedMemberships(t *testing.T) []Membership {
 	t.Helper()
 	var list []Membership
-	f.read(t, func(ctx context.Context, repo JSONStore) (err error) {
+	f.read(t, func(ctx context.Context, repo fakeStore) (err error) {
 		list, err = repo.ListMemberships(ctx)
 		return err
 	})

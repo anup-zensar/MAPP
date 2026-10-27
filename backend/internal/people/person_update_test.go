@@ -9,8 +9,7 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// A change is logged with every changed field, old and new values, and the teams joined get their own entry;
-// the next sign-in uses the new e-mail (FR-028, US1 scenario 4).
+// The teams joined get their own entry, and the next sign-in uses the new e-mail.
 func TestUpdatePerson_ChangesLoggedOldAndNew_FR028(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -32,7 +31,7 @@ func TestUpdatePerson_ChangesLoggedOldAndNew_FR028(t *testing.T) {
 			"Job title Marketer → Senior marketer: Teams Lubricants Europe → Lubricants Europe, Mobility China",
 		"Alex Morgan changed team 'Mobility China' (T-1002): Members No members → Priya Raman",
 	})
-	f.read(t, func(ctx context.Context, repo JSONStore) error {
+	f.read(t, func(ctx context.Context, repo fakeStore) error {
 		found, ok, err := repo.FindByEmail(ctx, "priya.r@shell.com")
 		if !ok || found.ID != priya.ID {
 			t.Errorf("FindByEmail(new e-mail) = %+v, %v; want Priya", found, ok)
@@ -41,9 +40,7 @@ func TestUpdatePerson_ChangesLoggedOldAndNew_FR028(t *testing.T) {
 	})
 }
 
-// An update sends only the fields to change (D-203, D-210): the fields left out keep their values, the
-// person keeps their teams, and the log lists only what changed. The impact check of such an update does not
-// treat the teams that were not sent as removed.
+// The impact check of an update that sends no teams does not treat the person's teams as removed.
 func TestUpdatePerson_OnlySentFieldsChange_D210(t *testing.T) { //nolint:gocyclo // 11: one update and its impact check, then the fields, the log and the memberships in turn
 	t.Parallel()
 	f := newFixture(t)
@@ -71,8 +68,7 @@ func TestUpdatePerson_OnlySentFieldsChange_D210(t *testing.T) { //nolint:gocyclo
 	}
 }
 
-// Every update sends the version it started from; without one, or below 1, the save is refused next to
-// the field "version", together with the other problems (FR-002, 001 FR-029).
+// Without a version, or with one below 1, the save is refused next to "version" with the other problems.
 func TestUpdatePerson_MissingVersion_FR002(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -89,8 +85,6 @@ func TestUpdatePerson_MissingVersion_FR002(t *testing.T) {
 	assertError(t, gone, errs.NotFound("This person doesn't exist."))
 }
 
-// A save from an out-of-date copy is refused, naming who changed the person and when; nothing is
-// overwritten (001 FR-029).
 func TestUpdatePerson_VersionConflict_FR029(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -112,8 +106,7 @@ func TestUpdatePerson_VersionConflict_FR029(t *testing.T) {
 	}
 }
 
-// Saving the form without a change — the same e-mail in other letters, a repeated team — is not a change:
-// no new version, no log entry (FR-028).
+// The same e-mail in other letters and a repeated team are not a change.
 func TestUpdatePerson_NoChangeNoVersionNoLog_FR028(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -132,8 +125,7 @@ func TestUpdatePerson_NoChangeNoVersionNoLog_FR028(t *testing.T) {
 	assertLog(t, f, nil)
 }
 
-// A person keeps a team that was set inactive after they joined it; an inactive team they are not in
-// cannot be added (FR-014, D-070).
+// An inactive team the person is already in is kept; one they are not in cannot be added.
 func TestUpdatePerson_KeepsInactiveTeam_FR014(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
