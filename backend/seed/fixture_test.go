@@ -8,29 +8,37 @@ import (
 	"time"
 
 	"mapp/internal/access"
+	"mapp/internal/access/accesstest"
 	"mapp/internal/activity"
+	"mapp/internal/activity/activitytest"
 	"mapp/internal/approval"
+	"mapp/internal/approval/approvaltest"
 	"mapp/internal/campaign"
+	"mapp/internal/campaign/campaigntest"
 	"mapp/internal/history"
+	"mapp/internal/history/historytest"
 	"mapp/internal/lineitem"
+	"mapp/internal/lineitem/lineitemtest"
 	"mapp/internal/people"
+	"mapp/internal/people/peopletest"
 	"mapp/internal/plan"
+	"mapp/internal/plan/plantest"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/apitest"
 	"mapp/internal/platform/date"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/money"
 	"mapp/internal/platform/record"
-	"mapp/internal/platform/store"
 	"mapp/internal/settings"
+	"mapp/internal/settings/settingstest"
 )
 
-// demoData is everything the seed stored, read through the repositories.
 type demoData struct {
 	people        []people.Person
 	teams         []people.Team
 	memberships   []people.Membership
 	currencies    []settings.Currency
-	rates         []settings.ExchangeRate // 016: the dated rates
+	rates         []settings.ExchangeRate
 	rateImports   []settings.RateImport
 	activityTypes []settings.ActivityType
 	models        []settings.Model
@@ -56,14 +64,14 @@ type demoData struct {
 	optionByID    map[string]settings.Option
 }
 
-// loadDemo loads the demo data into a new store and reads it all back.
+// loadDemo reads back everything the seed stored.
 func loadDemo(t *testing.T) demoData {
 	t.Helper()
 	db := loadedStore(t)
 	var d demoData
 	read(t, db, func(ctx context.Context) error {
-		peopleRepo, settingsRepo, approvalsRepo := people.NewJSONStore(), settings.NewJSONStore(), approval.NewJSONStore()
-		campaignsRepo := campaign.NewJSONStore()
+		peopleRepo, settingsRepo, approvalsRepo := peopletest.NewStore(db), settingstest.NewStore(db), approvaltest.NewStore(db)
+		campaignsRepo := campaigntest.NewStore(db)
 		var errs []error
 		collect := func(err error) { errs = append(errs, err) }
 		var err error
@@ -91,21 +99,21 @@ func loadDemo(t *testing.T) demoData {
 		collect(err)
 		d.options, err = settingsRepo.ListOptions(ctx)
 		collect(err)
-		d.plans, err = plan.NewJSONStore().List(ctx)
+		d.plans, err = plantest.NewStore(db).List(ctx)
 		collect(err)
 		d.campaigns, err = campaignsRepo.ListCampaigns(ctx)
 		collect(err)
 		d.initiatives, err = campaignsRepo.ListInitiatives(ctx)
 		collect(err)
-		d.activities, err = activity.NewJSONStore().List(ctx)
+		d.activities, err = activitytest.NewStore(db).List(ctx)
 		collect(err)
-		d.lineItems, err = lineitem.NewJSONStore().List(ctx)
+		d.lineItems, err = lineitemtest.NewStore(db).List(ctx)
 		collect(err)
 		d.workflows, err = approvalsRepo.ListWorkflows(ctx)
 		collect(err)
 		d.rounds, err = approvalsRepo.ListRounds(ctx)
 		collect(err)
-		accessRepo := access.NewJSONStore()
+		accessRepo := accesstest.NewStore(db)
 		d.roles, err = accessRepo.ListRoles(ctx)
 		collect(err)
 		d.assignments, err = accessRepo.ListAssignments(ctx)
@@ -133,12 +141,10 @@ func loadDemo(t *testing.T) demoData {
 	return d
 }
 
-// label returns the label of the option id.
 func (d demoData) label(optionID string) string {
 	return d.optionByID[optionID].Label
 }
 
-// attributeID returns the id of the attribute label at level.
 func (d demoData) attributeID(t *testing.T, level settings.Level, label string) string {
 	t.Helper()
 	for _, a := range d.attributes {
@@ -154,25 +160,13 @@ func fixedClock() time.Time {
 	return loadedAt
 }
 
-func openStore(t *testing.T, dir string) *store.DB {
+// loadedStore returns a test's own copy of the demo data, which apitest loads at loadedAt.
+func loadedStore(t *testing.T) *fake.DB {
 	t.Helper()
-	db, err := store.Open(dir)
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
-	return db
+	return apitest.DemoDB(t, false)
 }
 
-// loadedStore returns a new store with a copy of the demo data that Load stored at loadedAt once per test binary.
-func loadedStore(t *testing.T) *store.DB {
-	t.Helper()
-	dir := t.TempDir()
-	apitest.CopyDemoData(t, dir, false)
-	return openStore(t, dir)
-}
-
-// read runs fn in a Read of db and stops the test on its error.
-func read(t *testing.T, db *store.DB, fn func(ctx context.Context) error) {
+func read(t *testing.T, db *fake.DB, fn func(ctx context.Context) error) {
 	t.Helper()
 	if err := db.Read(t.Context(), fn); err != nil {
 		t.Fatalf("Read: %v", err)
@@ -192,19 +186,18 @@ func demoPerson(id, name, email, jobTitle string) people.Person {
 }
 
 // storedPeople returns every stored person, ordered by id.
-func storedPeople(t *testing.T, db *store.DB) []people.Person {
+func storedPeople(t *testing.T, db *fake.DB) []people.Person {
 	t.Helper()
 	var list []people.Person
 	read(t, db, func(ctx context.Context) error {
 		var err error
-		list, err = people.NewJSONStore().List(ctx)
+		list, err = peopletest.NewStore(db).List(ctx)
 		return err
 	})
 	return list
 }
 
-// currentRates returns the rate of every currency current on the seed day: its latest dated rate on or
-// before it (016 FR-002); USD is 1.
+// currentRates returns each currency's latest dated rate on or before the seed day; USD is 1.
 func (d demoData) currentRates() money.Rates {
 	rates := money.Rates{money.BaseCurrency: money.One}
 	latest := map[string]date.Date{}
@@ -218,12 +211,12 @@ func (d demoData) currentRates() money.Rates {
 }
 
 // demoLog reads the activity log and the recycle bin the seed wrote.
-func demoLog(t *testing.T, db *store.DB) ([]history.Entry, []history.BinEntry) {
+func demoLog(t *testing.T, db *fake.DB) ([]history.Entry, []history.BinEntry) {
 	t.Helper()
 	var entries []history.Entry
 	var bin []history.BinEntry
 	read(t, db, func(ctx context.Context) error {
-		repo := history.NewJSONStore()
+		repo := historytest.NewStore(db)
 		var err error
 		if entries, err = repo.Entries(ctx); err != nil {
 			return err

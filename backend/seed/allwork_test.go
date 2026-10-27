@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"mapp/internal/allwork"
+	"mapp/internal/allwork/allworktest"
 )
 
 // Priya Raman has two saved views, "Lubricants by month" (Budget & cost of FY2026 Lubricants Europe, by
@@ -14,7 +15,7 @@ import (
 func TestSeed_SavedViews_FR029(t *testing.T) {
 	t.Parallel()
 	db := loadedStore(t)
-	repo := allwork.NewJSONStore()
+	repo := allworktest.NewStore(db)
 	read(t, db, func(ctx context.Context) error {
 		priyas, err := repo.ListViews(ctx, "U-1002")
 		if err != nil {
