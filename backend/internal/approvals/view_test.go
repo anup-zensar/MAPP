@@ -2,6 +2,8 @@ package approvals
 
 import (
 	"reflect"
+	"slices"
+	"strconv"
 	"testing"
 	"time"
 
@@ -166,5 +168,55 @@ func TestApproval_NotSubmittedYet_FR024(t *testing.T) {
 	f.addActivity(t, "A-1010", "Nobody's activity", "", chinaFlow)
 	if ownerless, err := f.service.Approval(t.Context(), alex, "A-1010"); err != nil || ownerless.Owner != nil {
 		t.Errorf("owner of an activity without one = %+v, %v; want nil", ownerless.Owner, err)
+	}
+}
+
+// The approval history shows the new entries and fields (017 FR-034): Not needed and Approved
+// automatically by MAPP with their rule, Reminder sent and Escalated with the days waited and the
+// backup approver, each decision's capacity.
+func TestApproval_HistoryRuleEntries_FR034(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	f.addStandardFlow(t)
+	f.setManager(t, mei, carlos)
+	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, standardFlow)
+	f.setFacts(t, "A-1009", "5000.00", mobilityUnit)
+	f.submit(t, mei, "A-1009", "")
+	f.clock.Advance(4 * 24 * time.Hour)
+	f.mustRun(t)
+	f.clock.Advance(24 * time.Hour)
+	f.mustRun(t)
+	f.approve(t, carlos, "A-1009", "")
+
+	approval, err := f.service.Approval(t.Context(), mei, "A-1009")
+	if err != nil {
+		t.Fatalf("Approval: %v", err)
+	}
+	var got []string
+	for _, e := range approval.Rounds[0].History {
+		line := e.Action + " L" + strconv.Itoa(e.Level) + " " + e.Actor.Name
+		switch {
+		case e.Rule != "":
+			line += " rule " + e.Rule
+		case e.Action == "reminded" || e.Action == "escalated":
+			line += " waited " + daysText(e.WaitedDays)
+			if e.EscalatedTo != nil {
+				line += " to " + e.EscalatedTo.Name
+			}
+		case e.Capacity != "":
+			line += " as " + string(e.Capacity)
+		}
+		got = append(got, line)
+	}
+	want := []string{
+		"approved L3 Carlos Mendes as backup",
+		"escalated L3 MAPP waited 5 days to Carlos Mendes",
+		"reminded L3 MAPP waited 4 days",
+		"skipped L2 MAPP rule only when planned cost is at least $100,000.00",
+		"autoApproved L1 MAPP rule planned cost is below $10,000.00",
+		"submitted L3 Mei Lin",
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("history =\n%q\nwant\n%q", got, want)
 	}
 }
