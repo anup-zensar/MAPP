@@ -11,6 +11,7 @@ import (
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // Summaries returns one roll-up summary per activity under the initiatives initiativeIDs (FR-005, D-105):
@@ -116,28 +117,7 @@ func (s *Service) AddPlanFacts(ctx context.Context, planIDs []string, facts map[
 func (s *Service) addFacts(ctx context.Context, inPlan planActivities, lineItems map[string]LineItemFacts, f *plan.Facts) error {
 	var attention []plan.AttentionItem
 	for _, a := range inPlan.activities {
-		f.Activities++
-		if a.Status == StatusApproved {
-			f.ApprovedActivities++
-		}
-		if a.PlannedCost != nil {
-			sum := a.PlannedCost.Amount
-			if f.PlannedCost != nil {
-				sum = f.PlannedCost.Add(sum)
-			}
-			f.PlannedCost = &sum
-			f.AmountsSet++ // an amount in the plan currency, which locks it (016 FR-012)
-		}
-		goals := goalsOf(a, inPlan.base.model)
-		if goals.INQ != nil {
-			f.ActivityGoals.INQ += *goals.INQ
-		}
-		if goals.MQL != nil {
-			f.ActivityGoals.MQL += *goals.MQL
-		}
-		if goals.Revenue != nil {
-			f.ActivityGoals.Revenue = money.USD(f.ActivityGoals.Revenue.Amount.Add(goals.Revenue.Amount))
-		}
+		addFigures(f, a, inPlan.base.model)
 		d, err := s.storedDerive(ctx, a, inPlan.contextOf(a), lineItems[a.ID])
 		if err != nil {
 			return err
@@ -154,6 +134,31 @@ func (s *Service) addFacts(ctx context.Context, inPlan planActivities, lineItems
 	})
 	f.NeedsAttention = append(f.NeedsAttention, attention...)
 	return nil
+}
+
+func addFigures(f *plan.Facts, a Activity, model settings.Model) {
+	f.Activities++
+	if a.Status == StatusApproved {
+		f.ApprovedActivities++
+	}
+	if a.PlannedCost != nil {
+		sum := a.PlannedCost.Amount
+		if f.PlannedCost != nil {
+			sum = f.PlannedCost.Add(sum)
+		}
+		f.PlannedCost = &sum
+		f.AmountsSet++ // an amount in the plan currency, which locks it (016 FR-012)
+	}
+	goals := goalsOf(a, model)
+	if goals.INQ != nil {
+		f.ActivityGoals.INQ += *goals.INQ
+	}
+	if goals.MQL != nil {
+		f.ActivityGoals.MQL += *goals.MQL
+	}
+	if goals.Revenue != nil {
+		f.ActivityGoals.Revenue = money.USD(f.ActivityGoals.Revenue.Amount.Add(goals.Revenue.Amount))
+	}
 }
 
 // SubmitCheck returns the ready-to-submit check of the activity id, line items included (FR-023, D-204):

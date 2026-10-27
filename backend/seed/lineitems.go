@@ -35,40 +35,40 @@ type demoLineItem struct {
 // year 2026. The Declined activity (Fleet roadshow) has none: it shows the empty state.
 var demoLineItems = []demoLineItem{
 	{plan: lubricantsPlan, activity: "Launch film", name: "Agency fee", currency: "USD", plannedCost: "50000.00",
-		method: lineitem.SpreadEvenly, spendType: "Digital – Platform development", glCode: "7250080 – Advertising digital",
-		budget: "2026 Lubricants Budget", item: "Europe – Digital", requestSwbs: true},
+		method: lineitem.SpreadEvenly, spendType: spendDigitalPlatform, glCode: glAdvertisingDigital,
+		budget: lubricantsBudget, item: itemEuropeDigital, requestSwbs: true},
 	// 46,000.00 EUR = 50,000.00 USD at 0.92: Launch film keeps 20,000.00 USD unassigned; "3 fields needed".
 	{plan: lubricantsPlan, activity: "Launch film", name: "Film production", currency: "EUR", plannedCost: "46000.00",
 		method: lineitem.SpreadEvenly, requestSwbs: true},
 	// 15,800.00 GBP = 20,000.00 USD at 0.79.
 	{plan: lubricantsPlan, activity: "Social always-on", name: "Venue hire", currency: "GBP", plannedCost: "15800.00",
-		method: lineitem.SpreadFirstMonth, spendType: "BTL – Event", glCode: "7250040 – Events and sponsorship",
-		budget: "2026 Lubricants Budget", item: "Europe – Events", requestSwbs: true},
+		method: lineitem.SpreadFirstMonth, spendType: spendEvent, glCode: glEventsSponsorship,
+		budget: lubricantsBudget, item: itemEuropeEvents, requestSwbs: true},
 	{plan: lubricantsPlan, activity: "Social always-on", name: "Speaker fees", currency: "USD", plannedCost: "5000.00",
-		method: lineitem.SpreadLastMonth, spendType: "BTL – Event", glCode: "7250040 – Events and sponsorship",
-		budget: "2026 Lubricants Budget", item: "Europe – Events", requestSwbs: false},
+		method: lineitem.SpreadLastMonth, spendType: spendEvent, glCode: glEventsSponsorship,
+		budget: lubricantsBudget, item: itemEuropeEvents, requestSwbs: false},
 	// A deposit in the month before the activity starts (outside its dates), the rest evenly over its months.
 	{plan: lubricantsPlan, activity: "Trade magazine ads", name: "Media booking", currency: "USD", plannedCost: "30000.00",
 		method: lineitem.SpreadCustom, custom: depositThenEvenly("6000.00", "24000.00"),
-		spendType: "Digital – Platform development", glCode: "7250080 – Advertising digital",
-		budget: "2026 Lubricants Budget", item: "Europe – Digital", requestSwbs: true},
+		spendType: spendDigitalPlatform, glCode: glAdvertisingDigital,
+		budget: lubricantsBudget, item: itemEuropeDigital, requestSwbs: true},
 	{plan: lubricantsPlan, activity: "Billboard winter wave", name: "Stand build", currency: "EUR", plannedCost: "9200.00",
-		method: lineitem.SpreadEvenly, spendType: "BTL – Event", glCode: "7250040 – Events and sponsorship",
-		budget: "2026 Lubricants Budget", item: "Europe – Brand", requestSwbs: true},
+		method: lineitem.SpreadEvenly, spendType: spendEvent, glCode: glEventsSponsorship,
+		budget: lubricantsBudget, item: itemEuropeBrand, requestSwbs: true},
 	// 900.00 of 1,000.00 spread ("Spread doesn't add up…") and no GL code.
 	{plan: mobilityPlan, activity: "Grand opening Shanghai", name: "Station signage", currency: "USD", plannedCost: "1000.00",
-		method: lineitem.SpreadCustom, custom: firstMonths("450.00", "450.00"), spendType: "BTL – Event",
-		budget: "2026 Mobility Budget", item: "China – Retail", requestSwbs: true},
+		method: lineitem.SpreadCustom, custom: firstMonths("450.00", "450.00"), spendType: spendEvent,
+		budget: mobilityBudget, item: itemChinaRetail, requestSwbs: true},
 	// (planned cost − 500.00 USD) in CNY: the two line items exceed the activity's planned cost by 500.00 USD.
 	{plan: mobilityPlan, activity: "Grand opening Shanghai", name: "Fleet card promotion", currency: "CNY",
 		computeCost: exceedBy("500.00", "1000.00"), method: lineitem.SpreadEvenly,
-		spendType: "Digital – Platform development", glCode: "7250080 – Advertising digital",
-		budget: "2026 Mobility Budget", item: "China – Fleet", requestSwbs: true},
+		spendType: spendDigitalPlatform, glCode: glAdvertisingDigital,
+		budget: mobilityBudget, item: itemChinaFleet, requestSwbs: true},
 	{plan: ukPlan, activity: "UK launch event", name: "Venue", currency: "GBP", plannedCost: "15000.00",
-		method: lineitem.SpreadEvenly, spendType: "BTL – Event", glCode: "7250040 – Events and sponsorship",
+		method: lineitem.SpreadEvenly, spendType: spendEvent, glCode: glEventsSponsorship,
 		requestSwbs: true, budgetYear: 2027},
 	{plan: ukPlan, activity: "UK launch event", name: "Agency fee (Ireland)", currency: "EUR", plannedCost: "23000.00",
-		method: lineitem.SpreadEvenly, spendType: "Agency – Creative", glCode: "7250060 – Agency fees",
+		method: lineitem.SpreadEvenly, spendType: spendAgencyCreative, glCode: glAgencyFees,
 		requestSwbs: true, budgetYear: 2027},
 }
 
@@ -127,14 +127,7 @@ func (d *demo) lineItemFields(l demoLineItem, act activity.Activity, rate money.
 			return lineitem.LineItem{}, err
 		}
 	}
-	values := d.newValues(settings.LevelLineItem)
-	if l.spendType != "" {
-		values.choice("Spend type", l.spendType)
-	}
-	if l.glCode != "" {
-		values.choice("GL code", l.glCode)
-	}
-	if item.Attributes, err = values.done(); err != nil {
+	if item.Attributes, err = d.lineItemAttributes(l); err != nil {
 		return lineitem.LineItem{}, err
 	}
 	if l.item != "" {
@@ -144,6 +137,17 @@ func (d *demo) lineItemFields(l demoLineItem, act activity.Activity, rate money.
 		}
 	}
 	return item, nil
+}
+
+func (d *demo) lineItemAttributes(l demoLineItem) (settings.AttributeValues, error) {
+	values := d.newValues(settings.LevelLineItem)
+	if l.spendType != "" {
+		values.choice("Spend type", l.spendType)
+	}
+	if l.glCode != "" {
+		values.choice("GL code", l.glCode)
+	}
+	return values.done()
 }
 
 // depositThenEvenly puts deposit in the month before the activity's start month and spreads rest evenly

@@ -6,12 +6,13 @@ import (
 	"strings"
 	"testing"
 
+	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
 	"mapp/internal/settings"
 )
 
 // Every problem of a form is reported at once, and nothing is saved (FR-009, SC-005, US2 scenario 5).
-func TestCreate_AllProblemsAtOnce_FR009_SC005(t *testing.T) {
+func TestCreate_AllProblemsAtOnce_FR009_SC005(t *testing.T) { //nolint:tparallel // the subtests share one service, and the count after them needs them finished
 	t.Parallel()
 	f := newTestService(t)
 	f.create(t, priya, launchFilm, input("Agency fee", "USD", "50000.00"))
@@ -63,7 +64,7 @@ func TestCreate_AllProblemsAtOnce_FR009_SC005(t *testing.T) {
 
 // The finance budget year is the plan's year or a year with active items; the item needs a year first, must
 // exist, belong to that year and be active when newly chosen (FR-015, FR-016).
-func TestCreate_FinanceBudgetChecks_FR015_FR016(t *testing.T) {
+func TestCreate_FinanceBudgetChecks_FR015_FR016(t *testing.T) { //nolint:tparallel // the subtests share one service with the create after them
 	t.Parallel()
 	f := newTestService(t)
 	year := func(y int) *int { return &y }
@@ -102,35 +103,18 @@ func TestCreate_FinanceBudgetChecks_FR015_FR016(t *testing.T) {
 // The section lists the activity's line items in creation order, each with its currency and rate, local and
 // USD amounts, spread, missing fields and SWBS status; the unassigned planned cost; and the grid (FR-001 –
 // FR-003, US1 scenario 1).
-func TestSection_RowsInCreationOrder_FR001(t *testing.T) {
+func TestSection_RowsInCreationOrder_FR001(t *testing.T) { //nolint:gocyclo // 12: the order of the rows, then the section's balance, grid and activity
 	t.Parallel()
 	f := newTestService(t)
 	fee, film := launchFilmWithTwoItems(t, f)
 	f.create(t, priya, socialOnAir, func() Input { in := input("Elsewhere", "USD", "1.00"); in.RestartApproval = true; return in }())
 
-	section, err := f.service.Section(t.Context(), priya, launchFilm)
-	if err != nil {
-		t.Fatalf("Section: %v", err)
-	}
+	section := f.section(t, priya, launchFilm)
 
 	if len(section.Items) != 2 || section.Items[0].ID != fee.ID || section.Items[1].ID != film.ID {
 		t.Fatalf("items = %+v, want Agency fee then Film production", section.Items)
 	}
-	v := section.Items[1]
-	if v.Currency.Code != "EUR" || v.Currency.RatePerUSD.String() != "0.92" || v.PlannedCost.Format() != "46,000.00 EUR" ||
-		v.PlannedCostUSD.Format() != "50,000.00 USD" || v.SwbsStatus != SwbsWaitingForApproval || len(v.Missing) != 3 {
-		t.Errorf("Film production = %+v", v)
-	}
-	var months []string
-	for _, m := range v.Spread.Months {
-		months = append(months, m.Month+" "+m.Amount.Format()+" = "+m.AmountUSD.Format())
-	}
-	want := []string{
-		"2026-03 15,333.33 EUR = 16,666.66 USD", "2026-04 15,333.33 EUR = 16,666.66 USD", "2026-05 15,333.34 EUR = 16,666.68 USD",
-	}
-	if !slices.Equal(months, want) || v.Spread.State != StateSpread || !v.Spread.AddsUp || v.Spread.CustomTotal != nil {
-		t.Errorf("spread = %q (%+v), want %q", months, v.Spread, want)
-	}
+	assertFilmProductionRow(t, section.Items[1])
 	if b := section.Balance; b.State != BalanceLeft || b.Balance.Format() != "20,000.00 USD" || b.Assigned.Format() != "100,000.00 USD" {
 		t.Errorf("balance = %+v, want 20,000.00 USD left of 100,000.00 assigned", b)
 	}
@@ -139,6 +123,30 @@ func TestSection_RowsInCreationOrder_FR001(t *testing.T) {
 	}
 	if section.Activity.ID != launchFilm || section.Activity.Status != "created" {
 		t.Errorf("activity = %+v", section.Activity)
+	}
+}
+
+// assertFilmProductionRow checks the row of 46,000.00 EUR at 0.92 that launchFilmWithTwoItems spreads evenly.
+func assertFilmProductionRow(t *testing.T, v View) {
+	t.Helper()
+	if v.Currency.Code != "EUR" || v.Currency.RatePerUSD.String() != "0.92" || v.PlannedCost.Format() != "46,000.00 EUR" ||
+		v.PlannedCostUSD.Format() != "50,000.00 USD" || v.SwbsStatus != SwbsWaitingForApproval || len(v.Missing) != 3 {
+		t.Errorf("Film production = %+v", v)
+	}
+	assertFilmProductionSpread(t, v.Spread)
+}
+
+func assertFilmProductionSpread(t *testing.T, spread SpreadView) {
+	t.Helper()
+	var months []string
+	for _, m := range spread.Months {
+		months = append(months, m.Month+" "+m.Amount.Format()+" = "+m.AmountUSD.Format())
+	}
+	want := []string{
+		"2026-03 15,333.33 EUR = 16,666.66 USD", "2026-04 15,333.33 EUR = 16,666.66 USD", "2026-05 15,333.34 EUR = 16,666.68 USD",
+	}
+	if !slices.Equal(months, want) || spread.State != StateSpread || !spread.AddsUp || spread.CustomTotal != nil {
+		t.Errorf("spread = %q (%+v), want %q", months, spread, want)
 	}
 }
 
@@ -155,10 +163,7 @@ func TestSection_DisplayCurrency_FR005_D213(t *testing.T) {
 	facts.BusinessUnit = []string{"SO-1001"}
 	f.activities.facts[launchFilm] = facts
 
-	section, err := f.service.Section(t.Context(), lena, launchFilm)
-	if err != nil {
-		t.Fatalf("Section: %v", err)
-	}
+	section := f.section(t, lena, launchFilm)
 	options, err := f.service.FormOptions(t.Context(), lena, launchFilm)
 	if err != nil {
 		t.Fatalf("FormOptions: %v", err)
@@ -167,11 +172,35 @@ func TestSection_DisplayCurrency_FR005_D213(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Get: %v", err)
 	}
-	usd, err := f.service.Section(t.Context(), priya, launchFilm)
-	if err != nil {
-		t.Fatalf("Section (USD): %v", err)
-	}
+	usd := f.section(t, priya, launchFilm)
 
+	assertSectionInEuros(t, section)
+	if got := options.Balance.Balance.Format(); got != "20,000.00 USD" {
+		t.Errorf("form balance = %s, want 20,000.00 USD", got)
+	}
+	if details.LineItem.PlannedCostDisplay.Format() != "46,000.00 EUR" || details.Balance.Balance.Format() != "18,400.00 EUR" {
+		t.Errorf("details = %s, balance %s; want EUR", details.LineItem.PlannedCostDisplay.Format(), details.Balance.Balance.Format())
+	}
+	if shown := usd.Items[1].PlannedCostDisplay.Format(); shown != "50,000.00 USD" || usd.Balance.Balance.Format() != "20,000.00 USD" {
+		t.Errorf("for a USD reader: %s and balance %s, want USD", shown, usd.Balance.Balance.Format())
+	}
+	f.assertBusinessUnits(t, section, usd)
+}
+
+// assertBusinessUnits checks that each activity carries its plan's Business unit options, [] when it has none.
+func (f *fixture) assertBusinessUnits(t *testing.T, section, usd Section) {
+	t.Helper()
+	if !slices.Equal(section.Activity.BusinessUnitOptionIDs, []string{"SO-1001"}) || usd.Activity.BusinessUnitOptionIDs == nil {
+		t.Errorf("business units = %q", section.Activity.BusinessUnitOptionIDs)
+	}
+	if empty := f.section(t, priya, tradeAds); empty.Activity.BusinessUnitOptionIDs == nil {
+		t.Errorf("an activity whose plan has no business unit answers nil, want []")
+	}
+}
+
+// assertSectionInEuros checks the section of launchFilmWithTwoItems for a reader who shows amounts in EUR.
+func assertSectionInEuros(t *testing.T, section Section) { //nolint:gocyclo // 10: the film row, the balance and the grid, each in one condition
+	t.Helper()
 	film := section.Items[1]
 	if film.PlannedCostUSD.Format() != "50,000.00 USD" || film.PlannedCostDisplay.Format() != "46,000.00 EUR" {
 		t.Errorf("Film production = %s, shown %s; want 50,000.00 USD shown as 46,000.00 EUR", film.PlannedCostUSD.Format(), film.PlannedCostDisplay.Format())
@@ -183,21 +212,6 @@ func TestSection_DisplayCurrency_FR005_D213(t *testing.T) {
 	if section.Grid.Total.Format() != "92,000.00 EUR" || section.Grid.Rows[1].Total.Format() != "46,000.00 EUR" ||
 		section.Grid.Rows[1].Cells[2].Format() != "15,333.35 EUR" {
 		t.Errorf("grid = %+v, want EUR totals and cells", section.Grid)
-	}
-	if got := options.Balance.Balance.Format(); got != "20,000.00 USD" {
-		t.Errorf("form balance = %s, want 20,000.00 USD", got)
-	}
-	if details.LineItem.PlannedCostDisplay.Format() != "46,000.00 EUR" || details.Balance.Balance.Format() != "18,400.00 EUR" {
-		t.Errorf("details = %s, balance %s; want EUR", details.LineItem.PlannedCostDisplay.Format(), details.Balance.Balance.Format())
-	}
-	if shown := usd.Items[1].PlannedCostDisplay.Format(); shown != "50,000.00 USD" || usd.Balance.Balance.Format() != "20,000.00 USD" {
-		t.Errorf("for a USD reader: %s and balance %s, want USD", shown, usd.Balance.Balance.Format())
-	}
-	if !slices.Equal(section.Activity.BusinessUnitOptionIDs, []string{"SO-1001"}) || usd.Activity.BusinessUnitOptionIDs == nil {
-		t.Errorf("business units = %q", section.Activity.BusinessUnitOptionIDs)
-	}
-	if empty, _ := f.service.Section(t.Context(), priya, tradeAds); empty.Activity.BusinessUnitOptionIDs == nil {
-		t.Errorf("an activity whose plan has no business unit answers nil, want []")
 	}
 }
 
@@ -237,19 +251,13 @@ func TestSection_RateChange_FR013(t *testing.T) {
 	stored, logged := f.stored(t), len(f.log(t))
 
 	f.currencies.setRate("EUR", "0.80")
-	section, err := f.service.Section(t.Context(), priya, launchFilm)
-	if err != nil {
-		t.Fatalf("Section: %v", err)
-	}
+	section := f.section(t, priya, launchFilm)
 	if got := section.Items[1].PlannedCostUSD.Format(); got != "57,500.00 USD" || section.Balance.Balance.Format() != "12,500.00 USD" {
 		t.Errorf("at 0.80: %s and balance %s, want 57,500.00 USD and 12,500.00 USD", got, section.Balance.Balance.Format())
 	}
 
 	f.currencies.setRate("EUR", "0.50")
-	section, err = f.service.Section(t.Context(), priya, launchFilm)
-	if err != nil {
-		t.Fatalf("Section: %v", err)
-	}
+	section = f.section(t, priya, launchFilm)
 	if b := section.Balance; b.State != BalanceExceeded || b.Balance.Format() != "-22,000.00 USD" {
 		t.Errorf("at 0.50: balance %+v, want exceeded by 22,000.00 USD", b)
 	}
@@ -272,6 +280,23 @@ func TestCreate_CustomNotAddingUpSaves_FR019(t *testing.T) {
 		t.Fatalf("Create: %v", err)
 	}
 
+	assertVenueNotAddingUp(t, v)
+
+	section := f.section(t, priya, launchFilm)
+	if columns := section.Grid.Columns; len(columns) != 4 || columns[0].Key != "2026-02" || !columns[0].OutsideActivityDates ||
+		columns[1].OutsideActivityDates {
+		t.Errorf("grid columns = %+v, want Feb (outside) to May", columns)
+	}
+
+	in.Name, in.PlannedCost = "Venue deposit", text("12000.00")
+	if adds := f.create(t, priya, launchFilm, in); !adds.Spread.AddsUp || len(adds.Missing) != 0 {
+		t.Errorf("a custom spread that adds up: adds up %v, missing %+v", adds.Spread.AddsUp, adds.Missing)
+	}
+}
+
+// assertVenueNotAddingUp checks the Venue of 10,000.00 EUR whose custom months add up to 12,000.00 EUR.
+func assertVenueNotAddingUp(t *testing.T, v View) {
+	t.Helper()
 	if v.Spread.AddsUp || v.Spread.CustomTotal == nil || v.Spread.CustomTotal.Format() != "12,000.00 EUR" {
 		t.Errorf("spread adds up %v, total %v; want 12,000.00 EUR, not adding up", v.Spread.AddsUp, v.Spread.CustomTotal)
 	}
@@ -282,18 +307,13 @@ func TestCreate_CustomNotAddingUpSaves_FR019(t *testing.T) {
 	if got := monthsOf(v.Spread); len(got) != 4 || got[0] != "2026-02 2,000.00 EUR outside" {
 		t.Errorf("months = %v", got)
 	}
+}
 
-	section, err := f.service.Section(t.Context(), priya, launchFilm)
+func (f *fixture) section(t *testing.T, reader actor.Actor, activityID string) Section {
+	t.Helper()
+	section, err := f.service.Section(t.Context(), reader, activityID)
 	if err != nil {
 		t.Fatalf("Section: %v", err)
 	}
-	if columns := section.Grid.Columns; len(columns) != 4 || columns[0].Key != "2026-02" || !columns[0].OutsideActivityDates ||
-		columns[1].OutsideActivityDates {
-		t.Errorf("grid columns = %+v, want Feb (outside) to May", columns)
-	}
-
-	in.Name, in.PlannedCost = "Venue deposit", text("12000.00")
-	if adds := f.create(t, priya, launchFilm, in); !adds.Spread.AddsUp || len(adds.Missing) != 0 {
-		t.Errorf("a custom spread that adds up: adds up %v, missing %+v", adds.Spread.AddsUp, adds.Missing)
-	}
+	return section
 }

@@ -65,7 +65,7 @@ func (s *Service) checkUpdate(ctx context.Context, pc planContext, before Activi
 		}
 	}
 	var problems errs.Problems
-	after, err := s.checkFields(ctx, &problems, pc, update.fields(), &before)
+	after, err := s.checkFields(ctx, &problems, fieldCheck{pc: pc, in: update.fields(), before: &before})
 	if err != nil {
 		return Activity{}, err
 	}

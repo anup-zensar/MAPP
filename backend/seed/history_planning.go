@@ -43,7 +43,7 @@ func (h *demoHistory) addPublished(context.Context) error {
 		if r.plan == nil || r.plan.Status != plan.StatusPublished {
 			continue
 		}
-		change, err := statusChange(plan.StatusDraft, plan.StatusPublished, planStatusWords)
+		change, err := statusChange(plan.StatusDraft, plan.StatusPublished, planStatusWords())
 		if err != nil {
 			return err
 		}

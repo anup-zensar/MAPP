@@ -47,7 +47,7 @@ func (h *demoHistory) addApprovalActions(ctx context.Context) error {
 		}
 		changes := []history.Change{}
 		if after != before {
-			change, err := statusChange(before, after, activityStatusWords)
+			change, err := statusChange(before, after, activityStatusWords())
 			if err != nil {
 				return err
 			}

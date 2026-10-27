@@ -65,8 +65,12 @@ var demoTimings = map[string]struct {
 	mobilityFlow:   {3, 5, []string{"Alex Morgan", "Carlos Mendes"}},
 }
 
-// standardFlow is the third demo workflow, which no seeded activity uses.
-const standardFlow = "Standard marketing approval"
+// standardFlow is the third demo workflow, which no seeded activity uses; its second level is named after Alex
+// Morgan's job title.
+const (
+	standardFlow           = "Standard marketing approval"
+	marketingAdministrator = "Marketing administrator"
+)
 
 // addApprovalRules gives WF-1001 and WF-1002 their timings and backups, and creates WF-1003 "Standard
 // marketing approval": level 1 the owner's line manager, approved automatically below 10,000.00 USD; level 2
@@ -122,7 +126,7 @@ func (d *demo) addApprovalRules(ctx context.Context) error {
 			{Name: "Line manager", ApproverType: approval.SourceManager, ApproverIDs: none, Mode: approval.ModeAny,
 				AutoApproveWhen:  &approval.Condition{PlannedCostBelow: &below, BusinessUnitIDs: none, ActivityTypeIDs: none},
 				BackupApproverID: alex},
-			{Name: "Marketing administrator", ApproverType: approval.SourcePeople, ApproverIDs: []string{alex}, Mode: approval.ModeAny,
+			{Name: marketingAdministrator, ApproverType: approval.SourcePeople, ApproverIDs: []string{alex}, Mode: approval.ModeAny,
 				AppliesWhen:      &approval.Condition{PlannedCostAtLeast: &atLeast, BusinessUnitIDs: none, ActivityTypeIDs: none},
 				BackupApproverID: carlos},
 			{Name: "Mobility second check", ApproverType: approval.SourcePeople, ApproverIDs: []string{daniel, alex}, Mode: approval.ModeAll,
@@ -142,10 +146,16 @@ func days(n int) *int {
 	return &n
 }
 
+// ruleSubject is what the approval rules of a round look at: the activity and the ID of its plan.
+type ruleSubject struct {
+	act    activity.Activity
+	planID string
+}
+
 // roundRules fills the fields feature 017 adds to a seeded round (017 data-model §13): the workflow's
 // timings, each level decided by its named approvers where any one approves with the workflow's backup
 // approver, and the values the rules use of the activity.
-func (d *demo) roundRules(ctx context.Context, round *approval.Round, workflow approval.Workflow, act activity.Activity, planID string) error {
+func (d *demo) roundRules(ctx context.Context, round *approval.Round, workflow approval.Workflow, subject ruleSubject) error {
 	round.ReminderDays, round.EscalationDays = workflow.ReminderDays, workflow.EscalationDays
 	peopleRepo := d.stores.People
 	for i := range round.Levels {
@@ -162,7 +172,7 @@ func (d *demo) roundRules(ctx context.Context, round *approval.Round, workflow a
 		backup := p.Actor()
 		l.Backup = &backup
 	}
-	facts, err := d.ruleFacts(ctx, act, planID)
+	facts, err := d.ruleFacts(ctx, subject.act, subject.planID)
 	if err != nil {
 		return err
 	}
@@ -183,10 +193,9 @@ func named(actors []actor.Actor, personID string) bool {
 // ruleFacts are the values of act the approval rules look at: its planned cost, its activity type and the
 // business units of its plan, planID.
 func (d *demo) ruleFacts(ctx context.Context, act activity.Activity, planID string) (approval.RuleFacts, error) {
-	facts := approval.RuleFacts{PlannedCost: act.PlannedCost, BusinessUnits: []approval.FactOption{}}
-	settingsRepo := d.stores.Settings
+	facts := approval.RuleFacts{PlannedCost: act.PlannedCost}
 	if act.ActivityTypeID != "" {
-		t, found, err := settingsRepo.GetActivityType(ctx, act.ActivityTypeID)
+		t, found, err := d.stores.Settings.GetActivityType(ctx, act.ActivityTypeID)
 		if err != nil {
 			return approval.RuleFacts{}, err
 		}
@@ -194,26 +203,37 @@ func (d *demo) ruleFacts(ctx context.Context, act activity.Activity, planID stri
 			facts.ActivityType = &approval.FactRef{ID: t.ID, Name: t.Name}
 		}
 	}
-	plan, found, err := d.stores.Plans.Get(ctx, planID)
+	units, err := d.businessUnitFacts(ctx, planID)
+	if err != nil {
+		return approval.RuleFacts{}, err
+	}
+	facts.BusinessUnits = units
+	return facts, nil
+}
+
+// businessUnitFacts are the business units of the plan planID as the approval rules see them; never nil.
+func (d *demo) businessUnitFacts(ctx context.Context, planID string) ([]approval.FactOption, error) {
+	p, found, err := d.stores.Plans.Get(ctx, planID)
 	if err != nil || !found {
-		return approval.RuleFacts{}, cmpErr(err, fmt.Errorf("seed: plan %s is not stored", planID))
+		return nil, cmpErr(err, fmt.Errorf("seed: plan %s is not stored", planID))
 	}
 	var units []string
-	if raw, found := plan.Attributes[d.settings.Attributes["plan/Business unit"]]; found {
-		if err := json.Unmarshal(raw, &units); err != nil {
-			return approval.RuleFacts{}, err
+	if raw, set := p.Attributes[d.settings.Attributes["plan/Business unit"]]; set {
+		if err = json.Unmarshal(raw, &units); err != nil {
+			return nil, err
 		}
 	}
+	options := []approval.FactOption{}
 	for _, id := range units {
-		o, found, err := settingsRepo.GetOption(ctx, id)
+		o, found, err := d.stores.Settings.GetOption(ctx, id)
 		if err != nil {
-			return approval.RuleFacts{}, err
+			return nil, err
 		}
 		if found {
-			facts.BusinessUnits = append(facts.BusinessUnits, approval.FactOption{ID: o.ID, Label: o.Label})
+			options = append(options, approval.FactOption{ID: o.ID, Label: o.Label})
 		}
 	}
-	return facts, nil
+	return options, nil
 }
 
 // addDelegation writes DLG-1001: Daniel Okoro delegates his approvals to Carlos Mendes from a week after

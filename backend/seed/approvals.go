@@ -15,10 +15,15 @@ import (
 // day is 24 hours: the approval history is dated in days and hours before the seed time.
 const day = 24 * time.Hour
 
-// The decline comments of the demo story (008 data model §8).
+// The decline comments and the notification titles of the demo story (008 data model §8).
 const (
 	splitComment  = "Please split the agency fee by country before re-submitting."
 	budgetComment = "The planned cost is above this quarter's budget — please reduce it or move part of it to Q3."
+
+	activityApprovedTitle = "Activity approved"
+	activityDeclinedTitle = "Activity declined"
+	approvalNeededTitle   = "Approval needed"
+	levelOneApprovedTitle = "Level 1 approved"
 )
 
 // demoDecision is one decision on the current level of a round, ago before the seed time.
@@ -73,8 +78,8 @@ type demoNotification struct {
 
 // approvedNotice tells Priya Raman, read, that Daniel Okoro approved one of her activities.
 func approvedNotice(activity string) demoNotification {
-	return demoNotification{recipient: "Priya Raman", plan: lubricantsPlan, activity: activity, kind: approval.NotifyApproved,
-		title: "Activity approved", text: "Daniel Okoro approved %s", by: "Daniel Okoro", ago: 38 * day, read: true}
+	return demoNotification{recipient: priyaRaman, plan: lubricantsPlan, activity: activity, kind: approval.NotifyApproved,
+		title: activityApprovedTitle, text: "Daniel Okoro approved %s", by: danielOkoro, ago: 38 * day, read: true}
 }
 
 // declinedText is the text of a declined notification: the first 80 characters of the comment, then "…".
@@ -90,18 +95,18 @@ func declinedText(by, comment string) string {
 var demoNotifications = []demoNotification{
 	approvedNotice("Social always-on"),
 	approvedNotice("Billboard winter wave"),
-	{recipient: "Priya Raman", plan: lubricantsPlan, activity: "Trade magazine ads", kind: approval.NotifyDeclined,
-		title: "Activity declined", text: declinedText("Daniel Okoro", splitComment), by: "Daniel Okoro", ago: 8 * day, read: true},
-	{recipient: "Daniel Okoro", plan: lubricantsPlan, activity: "Trade magazine ads", kind: approval.NotifyApprovalNeeded,
-		title: "Approval needed", text: "Priya Raman re-submitted %s", by: "Priya Raman", ago: 2 * day},
-	{recipient: "Priya Raman", plan: lubricantsPlan, activity: "Fleet roadshow", kind: approval.NotifyDeclined,
-		title: "Activity declined", text: declinedText("Daniel Okoro", budgetComment), by: "Daniel Okoro", ago: 5 * day},
+	{recipient: priyaRaman, plan: lubricantsPlan, activity: "Trade magazine ads", kind: approval.NotifyDeclined,
+		title: activityDeclinedTitle, text: declinedText(danielOkoro, splitComment), by: danielOkoro, ago: 8 * day, read: true},
+	{recipient: danielOkoro, plan: lubricantsPlan, activity: "Trade magazine ads", kind: approval.NotifyApprovalNeeded,
+		title: approvalNeededTitle, text: "Priya Raman re-submitted %s", by: priyaRaman, ago: 2 * day},
+	{recipient: priyaRaman, plan: lubricantsPlan, activity: "Fleet roadshow", kind: approval.NotifyDeclined,
+		title: activityDeclinedTitle, text: declinedText(danielOkoro, budgetComment), by: danielOkoro, ago: 5 * day},
 	approvedNotice("Christmas trade gifting"),
 	approvedNotice("Partner co-marketing fund"),
-	{recipient: "Alex Morgan", plan: mobilityPlan, activity: "Fleet card launch", kind: approval.NotifyApprovalNeeded,
-		title: "Approval needed", text: "Carlos Mendes approved level 1 of %s — level 2 waits for you", by: "Carlos Mendes", ago: 2 * time.Hour},
-	{recipient: "Mei Lin", plan: mobilityPlan, activity: "Fleet card launch", kind: approval.NotifyLevelApproved,
-		title: "Level 1 approved", text: "Carlos Mendes approved level 1 of 2 of %s", by: "Carlos Mendes", ago: 2 * time.Hour},
+	{recipient: alexMorgan, plan: mobilityPlan, activity: "Fleet card launch", kind: approval.NotifyApprovalNeeded,
+		title: approvalNeededTitle, text: "Carlos Mendes approved level 1 of %s — level 2 waits for you", by: carlosMendes, ago: 2 * time.Hour},
+	{recipient: meiLin, plan: mobilityPlan, activity: "Fleet card launch", kind: approval.NotifyLevelApproved,
+		title: levelOneApprovedTitle, text: "Carlos Mendes approved level 1 of 2 of %s", by: carlosMendes, ago: 2 * time.Hour},
 }
 
 // addApprovals creates the approval rounds with their history entries, then the notifications, through
@@ -161,7 +166,7 @@ func (d *demo) addApprovals(ctx context.Context) error {
 			Meta: record.NewMeta(submitter, submittedAt),
 		}
 		round.Levels[0].StartedAt = &submittedAt
-		if err := d.roundRules(ctx, &round, workflow, activity, d.plans[dr.plan]); err != nil {
+		if err = d.roundRules(ctx, &round, workflow, ruleSubject{act: activity, planID: d.plans[dr.plan]}); err != nil {
 			return err
 		}
 		if round.ID, err = d.next(ctx, ids.PrefixApprovalRound); err != nil {
