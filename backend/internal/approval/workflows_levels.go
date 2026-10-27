@@ -2,8 +2,11 @@ package approval
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
+	"mapp/internal/people"
+	"mapp/internal/platform/errs"
 	"mapp/internal/platform/money"
 )
 
@@ -82,6 +85,136 @@ func nonNilIDs(ids []string) []string {
 		return []string{}
 	}
 	return ids
+}
+
+// levelCheck checks the level l at position n; before is the level at that position before an update.
+type levelCheck struct {
+	problems  *errs.Problems
+	rc        ruleContext
+	n         int
+	l, before Level
+}
+
+func (c levelCheck) field(name string) string { return fmt.Sprintf("levels.%d.%s", c.n, name) }
+
+// checkLevel adds every problem of c's level to c.problems (data-model §2), in the order of its fields.
+func checkLevel(c levelCheck, amountProblems map[string]string, escalates bool) {
+	if tooLong(c.l.Name, maxLevelNameLength) {
+		c.problems.Add(c.field("name"), fmt.Sprintf(levelNameTooLongMessage, c.n))
+	}
+	switch c.l.ApproverType {
+	case SourcePeople, SourceManager, SourceRole:
+	default:
+		c.problems.Add(c.field("approverType"), fmt.Sprintf(chooseSourceMessage, c.n))
+	}
+	if c.l.ApproverType == SourcePeople {
+		c.checkApprovers()
+	}
+	if c.l.ApproverType == SourceRole {
+		c.checkRole()
+	}
+	if c.l.Mode != ModeAny && c.l.Mode != ModeAll {
+		c.problems.Add(c.field("mode"), fmt.Sprintf(chooseModeMessage, c.n))
+	}
+	c.checkConditions(amountProblems)
+	c.checkBackup(escalates)
+}
+
+func (c levelCheck) checkApprovers() {
+	field := c.field("approverIds")
+	if len(c.l.ApproverIDs) == 0 {
+		c.problems.Add(field, fmt.Sprintf(chooseApproverMessage, c.n))
+	}
+	seen, unknown := map[string]bool{}, false
+	for _, id := range c.l.ApproverIDs {
+		p, found := c.rc.people.byID[id]
+		if !found {
+			unknown = true
+		} else if message := c.approverProblem(p, seen[id]); message != "" {
+			c.problems.Add(field, message)
+		}
+		seen[id] = true
+	}
+	if unknown {
+		c.problems.Add(field, fmt.Sprintf(unknownApproverMessage, c.n))
+	}
+}
+
+// approverProblem returns the problem of the named approver p, or "": someone kept from before the update may
+// stay when inactive or no longer allowed to approve.
+func (c levelCheck) approverProblem(p people.Person, listedBefore bool) string {
+	added := !slices.Contains(c.before.ApproverIDs, p.ID)
+	switch {
+	case listedBefore:
+		return fmt.Sprintf(listedTwiceMessage, c.n, p.Name)
+	case !p.Active && added:
+		return fmt.Sprintf(inactiveApproverMessage, c.n, p.Name)
+	case !c.rc.canApprove[p.ID] && added:
+		return fmt.Sprintf(approverCannotApproveMessage, p.Name)
+	}
+	return ""
+}
+
+func (c levelCheck) checkRole() {
+	role, known := c.rc.roles[c.l.RoleID]
+	switch {
+	case c.l.RoleID == "":
+		c.problems.Add(c.field("roleId"), fmt.Sprintf(chooseRoleMessage, c.n))
+	case !known:
+		c.problems.Add(c.field("roleId"), fmt.Sprintf(roleFromListMessage, c.n))
+	case !role.Approves:
+		c.problems.Add(c.field("roleId"), fmt.Sprintf(roleCannotApproveMessage, c.n, role.Name))
+	}
+}
+
+func (c levelCheck) checkConditions(amountProblems map[string]string) {
+	for _, cond := range []struct {
+		name, emptyMessage string
+		condition          *Condition
+	}{{"appliesWhen", emptyAppliesWhenMessage, c.l.AppliesWhen}, {"autoApproveWhen", emptyAutoApproveMessage, c.l.AutoApproveWhen}} {
+		field := c.field(cond.name)
+		if message, bad := amountProblems[field]; bad {
+			c.problems.Add(field, message)
+			continue
+		}
+		if cond.condition == nil {
+			continue
+		}
+		if message := conditionProblem(c.rc, c.n, *cond.condition, cond.emptyMessage); message != "" {
+			c.problems.Add(field, message)
+		}
+	}
+}
+
+func (c levelCheck) checkBackup(escalates bool) {
+	field := c.field("backupApproverId")
+	if c.l.BackupApproverID == "" {
+		if escalates {
+			c.problems.Add(field, fmt.Sprintf(backupRequiredMessage, c.n))
+		}
+		return
+	}
+	if message := c.backupProblem(); message != "" {
+		c.problems.Add(field, message)
+	}
+}
+
+// backupProblem returns the problem of the backup approver, or "": one kept from before the update may stay
+// when inactive or no longer allowed to approve.
+func (c levelCheck) backupProblem() string {
+	p, found := c.rc.people.byID[c.l.BackupApproverID]
+	changed := c.l.BackupApproverID != c.before.BackupApproverID
+	switch {
+	case !found:
+		return fmt.Sprintf(backupFromListMessage, c.n)
+	case !p.Active && changed:
+		return fmt.Sprintf(backupInactiveMessage, c.n, p.Name)
+	case !c.rc.canApprove[p.ID] && changed:
+		return fmt.Sprintf(backupCannotApproveMessage, c.n, p.Name)
+	case c.l.ApproverType == SourcePeople && slices.Contains(c.l.ApproverIDs, p.ID):
+		return fmt.Sprintf(backupIsApproverMessage, c.n, p.Name)
+	}
+	return ""
 }
 
 // conditionProblem returns the first problem of the condition c of the level n (data-model §2: one message

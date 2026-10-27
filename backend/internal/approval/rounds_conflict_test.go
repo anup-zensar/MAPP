@@ -47,15 +47,15 @@ func TestDecide_EndedRoundExplains_FR018(t *testing.T) {
 			"Level 1 was already declined by Daniel Okoro"},
 		{"recalled", func(t *testing.T, f *fixture, id string) {
 			t.Helper()
-			f.endDirectly(t, id, ActionRecalled, OutcomeRecalled, StatusCreated, priya, "Wrong workflow.")
+			f.endDirectly(t, id, roundEnd{kind: ActionRecalled, outcome: OutcomeRecalled, status: StatusCreated, by: priya, comment: "Wrong workflow."})
 		}, "The submission was recalled by Priya Raman"},
 		{"restarted", func(t *testing.T, f *fixture, id string) {
 			t.Helper()
-			f.endDirectly(t, id, ActionRestarted, OutcomeRestarted, StatusCreated, mei, "")
+			f.endDirectly(t, id, roundEnd{kind: ActionRestarted, outcome: OutcomeRestarted, status: StatusCreated, by: mei})
 		}, "Approval was restarted by Mei Lin"},
 		{"cancelled", func(t *testing.T, f *fixture, id string) {
 			t.Helper()
-			f.endDirectly(t, id, ActionCancelled, OutcomeCancelled, StatusCreated, alex, "")
+			f.endDirectly(t, id, roundEnd{kind: ActionCancelled, outcome: OutcomeCancelled, status: StatusCreated, by: alex})
 		}, "The approval round was cancelled because the activity was deleted"},
 	}
 	for _, tt := range tests {

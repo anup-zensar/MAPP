@@ -70,7 +70,7 @@ func (s *Service) ApprovalRestarted(ctx context.Context, a actor.Actor, activity
 			return nil
 		}
 
-		entry, err := s.newAction(ctx, round, ActionRestarted, level, a, nil, now, "")
+		entry, err := s.newAction(ctx, round, Action{Action: ActionRestarted, Level: level, Actor: a, At: now})
 		if err != nil {
 			return err
 		}
@@ -105,7 +105,7 @@ func (s *Service) ActivityRestored(ctx context.Context, rc history.RestoreContex
 		if err := s.repo.PutRound(ctx, open); err != nil {
 			return err
 		}
-		if err := s.addAction(ctx, open, ActionCancelled, open.CurrentLevel, rc.DeletedBy, nil, rc.DeletedAt, ""); err != nil {
+		if err = s.addAction(ctx, open, Action{Action: ActionCancelled, Level: open.CurrentLevel, Actor: rc.DeletedBy, At: rc.DeletedAt}); err != nil {
 			return err
 		}
 		notes = []string{fmt.Sprintf(cancelledNote, open.Number)}

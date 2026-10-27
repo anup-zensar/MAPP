@@ -57,6 +57,14 @@ func assertNotified(t *testing.T, f *fixture, p actor.Actor, want ...string) {
 	}
 }
 
+// assertOnly checks that got holds want and nothing else.
+func assertOnly[T any](t *testing.T, what string, got []T, want T) {
+	t.Helper()
+	if len(got) != 1 || !reflect.DeepEqual(got[0], want) {
+		t.Errorf("%s =\n%+v\nwant\n%+v", what, got, want)
+	}
+}
+
 // assertNothingHappened checks that the activity id still has status, no round, no history entry, no log
 // entry and that nobody was notified.
 func assertNothingHappened(t *testing.T, f *fixture, id, status string) {

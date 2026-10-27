@@ -66,7 +66,7 @@ func TestApproval_ChainAndHistory_FR024_FR025(t *testing.T) {
 	f.clock.Advance(time.Hour)
 	f.submit(t, mei, "A-1009", "")
 	f.submit(t, mei, "A-1008", "")
-	f.endDirectly(t, "A-1008", ActionRecalled, OutcomeRecalled, StatusCreated, mei, "Wrong workflow.")
+	f.endDirectly(t, "A-1008", roundEnd{kind: ActionRecalled, outcome: OutcomeRecalled, status: StatusCreated, by: mei, comment: "Wrong workflow."})
 
 	approval, err := f.service.Approval(t.Context(), carlos, "A-1009")
 	if err != nil {

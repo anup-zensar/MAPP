@@ -27,7 +27,7 @@ func (s *Service) CreateWorkflow(ctx context.Context, a actor.Actor, in Workflow
 		w := Workflow{Name: name, Description: description, Active: true, Levels: levels,
 			ReminderDays: in.ReminderDays, EscalationDays: in.EscalationDays}
 		var problems errs.Problems
-		if err = s.checkWorkflow(ctx, &problems, rc, w, amountProblems, Workflow{}); err != nil {
+		if err = s.checkWorkflow(ctx, &problems, workflowCheck{rc: rc, w: w, amountProblems: amountProblems}); err != nil {
 			return err
 		}
 		if err = problems.Err(); err != nil {

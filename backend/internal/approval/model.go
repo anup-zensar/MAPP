@@ -1,4 +1,4 @@
-// Package approvals holds activity approvals (feature 008): approval workflows (a Settings record), the
+// Package approval holds activity approvals (feature 008): approval workflows (a Settings record), the
 // approval rounds of activities with their history entries, and in-app notifications.
 //
 // The shared foundation wrote the data layer: the stored records and the API types (model*.go) and the

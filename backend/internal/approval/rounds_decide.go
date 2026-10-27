@@ -97,6 +97,18 @@ func decisionProblems(in DecisionInput, decision ActionKind, comment string) err
 	return problems.Err()
 }
 
+// roundOf returns the round roundID of the activity: not_found when there is none or it is another's.
+func (s *Service) roundOf(ctx context.Context, facts ActivityFacts, roundID string) (Round, error) {
+	round, found, err := s.repo.GetRound(ctx, roundID)
+	if err != nil {
+		return Round{}, err
+	}
+	if !found || round.ActivityID != facts.ID {
+		return Round{}, errs.NotFound(roundNotOfActivity)
+	}
+	return round, nil
+}
+
 // roundToDecide returns the round in.RoundID if it is open at in.Level, or why a decision comes too late.
 func (s *Service) roundToDecide(ctx context.Context, facts ActivityFacts, in DecisionInput) (Round, error) {
 	round, err := s.roundOf(ctx, facts, in.RoundID)
@@ -167,7 +179,9 @@ func (s *Service) recordDecision(ctx context.Context, dg deciding) (ActivityFact
 
 func (s *Service) decisionEntry(ctx context.Context, dg deciding) (Action, error) {
 	level := dg.round.Levels[dg.round.CurrentLevel-1]
-	entry, err := s.newAction(ctx, dg.round, dg.kind, level.Number, dg.a, dg.au.onBehalfOf, dg.now, dg.comment)
+	entry, err := s.newAction(ctx, dg.round, Action{
+		Action: dg.kind, Level: level.Number, Actor: dg.a, OnBehalfOf: dg.au.onBehalfOf, At: dg.now, Comment: dg.comment,
+	})
 	if err != nil {
 		return Action{}, err
 	}
@@ -216,7 +230,7 @@ func (s *Service) decisionOutcome(ctx context.Context, dg deciding) (Round, stat
 		logEntry.verb = fmt.Sprintf("approved level %d of", level.Number)
 		logEntry.details = fmt.Sprintf("%s · now waiting for level %d (%s)%s", decided, next, approversText(waiting), suffix)
 		// The next approvers first: an owner who approves the next level is asked to, not told.
-		err = s.notifyLevel(ctx, notify, waiting, dg.dl, fmt.Sprintf(nextLevelWaitsText, a.Name, level.Number, activityText(facts), next))
+		err = notify.sendToLevel(ctx, waiting, dg.dl, fmt.Sprintf(nextLevelWaitsText, a.Name, level.Number, activityText(facts), next))
 		if err == nil {
 			err = notify.send(ctx, owner, NotifyLevelApproved, fmt.Sprintf(levelApprovedTitle, level.Number),
 				fmt.Sprintf(levelApprovedText, a.Name, level.Number, len(round.Levels), activityText(facts)))

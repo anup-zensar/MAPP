@@ -2,12 +2,12 @@ package approval
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
-	"mapp/internal/people"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/record"
@@ -33,17 +33,13 @@ func TestSubmit_StartsRound1_FR011(t *testing.T) {
 		Facts: fixtureFacts(t), Meta: record.NewMeta(mei, start),
 	}
 	wantRound.Levels[0].StartedAt = &start // 017 FR-029: level 1 waits from the submission
-	if rounds := f.rounds(t, "A-1009"); len(rounds) != 1 || !reflect.DeepEqual(rounds[0], wantRound) {
-		t.Errorf("rounds =\n%+v\nwant\n%+v", rounds, wantRound)
-	}
+	assertOnly(t, "rounds", f.rounds(t, "A-1009"), wantRound)
 	wantAction := Action{
 		ID: "AH-1001", RoundID: "AR-1001", RoundNumber: 1, ActivityID: "A-1009", Action: ActionSubmitted, Level: 1,
 		Approvers: []actor.Actor{carlos}, Actor: mei, OnBehalfOf: []actor.Actor{}, At: start, Comment: "Ready for your review.",
 		Changes: []ChangeText{},
 	}
-	if actions := f.actions(t, "A-1009"); len(actions) != 1 || !reflect.DeepEqual(actions[0], wantAction) {
-		t.Errorf("history =\n%+v\nwant\n%+v", actions, wantAction)
-	}
+	assertOnly(t, "history", f.actions(t, "A-1009"), wantAction)
 	assertLog(t, f, "A-1009", []string{
 		"Mei Lin submitted activity 'Fleet card launch' [created → submitted] " +
 			`"Ready for your review." (Round 1 · China BC approval workflow · waiting for level 1 (Carlos Mendes))`,
@@ -53,9 +49,7 @@ func TestSubmit_StartsRound1_FR011(t *testing.T) {
 		Text: "Mei Lin submitted 'Fleet card launch' (A-1009)", ActivityID: "A-1009", ActivityName: "Fleet card launch",
 		Actor: mei, At: start,
 	}
-	if got := f.notifications(t, carlos.ID); len(got) != 1 || !reflect.DeepEqual(got[0], wantNotification) {
-		t.Errorf("Carlos's notifications =\n%+v\nwant\n%+v", got, wantNotification)
-	}
+	assertOnly(t, "Carlos's notifications", f.notifications(t, carlos.ID), wantNotification)
 	if got := f.notifications(t, mei.ID); len(got) != 0 {
 		t.Errorf("Mei's notifications = %+v, want none: nobody is told about their own action", got)
 	}
@@ -70,7 +64,7 @@ func TestSubmit_StartsRound1_FR011(t *testing.T) {
 
 // Re-submitting a Declined activity starts the next round at level 1 with the workflow's levels as they
 // are now, not those of the earlier round (FR-020, FR-006).
-func TestResubmit_NewRoundWithCurrentLevels_FR020(t *testing.T) {
+func TestResubmit_NewRoundWithCurrentLevels_FR020(t *testing.T) { //nolint:gocyclo // 13: one re-submission, then the preview, rounds, history, answer, log and notifications in turn
 	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1004", "Trade magazine ads", priya.ID, lubricantsFlow)
@@ -95,13 +89,7 @@ func TestResubmit_NewRoundWithCurrentLevels_FR020(t *testing.T) {
 	if submission.Kind != "resubmit" || submission.RoundNumber != 2 || !submission.Available {
 		t.Errorf("submission: kind %s, round %d, available %v; want resubmit, 2, true", submission.Kind, submission.RoundNumber, submission.Available)
 	}
-	rounds := f.rounds(t, "A-1004")
-	level := decideLevel(1, daniel, sara)
-	level.Name, level.StartedAt = "Team leaders", &rounds[1].SubmittedAt
-	if len(rounds) != 2 || rounds[0].Levels[0].Name != "" || rounds[1].Number != 2 || rounds[1].CurrentLevel != 1 ||
-		!reflect.DeepEqual(rounds[1].Levels, []RoundLevel{level}) {
-		t.Errorf("rounds = %+v, want round 1 unchanged and round 2 with the current levels", rounds)
-	}
+	assertRound2WithCurrentLevels(t, f.rounds(t, "A-1004"))
 	actions := f.actions(t, "A-1004")
 	if last := actions[len(actions)-1]; last.Action != ActionResubmitted || last.RoundNumber != 2 {
 		t.Errorf("last history entry = %+v, want resubmitted in round 2", last)
@@ -119,17 +107,38 @@ func TestResubmit_NewRoundWithCurrentLevels_FR020(t *testing.T) {
 	}
 }
 
+// assertRound2WithCurrentLevels checks that round 1 kept its levels and that round 2 waits at level 1 with the
+// workflow's levels as they are now.
+func assertRound2WithCurrentLevels(t *testing.T, rounds []Round) {
+	t.Helper()
+	level := decideLevel(1, daniel, sara)
+	level.Name, level.StartedAt = "Team leaders", &rounds[1].SubmittedAt
+	if len(rounds) != 2 || rounds[0].Levels[0].Name != "" || rounds[1].Number != 2 || rounds[1].CurrentLevel != 1 ||
+		!reflect.DeepEqual(rounds[1].Levels, []RoundLevel{level}) {
+		t.Errorf("rounds = %+v, want round 1 unchanged and round 2 with the current levels", rounds)
+	}
+}
+
 // declineDirectly ends the open round of the activity id as declined by a, as a decline does, without
 // the service: the tests of submitting do not depend on deciding.
 func (f *fixture) declineDirectly(t *testing.T, id string, by actor.Actor, comment string) {
 	t.Helper()
-	f.endDirectly(t, id, ActionDeclined, OutcomeDeclined, StatusDeclined, by, comment)
+	f.endDirectly(t, id, roundEnd{kind: ActionDeclined, outcome: OutcomeDeclined, status: StatusDeclined, by: by, comment: comment})
 }
 
-// endDirectly ends the open round of the activity id with outcome, by a history entry kind of by at the
-// waiting level, and gives the activity status: the ends of a round that features 006, 007 and the
-// recall of this feature bring about.
-func (f *fixture) endDirectly(t *testing.T, id string, kind ActionKind, outcome Outcome, status string, by actor.Actor, comment string) {
+// roundEnd is how endDirectly ends a round: by a history entry kind of by, with outcome, giving the activity
+// status.
+type roundEnd struct {
+	kind    ActionKind
+	outcome Outcome
+	status  string
+	by      actor.Actor
+	comment string
+}
+
+// endDirectly ends the open round of the activity id as end says, at the waiting level: the ends of a round
+// that features 006, 007 and the recall of this feature bring about.
+func (f *fixture) endDirectly(t *testing.T, id string, end roundEnd) {
 	t.Helper()
 	f.write(t, func(ctx context.Context) error {
 		rounds, err := f.service.repo.RoundsOf(ctx, id)
@@ -138,35 +147,35 @@ func (f *fixture) endDirectly(t *testing.T, id string, kind ActionKind, outcome 
 		}
 		round := rounds[len(rounds)-1]
 		now := f.clock.Now()
-		round.Outcome, round.EndedAt = outcome, &now
-		round.Touch(by, now)
-		if err := f.service.repo.PutRound(ctx, round); err != nil {
+		round.Outcome, round.EndedAt = end.outcome, &now
+		round.Touch(end.by, now)
+		if err = f.service.repo.PutRound(ctx, round); err != nil {
 			return err
 		}
-		if err := f.service.addAction(ctx, round, kind, round.CurrentLevel, by, []actor.Actor{}, now, comment); err != nil {
+		err = f.service.addAction(ctx, round, Action{Action: end.kind, Level: round.CurrentLevel, Actor: end.by, At: now, Comment: end.comment})
+		if err != nil {
 			return err
 		}
-		_, err = f.activities.SetStatus(ctx, by, id, status)
+		_, err = f.activities.SetStatus(ctx, end.by, id, end.status)
 		return err
 	})
 }
 
-// addWorkflow stores a workflow with the given levels of approvers, active, and returns its id.
-func (f *fixture) addWorkflow(t *testing.T, id, name string, levels ...[]string) string {
+// addWorkflow stores a workflow with the given levels of approvers, active.
+func (f *fixture) addWorkflow(t *testing.T, id, name string, levels ...[]string) {
 	t.Helper()
 	workflow := Workflow{ID: id, Name: name, Active: true, Levels: []Level{}, Meta: record.NewMeta(actor.System, start)}
 	for _, approvers := range levels {
 		workflow.Levels = append(workflow.Levels, Level{ApproverIDs: approvers})
 	}
 	f.write(t, func(ctx context.Context) error { return f.service.repo.PutWorkflow(ctx, workflow) })
-	return id
 }
 
 // The owner of an activity is left out of its levels and may not decide it while 014's access rule is on
 // (017 FR-011, FR-018); a person on two levels decides each level separately; an inactive approver stays
 // on the chain, shown inactive, and someone allowed to decide on behalf decides for them (spec edge cases,
 // 017 FR-017).
-func TestDecide_OwnerAndTwoLevelsAndInactiveApprover_017FR018_EdgeCases(t *testing.T) {
+func TestDecide_OwnerAndTwoLevelsAndInactiveApprover_017FR018_EdgeCases(t *testing.T) { //nolint:gocyclo,tparallel // 11: three edge cases, each checked in turn; the subtests share one fixture and the inactive approver comes last
 	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1004", "Trade magazine ads", daniel.ID, lubricantsFlow)
@@ -183,14 +192,7 @@ func TestDecide_OwnerAndTwoLevelsAndInactiveApprover_017FR018_EdgeCases(t *testi
 			t.Fatalf("Approval: %v", err)
 		}
 		_, err = f.service.Approve(t.Context(), daniel, "A-1004", DecisionInput{RoundID: f.openRound(t, "A-1004").ID, Level: version(1)})
-		level := before.Rounds[0].Levels[0]
-		if !before.Viewer.IsOwner || before.Viewer.IsCurrentApprover || before.Viewer.CanDecide || !level.NoApprover ||
-			len(level.Excluded) != 1 || level.Excluded[0].Reason != ReasonOwner {
-			t.Errorf("viewer %+v, level %+v; want the owner left out, the level with no approver", before.Viewer, level)
-		}
-		if before.Actions.Approve != (ActionAvailability{Reason: "You own this activity, so someone else must approve it."}) {
-			t.Errorf("approve = %+v, want unavailable with the owner message", before.Actions.Approve)
-		}
+		assertOwnerLeftOut(t, before)
 		assertError(t, err, errs.Forbidden("You own this activity, so someone else must approve it."))
 	})
 	t.Run("one person on two levels", func(t *testing.T) {
@@ -201,14 +203,7 @@ func TestDecide_OwnerAndTwoLevelsAndInactiveApprover_017FR018_EdgeCases(t *testi
 		}
 	})
 	t.Run("inactive approver", func(t *testing.T) {
-		f.write(t, func(ctx context.Context) error {
-			p, _, err := people.NewJSONStore().Get(ctx, daniel.ID)
-			if err != nil {
-				return err
-			}
-			p.Active = false
-			return people.NewJSONStore().Put(ctx, p)
-		})
+		f.deactivatePerson(t, daniel)
 		before, err := f.service.Approval(t.Context(), priya, "A-1001")
 		if err != nil {
 			t.Fatalf("Approval: %v", err)
@@ -224,11 +219,25 @@ func TestDecide_OwnerAndTwoLevelsAndInactiveApprover_017FR018_EdgeCases(t *testi
 	})
 }
 
+// assertOwnerLeftOut checks the owner's view of a submitted activity: left out of level 1, which has no
+// approver, and told why Approve is unavailable.
+func assertOwnerLeftOut(t *testing.T, before ActivityApproval) {
+	t.Helper()
+	level := before.Rounds[0].Levels[0]
+	if !before.Viewer.IsOwner || before.Viewer.IsCurrentApprover || before.Viewer.CanDecide || !level.NoApprover ||
+		len(level.Excluded) != 1 || level.Excluded[0].Reason != ReasonOwner {
+		t.Errorf("viewer %+v, level %+v; want the owner left out, the level with no approver", before.Viewer, level)
+	}
+	if before.Actions.Approve != (ActionAvailability{Reason: "You own this activity, so someone else must approve it."}) {
+		t.Errorf("approve = %+v, want unavailable with the owner message", before.Actions.Approve)
+	}
+}
+
 // Recalling a Submitted activity ends its round as recalled at the level it waited at, with the reason;
 // the activity is Created again, can be submitted again and leaves the approvers' Waiting for me; the
 // history, the log and the owner and waiting approvers record it. Anyone may recall (D-020). Recalling the
 // same round again explains what ended it; the reason holds at most 2,000 characters (FR-021, FR-018).
-func TestRecall_FR021(t *testing.T) {
+func TestRecall_FR021(t *testing.T) { //nolint:gocyclo // 11: one recall, then the activity, round, history, chain, actions, log, notifications and inbox in turn
 	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
@@ -247,15 +256,8 @@ func TestRecall_FR021(t *testing.T) {
 	if facts := f.activities.facts["A-1009"]; facts.Status != StatusCreated || facts.UpdatedBy != priya {
 		t.Errorf("activity = %s, changed by %v; want Created by Priya Raman", facts.Status, facts.UpdatedBy)
 	}
-	ended := f.rounds(t, "A-1009")[0]
-	if ended.Outcome != OutcomeRecalled || ended.CurrentLevel != 2 || ended.EndedAt == nil || !ended.EndedAt.Equal(recalledAt) || ended.UpdatedBy != priya {
-		t.Errorf("round = %+v, want recalled at level 2 now, by Priya Raman", ended)
-	}
-	last := f.actions(t, "A-1009")[2]
-	if last.Action != ActionRecalled || last.Level != 2 || !reflect.DeepEqual(last.Approvers, []actor.Actor{alex}) || last.Actor != priya ||
-		last.Comment != "Wrong workflow." || !last.At.Equal(recalledAt) {
-		t.Errorf("history entry = %+v, want recalled at level 2 by Priya Raman with the reason", last)
-	}
+	assertRecalledRound(t, f.rounds(t, "A-1009")[0], recalledAt)
+	assertRecallEntry(t, f.actions(t, "A-1009")[2], recalledAt)
 	if states := chainStates(approval.Rounds[0]); states != "L1 approved, L2 notDecided" || approval.Rounds[0].Outcome != OutcomeRecalled {
 		t.Errorf("chain = %s (%s), want L1 approved, L2 notDecided, recalled", states, approval.Rounds[0].Outcome)
 	}
@@ -282,11 +284,28 @@ func TestRecall_FR021(t *testing.T) {
 	assertError(t, otherRound, errs.NotFound("This approval round doesn't belong to this activity. Reload the page and try again."))
 }
 
+// assertRecalledRound checks that round ended as recalled at level 2 at the time at, by Priya Raman.
+func assertRecalledRound(t *testing.T, round Round, at time.Time) {
+	t.Helper()
+	if round.Outcome != OutcomeRecalled || round.CurrentLevel != 2 || round.EndedAt == nil || !round.EndedAt.Equal(at) || round.UpdatedBy != priya {
+		t.Errorf("round = %+v, want recalled at level 2 now, by Priya Raman", round)
+	}
+}
+
+// assertRecallEntry checks that entry is Priya Raman's recall at level 2, Alex Morgan's, at the time at, with the reason.
+func assertRecallEntry(t *testing.T, entry Action, at time.Time) {
+	t.Helper()
+	if entry.Action != ActionRecalled || entry.Level != 2 || !reflect.DeepEqual(entry.Approvers, []actor.Actor{alex}) || entry.Actor != priya ||
+		entry.Comment != "Wrong workflow." || !entry.At.Equal(at) {
+		t.Errorf("history entry = %+v, want recalled at level 2 by Priya Raman with the reason", entry)
+	}
+}
+
 // chainStates writes a round's chain as "L1 approved, L2 waiting".
 func chainStates(r RoundView) string {
 	var states []string
 	for _, l := range r.Levels {
-		states = append(states, "L"+string(rune('0'+l.Number))+" "+l.State)
+		states = append(states, fmt.Sprintf("L%d %s", l.Number, l.State))
 	}
 	return strings.Join(states, ", ")
 }

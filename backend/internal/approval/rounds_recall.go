@@ -41,7 +41,7 @@ func (s *Service) Recall(ctx context.Context, a actor.Actor, activityID string, 
 		if err = s.repo.PutRound(ctx, round); err != nil {
 			return err
 		}
-		if err = s.addAction(ctx, round, ActionRecalled, waiting.Number, a, nil, now, reason); err != nil {
+		if err = s.addAction(ctx, round, Action{Action: ActionRecalled, Level: waiting.Number, Actor: a, At: now, Comment: reason}); err != nil {
 			return err
 		}
 		updated, err := s.activities.SetStatus(ctx, a, facts.ID, StatusCreated)

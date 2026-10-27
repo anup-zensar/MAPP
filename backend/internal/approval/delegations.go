@@ -176,7 +176,7 @@ func (s *Service) changeableDelegation(ctx context.Context, a actor.Actor, id st
 		return Delegation{}, false, errs.NotAllowed(delegationEndedMessage)
 	}
 	if version == nil || *version < 1 {
-		return Delegation{}, false, errs.Validation(errs.FieldError{Field: "version", Message: reloadMessage})
+		return Delegation{}, false, errs.Validation(errs.FieldError{Field: versionField, Message: reloadMessage})
 	}
 	if err := stored.CheckVersion(*version, delegationSingular); err != nil {
 		return Delegation{}, false, err

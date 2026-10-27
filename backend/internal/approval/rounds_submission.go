@@ -8,8 +8,11 @@ import (
 	"mapp/internal/platform/actor"
 )
 
-// workflowField is the activity form field of the Approval workflow, the key of its problems.
-const workflowField = "approvalWorkflowId"
+// The fields that problems name: the activity form's Approval workflow, and the version every change sends.
+const (
+	workflowField = "approvalWorkflowId"
+	versionField  = "version"
+)
 
 // The kinds of a submission (ApprovalSubmission.kind).
 const (
@@ -70,6 +73,21 @@ func (s *Service) Submission(ctx context.Context, a actor.Actor, activityID stri
 		return Submission{}, err
 	}
 	return submission, nil
+}
+
+// submittable reports whether an activity with status can be submitted: Created, or Declined to re-submit
+// (FR-009).
+func submittable(status string) bool {
+	return status == StatusCreated || status == StatusDeclined
+}
+
+// nextRoundNumber is the number of an activity's next round: 1, then the highest number + 1 (FR-020).
+// rounds are ordered by number.
+func nextRoundNumber(rounds []Round) int {
+	if len(rounds) == 0 {
+		return 1
+	}
+	return rounds[len(rounds)-1].Number + 1
 }
 
 // submissionWorkflow returns the workflow and its levels as the confirmation shows them: none without one.

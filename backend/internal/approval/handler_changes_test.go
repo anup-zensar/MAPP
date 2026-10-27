@@ -12,6 +12,7 @@ import (
 	"mapp/internal/history"
 	"mapp/internal/lineitem"
 	"mapp/internal/platform/apitest"
+	"mapp/internal/platform/date"
 	"mapp/internal/platform/money"
 	"mapp/internal/settings"
 )
@@ -202,14 +203,7 @@ func activityForm(t *testing.T, client *apitest.Client, id string) activity.Upda
 	if v.Owner != nil {
 		form.OwnerID = &v.Owner.ID
 	}
-	if v.StartDate != nil {
-		text := v.StartDate.String()
-		form.StartDate = &text
-	}
-	if v.EndDate != nil {
-		text := v.EndDate.String()
-		form.EndDate = &text
-	}
+	form.StartDate, form.EndDate = dateText(v.StartDate), dateText(v.EndDate)
 	if v.PlannedCost != nil {
 		form.PlannedCost = usd(v.PlannedCost.Amount.String())
 	}
@@ -223,6 +217,15 @@ func activityForm(t *testing.T, client *apitest.Client, id string) activity.Upda
 		}
 	}
 	return form
+}
+
+// dateText returns d as a form sends it, nil for none.
+func dateText(d *date.Date) *string {
+	if d == nil {
+		return nil
+	}
+	text := d.String()
+	return &text
 }
 
 // lineItemForm reads the line item id and returns its whole form, as 007's edit page sends it.

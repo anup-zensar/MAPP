@@ -96,7 +96,7 @@ func (s *Service) escalate(ctx context.Context, a actor.Actor, b *board, rule bo
 		if l.RemindedAt == nil {
 			l.RemindedAt = &b.now
 		}
-		entry, err := s.newAction(ctx, round, ActionEscalated, level.Number, actor.System, nil, b.now, "")
+		entry, err := s.newAction(ctx, round, Action{Action: ActionEscalated, Level: level.Number, Actor: actor.System, At: b.now})
 		if err != nil {
 			return err
 		}
@@ -140,7 +140,7 @@ func (s *Service) escalate(ctx context.Context, a actor.Actor, b *board, rule bo
 			told = append(told, delegates...)
 		}
 		told = unique(told)
-		entry, err := s.newAction(ctx, round, ActionReminded, level.Number, actor.System, nil, b.now, "")
+		entry, err := s.newAction(ctx, round, Action{Action: ActionReminded, Level: level.Number, Actor: actor.System, At: b.now})
 		if err != nil {
 			return err
 		}
