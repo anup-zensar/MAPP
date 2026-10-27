@@ -191,7 +191,7 @@ func TestUpdatePerson_ChangesLoggedOldAndNew_FR028(t *testing.T) {
 			"Job title Marketer → Senior marketer: Teams Lubricants Europe → Lubricants Europe, Mobility China",
 		"Alex Morgan changed team 'Mobility China' (T-1002): Members No members → Priya Raman",
 	})
-	f.read(t, func(ctx context.Context, repo Store) error {
+	f.read(t, func(ctx context.Context, repo JSONStore) error {
 		found, ok, err := repo.FindByEmail(ctx, "priya.r@shell.com")
 		if !ok || found.ID != priya.ID {
 			t.Errorf("FindByEmail(new e-mail) = %+v, %v; want Priya", found, ok)

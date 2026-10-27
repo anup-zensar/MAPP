@@ -695,7 +695,7 @@ func newFixture(t *testing.T) *fixture {
 	clock := &testClock{now: start}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	hist := history.NewService(db, history.NewJSONStore(), generator, clock.Now)
-	service := NewService(db, NewJSONStore(), generator, hist, clock.Now)
+	service := NewService(history.Tools{Tx: db, IDs: generator, Log: hist, Now: clock.Now}, NewJSONStore())
 	for _, kind := range service.Kinds() {
 		if err := hist.Register(kind); err != nil {
 			t.Fatalf("Register(%s): %v", kind.Name, err)
@@ -757,7 +757,7 @@ func (f *fixture) addTeam(t *testing.T, name, colour string, active bool, member
 }
 
 // read runs fn in a Read of the fixture's store with its repository, and stops the test when it fails.
-func (f *fixture) read(t *testing.T, fn func(ctx context.Context, repo Store) error) {
+func (f *fixture) read(t *testing.T, fn func(ctx context.Context, repo JSONStore) error) {
 	t.Helper()
 	err := f.db.Read(t.Context(), func(ctx context.Context) error { return fn(ctx, NewJSONStore()) })
 	if err != nil {
@@ -770,7 +770,7 @@ func (f *fixture) storedPerson(t *testing.T, id string) Person {
 	t.Helper()
 	var p Person
 	var found bool
-	f.read(t, func(ctx context.Context, repo Store) (err error) {
+	f.read(t, func(ctx context.Context, repo JSONStore) (err error) {
 		p, found, err = repo.Get(ctx, id)
 		return err
 	})
@@ -785,7 +785,7 @@ func (f *fixture) storedTeam(t *testing.T, id string) (Team, bool) {
 	t.Helper()
 	var team Team
 	var found bool
-	f.read(t, func(ctx context.Context, repo Store) (err error) {
+	f.read(t, func(ctx context.Context, repo JSONStore) (err error) {
 		team, found, err = repo.GetTeam(ctx, id)
 		return err
 	})
@@ -796,7 +796,7 @@ func (f *fixture) storedTeam(t *testing.T, id string) (Team, bool) {
 func (f *fixture) memberships(t *testing.T) []string {
 	t.Helper()
 	var list []string
-	f.read(t, func(ctx context.Context, repo Store) error {
+	f.read(t, func(ctx context.Context, repo JSONStore) error {
 		stored, err := repo.ListMemberships(ctx)
 		for _, m := range stored {
 			list = append(list, m.TeamID+"/"+m.PersonID)
