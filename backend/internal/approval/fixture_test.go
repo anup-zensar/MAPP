@@ -8,17 +8,18 @@ import (
 	"time"
 
 	"mapp/internal/history"
+	"mapp/internal/history/historytest"
 	"mapp/internal/people"
+	"mapp/internal/people/peopletest"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/money"
 	"mapp/internal/platform/record"
-	"mapp/internal/platform/store"
 )
 
-// start is the time on the clock when every test begins: 12 Mar 2026 09:00 UTC.
 var start = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 
 // The demo people of these tests (demo-users-and-data.md), with the ids the seed gives them.
@@ -31,48 +32,42 @@ var (
 	sara   = actor.Actor{ID: "U-1006", Name: "Sara Novak"}
 )
 
-// The two workflows of the fixture, as the demo data has them (data model §8).
 const (
 	lubricantsFlow = "WF-1001" // Lubricants EU approval: level 1 Daniel Okoro
 	chinaFlow      = "WF-1002" // China BC approval workflow: level 1 Carlos Mendes, level 2 Alex Morgan
 )
 
-// fixture is a service on a temporary store with the six demo people, the two demo workflows and a fake
-// Activities, at a clock that starts at 12 Mar 2026 09:00 UTC.
 type fixture struct {
 	service    *Service
 	activities *fakeActivities
 	history    *history.Service
-	db         *store.DB
+	db         *fake.DB
 	clock      *testClock
 	access     *fakeAccess
 }
 
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
+	db := fake.NewDB()
 	clock := &testClock{now: start}
-	generator := ids.NewGenerator(ids.NewJSONCounters())
-	hist := history.NewService(db, history.NewJSONStore(), generator, clock.Now)
-	fake := &fakeActivities{
+	generator := ids.NewGenerator(fake.NewCounters(db))
+	hist := history.NewService(db, historytest.NewStore(db), generator, clock.Now)
+	activities := &fakeActivities{
 		clock: clock, facts: map[string]ActivityFacts{}, problems: map[string][]SubmitProblem{}, missing: map[string][]MissingFieldRef{},
 		unassigned: map[string]*money.Money{}, lineItems: map[string][]PreviewLineItem{},
 	}
-	peopleRepo := people.NewJSONStore()
-	service := NewService(history.Tools{Tx: db, IDs: generator, Log: hist, Now: clock.Now}, NewJSONStore(), peopleRepo, fake)
+	peopleRepo := peopletest.NewStore(db)
+	service := NewService(history.Tools{Tx: db, IDs: generator, Log: hist, Now: clock.Now}, newFakeStore(db), peopleRepo, activities)
 	access := &fakeAccess{rule: true, cannotApprove: map[string]bool{}, holders: map[string][]string{}}
 	service.UseAccess(access)
 	service.UseRuleChoices(fakeChoices{})
-	f := &fixture{service: service, activities: fake, history: hist, db: db, clock: clock, access: access}
+	f := &fixture{service: service, activities: activities, history: hist, db: db, clock: clock, access: access}
 
 	// The activity kind of feature 006, as far as the log needs it: its name.
-	err = hist.Register(history.Kind{
+	err := hist.Register(history.Kind{
 		Name: activityKind, Singular: "activity", Plural: "activities",
 		Snapshot: func(_ context.Context, id string) (history.Snapshot, bool, error) {
-			facts, found := fake.facts[id]
+			facts, found := activities.facts[id]
 			return history.Snapshot{ID: id, Name: facts.Name}, found, nil
 		},
 		Remove: func(context.Context, string) error { return nil },
@@ -115,8 +110,6 @@ func newFixture(t *testing.T) *fixture {
 	return f
 }
 
-// addActivity stores a Created activity named name, owned by owner, with the workflow workflowID, in the
-// fixture's plan, and returns it.
 func (f *fixture) addActivity(t *testing.T, id, name, owner, workflowID string) ActivityFacts {
 	t.Helper()
 	startDate, endDate := date.MustParse("2026-04-01"), date.MustParse("2026-06-30")
@@ -138,13 +131,10 @@ func (f *fixture) addActivity(t *testing.T, id, name, owner, workflowID string) 
 	return facts
 }
 
-// version returns a pointer to v, for the versions of requests.
 func version(v int) *int {
 	return &v
 }
 
-// submit submits (or re-submits) the activity id as a from its current version, and stops the test when
-// that fails.
 func (f *fixture) submit(t *testing.T, a actor.Actor, id, comment string) ActivityApproval {
 	t.Helper()
 	approval, err := f.service.Submit(t.Context(), a, id, SubmitInput{Version: version(f.activities.facts[id].Version), Comment: comment})
@@ -154,7 +144,6 @@ func (f *fixture) submit(t *testing.T, a actor.Actor, id, comment string) Activi
 	return approval
 }
 
-// read runs fn in a Read of the fixture's store and stops the test when it fails.
 func (f *fixture) read(t *testing.T, fn func(ctx context.Context) error) {
 	t.Helper()
 	if err := f.db.Read(t.Context(), fn); err != nil {
@@ -162,7 +151,6 @@ func (f *fixture) read(t *testing.T, fn func(ctx context.Context) error) {
 	}
 }
 
-// write runs fn in a Write of the fixture's store and stops the test when it fails.
 func (f *fixture) write(t *testing.T, fn func(ctx context.Context) error) {
 	t.Helper()
 	if err := f.db.Write(t.Context(), fn); err != nil {
@@ -170,7 +158,6 @@ func (f *fixture) write(t *testing.T, fn func(ctx context.Context) error) {
 	}
 }
 
-// rounds returns the stored rounds of the activity id, by number.
 func (f *fixture) rounds(t *testing.T, id string) []Round {
 	t.Helper()
 	var rounds []Round
@@ -181,7 +168,6 @@ func (f *fixture) rounds(t *testing.T, id string) []Round {
 	return rounds
 }
 
-// actions returns the stored history entries of the activity id, oldest first.
 func (f *fixture) actions(t *testing.T, id string) []Action {
 	t.Helper()
 	var actions []Action
@@ -192,7 +178,6 @@ func (f *fixture) actions(t *testing.T, id string) []Action {
 	return actions
 }
 
-// notifications returns the stored notifications of the person personID, newest first.
 func (f *fixture) notifications(t *testing.T, personID string) []Notification {
 	t.Helper()
 	var list []Notification
@@ -203,7 +188,6 @@ func (f *fixture) notifications(t *testing.T, personID string) []Notification {
 	return list
 }
 
-// log returns the activity-log entries about the record id, newest first.
 func (f *fixture) log(t *testing.T, id string) []history.Entry {
 	t.Helper()
 	entries, _, err := f.history.ListLog(t.Context(), priya, history.LogFilter{RecordID: id, Limit: 200})
@@ -213,7 +197,6 @@ func (f *fixture) log(t *testing.T, id string) []history.Entry {
 	return entries
 }
 
-// mustAmount parses a decimal text and stops the test when it is not one.
 func mustAmount(t *testing.T, text string) money.Amount {
 	t.Helper()
 	amount, err := money.ParseAmount(text)
@@ -223,7 +206,6 @@ func mustAmount(t *testing.T, text string) money.Amount {
 	return amount
 }
 
-// assertError checks that err is exactly want.
 func assertError(t *testing.T, err error, want *errs.Error) {
 	t.Helper()
 	var got *errs.Error
@@ -232,7 +214,6 @@ func assertError(t *testing.T, err error, want *errs.Error) {
 	}
 }
 
-// testClock is a clock that shows a fixed time until Advance moves it.
 type testClock struct {
 	now time.Time
 }
@@ -240,21 +221,20 @@ type testClock struct {
 func (c *testClock) Now() time.Time          { return c.now }
 func (c *testClock) Advance(d time.Duration) { c.now = c.now.Add(d) }
 
-// setManager makes manager the line manager of the person p in the fixture's store.
 func (f *fixture) setManager(t *testing.T, p, manager actor.Actor) {
 	t.Helper()
+	repo := peopletest.NewStore(f.db)
 	f.write(t, func(ctx context.Context) error {
-		person, _, err := people.NewJSONStore().Get(ctx, p.ID)
+		person, _, err := repo.Get(ctx, p.ID)
 		if err != nil {
 			return err
 		}
 		person.ManagerID = manager.ID
-		return people.NewJSONStore().Put(ctx, person)
+		return repo.Put(ctx, person)
 	})
 }
 
-// decideLevel is a round level whose approvers decide, as Submit stores one of named people where any one
-// approves.
+// decideLevel is a level of named people where any one approves, as Submit stores it.
 func decideLevel(n int, approvers ...actor.Actor) RoundLevel {
 	if approvers == nil {
 		approvers = []actor.Actor{}

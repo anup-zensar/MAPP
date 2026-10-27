@@ -8,18 +8,16 @@ import (
 	"testing"
 	"time"
 
-	"mapp/internal/people"
+	"mapp/internal/people/peopletest"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
 )
 
-// day writes the fixture's today plus n days as a request sends it.
 func (f *fixture) day(n int) string {
 	return f.today().AddDays(n).String()
 }
 
-// createDelegation creates a delegation as a and stops the test when that fails.
 func (f *fixture) createDelegation(t *testing.T, a actor.Actor, in DelegationInput) DelegationView {
 	t.Helper()
 	view, err := f.service.CreateDelegation(t.Context(), a, in)
@@ -29,9 +27,8 @@ func (f *fixture) createDelegation(t *testing.T, a actor.Actor, in DelegationInp
 	return view
 }
 
-// A person delegates their approvals to one active person who can approve, for at most 90 days from today
-// or later, with an optional note; every problem is reported at once, and a second delegation on the same
-// days is refused (017 FR-022, data-model §7). The delegation is logged.
+// A delegation goes to one active approver for at most 90 days from today; every problem is reported at once,
+// and a second one on the same days is refused.
 func TestCreateDelegation_Rules_FR022(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -81,9 +78,7 @@ func TestCreateDelegation_Rules_FR022(t *testing.T) {
 	}
 }
 
-// The delegations panel lists the person's delegations, as delegating person or delegate: current and
-// planned by first day, then ended and cancelled, latest last day first; each with its state and whether
-// the person may change it (017 FR-024).
+// Current and planned delegations come by first day, then ended and cancelled ones, latest last day first.
 func TestDelegation_States_FR024(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -124,9 +119,7 @@ func TestDelegation_States_FR024(t *testing.T) {
 	assertError(t, err, errs.Validation(errs.FieldError{Field: "scope", Message: "Choose mine or all."}))
 }
 
-// A planned or current delegation can be changed — a current one keeps its first day — and cancelled, by
-// the delegating person, from the version they saw; ended and cancelled ones are kept read-only; changes
-// and the cancel are logged (017 FR-024, FR-035).
+// A current delegation keeps its first day when changed; ended and cancelled ones are read-only.
 func TestUpdateCancelDelegation_FR024(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -178,8 +171,7 @@ func TestUpdateCancelDelegation_FR024(t *testing.T) {
 	assertError(t, err, errs.NotFound("This delegation no longer exists."))
 }
 
-// People who can change approval workflows manage everyone's delegations; others only their own (017
-// FR-022, D-296): creating one for someone else and listing everyone's are refused with 014's message.
+// Without the right to change workflows, a delegation for someone else and everyone's list are refused.
 func TestDelegations_ForOthersNeedWorkflowsManage_FR022(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -209,10 +201,8 @@ func TestDelegations_ForOthersNeedWorkflowsManage_FR022(t *testing.T) {
 	}
 }
 
-// On each day of a current delegation the delegate may decide wherever the delegating person can as an
-// approver, sees those activities in Waiting for me marked "as delegate of", and is counted in the summary;
-// the delegating person keeps every right. A planned delegation, an inactive delegate, a delegate who
-// cannot approve and a delegate's own delegate have no effect (017 FR-023).
+// A planned delegation, an inactive delegate, a delegate who cannot approve and a delegate's own delegate have
+// no effect; the delegating person keeps every right.
 func TestDelegation_Effect_FR023(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -248,13 +238,14 @@ func TestDelegation_Effect_FR023(t *testing.T) {
 	if ids := f.inboxIDs(t, carlos, TabWaiting); len(ids) != 0 {
 		t.Errorf("an inactive delegate still has %v", ids)
 	}
+	repo := peopletest.NewStore(f.db)
 	f.write(t, func(ctx context.Context) error {
-		p, _, err := people.NewJSONStore().Get(ctx, carlos.ID)
+		p, _, err := repo.Get(ctx, carlos.ID)
 		if err != nil {
 			return err
 		}
 		p.Active = true
-		return people.NewJSONStore().Put(ctx, p)
+		return repo.Put(ctx, p)
 	})
 
 	approval := f.approve(t, carlos, "A-1001", "")

@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"slices"
+	"time"
 
 	"mapp/internal/platform/store"
 )
@@ -133,15 +134,21 @@ func (JSONStore) PutNotification(ctx context.Context, n Notification) error {
 	return store.Put(ctx, notificationsTable, n.ID, n)
 }
 
-// where returns the records that keep accepts, in order; never nil.
-func where[T any](records []T, keep func(T) bool) []T {
-	kept := []T{}
-	for _, r := range records {
-		if keep(r) {
-			kept = append(kept, r)
+func (r JSONStore) MarkNotificationsRead(ctx context.Context, ids []string, at time.Time) error {
+	for _, id := range ids {
+		n, found, err := r.GetNotification(ctx, id)
+		if err != nil {
+			return err
+		}
+		if !found {
+			continue
+		}
+		n.Read, n.ReadAt = true, &at
+		if err = r.PutNotification(ctx, n); err != nil {
+			return err
 		}
 	}
-	return kept
+	return nil
 }
 
 // GetDelegation reads one delegation.
