@@ -38,6 +38,7 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
 | 026 | [026-web-app-structure](../../specs/026-web-app-structure/spec.md) | Web-app structure: constitution F2 folders, React Hook Form + Zod, MSW, per-route splitting | P2 | 019, 020, 022 | Done |
 | 027 | [027-test-hygiene](../../specs/027-test-hygiene/spec.md) | Test hygiene: drop tests that prove nothing, fast and deterministic suites; coverage threshold once SonarQube exists | P3 | 019 | In review — phase 1 merged (#12); phase 2 (every other backend package) in review |
 | 028 | [028-query-efficiency](../../specs/028-query-efficiency/spec.md) | Query efficiency: no page or operation sends statements that grow with its records (N+1); reference data read once per transaction; statements per request in the request log; benchmarks at the scale targets' volumes | P1 | 023 | In review |
+| 029 | [029-test-fakes](../../specs/029-test-fakes/spec.md) | Test fakes: service, handler and contract tests on hand-written in-memory fakes; the JSON file store deleted | P2 | 023, 025 | In progress |
 
 ## Scope boundaries
 
