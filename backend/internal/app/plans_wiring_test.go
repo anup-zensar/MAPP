@@ -33,7 +33,7 @@ func TestPlansDependencies_ReadTheDemoData(t *testing.T) {
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	historyService := history.NewService(db, history.NewJSONStore(), generator, now)
-	var s plans.Settings = settings.NewService(db, settings.NewJSONStore(), generator, historyService, now)
+	var s plans.Settings = settings.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, settings.NewJSONStore())
 	var d plans.Directory = people.NewService(db, people.NewJSONStore(), generator, historyService, now)
 
 	err = db.Read(t.Context(), func(ctx context.Context) error {

@@ -9,6 +9,7 @@ import (
 	"mapp/internal/budgets"
 	"mapp/internal/campaigns"
 	"mapp/internal/financials"
+	"mapp/internal/history"
 	"mapp/internal/home"
 	"mapp/internal/lineitems"
 	"mapp/internal/plans"
@@ -34,7 +35,7 @@ func (w *wiring) areas() error {
 }
 
 func (w *wiring) settingsArea() error {
-	w.settings = settings.NewService(w.set.Tx, w.set.Settings, w.generator, w.history, w.now)
+	w.settings = settings.NewService(history.Tools{Tx: w.set.Tx, IDs: w.generator, Log: w.history, Now: w.now}, w.set.Settings)
 	if err := w.register(w.settings.Kinds()); err != nil {
 		return err
 	}

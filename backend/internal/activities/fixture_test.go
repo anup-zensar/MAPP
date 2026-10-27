@@ -82,7 +82,8 @@ func newFixture(t *testing.T) *fixture {
 	campaignsRepo := campaigns.NewJSONStore()
 	service := activities.NewService(db, activities.NewJSONStore(), generator, hist, clock.Now, activities.Deps{
 		Plans: plans.NewJSONStore(), Hierarchy: campaignsRepo,
-		Settings: settings.NewService(db, settings.NewJSONStore(), generator, hist, clock.Now), People: people.NewJSONStore(),
+		Settings:  settings.NewService(history.Tools{Tx: db, IDs: generator, Log: hist, Now: clock.Now}, settings.NewJSONStore()),
+		People:    people.NewJSONStore(),
 		Workflows: activities.NewSeededWorkflows(approvals.NewJSONStore()),
 	})
 	for _, kind := range append([]history.Kind{initiativeKind(campaignsRepo)}, service.Kinds()...) {
