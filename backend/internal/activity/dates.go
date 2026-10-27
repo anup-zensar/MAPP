@@ -37,25 +37,31 @@ func parseDate(problems *errs.Problems, field string, text *string) *date.Date {
 
 // checkDates adds the problems of an activity's dates to problems (FR-009, FR-010): the end on or after
 // the start; both inside the initiative's dates when the initiative has both (R3) — for an ongoing activity
-// only the start; the end no later than latestEnd (R5). end is ignored when ongoing.
-func checkDates(problems *errs.Problems, start, end *date.Date, ongoing bool, initiative campaign.Initiative, latestEnd date.Date) {
-	if ongoing {
+// only the start; the end no later than latestEnd (R5). The end is ignored when ongoing.
+func checkDates(problems *errs.Problems, a Activity, initiative campaign.Initiative, latestEnd date.Date) {
+	start, end := a.StartDate, a.EndDate
+	if a.Ongoing {
 		end = nil
 	}
 	if start != nil && end != nil && end.Before(*start) {
 		problems.Add("endDate", fmt.Sprintf(endBeforeStartFormat, date.Format(*start)))
 	}
-	if initiative.StartDate != nil && initiative.EndDate != nil {
-		message := fmt.Sprintf(outsideFormat, date.FormatRangeFull(*initiative.StartDate, *initiative.EndDate))
-		if start != nil && !inside(*start, initiative) {
-			problems.Add("startDate", message)
-		}
-		if end != nil && !inside(*end, initiative) {
-			problems.Add("endDate", message)
-		}
-	}
+	checkInside(problems, start, end, initiative)
 	if end != nil && end.After(latestEnd) {
 		problems.Add("endDate", fmt.Sprintf(afterLatestFormat, date.Format(latestEnd)))
+	}
+}
+
+func checkInside(problems *errs.Problems, start, end *date.Date, initiative campaign.Initiative) {
+	if initiative.StartDate == nil || initiative.EndDate == nil {
+		return
+	}
+	message := fmt.Sprintf(outsideFormat, date.FormatRangeFull(*initiative.StartDate, *initiative.EndDate))
+	if start != nil && !inside(*start, initiative) {
+		problems.Add("startDate", message)
+	}
+	if end != nil && !inside(*end, initiative) {
+		problems.Add("endDate", message)
 	}
 }
 

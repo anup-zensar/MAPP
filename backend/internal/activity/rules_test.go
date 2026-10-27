@@ -68,7 +68,7 @@ func TestCheckDates_FR009_FR010(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var problems errs.Problems
-			checkDates(&problems, tt.start, tt.end, tt.ongoing, tt.initiative, latest)
+			checkDates(&problems, Activity{StartDate: tt.start, EndDate: tt.end, Ongoing: tt.ongoing}, tt.initiative, latest)
 			if !reflect.DeepEqual(problems, tt.want) {
 				t.Errorf("problems = %+v, want %+v", problems, tt.want)
 			}

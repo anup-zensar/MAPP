@@ -24,7 +24,7 @@ func (s *Service) Create(ctx context.Context, a actor.Actor, initiativeID string
 			return errs.NotFound(initiativeGoneMessage)
 		}
 		var problems errs.Problems
-		activity, err := s.checkFields(ctx, &problems, pc, in, nil)
+		activity, err := s.checkFields(ctx, &problems, fieldCheck{pc: pc, in: in})
 		if err != nil {
 			return err
 		}
