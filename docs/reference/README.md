@@ -16,7 +16,7 @@ from **the Hive9 application itself** — Shell's live Hive9 sandbox, analysed i
 | [gsap-workshop-summary.md](gsap-workshop-summary.md) | WS | Shell/Zensar workshop "Understanding GSAP–Hive9 integrations" | 10 Sep 2026 | Line-item finance fields, SWBS, future GSAP flow |
 | [hive9-replacement-project-plan.md](hive9-replacement-project-plan.md) | PP | Zensar project plan: personas (19 roles), in-scope features, roadmap | Oct 2026 | Scope |
 | [prism-findings-summary.md](prism-findings-summary.md) | PRISM | Sidekick for Shell, *PRISM Phase 1 Findings and Future-State Requirements* | May 2026 | Priorities: foundations before features |
-| [shell-target-architecture.md](shell-target-architecture.md) | ARCH | *Hive9 Final Architecture* deck (4 slides) | Oct 2026 | Target platform (later) |
+| [shell-target-architecture.md](shell-target-architecture.md) | ARCH | *Application and Azure Deployment Architecture* deck (v3, 6 slides) | Oct 2026 | Target platform (later) |
 
 **Precedence when sources disagree on behaviour (D-007):** PM > FA (Live) > WS > FA (Guide).
 **The design system decides layout, look and interaction (D-005).**
@@ -25,5 +25,6 @@ from **the Hive9 application itself** — Shell's live Hive9 sandbox, analysed i
 
 - `Hive9 - User & Admin Guide - EN.pdf` (Uptempo vendor guide) — the "Guide" evidence in FA.
 - `Workshop_ Understanding GSAP-Hive9 Integrations.docx` — full transcript (summarised here).
-- `Hive9_Final_Architecture.pptx` — summarised here.
+- `Application_and_Azure_Deployment_Architecture_Enterprise_Updated_v3.pdf` — summarised here
+  (supersedes `Hive9_Final_Architecture.pptx`).
 - `Business Requirements.pdf` — transcribed in `brd-requirements.md`.
