@@ -6,6 +6,8 @@ import (
 	"context"
 	"errors"
 	"sync"
+
+	"mapp/internal/platform/memo"
 )
 
 var ErrReadOnly = errors.New("fake: data cannot be changed inside a Read")
@@ -34,13 +36,14 @@ func NewDB() *DB {
 	return &DB{tables: map[string]table{}}
 }
 
+// Read keeps a memo as database.DB does; a Write keeps none, so no fake has to forget what a change outdates.
 func (db *DB) Read(ctx context.Context, fn func(ctx context.Context) error) error {
 	if _, joined := db.current(ctx); joined {
 		return fn(ctx)
 	}
 	db.mu.RLock()
 	defer db.mu.RUnlock()
-	return fn(context.WithValue(ctx, txKey{}, &tx{db: db, readOnly: true}))
+	return fn(context.WithValue(memo.With(ctx), txKey{}, &tx{db: db, readOnly: true}))
 }
 
 func (db *DB) Write(ctx context.Context, fn func(ctx context.Context) error) error {
@@ -66,7 +69,6 @@ func (db *DB) Write(ctx context.Context, fn func(ctx context.Context) error) err
 	return nil
 }
 
-// Copy returns a new DB holding the same records: one test changes its copy without touching the original.
 func (db *DB) Copy() *DB {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
