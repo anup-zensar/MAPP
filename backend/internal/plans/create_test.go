@@ -154,17 +154,29 @@ func TestCreate_DraftWithIDAndLog_FR010_FR031(t *testing.T) {
 	if view.ID != "P-1001" || view.Status != StatusDraft || view.Meta != record.NewMeta(priya, start) {
 		t.Errorf("plan %s, %s, %+v; want P-1001, Draft, created by Priya now", view.ID, view.Status, view.Meta)
 	}
+	f.assertLubricantsReferences(t, view)
+	if len(view.Completeness.Missing) != 0 || view.Goals.Plan.MQL == nil || *view.Goals.Plan.MQL != 5000 {
+		t.Errorf("completeness %+v, goals %+v; want all filled in and MQL 5,000", view.Completeness, view.Goals.Plan)
+	}
+	assertCreatedByPriya(t, f.entries(t), "P-1001", "FY2026 Lubricants Test")
+}
+
+// assertLubricantsReferences checks the references of a plan created from input: the Lubricants team, Priya
+// as owner, the Lubricants model and business unit.
+func (f *fixture) assertLubricantsReferences(t *testing.T, view PlanView) {
+	t.Helper()
 	if !reflect.DeepEqual(view.Teams, []people.TeamRef{f.directory.teams[teamLubricants]}) ||
 		!reflect.DeepEqual(view.Owner, ptr(f.directory.people[priya.ID])) || view.Model.Name != "Lubricants 1.0" ||
 		!reflect.DeepEqual(view.BusinessUnit, []OptionRef{{ID: lubricants, Label: "Lubricants", Active: true}}) {
 		t.Errorf("references: teams %+v, owner %+v, model %+v, business unit %+v", view.Teams, view.Owner, view.Model, view.BusinessUnit)
 	}
-	if len(view.Completeness.Missing) != 0 || view.Goals.Plan.MQL == nil || *view.Goals.Plan.MQL != 5000 {
-		t.Errorf("completeness %+v, goals %+v; want all filled in and MQL 5,000", view.Completeness, view.Goals.Plan)
-	}
-	entries := f.entries(t)
-	if len(entries) != 1 || entries[0].Action != history.ActionCreated || entries[0].RecordID != "P-1001" ||
-		entries[0].RecordType != "plan" || entries[0].Actor != priya || entries[0].RecordName != "FY2026 Lubricants Test" {
+}
+
+// assertCreatedByPriya checks that the log holds one entry: Priya's "created" entry of the plan id named name.
+func assertCreatedByPriya(t *testing.T, entries []history.Entry, id, name string) {
+	t.Helper()
+	if len(entries) != 1 || entries[0].Action != history.ActionCreated || entries[0].RecordID != id ||
+		entries[0].RecordType != "plan" || entries[0].Actor != priya || entries[0].RecordName != name {
 		t.Errorf("log = %+v, want one created entry by Priya", entries)
 	}
 }

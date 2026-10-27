@@ -33,7 +33,7 @@ func TestGet_NotFound_FR011(t *testing.T) {
 // the reader's display currency: remaining −100,000.00 USD (over-allocated), 80 % used, 4 of 7 activities
 // approved, 60 % of the INQ goal planned, and the campaign that needs attention (FR-012, FR-015 – FR-017,
 // US3 scenarios 2, 3 and 5).
-func TestGet_FactsFromLevels_FR012_FR016_FR017(t *testing.T) {
+func TestGet_FactsFromLevels_FR012_FR016_FR017(t *testing.T) { //nolint:gocyclo // 14: the figures, goals, completeness and contents of one plan, then its figures in euros
 	t.Parallel()
 	f := newFixture(t)
 	in := input("FY2026 Lubricants Europe")
@@ -104,7 +104,7 @@ func TestGet_MissingFieldsAndOwnerProblem_FR017_FR021(t *testing.T) {
 // Lookup reads a plan inside a caller's Write (for 005–007); References lists what every plan uses, the
 // plans in the recycle bin included and marked, for the "Used by" counts of 002 and 003; a recycle-bin
 // snapshot decodes to the same references as the stored plan.
-func TestLookupAndReferences(t *testing.T) {
+func TestLookupAndReferences(t *testing.T) { //nolint:gocyclo // 11: two lookups, then the references of both plans and of a snapshot
 	t.Parallel()
 	f := newFixture(t)
 	kept := f.create(t, priya, input("FY2026 Lubricants Test"))
@@ -120,12 +120,12 @@ func TestLookupAndReferences(t *testing.T) {
 	var found, missing bool
 	var lookedUp Plan
 	err = f.db.Write(t.Context(), func(ctx context.Context) error {
-		var err error
-		if lookedUp, found, err = f.service.Lookup(ctx, priya, kept.ID); err != nil {
-			return err
+		var lookupErr error
+		if lookedUp, found, lookupErr = f.service.Lookup(ctx, priya, kept.ID); lookupErr != nil {
+			return lookupErr
 		}
-		_, missing, err = f.service.Lookup(ctx, priya, deleted.ID)
-		return err
+		_, missing, lookupErr = f.service.Lookup(ctx, priya, deleted.ID)
+		return lookupErr
 	})
 	refs, refsErr := f.service.References(t.Context(), priya)
 	fromSnapshot, snapshotErr := ReferencesFromSnapshot(entry.Snapshots[0].Data)

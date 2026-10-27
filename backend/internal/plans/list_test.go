@@ -34,7 +34,7 @@ func itemIDs(list PlanList) []string {
 // The Plans list is sorted by year, newest first, then by name; status and year narrow it; total counts
 // the plans in the team scope, and the summary covers the scope and the chosen year whatever the status
 // (FR-001, FR-003, D-080, US2 scenarios 1 and 2).
-func TestList_FiltersSortAndSummary_FR001_FR003(t *testing.T) {
+func TestList_FiltersSortAndSummary_FR001_FR003(t *testing.T) { //nolint:gocyclo // 10: two lists, then the rows, totals and summary of each checked in turn
 	t.Parallel()
 	f := newFixture(t)
 	f.putDemoPlans(t)
@@ -64,19 +64,25 @@ func TestList_FiltersSortAndSummary_FR001_FR003(t *testing.T) {
 	if !reflect.DeepEqual(draft2026.Summary, want2026) {
 		t.Errorf("summary of 2026 = %+v, want %+v", draft2026.Summary, want2026)
 	}
-	item := all.Items[1] // FY2026 Lubricants Europe
-	if item.Owner == nil || item.Owner.Name != "Priya Raman" || item.Figures.BudgetUsedPercent == nil ||
-		*item.Figures.BudgetUsedPercent != 80 || len(item.Completeness.Missing) != 0 || item.Teams[0].Name != "Lubricants Europe" {
-		t.Errorf("FY2026 Lubricants Europe = %+v", item)
-	}
+	assertLubricantsEuropeRow(t, all.Items[1])
 
 	_, err = f.service.List(t.Context(), priya, ListFilter{Scope: "mine", Status: "open"})
 	assertError(t, err, problems("scope", "Choose all or myTeams.", "status", "Choose draft or published."))
 }
 
+// assertLubricantsEuropeRow checks the list row of the demo plan FY2026 Lubricants Europe: its owner, 80 % of
+// its budget used, nothing missing and its team.
+func assertLubricantsEuropeRow(t *testing.T, item PlanSummary) {
+	t.Helper()
+	if item.Owner == nil || item.Owner.Name != "Priya Raman" || item.Figures.BudgetUsedPercent == nil ||
+		*item.Figures.BudgetUsedPercent != 80 || len(item.Completeness.Missing) != 0 || item.Teams[0].Name != "Lubricants Europe" {
+		t.Errorf("FY2026 Lubricants Europe = %+v", item)
+	}
+}
+
 // My teams keeps the plans with one of the person's teams; All plans is every plan (FR-004, Q-006, US2
 // scenario 4).
-func TestList_MyTeams_FR004(t *testing.T) {
+func TestList_MyTeams_FR004(t *testing.T) { //nolint:gocyclo // 10: three people's lists, each checked in one condition
 	t.Parallel()
 	f := newFixture(t)
 	f.putDemoPlans(t)
