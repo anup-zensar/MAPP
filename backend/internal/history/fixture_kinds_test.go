@@ -7,33 +7,26 @@ import (
 	"testing"
 
 	"mapp/internal/platform/record"
-	"mapp/internal/platform/store"
 )
 
-// Tables of the test kinds.
 const (
 	parentsTable       = "parents"
 	childrenTable      = "children"
 	grandchildrenTable = "grandchildren"
 )
 
-// testRecord is the record of every test kind: a parent, a child under a parent, or a grandchild under a
-// child.
 type testRecord struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
 	ParentID string `json:"parentId"`
-	Status   string `json:"status,omitempty"` // only the tests of restore rules (011) give one
+	Status   string `json:"status,omitempty"`
 	record.Meta
 }
 
-// newRecord returns a record that Priya created when the test started.
 func newRecord(id, name, parentID string) testRecord {
 	return testRecord{ID: id, Name: name, ParentID: parentID, Meta: record.NewMeta(priya, start)}
 }
 
-// standardKinds returns the kinds parent, child and grandchild, parents first, for a test to adjust and
-// register.
 func (f *fixture) standardKinds() []Kind {
 	return []Kind{
 		f.testKind("parent", "parents", "", parentsTable),
@@ -42,13 +35,13 @@ func (f *fixture) standardKinds() []Kind {
 	}
 }
 
-// testKind returns a kind whose records are testRecords kept in table; its singular is its name. Remove
-// notes every id in f.removed, so tests can check the order.
+// testKind notes every id it removes in f.removed, so tests can check the order.
 func (f *fixture) testKind(name, plural, parent, table string) Kind {
+	records := f.records(table)
 	k := Kind{
 		Name: name, Singular: name, Plural: plural, Parent: parent,
 		Snapshot: func(ctx context.Context, id string) (Snapshot, bool, error) {
-			r, found, err := store.Get[testRecord](ctx, table, id)
+			r, found, err := records.Get(id)
 			if err != nil || !found {
 				return Snapshot{}, false, err
 			}
@@ -57,24 +50,24 @@ func (f *fixture) testKind(name, plural, parent, table string) Kind {
 		},
 		Remove: func(ctx context.Context, id string) error {
 			f.removed = append(f.removed, id)
-			return store.Delete(ctx, table, id)
+			return records.Delete(ctx, id)
 		},
 		Put: func(ctx context.Context, s Snapshot) error {
 			var r testRecord
 			if err := json.Unmarshal(s.Data, &r); err != nil {
 				return err
 			}
-			return store.Put(ctx, table, r.ID, r)
+			return records.Put(ctx, r)
 		},
 	}
 	if parent != "" {
-		k.ChildIDs = func(ctx context.Context, parentID string) ([]string, error) {
-			records, err := store.List[testRecord](ctx, table)
+		k.ChildIDs = func(_ context.Context, parentID string) ([]string, error) {
+			all, err := records.List()
 			if err != nil {
 				return nil, err
 			}
 			var childIDs []string
-			for _, r := range slices.Backward(records) { // backwards, so the test sees history sort them
+			for _, r := range slices.Backward(all) { // backwards, so the test sees history sort them
 				if r.ParentID == parentID {
 					childIDs = append(childIDs, r.ID)
 				}
@@ -85,8 +78,6 @@ func (f *fixture) testKind(name, plural, parent, table string) Kind {
 	return k
 }
 
-// describeOwner is a Describe hook that names the person in the field "owner", as a kind holding people's
-// ids would. It leaves every other field to the defaults.
 func describeOwner(_ context.Context, field string, value any) (string, string, error) {
 	if field != "owner" {
 		return "", "", nil
@@ -96,11 +87,8 @@ func describeOwner(_ context.Context, field string, value any) (string, string, 
 	return "Owner", names[id], nil
 }
 
-// newStatusFixture returns a fixture with the tree of addTree in which C-1, G-1 and G-2 are approved, and
-// restore rules like those of the planning kinds (004–008): a child or grandchild restored from the bin
-// comes back as created (with a note), a child whose name is taken gets " (restored)", and a grandchild
-// restored under a stored, approved child sends that child back to created and logs it, as 007's
-// AfterRestore does. An Undo keeps everything as it was.
+// newStatusFixture approves C-1, G-1 and G-2 and gives the planning kinds' restore rules: a restore (not an
+// Undo) brings a record back as created, renames a child whose name is taken and sends an approved parent back.
 func newStatusFixture(t *testing.T) *fixture {
 	t.Helper()
 	f := newBareFixture(t)
@@ -115,7 +103,7 @@ func newStatusFixture(t *testing.T) *fixture {
 		}
 		var notes []string
 		if s.Kind == "child" {
-			taken, err := nameTaken(ctx, r)
+			taken, err := f.nameTaken(r)
 			if err != nil {
 				return nil, err
 			}
@@ -149,9 +137,8 @@ func newStatusFixture(t *testing.T) *fixture {
 	return f
 }
 
-// nameTaken reports whether another stored child of the same parent has the name of r.
-func nameTaken(ctx context.Context, r testRecord) (bool, error) {
-	children, err := store.List[testRecord](ctx, childrenTable)
+func (f *fixture) nameTaken(r testRecord) (bool, error) {
+	children, err := f.records(childrenTable).List()
 	if err != nil {
 		return false, err
 	}
@@ -160,16 +147,14 @@ func nameTaken(ctx context.Context, r testRecord) (bool, error) {
 	}), nil
 }
 
-// sendParentBack sends the stored child parentID back to created when it is approved, and logs that
-// through history, as 007's AfterRestore does for an activity whose line item comes back.
 func (f *fixture) sendParentBack(ctx context.Context, rc RestoreContext, parentID string) error {
-	parent, found, err := store.Get[testRecord](ctx, childrenTable, parentID)
+	parent, found, err := f.records(childrenTable).Get(parentID)
 	if err != nil || !found || parent.Status != "approved" {
 		return err
 	}
 	parent.Status = "created"
 	parent.Touch(rc.Actor, rc.Now)
-	if putErr := store.Put(ctx, childrenTable, parent.ID, parent); putErr != nil {
+	if putErr := f.records(childrenTable).Put(ctx, parent); putErr != nil {
 		return putErr
 	}
 	_, err = f.service.Log(ctx, rc.Actor, LogInput{Kind: "child", RecordID: parent.ID, RecordName: parent.Name,
@@ -178,11 +163,10 @@ func (f *fixture) sendParentBack(ctx context.Context, rc RestoreContext, parentI
 	return err
 }
 
-// withKind returns a second service on the fixture's data that also knows a kind called name under the
-// kind "parent": the entries it logs are about a kind the fixture's service does not know.
+// withKind returns a second service that also knows the kind name: the fixture's service does not know it.
 func (f *fixture) withKind(t *testing.T, name string) *Service {
 	t.Helper()
-	other := NewService(f.db, NewJSONStore(), f.service.ids, f.clock.Now)
+	other := NewService(f.db, newFakeStore(f.db), f.service.ids, f.clock.Now)
 	for _, k := range append(f.standardKinds(), f.testKind(name, name+"s", "parent", "others")) {
 		if err := other.Register(k); err != nil {
 			t.Fatalf("Register(%s): %v", k.Name, err)
