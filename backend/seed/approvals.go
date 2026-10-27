@@ -171,7 +171,7 @@ func (d *demo) addApprovals(ctx context.Context) error {
 		if dr.resubmitted {
 			submitted = approvals.ActionResubmitted
 		}
-		if err := d.addAction(ctx, repo, round, submitted, submitter, submittedAt, ""); err != nil {
+		if err := d.addAction(ctx, repo, round, roundAction{kind: submitted, by: submitter, at: submittedAt}); err != nil {
 			return err
 		}
 		for _, decision := range dr.decisions {
@@ -184,7 +184,7 @@ func (d *demo) addApprovals(ctx context.Context) error {
 			if decision.declined {
 				action = approvals.ActionDeclined
 			}
-			if err := d.addAction(ctx, repo, round, action, by, at, decision.comment); err != nil {
+			if err := d.addAction(ctx, repo, round, roundAction{kind: action, by: by, at: at, comment: decision.comment}); err != nil {
 				return err
 			}
 			switch {
@@ -208,18 +208,25 @@ func (d *demo) addApprovals(ctx context.Context) error {
 	return d.addDelegation(ctx)
 }
 
+// roundAction is what one history entry of a round records: what was done, by whom, when and why.
+type roundAction struct {
+	kind    approvals.ActionKind
+	by      actor.Actor
+	at      time.Time
+	comment string
+}
+
 // addAction writes one history entry of round at its current level.
-func (d *demo) addAction(ctx context.Context, repo stores.ApprovalStore, round approvals.Round, kind approvals.ActionKind,
-	by actor.Actor, at time.Time, comment string) error {
+func (d *demo) addAction(ctx context.Context, repo stores.ApprovalStore, round approvals.Round, action roundAction) error {
 	id, err := d.next(ctx, ids.PrefixApprovalAction)
 	if err != nil {
 		return err
 	}
 	level := round.Levels[round.CurrentLevel-1]
 	return repo.PutAction(ctx, approvals.Action{
-		ID: id, RoundID: round.ID, RoundNumber: round.Number, ActivityID: round.ActivityID, Action: kind,
-		Level: level.Number, LevelName: level.Name, Approvers: level.Approvers, Actor: by, OnBehalfOf: []actor.Actor{},
-		At: at, Comment: comment, Changes: []approvals.ChangeText{},
+		ID: id, RoundID: round.ID, RoundNumber: round.Number, ActivityID: round.ActivityID, Action: action.kind,
+		Level: level.Number, LevelName: level.Name, Approvers: level.Approvers, Actor: action.by, OnBehalfOf: []actor.Actor{},
+		At: action.at, Comment: action.comment, Changes: []approvals.ChangeText{},
 	})
 }
 
