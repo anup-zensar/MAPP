@@ -55,7 +55,7 @@ func (s *PostgresStore) RoundsInScope(ctx context.Context, scope authz.Scope) ([
 	return roundsFromRows(rows)
 }
 
-// PutRound saves r with its levels normalised, as the JSON store reads them back.
+// PutRound saves r with feature 017's defaults in its levels.
 func (s *PostgresStore) PutRound(ctx context.Context, r Round) error {
 	normalised := Round{Levels: slices.Clone(r.Levels)}.normalised().Levels
 	levels, levelsErr := json.Marshal(normalised)

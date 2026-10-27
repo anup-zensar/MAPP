@@ -29,7 +29,4 @@ type Store interface {
 	DeleteInitiatives(ctx context.Context, ids []string) error
 }
 
-var (
-	_ Store = (*PostgresStore)(nil)
-	_ Store = JSONStore{}
-)
+var _ Store = (*PostgresStore)(nil)

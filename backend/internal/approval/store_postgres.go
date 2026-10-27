@@ -74,8 +74,7 @@ func copyOfWorkflow(w Workflow) Workflow {
 	return w
 }
 
-// PutWorkflow saves w with its levels normalised, which is how the JSON store reads every level back, so a
-// workflow read from either store is the same.
+// PutWorkflow saves w with feature 017's defaults in its levels, so every workflow reads back alike.
 func (s *PostgresStore) PutWorkflow(ctx context.Context, w Workflow) error {
 	q := s.change(ctx)
 	err := q.PutWorkflow(ctx, sqlcdb.PutWorkflowParams{

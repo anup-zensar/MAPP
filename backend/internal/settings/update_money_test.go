@@ -8,7 +8,7 @@ import (
 	"mapp/internal/settings"
 )
 
-// An update's money field tells "left out", "null" and an amount apart (D-203).
+// An update's money field tells "left out", "null" and an amount apart.
 func TestOptionalMoney_LeftOutNullOrAmount_D203(t *testing.T) {
 	t.Parallel()
 	var update settings.ActivityTypeUpdate

@@ -130,7 +130,7 @@ func preferencesFromRow(row sqlcdb.Preference) Preferences {
 		HistoryIncludeInside: row.HistoryIncludeInside, PinnedPlanIDs: slices.Clone(row.PinnedPlanIds),
 	}
 	if len(p.PinnedPlanIDs) == 0 {
-		p.PinnedPlanIDs = nil // the JSON store leaves an empty list out, so it reads back as nil
+		p.PinnedPlanIDs = nil
 	}
 	return p
 }

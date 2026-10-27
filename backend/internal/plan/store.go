@@ -12,7 +12,6 @@ type Transactor interface {
 }
 
 // Store lists plans ordered by id, never nil; ListInScope keeps those the scope sees (authz.Scope.Sees).
-// Deleting a missing plan changes nothing; plans in the recycle bin are not in the table.
 type Store interface {
 	Get(ctx context.Context, id string) (Plan, bool, error)
 	List(ctx context.Context) ([]Plan, error)
@@ -22,7 +21,4 @@ type Store interface {
 	Delete(ctx context.Context, id string) error
 }
 
-var (
-	_ Store = (*PostgresStore)(nil)
-	_ Store = JSONStore{}
-)
+var _ Store = (*PostgresStore)(nil)

@@ -1,12 +1,5 @@
-// Package ids gives records their permanent readable IDs: "P-1001", "P-1002", … (FR-027, research R4).
-//
-// Each prefix has its own counter, which only ever goes up, so an ID is never given out twice, not even
-// after its record was deleted. The counter is read and raised inside the caller's Write, so a new ID and
-// its new record are saved together. Every record with a readable ID, seed records included, gets it
-// from a Generator.
-//
-// The prefixes are the constants below: one per record type, never shared, so that every counter belongs to
-// one table.
+// Package ids gives records permanent readable IDs, "P-1001": each prefix has a counter that only goes up,
+// raised inside the caller's Write so a new ID and its record are saved together.
 package ids
 
 import (
@@ -14,61 +7,50 @@ import (
 	"fmt"
 )
 
-// The readable-ID prefixes (001 data model §4 and the data models of features 002–008). Pass them to Next.
+// One prefix per record type, never shared, so every counter belongs to one table.
 const (
-	// Feature 001.
-	PrefixPerson       = "U"   // people: U-1001
-	PrefixLogEntry     = "LOG" // activity-log entries (their number orders the log)
-	PrefixBinEntry     = "BIN" // recycle-bin entries
-	PrefixSampleFolder = "SF"  // developer sample folders
-	PrefixSampleNote   = "SN"  // developer sample notes
+	PrefixPerson       = "U"
+	PrefixLogEntry     = "LOG"
+	PrefixBinEntry     = "BIN"
+	PrefixSampleFolder = "SF"
+	PrefixSampleNote   = "SN"
 
-	// Feature 002, Settings (internal ids, never shown on screens; a currency's id is its ISO code).
-	PrefixModel             = "MOD" // models
-	PrefixActivityType      = "AT"  // activity types
-	PrefixShellAttribute    = "SA"  // Shell attributes
-	PrefixShellOption       = "SO"  // Shell attribute options
-	PrefixFinanceBudget     = "FB"  // finance budgets
-	PrefixFinanceBudgetItem = "FBI" // finance budget items
+	PrefixModel             = "MOD"
+	PrefixActivityType      = "AT"
+	PrefixShellAttribute    = "SA"
+	PrefixShellOption       = "SO"
+	PrefixFinanceBudget     = "FB"
+	PrefixFinanceBudgetItem = "FBI"
 
-	// Feature 003, people and teams.
-	PrefixTeam           = "T"  // teams
-	PrefixTeamMembership = "TM" // team memberships
+	PrefixTeam           = "T"
+	PrefixTeamMembership = "TM"
 
-	// Features 004–007, the planning records (D-019).
-	PrefixPlan       = "P" // plans (004)
-	PrefixCampaign   = "C" // campaigns (005)
-	PrefixInitiative = "I" // initiatives (005)
-	PrefixActivity   = "A" // activities (006)
-	PrefixLineItem   = "L" // line items (007)
+	PrefixPlan       = "P"
+	PrefixCampaign   = "C"
+	PrefixInitiative = "I"
+	PrefixActivity   = "A"
+	PrefixLineItem   = "L"
 
-	// Feature 008, approvals (D-201: workflows keep 006's WF).
-	PrefixApprovalWorkflow = "WF" // approval workflows
-	PrefixApprovalRound    = "AR" // approval rounds
-	PrefixApprovalAction   = "AH" // approval history entries
-	PrefixNotification     = "NT" // notifications
+	PrefixApprovalWorkflow = "WF"
+	PrefixApprovalRound    = "AR"
+	PrefixApprovalAction   = "AH"
+	PrefixNotification     = "NT"
 
-	// Feature 010, All work (D-125).
-	PrefixSavedView = "SV" // saved views
+	PrefixSavedView = "SV"
 
-	// Feature 015, financial transactions (D-254).
-	PrefixFinancialTransaction = "FT"  // GSAP transactions: FT-1001
-	PrefixFinancialImport      = "FIM" // GSAP imports: FIM-1001
+	PrefixFinancialTransaction = "FT"
+	PrefixFinancialImport      = "FIM"
 
-	// Feature 017, approval rules (D-291).
-	PrefixApprovalDelegation = "DLG" // approval delegations
-	// Feature 014, access control and global budgets.
-	PrefixRole             = "RL" // roles
-	PrefixRoleAssignment   = "RA" // role assignments
-	PrefixGlobalBudget     = "GB" // global budgets
-	PrefixBudgetAllocation = "BA" // budget allocations
+	PrefixApprovalDelegation = "DLG"
+	PrefixRole               = "RL"
+	PrefixRoleAssignment     = "RA"
+	PrefixGlobalBudget       = "GB"
+	PrefixBudgetAllocation   = "BA"
 
-	// Feature 016, exchange rates (internal ids, never shown on screens).
-	PrefixExchangeRate = "XR" // dated exchange rates
-	PrefixRateImport   = "RI" // GSAP rate imports
+	PrefixExchangeRate = "XR"
+	PrefixRateImport   = "RI"
 )
 
-// Prefixes lists every prefix above, in that order.
 var Prefixes = []string{
 	PrefixPerson, PrefixLogEntry, PrefixBinEntry, PrefixSampleFolder, PrefixSampleNote,
 	PrefixModel, PrefixActivityType, PrefixShellAttribute, PrefixShellOption, PrefixFinanceBudget, PrefixFinanceBudgetItem,
@@ -82,28 +64,21 @@ var Prefixes = []string{
 	PrefixExchangeRate, PrefixRateImport,
 }
 
-// firstNumber is the number of the first ID of every prefix: "P-1001".
 const firstNumber = 1001
 
-// Counters is the repository of the last number given per prefix. The JSON store keeps it in the table
-// "counters"; PostgreSQL will have its own implementation.
 type Counters interface {
-	// Advance raises the counter of prefix by count (at least 1) and returns the new number: the last of the
-	// count numbers given out, 1001 the first time for a count of 1. It runs inside the caller's Write.
+	// Advance raises the counter of prefix by count and returns the last number given out: 1001 the first time.
 	Advance(ctx context.Context, prefix string, count int) (int, error)
 }
 
-// Generator gives out readable IDs.
 type Generator struct {
 	counters Counters
 }
 
-// NewGenerator returns a Generator that keeps its counters in c.
 func NewGenerator(c Counters) *Generator {
 	return &Generator{counters: c}
 }
 
-// Next returns the next ID of prefix, such as "P-1001". Call it inside a Write.
 func (g *Generator) Next(ctx context.Context, prefix string) (string, error) {
 	number, err := g.NextNumber(ctx, prefix)
 	if err != nil {
@@ -112,14 +87,11 @@ func (g *Generator) Next(ctx context.Context, prefix string) (string, error) {
 	return fmt.Sprintf("%s-%d", prefix, number), nil
 }
 
-// NextNumber returns the number of the next ID of prefix, without the prefix. The activity log uses it to
-// order its entries (LOG-1001 has the sequence number 1001). Call it inside a Write.
+// NextNumber orders the activity log: LOG-1001 has the sequence number 1001.
 func (g *Generator) NextNumber(ctx context.Context, prefix string) (int, error) {
 	return g.counters.Advance(ctx, prefix, 1)
 }
 
-// NextIDs returns the next count IDs of prefix in order, the same IDs count calls of Next would give, with one
-// raise of the counter. Call it inside a Write.
 func (g *Generator) NextIDs(ctx context.Context, prefix string, count int) ([]string, error) {
 	if count < 1 {
 		return []string{}, nil

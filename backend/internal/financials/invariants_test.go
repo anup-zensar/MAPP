@@ -38,7 +38,7 @@ func checkInvariants(t *testing.T, tr Transaction) {
 }
 
 // The demo feed holds the 11 rows of data model §6 in file order, POs first, and loading them gives
-// FT-1001 to FT-1011 linked as the table says, and one import FIM-1001 (FR-031).
+// FT-1001 to FT-1011 linked as the table says, and one import FIM-1001.
 func TestDemoFeed_LoadsDataModelSix_FR031(t *testing.T) {
 	t.Parallel()
 	rows, problems, unused, err := DemoFeed{}.Read(t.Context(), Delivery{})

@@ -54,7 +54,7 @@ func (s *PostgresStore) GetInScope(ctx context.Context, scope authz.Scope, id st
 	return onePlan(s.listInScope(ctx, scope, &id))
 }
 
-// Put saves p as the JSON store reads it back (Plan.Normalised), so either store reads the same plan.
+// Put saves p normalised, so a plan saved without feature 016's fields reads with their defaults.
 func (s *PostgresStore) Put(ctx context.Context, p Plan) error {
 	plan := p.Normalised()
 	params, err := planParams(plan)

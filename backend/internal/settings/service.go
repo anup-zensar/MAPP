@@ -192,16 +192,6 @@ func jsonOf(v any) json.RawMessage {
 	return encoded
 }
 
-func withoutFields(changes []history.Change, fields ...string) []history.Change {
-	kept := []history.Change{}
-	for _, c := range changes {
-		if !slices.Contains(fields, c.Field) {
-			kept = append(kept, c)
-		}
-	}
-	return kept
-}
-
 func unique(list []string) []string {
 	kept := []string{}
 	for _, item := range list {

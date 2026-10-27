@@ -222,10 +222,6 @@ func restoreDetails(how string, contents []ContentCount, notes []string) string 
 	return details
 }
 
-func invalidLimit() error {
-	return errs.Validation(errs.FieldError{Field: "limit", Message: limitMessage})
-}
-
 // ListBin lists newest first; a context without a person (authz.Unrestricted) sees every entry.
 func (s *Service) ListBin(ctx context.Context, a actor.Actor) ([]BinEntry, error) {
 	inBin := []BinEntry{}

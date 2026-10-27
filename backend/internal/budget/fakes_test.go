@@ -16,19 +16,17 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// The service tests run the real service on a temporary JSON store, with fakes for plans, people, rates
-// and the access rules. The clock starts at 12 Mar 2026 09:00 UTC, so a global budget's year is 2025–2031.
+// The clock starts at 12 Mar 2026 09:00 UTC, so a global budget's year is 2025–2031.
 
 var start = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 
 var (
-	carlos = actor.Actor{ID: "U-1005", Name: "Carlos Mendes"} // the global planner
-	priya  = actor.Actor{ID: "U-1002", Name: "Priya Raman"}   // a local planner
-	alex   = actor.Actor{ID: "U-1001", Name: "Alex Morgan"}   // the administrator
+	carlos = actor.Actor{ID: "U-1005", Name: "Carlos Mendes"}
+	priya  = actor.Actor{ID: "U-1002", Name: "Priya Raman"}
+	alex   = actor.Actor{ID: "U-1001", Name: "Alex Morgan"}
 )
 
-// The fake plans: Lubricants Europe and Mobility China of 2026, a 2026 plan of Brazil in BRL (016), and a
-// 2027 plan.
+// The fake plans: Lubricants Europe and Mobility China of 2026, Brazil 2026 in BRL, and a 2027 plan.
 const (
 	planEurope = "P-1001"
 	planChina  = "P-1002"
@@ -36,20 +34,17 @@ const (
 	plan2027   = "P-1004"
 )
 
-// testClock is a clock the test moves forward.
 type testClock struct{ now time.Time }
 
 func (c *testClock) Now() time.Time          { return c.now }
 func (c *testClock) Advance(d time.Duration) { c.now = c.now.Add(d) }
 
-// budgetCall is one call of Plans.SetBudgetFromAllocation.
 type budgetCall struct {
 	planID, amount, comment string
 	version                 int
 }
 
-// fakePlans is Plans over plans kept in memory. SetBudgetFromAllocation behaves as the plans service: an
-// out-of-date version is refused naming Priya, and a changed budget gives the plan a new version.
+// fakePlans refuses an out-of-date version naming Priya, and gives a changed budget a new version, as plans does.
 type fakePlans struct {
 	plans    map[string]PlanInfo
 	planned  map[string]*money.Amount
@@ -141,7 +136,6 @@ func (f *fakePlans) planKind() history.Kind {
 	}
 }
 
-// fakeDirectory is Directory over the demo people and teams.
 type fakeDirectory struct{}
 
 var directoryPeople = map[string]people.PersonRef{
@@ -188,7 +182,6 @@ func (f fakeRates) Rates(context.Context) (money.Rates, error) {
 	return money.Rates{"USD": money.One, "BRL": brl}, nil
 }
 
-// refusal is how the access rules refuse (014: 403 forbidden with their message).
 func refusal(message string) *errs.Error {
 	return &errs.Error{Status: http.StatusForbidden, Code: "forbidden", Message: message, Fields: []errs.FieldError{}}
 }
@@ -198,15 +191,14 @@ const (
 	refusedPlan = "Creating global budgets is allowed for you only in plans of Lubricants Europe. Ask an administrator if you need it here."
 )
 
-// fakeAccess is Access with the answers a test sets: by default everything is allowed, every plan is
-// visible and Carlos and Alex may own a global budget.
+// fakeAccess allows everything by default: every plan is visible and Carlos and Alex may own a global budget.
 type fakeAccess struct {
 	manageAll error
 	manage    error
-	manageIn  map[string]error // by plan id
-	hidden    map[string]bool  // plans the person cannot see
-	noView    bool             // the person does not hold globalBudgets.view
-	managers  map[string]bool  // who holds globalBudgets.manage for All markets; nil: Carlos and Alex
+	manageIn  map[string]error
+	hidden    map[string]bool
+	noView    bool            // the person does not hold globalBudgets.view
+	managers  map[string]bool // who holds globalBudgets.manage for All markets; nil: Carlos and Alex
 }
 
 func (f *fakeAccess) ManageAll(context.Context) error { return f.manageAll }
@@ -225,8 +217,7 @@ func (f *fakeAccess) CanManageAll(_ context.Context, personID string) (bool, err
 	return f.managers[personID], nil
 }
 
-// priyasAccess is what a local planner of Lubricants Europe may do: see her plan only, manage nothing for
-// all markets.
+// priyasAccess sees her plan only and manages nothing for all markets, as a local planner.
 func priyasAccess() *fakeAccess {
 	return &fakeAccess{
 		manageAll: refusal(refusedAll), manage: refusal(refusedAll),

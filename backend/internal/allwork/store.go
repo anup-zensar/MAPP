@@ -17,7 +17,4 @@ type Store interface {
 	DeleteView(ctx context.Context, id string) error
 }
 
-var (
-	_ Store = JSONStore{}
-	_ Store = (*PostgresStore)(nil)
-)
+var _ Store = (*PostgresStore)(nil)

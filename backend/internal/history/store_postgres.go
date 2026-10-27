@@ -28,7 +28,7 @@ func NewPostgresStore(db *database.DB) *PostgresStore {
 func (s *PostgresStore) AppendEntry(ctx context.Context, e Entry) error {
 	items := e.Items
 	if len(items) == 0 {
-		items = nil // the JSON store leaves an empty list out, so it reads back as nil
+		items = nil
 	}
 	path, pathErr := json.Marshal(e.Path)
 	changes, changesErr := json.Marshal(e.Changes)
