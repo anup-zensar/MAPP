@@ -70,7 +70,7 @@ type shown struct {
 }
 
 // shownOf works out what the list and the plan page show of p, from what the levels below report (f).
-func (s *Service) shownOf(ctx context.Context, p Plan, f Facts, l lookups, c converter) (shown, error) {
+func (s *Service) shownOf(ctx context.Context, p Plan, f Facts, l lookups, c converter) (shown, error) { //nolint:revive // argument-limit 5: the plan, what the levels below report, and the lookups and converter the list reads once
 	sh := shown{teams: []people.TeamRef{}, figures: figuresOf(p, f, c)}
 	for _, id := range p.TeamIDs {
 		team, found := l.teams[id]
@@ -135,7 +135,7 @@ func sortedTeams(teams []people.TeamRef) []people.TeamRef {
 // view returns p as the API returns it, inside the caller's transaction: its references by name, its
 // figures, goals and completeness in a's display currency, its figures in the plan currency too (016
 // FR-013), and its contents, from one call per level below (FR-011 – FR-017, SC-009).
-func (s *Service) view(ctx context.Context, a actor.Actor, p Plan) (PlanView, error) {
+func (s *Service) view(ctx context.Context, a actor.Actor, p Plan) (PlanView, error) { //nolint:gocyclo // 13: one view whose every read returns its error.
 	facts, err := s.facts(ctx, []string{p.ID})
 	if err != nil {
 		return PlanView{}, err
@@ -189,18 +189,27 @@ func (s *Service) view(ctx context.Context, a actor.Actor, p Plan) (PlanView, er
 		goal := p.GoalAmount
 		view.GoalAmount = &goal
 	}
-	if p.DefaultFinanceBudgetID != "" {
-		b, found, err := s.settings.FinanceBudget(ctx, p.DefaultFinanceBudgetID)
-		if err != nil {
-			return PlanView{}, err
-		}
-		if !found {
-			b = settings.FinanceBudget{ID: p.DefaultFinanceBudgetID, Year: p.Year, Name: p.DefaultFinanceBudgetID}
-		}
-		view.DefaultFinanceBudget = &FinanceBudgetRef{ID: b.ID, Year: b.Year, Name: b.Name}
+	if view.DefaultFinanceBudget, err = s.financeBudgetRef(ctx, p); err != nil {
+		return PlanView{}, err
 	}
 	if view.Allocation, err = s.allocationView(ctx, p); err != nil { // where the budget comes from (014 FR-031)
 		return PlanView{}, err
 	}
 	return view, nil
+}
+
+// financeBudgetRef is p's default finance budget, nil when it has none; one that no longer resolves is shown
+// by its id.
+func (s *Service) financeBudgetRef(ctx context.Context, p Plan) (*FinanceBudgetRef, error) {
+	if p.DefaultFinanceBudgetID == "" {
+		return nil, nil
+	}
+	b, found, err := s.settings.FinanceBudget(ctx, p.DefaultFinanceBudgetID)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		b = settings.FinanceBudget{ID: p.DefaultFinanceBudgetID, Year: p.Year, Name: p.DefaultFinanceBudgetID}
+	}
+	return &FinanceBudgetRef{ID: b.ID, Year: b.Year, Name: b.Name}, nil
 }

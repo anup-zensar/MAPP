@@ -23,7 +23,7 @@ func (s *Service) Create(ctx context.Context, a actor.Actor, input PlanInput) (P
 			return err
 		}
 		checkTeams(ctx, authz.PlansCreate, nil, authz.PlanFacts{TeamIDs: p.TeamIDs, CreatedByID: a.ID}, &problems) // 014 FR-013
-		if err := problems.Err(); err != nil {
+		if err = problems.Err(); err != nil {
 			return err
 		}
 		if p.ID, err = s.ids.Next(ctx, ids.PrefixPlan); err != nil {
@@ -31,10 +31,10 @@ func (s *Service) Create(ctx context.Context, a actor.Actor, input PlanInput) (P
 		}
 		p.Status = StatusDraft
 		p.Meta = record.NewMeta(a, s.now())
-		if err := s.repo.Put(ctx, p); err != nil {
+		if err = s.repo.Put(ctx, p); err != nil {
 			return err
 		}
-		if _, err := s.history.Log(ctx, a, history.LogInput{
+		if _, err = s.history.Log(ctx, a, history.LogInput{
 			Kind: kindName, RecordID: p.ID, RecordName: p.Name, Action: history.ActionCreated,
 		}); err != nil {
 			return err

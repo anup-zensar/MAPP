@@ -38,7 +38,7 @@ func (s *Service) stored(ctx context.Context, id string) (Plan, error) {
 
 // Lookup returns the stored plan id inside the caller's transaction, and false when there is none: for the
 // levels below the plan (005–007), which check their parent with it.
-func (s *Service) Lookup(ctx context.Context, a actor.Actor, id string) (Plan, bool, error) {
+func (s *Service) Lookup(ctx context.Context, _ actor.Actor, id string) (Plan, bool, error) {
 	var p Plan
 	var found bool
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
