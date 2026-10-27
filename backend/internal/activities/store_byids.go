@@ -40,7 +40,7 @@ func (s *PostgresStore) WorkflowIDs(ctx context.Context) (map[string]string, err
 	return fields, nil
 }
 
-func (r jsonRepository) WorkflowIDs(ctx context.Context) (map[string]string, error) {
+func (r JSONStore) WorkflowIDs(ctx context.Context) (map[string]string, error) {
 	all, err := r.List(ctx)
 	fields := make(map[string]string, len(all))
 	for _, a := range all {
@@ -49,12 +49,12 @@ func (r jsonRepository) WorkflowIDs(ctx context.Context) (map[string]string, err
 	return fields, err
 }
 
-func (r jsonRepository) ListInScopeOf(ctx context.Context, scope authz.Scope, ids []string) ([]Activity, error) {
+func (r JSONStore) ListInScopeOf(ctx context.Context, scope authz.Scope, ids []string) ([]Activity, error) {
 	seen, err := r.ListInScope(ctx, scope)
 	return among(seen, ids), err
 }
 
-func (r jsonRepository) ListByIDs(ctx context.Context, ids []string) ([]Activity, error) {
+func (r JSONStore) ListByIDs(ctx context.Context, ids []string) ([]Activity, error) {
 	all, err := r.List(ctx)
 	return among(all, ids), err
 }

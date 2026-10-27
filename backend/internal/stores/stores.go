@@ -5,22 +5,8 @@ package stores
 import (
 	"context"
 
-	"mapp/internal/access"
-	"mapp/internal/activities"
-	"mapp/internal/allwork"
-	"mapp/internal/approvals"
-	"mapp/internal/auth"
-	"mapp/internal/budgets"
-	"mapp/internal/campaigns"
-	"mapp/internal/financials"
-	"mapp/internal/history"
-	"mapp/internal/lineitems"
-	"mapp/internal/people"
-	"mapp/internal/plans"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/store"
-	"mapp/internal/samples"
-	"mapp/internal/settings"
 )
 
 type Set struct {
@@ -29,30 +15,30 @@ type Set struct {
 	Organisation
 	Planning
 	Finance
-	Samples samples.Repository
+	Samples SampleStore
 	// Ready says why the data cannot be served now; IsEmpty whether nothing has been stored yet.
 	Ready   func(ctx context.Context) error
 	IsEmpty func(ctx context.Context) (bool, error)
 }
 
 type Organisation struct {
-	People   people.Repository
-	History  history.Repository
-	Auth     auth.Repository
-	Access   access.Repository
-	Settings settings.Repository
+	People   PeopleStore
+	History  HistoryStore
+	Auth     AuthStore
+	Access   AccessStore
+	Settings SettingsStore
 }
 
 type Planning struct {
-	Plans      plans.Repository
-	Campaigns  campaigns.Repository
-	Activities activities.Repository
-	LineItems  lineitems.Repository
-	Approvals  approvals.Repository
-	AllWork    allwork.Repository
+	Plans      PlanStore
+	Campaigns  CampaignStore
+	Activities ActivityStore
+	LineItems  LineItemStore
+	Approvals  ApprovalStore
+	AllWork    AllWorkStore
 }
 
 type Finance struct {
-	Budgets    budgets.Repository
-	Financials financials.Repository
+	Budgets    BudgetStore
+	Financials FinancialsStore
 }

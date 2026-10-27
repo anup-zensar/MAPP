@@ -218,7 +218,7 @@ func TestUpdateCurrencyRate_UpsertsToday_FR004(t *testing.T) {
 func TestRateImpact_LineItemsAndPlans_FR005(t *testing.T) {
 	t.Parallel()
 	f, _, latest := rateFixture(t)
-	f.write(t, func(ctx context.Context, repo Repository) error {
+	f.write(t, func(ctx context.Context, repo Store) error {
 		r := latest
 		r.Rate = money.RateFromMicros(920_000) // 0.92, as in US4-3
 		return repo.PutRate(ctx, r)

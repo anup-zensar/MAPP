@@ -565,8 +565,8 @@ func TestUndo_KindNotRegistered_FR025(t *testing.T) {
 	f := newFixture(t)
 	f.addTree(t)
 	deleted := f.moveToBin(t, "parent", "P-1")
-	noKinds := NewService(f.db, NewJSONRepository(), ids.NewGenerator(ids.NewJSONCounters()), f.clock.Now)
-	parentsOnly := NewService(f.db, NewJSONRepository(), ids.NewGenerator(ids.NewJSONCounters()), f.clock.Now)
+	noKinds := NewService(f.db, NewJSONStore(), ids.NewGenerator(ids.NewJSONCounters()), f.clock.Now)
+	parentsOnly := NewService(f.db, NewJSONStore(), ids.NewGenerator(ids.NewJSONCounters()), f.clock.Now)
 	if err := parentsOnly.Register(f.standardKinds()[0]); err != nil {
 		t.Fatalf("Register: %v", err)
 	}
@@ -1039,7 +1039,7 @@ func (f *fixture) open(t *testing.T) {
 		t.Fatalf("store.Open: %v", err)
 	}
 	f.db = db
-	f.service = NewService(db, NewJSONRepository(), ids.NewGenerator(ids.NewJSONCounters()), f.clock.Now)
+	f.service = NewService(db, NewJSONStore(), ids.NewGenerator(ids.NewJSONCounters()), f.clock.Now)
 }
 
 // reopen starts again from the data folder with the standard kinds, as after a restart of the API.
@@ -1191,7 +1191,7 @@ func (f *fixture) entries(t *testing.T) []Entry {
 	var entries []Entry
 	err := f.db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
-		entries, err = NewJSONRepository().Entries(ctx)
+		entries, err = NewJSONStore().Entries(ctx)
 		return err
 	})
 	if err != nil {
@@ -1207,7 +1207,7 @@ func (f *fixture) binEntry(t *testing.T, id string) BinEntry {
 	var found bool
 	err := f.db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
-		entry, found, err = NewJSONRepository().GetBinEntry(ctx, id)
+		entry, found, err = NewJSONStore().GetBinEntry(ctx, id)
 		return err
 	})
 	if err != nil || !found {

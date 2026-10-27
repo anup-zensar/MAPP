@@ -44,7 +44,7 @@ func initiativeUpdateOf(i InitiativeView, version int) InitiativeUpdate {
 func (f *fixture) putStored(t *testing.T, campaigns []Campaign, initiatives []Initiative) {
 	t.Helper()
 	err := f.db.Write(t.Context(), func(ctx context.Context) error {
-		repo := NewJSONRepository()
+		repo := NewJSONStore()
 		for _, c := range campaigns {
 			if err := repo.PutCampaign(ctx, c); err != nil {
 				return err

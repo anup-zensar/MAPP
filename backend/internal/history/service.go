@@ -41,7 +41,7 @@ const (
 // Service holds the rules of the activity log and the recycle bin.
 type Service struct {
 	tx     store.Transactor
-	repo   Repository
+	repo   Store
 	ids    *ids.Generator
 	now    clock.Clock
 	kinds  []Kind // the registered kinds, parents before children
@@ -51,7 +51,7 @@ type Service struct {
 // NewService returns the history service. It keeps the log and the bin in repo, gives out readable IDs with
 // generator, works in transactions of tx and reads the time from now. It knows no kinds until they are
 // registered with Register.
-func NewService(tx store.Transactor, repo Repository, generator *ids.Generator, now clock.Clock) *Service {
+func NewService(tx store.Transactor, repo Store, generator *ids.Generator, now clock.Clock) *Service {
 	return &Service{tx: tx, repo: repo, ids: generator, now: now}
 }
 

@@ -87,7 +87,7 @@ func TestNewForm_Defaults_FR008_FR009_FR012(t *testing.T) {
 func TestNewForm_ModelWithoutTypes_EdgeCase(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	repo := settings.NewJSONRepository()
+	repo := settings.NewJSONStore()
 	f.change(t, func(ctx context.Context) error {
 		model, _, err := repo.GetModel(ctx, "MOD-1001")
 		if err != nil {

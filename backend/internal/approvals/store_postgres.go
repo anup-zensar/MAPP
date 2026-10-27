@@ -17,7 +17,7 @@ import (
 // keptArea is what the transaction memo keeps of approvals: the workflows.
 const keptArea = "approvals"
 
-// PostgresStore is the Repository on PostgreSQL: workflows here, rounds and history entries in
+// PostgresStore is the Store on PostgreSQL: workflows here, rounds and history entries in
 // store_postgres_rounds.go, notifications and delegations in store_postgres_notifications.go.
 type PostgresStore struct {
 	db *database.DB

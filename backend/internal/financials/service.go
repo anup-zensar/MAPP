@@ -39,7 +39,7 @@ type Deps struct {
 // transaction, imports, links and unlinks in one Write with their activity-log entry.
 type Service struct {
 	tx       store.Transactor
-	repo     Repository
+	repo     Store
 	ids      *ids.Generator
 	history  *history.Service
 	planning Planning
@@ -53,7 +53,7 @@ type Service struct {
 // NewService returns the financials service. It keeps transactions and imports in repo, gives out readable
 // IDs with generator, logs with hist, reads the other features through deps, works in transactions of tx
 // and reads the time from now. Uploaded files are read by the simulated GSAP extract (CSVFeed).
-func NewService(tx store.Transactor, repo Repository, generator *ids.Generator, hist *history.Service, deps Deps,
+func NewService(tx store.Transactor, repo Store, generator *ids.Generator, hist *history.Service, deps Deps,
 	now clock.Clock) *Service {
 	return &Service{
 		tx: tx, repo: repo, ids: generator, history: hist, planning: deps.Planning, rates: deps.Rates,
@@ -496,7 +496,7 @@ func (s *Service) applier(ctx context.Context, a actor.Actor, feed Feed) (applie
 // through the same apply code as an import, as MAPP (actor.System) at the time at, and one import
 // record "Demo data (simulated GSAP)". It writes no activity-log entry (D-188). The seed calls it, with the
 // line items it stored and the rates of its currencies.
-func LoadDemo(ctx context.Context, repo Repository, generator *ids.Generator, items LineItemStates, rates money.Rates,
+func LoadDemo(ctx context.Context, repo Store, generator *ids.Generator, items LineItemStates, rates money.Rates,
 	at time.Time) (Import, error) {
 	ap := applier{repo: repo, ids: generator, items: items, rates: rates, actor: actor.System, now: at, feed: DemoFeed{}}
 	done, err := ap.apply(ctx, Delivery{})

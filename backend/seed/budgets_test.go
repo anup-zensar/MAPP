@@ -21,7 +21,7 @@ func TestLoad_GlobalBudget_FR040(t *testing.T) {
 	var stored []budgets.GlobalBudget
 	var allocations []budgets.Allocation
 	read(t, db, func(ctx context.Context) error {
-		repo := budgets.NewJSONRepository()
+		repo := budgets.NewJSONStore()
 		var errB, errA error
 		stored, errB = repo.ListBudgets(ctx)
 		allocations, errA = repo.ListAllocations(ctx)

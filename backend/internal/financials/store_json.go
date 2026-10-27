@@ -12,25 +12,25 @@ const (
 	importsTable      = "financial_imports"
 )
 
-// jsonRepository is the Repository of the JSON store.
-type jsonRepository struct{}
+// JSONStore is the Store of the JSON store.
+type JSONStore struct{}
 
-// NewJSONRepository returns the Repository of the JSON store.
-func NewJSONRepository() Repository {
-	return jsonRepository{}
+// NewJSONStore returns the Store of the JSON store.
+func NewJSONStore() JSONStore {
+	return JSONStore{}
 }
 
 // ListTransactions reads the whole financial_transactions table, in id order.
-func (jsonRepository) ListTransactions(ctx context.Context) ([]Transaction, error) {
+func (JSONStore) ListTransactions(ctx context.Context) ([]Transaction, error) {
 	return store.List[Transaction](ctx, transactionsTable)
 }
 
 // GetTransaction reads one transaction.
-func (jsonRepository) GetTransaction(ctx context.Context, id string) (Transaction, bool, error) {
+func (JSONStore) GetTransaction(ctx context.Context, id string) (Transaction, bool, error) {
 	return store.Get[Transaction](ctx, transactionsTable, id)
 }
 
-func (r jsonRepository) AddTransactions(ctx context.Context, list []Transaction) error {
+func (r JSONStore) AddTransactions(ctx context.Context, list []Transaction) error {
 	for _, t := range list {
 		if err := r.PutTransaction(ctx, t); err != nil {
 			return err
@@ -40,31 +40,31 @@ func (r jsonRepository) AddTransactions(ctx context.Context, list []Transaction)
 }
 
 // PutTransaction saves a transaction under its id.
-func (jsonRepository) PutTransaction(ctx context.Context, t Transaction) error {
+func (JSONStore) PutTransaction(ctx context.Context, t Transaction) error {
 	return store.Put(ctx, transactionsTable, t.ID, t)
 }
 
 // DeleteTransaction removes one transaction.
-func (jsonRepository) DeleteTransaction(ctx context.Context, id string) error {
+func (JSONStore) DeleteTransaction(ctx context.Context, id string) error {
 	return store.Delete(ctx, transactionsTable, id)
 }
 
 // ListImports reads the whole financial_imports table, in id order: oldest first.
-func (jsonRepository) ListImports(ctx context.Context) ([]Import, error) {
+func (JSONStore) ListImports(ctx context.Context) ([]Import, error) {
 	return store.List[Import](ctx, importsTable)
 }
 
 // GetImport reads one import.
-func (jsonRepository) GetImport(ctx context.Context, id string) (Import, bool, error) {
+func (JSONStore) GetImport(ctx context.Context, id string) (Import, bool, error) {
 	return store.Get[Import](ctx, importsTable, id)
 }
 
 // PutImport saves an import under its id.
-func (jsonRepository) PutImport(ctx context.Context, i Import) error {
+func (JSONStore) PutImport(ctx context.Context, i Import) error {
 	return store.Put(ctx, importsTable, i.ID, i)
 }
 
 // DeleteImport removes one import.
-func (jsonRepository) DeleteImport(ctx context.Context, id string) error {
+func (JSONStore) DeleteImport(ctx context.Context, id string) error {
 	return store.Delete(ctx, importsTable, id)
 }

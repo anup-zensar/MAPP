@@ -11,6 +11,7 @@ import (
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/money"
 	"mapp/internal/settings"
+	"mapp/internal/stores"
 )
 
 // SettingsSeed holds the IDs of the Settings records the seed created, by name (002 plan "Demo data"), for
@@ -207,7 +208,7 @@ func (d *demo) addSettings(ctx context.Context) error {
 		Models: map[string]string{}, ActivityTypes: map[string]string{}, Attributes: map[string]string{},
 		Options: map[string]string{}, Budgets: map[string]string{}, Items: map[string]string{},
 	}
-	for _, step := range []func(context.Context, settings.Repository) error{
+	for _, step := range []func(context.Context, stores.SettingsStore) error{
 		d.addCurrencies, d.addActivityTypes, d.addModels, d.addFinanceBudgets, d.addAttributes,
 	} {
 		if err := step(ctx, repo); err != nil {
@@ -219,7 +220,7 @@ func (d *demo) addSettings(ctx context.Context) error {
 
 // addCurrencies creates the five currencies; a currency's ID is its code. Their rates are dated records since
 // 016: addRateHistory writes them.
-func (d *demo) addCurrencies(ctx context.Context, repo settings.Repository) error {
+func (d *demo) addCurrencies(ctx context.Context, repo stores.SettingsStore) error {
 	d.rates = money.Rates{}
 	for _, c := range demoCurrencies {
 		rate, err := money.ParseRate(c.rate)
@@ -249,7 +250,7 @@ var seedRateSwing = []int64{-6, -3, 0, 3, 6}
 // a GSAP-imported rate for each of the 30 days before the seed day (the seeded rate × (1 + swing), half up to
 // six decimals) and one on the seed day equal to the seeded rate, so the current rates are the seeded ones
 // (XR-1001 …, currency by currency, oldest first).
-func (d *demo) addRateHistory(ctx context.Context, repo settings.Repository) error {
+func (d *demo) addRateHistory(ctx context.Context, repo stores.SettingsStore) error {
 	importID, err := d.next(ctx, ids.PrefixRateImport)
 	if err != nil {
 		return err
@@ -287,7 +288,7 @@ func (d *demo) addRateHistory(ctx context.Context, repo settings.Repository) err
 }
 
 // addActivityTypes creates the six activity types, AT-1001 … AT-1006.
-func (d *demo) addActivityTypes(ctx context.Context, repo settings.Repository) error {
+func (d *demo) addActivityTypes(ctx context.Context, repo stores.SettingsStore) error {
 	for _, t := range demoActivityTypes {
 		id, err := d.next(ctx, ids.PrefixActivityType)
 		if err != nil {
@@ -311,7 +312,7 @@ func (d *demo) addActivityTypes(ctx context.Context, repo settings.Repository) e
 
 // addModels creates the two models, MOD-1001 and MOD-1002, with their allowed activity types in the order
 // of the activity-type list (by name).
-func (d *demo) addModels(ctx context.Context, repo settings.Repository) error {
+func (d *demo) addModels(ctx context.Context, repo stores.SettingsStore) error {
 	for _, m := range demoModels {
 		var r resolver
 		typeNames := slices.Clone(m.activityTypes)
@@ -344,7 +345,7 @@ func (d *demo) addModels(ctx context.Context, repo settings.Repository) error {
 
 // addFinanceBudgets creates the two 2026 finance budgets, FB-1001 and FB-1002, each with three items,
 // FBI-1001 … FBI-1006.
-func (d *demo) addFinanceBudgets(ctx context.Context, repo settings.Repository) error {
+func (d *demo) addFinanceBudgets(ctx context.Context, repo stores.SettingsStore) error {
 	for _, b := range demoBudgets {
 		budgetID, err := d.next(ctx, ids.PrefixFinanceBudget)
 		if err != nil {
@@ -372,7 +373,7 @@ func (d *demo) addFinanceBudgets(ctx context.Context, repo settings.Repository) 
 
 // addAttributes creates the 35 Shell attributes, SA-1001 … SA-1035, with their 110 options, SO-1001 …,
 // the links of dependent options to their parent options, and the business-unit conditions.
-func (d *demo) addAttributes(ctx context.Context, repo settings.Repository) error {
+func (d *demo) addAttributes(ctx context.Context, repo stores.SettingsStore) error {
 	positions := map[settings.Level]int{}
 	for _, a := range demoAttributes {
 		var r resolver

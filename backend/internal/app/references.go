@@ -17,6 +17,7 @@ import (
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/settings"
+	"mapp/internal/stores"
 )
 
 // The adapters below tell Settings (002) and people (003) where their records are used (D-196): Settings'
@@ -27,9 +28,9 @@ import (
 // stored and in the recycle bin.
 type planningRecords struct {
 	history    *history.Service
-	campaigns  campaigns.Repository
-	activities activities.Repository
-	lineItems  lineitems.Repository
+	campaigns  stores.CampaignStore
+	activities stores.ActivityStore
+	lineItems  stores.LineItemStore
 }
 
 // references lists a Settings reference for every campaign, initiative, activity and line item, stored and
@@ -233,8 +234,8 @@ const ownerRole = "owner"
 
 // personUsages are the counts of what a person owns or approves below the plans (005, 006, 007, 008), over
 // the stored records: records in the recycle bin are not stored, so they are not counted (FR-004).
-func personUsages(campaignsRepo campaigns.Repository, activitiesRepo activities.Repository,
-	lineItemsRepo lineitems.Repository, approvalsRepo approvals.Repository) []people.PersonUsage {
+func personUsages(campaignsRepo stores.CampaignStore, activitiesRepo stores.ActivityStore,
+	lineItemsRepo stores.LineItemStore, approvalsRepo stores.ApprovalStore) []people.PersonUsage {
 	return []people.PersonUsage{
 		{Role: ownerRole, RecordType: "campaign", Singular: "campaign", Plural: "campaigns", Count: campaignsRepo.CountCampaignsOwnedBy},
 		{Role: ownerRole, RecordType: "initiative", Singular: "initiative", Plural: "initiatives",

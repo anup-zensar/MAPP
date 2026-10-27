@@ -2,11 +2,11 @@ package lineitems
 
 import "context"
 
-// Repository stores line items. The JSON store implements it now (store_json.go) and PostgreSQL can later
+// Store stores line items. The JSON store implements it now (store_json.go) and PostgreSQL can later
 // (index on line_items(activity_id)). Every method runs inside the caller's transaction, which the context
 // carries. Lists are ordered by id — the order the line items were created in — and never nil; line items in
 // the recycle bin are not in the table.
-type Repository interface {
+type Store interface {
 	// Get returns the line item with id, and false when there is none.
 	Get(ctx context.Context, id string) (LineItem, bool, error)
 	// List returns every line item (usage counts of feature 002).

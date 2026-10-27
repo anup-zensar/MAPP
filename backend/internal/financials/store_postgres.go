@@ -13,7 +13,7 @@ import (
 	"mapp/internal/platform/record"
 )
 
-// PostgresStore is the Repository on PostgreSQL. A transaction's line item and currency are plain values,
+// PostgresStore is the Store on PostgreSQL. A transaction's line item and currency are plain values,
 // as GSAP sent them: the line item may be in the recycle bin and the currency deleted since.
 type PostgresStore struct {
 	db *database.DB

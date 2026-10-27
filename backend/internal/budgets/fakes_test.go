@@ -256,9 +256,9 @@ func newFixture(t *testing.T) *fixture {
 	}
 	clock := &testClock{now: start}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
-	hist := history.NewService(db, history.NewJSONRepository(), generator, clock.Now)
+	hist := history.NewService(db, history.NewJSONStore(), generator, clock.Now)
 	f := &fixture{db: db, clock: clock, plans: newFakePlans(t), access: &fakeAccess{}, history: hist}
-	f.service = NewService(db, NewJSONRepository(), generator, hist, Deps{
+	f.service = NewService(db, NewJSONStore(), generator, hist, Deps{
 		Plans: f.plans, Directory: fakeDirectory{}, Rates: fakeRates{t: t}, Access: f.access,
 	}, clock.Now)
 	for _, kind := range append([]history.Kind{f.plans.planKind()}, f.service.Kinds()...) {
@@ -324,7 +324,7 @@ func (f *fixture) stored(t *testing.T, id string) (GlobalBudget, bool) {
 	var found bool
 	err := f.db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
-		b, found, err = NewJSONRepository().GetBudget(ctx, id)
+		b, found, err = NewJSONStore().GetBudget(ctx, id)
 		return err
 	})
 	if err != nil {
@@ -339,7 +339,7 @@ func (f *fixture) allocations(t *testing.T) []Allocation {
 	var all []Allocation
 	err := f.db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
-		all, err = NewJSONRepository().ListAllocations(ctx)
+		all, err = NewJSONStore().ListAllocations(ctx)
 		return err
 	})
 	if err != nil {

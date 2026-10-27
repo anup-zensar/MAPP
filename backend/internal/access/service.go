@@ -46,7 +46,7 @@ type ApprovalFacts interface {
 // Grants.
 type Service struct {
 	tx        store.Transactor
-	repo      Repository
+	repo      Store
 	ids       *ids.Generator
 	history   *history.Service
 	directory Directory
@@ -58,7 +58,7 @@ type Service struct {
 // NewService returns the access service. It keeps its records in repo, gives them readable IDs with
 // generator, logs their changes through hist, reads people and teams through directory, works in
 // transactions of tx and reads the time from now.
-func NewService(tx store.Transactor, repo Repository, generator *ids.Generator, hist *history.Service,
+func NewService(tx store.Transactor, repo Store, generator *ids.Generator, hist *history.Service,
 	directory Directory, now clock.Clock) *Service {
 	return &Service{tx: tx, repo: repo, ids: generator, history: hist, directory: directory, now: now}
 }

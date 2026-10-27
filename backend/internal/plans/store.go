@@ -6,10 +6,10 @@ import (
 	"mapp/internal/platform/authz"
 )
 
-// Repository stores plans. The JSON store implements it now (store_json.go) and PostgreSQL can later.
+// Store stores plans. The JSON store implements it now (store_json.go) and PostgreSQL can later.
 // Every method runs inside the caller's transaction, which the context carries. Lists are ordered by id and
 // never nil; plans in the recycle bin are not in the table.
-type Repository interface {
+type Store interface {
 	// Get returns the plan with id, and false when there is none.
 	Get(ctx context.Context, id string) (Plan, bool, error)
 	// List returns every plan.

@@ -13,6 +13,7 @@ import (
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/record"
+	"mapp/internal/stores"
 )
 
 // GrantRole gives the person with e-mail email the built-in role builtIn ("administrator", "globalPlanner",
@@ -30,7 +31,7 @@ import (
 func (s *Server) GrantRole(t testing.TB, email, builtIn, scope string, teamNames ...string) {
 	t.Helper()
 	err := s.db.Write(t.Context(), func(ctx context.Context) error {
-		peopleRepo, accessRepo := people.NewJSONRepository(), access.NewJSONRepository()
+		peopleRepo, accessRepo := people.NewJSONStore(), access.NewJSONStore()
 		everyone, err := peopleRepo.List(ctx)
 		if err != nil {
 			return err
@@ -78,7 +79,7 @@ func (s *Server) GrantRole(t testing.TB, email, builtIn, scope string, teamNames
 }
 
 // teamIDsOf returns the ids of the teams called names, in that order; never nil.
-func teamIDsOf(ctx context.Context, repo people.Repository, names []string) ([]string, error) {
+func teamIDsOf(ctx context.Context, repo stores.PeopleStore, names []string) ([]string, error) {
 	teams, err := repo.ListTeams(ctx)
 	if err != nil {
 		return nil, err

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"mapp/internal/history"
+	"mapp/internal/people"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/money"
@@ -622,12 +623,12 @@ func TestDecide_OwnerAndTwoLevelsAndInactiveApprover_017FR018_EdgeCases(t *testi
 	})
 	t.Run("inactive approver", func(t *testing.T) {
 		f.write(t, func(ctx context.Context) error {
-			p, _, err := f.service.people.Get(ctx, daniel.ID)
+			p, _, err := people.NewJSONStore().Get(ctx, daniel.ID)
 			if err != nil {
 				return err
 			}
 			p.Active = false
-			return f.service.people.Put(ctx, p)
+			return people.NewJSONStore().Put(ctx, p)
 		})
 		before, err := f.service.Approval(t.Context(), priya, "A-1001")
 		if err != nil {

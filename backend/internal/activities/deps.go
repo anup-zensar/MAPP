@@ -17,12 +17,12 @@ import (
 // feature 002 satisfies SettingsReader (its reader API, "How later features read Settings"). Every method
 // runs inside the caller's transaction, which ctx carries.
 
-// PlanReader finds plans (plans.Repository, feature 004).
+// PlanReader finds plans (plans.Store, feature 004).
 type PlanReader interface {
 	Get(ctx context.Context, id string) (plans.Plan, bool, error)
 }
 
-// HierarchyReader finds campaigns and initiatives (campaigns.Repository, feature 005).
+// HierarchyReader finds campaigns and initiatives (campaigns.Store, feature 005).
 type HierarchyReader interface {
 	GetCampaign(ctx context.Context, id string) (campaigns.Campaign, bool, error)
 	CampaignsOfPlan(ctx context.Context, planID string) ([]campaigns.Campaign, error)
@@ -30,7 +30,7 @@ type HierarchyReader interface {
 	InitiativesOfCampaigns(ctx context.Context, campaignIDs []string) ([]campaigns.Initiative, error)
 }
 
-// PeopleReader finds people (people.Repository, features 001 and 003).
+// PeopleReader finds people (people.Store, features 001 and 003).
 type PeopleReader interface {
 	Get(ctx context.Context, id string) (people.Person, bool, error)
 }

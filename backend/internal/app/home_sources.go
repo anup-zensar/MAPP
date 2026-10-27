@@ -14,13 +14,14 @@ import (
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/money"
+	"mapp/internal/stores"
 )
 
 // homeSources builds the Sources of feature 009's Home over the services of features 003–008 and 011's
 // activity log (009 plan "Inputs", D-171, D-196): what Home reads is what those features calculate for their
 // own pages, so every figure on Home equals the one there (FR-017). The names of those packages appear only
 // here. Every function joins the read transaction of the Home service.
-func homeSources(peopleService *people.Service, plansRepo plans.Repository, planService *plans.Service,
+func homeSources(peopleService *people.Service, plansRepo stores.PlanStore, planService *plans.Service,
 	campaignsService *campaigns.Service, activitiesService *activities.Service, approvalsService *approvals.Service,
 	historyService *history.Service, rates func(context.Context) (money.Rates, error)) home.Sources {
 	return home.Sources{
@@ -106,7 +107,7 @@ func homePlan(o plans.Overview) home.Plan {
 
 // ownedContainers returns the campaigns and initiatives ownerID owns, in every plan the person may see, as
 // the plan tree shows them (005): budgets, roll-ups and completeness worked out by the campaigns' own view builder (D-090).
-func ownedContainers(ctx context.Context, plansRepo plans.Repository, campaignsService *campaigns.Service, a actor.Actor,
+func ownedContainers(ctx context.Context, plansRepo stores.PlanStore, campaignsService *campaigns.Service, a actor.Actor,
 	ownerID string, rates money.Rates) ([]home.Container, error) {
 	list := []home.Container{}
 	if ownerID == "" {

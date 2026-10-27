@@ -77,7 +77,7 @@ func newTestService(t *testing.T) *fixture {
 	}
 	now := func() time.Time { return start }
 	generator := ids.NewGenerator(ids.NewJSONCounters())
-	hist := history.NewService(db, history.NewJSONRepository(), generator, now)
+	hist := history.NewService(db, history.NewJSONStore(), generator, now)
 	f := &fixture{
 		db: db, history: hist, activities: newFakeActivities(), currencies: newFakeCurrencies(), attributes: &fakeAttributes{},
 	}
@@ -85,7 +85,7 @@ func newTestService(t *testing.T) *fixture {
 		Activities: f.activities, Currencies: f.currencies, FinanceBudgets: fakeBudgets{},
 		Attributes: f.attributes, People: fakePeople{},
 	}
-	f.service = NewService(db, NewJSONRepository(), generator, hist, deps, now)
+	f.service = NewService(db, NewJSONStore(), generator, hist, deps, now)
 	if err := hist.Register(f.activities.kind()); err != nil {
 		t.Fatalf("Register(activity): %v", err)
 	}
@@ -113,7 +113,7 @@ func (f *fixture) stored(t *testing.T) []LineItem {
 	var items []LineItem
 	err := f.db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
-		items, err = NewJSONRepository().List(ctx)
+		items, err = NewJSONStore().List(ctx)
 		return err
 	})
 	if err != nil {

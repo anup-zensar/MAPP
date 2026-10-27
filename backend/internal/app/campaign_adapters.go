@@ -7,15 +7,16 @@ import (
 	"mapp/internal/campaigns"
 	"mapp/internal/plans"
 	"mapp/internal/platform/money"
+	"mapp/internal/stores"
 )
 
 // The adapters below give feature 005's campaigns package what it needs from feature 004 (campaigns.Deps,
-// D-196); people.Repository is its PersonSource as it is, and 002's *settings.Service its Settings.
+// D-196); stores.PeopleStore is its PersonSource as it is, and 002's *settings.Service its Settings.
 // campaignLevels are registered with 004's RegisterLevel in app.New.
 
 // campaignPlans is the campaigns.PlanSource over the plans repository (feature 004).
 type campaignPlans struct {
-	repo plans.Repository
+	repo stores.PlanStore
 }
 
 // Plan returns the plan id as campaigns needs it.

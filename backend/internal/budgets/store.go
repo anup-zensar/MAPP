@@ -2,10 +2,10 @@ package budgets
 
 import "context"
 
-// Repository stores global budgets and allocations. The JSON store implements it now (store_json.go) and
+// Store stores global budgets and allocations. The JSON store implements it now (store_json.go) and
 // PostgreSQL can later. Every method runs inside the caller's transaction, which the context carries. Lists
 // are ordered by id and never nil; records in the recycle bin are not in the tables.
-type Repository interface {
+type Store interface {
 	// GetBudget returns the global budget with id, and false when there is none.
 	GetBudget(ctx context.Context, id string) (GlobalBudget, bool, error)
 	// ListBudgets returns every global budget.

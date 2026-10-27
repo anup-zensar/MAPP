@@ -14,7 +14,7 @@ func (s *PostgresStore) ListByIDs(ctx context.Context, ids []string) ([]Plan, er
 	return plansFromRows(rows)
 }
 
-func (r jsonRepository) ListByIDs(ctx context.Context, ids []string) ([]Plan, error) {
+func (r JSONStore) ListByIDs(ctx context.Context, ids []string) ([]Plan, error) {
 	all, err := r.List(ctx)
 	if err != nil {
 		return nil, err

@@ -19,7 +19,7 @@ import (
 // Service holds the rules of global budgets and their allocations (feature 014, FR-029 – FR-036).
 type Service struct {
 	tx        store.Transactor
-	repo      Repository
+	repo      Store
 	ids       *ids.Generator
 	history   *history.Service
 	plans     Plans
@@ -33,7 +33,7 @@ type Service struct {
 // readable IDs with generator, logs their changes and deletes them through hist, reads plans, people and
 // rates and asks the access rules through deps, works in transactions of tx and reads the time from now.
 // Without deps.Access every action is allowed (internal calls, the seed, tests).
-func NewService(tx store.Transactor, repo Repository, generator *ids.Generator, hist *history.Service, deps Deps,
+func NewService(tx store.Transactor, repo Store, generator *ids.Generator, hist *history.Service, deps Deps,
 	now clock.Clock) *Service {
 	access := deps.Access
 	if access == nil {

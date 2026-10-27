@@ -694,8 +694,8 @@ func newFixture(t *testing.T) *fixture {
 	}
 	clock := &testClock{now: start}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
-	hist := history.NewService(db, history.NewJSONRepository(), generator, clock.Now)
-	service := NewService(db, NewJSONRepository(), generator, hist, clock.Now)
+	hist := history.NewService(db, history.NewJSONStore(), generator, clock.Now)
+	service := NewService(db, NewJSONStore(), generator, hist, clock.Now)
 	for _, kind := range service.Kinds() {
 		if err := hist.Register(kind); err != nil {
 			t.Fatalf("Register(%s): %v", kind.Name, err)
@@ -716,7 +716,7 @@ func (f *fixture) addPerson(t *testing.T, name, jobTitle string, active bool) Pe
 		}
 		p = newPerson(id, name, active)
 		p.JobTitle = jobTitle
-		return NewJSONRepository().Put(ctx, p)
+		return NewJSONStore().Put(ctx, p)
 	})
 	if err != nil {
 		t.Fatalf("addPerson(%q): %v", name, err)
@@ -729,7 +729,7 @@ func (f *fixture) addTeam(t *testing.T, name, colour string, active bool, member
 	t.Helper()
 	var team Team
 	err := f.db.Write(t.Context(), func(ctx context.Context) error {
-		repo := NewJSONRepository()
+		repo := NewJSONStore()
 		id, err := f.ids.Next(ctx, ids.PrefixTeam)
 		if err != nil {
 			return err
@@ -757,9 +757,9 @@ func (f *fixture) addTeam(t *testing.T, name, colour string, active bool, member
 }
 
 // read runs fn in a Read of the fixture's store with its repository, and stops the test when it fails.
-func (f *fixture) read(t *testing.T, fn func(ctx context.Context, repo Repository) error) {
+func (f *fixture) read(t *testing.T, fn func(ctx context.Context, repo Store) error) {
 	t.Helper()
-	err := f.db.Read(t.Context(), func(ctx context.Context) error { return fn(ctx, NewJSONRepository()) })
+	err := f.db.Read(t.Context(), func(ctx context.Context) error { return fn(ctx, NewJSONStore()) })
 	if err != nil {
 		t.Fatalf("Read: %v", err)
 	}
@@ -770,7 +770,7 @@ func (f *fixture) storedPerson(t *testing.T, id string) Person {
 	t.Helper()
 	var p Person
 	var found bool
-	f.read(t, func(ctx context.Context, repo Repository) (err error) {
+	f.read(t, func(ctx context.Context, repo Store) (err error) {
 		p, found, err = repo.Get(ctx, id)
 		return err
 	})
@@ -785,7 +785,7 @@ func (f *fixture) storedTeam(t *testing.T, id string) (Team, bool) {
 	t.Helper()
 	var team Team
 	var found bool
-	f.read(t, func(ctx context.Context, repo Repository) (err error) {
+	f.read(t, func(ctx context.Context, repo Store) (err error) {
 		team, found, err = repo.GetTeam(ctx, id)
 		return err
 	})
@@ -796,7 +796,7 @@ func (f *fixture) storedTeam(t *testing.T, id string) (Team, bool) {
 func (f *fixture) memberships(t *testing.T) []string {
 	t.Helper()
 	var list []string
-	f.read(t, func(ctx context.Context, repo Repository) error {
+	f.read(t, func(ctx context.Context, repo Store) error {
 		stored, err := repo.ListMemberships(ctx)
 		for _, m := range stored {
 			list = append(list, m.TeamID+"/"+m.PersonID)
@@ -812,7 +812,7 @@ func (f *fixture) entries(t *testing.T) []history.Entry {
 	var entries []history.Entry
 	err := f.db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
-		entries, err = history.NewJSONRepository().Entries(ctx)
+		entries, err = history.NewJSONStore().Entries(ctx)
 		return err
 	})
 	if err != nil {
@@ -879,7 +879,7 @@ func newPerson(id, name string, active bool) Person {
 // addPeople saves people through the repository, in one Write.
 func addPeople(t *testing.T, db *store.DB, list ...Person) {
 	t.Helper()
-	repo := NewJSONRepository()
+	repo := NewJSONStore()
 	err := db.Write(t.Context(), func(ctx context.Context) error {
 		for _, p := range list {
 			if err := repo.Put(ctx, p); err != nil {
@@ -900,7 +900,7 @@ func storedPreferences(t *testing.T, db *store.DB, personID string) (Preferences
 	var found bool
 	err := db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
-		prefs, found, err = NewJSONRepository().GetPreferences(ctx, personID)
+		prefs, found, err = NewJSONStore().GetPreferences(ctx, personID)
 		return err
 	})
 	if err != nil {

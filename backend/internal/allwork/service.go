@@ -26,7 +26,7 @@ const (
 // business record (FR-002).
 type Service struct {
 	tx   store.Transactor
-	repo Repository
+	repo Store
 	src  Source
 	ids  *ids.Generator
 	now  clock.Clock
@@ -35,7 +35,7 @@ type Service struct {
 // NewService returns the All work service. It reads the planning records through src, keeps saved views and
 // preferences in repo, gives saved views readable IDs with generator, works in transactions of tx and reads
 // the time from now.
-func NewService(tx store.Transactor, repo Repository, src Source, generator *ids.Generator, now clock.Clock) *Service {
+func NewService(tx store.Transactor, repo Store, src Source, generator *ids.Generator, now clock.Clock) *Service {
 	return &Service{tx: tx, repo: repo, src: src, ids: generator, now: now}
 }
 

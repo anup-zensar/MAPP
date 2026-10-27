@@ -120,7 +120,7 @@ func TestCopyAll_ShiftsYears(t *testing.T) {
 	const events = "I-1003" // Partner co-marketing fund: Approved, ongoing from 1 Mar 2026
 	leap := date.MustParse("2028-02-29")
 	f.change(t, func(ctx context.Context) error {
-		return activities.NewJSONRepository().Put(ctx, activities.Activity{
+		return activities.NewJSONStore().Put(ctx, activities.Activity{
 			ID: "A-9001", InitiativeID: events, Name: "Leap day stunt", ActivityTypeID: eventType, StartDate: &leap,
 			EndDate: &leap, Status: activities.StatusSubmitted, Attributes: settings.AttributeValues{}, Meta: record.NewMeta(priya, start),
 		})
@@ -199,7 +199,7 @@ func (f *fixture) byName(t *testing.T, initiativeID string) map[string]activitie
 	t.Helper()
 	named := map[string]activities.Activity{}
 	err := f.db.Read(t.Context(), func(ctx context.Context) error {
-		list, err := activities.NewJSONRepository().ListByInitiative(ctx, initiativeID)
+		list, err := activities.NewJSONStore().ListByInitiative(ctx, initiativeID)
 		for _, a := range list {
 			named[a.Name] = a
 		}

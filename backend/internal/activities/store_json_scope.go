@@ -10,7 +10,7 @@ import (
 )
 
 // ListInScope reads every activity and keeps those the scope sees, as activity_in_scope() does in SQL.
-func (r jsonRepository) ListInScope(ctx context.Context, scope authz.Scope) ([]Activity, error) {
+func (r JSONStore) ListInScope(ctx context.Context, scope authz.Scope) ([]Activity, error) {
 	all, err := r.List(ctx)
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func (r jsonRepository) ListInScope(ctx context.Context, scope authz.Scope) ([]A
 }
 
 func jsonApprovers(ctx context.Context) (map[string][]string, error) {
-	rounds, err := approvals.NewJSONRepository().ListRounds(ctx)
+	rounds, err := approvals.NewJSONStore().ListRounds(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func jsonApprovers(ctx context.Context) (map[string][]string, error) {
 }
 
 func jsonPlanOf(ctx context.Context, initiativeID string) (authz.PlanFacts, error) {
-	hierarchy := campaigns.NewJSONRepository()
+	hierarchy := campaigns.NewJSONStore()
 	initiative, _, err := hierarchy.GetInitiative(ctx, initiativeID)
 	if err != nil {
 		return authz.PlanFacts{}, err
@@ -58,6 +58,6 @@ func jsonPlanOf(ctx context.Context, initiativeID string) (authz.PlanFacts, erro
 	if err != nil {
 		return authz.PlanFacts{}, err
 	}
-	plan, _, err := plans.NewJSONRepository().Get(ctx, campaign.PlanID)
+	plan, _, err := plans.NewJSONStore().Get(ctx, campaign.PlanID)
 	return plans.AccessFacts(plan), err
 }

@@ -31,12 +31,12 @@ func TestReaders_SortedWithoutBinRecords_FR007(t *testing.T) {
 	asia := f.addItem(t, 2026, "B budget", "asia", "", true)
 	other := f.addItem(t, 2026, "A budget", "Other", "", true)
 	f.addItem(t, 2027, "Next budget", "Next", "", true)
-	f.write(t, func(ctx context.Context, _ Repository) error {
+	f.write(t, func(ctx context.Context, _ Store) error {
 		_, err := f.history.MoveToBin(ctx, alex, modelKind, gone.ID)
 		return err
 	})
 
-	f.write(t, func(ctx context.Context, _ Repository) error { // a caller's Write: the readers join it
+	f.write(t, func(ctx context.Context, _ Store) error { // a caller's Write: the readers join it
 		models, err := f.service.Models(ctx)
 		if err != nil {
 			return err

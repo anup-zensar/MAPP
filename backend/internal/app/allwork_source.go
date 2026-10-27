@@ -25,6 +25,7 @@ import (
 	"mapp/internal/platform/record"
 	"mapp/internal/rollup"
 	"mapp/internal/settings"
+	"mapp/internal/stores"
 )
 
 // The wiring of feature 010, All work (D-196): allWorkSource implements allwork.Source over plans (004),
@@ -38,18 +39,18 @@ import (
 // allWorkSource is allwork.Source over the planning features.
 type allWorkSource struct {
 	plans          *plans.Service
-	plansRepo      plans.Repository
+	plansRepo      stores.PlanStore
 	campaigns      *campaigns.Service
-	campaignsRepo  campaigns.Repository
+	campaignsRepo  stores.CampaignStore
 	activities     *activities.Service
-	activitiesRepo activities.Repository
+	activitiesRepo stores.ActivityStore
 	lineItems      *lineitems.Service
-	lineItemsRepo  lineitems.Repository
+	lineItemsRepo  stores.LineItemStore
 	settings       *settings.Service
 	budgetItems    lineitems.FinanceBudgets // 002's finance budget items, as line items read them
 	workflows      activities.Workflows     // 008's approval workflows, as activities read them
 	people         *people.Service
-	peopleRepo     people.Repository
+	peopleRepo     stores.PeopleStore
 	history        *history.Service
 	financials     *financials.Service // 015's GSAP figures of line items (financials.go)
 	financeAccess  financials.Access   // who may see them (015 FR-028)
@@ -968,7 +969,7 @@ func (s allWorkSource) InRecycleBin(ctx context.Context, recordID string) (bool,
 }
 
 // plansOfYear returns the plans of year the person acting may see (014 FR-007, SC-004).
-func plansOfYear(ctx context.Context, repo plans.Repository, year int) ([]plans.Plan, error) {
+func plansOfYear(ctx context.Context, repo stores.PlanStore, year int) ([]plans.Plan, error) {
 	all, err := repo.ListInScope(ctx, authz.ScopeOf(ctx))
 	return slices.DeleteFunc(all, func(p plans.Plan) bool { return p.Year != year }), err
 }

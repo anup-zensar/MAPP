@@ -2,10 +2,10 @@ package people
 
 import "context"
 
-// Repository stores people, their preferences, teams and team memberships. The JSON store implements it now (store_json.go) and
+// Store stores people, their preferences, teams and team memberships. The JSON store implements it now (store_json.go) and
 // PostgreSQL will later, without any change to the service. Every method runs inside the caller's
 // transaction, which the context carries.
-type Repository interface {
+type Store interface {
 	// Get returns the person with id, and false when there is none.
 	Get(ctx context.Context, id string) (Person, bool, error)
 	// FindByEmail returns the person whose stored e-mail is email (people's e-mails are stored in lower

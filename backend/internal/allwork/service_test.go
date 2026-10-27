@@ -27,7 +27,7 @@ func newTestService(t *testing.T, src Source) (*Service, string) {
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)
 	}
-	return NewService(db, NewJSONRepository(), src, ids.NewGenerator(ids.NewJSONCounters()), func() time.Time { return fixtureNow }), dir
+	return NewService(db, NewJSONStore(), src, ids.NewGenerator(ids.NewJSONCounters()), func() time.Time { return fixtureNow }), dir
 }
 
 // Without a year the view shows the current year (FR-004); the answer names the year, today, the display

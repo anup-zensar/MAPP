@@ -8,6 +8,7 @@ import (
 	"mapp/internal/plans"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/money"
+	"mapp/internal/stores"
 )
 
 // The adapters between global budgets (014, package budgets) and plans (004): budgets reads plans and sets a
@@ -16,7 +17,7 @@ import (
 // budgetPlans is budgets.Plans over the plans service and repository.
 type budgetPlans struct {
 	plans *plans.Service
-	repo  plans.Repository
+	repo  stores.PlanStore
 	rates func(context.Context) (money.Rates, error) // the current rates (016), for planned costs in USD
 }
 

@@ -14,7 +14,7 @@ import (
 func TestSeed_SavedViews_FR029(t *testing.T) {
 	t.Parallel()
 	db := loadedStore(t)
-	repo := allwork.NewJSONRepository()
+	repo := allwork.NewJSONStore()
 	read(t, db, func(ctx context.Context) error {
 		priyas, err := repo.ListViews(ctx, "U-1002")
 		if err != nil {

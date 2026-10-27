@@ -76,8 +76,8 @@ func newFixture(t *testing.T) *fixture {
 		activities: &fakeActivities{byInitiative: map[string][]ActivitySummary{}},
 		now:        start,
 	}
-	f.history = history.NewService(db, history.NewJSONRepository(), ids.NewGenerator(ids.NewJSONCounters()), f.clock)
-	f.service = NewService(db, NewJSONRepository(), ids.NewGenerator(ids.NewJSONCounters()), f.history, f.clock, Deps{
+	f.history = history.NewService(db, history.NewJSONStore(), ids.NewGenerator(ids.NewJSONCounters()), f.clock)
+	f.service = NewService(db, NewJSONStore(), ids.NewGenerator(ids.NewJSONCounters()), f.history, f.clock, Deps{
 		Plans: f.plans, People: fakePeople{}, Settings: f.settings, Activities: f.activities,
 	})
 	kinds := append([]history.Kind{f.plans.kind()}, f.service.Kinds()...)
@@ -133,7 +133,7 @@ func (f *fixture) storedCampaign(t *testing.T, id string) (Campaign, bool) {
 	var found bool
 	err := f.db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
-		c, found, err = NewJSONRepository().GetCampaign(ctx, id)
+		c, found, err = NewJSONStore().GetCampaign(ctx, id)
 		return err
 	})
 	if err != nil {
@@ -149,7 +149,7 @@ func (f *fixture) storedInitiative(t *testing.T, id string) (Initiative, bool) {
 	var found bool
 	err := f.db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
-		i, found, err = NewJSONRepository().GetInitiative(ctx, id)
+		i, found, err = NewJSONStore().GetInitiative(ctx, id)
 		return err
 	})
 	if err != nil {

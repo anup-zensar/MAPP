@@ -14,7 +14,7 @@ import (
 	"mapp/internal/platform/record"
 )
 
-// PostgresStore is the Repository on PostgreSQL; teams and memberships are in store_postgres_teams.go.
+// PostgresStore is the Store on PostgreSQL; teams and memberships are in store_postgres_teams.go.
 type PostgresStore struct {
 	db *database.DB
 }

@@ -30,11 +30,11 @@ func TestCampaignLevels_AddFacts_For004(t *testing.T) {
 		t.Fatalf("seed.Load: %v", err)
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
-	historyService := history.NewService(db, history.NewJSONRepository(), generator, now)
-	svc := campaigns.NewService(db, campaigns.NewJSONRepository(), generator, historyService, now, campaigns.Deps{
-		Plans:      campaignPlans{repo: plans.NewJSONRepository()},
-		People:     people.NewJSONRepository(),
-		Settings:   settings.NewService(db, settings.NewJSONRepository(), generator, historyService, now),
+	historyService := history.NewService(db, history.NewJSONStore(), generator, now)
+	svc := campaigns.NewService(db, campaigns.NewJSONStore(), generator, historyService, now, campaigns.Deps{
+		Plans:      campaignPlans{repo: plans.NewJSONStore()},
+		People:     people.NewJSONStore(),
+		Settings:   settings.NewService(db, settings.NewJSONStore(), generator, historyService, now),
 		Activities: campaigns.NoActivities{},
 	})
 	planIDs := []string{"P-1001", "P-1002", "P-1003"}

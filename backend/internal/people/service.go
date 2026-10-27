@@ -25,7 +25,7 @@ var planIDPattern = regexp.MustCompile(`^P-\d+$`)
 // Service holds the rules about people, teams, team memberships and preferences.
 type Service struct {
 	tx      store.Transactor
-	repo    Repository
+	repo    Store
 	ids     *ids.Generator
 	history *history.Service
 	now     clock.Clock
@@ -40,7 +40,7 @@ type Service struct {
 // NewService returns the people service. It keeps the records in repo, gives them readable IDs with
 // generator, logs their changes and deletes teams through hist, works in transactions of tx and reads the
 // time from now. Until UseCurrencies is called, US dollars are the only currency.
-func NewService(tx store.Transactor, repo Repository, generator *ids.Generator, hist *history.Service, now clock.Clock) *Service {
+func NewService(tx store.Transactor, repo Store, generator *ids.Generator, hist *history.Service, now clock.Clock) *Service {
 	return &Service{tx: tx, repo: repo, ids: generator, history: hist, now: now, currencies: OnlyUSD}
 }
 

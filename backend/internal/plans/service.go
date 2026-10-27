@@ -32,7 +32,7 @@ const fallbackColour = "slate"
 // Service holds the rules of plans (feature 004): every check, calculation and change of a plan.
 type Service struct {
 	tx        store.Transactor
-	repo      Repository
+	repo      Store
 	ids       *ids.Generator
 	history   *history.Service
 	settings  Settings
@@ -47,7 +47,7 @@ type Service struct {
 // logs their changes and deletes them through hist, reads Settings and people and teams through settings
 // and directory, works in transactions of tx and reads the time from now. It knows no level below the plan
 // until RegisterLevel adds one.
-func NewService(tx store.Transactor, repo Repository, generator *ids.Generator, hist *history.Service,
+func NewService(tx store.Transactor, repo Store, generator *ids.Generator, hist *history.Service,
 	settings Settings, directory Directory, now clock.Clock) *Service {
 	return &Service{tx: tx, repo: repo, ids: generator, history: hist, settings: settings, directory: directory, now: now}
 }

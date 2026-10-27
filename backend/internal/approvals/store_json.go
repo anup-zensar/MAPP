@@ -17,22 +17,22 @@ const (
 	delegationsTable   = "approval_delegations" // 017 data-model §7
 )
 
-// jsonRepository is the Repository of the JSON store.
-type jsonRepository struct{}
+// JSONStore is the Store of the JSON store.
+type JSONStore struct{}
 
-// NewJSONRepository returns the Repository of the JSON store.
-func NewJSONRepository() Repository {
-	return jsonRepository{}
+// NewJSONStore returns the Store of the JSON store.
+func NewJSONStore() JSONStore {
+	return JSONStore{}
 }
 
 // GetWorkflow reads one workflow.
-func (jsonRepository) GetWorkflow(ctx context.Context, id string) (Workflow, bool, error) {
+func (JSONStore) GetWorkflow(ctx context.Context, id string) (Workflow, bool, error) {
 	w, found, err := store.Get[Workflow](ctx, workflowsTable, id)
 	return w.normalised(), found, err
 }
 
 // ListWorkflows reads the whole approval_workflows table.
-func (jsonRepository) ListWorkflows(ctx context.Context) ([]Workflow, error) {
+func (JSONStore) ListWorkflows(ctx context.Context) ([]Workflow, error) {
 	workflows, err := store.List[Workflow](ctx, workflowsTable)
 	for i := range workflows {
 		workflows[i] = workflows[i].normalised()
@@ -41,23 +41,23 @@ func (jsonRepository) ListWorkflows(ctx context.Context) ([]Workflow, error) {
 }
 
 // PutWorkflow saves a workflow under its id.
-func (jsonRepository) PutWorkflow(ctx context.Context, w Workflow) error {
+func (JSONStore) PutWorkflow(ctx context.Context, w Workflow) error {
 	return store.Put(ctx, workflowsTable, w.ID, w)
 }
 
 // DeleteWorkflow removes one workflow.
-func (jsonRepository) DeleteWorkflow(ctx context.Context, id string) error {
+func (JSONStore) DeleteWorkflow(ctx context.Context, id string) error {
 	return store.Delete(ctx, workflowsTable, id)
 }
 
 // GetRound reads one round.
-func (jsonRepository) GetRound(ctx context.Context, id string) (Round, bool, error) {
+func (JSONStore) GetRound(ctx context.Context, id string) (Round, bool, error) {
 	round, found, err := store.Get[Round](ctx, roundsTable, id)
 	return round.normalised(), found, err
 }
 
 // ListRounds reads the whole approval_rounds table.
-func (jsonRepository) ListRounds(ctx context.Context) ([]Round, error) {
+func (JSONStore) ListRounds(ctx context.Context) ([]Round, error) {
 	rounds, err := store.List[Round](ctx, roundsTable)
 	for i := range rounds {
 		rounds[i] = rounds[i].normalised()
@@ -66,7 +66,7 @@ func (jsonRepository) ListRounds(ctx context.Context) ([]Round, error) {
 }
 
 // RoundsOf reads every round to find those of one activity, ordered by their number.
-func (r jsonRepository) RoundsOf(ctx context.Context, activityID string) ([]Round, error) {
+func (r JSONStore) RoundsOf(ctx context.Context, activityID string) ([]Round, error) {
 	all, err := r.ListRounds(ctx)
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (r jsonRepository) RoundsOf(ctx context.Context, activityID string) ([]Roun
 	return rounds, nil
 }
 
-func (r jsonRepository) OpenRounds(ctx context.Context) ([]Round, error) {
+func (r JSONStore) OpenRounds(ctx context.Context) ([]Round, error) {
 	all, err := r.ListRounds(ctx)
 	if err != nil {
 		return nil, err
@@ -85,23 +85,23 @@ func (r jsonRepository) OpenRounds(ctx context.Context) ([]Round, error) {
 }
 
 // PutRound saves a round under its id.
-func (jsonRepository) PutRound(ctx context.Context, round Round) error {
+func (JSONStore) PutRound(ctx context.Context, round Round) error {
 	return store.Put(ctx, roundsTable, round.ID, round)
 }
 
 // PutAction saves a history entry under its id.
-func (jsonRepository) PutAction(ctx context.Context, a Action) error {
+func (JSONStore) PutAction(ctx context.Context, a Action) error {
 	return store.Put(ctx, actionsTable, a.ID, a)
 }
 
 // ListActions reads the whole approval_actions table; the store orders it by id, which is the order the
 // entries were written in.
-func (jsonRepository) ListActions(ctx context.Context) ([]Action, error) {
+func (JSONStore) ListActions(ctx context.Context) ([]Action, error) {
 	return store.List[Action](ctx, actionsTable)
 }
 
 // ActionsOf reads every history entry to find those of one activity.
-func (r jsonRepository) ActionsOf(ctx context.Context, activityID string) ([]Action, error) {
+func (r JSONStore) ActionsOf(ctx context.Context, activityID string) ([]Action, error) {
 	all, err := r.ListActions(ctx)
 	if err != nil {
 		return nil, err
@@ -110,14 +110,14 @@ func (r jsonRepository) ActionsOf(ctx context.Context, activityID string) ([]Act
 }
 
 // GetNotification reads one notification.
-func (jsonRepository) GetNotification(ctx context.Context, id string) (Notification, bool, error) {
+func (JSONStore) GetNotification(ctx context.Context, id string) (Notification, bool, error) {
 	return store.Get[Notification](ctx, notificationsTable, id)
 }
 
 // NotificationsOf reads every notification to find those of one person, newest first. The store lists
 // them by id (creation order); reversed, the newer id comes first, and the stable sort by time keeps it so
 // among notifications of the same time.
-func (jsonRepository) NotificationsOf(ctx context.Context, personID string) ([]Notification, error) {
+func (JSONStore) NotificationsOf(ctx context.Context, personID string) ([]Notification, error) {
 	all, err := store.List[Notification](ctx, notificationsTable)
 	if err != nil {
 		return nil, err
@@ -129,7 +129,7 @@ func (jsonRepository) NotificationsOf(ctx context.Context, personID string) ([]N
 }
 
 // PutNotification saves a notification under its id.
-func (jsonRepository) PutNotification(ctx context.Context, n Notification) error {
+func (JSONStore) PutNotification(ctx context.Context, n Notification) error {
 	return store.Put(ctx, notificationsTable, n.ID, n)
 }
 
@@ -145,16 +145,16 @@ func where[T any](records []T, keep func(T) bool) []T {
 }
 
 // GetDelegation reads one delegation.
-func (jsonRepository) GetDelegation(ctx context.Context, id string) (Delegation, bool, error) {
+func (JSONStore) GetDelegation(ctx context.Context, id string) (Delegation, bool, error) {
 	return store.Get[Delegation](ctx, delegationsTable, id)
 }
 
 // ListDelegations reads the whole approval_delegations table, ordered by id.
-func (jsonRepository) ListDelegations(ctx context.Context) ([]Delegation, error) {
+func (JSONStore) ListDelegations(ctx context.Context) ([]Delegation, error) {
 	return store.List[Delegation](ctx, delegationsTable)
 }
 
 // PutDelegation saves a delegation under its id.
-func (jsonRepository) PutDelegation(ctx context.Context, dl Delegation) error {
+func (JSONStore) PutDelegation(ctx context.Context, dl Delegation) error {
 	return store.Put(ctx, delegationsTable, dl.ID, dl)
 }

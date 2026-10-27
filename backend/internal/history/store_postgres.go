@@ -15,7 +15,7 @@ import (
 // keptArea is what the transaction memo keeps of history: the recycle bin.
 const keptArea = "history"
 
-// PostgresStore is the Repository on PostgreSQL. The documents of an entry (its path, changes and
+// PostgresStore is the Store on PostgreSQL. The documents of an entry (its path, changes and
 // snapshots) are json columns, which keep the text exactly as written.
 type PostgresStore struct {
 	db *database.DB

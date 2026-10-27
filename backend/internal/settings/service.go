@@ -49,7 +49,7 @@ const (
 // one transaction and logs every change; the readers of readers.go and form.go serve later features.
 type Service struct {
 	tx      store.Transactor
-	repo    Repository
+	repo    Store
 	ids     *ids.Generator
 	history *history.Service
 	now     clock.Clock
@@ -60,7 +60,7 @@ type Service struct {
 // NewService returns the Settings service. It keeps the records in repo, gives them IDs with generator,
 // logs their changes, deletes them and reads the recycle bin through hist, works in transactions of tx and
 // reads the time from now.
-func NewService(tx store.Transactor, repo Repository, generator *ids.Generator, hist *history.Service, now clock.Clock) *Service {
+func NewService(tx store.Transactor, repo Store, generator *ids.Generator, hist *history.Service, now clock.Clock) *Service {
 	return &Service{tx: tx, repo: repo, ids: generator, history: hist, now: now}
 }
 

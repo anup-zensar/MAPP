@@ -2,11 +2,11 @@ package settings
 
 import "context"
 
-// Repository stores the Settings records. The JSON store implements it now (store_json.go) and PostgreSQL
+// Store stores the Settings records. The JSON store implements it now (store_json.go) and PostgreSQL
 // can later, without any change to the service. Every method runs inside the caller's transaction, which
 // the context carries. Lists are ordered by id (as store.List: shorter ids first) and never nil; records in
 // the recycle bin are not in the tables.
-type Repository interface {
+type Store interface {
 	// GetModel returns the model with id, and false when there is none.
 	GetModel(ctx context.Context, id string) (Model, bool, error)
 	// ListModels returns every model.

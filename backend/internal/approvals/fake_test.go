@@ -125,13 +125,13 @@ func newFixture(t *testing.T) *fixture {
 	}
 	clock := &testClock{now: start}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
-	hist := history.NewService(db, history.NewJSONRepository(), generator, clock.Now)
+	hist := history.NewService(db, history.NewJSONStore(), generator, clock.Now)
 	fake := &fakeActivities{
 		clock: clock, facts: map[string]ActivityFacts{}, problems: map[string][]SubmitProblem{}, missing: map[string][]MissingFieldRef{},
 		unassigned: map[string]*money.Money{}, lineItems: map[string][]PreviewLineItem{},
 	}
-	peopleRepo := people.NewJSONRepository()
-	service := NewService(db, NewJSONRepository(), peopleRepo, fake, generator, hist, clock.Now)
+	peopleRepo := people.NewJSONStore()
+	service := NewService(db, NewJSONStore(), peopleRepo, fake, generator, hist, clock.Now)
 	access := &fakeAccess{rule: true, cannotApprove: map[string]bool{}, holders: map[string][]string{}}
 	service.UseAccess(access)
 	service.UseRuleChoices(fakeChoices{})
@@ -386,12 +386,12 @@ func (f *fakeAccess) RoleHolders(_ context.Context, roleID string, _ PlanFacts) 
 func (f *fixture) setManager(t *testing.T, p, manager actor.Actor) {
 	t.Helper()
 	f.write(t, func(ctx context.Context) error {
-		person, _, err := f.service.people.Get(ctx, p.ID)
+		person, _, err := people.NewJSONStore().Get(ctx, p.ID)
 		if err != nil {
 			return err
 		}
 		person.ManagerID = manager.ID
-		return f.service.people.Put(ctx, person)
+		return people.NewJSONStore().Put(ctx, person)
 	})
 }
 

@@ -7,13 +7,13 @@ import (
 	"slices"
 
 	"mapp/internal/activities"
-	"mapp/internal/campaigns"
 	"mapp/internal/lineitems"
 	"mapp/internal/people"
 	"mapp/internal/plans"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
 	"mapp/internal/settings"
+	"mapp/internal/stores"
 )
 
 // The wiring of feature 007, line items (D-196): the adapters that implement the dependency interfaces of
@@ -21,9 +21,9 @@ import (
 // the plans' level registry (004). They run inside the caller's transaction.
 
 // lineItemDeps returns what the line-items service reads of the other features.
-func lineItemDeps(settingsService *settings.Service, settingsRepo settings.Repository, activitiesService *activities.Service,
-	activitiesRepo activities.Repository, campaignsRepo campaigns.Repository, plansRepo plans.Repository,
-	peopleRepo people.Repository, peopleService *people.Service) lineitems.Deps {
+func lineItemDeps(settingsService *settings.Service, settingsRepo stores.SettingsStore, activitiesService *activities.Service,
+	activitiesRepo stores.ActivityStore, campaignsRepo stores.CampaignStore, plansRepo stores.PlanStore,
+	peopleRepo stores.PeopleStore, peopleService *people.Service) lineitems.Deps {
 	return lineitems.Deps{
 		Activities: lineItemActivities{
 			activities: activitiesRepo, campaigns: campaignsRepo, plans: plansRepo,
@@ -39,9 +39,9 @@ func lineItemDeps(settingsService *settings.Service, settingsRepo settings.Repos
 // lineItemActivities implements lineitems.Activities over the activities (006), campaigns (005) and plans
 // (004) repositories and Settings (002); RestartApproval is 006's.
 type lineItemActivities struct {
-	activities activities.Repository
-	campaigns  campaigns.Repository
-	plans      plans.Repository
+	activities stores.ActivityStore
+	campaigns  stores.CampaignStore
+	plans      stores.PlanStore
 	settings   *settings.Service
 	service    *activities.Service
 }
@@ -162,7 +162,7 @@ func missing(err error, kind, id string) error {
 // lineItemBudgets implements lineitems.FinanceBudgets over the Settings repository (002): each item with its
 // budget's year and name. Settings' readers give the budgets of one year only, and line items need every year.
 type lineItemBudgets struct {
-	repo settings.Repository
+	repo stores.SettingsStore
 }
 
 // Item returns the finance budget item id with its budget's year and name.
@@ -206,7 +206,7 @@ func budgetItem(budget settings.FinanceBudget, item settings.FinanceBudgetItem) 
 
 // lineItemPeople implements lineitems.People over the people repository and service (003).
 type lineItemPeople struct {
-	repo    people.Repository
+	repo    stores.PeopleStore
 	service *people.Service
 }
 
@@ -321,7 +321,7 @@ func (lineItemsForActivities) DatesChanged(context.Context, actor.Actor, activit
 // lineItemLevel is the line-item level of feature 004's registry: how many line items each plan has and
 // those still incomplete, below the plan's activities, and their copies in a plan copy (the line items of
 // every activity the activity level copied, each copied once).
-func lineItemLevel(svc *lineitems.Service, activitiesRepo activities.Repository, campaignsRepo campaigns.Repository) plans.Level {
+func lineItemLevel(svc *lineitems.Service, activitiesRepo stores.ActivityStore, campaignsRepo stores.CampaignStore) plans.Level {
 	return plans.Level{
 		Name: "lineItem",
 		AddFacts: func(ctx context.Context, planIDs []string, facts map[string]*plans.Facts) error {
@@ -366,7 +366,7 @@ func lineItemLevel(svc *lineitems.Service, activitiesRepo activities.Repository,
 
 // activitiesOfPlan returns the ids of the activities of the plan, campaign by campaign, initiative by
 // initiative.
-func activitiesOfPlan(ctx context.Context, planID string, activitiesRepo activities.Repository, campaignsRepo campaigns.Repository) ([]string, error) {
+func activitiesOfPlan(ctx context.Context, planID string, activitiesRepo stores.ActivityStore, campaignsRepo stores.CampaignStore) ([]string, error) {
 	campaignList, err := campaignsRepo.CampaignsOfPlan(ctx, planID)
 	if err != nil {
 		return nil, err

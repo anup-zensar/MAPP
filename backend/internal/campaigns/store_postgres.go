@@ -13,7 +13,7 @@ import (
 	"mapp/internal/settings"
 )
 
-// PostgresStore is the Repository on PostgreSQL; initiatives are in store_postgres_initiatives.go. The
+// PostgresStore is the Store on PostgreSQL; initiatives are in store_postgres_initiatives.go. The
 // ...InScope reads keep only the records of the plans the person acting may see.
 type PostgresStore struct {
 	db *database.DB

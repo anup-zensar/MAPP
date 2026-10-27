@@ -78,12 +78,12 @@ func newFixture(t *testing.T) *fixture {
 	}
 	clock := &testClock{now: start}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
-	hist := history.NewService(db, history.NewJSONRepository(), generator, clock.Now)
-	campaignsRepo := campaigns.NewJSONRepository()
-	service := activities.NewService(db, activities.NewJSONRepository(), generator, hist, clock.Now, activities.Deps{
-		Plans: plans.NewJSONRepository(), Hierarchy: campaignsRepo,
-		Settings: settings.NewService(db, settings.NewJSONRepository(), generator, hist, clock.Now), People: people.NewJSONRepository(),
-		Workflows: activities.NewSeededWorkflows(approvals.NewJSONRepository()),
+	hist := history.NewService(db, history.NewJSONStore(), generator, clock.Now)
+	campaignsRepo := campaigns.NewJSONStore()
+	service := activities.NewService(db, activities.NewJSONStore(), generator, hist, clock.Now, activities.Deps{
+		Plans: plans.NewJSONStore(), Hierarchy: campaignsRepo,
+		Settings: settings.NewService(db, settings.NewJSONStore(), generator, hist, clock.Now), People: people.NewJSONStore(),
+		Workflows: activities.NewSeededWorkflows(approvals.NewJSONStore()),
 	})
 	for _, kind := range append([]history.Kind{initiativeKind(campaignsRepo)}, service.Kinds()...) {
 		if err := hist.Register(kind); err != nil {
@@ -98,7 +98,7 @@ func newFixture(t *testing.T) *fixture {
 }
 
 // initiativeKind is feature 005's initiative kind as the tests need it: the parent of activities.
-func initiativeKind(repo campaigns.Repository) history.Kind {
+func initiativeKind(repo campaigns.Store) history.Kind {
 	unused := errors.New("not used by these tests")
 	return history.Kind{
 		Name: "initiative", Singular: "initiative", Plural: "initiatives",
@@ -203,7 +203,7 @@ func (f *fixture) stored(t *testing.T, id string) (activities.Activity, bool) {
 	var found bool
 	err := f.db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
-		activity, found, err = activities.NewJSONRepository().Get(ctx, id)
+		activity, found, err = activities.NewJSONStore().Get(ctx, id)
 		return err
 	})
 	if err != nil {
@@ -227,7 +227,7 @@ func (f *fixture) change(t *testing.T, fn func(ctx context.Context) error) {
 // deactivateType makes the activity type id inactive.
 func (f *fixture) deactivateType(t *testing.T, id string) {
 	t.Helper()
-	repo := settings.NewJSONRepository()
+	repo := settings.NewJSONStore()
 	f.change(t, func(ctx context.Context) error {
 		activityType, _, err := repo.GetActivityType(ctx, id)
 		if err != nil {
@@ -241,7 +241,7 @@ func (f *fixture) deactivateType(t *testing.T, id string) {
 // deactivateOption makes the Shell attribute option id inactive.
 func (f *fixture) deactivateOption(t *testing.T, id string) {
 	t.Helper()
-	repo := settings.NewJSONRepository()
+	repo := settings.NewJSONStore()
 	f.change(t, func(ctx context.Context) error {
 		option, _, err := repo.GetOption(ctx, id)
 		if err != nil {
@@ -255,7 +255,7 @@ func (f *fixture) deactivateOption(t *testing.T, id string) {
 // deactivateWorkflow makes the approval workflow id inactive.
 func (f *fixture) deactivateWorkflow(t *testing.T, id string) {
 	t.Helper()
-	repo := approvals.NewJSONRepository()
+	repo := approvals.NewJSONStore()
 	f.change(t, func(ctx context.Context) error {
 		workflow, _, err := repo.GetWorkflow(ctx, id)
 		if err != nil {
@@ -269,7 +269,7 @@ func (f *fixture) deactivateWorkflow(t *testing.T, id string) {
 // deactivatePerson makes the person id inactive.
 func (f *fixture) deactivatePerson(t *testing.T, id string) {
 	t.Helper()
-	repo := people.NewJSONRepository()
+	repo := people.NewJSONStore()
 	f.change(t, func(ctx context.Context) error {
 		person, _, err := repo.Get(ctx, id)
 		if err != nil {

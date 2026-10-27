@@ -237,9 +237,9 @@ func newTestService(t *testing.T) *fixture {
 	}
 	clock := &testClock{now: start}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
-	hist := history.NewService(db, history.NewJSONRepository(), generator, clock.Now)
+	hist := history.NewService(db, history.NewJSONStore(), generator, clock.Now)
 	f := &fixture{history: hist, db: db, clock: clock, ids: generator}
-	f.service = NewService(db, NewJSONRepository(), generator, hist, clock.Now)
+	f.service = NewService(db, NewJSONStore(), generator, hist, clock.Now)
 	for _, kind := range f.service.Kinds() {
 		if err := hist.Register(kind); err != nil {
 			t.Fatalf("Register(%s): %v", kind.Name, err)
@@ -250,7 +250,7 @@ func newTestService(t *testing.T) *fixture {
 }
 
 // write runs fn in a Write of the store and stops the test when it fails.
-func (f *fixture) write(t *testing.T, fn func(ctx context.Context, repo Repository) error) {
+func (f *fixture) write(t *testing.T, fn func(ctx context.Context, repo Store) error) {
 	t.Helper()
 	repo := f.service.repo
 	if err := f.db.Write(t.Context(), func(ctx context.Context) error { return fn(ctx, repo) }); err != nil {
@@ -271,7 +271,7 @@ func (f *fixture) next(ctx context.Context, prefix string) string {
 func (f *fixture) addType(t *testing.T, name string, active bool) ActivityType {
 	t.Helper()
 	var at ActivityType
-	f.write(t, func(ctx context.Context, repo Repository) error {
+	f.write(t, func(ctx context.Context, repo Store) error {
 		at = ActivityType{ID: f.next(ctx, ids.PrefixActivityType), Name: name, Active: active, Meta: record.NewMeta(actor.System, start)}
 		return repo.PutActivityType(ctx, at)
 	})
@@ -282,7 +282,7 @@ func (f *fixture) addType(t *testing.T, name string, active bool) ActivityType {
 func (f *fixture) addModel(t *testing.T, name string, typeIDs ...string) Model {
 	t.Helper()
 	var m Model
-	f.write(t, func(ctx context.Context, repo Repository) error {
+	f.write(t, func(ctx context.Context, repo Store) error {
 		m = Model{
 			ID: f.next(ctx, ids.PrefixModel), Name: name, InqToMqlRate: money.PercentFromHundredths(200),
 			MqlToDealRate: money.PercentFromHundredths(500), AverageDealSize: money.USD(money.FromCents(1_000_000)),
@@ -302,7 +302,7 @@ func (f *fixture) addCurrency(t *testing.T, code, rate string, active bool) Curr
 	}
 	c := Currency{Code: code, Name: code + " name", Rate: r, RateChangedAt: start, RateChangedBy: actor.System, Active: active,
 		Meta: record.NewMeta(actor.System, start)}
-	f.write(t, func(ctx context.Context, repo Repository) error { return repo.PutCurrency(ctx, c) })
+	f.write(t, func(ctx context.Context, repo Store) error { return repo.PutCurrency(ctx, c) })
 	return c
 }
 
@@ -310,7 +310,7 @@ func (f *fixture) addCurrency(t *testing.T, code, rate string, active bool) Curr
 func (f *fixture) addItem(t *testing.T, year int, budgetName, name, code string, active bool) FinanceBudgetItem {
 	t.Helper()
 	var item FinanceBudgetItem
-	f.write(t, func(ctx context.Context, repo Repository) error {
+	f.write(t, func(ctx context.Context, repo Store) error {
 		budgets, err := repo.ListFinanceBudgets(ctx)
 		if err != nil {
 			return err
@@ -370,7 +370,7 @@ func (tf testForm) option(level Level, label, option string) string {
 func (f *fixture) addAttributes(t *testing.T, list ...testAttribute) testForm {
 	t.Helper()
 	tf := testForm{attributes: map[string]Attribute{}, options: map[string]Option{}}
-	f.write(t, func(ctx context.Context, repo Repository) error {
+	f.write(t, func(ctx context.Context, repo Store) error {
 		existing, err := repo.ListAttributes(ctx)
 		if err != nil {
 			return err
@@ -482,7 +482,7 @@ func (f *fixture) logEntries(t *testing.T) []history.Entry {
 	var entries []history.Entry
 	err := f.db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
-		entries, err = history.NewJSONRepository().Entries(ctx)
+		entries, err = history.NewJSONStore().Entries(ctx)
 		return err
 	})
 	if err != nil {

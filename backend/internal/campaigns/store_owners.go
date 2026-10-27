@@ -21,7 +21,7 @@ func (s *PostgresStore) CountInitiativesOwnedBy(ctx context.Context, personID st
 	return n, nil
 }
 
-func (r jsonRepository) CountCampaignsOwnedBy(ctx context.Context, personID string) (int, error) {
+func (r JSONStore) CountCampaignsOwnedBy(ctx context.Context, personID string) (int, error) {
 	list, err := r.ListCampaigns(ctx)
 	n := 0
 	for _, c := range list {
@@ -32,7 +32,7 @@ func (r jsonRepository) CountCampaignsOwnedBy(ctx context.Context, personID stri
 	return n, err
 }
 
-func (r jsonRepository) CountInitiativesOwnedBy(ctx context.Context, personID string) (int, error) {
+func (r JSONStore) CountInitiativesOwnedBy(ctx context.Context, personID string) (int, error) {
 	list, err := r.ListInitiatives(ctx)
 	n := 0
 	for _, i := range list {

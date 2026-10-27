@@ -26,7 +26,7 @@ import (
 // signed-in person may do everything (FR-031, D-004); the actor is where those checks will go.
 type Service struct {
 	tx      store.Transactor
-	repo    Repository
+	repo    Store
 	ids     *ids.Generator
 	history *history.Service
 	now     clock.Clock
@@ -38,7 +38,7 @@ type Service struct {
 // NewService returns the campaigns service. It keeps the records in repo, gives them readable IDs with
 // generator, logs their changes and deletes them through hist, works in transactions of tx, reads the time
 // from now and what it needs from other features from deps.
-func NewService(tx store.Transactor, repo Repository, generator *ids.Generator, hist *history.Service, now clock.Clock, deps Deps) *Service {
+func NewService(tx store.Transactor, repo Store, generator *ids.Generator, hist *history.Service, now clock.Clock, deps Deps) *Service {
 	deps.Plans = inPlanCurrency{deps.Plans}
 	return &Service{tx: tx, repo: repo, ids: generator, history: hist, now: now, deps: deps}
 }

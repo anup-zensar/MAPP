@@ -199,8 +199,8 @@ func newEmptyFixture(t *testing.T) *fixture {
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	clock := func() time.Time { return f.now }
-	f.history = history.NewService(db, history.NewJSONRepository(), generator, clock)
-	f.service = NewService(db, NewJSONRepository(), generator, f.history, Deps{
+	f.history = history.NewService(db, history.NewJSONStore(), generator, clock)
+	f.service = NewService(db, NewJSONStore(), generator, f.history, Deps{
 		Planning: f.planning, Rates: f.rates, Displays: fakeDisplays{}, Access: f.access,
 	}, clock)
 	for _, k := range f.service.Kinds() {

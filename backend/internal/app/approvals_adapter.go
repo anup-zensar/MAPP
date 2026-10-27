@@ -9,9 +9,7 @@ import (
 
 	"mapp/internal/activities"
 	"mapp/internal/approvals"
-	"mapp/internal/campaigns"
 	"mapp/internal/history"
-	"mapp/internal/lineitems"
 	"mapp/internal/plans"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
@@ -20,6 +18,7 @@ import (
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/money"
 	"mapp/internal/settings"
+	"mapp/internal/stores"
 )
 
 // submitCheck is feature 006's ready-to-submit check of one activity, line items included (006 plan
@@ -30,11 +29,11 @@ type submitCheck func(ctx context.Context, a actor.Actor, activityID string) (ac
 // their line items (007), the plans, campaigns and initiatives above them (004, 005) and Settings (002).
 // Every method runs inside the caller's transaction, which ctx carries.
 type approvalsActivities struct {
-	activities activities.Repository
-	lineItems  lineitems.Repository
-	campaigns  campaigns.Repository
-	plans      plans.Repository
-	settings   settings.Repository
+	activities stores.ActivityStore
+	lineItems  stores.LineItemStore
+	campaigns  stores.CampaignStore
+	plans      stores.PlanStore
+	settings   stores.SettingsStore
 	rates      func(context.Context) (money.Rates, error) // the current rates (016: dated rates), settings.Service.Rates
 	check      submitCheck
 	now        clock.Clock
@@ -419,7 +418,7 @@ func (c coding) of(values settings.AttributeValues, attributeLabel string) strin
 // the activity form offers the active ones and labels the inactive ones (FR-007; 008 plan, Reconciliation).
 // Its reads join the caller's transaction.
 type activityWorkflows struct {
-	repo approvals.Repository
+	repo stores.ApprovalStore
 }
 
 // The compiler checks here that activityWorkflows implements activities.Workflows.

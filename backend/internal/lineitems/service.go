@@ -41,7 +41,7 @@ const (
 // Service holds the rules of line items (feature 007).
 type Service struct {
 	tx      store.Transactor
-	repo    Repository
+	repo    Store
 	ids     *ids.Generator
 	history *history.Service
 	deps    Deps
@@ -51,7 +51,7 @@ type Service struct {
 // NewService returns the line-items service. It keeps line items in repo, gives them readable IDs with
 // generator, logs their changes and deletes them through hist, reads the other features through deps, works
 // in transactions of tx and reads the time from now.
-func NewService(tx store.Transactor, repo Repository, generator *ids.Generator, hist *history.Service, deps Deps, now clock.Clock) *Service {
+func NewService(tx store.Transactor, repo Store, generator *ids.Generator, hist *history.Service, deps Deps, now clock.Clock) *Service {
 	return &Service{tx: tx, repo: repo, ids: generator, history: hist, deps: deps, now: now}
 }
 

@@ -9,6 +9,7 @@ import (
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/record"
+	"mapp/internal/stores"
 )
 
 // day is 24 hours: the approval history is dated in days and hours before the seed time.
@@ -208,7 +209,7 @@ func (d *demo) addApprovals(ctx context.Context) error {
 }
 
 // addAction writes one history entry of round at its current level.
-func (d *demo) addAction(ctx context.Context, repo approvals.Repository, round approvals.Round, kind approvals.ActionKind,
+func (d *demo) addAction(ctx context.Context, repo stores.ApprovalStore, round approvals.Round, kind approvals.ActionKind,
 	by actor.Actor, at time.Time, comment string) error {
 	id, err := d.next(ctx, ids.PrefixApprovalAction)
 	if err != nil {
@@ -223,7 +224,7 @@ func (d *demo) addAction(ctx context.Context, repo approvals.Repository, round a
 }
 
 // addNotifications writes the demo notifications; read ones were read an hour after they came.
-func (d *demo) addNotifications(ctx context.Context, repo approvals.Repository, person func(string) (actor.Actor, error)) error {
+func (d *demo) addNotifications(ctx context.Context, repo stores.ApprovalStore, person func(string) (actor.Actor, error)) error {
 	for _, dn := range demoNotifications {
 		activityID, err := find(d.activities, "activity", dn.plan+"/"+dn.activity)
 		if err != nil {

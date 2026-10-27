@@ -2,7 +2,7 @@ package lineitems
 
 import "context"
 
-func (r jsonRepository) AddMany(ctx context.Context, list []LineItem) error {
+func (r JSONStore) AddMany(ctx context.Context, list []LineItem) error {
 	for _, li := range list {
 		if err := r.Put(ctx, li); err != nil {
 			return err
@@ -11,7 +11,7 @@ func (r jsonRepository) AddMany(ctx context.Context, list []LineItem) error {
 	return nil
 }
 
-func (r jsonRepository) DeleteMany(ctx context.Context, ids []string) error {
+func (r JSONStore) DeleteMany(ctx context.Context, ids []string) error {
 	for _, id := range ids {
 		if err := r.Delete(ctx, id); err != nil {
 			return err

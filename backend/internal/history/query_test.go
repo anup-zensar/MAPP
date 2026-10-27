@@ -562,7 +562,7 @@ func (f *fixture) logAs(t *testing.T, a actor.Actor, in LogInput, service ...*Se
 // kind "parent": the entries it logs are about a kind the fixture's service does not know.
 func (f *fixture) withKind(t *testing.T, name string) *Service {
 	t.Helper()
-	other := NewService(f.db, NewJSONRepository(), f.service.ids, f.clock.Now)
+	other := NewService(f.db, NewJSONStore(), f.service.ids, f.clock.Now)
 	for _, k := range append(f.standardKinds(), f.testKind(name, name+"s", "parent", "others")) {
 		if err := other.Register(k); err != nil {
 			t.Fatalf("Register(%s): %v", k.Name, err)

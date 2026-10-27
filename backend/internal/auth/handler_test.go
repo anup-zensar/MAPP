@@ -187,7 +187,7 @@ func TestRequireSignIn_HandlerCanWrite_FR007(t *testing.T) {
 	if err = seed.Load(t.Context(), stores.JSON(db), now); err != nil {
 		t.Fatalf("seed.Load: %v", err)
 	}
-	service := auth.NewService(db, auth.NewJSONRepository(), people.NewJSONRepository(), true, demoPassword, now)
+	service := auth.NewService(db, auth.NewJSONStore(), people.NewJSONStore(), true, demoPassword, now)
 	token, _, err := service.SignIn(t.Context(), priyasEmail, demoPassword, "")
 	if err != nil {
 		t.Fatalf("SignIn: %v", err)

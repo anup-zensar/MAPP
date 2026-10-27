@@ -24,7 +24,7 @@ import (
 // JSON is the set of the tests' stand-in store; feature 025 replaces it with fakes and deletes it.
 func JSON(db *store.DB) Set {
 	return Set{
-		Tx: db, Counters: ids.NewJSONCounters(), Samples: samples.NewJSONRepository(),
+		Tx: db, Counters: ids.NewJSONCounters(), Samples: samples.NewJSONStore(),
 		Organisation: jsonOrganisation(), Planning: jsonPlanning(), Finance: jsonFinance(),
 		Ready:   func(context.Context) error { return db.Ready() },
 		IsEmpty: func(context.Context) (bool, error) { return db.IsEmpty(), nil },
@@ -33,19 +33,19 @@ func JSON(db *store.DB) Set {
 
 func jsonOrganisation() Organisation {
 	return Organisation{
-		People: people.NewJSONRepository(), History: history.NewJSONRepository(), Auth: auth.NewJSONRepository(),
-		Access: access.NewJSONRepository(), Settings: settings.NewJSONRepository(),
+		People: people.NewJSONStore(), History: history.NewJSONStore(), Auth: auth.NewJSONStore(),
+		Access: access.NewJSONStore(), Settings: settings.NewJSONStore(),
 	}
 }
 
 func jsonPlanning() Planning {
 	return Planning{
-		Plans: plans.NewJSONRepository(), Campaigns: campaigns.NewJSONRepository(),
-		Activities: activities.NewJSONRepository(), LineItems: lineitems.NewJSONRepository(),
-		Approvals: approvals.NewJSONRepository(), AllWork: allwork.NewJSONRepository(),
+		Plans: plans.NewJSONStore(), Campaigns: campaigns.NewJSONStore(),
+		Activities: activities.NewJSONStore(), LineItems: lineitems.NewJSONStore(),
+		Approvals: approvals.NewJSONStore(), AllWork: allwork.NewJSONStore(),
 	}
 }
 
 func jsonFinance() Finance {
-	return Finance{Budgets: budgets.NewJSONRepository(), Financials: financials.NewJSONRepository()}
+	return Finance{Budgets: budgets.NewJSONStore(), Financials: financials.NewJSONStore()}
 }

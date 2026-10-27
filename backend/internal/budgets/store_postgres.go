@@ -15,7 +15,7 @@ import (
 	"mapp/internal/platform/record"
 )
 
-// PostgresStore is the Repository on PostgreSQL. Global budgets belong to the organisation; allocations
+// PostgresStore is the Store on PostgreSQL. Global budgets belong to the organisation; allocations
 // belong to their plan, and AllocationsInScope keeps only those of the plans the person acting may see.
 type PostgresStore struct {
 	db *database.DB

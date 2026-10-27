@@ -19,7 +19,7 @@ import (
 // keptArea is what the transaction memo keeps of plans.
 const keptArea = "plans"
 
-// PostgresStore is the Repository on PostgreSQL. Beside the Repository's reads of every plan (for internal
+// PostgresStore is the Store on PostgreSQL. Beside the Store's reads of every plan (for internal
 // work such as usage counts), ListInScope and GetInScope read only what the person acting may see.
 type PostgresStore struct {
 	db *database.DB

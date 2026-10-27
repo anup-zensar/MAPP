@@ -9,6 +9,7 @@ import (
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/memo"
+	"mapp/internal/stores"
 )
 
 // historyAccess implements history.Access (feature 014, D-238, D-304): who sees which activity-log and
@@ -25,7 +26,7 @@ import (
 //   - Restoring needs to see the entry and the level's delete permission in the plan, or the permission that
 //     manages an administration record. The developer sample records stay open to everyone.
 type historyAccess struct {
-	plans   plans.Repository
+	plans   stores.PlanStore
 	history *history.Service
 }
 

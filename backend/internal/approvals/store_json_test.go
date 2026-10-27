@@ -27,7 +27,7 @@ func TestJSONRepository_RoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)
 	}
-	repo := approvals.NewJSONRepository()
+	repo := approvals.NewJSONStore()
 	meta := record.NewMeta(actor.System, seededAt)
 	workflow := approvals.Workflow{
 		ID: "WF-1001", Name: "Lubricants EU approval", Description: "Lubricants Europe activities.", Active: true,
@@ -162,7 +162,7 @@ func TestLegacyRecords_ReadWithDefaults_017P19(t *testing.T) {
 		t.Fatalf("Write: %v", err)
 	}
 
-	repo := approvals.NewJSONRepository()
+	repo := approvals.NewJSONStore()
 	err = db.Read(t.Context(), func(ctx context.Context) error {
 		w, _, err := repo.GetWorkflow(ctx, "WF-1001")
 		if err != nil {

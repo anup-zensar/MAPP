@@ -293,8 +293,8 @@ func loadDemo(t *testing.T) demoData {
 	db := loadedStore(t)
 	var d demoData
 	read(t, db, func(ctx context.Context) error {
-		peopleRepo, settingsRepo, approvalsRepo := people.NewJSONRepository(), settings.NewJSONRepository(), approvals.NewJSONRepository()
-		campaignsRepo := campaigns.NewJSONRepository()
+		peopleRepo, settingsRepo, approvalsRepo := people.NewJSONStore(), settings.NewJSONStore(), approvals.NewJSONStore()
+		campaignsRepo := campaigns.NewJSONStore()
 		var errs []error
 		collect := func(err error) { errs = append(errs, err) }
 		var err error
@@ -322,21 +322,21 @@ func loadDemo(t *testing.T) demoData {
 		collect(err)
 		d.options, err = settingsRepo.ListOptions(ctx)
 		collect(err)
-		d.plans, err = plans.NewJSONRepository().List(ctx)
+		d.plans, err = plans.NewJSONStore().List(ctx)
 		collect(err)
 		d.campaigns, err = campaignsRepo.ListCampaigns(ctx)
 		collect(err)
 		d.initiatives, err = campaignsRepo.ListInitiatives(ctx)
 		collect(err)
-		d.activities, err = activities.NewJSONRepository().List(ctx)
+		d.activities, err = activities.NewJSONStore().List(ctx)
 		collect(err)
-		d.lineItems, err = lineitems.NewJSONRepository().List(ctx)
+		d.lineItems, err = lineitems.NewJSONStore().List(ctx)
 		collect(err)
 		d.workflows, err = approvalsRepo.ListWorkflows(ctx)
 		collect(err)
 		d.rounds, err = approvalsRepo.ListRounds(ctx)
 		collect(err)
-		accessRepo := access.NewJSONRepository()
+		accessRepo := access.NewJSONStore()
 		d.roles, err = accessRepo.ListRoles(ctx)
 		collect(err)
 		d.assignments, err = accessRepo.ListAssignments(ctx)
@@ -428,7 +428,7 @@ func storedPeople(t *testing.T, db *store.DB) []people.Person {
 	var list []people.Person
 	read(t, db, func(ctx context.Context) error {
 		var err error
-		list, err = people.NewJSONRepository().List(ctx)
+		list, err = people.NewJSONStore().List(ctx)
 		return err
 	})
 	return list

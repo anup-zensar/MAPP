@@ -21,7 +21,7 @@ func TestAdapter_WorkflowFacts_FR007(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)
 	}
-	repo := approvals.NewJSONRepository()
+	repo := approvals.NewJSONStore()
 	meta := record.NewMeta(actor.System, time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC))
 	err = db.Write(t.Context(), func(ctx context.Context) error {
 		for _, w := range []approvals.Workflow{
@@ -81,7 +81,7 @@ func TestAdapter_ActivityDeletingKeepsRound_008P3(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)
 	}
-	repo := approvals.NewJSONRepository()
+	repo := approvals.NewJSONStore()
 	at := time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 	priya := actor.Actor{ID: "U-1002", Name: "Priya Raman"}
 	open := approvals.Round{

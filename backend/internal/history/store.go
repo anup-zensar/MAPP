@@ -2,12 +2,12 @@ package history
 
 import "context"
 
-// Repository stores the activity log and the recycle bin. The JSON store implements it now (store_json.go)
+// Store stores the activity log and the recycle bin. The JSON store implements it now (store_json.go)
 // and PostgreSQL will later, without any change to the service. Every method runs inside the caller's
 // transaction, which the context carries.
 //
 // There is no method to change or remove a log entry: entries are only ever added (FR-023).
-type Repository interface {
+type Store interface {
 	// AppendEntry adds e at the end of the activity log.
 	AppendEntry(ctx context.Context, e Entry) error
 	// Entries returns every activity-log entry, in the order they were added.

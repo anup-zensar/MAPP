@@ -16,7 +16,7 @@ import (
 // keptArea is what the transaction memo keeps of activities.
 const keptArea = "activities"
 
-// PostgresStore is the Repository on PostgreSQL. ListInScope and GetInScope keep only the activities the
+// PostgresStore is the Store on PostgreSQL. ListInScope and GetInScope keep only the activities the
 // person acting may see (activity_in_scope: their plan's scope, their owner, their named approvers).
 type PostgresStore struct {
 	db *database.DB

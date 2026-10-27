@@ -341,7 +341,7 @@ func TestUpdate_InactiveValuesKeptWhenUnchanged_FR013(t *testing.T) {
 func TestUpdate_UnchangedDatesNotChecked_EdgeCase(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	repo := campaigns.NewJSONRepository()
+	repo := campaigns.NewJSONStore()
 	f.change(t, func(ctx context.Context) error {
 		initiative, _, err := repo.GetInitiative(ctx, digitalAndSocial)
 		if err != nil {

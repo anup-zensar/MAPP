@@ -9,6 +9,7 @@ import (
 	"mapp/internal/people"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
+	"mapp/internal/stores"
 )
 
 // accessDirectory implements access.Directory (feature 014) over the people service (003): everyone with
@@ -63,7 +64,7 @@ func (d accessDirectory) TouchPerson(ctx context.Context, a actor.Actor, personI
 // accessApprovals implements access.ApprovalFacts over the approval workflows and rounds of feature 008,
 // for the roles impact check (FR-022).
 type accessApprovals struct {
-	repo approvals.Repository
+	repo stores.ApprovalStore
 }
 
 // ApproverIn counts the active approval workflows that name the person as an approver of any level, and

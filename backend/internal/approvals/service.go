@@ -28,8 +28,8 @@ const maxCommentLength = 2000
 // Service holds the rules of approval workflows, approval rounds and notifications.
 type Service struct {
 	tx         store.Transactor
-	repo       Repository
-	people     people.Repository
+	repo       Store
+	people     People
 	activities Activities
 	ids        *ids.Generator
 	history    *history.Service
@@ -47,7 +47,7 @@ type Service struct {
 // NewService returns the approvals service. It keeps its records in repo, reads people from peopleRepo
 // and activities through activities, gives out readable IDs with generator, logs through hist, works in
 // transactions of tx and reads the time from now.
-func NewService(tx store.Transactor, repo Repository, peopleRepo people.Repository, activities Activities,
+func NewService(tx store.Transactor, repo Store, peopleRepo People, activities Activities,
 	generator *ids.Generator, hist *history.Service, now clock.Clock) *Service {
 	return &Service{tx: tx, repo: repo, people: peopleRepo, activities: activities, ids: generator, history: hist, now: now,
 		access: openAccess{}, choices: noChoices{}}

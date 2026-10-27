@@ -13,7 +13,7 @@ import (
 	"mapp/internal/platform/record"
 )
 
-// PostgresStore is the Repository on PostgreSQL. Sample records belong to no plan, so no method takes a
+// PostgresStore is the Store on PostgreSQL. Sample records belong to no plan, so no method takes a
 // scope.
 type PostgresStore struct {
 	db *database.DB

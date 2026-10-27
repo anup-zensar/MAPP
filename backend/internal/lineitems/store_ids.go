@@ -6,7 +6,7 @@ import (
 )
 
 // ListByIDs returns the stored line items among ids, ordered by id.
-func (r jsonRepository) ListByIDs(ctx context.Context, ids []string) ([]LineItem, error) {
+func (r JSONStore) ListByIDs(ctx context.Context, ids []string) ([]LineItem, error) {
 	all, err := r.List(ctx)
 	if err != nil {
 		return nil, err

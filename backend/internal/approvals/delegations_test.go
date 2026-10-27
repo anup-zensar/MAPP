@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"mapp/internal/people"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
@@ -248,12 +249,12 @@ func TestDelegation_Effect_FR023(t *testing.T) {
 		t.Errorf("an inactive delegate still has %v", ids)
 	}
 	f.write(t, func(ctx context.Context) error {
-		p, _, err := f.service.people.Get(ctx, carlos.ID)
+		p, _, err := people.NewJSONStore().Get(ctx, carlos.ID)
 		if err != nil {
 			return err
 		}
 		p.Active = true
-		return f.service.people.Put(ctx, p)
+		return people.NewJSONStore().Put(ctx, p)
 	})
 
 	approval := f.approve(t, carlos, "A-1001", "")

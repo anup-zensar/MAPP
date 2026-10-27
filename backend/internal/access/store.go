@@ -2,10 +2,10 @@ package access
 
 import "context"
 
-// Repository stores roles, role assignments and the access rules. The JSON store implements it now
+// Store stores roles, role assignments and the access rules. The JSON store implements it now
 // (store_json.go) and PostgreSQL will later, without any change to the service. Every method runs inside the
 // caller's transaction, which the context carries.
-type Repository interface {
+type Store interface {
 	// GetRole returns the role with id, and false when there is none.
 	GetRole(ctx context.Context, id string) (Role, bool, error)
 	// ListRoles returns every role, ordered by id.

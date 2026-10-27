@@ -41,7 +41,7 @@ type PlanSource interface {
 	PlansOfYear(ctx context.Context, year int) ([]PlanFacts, error)
 }
 
-// PersonSource reads people (features 001 and 003): the owners. people.Repository implements it as it is.
+// PersonSource reads people (features 001 and 003): the owners. people.Store implements it as it is.
 type PersonSource interface {
 	// Get returns the person with id, and false when there is none.
 	Get(ctx context.Context, id string) (people.Person, bool, error)

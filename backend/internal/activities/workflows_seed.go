@@ -11,12 +11,18 @@ import (
 
 // seededWorkflows reads the approval workflows the seed wrote in feature 008's table (D-103, D-201).
 type seededWorkflows struct {
-	repo approvals.Repository
+	repo approvalWorkflows
+}
+
+// approvalWorkflows is what the seeded workflows read of feature 008's table.
+type approvalWorkflows interface {
+	GetWorkflow(ctx context.Context, id string) (approvals.Workflow, bool, error)
+	ListWorkflows(ctx context.Context) ([]approvals.Workflow, error)
 }
 
 // NewSeededWorkflows returns the Workflows of a build without feature 008: the workflows of the table
 // "approval_workflows", read through repo. Feature 008 replaces it with its own adapter.
-func NewSeededWorkflows(repo approvals.Repository) Workflows {
+func NewSeededWorkflows(repo approvalWorkflows) Workflows {
 	return seededWorkflows{repo: repo}
 }
 

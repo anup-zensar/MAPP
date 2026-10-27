@@ -103,7 +103,7 @@ func TestUsage_SettingsInBinCount_EdgeCase(t *testing.T) {
 		testAttribute{level: LevelCampaign, label: "Region", typ: TypeMultipleChoice, parent: "Cluster",
 			options: []string{"UK"}, links: map[string][]string{"UK": {"Europe"}}},
 	)
-	f.write(t, func(ctx context.Context, _ Repository) error {
+	f.write(t, func(ctx context.Context, _ Store) error {
 		if _, err := f.history.MoveToBin(ctx, alex, modelKind, model.ID); err != nil {
 			return err
 		}

@@ -162,7 +162,7 @@ func newEmptyStoreService(t *testing.T) *Service {
 	t.Helper()
 	f := newFixture(t)
 	f.write(t, func(ctx context.Context) error {
-		roles, err := NewJSONRepository().ListRoles(ctx)
+		roles, err := NewJSONStore().ListRoles(ctx)
 		if err != nil {
 			return err
 		}

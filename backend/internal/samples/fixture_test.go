@@ -39,8 +39,8 @@ func newFixture(t *testing.T) *fixture {
 	}
 	clock := &testClock{now: start}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
-	hist := history.NewService(db, history.NewJSONRepository(), generator, clock.Now)
-	service := NewService(db, NewJSONRepository(), generator, hist, clock.Now)
+	hist := history.NewService(db, history.NewJSONStore(), generator, clock.Now)
+	service := NewService(db, NewJSONStore(), generator, hist, clock.Now)
 	for _, kind := range service.Kinds() {
 		if err := hist.Register(kind); err != nil {
 			t.Fatalf("Register(%s): %v", kind.Name, err)
@@ -100,7 +100,7 @@ func (f *fixture) storedFolder(t *testing.T, id string) Folder {
 	var found bool
 	err := f.db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
-		folder, found, err = NewJSONRepository().GetFolder(ctx, id)
+		folder, found, err = NewJSONStore().GetFolder(ctx, id)
 		return err
 	})
 	if err != nil || !found {
@@ -114,7 +114,7 @@ func (f *fixture) entries(t *testing.T) []history.Entry {
 	var entries []history.Entry
 	err := f.db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
-		entries, err = history.NewJSONRepository().Entries(ctx)
+		entries, err = history.NewJSONStore().Entries(ctx)
 		return err
 	})
 	if err != nil {
@@ -129,7 +129,7 @@ func (f *fixture) binEntry(t *testing.T, id string) history.BinEntry {
 	var found bool
 	err := f.db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
-		entry, found, err = history.NewJSONRepository().GetBinEntry(ctx, id)
+		entry, found, err = history.NewJSONStore().GetBinEntry(ctx, id)
 		return err
 	})
 	if err != nil || !found {

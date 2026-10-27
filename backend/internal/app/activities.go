@@ -11,6 +11,7 @@ import (
 	"mapp/internal/plans"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
+	"mapp/internal/stores"
 )
 
 // The adapters below hand the activities service (feature 006) to the features above it (D-196): to
@@ -47,7 +48,7 @@ func (x activitiesForCampaigns) CopyMany(ctx context.Context, a actor.Actor, pai
 // activities that need attention (AddPlanFacts), their copies in a plan copy (the activities of every
 // copied initiative; their line items are the next level's), and the activities a new model would not
 // allow (004 FR-019).
-func activityLevel(svc *activities.Service, activitiesRepo activities.Repository, campaignsRepo campaigns.Repository) plans.Level {
+func activityLevel(svc *activities.Service, activitiesRepo stores.ActivityStore, campaignsRepo stores.CampaignStore) plans.Level {
 	return plans.Level{
 		Name:     "activity",
 		AddFacts: svc.AddPlanFacts,
@@ -70,7 +71,7 @@ func activityLevel(svc *activities.Service, activitiesRepo activities.Repository
 // allowedTypeIDs (006 TypesNotAllowed, for 004 FR-019), ordered by path: campaign, initiative and activity
 // names, ignoring letter case. An activity without a type is not listed: it has no type to disallow.
 func activitiesWithTypeNotAllowed(ctx context.Context, planID string, allowedTypeIDs []string,
-	activitiesRepo activities.Repository, campaignsRepo campaigns.Repository) ([]errs.RecordRef, error) {
+	activitiesRepo stores.ActivityStore, campaignsRepo stores.CampaignStore) ([]errs.RecordRef, error) {
 	campaignList, err := campaignsRepo.CampaignsOfPlan(ctx, planID)
 	if err != nil {
 		return nil, err

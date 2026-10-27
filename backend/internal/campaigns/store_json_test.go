@@ -16,7 +16,7 @@ func TestJSONRepository_PhasingOfOlderRows(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)
 	}
-	repo := campaigns.NewJSONRepository()
+	repo := campaigns.NewJSONStore()
 	err = db.Write(t.Context(), func(ctx context.Context) error {
 		if err := store.Put(ctx, "campaigns", "C-1001", map[string]any{"id": "C-1001", "planId": "P-1001", "name": "Old"}); err != nil {
 			return err

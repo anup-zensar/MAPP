@@ -215,7 +215,7 @@ func TestUpdateModel_KeepsInactiveTypeAlreadyAllowed_FR004(t *testing.T) {
 	event := f.addType(t, "Event", true)
 	webinar := f.addType(t, "Webinar", true)
 	m := f.createModel(t, modelInput("Model", event.ID, webinar.ID))
-	f.write(t, func(ctx context.Context, repo Repository) error {
+	f.write(t, func(ctx context.Context, repo Store) error {
 		webinar.Active = false
 		return repo.PutActivityType(ctx, webinar)
 	})

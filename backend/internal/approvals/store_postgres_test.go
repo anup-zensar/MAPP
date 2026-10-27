@@ -21,10 +21,10 @@ import (
 )
 
 var (
-	pgMeta                         = record.NewMeta(actor.System, time.Date(2026, time.March, 12, 9, 0, 0, 0, time.UTC))
-	_         approvals.Repository = (*approvals.PostgresStore)(nil)
-	submitted                      = time.Date(2026, time.April, 1, 9, 0, 0, 0, time.UTC)
-	approver                       = actor.Actor{ID: "U-1003", Name: "Mei Chen"}
+	pgMeta                    = record.NewMeta(actor.System, time.Date(2026, time.March, 12, 9, 0, 0, 0, time.UTC))
+	_         approvals.Store = (*approvals.PostgresStore)(nil)
+	submitted                 = time.Date(2026, time.April, 1, 9, 0, 0, 0, time.UTC)
+	approver                  = actor.Actor{ID: "U-1003", Name: "Mei Chen"}
 )
 
 // pgPlanned gives a store whose database also holds the activities A-1001 (plan P-1001, team T-1001) and

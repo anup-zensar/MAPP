@@ -4,12 +4,10 @@ import (
 	"context"
 	"slices"
 
-	"mapp/internal/activities"
 	"mapp/internal/allwork"
 	"mapp/internal/campaigns"
 	"mapp/internal/financials"
 	"mapp/internal/history"
-	"mapp/internal/lineitems"
 	"mapp/internal/people"
 	"mapp/internal/plans"
 	"mapp/internal/platform/actor"
@@ -17,6 +15,7 @@ import (
 	"mapp/internal/platform/money"
 	"mapp/internal/platform/store"
 	"mapp/internal/settings"
+	"mapp/internal/stores"
 )
 
 // The wiring of feature 015, financial transactions (D-196, D-251): the ports of internal/financials over
@@ -28,11 +27,11 @@ import (
 // and 007's line items with their USD planned cost at the current rates. It reads inside the caller's
 // transaction and never writes.
 type financialPlanning struct {
-	plans         plans.Repository
+	plans         stores.PlanStore
 	campaigns     *campaigns.Service
-	campaignsRepo campaigns.Repository
-	activities    activities.Repository
-	lineItems     lineitems.Repository
+	campaignsRepo stores.CampaignStore
+	activities    stores.ActivityStore
+	lineItems     stores.LineItemStore
 	settings      *settings.Service
 	people        *people.Service
 	history       *history.Service
@@ -98,7 +97,7 @@ func (d financialDisplays) Display(ctx context.Context, personID string) (money.
 // An internal call (no grants) may do everything.
 type financialAccess struct {
 	tx    store.Transactor
-	plans plans.Repository
+	plans stores.PlanStore
 }
 
 // SeeFinance needs finance.view in some scope.

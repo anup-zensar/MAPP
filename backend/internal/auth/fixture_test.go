@@ -41,7 +41,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 	clock := &testClock{now: start}
 	f := &fixture{
-		service: NewService(db, NewJSONRepository(), people.NewJSONRepository(), true, demoPassword, clock.Now),
+		service: NewService(db, NewJSONStore(), people.NewJSONStore(), true, demoPassword, clock.Now),
 		db:      db,
 		dir:     dir,
 		clock:   clock,
@@ -74,7 +74,7 @@ func (f *fixture) deactivate(t *testing.T, p people.Person) {
 
 func (f *fixture) putPeople(t *testing.T, list ...people.Person) {
 	t.Helper()
-	repo := people.NewJSONRepository()
+	repo := people.NewJSONStore()
 	err := f.db.Write(t.Context(), func(ctx context.Context) error {
 		for _, p := range list {
 			if err := repo.Put(ctx, p); err != nil {
@@ -91,7 +91,7 @@ func (f *fixture) putPeople(t *testing.T, list ...people.Person) {
 func (f *fixture) putSession(t *testing.T, s Session) {
 	t.Helper()
 	err := f.db.Write(t.Context(), func(ctx context.Context) error {
-		return NewJSONRepository().Put(ctx, s)
+		return NewJSONStore().Put(ctx, s)
 	})
 	if err != nil {
 		t.Fatalf("Write: %v", err)
@@ -103,7 +103,7 @@ func (f *fixture) sessions(t *testing.T) []Session {
 	var list []Session
 	err := f.db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
-		list, err = NewJSONRepository().List(ctx)
+		list, err = NewJSONStore().List(ctx)
 		return err
 	})
 	if err != nil {

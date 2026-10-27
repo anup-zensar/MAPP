@@ -684,7 +684,7 @@ func (f *fixture) update(t *testing.T, a actor.Actor, id string, u Update) View 
 // put stores li as it is, for situations a form cannot create (values that became inactive since).
 func (f *fixture) put(t *testing.T, li LineItem) {
 	t.Helper()
-	err := f.db.Write(t.Context(), func(ctx context.Context) error { return NewJSONRepository().Put(ctx, li) })
+	err := f.db.Write(t.Context(), func(ctx context.Context) error { return NewJSONStore().Put(ctx, li) })
 	if err != nil {
 		t.Fatalf("Put: %v", err)
 	}

@@ -2,10 +2,10 @@ package samples
 
 import "context"
 
-// Repository stores sample folders and notes. The JSON store implements it now (store_json.go) and
+// Store stores sample folders and notes. The JSON store implements it now (store_json.go) and
 // PostgreSQL could later, without any change to the service. Every method runs inside the caller's
 // transaction, which the context carries.
-type Repository interface {
+type Store interface {
 	// GetFolder returns the folder with id, and false when there is none.
 	GetFolder(ctx context.Context, id string) (Folder, bool, error)
 	// ListFolders returns every folder, ordered by id.

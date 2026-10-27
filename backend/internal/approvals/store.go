@@ -3,12 +3,14 @@ package approvals
 import (
 	"context"
 	"time"
+
+	"mapp/internal/people"
 )
 
-// Repository stores approval workflows, rounds, history entries and notifications. The JSON store
+// Store stores approval workflows, rounds, history entries and notifications. The JSON store
 // implements it now (store_json.go) and PostgreSQL can later. Every method runs inside the caller's
 // transaction, which the context carries. Lists are never nil.
-type Repository interface {
+type Store interface {
 	// GetWorkflow returns the workflow with id, and false when there is none.
 	GetWorkflow(ctx context.Context, id string) (Workflow, bool, error)
 	// ListWorkflows returns every workflow, active or not, ordered by id.
@@ -52,4 +54,9 @@ type Repository interface {
 	ListDelegations(ctx context.Context) ([]Delegation, error)
 	// PutDelegation saves dl, replacing the delegation with the same id. Delegations are never deleted.
 	PutDelegation(ctx context.Context, dl Delegation) error
+}
+
+// People is what approvals reads of people and teams.
+type People interface {
+	List(ctx context.Context) ([]people.Person, error)
 }

@@ -17,7 +17,7 @@ import (
 // keptArea is what the transaction memo keeps of line items.
 const keptArea = "lineitems"
 
-// PostgresStore is the Repository on PostgreSQL. ListInScope and GetInScope keep only the line items of the
+// PostgresStore is the Store on PostgreSQL. ListInScope and GetInScope keep only the line items of the
 // activities the person acting may see: whoever sees an activity sees its line items.
 type PostgresStore struct {
 	db *database.DB

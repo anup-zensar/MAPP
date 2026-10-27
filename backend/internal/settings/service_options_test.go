@@ -18,7 +18,7 @@ import (
 // attributeID directly, as an import would.
 func (f *fixture) addOptions(t *testing.T, attributeID, prefix string, n int) {
 	t.Helper()
-	f.write(t, func(ctx context.Context, repo Repository) error {
+	f.write(t, func(ctx context.Context, repo Store) error {
 		for i := 1; i <= n; i++ {
 			o := Option{ID: f.next(ctx, ids.PrefixShellOption), AttributeID: attributeID, Label: fmt.Sprintf("%s%04d", prefix, i), Position: i,
 				ParentOptionIDs: []string{}, Active: true, Meta: record.NewMeta(actor.System, start)}

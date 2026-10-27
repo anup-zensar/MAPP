@@ -42,11 +42,11 @@ func TestAdapter_RuleFacts_FR010(t *testing.T) {
 	t.Parallel()
 	db, now := seededStore(t)
 	generator := ids.NewGenerator(ids.NewJSONCounters())
-	settingsService := settings.NewService(db, settings.NewJSONRepository(), generator,
-		history.NewService(db, history.NewJSONRepository(), generator, now), now)
+	settingsService := settings.NewService(db, settings.NewJSONStore(), generator,
+		history.NewService(db, history.NewJSONStore(), generator, now), now)
 	adapter := &approvalsActivities{
-		activities: activities.NewJSONRepository(), lineItems: lineitems.NewJSONRepository(), campaigns: campaigns.NewJSONRepository(),
-		plans: plans.NewJSONRepository(), settings: settings.NewJSONRepository(), rates: settingsService.Rates, now: now,
+		activities: activities.NewJSONStore(), lineItems: lineitems.NewJSONStore(), campaigns: campaigns.NewJSONStore(),
+		plans: plans.NewJSONStore(), settings: settings.NewJSONStore(), rates: settingsService.Rates, now: now,
 	}
 
 	var fleet, launch approvals.ActivityFacts
@@ -79,14 +79,14 @@ func TestApprovalsAccess_RoleHolders_FR001(t *testing.T) {
 	t.Parallel()
 	db, now := seededStore(t)
 	generator := ids.NewGenerator(ids.NewJSONCounters())
-	historyService := history.NewService(db, history.NewJSONRepository(), generator, now)
-	peopleService := people.NewService(db, people.NewJSONRepository(), generator, historyService, now)
-	access := approvalsAccess{access: accessservice.NewService(db, accessservice.NewJSONRepository(), generator, historyService,
+	historyService := history.NewService(db, history.NewJSONStore(), generator, now)
+	peopleService := people.NewService(db, people.NewJSONStore(), generator, historyService, now)
+	access := approvalsAccess{access: accessservice.NewService(db, accessservice.NewJSONStore(), generator, historyService,
 		accessDirectory{people: peopleService}, now)}
-	choices := approvalRuleChoices{settings: settings.NewService(db, settings.NewJSONRepository(), generator, historyService, now)}
+	choices := approvalRuleChoices{settings: settings.NewService(db, settings.NewJSONStore(), generator, historyService, now)}
 
 	err := db.Read(t.Context(), func(ctx context.Context) error {
-		lubricants, found, err := plans.NewJSONRepository().Get(ctx, "P-1001")
+		lubricants, found, err := plans.NewJSONStore().Get(ctx, "P-1001")
 		if err != nil || !found {
 			t.Fatalf("plan P-1001: %v %v", found, err)
 		}

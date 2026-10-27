@@ -2,10 +2,10 @@ package allwork
 
 import "context"
 
-// Repository stores All work's personal settings: saved views and the remembered columns (data model §1).
+// Store stores All work's personal settings: saved views and the remembered columns (data model §1).
 // The JSON store implements it now (store_json.go) and PostgreSQL can later. Every method runs inside the
 // caller's transaction, which the context carries. Lists are never nil.
-type Repository interface {
+type Store interface {
 	// GetPreferences returns the preferences of the person personID, and false when they never saved any.
 	GetPreferences(ctx context.Context, personID string) (PreferencesRecord, bool, error)
 	// PutPreferences saves p under p.PersonID, replacing what was saved.

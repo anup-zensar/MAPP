@@ -6,11 +6,11 @@ import (
 	"mapp/internal/platform/authz"
 )
 
-// Repository stores activities. The JSON store implements it now (store_json.go) and PostgreSQL can later
+// Store stores activities. The JSON store implements it now (store_json.go) and PostgreSQL can later
 // (index on activities(initiative_id)). Every method runs inside the caller's transaction, which the context
 // carries. Lists are ordered by id (creation order) and never nil; activities in the recycle bin are not in
 // the table.
-type Repository interface {
+type Store interface {
 	// Get returns the activity with id, and false when there is none.
 	Get(ctx context.Context, id string) (Activity, bool, error)
 	// List returns every activity (008's inbox and usage counts).

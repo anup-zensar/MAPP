@@ -18,7 +18,7 @@ import (
 // SO-1002), as feature 004's plan edit would.
 func (f *fixture) setBusinessUnit(t *testing.T, optionIDs ...string) {
 	t.Helper()
-	repo := plans.NewJSONRepository()
+	repo := plans.NewJSONStore()
 	f.change(t, func(ctx context.Context) error {
 		plan, _, err := repo.Get(ctx, "P-1001")
 		if err != nil {
@@ -103,7 +103,7 @@ func TestUpdate_SplitNot100SavesButIsListed_FR017(t *testing.T) {
 func TestView_GoalsUseCurrentModelValues_FR018(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	repo := settings.NewJSONRepository()
+	repo := settings.NewJSONStore()
 	f.change(t, func(ctx context.Context) error {
 		model, _, err := repo.GetModel(ctx, "MOD-1001")
 		if err != nil {

@@ -191,7 +191,7 @@ func TestUpdatePerson_ChangesLoggedOldAndNew_FR028(t *testing.T) {
 			"Job title Marketer → Senior marketer: Teams Lubricants Europe → Lubricants Europe, Mobility China",
 		"Alex Morgan changed team 'Mobility China' (T-1002): Members No members → Priya Raman",
 	})
-	f.read(t, func(ctx context.Context, repo Repository) error {
+	f.read(t, func(ctx context.Context, repo Store) error {
 		found, ok, err := repo.FindByEmail(ctx, "priya.r@shell.com")
 		if !ok || found.ID != priya.ID {
 			t.Errorf("FindByEmail(new e-mail) = %+v, %v; want Priya", found, ok)
@@ -533,7 +533,7 @@ func TestGetPerson_NotFound_FR008(t *testing.T) {
 // putPerson stores p through the repository, replacing the person with the same id.
 func (f *fixture) putPerson(t *testing.T, p Person) {
 	t.Helper()
-	err := f.db.Write(t.Context(), func(ctx context.Context) error { return NewJSONRepository().Put(ctx, p) })
+	err := f.db.Write(t.Context(), func(ctx context.Context) error { return NewJSONStore().Put(ctx, p) })
 	if err != nil {
 		t.Fatalf("Put(%s): %v", p.ID, err)
 	}

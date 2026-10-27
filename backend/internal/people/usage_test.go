@@ -201,7 +201,7 @@ var usd = Currency{Code: "USD", Name: "US dollar", Rate: "1", Active: true}
 func (f *fixture) savePreferences(t *testing.T, prefs Preferences) {
 	t.Helper()
 	err := f.db.Write(t.Context(), func(ctx context.Context) error {
-		return NewJSONRepository().PutPreferences(ctx, prefs)
+		return NewJSONStore().PutPreferences(ctx, prefs)
 	})
 	if err != nil {
 		t.Fatalf("PutPreferences: %v", err)

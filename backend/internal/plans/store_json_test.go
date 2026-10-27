@@ -17,7 +17,7 @@ func TestPlanStore_NormalisesOlderRows(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)
 	}
-	repo := plans.NewJSONRepository()
+	repo := plans.NewJSONStore()
 	err = db.Write(t.Context(), func(ctx context.Context) error {
 		if err := store.Put(ctx, "plans", "P-1001", map[string]any{"id": "P-1001", "name": "Old", "year": 2026, "teamIds": []string{}}); err != nil {
 			return err

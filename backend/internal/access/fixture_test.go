@@ -114,15 +114,15 @@ func newFixture(t *testing.T) *fixture {
 	}}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	clock := func() time.Time { return f.now }
-	f.history = history.NewService(db, history.NewJSONRepository(), generator, clock)
-	f.service = NewService(db, NewJSONRepository(), generator, f.history, f.directory, clock)
+	f.history = history.NewService(db, history.NewJSONStore(), generator, clock)
+	f.service = NewService(db, NewJSONStore(), generator, f.history, f.directory, clock)
 	for _, kind := range append(f.service.Kinds(), f.personKind()) {
 		if err := f.history.Register(kind); err != nil {
 			t.Fatalf("Register(%s): %v", kind.Name, err)
 		}
 	}
 	f.write(t, func(ctx context.Context) error {
-		repo := NewJSONRepository()
+		repo := NewJSONStore()
 		roles := []Role{
 			{Name: "Administrator", BuiltIn: authz.BuiltInAdministrator, Permissions: authz.All(), DefaultScope: authz.ScopeAll},
 			{Name: "Global planner", BuiltIn: authz.BuiltInGlobalPlanner, DefaultScope: authz.ScopeAll, Permissions: []authz.Permission{

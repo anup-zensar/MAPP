@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"mapp/internal/history"
+	"mapp/internal/people"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/record"
@@ -59,12 +60,12 @@ func (f *fixture) storedWorkflow(t *testing.T, id string) (Workflow, bool) {
 func (f *fixture) deactivatePerson(t *testing.T, p actor.Actor) {
 	t.Helper()
 	f.write(t, func(ctx context.Context) error {
-		person, _, err := f.service.people.Get(ctx, p.ID)
+		person, _, err := people.NewJSONStore().Get(ctx, p.ID)
 		if err != nil {
 			return err
 		}
 		person.Active = false
-		return f.service.people.Put(ctx, person)
+		return people.NewJSONStore().Put(ctx, person)
 	})
 }
 

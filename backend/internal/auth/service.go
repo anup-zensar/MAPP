@@ -20,8 +20,8 @@ import (
 // Service holds the rules of demo sign-in and sessions (research R6).
 type Service struct {
 	tx           store.Transactor
-	repo         Repository
-	people       people.Repository
+	repo         Store
+	people       People
 	demoMode     bool
 	demoPassword string
 	now          clock.Clock
@@ -30,7 +30,7 @@ type Service struct {
 // NewService returns the sign-in service. It keeps sessions in repo, finds people in peopleRepo and works
 // in transactions of tx. demoMode says whether demo sign-in is on, which it is only in the local and
 // development environments (FR-009); demoPassword is the password all demo people share; now is the clock.
-func NewService(tx store.Transactor, repo Repository, peopleRepo people.Repository, demoMode bool, demoPassword string, now clock.Clock) *Service {
+func NewService(tx store.Transactor, repo Store, peopleRepo People, demoMode bool, demoPassword string, now clock.Clock) *Service {
 	return &Service{tx: tx, repo: repo, people: peopleRepo, demoMode: demoMode, demoPassword: demoPassword, now: now}
 }
 

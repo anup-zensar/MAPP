@@ -61,7 +61,7 @@ const (
 // Service holds the rules of activities (feature 006).
 type Service struct {
 	tx        store.Transactor
-	repo      Repository
+	repo      Store
 	ids       *ids.Generator
 	history   *history.Service
 	now       clock.Clock
@@ -81,7 +81,7 @@ type Service struct {
 // from now and reads the plans, campaigns, initiatives, Settings, people and approval workflows of deps.
 // Until UseLineItems and UseApprovalHooks are called, activities have no line items and nothing reacts to
 // approval changes.
-func NewService(tx store.Transactor, repo Repository, generator *ids.Generator, hist *history.Service, now clock.Clock, deps Deps) *Service {
+func NewService(tx store.Transactor, repo Store, generator *ids.Generator, hist *history.Service, now clock.Clock, deps Deps) *Service {
 	return &Service{
 		tx: tx, repo: repo, ids: generator, history: hist, now: now,
 		plans: deps.Plans, hierarchy: deps.Hierarchy, settings: deps.Settings, people: deps.People, workflows: deps.Workflows,
