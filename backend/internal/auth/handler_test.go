@@ -12,13 +12,13 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"mapp/internal/auth"
+	"mapp/internal/auth/authtest"
 	"mapp/internal/people"
+	"mapp/internal/people/peopletest"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/apitest"
-	"mapp/internal/platform/store"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/web"
-	"mapp/internal/stores"
-	"mapp/seed"
 )
 
 const (
@@ -178,16 +178,10 @@ func TestSignOut_WithoutSession_FR006(t *testing.T) {
 // The sign-in check's transaction has finished before the handler runs (research R6).
 func TestRequireSignIn_HandlerCanWrite_FR007(t *testing.T) {
 	t.Parallel()
-	dir := t.TempDir()
-	db, err := store.Open(dir)
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
+	db := apitest.DemoDB(t, false)
+	notes := fake.TableOf(db, "notes", func(n note) string { return n.ID })
 	now := func() time.Time { return time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC) }
-	if err = seed.Load(t.Context(), stores.JSON(db), now); err != nil {
-		t.Fatalf("seed.Load: %v", err)
-	}
-	service := auth.NewService(db, auth.NewJSONStore(), people.NewJSONStore(),
+	service := auth.NewService(db, authtest.NewStore(db), peopletest.NewStore(db),
 		auth.Options{DemoMode: true, DemoPassword: demoPassword, Now: now})
 	token, _, err := service.SignIn(t.Context(), priyasEmail, demoPassword, "")
 	if err != nil {
@@ -197,7 +191,7 @@ func TestRequireSignIn_HandlerCanWrite_FR007(t *testing.T) {
 	saveANote := func(c *gin.Context) {
 		who, _ = actor.From(c.Request.Context())
 		saveErr := db.Write(c.Request.Context(), func(ctx context.Context) error {
-			return store.Put(ctx, "notes", "N-1", map[string]string{"writtenBy": who.Name})
+			return notes.Put(ctx, note{ID: "N-1", WrittenBy: who.Name})
 		})
 		if saveErr != nil {
 			web.RespondError(c, saveErr)
@@ -220,20 +214,15 @@ func TestRequireSignIn_HandlerCanWrite_FR007(t *testing.T) {
 	if who != (actor.Actor{ID: "U-1002", Name: "Priya Raman"}) {
 		t.Errorf("actor = %+v, want Priya Raman (U-1002)", who)
 	}
-	reopened, err := store.Open(dir) // the note was saved to disk, not lost in a finished transaction
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
+	saved, found, err := notes.Get("N-1")
+	if err != nil || !found || saved.WrittenBy != "Priya Raman" {
+		t.Errorf("saved note = %+v (found %v, %v), want one written by Priya Raman", saved, found, err)
 	}
-	err = reopened.Read(t.Context(), func(ctx context.Context) error {
-		note, found, err := store.Get[map[string]string](ctx, "notes", "N-1")
-		if !found || note["writtenBy"] != "Priya Raman" {
-			t.Errorf("saved note = %v (found %v), want one written by Priya Raman", note, found)
-		}
-		return err
-	})
-	if err != nil {
-		t.Fatalf("Read: %v", err)
-	}
+}
+
+type note struct {
+	ID        string `json:"id"`
+	WrittenBy string `json:"writtenBy"`
 }
 
 func signIn(email, password string) map[string]string {
