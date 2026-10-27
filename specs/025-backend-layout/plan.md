@@ -41,22 +41,23 @@ Worked example (plans):
 // internal/plan/store.go — what the plans service calls, nothing more.
 type Store interface {
 	Get(ctx context.Context, id string) (Plan, bool, error)
+	List(ctx context.Context) ([]Plan, error)
 	ListInScope(ctx context.Context, scope authz.Scope) ([]Plan, error)
-	GetInScope(ctx context.Context, scope authz.Scope, id string) (Plan, bool, error)
-	PlansOfYear(ctx context.Context, year int) ([]Plan, error)
 	ListByIDs(ctx context.Context, ids []string) ([]Plan, error)
 	Put(ctx context.Context, p Plan) error
 	Delete(ctx context.Context, id string) error
 }
 
-// internal/stores/plans.go — the plans store as the wiring and the seed use it.
+// internal/stores/plans.go — the plans store as the wiring and the seed use it: the service's Store and
+// what only other areas' adapters call.
 type PlanStore interface {
 	plan.Store
-	List(ctx context.Context) ([]plan.Plan, error) // the seed and the All work adapter read every plan
+	GetInScope(ctx context.Context, scope authz.Scope, id string) (plan.Plan, bool, error)
+	PlansOfYear(ctx context.Context, year int) ([]plan.Plan, error)
 }
 
 // internal/app/areas.go
-w.plans = plan.NewService(w.tools, w.set.Plans, w.settings, w.people)
+w.plans = plan.NewService(tools, w.set.Plans, w.settings, w.people)
 ```
 
 Constructors: `history.Tools` bundles the transaction, the ID generator, the activity log and the clock
