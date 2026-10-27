@@ -22,7 +22,7 @@ const (
 // approver sources, or the workflow with what would happen to each level — who approves it and how they were
 // found, or why it is not needed or approved automatically — with a positive unassigned planned cost as a
 // note.
-func (s *Service) Submission(ctx context.Context, a actor.Actor, activityID string) (Submission, error) {
+func (s *Service) Submission(ctx context.Context, a actor.Actor, activityID string) (Submission, error) { //nolint:gocyclo // 11: one Read whose every step returns its error.
 	var submission Submission
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		facts, err := s.activity(ctx, activityID)
@@ -58,23 +58,11 @@ func (s *Service) Submission(ctx context.Context, a actor.Actor, activityID stri
 		if !submission.Available {
 			submission.Reason = onlyCreatedOrDeclinedMessage
 		}
-		if workflow != nil {
-			rc, err := s.ruleContext(ctx)
-			if err != nil {
-				return err
-			}
-			submission.Workflow = workflowRef(*workflow)
-			submission.Levels = levelViews(workflow.Levels, rc)
+		if submission.Workflow, submission.Levels, err = s.submissionWorkflow(ctx, workflow); err != nil {
+			return err
 		}
 		if res != nil {
-			for _, l := range res.levels {
-				submission.Outcomes = append(submission.Outcomes, SubmissionLevel{
-					Number: l.Number, Label: levelLabel(l.Name, l.Number), Outcome: l.Resolution, Approvers: d.copiedAll(l.Approvers),
-					Source: l.Source, Mode: l.Mode, RuleText: l.RuleText, Excluded: excludedViews(l.Excluded, d),
-					BackupUsed: l.BackupUsed, NoApprover: l.NoApprover, Advice: noApproverAdvice(l, a.ID),
-				})
-			}
-			submission.ApprovedAutomatically = len(res.problems) == 0 && len(res.levels) > 0 && firstDecideLevel(res.levels, 0) == 0
+			submission.Outcomes, submission.ApprovedAutomatically = submissionOutcomes(*res, d, a)
 		}
 		return nil
 	})
@@ -82,6 +70,33 @@ func (s *Service) Submission(ctx context.Context, a actor.Actor, activityID stri
 		return Submission{}, err
 	}
 	return submission, nil
+}
+
+// submissionWorkflow returns the workflow and its levels as the submit confirmation shows them: none without
+// a workflow.
+func (s *Service) submissionWorkflow(ctx context.Context, workflow *Workflow) (*WorkflowRef, []LevelView, error) {
+	if workflow == nil {
+		return nil, []LevelView{}, nil
+	}
+	rc, err := s.ruleContext(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	return workflowRef(*workflow), levelViews(workflow.Levels, rc), nil
+}
+
+// submissionOutcomes says what would happen to each level of res if a submitted now, and whether the
+// activity would be approved at once.
+func submissionOutcomes(res resolution, d directory, a actor.Actor) ([]SubmissionLevel, bool) {
+	outcomes := []SubmissionLevel{}
+	for _, l := range res.levels {
+		outcomes = append(outcomes, SubmissionLevel{
+			Number: l.Number, Label: levelLabel(l.Name, l.Number), Outcome: l.Resolution, Approvers: d.copiedAll(l.Approvers),
+			Source: l.Source, Mode: l.Mode, RuleText: l.RuleText, Excluded: excludedViews(l.Excluded, d),
+			BackupUsed: l.BackupUsed, NoApprover: l.NoApprover, Advice: noApproverAdvice(l, a.ID),
+		})
+	}
+	return outcomes, len(res.problems) == 0 && len(res.levels) > 0 && firstDecideLevel(res.levels, 0) == 0
 }
 
 // submitCheck runs the ready-to-submit check of 006 and 007 for facts and adds the problem of its approval
@@ -95,15 +110,9 @@ func (s *Service) submitCheck(ctx context.Context, a actor.Actor, facts Activity
 	if err != nil {
 		return ReadyCheck{}, nil, nil, err
 	}
-	var workflow *Workflow
-	if facts.WorkflowID != "" {
-		w, found, err := s.repo.GetWorkflow(ctx, facts.WorkflowID)
-		if err != nil {
-			return ReadyCheck{}, nil, nil, err
-		}
-		if found {
-			workflow = &w
-		}
+	workflow, err := s.workflowOf(ctx, facts)
+	if err != nil {
+		return ReadyCheck{}, nil, nil, err
 	}
 
 	problems := slices.Clone(check.Problems)
@@ -128,6 +137,27 @@ func (s *Service) submitCheck(ctx context.Context, a actor.Actor, facts Activity
 		res = &resolved
 		added = append(added, resolved.problems...)
 	}
+	check.Problems = withWorkflowProblems(problems, added)
+	return check, workflow, res, nil
+}
+
+// workflowOf returns the approval workflow of the activity, nil when it has none or it is no longer stored.
+func (s *Service) workflowOf(ctx context.Context, facts ActivityFacts) (*Workflow, error) {
+	var workflow *Workflow
+	if facts.WorkflowID != "" {
+		w, found, err := s.repo.GetWorkflow(ctx, facts.WorkflowID)
+		if err != nil {
+			return nil, err
+		}
+		if found {
+			workflow = &w
+		}
+	}
+	return workflow, nil
+}
+
+// withWorkflowProblems returns problems with the workflow's problems added among them; never nil.
+func withWorkflowProblems(problems, added []SubmitProblem) []SubmitProblem {
 	if len(added) > 0 {
 		// The activity's own problems come first, then those of its line items: the workflow's go last of
 		// the activity's.
@@ -140,8 +170,7 @@ func (s *Service) submitCheck(ctx context.Context, a actor.Actor, facts Activity
 	if problems == nil {
 		problems = []SubmitProblem{}
 	}
-	check.Problems = problems
-	return check, workflow, res, nil
+	return problems
 }
 
 // choiceNames reads the labels of the business units and activity types conditions name.

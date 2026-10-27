@@ -221,6 +221,19 @@ func submittable(status string) bool {
 	return status == StatusCreated || status == StatusDeclined
 }
 
+// roundOf returns the round roundID of the activity: not_found when there is none or it is another
+// activity's.
+func (s *Service) roundOf(ctx context.Context, facts ActivityFacts, roundID string) (Round, error) {
+	round, found, err := s.repo.GetRound(ctx, roundID)
+	if err != nil {
+		return Round{}, err
+	}
+	if !found || round.ActivityID != facts.ID {
+		return Round{}, errs.NotFound(roundNotOfActivity)
+	}
+	return round, nil
+}
+
 // nextRoundNumber is the number of an activity's next round: 1, then the highest number + 1 (FR-020).
 // rounds are ordered by number.
 func nextRoundNumber(rounds []Round) int {

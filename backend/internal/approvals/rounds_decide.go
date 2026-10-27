@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
@@ -31,9 +32,59 @@ func (s *Service) Decline(ctx context.Context, a actor.Actor, activityID string,
 	return s.decide(ctx, a, activityID, in, ActionDeclined)
 }
 
+// deciding is one decision inside decide's Write: what a decides, with which comment and when, on the current
+// level of the open round of the activity, with the round's history entries, the current delegations and
+// a's authority.
+type deciding struct {
+	a       actor.Actor
+	kind    ActionKind
+	comment string
+	now     time.Time
+	facts   ActivityFacts
+	round   Round
+	entries []Action
+	dl      []Delegation
+	au      authority
+}
+
 // decide does the work of Approve and Decline, in one Write.
-func (s *Service) decide(ctx context.Context, a actor.Actor, activityID string, in DecisionInput, decision ActionKind) (ActivityApproval, error) {
+func (s *Service) decide(ctx context.Context, a actor.Actor, activityID string, in DecisionInput, decision ActionKind) (ActivityApproval, error) { //nolint:revive // argument-limit 5: Approve's and Decline's parameters, and which of the two it is
 	comment := strings.TrimSpace(in.Comment)
+	if err := decisionProblems(in, decision, comment); err != nil {
+		return ActivityApproval{}, err
+	}
+
+	var approval ActivityApproval
+	err := s.tx.Write(ctx, func(ctx context.Context) error {
+		facts, err := s.activity(ctx, activityID)
+		if err != nil {
+			return err
+		}
+		round, err := s.roundToDecide(ctx, facts, in)
+		if err != nil {
+			return err
+		}
+		dg, err := s.decidingOn(ctx, a, facts, round)
+		if err != nil {
+			return err
+		}
+		dg.kind, dg.comment, dg.now = decision, comment, s.now()
+		updated, err := s.recordDecision(ctx, dg)
+		if err != nil {
+			return err
+		}
+		approval, err = s.approval(ctx, a, updated)
+		return err
+	})
+	if err != nil {
+		return ActivityApproval{}, err
+	}
+	return approval, nil
+}
+
+// decisionProblems are every problem of a decision request at once: the round and level it names, and its
+// comment, which a decline needs.
+func decisionProblems(in DecisionInput, decision ActionKind, comment string) error {
 	var problems errs.Problems
 	if in.RoundID == "" {
 		problems.Add("roundId", reloadMessage)
@@ -47,124 +98,140 @@ func (s *Service) decide(ctx context.Context, a actor.Actor, activityID string, 
 	case tooLong(comment, maxCommentLength):
 		problems.Add("comment", tooLong2000Message)
 	}
-	if err := problems.Err(); err != nil {
-		return ActivityApproval{}, err
-	}
+	return problems.Err()
+}
 
-	var approval ActivityApproval
-	err := s.tx.Write(ctx, func(ctx context.Context) error {
-		facts, err := s.activity(ctx, activityID)
-		if err != nil {
-			return err
-		}
-		round, found, err := s.repo.GetRound(ctx, in.RoundID)
-		if err != nil {
-			return err
-		}
-		if !found || round.ActivityID != facts.ID {
-			return errs.NotFound(roundNotOfActivity)
-		}
-		if round.Outcome != OutcomeOpen || round.CurrentLevel != *in.Level {
-			return s.movedOn(ctx, round, *in.Level)
-		}
-		all, err := s.repo.ActionsOf(ctx, facts.ID)
-		if err != nil {
-			return err
-		}
-		entries := entriesOf(all, round.ID)
-		d, err := s.directory(ctx)
-		if err != nil {
-			return err
-		}
-		dl, err := s.currentDelegations(ctx, d)
-		if err != nil {
-			return err
-		}
-		dc, err := s.deciderOf(ctx, a, dl)
-		if err != nil {
-			return err
-		}
-		au, err := s.authority(ctx, dc, facts, round, entries, true)
-		if err != nil {
-			return err
-		}
-		if !au.allowed {
-			return au.refusal
-		}
-
-		now := s.now()
-		level := round.Levels[round.CurrentLevel-1]
-		entry, err := s.newAction(ctx, round, decision, level.Number, a, au.onBehalfOf, now, comment)
-		if err != nil {
-			return err
-		}
-		entry.Capacity = au.capacity
-		if au.capacity == CapacityDelegate {
-			entry.AsDelegateOf = &au.asDelegateOf[0]
-		}
-		if err := s.repo.PutAction(ctx, entry); err != nil {
-			return err
-		}
-		suffix := capacitySuffix(au)
-		decided := fmt.Sprintf("Round %d · level %d of %d", round.Number, level.Number, len(round.Levels))
-
-		updated := facts
-		logEntry := statusLog{comment: comment, details: decided + suffix}
-		notify := s.notifier(a, facts, now)
-		owner := []string{facts.OwnerID}
-		entries = append(entries, entry)
-		next := firstDecideLevel(round.Levels, level.Number)
-		switch {
-		case decision == ActionDeclined:
-			round.Outcome, round.EndedAt = OutcomeDeclined, &now
-			logEntry.verb, logEntry.oldStatus, logEntry.newer = "declined", facts.Status, StatusDeclined
-			err = notify.send(ctx, owner, NotifyDeclined, activityDeclinedTitle,
-				fmt.Sprintf(declinedText, a.Name, activityText(facts), quoted(comment)))
-		case !levelDone(level, entries):
-			// An "all must approve" level waits for more approvals: nobody is told (017 FR-032).
-			waiting := waitingOn(level, entries)
-			logEntry.verb = fmt.Sprintf("approved level %d of", level.Number)
-			logEntry.details = fmt.Sprintf("%s · %d of %d approved · still waiting for %s%s", decided,
-				len(level.Approvers)-len(waiting), len(level.Approvers), names(waiting), suffix)
-		case next == 0:
-			round.Outcome, round.EndedAt = OutcomeApproved, &now
-			logEntry.verb, logEntry.oldStatus, logEntry.newer = "approved", facts.Status, StatusApproved
-			err = notify.send(ctx, owner, NotifyApproved, activityApprovedTitle, fmt.Sprintf(approvedText, a.Name, activityText(facts)))
-		default:
-			round.CurrentLevel = next
-			round.Levels[next-1].StartedAt = &now
-			waiting := round.Levels[next-1]
-			logEntry.verb = fmt.Sprintf("approved level %d of", level.Number)
-			logEntry.details = fmt.Sprintf("%s · now waiting for level %d (%s)%s", decided, next, approversText(waiting), suffix)
-			// The next approvers first: an owner who approves the next level is asked to, not told.
-			err = s.notifyLevel(ctx, notify, waiting, dl, fmt.Sprintf(nextLevelWaitsText, a.Name, level.Number, activityText(facts), next))
-			if err == nil {
-				err = notify.send(ctx, owner, NotifyLevelApproved, fmt.Sprintf(levelApprovedTitle, level.Number),
-					fmt.Sprintf(levelApprovedText, a.Name, level.Number, len(round.Levels), activityText(facts)))
-			}
-		}
-		if err != nil {
-			return err
-		}
-		round.Touch(a, now)
-		if err := s.repo.PutRound(ctx, round); err != nil {
-			return err
-		}
-		if logEntry.newer != "" {
-			if updated, err = s.activities.SetStatus(ctx, a, facts.ID, logEntry.newer); err != nil {
-				return err
-			}
-		}
-		if err := s.logOnActivity(ctx, a, updated, logEntry); err != nil {
-			return err
-		}
-		approval, err = s.approval(ctx, a, updated)
-		return err
-	})
+// roundToDecide returns the round in.RoundID of the activity if it is open at in.Level, or why a decision
+// on it comes too late.
+func (s *Service) roundToDecide(ctx context.Context, facts ActivityFacts, in DecisionInput) (Round, error) {
+	round, err := s.roundOf(ctx, facts, in.RoundID)
 	if err != nil {
-		return ActivityApproval{}, err
+		return Round{}, err
 	}
-	return approval, nil
+	if round.Outcome != OutcomeOpen || round.CurrentLevel != *in.Level {
+		return Round{}, s.movedOn(ctx, round, *in.Level)
+	}
+	return round, nil
+}
+
+// decidingOn reads whether a may decide the current level of round, and in which capacity: the round's
+// history entries, the current delegations and a's authority, or a's refusal.
+func (s *Service) decidingOn(ctx context.Context, a actor.Actor, facts ActivityFacts, round Round) (deciding, error) {
+	all, err := s.repo.ActionsOf(ctx, facts.ID)
+	if err != nil {
+		return deciding{}, err
+	}
+	entries := entriesOf(all, round.ID)
+	d, err := s.directory(ctx)
+	if err != nil {
+		return deciding{}, err
+	}
+	dl, err := s.currentDelegations(ctx, d)
+	if err != nil {
+		return deciding{}, err
+	}
+	dc, err := s.deciderOf(ctx, a, dl)
+	if err != nil {
+		return deciding{}, err
+	}
+	au, err := s.authority(ctx, dc, facts, round, entries, true)
+	if err != nil {
+		return deciding{}, err
+	}
+	if !au.allowed {
+		return deciding{}, au.refusal
+	}
+	return deciding{a: a, facts: facts, round: round, entries: entries, dl: dl, au: au}, nil
+}
+
+// recordDecision stores dg's decision: its history entry, the round moved on or ended, the activity's new
+// status and its log entry. It returns the activity after the decision.
+func (s *Service) recordDecision(ctx context.Context, dg deciding) (ActivityFacts, error) {
+	entry, err := s.decisionEntry(ctx, dg)
+	if err != nil {
+		return ActivityFacts{}, err
+	}
+	dg.entries = append(dg.entries, entry)
+	round, logEntry, err := s.decisionOutcome(ctx, dg)
+	if err != nil {
+		return ActivityFacts{}, err
+	}
+	round.Touch(dg.a, dg.now)
+	if err = s.repo.PutRound(ctx, round); err != nil {
+		return ActivityFacts{}, err
+	}
+	updated := dg.facts
+	if logEntry.newer != "" {
+		if updated, err = s.activities.SetStatus(ctx, dg.a, dg.facts.ID, logEntry.newer); err != nil {
+			return ActivityFacts{}, err
+		}
+	}
+	if err = s.logOnActivity(ctx, dg.a, updated, logEntry); err != nil {
+		return ActivityFacts{}, err
+	}
+	return updated, nil
+}
+
+// decisionEntry stores the history entry of dg's decision on the current level, with its capacity.
+func (s *Service) decisionEntry(ctx context.Context, dg deciding) (Action, error) {
+	level := dg.round.Levels[dg.round.CurrentLevel-1]
+	entry, err := s.newAction(ctx, dg.round, dg.kind, level.Number, dg.a, dg.au.onBehalfOf, dg.now, dg.comment)
+	if err != nil {
+		return Action{}, err
+	}
+	entry.Capacity = dg.au.capacity
+	if dg.au.capacity == CapacityDelegate {
+		entry.AsDelegateOf = &dg.au.asDelegateOf[0]
+	}
+	if err = s.repo.PutAction(ctx, entry); err != nil {
+		return Action{}, err
+	}
+	return entry, nil
+}
+
+// decisionOutcome moves dg's round on after its decision, or ends it, and tells who needs to know. It
+// returns the round and the activity-log entry of the decision.
+func (s *Service) decisionOutcome(ctx context.Context, dg deciding) (Round, statusLog, error) {
+	round, facts, a, now := dg.round, dg.facts, dg.a, dg.now
+	level := round.Levels[round.CurrentLevel-1]
+	suffix := capacitySuffix(dg.au)
+	decided := fmt.Sprintf("Round %d · level %d of %d", round.Number, level.Number, len(round.Levels))
+
+	logEntry := statusLog{comment: dg.comment, details: decided + suffix}
+	notify := s.notifier(a, facts, now)
+	owner := []string{facts.OwnerID}
+	next := firstDecideLevel(round.Levels, level.Number)
+	var err error
+	switch {
+	case dg.kind == ActionDeclined:
+		round.Outcome, round.EndedAt = OutcomeDeclined, &now
+		logEntry.verb, logEntry.oldStatus, logEntry.newer = "declined", facts.Status, StatusDeclined
+		err = notify.send(ctx, owner, NotifyDeclined, activityDeclinedTitle,
+			fmt.Sprintf(declinedText, a.Name, activityText(facts), quoted(dg.comment)))
+	case !levelDone(level, dg.entries):
+		// An "all must approve" level waits for more approvals: nobody is told (017 FR-032).
+		waiting := waitingOn(level, dg.entries)
+		logEntry.verb = fmt.Sprintf("approved level %d of", level.Number)
+		logEntry.details = fmt.Sprintf("%s · %d of %d approved · still waiting for %s%s", decided,
+			len(level.Approvers)-len(waiting), len(level.Approvers), names(waiting), suffix)
+	case next == 0:
+		round.Outcome, round.EndedAt = OutcomeApproved, &now
+		logEntry.verb, logEntry.oldStatus, logEntry.newer = "approved", facts.Status, StatusApproved
+		err = notify.send(ctx, owner, NotifyApproved, activityApprovedTitle, fmt.Sprintf(approvedText, a.Name, activityText(facts)))
+	default:
+		round.CurrentLevel = next
+		round.Levels[next-1].StartedAt = &now
+		waiting := round.Levels[next-1]
+		logEntry.verb = fmt.Sprintf("approved level %d of", level.Number)
+		logEntry.details = fmt.Sprintf("%s · now waiting for level %d (%s)%s", decided, next, approversText(waiting), suffix)
+		// The next approvers first: an owner who approves the next level is asked to, not told.
+		err = s.notifyLevel(ctx, notify, waiting, dg.dl, fmt.Sprintf(nextLevelWaitsText, a.Name, level.Number, activityText(facts), next))
+		if err == nil {
+			err = notify.send(ctx, owner, NotifyLevelApproved, fmt.Sprintf(levelApprovedTitle, level.Number),
+				fmt.Sprintf(levelApprovedText, a.Name, level.Number, len(round.Levels), activityText(facts)))
+		}
+	}
+	return round, logEntry, err
 }
 
 // movedOn explains why a decision on level of round comes too late (FR-018, D-155): the level was decided,
@@ -183,18 +250,21 @@ func (s *Service) movedOn(ctx context.Context, round Round, level int) error {
 	if !found {
 		return errs.Validation(errs.FieldError{Field: "level", Message: reloadMessage})
 	}
-	var message string
-	switch last.Action {
+	return decidedConflict(movedOnMessage(last), last.Actor.Name, last.At)
+}
+
+// movedOnMessage says what decided the level, or ended the round, in the entry last.
+func movedOnMessage(last Action) string {
+	switch last.Action { //nolint:exhaustive // any other entry gets the deletion's message, as before
 	case ActionApproved:
-		message = fmt.Sprintf(alreadyApprovedMessage, last.Level, last.Actor.Name)
+		return fmt.Sprintf(alreadyApprovedMessage, last.Level, last.Actor.Name)
 	case ActionDeclined:
-		message = fmt.Sprintf(alreadyDeclinedMessage, last.Level, last.Actor.Name)
+		return fmt.Sprintf(alreadyDeclinedMessage, last.Level, last.Actor.Name)
 	case ActionRecalled:
-		message = fmt.Sprintf(recalledByMessage, last.Actor.Name)
+		return fmt.Sprintf(recalledByMessage, last.Actor.Name)
 	case ActionRestarted:
-		message = fmt.Sprintf(restartedByMessage, last.Actor.Name)
+		return fmt.Sprintf(restartedByMessage, last.Actor.Name)
 	default:
-		message = cancelledMessage
+		return cancelledMessage
 	}
-	return decidedConflict(message, last.Actor.Name, last.At)
 }

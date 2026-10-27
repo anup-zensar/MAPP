@@ -17,16 +17,9 @@ import (
 // on behalf of the approvers (014 FR-027). An Approved activity cannot be recalled — a change of domain model §2.5 sends it back
 // for approval — and the refusal says so. A round that ended meanwhile is refused, saying what ended it
 // (FR-018).
-func (s *Service) Recall(ctx context.Context, a actor.Actor, activityID string, in RecallInput) (ActivityApproval, error) {
+func (s *Service) Recall(ctx context.Context, a actor.Actor, activityID string, in RecallInput) (ActivityApproval, error) { //nolint:gocyclo // 10: one Write whose every step returns its error.
 	reason := strings.TrimSpace(in.Reason)
-	var problems errs.Problems
-	if in.RoundID == "" {
-		problems.Add("roundId", reloadMessage)
-	}
-	if tooLong(reason, maxCommentLength) {
-		problems.Add("reason", tooLong2000Message)
-	}
-	if err := problems.Err(); err != nil {
+	if err := recallProblems(in, reason); err != nil {
 		return ActivityApproval{}, err
 	}
 
@@ -36,31 +29,19 @@ func (s *Service) Recall(ctx context.Context, a actor.Actor, activityID string, 
 		if err != nil {
 			return err
 		}
-		if facts.Status == StatusApproved {
-			return errs.BadRequest(approvedNoRecallMessage)
-		}
-		round, found, err := s.repo.GetRound(ctx, in.RoundID)
+		round, err := s.roundToRecall(ctx, facts, in.RoundID)
 		if err != nil {
 			return err
-		}
-		if !found || round.ActivityID != facts.ID {
-			return errs.NotFound(roundNotOfActivity)
-		}
-		if round.Outcome != OutcomeOpen {
-			return s.movedOn(ctx, round, 0) // no level is decided by a recall: what ended the round explains it
-		}
-		if refusal, _ := recallRefusal(ctx, facts, round); refusal != "" { // 014 FR-027
-			return errs.Forbidden(refusal)
 		}
 
 		now := s.now()
 		waiting := round.Levels[round.CurrentLevel-1]
 		round.Outcome, round.EndedAt = OutcomeRecalled, &now
 		round.Touch(a, now)
-		if err := s.repo.PutRound(ctx, round); err != nil {
+		if err = s.repo.PutRound(ctx, round); err != nil {
 			return err
 		}
-		if err := s.addAction(ctx, round, ActionRecalled, waiting.Number, a, nil, now, reason); err != nil {
+		if err = s.addAction(ctx, round, ActionRecalled, waiting.Number, a, nil, now, reason); err != nil {
 			return err
 		}
 		updated, err := s.activities.SetStatus(ctx, a, facts.ID, StatusCreated)
@@ -87,4 +68,35 @@ func (s *Service) Recall(ctx context.Context, a actor.Actor, activityID string, 
 		return ActivityApproval{}, err
 	}
 	return approval, nil
+}
+
+// recallProblems are every problem of a recall request at once: the round it names and the reason's length.
+func recallProblems(in RecallInput, reason string) error {
+	var problems errs.Problems
+	if in.RoundID == "" {
+		problems.Add("roundId", reloadMessage)
+	}
+	if tooLong(reason, maxCommentLength) {
+		problems.Add("reason", tooLong2000Message)
+	}
+	return problems.Err()
+}
+
+// roundToRecall returns the open round roundID of the activity if the person acting may recall it, or why
+// not: the activity is Approved, the round ended, or 014 does not let them.
+func (s *Service) roundToRecall(ctx context.Context, facts ActivityFacts, roundID string) (Round, error) {
+	if facts.Status == StatusApproved {
+		return Round{}, errs.BadRequest(approvedNoRecallMessage)
+	}
+	round, err := s.roundOf(ctx, facts, roundID)
+	if err != nil {
+		return Round{}, err
+	}
+	if round.Outcome != OutcomeOpen {
+		return Round{}, s.movedOn(ctx, round, 0) // no level is decided by a recall: what ended the round explains it
+	}
+	if refusal, _ := recallRefusal(ctx, facts, round); refusal != "" { // 014 FR-027
+		return Round{}, errs.Forbidden(refusal)
+	}
+	return round, nil
 }
