@@ -45,10 +45,9 @@ func newFixture(t *testing.T) *fixture {
 	return f
 }
 
-// as returns the fixture's service answering with the access rules a, for the rest of the test.
-func (f *fixture) as(a *fakeAccess) *fixture {
+// as makes the fixture's service answer with the access rules a, for the rest of the test.
+func (f *fixture) as(a *fakeAccess) {
 	*f.access = *a
-	return f
 }
 
 // budgetInput is the whole form of a new global budget: FY2026 Global marketing budget, 2,500,000.00 USD,
@@ -124,10 +123,10 @@ func (f *fixture) allocations(t *testing.T) []Allocation {
 	return all
 }
 
-// entries returns the activity log of the record id, newest first.
-func (f *fixture) entries(t *testing.T, kind, id string) []history.Entry {
+// entries returns the activity log of the global budget id, newest first.
+func (f *fixture) entries(t *testing.T, id string) []history.Entry {
 	t.Helper()
-	entries, _, err := f.history.ListLog(t.Context(), carlos, history.LogFilter{RecordType: kind, RecordID: id, Limit: 200})
+	entries, _, err := f.history.ListLog(t.Context(), carlos, history.LogFilter{RecordType: kindBudget, RecordID: id, Limit: 200})
 	if err != nil {
 		t.Fatalf("ListLog: %v", err)
 	}

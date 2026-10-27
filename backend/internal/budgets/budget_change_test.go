@@ -15,7 +15,7 @@ import (
 
 // A new global budget gets the first ID, version 1 and a "created" entry; its page has no allocation yet,
 // the year lock, and every action for the global planner (FR-029, FR-037).
-func TestCreate_GlobalBudget_FR029(t *testing.T) {
+func TestCreate_GlobalBudget_FR029(t *testing.T) { //nolint:gocyclo // 11: one create, then its fields, figures, locks, actions and log entry
 	t.Parallel()
 	f := newFixture(t)
 
@@ -39,7 +39,7 @@ func TestCreate_GlobalBudget_FR029(t *testing.T) {
 	if view.Access != (BudgetAccess{Edit: available, Delete: available, Allocate: available}) {
 		t.Errorf("access = %+v, want everything available", view.Access)
 	}
-	entries := f.entries(t, kindBudget, view.ID)
+	entries := f.entries(t, view.ID)
 	if len(entries) != 1 || entries[0].Action != history.ActionCreated || entries[0].Actor != carlos ||
 		entries[0].RecordName != "FY2026 Global marketing budget" || entries[0].RecordTypeLabel != "global budget" {
 		t.Errorf("log = %+v, want one created entry by Carlos", entries)
@@ -47,7 +47,7 @@ func TestCreate_GlobalBudget_FR029(t *testing.T) {
 }
 
 // Every problem of the form is reported at once and nothing is saved (FR-029, messages 24, 26 and 27).
-func TestCreate_EveryProblemAtOnce_FR029(t *testing.T) {
+func TestCreate_EveryProblemAtOnce_FR029(t *testing.T) { //nolint:tparallel // the check after the subtests needs them done
 	t.Parallel()
 	f := newFixture(t)
 	f.create(t, budgetInput())
@@ -125,7 +125,7 @@ func TestCreateUpdateDelete_NeedManageForAllMarkets_FR029(t *testing.T) {
 // Saving changed fields gives a new version and one "changed" entry with every field in words; the year
 // cannot be sent; an out-of-date version is refused naming who changed it; a missing version is a field
 // problem; a save that changes nothing changes nothing (FR-029, FR-037, data model §3).
-func TestUpdate_ChangedFieldsAndVersion_FR029_FR037(t *testing.T) {
+func TestUpdate_ChangedFieldsAndVersion_FR029_FR037(t *testing.T) { //nolint:gocyclo // 11: one save, a stale, a missing and an unchanged one, then the log
 	t.Parallel()
 	f := newFixture(t)
 	b := f.create(t, budgetInput())
@@ -147,7 +147,7 @@ func TestUpdate_ChangedFieldsAndVersion_FR029_FR037(t *testing.T) {
 	if errSame != nil || same.Version != 2 {
 		t.Errorf("unchanged save = version %d, %v; want version 2", same.Version, errSame)
 	}
-	entries := f.entries(t, kindBudget, b.ID)
+	entries := f.entries(t, b.ID)
 	if len(entries) != 2 || entries[0].Action != history.ActionChanged {
 		t.Fatalf("log = %+v, want created and one changed entry", entries)
 	}
@@ -175,7 +175,7 @@ func TestUpdate_Owner_FR029_FR037(t *testing.T) {
 	if errKept != nil || kept.Description != "New" || kept.Owner.Name != "Alex Morgan" {
 		t.Errorf("kept = %+v, %v", kept, errKept)
 	}
-	entries := f.entries(t, kindBudget, b.ID)
+	entries := f.entries(t, b.ID)
 	if got := changesText(entries[1].Changes); got != "Owner: Carlos Mendes → Alex Morgan" {
 		t.Errorf("owner change = %s", got)
 	}

@@ -85,7 +85,7 @@ func TestCreateBudgetAllocation_201_400_409_FR030(t *testing.T) {
 // 1,300,000.00 at once, and the log shows the change on the global budget and on the plan, with the
 // comment. A change from an out-of-date allocation version is refused; an unknown allocation is not found
 // (FR-030, FR-037).
-func TestUpdateBudgetAllocation_200_409_404_FR030_FR037(t *testing.T) {
+func TestUpdateBudgetAllocation_200_409_404_FR030_FR037(t *testing.T) { //nolint:gocyclo // 10: one change and three refusals, then the plan and both logs
 	t.Parallel()
 	server := apitest.New(t)
 	carlos := server.SignIn(t, carlosEmail)

@@ -29,7 +29,7 @@ func TestAllocate_OverAllocationNeverBlocks_FR032(t *testing.T) {
 // Allocating sets the plan's budget in the same save from the plan version the person saw, and logs the
 // allocation on the global budget, Not allocated → 1,200,000.00 USD, and with a comment on the plan (FR-030,
 // FR-037, data model §3).
-func TestAllocate_SetsThePlanBudgetAndLogs_FR030_FR037(t *testing.T) {
+func TestAllocate_SetsThePlanBudgetAndLogs_FR030_FR037(t *testing.T) { //nolint:gocyclo // 12: one allocation, then its row, the plan budget call and the log entry
 	t.Parallel()
 	f := newFixture(t)
 	b := f.create(t, budgetInput())
@@ -45,7 +45,7 @@ func TestAllocate_SetsThePlanBudgetAndLogs_FR030_FR037(t *testing.T) {
 	if !slices.Equal(f.plans.calls, wantCall) || f.plans.plans[planEurope].Budget.String() != "1300000.00" {
 		t.Errorf("plan budget calls = %+v, want %+v", f.plans.calls, wantCall)
 	}
-	entries := f.entries(t, kindBudget, b.ID)
+	entries := f.entries(t, b.ID)
 	if len(entries) != 2 || entries[0].Action != history.ActionChanged ||
 		changesText(entries[0].Changes) != "Allocation to 'FY2026 Lubricants Europe': Not allocated → 1,300,000.00 USD" ||
 		entries[0].Changes[0].Field != "allocations.P-1001" {
@@ -60,7 +60,7 @@ func TestAllocate_SetsThePlanBudgetAndLogs_FR030_FR037(t *testing.T) {
 // one plan has one allocation across all global budgets (message 29); the amount is 0 or more in the plan's
 // currency (D-303); the plan version is required. A person who may not manage global budgets in the plan's
 // scope is refused (403). Nothing is saved (FR-030).
-func TestAllocate_Rules_FR030(t *testing.T) {
+func TestAllocate_Rules_FR030(t *testing.T) { //nolint:tparallel // the checks after the subtests change the fixture they share
 	t.Parallel()
 	f := newFixture(t)
 	demo := f.demo(t)
@@ -118,8 +118,8 @@ func TestAllocate_PlanVersionConflict_FR030(t *testing.T) {
 	})
 
 	assertError(t, err, errs.VersionConflict("plan", "Priya Raman", start))
-	if len(f.allocations(t)) != 0 || len(f.entries(t, kindBudget, b.ID)) != 1 {
-		t.Errorf("allocations %+v, log %+v; want nothing saved", f.allocations(t), f.entries(t, kindBudget, b.ID))
+	if len(f.allocations(t)) != 0 || len(f.entries(t, b.ID)) != 1 {
+		t.Errorf("allocations %+v, log %+v; want nothing saved", f.allocations(t), f.entries(t, b.ID))
 	}
 }
 

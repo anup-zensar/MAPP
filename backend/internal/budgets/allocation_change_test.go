@@ -11,7 +11,7 @@ import (
 
 // Changing an allocation sets the plan's budget in the same save and logs both; the allocation's and the
 // plan's versions are both checked; an unchanged amount changes and logs nothing (FR-030, US6 scenario 2).
-func TestUpdateAllocation_FR030_FR037(t *testing.T) {
+func TestUpdateAllocation_FR030_FR037(t *testing.T) { //nolint:gocyclo // 13: one change and five refused or unchanged ones, then the store, the log and the calls
 	t.Parallel()
 	f := newFixture(t)
 	demo := f.demo(t)
@@ -50,7 +50,7 @@ func TestUpdateAllocation_FR030_FR037(t *testing.T) {
 	if stored := f.allocations(t); stored[0].Amount.Amount.String() != "1300000.00" || stored[0].Version != 2 {
 		t.Errorf("stored = %+v, want 1300000.00 at version 2 after the refused changes", stored[0])
 	}
-	entries := f.entries(t, kindBudget, demo.ID)
+	entries := f.entries(t, demo.ID)
 	if len(entries) != 4 || changesText(entries[0].Changes) != "Allocation to 'FY2026 Lubricants Europe': 1,200,000.00 USD → 1,300,000.00 USD" {
 		t.Errorf("log = %d entries, newest %+v", len(entries), entries[0])
 	}
@@ -109,7 +109,7 @@ func TestChangeAndRemoveAllocation_HiddenPlanIsNotFound_022_FR005(t *testing.T) 
 
 // Removing an allocation deletes it outright: the plan keeps its budget, which is editable again, the plan's
 // log says the allocation was removed, and the global budget's log keeps the amount (FR-034, US6 scenario 6).
-func TestRemoveAllocation_KeepsThePlanBudget_FR034(t *testing.T) {
+func TestRemoveAllocation_KeepsThePlanBudget_FR034(t *testing.T) { //nolint:gocyclo // 11: one removal, then the page, the plan, its allocation and the log
 	t.Parallel()
 	f := newFixture(t)
 	demo := f.demo(t)
@@ -130,7 +130,7 @@ func TestRemoveAllocation_KeepsThePlanBudget_FR034(t *testing.T) {
 	if _, allocated, _ := f.service.AllocationOf(t.Context(), planChina); allocated {
 		t.Errorf("the plan still has an allocation")
 	}
-	entries := f.entries(t, kindBudget, demo.ID)
+	entries := f.entries(t, demo.ID)
 	if changesText(entries[0].Changes) != "Allocation to 'FY2026 Mobility China': 800,000.00 USD → Not allocated" {
 		t.Errorf("log = %+v", entries[0])
 	}
@@ -138,7 +138,7 @@ func TestRemoveAllocation_KeepsThePlanBudget_FR034(t *testing.T) {
 
 // The Allocate dialog offers the plans of the global budget's year without an allocation that the person
 // may allocate to, by name (FR-030).
-func TestAllocationOptions_FR030(t *testing.T) {
+func TestAllocationOptions_FR030(t *testing.T) { //nolint:gocyclo // 12: the options of every plan, then of the plans in scope
 	t.Parallel()
 	f := newFixture(t)
 	b := f.create(t, budgetInput())
