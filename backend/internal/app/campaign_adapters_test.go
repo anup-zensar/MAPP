@@ -34,7 +34,7 @@ func TestCampaignLevels_AddFacts_For004(t *testing.T) {
 	svc := campaigns.NewService(db, campaigns.NewJSONStore(), generator, historyService, now, campaigns.Deps{
 		Plans:      campaignPlans{repo: plans.NewJSONStore()},
 		People:     people.NewJSONStore(),
-		Settings:   settings.NewService(db, settings.NewJSONStore(), generator, historyService, now),
+		Settings:   settings.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, settings.NewJSONStore()),
 		Activities: campaigns.NoActivities{},
 	})
 	planIDs := []string{"P-1001", "P-1002", "P-1003"}

@@ -92,8 +92,9 @@ func TestApprovals_DisplayFromPlanCurrency(t *testing.T) {
 		t.Fatalf("seed.Load: %v", err)
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
-	settingsService := settings.NewService(db, settings.NewJSONStore(), generator,
-		history.NewService(db, history.NewJSONStore(), generator, now), now)
+	settingsService := settings.NewService(history.Tools{
+		Tx: db, IDs: generator, Log: history.NewService(db, history.NewJSONStore(), generator, now), Now: now,
+	}, settings.NewJSONStore())
 	adapter := &approvalsActivities{
 		activities: activities.NewJSONStore(), lineItems: lineitems.NewJSONStore(), campaigns: campaigns.NewJSONStore(),
 		plans: plans.NewJSONStore(), settings: settings.NewJSONStore(), rates: settingsService.Rates, now: now,

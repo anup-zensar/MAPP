@@ -42,8 +42,9 @@ func TestAdapter_RuleFacts_FR010(t *testing.T) {
 	t.Parallel()
 	db, now := seededStore(t)
 	generator := ids.NewGenerator(ids.NewJSONCounters())
-	settingsService := settings.NewService(db, settings.NewJSONStore(), generator,
-		history.NewService(db, history.NewJSONStore(), generator, now), now)
+	settingsService := settings.NewService(history.Tools{
+		Tx: db, IDs: generator, Log: history.NewService(db, history.NewJSONStore(), generator, now), Now: now,
+	}, settings.NewJSONStore())
 	adapter := &approvalsActivities{
 		activities: activities.NewJSONStore(), lineItems: lineitems.NewJSONStore(), campaigns: campaigns.NewJSONStore(),
 		plans: plans.NewJSONStore(), settings: settings.NewJSONStore(), rates: settingsService.Rates, now: now,
@@ -83,7 +84,7 @@ func TestApprovalsAccess_RoleHolders_FR001(t *testing.T) {
 	peopleService := people.NewService(db, people.NewJSONStore(), generator, historyService, now)
 	access := approvalsAccess{access: accessservice.NewService(db, accessservice.NewJSONStore(), generator, historyService,
 		accessDirectory{people: peopleService}, now)}
-	choices := approvalRuleChoices{settings: settings.NewService(db, settings.NewJSONStore(), generator, historyService, now)}
+	choices := approvalRuleChoices{settings: settings.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, settings.NewJSONStore())}
 
 	err := db.Read(t.Context(), func(ctx context.Context) error {
 		lubricants, found, err := plans.NewJSONStore().Get(ctx, "P-1001")
