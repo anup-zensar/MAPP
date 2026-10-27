@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"mapp/internal/history"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
@@ -35,7 +36,7 @@ var threeRows = file("gsap-2026-10-19.csv", header,
 
 // A check says what the import does and saves nothing: no transaction, import, ID or log entry (FR-004,
 // SC-003, D-177).
-func TestCheck_SavesNothing_FR004(t *testing.T) {
+func TestCheck_SavesNothing_FR004(t *testing.T) { //nolint:gocyclo // 14: one check, then the store and the log, then the import it foretold
 	t.Parallel()
 	f := newFixture(t)
 	check, err := f.service.Check(t.Context(), alex, threeRows)
@@ -66,7 +67,7 @@ func TestCheck_SavesNothing_FR004(t *testing.T) {
 
 // Rows = new + updated + unchanged + refused, and the import says the same as its check; importing the same
 // file twice changes nothing the second time (FR-006, SC-003).
-func TestImport_CountsAddUpAndTwiceChangesNothing_FR006(t *testing.T) {
+func TestImport_CountsAddUpAndTwiceChangesNothing_FR006(t *testing.T) { //nolint:gocyclo // 14: the counts and stored rows of one import, then of the same file again
 	t.Parallel()
 	f := newFixture(t)
 	req := file("gsap.csv", header,
@@ -111,7 +112,7 @@ func TestImport_CountsAddUpAndTwiceChangesNothing_FR006(t *testing.T) {
 
 // Refused rows are skipped and listed with their row; a key repeated in the file refuses the later row; the
 // rest are imported; lists stop at 200, the totals say how many there are (FR-005).
-func TestImport_RefusedRowsAreSkipped_FR005(t *testing.T) {
+func TestImport_RefusedRowsAreSkipped_FR005(t *testing.T) { //nolint:gocyclo // 11: the problems and kept row of one import, then the capped list of a check
 	t.Parallel()
 	f := newFixture(t)
 	result := f.importFile(t, alex, file("gsap.csv", header,
@@ -184,14 +185,19 @@ func TestImport_RetryRelinksAndLogs_FR007(t *testing.T) {
 	if len(entries) != 2 {
 		t.Fatalf("%d log entries, want one per import", len(entries))
 	}
-	e := entries[1]
+	checkRelinkEntry(t, entries[1])
+	if entries[0].Details != "1 row: 1 new, 0 updated, 0 unchanged, 0 refused · 1 not linked" {
+		t.Errorf("first entry = %q", entries[0].Details)
+	}
+}
+
+// checkRelinkEntry checks the log entry of the import that linked an earlier transaction.
+func checkRelinkEntry(t *testing.T, e history.Entry) {
+	t.Helper()
 	if e.RecordType != "financialImport" || e.Verb != "imported" || e.RecordID != "FIM-1003" || e.RecordName != "po.csv" ||
 		e.Actor.Name != "Alex Morgan" || e.RecordTypeLabel != "GSAP extract" ||
 		e.Details != "1 row: 1 new, 0 updated, 0 unchanged, 0 refused · 0 not linked · 1 earlier transaction is now linked" {
 		t.Errorf("entry = %+v", e)
-	}
-	if entries[0].Details != "1 row: 1 new, 0 updated, 0 unchanged, 0 refused · 1 not linked" {
-		t.Errorf("first entry = %q", entries[0].Details)
 	}
 }
 
@@ -223,7 +229,7 @@ func TestImport_WholeFileRefusalSavesNothing_FR004(t *testing.T) {
 		t.Errorf("fields = %+v", e.Fields)
 	}
 	_, err = f.service.Import(t.Context(), alex, file("gsap.csv", "type,amount", "PO,1"))
-	assertCode(t, err, http.StatusBadRequest, errs.CodeValidationFailed)
+	_ = assertCode(t, err, http.StatusBadRequest, errs.CodeValidationFailed)
 	page, err := f.service.Imports(t.Context(), alex)
 	if err != nil || page.Total != 1 || len(f.entries(t)) != 0 {
 		t.Errorf("imports %+v, %v; log %d", page, err, len(f.entries(t)))
@@ -235,7 +241,7 @@ func TestImport_WholeFileRefusalSavesNothing_FR004(t *testing.T) {
 }
 
 // The import history is newest first; GSAP data as of is the newest import (FR-008).
-func TestImports_NewestFirstAndDataAsOf_FR008(t *testing.T) {
+func TestImports_NewestFirstAndDataAsOf_FR008(t *testing.T) { //nolint:gocyclo // 12: the history and data as of before and after an import, then without data
 	t.Parallel()
 	f := newFixture(t)
 	asOf, err := f.service.DataAsOf(t.Context())

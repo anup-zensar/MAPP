@@ -33,7 +33,7 @@ func (f *fixture) list(t *testing.T, a actor.Actor, q Query) TransactionPage {
 }
 
 // The tab counts and totals of the seed, and every filter (FR-021, US3 scenario 1).
-func TestTransactions_FiltersCountsAndTotals_FR021(t *testing.T) {
+func TestTransactions_FiltersCountsAndTotals_FR021(t *testing.T) { //nolint:gocyclo,tparallel // 10: the seed's counts and totals, then every filter; the subtests share one fixture
 	t.Parallel()
 	f := newFixture(t)
 	all := f.list(t, alex, Query{})
@@ -45,10 +45,7 @@ func TestTransactions_FiltersCountsAndTotals_FR021(t *testing.T) {
 	if all.Totals != wantTotals {
 		t.Errorf("totals = %+v", all.Totals)
 	}
-	if len(all.Choices.Years) != 1 || all.Choices.Years[0] != 2026 || len(all.Choices.Plans) != 2 ||
-		all.Choices.Plans[0].Name != "FY2026 Lubricants Europe" || all.Choices.CurrentYear != 2026 {
-		t.Errorf("choices = %+v", all.Choices)
-	}
+	checkSeedChoices(t, all.Choices)
 
 	cases := []struct {
 		name  string
@@ -92,6 +89,23 @@ func TestTransactions_FiltersCountsAndTotals_FR021(t *testing.T) {
 		})
 	}
 
+	f.checkTabsKeepCountsAndTotals(t, wantCounts, wantTotals)
+	f.checkRecordAndYearFilters(t)
+}
+
+// checkSeedChoices checks the year and plan choices of the seed's transactions.
+func checkSeedChoices(t *testing.T, choices Choices) {
+	t.Helper()
+	if len(choices.Years) != 1 || choices.Years[0] != 2026 || len(choices.Plans) != 2 ||
+		choices.Plans[0].Name != "FY2026 Lubricants Europe" || choices.CurrentYear != 2026 {
+		t.Errorf("choices = %+v", choices)
+	}
+}
+
+// checkTabsKeepCountsAndTotals checks that the type and link filters leave the tab counts and totals as
+// they are, and that the not-linked tab names the reason.
+func (f *fixture) checkTabsKeepCountsAndTotals(t *testing.T, wantCounts TypeCounts, wantTotals Totals) {
+	t.Helper()
 	invoices := f.list(t, alex, Query{Type: string(TypeInvoice)})
 	if invoices.Counts != wantCounts || invoices.Totals != wantTotals {
 		t.Errorf("the tab changed the counts or totals: %+v %+v", invoices.Counts, invoices.Totals)
@@ -101,6 +115,12 @@ func TestTransactions_FiltersCountsAndTotals_FR021(t *testing.T) {
 		*notLinked.Items[0].Link.Reason != "No line item for HX key HX1099 — check the tracking key in GSAP." {
 		t.Errorf("not linked: totals %+v, counts %+v, first %+v", notLinked.Totals, notLinked.Counts, notLinked.Items[0].Link)
 	}
+}
+
+// checkRecordAndYearFilters checks the counts of a record filter, which names its record, and of a year
+// without transactions.
+func (f *fixture) checkRecordAndYearFilters(t *testing.T) {
+	t.Helper()
 	record := f.list(t, alex, Query{RecordID: "L-1004"})
 	if record.RecordFilter == nil || record.RecordFilter.Name != "Speaker fees" || record.Counts.All != 4 || record.Counts.NotLinked != 0 {
 		t.Errorf("record filter %+v, counts %+v", record.RecordFilter, record.Counts)
@@ -125,7 +145,7 @@ func TestTransactions_UnknownRecordAndPlan_FR021(t *testing.T) {
 }
 
 // ParseQuery takes the defaults and reports every wrong parameter at once (FR-021, D-219).
-func TestParseQuery_DefaultsAndEveryProblem_FR021(t *testing.T) {
+func TestParseQuery_DefaultsAndEveryProblem_FR021(t *testing.T) { //nolint:gocyclo // 10: the defaults, every parameter read, then every problem at once
 	t.Parallel()
 	q, err := ParseQuery(map[string][]string{})
 	if err != nil || q != (Query{Type: filterAll, Link: filterAll, Sort: sortPostingDate, Desc: true, Page: 1, PageSize: 50}) {

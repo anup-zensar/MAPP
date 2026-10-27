@@ -167,7 +167,7 @@ func capped[T any](list []T) []T {
 func importProblems(problems []RowProblem) []ImportProblem {
 	list := make([]ImportProblem, 0, len(problems))
 	for _, p := range problems {
-		list = append(list, ImportProblem{Row: p.Row, Column: p.Column, Message: p.Message})
+		list = append(list, ImportProblem(p))
 	}
 	return list
 }

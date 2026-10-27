@@ -23,15 +23,19 @@ const (
 	LevelLineItem   Level = "lineItem"
 )
 
-// levelWords name the levels mid-sentence.
-var levelWords = map[Level]string{
-	LevelPlan: "plan", LevelCampaign: "campaign", LevelInitiative: "initiative", LevelActivity: "activity",
-	LevelLineItem: "line item",
+// levelWords returns the words that name the levels mid-sentence.
+func levelWords() map[Level]string {
+	return map[Level]string{
+		LevelPlan: "plan", LevelCampaign: "campaign", LevelInitiative: "initiative", LevelActivity: "activity",
+		LevelLineItem: "line item",
+	}
 }
 
-// childLevel is the level of each level's breakdown rows; a line item has none.
-var childLevel = map[Level]Level{
-	LevelPlan: LevelCampaign, LevelCampaign: LevelInitiative, LevelInitiative: LevelActivity, LevelActivity: LevelLineItem,
+// childLevel returns the level of each level's breakdown rows; a line item has none.
+func childLevel() map[Level]Level {
+	return map[Level]Level{
+		LevelPlan: LevelCampaign, LevelCampaign: LevelInitiative, LevelInitiative: LevelActivity, LevelActivity: LevelLineItem,
+	}
 }
 
 // RecordRef is a planning record (FinancialRecordRef).
