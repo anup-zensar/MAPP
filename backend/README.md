@@ -6,8 +6,7 @@ one package per business area. Every area follows the same pattern, **handler �
 
 A request goes through `web.Middleware` → the route's handler (behind `auth.RequireSignIn` when it needs a
 signed-in person) → the service, which holds every rule → a repository interface → the area's
-`store_postgres.go`. The JSON file store remains only as the stand-in of the service, handler and contract
-tests, until feature 025 replaces it with fakes.
+`store_postgres.go`. Service, handler and contract tests run on in-memory fakes of the stores (feature 029).
 The API contract is [api/openapi.yaml](api/openapi.yaml); the web app's types are generated from it.
 
 ## Commands
@@ -85,10 +84,10 @@ internal/
     telemetry/        OpenTelemetry tracing and metrics, exported to the console at most
     database/         PostgreSQL: Open, Migrate, Write (one at a time), Read (snapshot); migrations/, queries/, sqlcdb/, dbtest/
     memo/             values worked out once per read-only transaction, such as Settings' forms
-    store/            the JSON file store, the tests' stand-in until feature 025: transactions and table helpers
+    fake/             test fakes' building blocks: transactions undone on failure, tables, ID counters (029)
     ids/              readable IDs such as SF-1001, from counters that only ever go up
     record/           record.Meta — version, created and updated by and at — with Touch and CheckVersion
-    apitest/          test helper: the real API on a temporary data folder, every call checked against the contract
+    apitest/          test helper: the real API in memory on the demo data, every call checked against the contract
     money/            exact money: Amount, Money, Input, Rate, Rates, Percent; half-up rounding (owner: 002)
     date/             calendar dates: date.Date ("2026-03-01" in JSON), AddYears, Today, Format (owner: 005)
     sheet/            spreadsheet files with the standard library: .xlsx workbooks and CSV (owner: 010)
@@ -139,8 +138,9 @@ history kinds and handlers (docs/sdd/plan-module-build.md).
    Lists are never `nil`.
 2. **`store.go`** — the `Store` interface: only the methods the service calls (a method only the wiring or
    the seed needs goes in `internal/stores/plan.go`). **`store_postgres.go`** — `PostgresStore` on the sqlc
-   queries. **`store_json.go`** — `NewJSONStore()`, the tests' stand-in, built on `store.Get`, `store.List`,
-   `store.Put` and `store.Delete`.
+   queries, and the `Transactor` the service needs. **`plantest/store.go`** — the in-memory fake every
+   other package's tests use, on `fake.TableOf`; **`store_fake_test.go`** — the same fake for the area's
+   own internal tests.
 3. **`service.go`** — `NewService(tools history.Tools, store Store, …)`, at most four parameters. In every
    method:
    - take the actor (`ctx, a actor.Actor, …`), also when it only reads;

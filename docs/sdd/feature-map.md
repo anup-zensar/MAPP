@@ -32,13 +32,13 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
 | 020 | — | Shell palette: design tokens with Shell's exact colours (constitution X) | P1 | 019 | Planned |
 | 021 | — | Comment budget: comments cut to at most 5% of each file (constitution VIII) | P2 | 019 | Dropped: each change brings the files it touches within the budget (constitution 4.2.0) |
 | 022 | [022-api-v1](../../specs/022-api-v1/spec.md) | API v1: `/api/v1` paths, one error envelope, 404 for out-of-scope records, `/healthz` and `/readyz` | P1 | 019 | In progress |
-| 023 | [023-postgresql-storage](../../specs/023-postgresql-storage/spec.md) | PostgreSQL storage: pgx, sqlc and goose replace the JSON file store; scoped reads in SQL (ADR-0013) | P1 | 022 | In review — the JSON store stays as the tests' stand-in until 025 |
+| 023 | [023-postgresql-storage](../../specs/023-postgresql-storage/spec.md) | PostgreSQL storage: pgx, sqlc and goose replace the JSON file store; scoped reads in SQL (ADR-0013) | P1 | 022 | In review — the JSON store stayed as the tests' stand-in until 029 deleted it |
 | 024 | [024-gin-transport](../../specs/024-gin-transport/spec.md) | Gin transport, middleware and OpenTelemetry | P2 | 022 | In progress |
-| 025 | [025-backend-layout](../../specs/025-backend-layout/spec.md) | Backend layout: singular packages, a small `Store` per service, files within 300 lines | P2 | 023, 024 | In review — service tests on fakes and deleting the JSON store left open (research R4) |
+| 025 | [025-backend-layout](../../specs/025-backend-layout/spec.md) | Backend layout: singular packages, a small `Store` per service, files within 300 lines | P2 | 023, 024 | In review — service tests on fakes and deleting the JSON store done by 029 |
 | 026 | [026-web-app-structure](../../specs/026-web-app-structure/spec.md) | Web-app structure: constitution F2 folders, React Hook Form + Zod, MSW, per-route splitting | P2 | 019, 020, 022 | Done |
 | 027 | [027-test-hygiene](../../specs/027-test-hygiene/spec.md) | Test hygiene: drop tests that prove nothing, fast and deterministic suites; coverage threshold once SonarQube exists | P3 | 019 | In review — phase 1 merged (#12); phase 2 (every other backend package) in review |
 | 028 | [028-query-efficiency](../../specs/028-query-efficiency/spec.md) | Query efficiency: no page or operation sends statements that grow with its records (N+1); reference data read once per transaction; statements per request in the request log; benchmarks at the scale targets' volumes | P1 | 023 | In review |
-| 029 | [029-test-fakes](../../specs/029-test-fakes/spec.md) | Test fakes: service, handler and contract tests on hand-written in-memory fakes; the JSON file store deleted | P2 | 023, 025 | In progress |
+| 029 | [029-test-fakes](../../specs/029-test-fakes/spec.md) | Test fakes: service, handler and contract tests on hand-written in-memory fakes; the JSON file store deleted | P2 | 023, 025 | In review |
 
 ## Scope boundaries
 

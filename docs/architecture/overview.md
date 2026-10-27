@@ -68,13 +68,13 @@ fit together. Exact library versions are fixed in feature 001's `plan.md` and `r
   `store_postgres.go` implements its repository interface with sqlc-generated queries over the schema of
   the goose migrations; constraints guard every invariant the database can check, and the reads of
   plan-owned records the person sees filter by their scope in SQL.
-- Work runs in transactions (`store.Transactor`): all changes of one request — for example a delete, its
+- Work runs in transactions (each service's `Transactor`): all changes of one request — for example a delete, its
   recycle-bin entry and its activity-log entry — are saved together or not at all. Writes run one at a
   time; reads see one consistent snapshot and never wait.
 - Seed data: `go run ./cmd/seed` creates and migrates the database and loads the demo dataset into it
   (see `docs/product/demo-users-and-data.md`).
-- The JSON file store of feature 001 (ADR-0004) remains only as the stand-in of service, handler and
-  contract tests until feature 025 replaces it with fakes.
+- Service, handler and contract tests run on in-memory fakes of the stores; feature 029 deleted the JSON
+  file store of feature 001 (ADR-0004).
 
 ## 4. Sign-in and the actor
 

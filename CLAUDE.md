@@ -144,18 +144,22 @@ Fixed by feature 001 (`specs/001-app-shell-and-sign-in/research.md` explains eac
   and `BindJSON` · `Respond` · `RespondError`; each area registers its handlers in `RegisterRoutes(r
   gin.IRoutes)` and its access rule in `access/routes.go`. JSON logs through `internal/platform/logging`,
   OpenTelemetry through `internal/platform/telemetry`.
-  Packages: `internal/app` (wiring, config), `internal/platform/{actor,clock,errs,web,store,ids,record,apitest}`,
+  Packages: `internal/app` (wiring, config), `internal/platform/{actor,clock,errs,web,ids,record,fake,apitest}`,
   then one package per business area (`auth`, `people`, `history`, `plan`, `campaign`, `activity`, …; record
-  areas have singular names since feature 025), each `model.go · store.go · store_postgres.go · store_json.go ·
-  service.go · handler.go` plus tests, every file within 300 non-blank lines.
+  areas have singular names since feature 025), each `model.go · store.go · store_postgres.go · service.go ·
+  handler.go` plus tests and its test fake `<area>test/`, every file within 300 non-blank lines.
 - **Storage**: PostgreSQL (feature 023, ADR-0013): `internal/platform/database` (pool, goose migrations,
-  sqlc queries, `Write` one at a time, `Read` snapshot), one `store_postgres.go` per area, gathered with
-  the `Transactor` in `internal/stores`; each service takes `history.Tools` (transaction, IDs, activity log,
-  clock) and the small `Store` it declares in `store.go`, with only the methods it calls; the wiring and the
-  seed use the full stores through `stores.<X>Store` (`internal/stores/<area>.go`). The JSON file store (`internal/platform/store`, `store_json.go`, `stores.JSON`) is only the stand-in
-  of service, handler and contract tests until feature 025 replaces it with fakes.
+  sqlc queries, `Write` one at a time, `Read` snapshot), one `store_postgres.go` per area, gathered in
+  `internal/stores`; each service takes `history.Tools` (transaction, IDs, activity log, clock) and declares
+  in `store.go` the small `Store` it calls and its `Transactor`; the wiring and the seed use the full stores
+  through `stores.<X>Store` (`internal/stores/<area>.go`).
+- **Test fakes** (feature 029): `internal/platform/fake` (`DB`: transactions undone when a Write fails;
+  `Table[T]`; `Counters`); each area's `<area>test.Store` fakes `stores.<X>Store`, and the area's own internal
+  tests use `fakeStore` in `store_fake_test.go` (they cannot import `<area>test`); `storestest.New(db)` is the
+  whole set in memory. A new `Store` method goes into the PostgreSQL store and both fakes.
 - **Contract**: paths under `/api/v1`; contract tests use `libopenapi-validator` through
-  `internal/platform/apitest`; handler tests are external test packages (`package <name>_test`).
+  `internal/platform/apitest`, which runs the whole API in memory on a copy of the demo data
+  (`apitest.DemoDB`); handler tests are external test packages (`package <name>_test`).
 - **Web app**: aligned with the target by feature 026 — F2 folders, React Hook Form + Zod, MSW with
   answers typed from the contract (`reply()` in `src/testing/replies.ts`), `fast-check`, pages loaded
   per feature (`src/app/pages.tsx`); component axe checks still use `src/testing/axe.ts` (027).

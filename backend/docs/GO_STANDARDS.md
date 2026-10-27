@@ -132,9 +132,9 @@ backend/
 ```
 
 Feature 025 brought the packages to this layout: singular names for record areas, a small `Store` per
-service, files within 300 lines. What remains of the old one is the JSON file store
-(`internal/platform/store`, each area's `store_json.go`, `stores.JSON`), the stand-in of service, handler
-and contract tests until they move to fakes (constitution, Governance → Alignment).
+service, files within 300 lines. Feature 029 replaced the JSON file store the tests ran on with fakes:
+each area's `<area>test` package (and `store_fake_test.go` for the area's own internal tests, which cannot
+import it), built on `internal/platform/fake`; `internal/stores/storestest` gathers them for `apitest`.
 Architecture decision records live at the repository root in `docs/architecture/adr/`, because
 they span backend and frontend (Principle III).
 
