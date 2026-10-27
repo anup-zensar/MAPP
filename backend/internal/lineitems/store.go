@@ -9,8 +9,6 @@ import "context"
 type Store interface {
 	// Get returns the line item with id, and false when there is none.
 	Get(ctx context.Context, id string) (LineItem, bool, error)
-	// List returns every line item (usage counts of feature 002).
-	List(ctx context.Context) ([]LineItem, error)
 	// ListByActivity returns the line items of the activity activityID.
 	ListByActivity(ctx context.Context, activityID string) ([]LineItem, error)
 	// ListByActivities returns the line items of every activity in activityIDs (summaries of many
@@ -26,6 +24,4 @@ type Store interface {
 	ListByIDs(ctx context.Context, ids []string) ([]LineItem, error)
 	// DeleteMany removes the line items with ids all at once.
 	DeleteMany(ctx context.Context, ids []string) error
-	// CountOwnedBy counts the stored line items the person owns.
-	CountOwnedBy(ctx context.Context, personID string) (int, error)
 }

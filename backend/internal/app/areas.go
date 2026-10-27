@@ -84,8 +84,8 @@ func (w *wiring) buildActivities() {
 		Plans: s.Plans, Hierarchy: s.Campaigns, Settings: w.settings, People: s.People,
 		Workflows: activityWorkflows{repo: s.Approvals},
 	})
-	w.lineItems = lineitems.NewService(s.Tx, s.LineItems, w.generator, w.history,
-		lineItemDeps(w.settings, s.Settings, w.activities, s.Activities, s.Campaigns, s.Plans, s.People, w.people), w.now)
+	w.lineItems = lineitems.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}, s.LineItems,
+		lineItemDeps(w.settings, s.Settings, w.activities, s.Activities, s.Campaigns, s.Plans, s.People, w.people))
 	w.activities.UseLineItems(lineItemsForActivities{svc: w.lineItems})
 	w.activities.UseDisplayRates(w.people)
 }
