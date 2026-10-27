@@ -94,7 +94,7 @@ func TestCreate_AmountsAtMostTwoDecimals_D190(t *testing.T) {
 
 // A new line item gets the next readable ID L-…, the person and time who created it, and one "created" log
 // entry with its activity as its path (FR-010, D-019).
-func TestCreate_IDAndLog_FR010(t *testing.T) {
+func TestCreate_IDAndLog_FR010(t *testing.T) { //nolint:gocyclo // 14: the IDs, the bookkeeping and the log entry of two creates, field by field
 	t.Parallel()
 	f := newTestService(t)
 
