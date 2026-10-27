@@ -48,11 +48,11 @@ type Service struct {
 	now     clock.Clock
 }
 
-// NewService returns the line-items service. It keeps line items in repo, gives them readable IDs with
-// generator, logs their changes and deletes them through hist, reads the other features through deps, works
-// in transactions of tx and reads the time from now.
-func NewService(tx store.Transactor, repo Store, generator *ids.Generator, hist *history.Service, deps Deps, now clock.Clock) *Service {
-	return &Service{tx: tx, repo: repo, ids: generator, history: hist, deps: deps, now: now}
+// NewService returns the line-items service. It keeps line items in repo, gives them readable IDs, logs
+// their changes, deletes them and works in transactions through tools, and reads the other features through
+// deps.
+func NewService(tools history.Tools, repo Store, deps Deps) *Service {
+	return &Service{tx: tools.Tx, repo: repo, ids: tools.IDs, history: tools.Log, deps: deps, now: tools.Now}
 }
 
 // Section returns the Line items section of the activity activityID (FR-001 – FR-004, FR-023): its line

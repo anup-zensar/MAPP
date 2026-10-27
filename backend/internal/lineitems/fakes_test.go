@@ -85,7 +85,7 @@ func newTestService(t *testing.T) *fixture {
 		Activities: f.activities, Currencies: f.currencies, FinanceBudgets: fakeBudgets{},
 		Attributes: f.attributes, People: fakePeople{},
 	}
-	f.service = NewService(db, NewJSONStore(), generator, hist, deps, now)
+	f.service = NewService(history.Tools{Tx: db, IDs: generator, Log: hist, Now: now}, NewJSONStore(), deps)
 	if err := hist.Register(f.activities.kind()); err != nil {
 		t.Fatalf("Register(activity): %v", err)
 	}
