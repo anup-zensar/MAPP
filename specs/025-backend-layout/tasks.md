@@ -47,8 +47,8 @@ Each task says which helper area did it (plan.md, "Helper areas"). `[x]` done, `
 - [ ] T023 [US3] Service tests on hand-written fakes of each area's `Store` (research.md R4)
 - [ ] T024 [US3] Handler and contract tests without the JSON stand-in; delete `internal/platform/store`
   and every `store_json*.go` (research.md R4)
-- [ ] T025 [US3] Singular package names in one mechanical commit, then the lint findings it surfaces
-  (research.md R5)
+- [x] T025 [US3] Singular package names in one mechanical commit, then the lint findings it surfaces
+  (research.md R5; r5-approval, r5-campaign, r5-activity)
 
 ## Phase 6: Polish
 

@@ -2,7 +2,8 @@
 
 ## R1. Files over 300 non-blank lines
 
-Counted with `grep -cv '^[[:space:]]*$'` on every Go file outside `internal/platform/database/sqlcdb`.
+Counted with `grep -cv '^[[:space:]]*$'` on every Go file outside `internal/platform/database/sqlcdb`. Package names
+in R1 and R2 are the ones before the singular rename (R5).
 
 | | develop (9edb562) | this branch |
 |---|---|---|
@@ -63,20 +64,24 @@ takes a `DemoLoad`.
 
 ## R3. Lint on moved code
 
-CI lints new and changed lines only, and a moved function counts as new, so the splits surfaced the old
-findings of the code they moved (about 500 in all). They were fixed in this feature: shadowed errors,
-repeated literals (named constants), unused parameters, dead code, and every function over the hard
-complexity limit (cyclop 15+) or with 7+ parameters was given well-named helpers or a parameter struct.
-What stays in the "needs justification" band carries a `//nolint` with its count and reason:
+CI lints new and changed lines only, and a moved function counts as new, so the splits (and later the
+rename, R5) surfaced the old findings of the code they touched: about 680 in all. They were fixed in this
+feature: shadowed errors, repeated literals (named constants), unused parameters, dead code, package-level
+maps turned into functions, and every function over the hard complexity limit (cyclop 15+), with 7+
+parameters or over 60 statements was given well-named helpers or a parameter struct (approval's `decide`
+and `Submit`, activity's `checkFields`, `Split` and `planSplit`, campaign's moves and copies, line item's
+`Update`, plan's `List`, the All work source's `Locate`, `Choices` and attribute values, ...). What stays in
+the "needs justification" band carries a `//nolint` with its count and reason (none for cyclop, none for
+funlen):
 
 | | Code | Tests |
 |---|---|---|
-| `gocyclo` 10–14 | 9 (mostly "one Write whose every step returns its error") | 56 |
-| `revive` argument-limit 5 | 4 (three match an interface's or caller's signature) | 3 |
-| `tparallel` | — | 7 (subtests that share one fixture) |
+| `gocyclo` 10–14 | 8 (mostly "one Write whose every step returns its error") | 66 |
+| `revive` argument-limit 5 | 5 (three match an interface's signature) | 3 |
+| `tparallel` | — | 14 (subtests that share one fixture) |
 | other (`gochecknoglobals` on the route table, `exhaustive`, `unparam`, `gosec`, `errorlint`) | 3 | 4 |
 
-Fan-out (review only): approvals' `decisionOutcome` calls 12 distinct functions (down from about 25 in the
+Fan-out (review only): approval's `decisionOutcome` calls 12 distinct functions (down from about 25 in the
 old `decide`).
 
 ## R4. P2: fakes instead of the JSON stand-in, and deleting the JSON store
@@ -98,15 +103,18 @@ That is a rewrite of the backend's test infrastructure, larger than this feature
 changes how every handler test proves its contract; it should be its own feature (its own spec and
 acceptance scenarios for what each test keeps proving).
 
-## R5. P2: singular package names
+## R5. Singular package names (done)
 
-A trial on a scratch branch renamed plans → plan, campaigns → campaign, activities → activity, lineitems →
-lineitem, approvals → approval, budgets → budget and samples → sample (the count nouns; access, auth,
-allwork, history, home, people, rollup, settings and financials name areas, not records):
+plans → plan, campaigns → campaign, activities → activity, lineitems → lineitem, approvals → approval,
+budgets → budget, samples → sample: the count nouns. access, auth, allwork, history, home, people, rollup,
+settings and financials name areas, not records, and keep their names; `internal/stores` keeps its name
+because `store` is the JSON store's package.
 
-- 61 local variables named like the new packages (35 `plan`, 11 `approval`, 8 `activity`, 7 `campaign`)
-  and one test type must be renamed first, or they shadow the package; `gopls rename` does it safely.
-- The rename then compiles; it touches 415 files (1,796 lines).
-- CI's lint on new lines then reports 181 old findings on the lines the rename touched (50 govet shadow,
-  39 gocyclo, 30 goconst, 23 cyclop, 21 revive, 7 tparallel, 4 funlen, ...): every function whose signature
-  names a renamed package is re-linted.
+- One commit (e339ef7): first 61 local variables named like the new packages (35 `plan`, 11 `approval`,
+  8 `activity`, 7 `campaign`) and one test type were renamed with `gopls rename` (`plan` → `p`,
+  `approval` → `appr`, `activity` → `act`, `campaign` → `c`), so they don't shadow the packages; then the
+  directories, package clauses, import paths and selectors were renamed by script. It touches 415 files
+  (1,796 lines); everything compiled and every test passed unchanged.
+- CI's lint then reported 181 old findings on the lines the rename touched (50 govet shadow, 39 gocyclo,
+  30 goconst, 23 cyclop, 21 revive, ...): every function whose signature names a renamed package is linted
+  again. They were fixed in the commits after it, package by package (R3).

@@ -38,7 +38,7 @@ exists) keep every method and satisfy it implicitly. Every other consumer declar
 Worked example (plans):
 
 ```go
-// internal/plans/store.go — what the plans service calls, nothing more.
+// internal/plan/store.go — what the plans service calls, nothing more.
 type Store interface {
 	Get(ctx context.Context, id string) (Plan, bool, error)
 	ListInScope(ctx context.Context, scope authz.Scope) ([]Plan, error)
@@ -51,12 +51,12 @@ type Store interface {
 
 // internal/stores/plans.go — the plans store as the wiring and the seed use it.
 type PlanStore interface {
-	plans.Store
-	List(ctx context.Context) ([]plans.Plan, error) // the seed and the All work adapter read every plan
+	plan.Store
+	List(ctx context.Context) ([]plan.Plan, error) // the seed and the All work adapter read every plan
 }
 
 // internal/app/areas.go
-w.plans = plans.NewService(w.tools, w.set.Plans, w.settings, w.people)
+w.plans = plan.NewService(w.tools, w.set.Plans, w.settings, w.people)
 ```
 
 Constructors: `history.Tools` bundles the transaction, the ID generator, the activity log and the clock

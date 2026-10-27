@@ -22,7 +22,7 @@ Run them in this folder (`backend/`).
 | `go run ./cmd/api` | Starts the API on <http://127.0.0.1:8080>, logging JSON lines on standard output; Ctrl+C or SIGTERM stops it once the requests in progress finish |
 | `gofmt -l .` | Lists files that are not formatted (prints nothing when all is well; `gofmt -w .` fixes them) |
 | `go vet ./...` | Finds suspicious code |
-| `go test -short ./...` | Runs every unit and contract test; no database needed (one package: `go test -short ./internal/samples/`) |
+| `go test -short ./...` | Runs every unit and contract test; no database needed (one package: `go test -short ./internal/sample/`) |
 | `go test ./...` | Also runs the scope-isolation tests on the PostgreSQL server of `TEST_DATABASE_URL` |
 | `go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1 generate` | Regenerates `internal/platform/database/sqlcdb` after a change to `queries/` or `migrations/` (`… vet` checks the queries) |
 
@@ -127,19 +127,22 @@ access matrix test (`internal/app/access_matrix_test.go`) checks every served op
 
 The Plan module's packages (002–008) started from a shared foundation: each has its stored types and API
 types (`model.go`), the hook types other features implement (`hooks.go`, `usage.go`, `levels.go`), its
-`Repository` with the JSON implementation, and a round-trip test. Their features add the services,
+store with the JSON implementation, and a round-trip test. Their features add the services,
 history kinds and handlers (docs/sdd/plan-module-build.md).
 
 ## How to add a business package
 
-`internal/samples` is the smallest complete example: copy its shape. For a new package `plans`:
+`internal/sample` is the smallest complete example: copy its shape. For a new package `plan`:
 
 1. **`model.go`** — the stored type, which embeds `record.Meta`, and separately the API types the handler
    returns and receives (for example `PlanView`, `PlanInput`, and `PlanUpdate` with `Version *int`).
    Lists are never `nil`.
-2. **`repository.go`** — the `Repository` interface. **`store_json.go`** — `NewJSONRepository()`, built on
-   `store.Get`, `store.List`, `store.Put` and `store.Delete`.
-3. **`service.go`** — `NewService(tx store.Transactor, repo Repository, …)`. In every method:
+2. **`store.go`** — the `Store` interface: only the methods the service calls (a method only the wiring or
+   the seed needs goes in `internal/stores/plan.go`). **`store_postgres.go`** — `PostgresStore` on the sqlc
+   queries. **`store_json.go`** — `NewJSONStore()`, the tests' stand-in, built on `store.Get`, `store.List`,
+   `store.Put` and `store.Delete`.
+3. **`service.go`** — `NewService(tools history.Tools, store Store, …)`, at most four parameters. In every
+   method:
    - take the actor (`ctx, a actor.Actor, …`), also when it only reads;
    - check the input and report every problem at once with `errs.Problems` (`Add`, then `Err()`);
    - do the work inside one `s.tx.Write(ctx, func(ctx context.Context) error { … })` (`s.tx.Read` when

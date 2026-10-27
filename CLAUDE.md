@@ -145,12 +145,14 @@ Fixed by feature 001 (`specs/001-app-shell-and-sign-in/research.md` explains eac
   gin.IRoutes)` and its access rule in `access/routes.go`. JSON logs through `internal/platform/logging`,
   OpenTelemetry through `internal/platform/telemetry`.
   Packages: `internal/app` (wiring, config), `internal/platform/{actor,clock,errs,web,store,ids,record,apitest}`,
-  then one package per business area (`auth`, `people`, `history`, `samples`, …), each `model.go ·
-  repository.go · store_postgres.go · store_json.go · service.go · handler.go` plus tests.
+  then one package per business area (`auth`, `people`, `history`, `plan`, `campaign`, `activity`, …; record
+  areas have singular names since feature 025), each `model.go · store.go · store_postgres.go · store_json.go ·
+  service.go · handler.go` plus tests, every file within 300 non-blank lines.
 - **Storage**: PostgreSQL (feature 023, ADR-0013): `internal/platform/database` (pool, goose migrations,
   sqlc queries, `Write` one at a time, `Read` snapshot), one `store_postgres.go` per area, gathered with
-  the `Transactor` in `internal/stores`; services depend on `store.Transactor` and repository interfaces
-  only. The JSON file store (`internal/platform/store`, `store_json.go`, `stores.JSON`) is only the stand-in
+  the `Transactor` in `internal/stores`; each service takes `history.Tools` (transaction, IDs, activity log,
+  clock) and the small `Store` it declares in `store.go`, with only the methods it calls; the wiring and the
+  seed use the full stores through `stores.<X>Store` (`internal/stores/<area>.go`). The JSON file store (`internal/platform/store`, `store_json.go`, `stores.JSON`) is only the stand-in
   of service, handler and contract tests until feature 025 replaces it with fakes.
 - **Contract**: paths under `/api/v1`; contract tests use `libopenapi-validator` through
   `internal/platform/apitest`; handler tests are external test packages (`package <name>_test`).

@@ -46,17 +46,18 @@ MAPP/
 │   │   ├── auth/                demo sign-in, sessions, the sign-in middleware              (001)
 │   │   ├── people/              people, "me", preferences; teams and profiles               (001, 003)
 │   │   ├── history/             activity log and recycle bin core; screens' needs           (001, 011)
-│   │   ├── samples/             developer sample records (local/development only)          (001)
+│   │   ├── sample/              developer sample records (local/development only)          (001)
 │   │   ├── settings/            models, activity types, attributes, currencies, budget items (002)
-│   │   ├── plans/               plans                                                        (004)
-│   │   ├── campaigns/           campaigns and initiatives                                    (005)
-│   │   ├── activities/          activities                                                   (006)
-│   │   ├── lineitems/           line items and spreads                                       (007)
-│   │   ├── approvals/           approval workflows, approvals, notifications                 (008)
+│   │   ├── plan/                plans                                                        (004)
+│   │   ├── campaign/            campaigns and initiatives                                    (005)
+│   │   ├── activity/            activities                                                   (006)
+│   │   ├── lineitem/            line items and spreads                                       (007)
+│   │   ├── approval/            approval workflows, approvals, notifications                 (008)
 │   │   ├── stores/              every area's store and the Transactor: Postgres, or JSON for tests (023)
 │   │   └── views/               cross-plan queries for All work                              (010)
-│   │       each business package:  model.go · repository.go · store_postgres.go · store_json.go ·
-│   │                               service.go · service_test.go · handler.go · handler_test.go
+│   │       each business package:  model.go · store.go · store_postgres.go · store_json.go ·
+│   │                               service.go · handler.go, a large one a file per use case,
+│   │                               each within 300 non-blank lines, tests beside them      (025)
 └── frontend/                    React + TypeScript web app
     ├── src/                     constitution F2 (feature 026)
     │   ├── main.tsx             mounts <App /> and nothing else
