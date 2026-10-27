@@ -54,7 +54,7 @@ func TestListGlobalBudgets_200_FR036(t *testing.T) {
 // Unallocated 500,000.00 and the plans' planned cost; one row per plan by name with teams, owner, status,
 // planned cost, left to plan and budget used; no plan of 2026 without an allocation; the year lock and the
 // delete lock (FR-032). An unknown global budget is not found.
-func TestGetGlobalBudget_200_404_FR032(t *testing.T) {
+func TestGetGlobalBudget_200_404_FR032(t *testing.T) { //nolint:gocyclo // 11: the figures and rows, then the page's other markets, owner, locks and access in one condition
 	t.Parallel()
 	server := apitest.New(t)
 	carlos := server.SignIn(t, carlosEmail)
@@ -67,23 +67,40 @@ func TestGetGlobalBudget_200_404_FR032(t *testing.T) {
 	if got := figuresText(view.Figures); !strings.HasPrefix(got, "2,500,000.00 USD allocated 2,000,000.00 USD unallocated 500,000.00 USD planned ") {
 		t.Errorf("figures = %s", got)
 	}
-	var rows []string
-	for _, r := range view.Allocations {
-		var teams []string
-		for _, team := range r.Teams {
-			teams = append(teams, team.Name)
-		}
-		rows = append(rows, fmt.Sprintf("%s %s %s v%d [%s] %s %s %s v%d %v", r.ID, r.Plan.Name, r.Plan.Status, r.Plan.Version,
-			strings.Join(teams, ", "), r.Owner.Name, r.Amount.Format(), r.AmountUSD.Format(), r.Version, r.Access.Edit.Available))
-	}
 	want := []string{
 		"BA-1001 FY2026 Lubricants Europe published v1 [Lubricants Europe] Priya Raman 1,200,000.00 USD 1,200,000.00 USD v1 true",
 		"BA-1002 FY2026 Mobility China draft v1 [Mobility China] Mei Lin 800,000.00 USD 800,000.00 USD v1 true",
 	}
-	if !slices.Equal(rows, want) {
+	if rows := allocationLines(view.Allocations); !slices.Equal(rows, want) {
 		t.Errorf("rows =\n%s\nwant\n%s", strings.Join(rows, "\n"), strings.Join(want, "\n"))
 	}
-	for _, r := range view.Allocations { // left to plan = allocation − planned cost (domain model §4.2)
+	assertLeftToPlan(t, view.Allocations)
+	if view.OtherMarkets != nil || len(view.PlansWithoutAllocation) != 0 || view.Owner.Name != "Carlos Mendes" ||
+		len(view.Locks) != 2 || view.Locks[1].Reason != "'FY2026 Global marketing budget' has allocations to 2 plans. Remove them first." ||
+		view.Access.Delete.Available || !view.Access.Edit.Available || !view.Access.Allocate.Available {
+		t.Errorf("page = %s", found.Body)
+	}
+	assertAnswer(t, gone, http.StatusNotFound, budgetGoneBody)
+}
+
+// allocationLines writes the allocation rows of a global budget page one per line.
+func allocationLines(rows []budget.AllocationRow) []string {
+	var lines []string
+	for _, r := range rows {
+		var teams []string
+		for _, team := range r.Teams {
+			teams = append(teams, team.Name)
+		}
+		lines = append(lines, fmt.Sprintf("%s %s %s v%d [%s] %s %s %s v%d %v", r.ID, r.Plan.Name, r.Plan.Status, r.Plan.Version,
+			strings.Join(teams, ", "), r.Owner.Name, r.Amount.Format(), r.AmountUSD.Format(), r.Version, r.Access.Edit.Available))
+	}
+	return lines
+}
+
+// assertLeftToPlan checks that each row's left to plan is its allocation less its planned cost (domain model §4.2).
+func assertLeftToPlan(t *testing.T, rows []budget.AllocationRow) {
+	t.Helper()
+	for _, r := range rows {
 		planned := "0.00"
 		if r.PlannedCost != nil {
 			planned = r.PlannedCost.Amount.String()
@@ -92,12 +109,6 @@ func TestGetGlobalBudget_200_404_FR032(t *testing.T) {
 			t.Errorf("%s: left to plan %s + planned %s ≠ %s", r.ID, r.LeftToPlan.Format(), planned, r.Amount.Format())
 		}
 	}
-	if view.OtherMarkets != nil || len(view.PlansWithoutAllocation) != 0 || view.Owner.Name != "Carlos Mendes" ||
-		len(view.Locks) != 2 || view.Locks[1].Reason != "'FY2026 Global marketing budget' has allocations to 2 plans. Remove them first." ||
-		view.Access.Delete.Available || !view.Access.Edit.Available || !view.Access.Allocate.Available {
-		t.Errorf("page = %s", found.Body)
-	}
-	assertAnswer(t, gone, http.StatusNotFound, budgetGoneBody)
 }
 
 // Creating a global budget answers 201 with GB-1002 and its empty figures; a form with problems answers

@@ -14,7 +14,7 @@ import (
 
 // The list shows the global budgets of the chosen year by name with their four totals, every year that has
 // one, newest first, and whether the person may create one (FR-036).
-func TestList_YearsTotalsAndCreate_FR036(t *testing.T) {
+func TestList_YearsTotalsAndCreate_FR036(t *testing.T) { //nolint:gocyclo // 13: three lists, then the rows, totals, years and create of each in turn
 	t.Parallel()
 	f := newFixture(t)
 	f.demo(t)
@@ -52,7 +52,7 @@ func TestList_YearsTotalsAndCreate_FR036(t *testing.T) {
 // 500,000.00 and the planned cost of the allocated plans; one row per plan by name with teams, owner,
 // status, allocation, planned cost, left to plan and budget used; the plans of the year without an
 // allocation (FR-032).
-func TestGet_FiguresAndRows_FR032(t *testing.T) {
+func TestGet_FiguresAndRows_FR032(t *testing.T) { //nolint:gocyclo // 11: one page, then its figures, rows, other markets, plans without allocation and locks in turn
 	t.Parallel()
 	f := newFixture(t)
 	demo := f.demo(t)
@@ -127,7 +127,7 @@ func TestGet_OtherMarkets_FR033(t *testing.T) {
 
 // Deleting a plan takes its allocation to the recycle bin with it, so the global budget no longer counts
 // it; restoring the plan brings the allocation back (FR-035).
-func TestPlanDelete_TakesTheAllocation_FR035(t *testing.T) {
+func TestPlanDelete_TakesTheAllocation_FR035(t *testing.T) { //nolint:gocyclo // 10: the page and the bin entry while the plan is in the bin, then the page after the restore
 	t.Parallel()
 	f := newFixture(t)
 	demo := f.demo(t)
@@ -161,7 +161,7 @@ func TestPlanRestore_GlobalBudgetGone_FR035(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MoveToBin: %v", err)
 	}
-	if _, err := f.service.Delete(t.Context(), carlos, b.ID); err != nil {
+	if _, err = f.service.Delete(t.Context(), carlos, b.ID); err != nil {
 		t.Fatalf("Delete of the global budget without allocations: %v", err)
 	}
 

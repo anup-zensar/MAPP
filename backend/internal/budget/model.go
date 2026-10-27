@@ -1,4 +1,4 @@
-// Package budgets holds global budgets and their allocations to market plans (feature 014, BUS.BUD.040): a
+// Package budget holds global budgets and their allocations to market plans (feature 014, BUS.BUD.040): a
 // global planner creates a global budget for a year and shares it out top-down; each allocation becomes the
 // plan's budget, which local planners see but cannot change (FR-029 – FR-036, D-235, D-236).
 //
