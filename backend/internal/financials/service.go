@@ -13,17 +13,13 @@ import (
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/ids"
-	"mapp/internal/platform/store"
 )
 
-// maxListed is the most problems and not-linked rows a check or an import lists; the totals say how many
-// there are.
+// maxListed caps the problems and not-linked rows listed; the totals still count them all.
 const maxListed = 200
 
-// latestCount is how many latest transactions a Financials card shows (FR-015).
 const latestCount = 5
 
-// Deps are the ports of the service (ports.go), which internal/app fills.
 type Deps struct {
 	Planning Planning
 	Rates    Rates
@@ -31,10 +27,9 @@ type Deps struct {
 	Access   Access
 }
 
-// Service holds the rules of feature 015. Every method takes the actor; the reads run in one read
-// transaction, imports, links and unlinks in one Write with their activity-log entry.
+// Service reads in one read transaction; imports, links and unlinks write with their log entry in one Write.
 type Service struct {
-	tx       store.Transactor
+	tx       Transactor
 	repo     Store
 	ids      *ids.Generator
 	history  *history.Service
@@ -42,13 +37,10 @@ type Service struct {
 	rates    Rates
 	displays Displays
 	access   Access
-	feed     Feed // the feed of uploaded files: the simulated GSAP extract
+	feed     Feed
 	now      clock.Clock
 }
 
-// NewService returns the financials service. It keeps transactions and imports in repo, gives out readable
-// IDs, logs, works in transactions and reads the time with tools, and reads the other features through
-// deps. Uploaded files are read by the simulated GSAP extract (CSVFeed).
 func NewService(tools history.Tools, repo Store, deps Deps) *Service {
 	return &Service{
 		tx: tools.Tx, repo: repo, ids: tools.IDs, history: tools.Log, planning: deps.Planning, rates: deps.Rates,
@@ -56,23 +48,16 @@ func NewService(tools history.Tools, repo Store, deps Deps) *Service {
 	}
 }
 
-// UseFeed replaces the feed that reads uploaded files — a real GSAP feed later (FR-003, SC-006). Nothing
-// else changes: the checks, matching, figures, handler and contract stay the same.
+// UseFeed replaces the simulated GSAP extract, later with a real GSAP feed; nothing else changes.
 func (s *Service) UseFeed(f Feed) {
 	s.feed = f
 }
 
-// today is the calendar date of the clock: "the current year" is its year (D-091).
 func (s *Service) today() date.Date {
 	return date.Today(s.now())
 }
 
-// Link links the not-linked transaction id to the line item req.LineItemID by hand (FR-026, D-253) and
-// logs it (FR-027). It refuses: a missing version or a line item ID of the wrong form (validation); a
-// transaction that does not exist (not_found); a version that is out of date (version_conflict); a
-// transaction already linked, by the rules — corrected in GSAP — or by a person (not_allowed); a line item
-// that does not exist or is in the recycle bin (validation on lineItemId); a person who may not link in the
-// line item's plan (forbidden).
+// Link links a not-linked transaction by hand: one the rules linked is corrected in GSAP instead.
 func (s *Service) Link(ctx context.Context, a actor.Actor, id string, req LinkRequest) (TransactionView, error) {
 	var problems errs.Problems
 	if req.Version == nil {
@@ -127,7 +112,6 @@ func (s *Service) Link(ctx context.Context, a actor.Actor, id string, req LinkRe
 	return view, nil
 }
 
-// missingLineItem is the refusal of a line item ID that is not live: in the recycle bin, or unknown.
 func (s *Service) missingLineItem(ctx context.Context, id string) error {
 	inBin, err := s.planning.LineItemsInBin(ctx)
 	if err != nil {
@@ -139,8 +123,7 @@ func (s *Service) missingLineItem(ctx context.Context, id string) error {
 	return fieldProblem("lineItemId", fmt.Sprintf(msgNoLineItem, id))
 }
 
-// Unlink undoes a manual link (FR-026): the transaction is matched again by the rules, and usually is Not
-// linked again with its import reason. Only links made by a person can be undone (not_allowed otherwise).
+// Unlink undoes only a link made by a person; the rules then match the transaction again.
 func (s *Service) Unlink(ctx context.Context, a actor.Actor, id string, req UnlinkRequest) (TransactionView, error) {
 	if req.Version == nil {
 		return TransactionView{}, fieldProblem("version", msgEnterVersion)
@@ -188,7 +171,6 @@ func (s *Service) Unlink(ctx context.Context, a actor.Actor, id string, req Unli
 	return view, nil
 }
 
-// rematch matches t again by the rules, against every other stored transaction.
 func (s *Service) rematch(ctx context.Context, b *book, t *Transaction) error {
 	inBin, err := s.planning.LineItemsInBin(ctx)
 	if err != nil {
@@ -215,8 +197,6 @@ func (s *Service) rematch(ctx context.Context, b *book, t *Transaction) error {
 	return nil
 }
 
-// save stores t after a link change by a and writes its one activity-log entry: the line item before and
-// after ("" for Not linked).
 func (s *Service) save(ctx context.Context, a actor.Actor, t *Transaction, verb, before, after string) error {
 	t.Touch(a, s.now())
 	if err := s.repo.PutTransaction(ctx, *t); err != nil {
@@ -229,7 +209,6 @@ func (s *Service) save(ctx context.Context, a actor.Actor, t *Transaction, verb,
 	return err
 }
 
-// idValue is a line item id as a stored JSON value: null for none.
 func idValue(id string) json.RawMessage {
 	if id == "" {
 		return json.RawMessage("null")
@@ -238,15 +217,12 @@ func idValue(id string) json.RawMessage {
 	return encoded
 }
 
-// dayText writes a moment's UTC date as people read it: "20 Oct 2026".
 func dayText(t time.Time) string {
 	return t.UTC().Format("2 Jan 2006")
 }
 
-// FactsByLineItem returns the figures in USD of every line item with linked transactions, by line item
-// id, for All work (010 FR-023): the same rules as the cards — current rates, the latest accrual month,
-// currencies no longer in Settings left out (SC-002). It joins the caller's transaction and checks no
-// access: the caller does.
+// FactsByLineItem gives All work the cards' USD figures by line item: current rates, the latest accrual
+// month, currencies no longer in Settings left out. It checks no access: the caller does.
 func (s *Service) FactsByLineItem(ctx context.Context) (map[string]Facts, error) {
 	var facts map[string]Facts
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -276,8 +252,7 @@ func (s *Service) FactsByLineItem(ctx context.Context) (map[string]Facts, error)
 	return facts, err
 }
 
-// DataAsOf returns when the newest GSAP data was loaded (FR-008), nil when none ever was. It joins the
-// caller's transaction.
+// DataAsOf is nil when no GSAP data was ever loaded.
 func (s *Service) DataAsOf(ctx context.Context) (*time.Time, error) {
 	var asOf *time.Time
 	err := s.tx.Read(ctx, func(ctx context.Context) error {

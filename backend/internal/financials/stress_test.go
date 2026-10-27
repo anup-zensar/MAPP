@@ -14,11 +14,7 @@ import (
 	"mapp/internal/platform/record"
 )
 
-// The stress tests of SC-004: they run without -short, as 010's. Each measure is taken three times and the
-// fastest counts, so that other test binaries running at the same time do not make it fail.
-
-// A 5,000-row extract — purchase orders and invoices for them — is checked and imported in under 5 seconds
-// (SC-004).
+// Each measure is taken three times and the fastest counts, so test binaries running at once cannot fail it.
 func TestImport_FiveThousandRows_SC004(t *testing.T) {
 	if testing.Short() || race.Enabled {
 		t.Skip("a timing test: it runs without -short and without the race detector, in CI's Timing tests step")
@@ -50,9 +46,8 @@ func TestImport_FiveThousandRows_SC004(t *testing.T) {
 	t.Logf("5,000-row import in %s", elapsed)
 }
 
-// memRepository is a Store in memory: the stress test measures the service's own work, as 010's
-// stress test does over an in-memory source, and not the decoding of the demo JSON store (a PostgreSQL
-// repository answers with SQL indexes instead, data model §1).
+// memRepository keeps records decoded, so the test measures the service's own work, not the fake store's
+// decoding of every record.
 type memRepository struct {
 	transactions []Transaction
 	imports      []Import
@@ -115,7 +110,6 @@ func (m *memRepository) DeleteImport(_ context.Context, id string) error {
 	return nil
 }
 
-// The Financials page answers a search over 20,000 transactions in under 1 second (SC-004).
 func TestTransactions_TwentyThousand_SC004(t *testing.T) {
 	if testing.Short() || race.Enabled {
 		t.Skip("a timing test: it runs without -short and without the race detector, in CI's Timing tests step")
