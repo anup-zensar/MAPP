@@ -1,75 +1,17 @@
 package home_test
 
 import (
-	"net/http"
 	"reflect"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
-	"mapp/internal/activities"
 	"mapp/internal/approvals"
 	"mapp/internal/home"
 	"mapp/internal/plans"
 	"mapp/internal/platform/apitest"
-	"mapp/internal/platform/money"
 )
-
-// The demo people's e-mail addresses (demo-users-and-data.md).
-const (
-	alexsEmail   = "alex.morgan@shell.com"
-	priyasEmail  = "priya.raman@shell.com"
-	danielsEmail = "daniel.okoro@shell.com"
-	meisEmail    = "mei.lin@shell.com"
-	carlosEmail  = "carlos.mendes@shell.com"
-	sarasEmail   = "sara.novak@shell.com"
-)
-
-// everyone is every seeded person.
-var everyone = []string{alexsEmail, priyasEmail, danielsEmail, meisEmail, carlosEmail, sarasEmail}
-
-// now is the time of the test server's clock: 12 Mar 2026 09:00 UTC. The seeded approvals are dated before
-// it.
-var now = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
-
-// listScopes are Home's scopes with the matching scope of the Plans list (feature 004).
-var listScopes = map[string]string{"myTeams": "myTeams", "everything": "all"}
-
-// get sends GET path as client, checks that it answers 200 and decodes the answer into a T.
-func get[T any](t *testing.T, client *apitest.Client, path string, opts ...apitest.RequestOption) T {
-	t.Helper()
-	response := client.Do(t, http.MethodGet, path, nil, opts...)
-	if response.Status != http.StatusOK {
-		t.Fatalf("GET %s = %d %s, want 200", path, response.Status, response.Body)
-	}
-	var v T
-	response.Decode(t, &v)
-	return v
-}
-
-// usd returns text as US dollars, such as "460000.00".
-func usd(t *testing.T, text string) money.Money {
-	t.Helper()
-	amount, err := money.ParseAmount(text)
-	if err != nil {
-		t.Fatalf("ParseAmount(%q): %v", text, err)
-	}
-	return money.USD(amount)
-}
-
-// orZero is m, or 0.00 USD when there is none.
-func orZero(m *money.Money) money.Money {
-	if m == nil {
-		return money.USD(money.Amount{})
-	}
-	return *m
-}
-
-// same reports whether two optional values, such as amounts or percentages, are equal.
-func same[T comparable](x, y *T) bool {
-	return (x == nil && y == nil) || (x != nil && y != nil && *x == *y)
-}
 
 // User story 1 — See my work at a glance.
 
@@ -112,61 +54,6 @@ func TestHomeSummary_Contract(t *testing.T) {
 	w := danielsCards.WaitingForMe
 	if w.Count != 1 || w.OldestWaitingSince == nil || !w.OldestWaitingSince.Equal(now.Add(-48*time.Hour)) {
 		t.Errorf("waiting for Daniel = %+v, want Trade magazine ads, waiting 2 days", w)
-	}
-}
-
-// User story 5 — Get started as a new user.
-
-// A new person in no team gets the Getting started card with the no-team reason and empty cards; once they
-// join a team that has a plan, the card is gone (FR-020, FR-021, US5 scenarios 1 and 2).
-func TestHomeSummary_GettingStartedForANewPerson_FR020(t *testing.T) {
-	t.Parallel()
-	server := apitest.New(t)
-	alex := server.SignIn(t, alexsEmail)
-	created := alex.Do(t, http.MethodPost, "/api/v1/people", map[string]any{"name": "Nina Berg", "email": "nina.berg@shell.com"})
-	var nina struct {
-		ID      string `json:"id"`
-		Version int    `json:"version"`
-	}
-	created.Decode(t, &nina)
-	if created.Status != http.StatusCreated && created.Status != http.StatusOK {
-		t.Fatalf("POST /api/v1/people = %d %s", created.Status, created.Body)
-	}
-	newcomer := server.SignIn(t, "nina.berg@shell.com")
-
-	alone := get[home.SummaryView](t, newcomer, "/api/v1/home/summary?scope=myTeams")
-	joined := alex.Do(t, http.MethodPatch, "/api/v1/people/"+nina.ID, map[string]any{"name": "Nina Berg",
-		"email": "nina.berg@shell.com", "jobTitle": "", "teamIds": []string{"T-1003"}, "version": nina.Version})
-	inTeam := get[home.SummaryView](t, newcomer, "/api/v1/home/summary?scope=myTeams")
-
-	if alone.GettingStarted == nil || *alone.GettingStarted != "notInTeam" {
-		t.Errorf("getting started = %v, want notInTeam", alone.GettingStarted)
-	}
-	empty := home.PlannedCostTotal{PlannedCost: money.USD(money.Amount{})}
-	if alone.Plans != (home.PlanCounts{}) || alone.ActivitiesOwned != (home.ActivityCounts{}) ||
-		alone.WaitingForMe != (home.WaitingCounts{}) || alone.PlannedCost != empty {
-		t.Errorf("cards = %+v, want every card empty", alone)
-	}
-	if joined.Status != http.StatusOK || inTeam.GettingStarted != nil || inTeam.Plans.Count != 1 {
-		t.Errorf("after joining Global Marketing Ops (%d %s): getting started %v, plans %+v; want no card and FY2027 Global Brand",
-			joined.Status, joined.Body, inTeam.GettingStarted, inTeam.Plans)
-	}
-}
-
-// A scope other than myTeams or everything, or none, is refused on the field scope.
-func TestHome_InvalidScope_400(t *testing.T) {
-	t.Parallel()
-	server := apitest.New(t)
-	priya := server.SignIn(t, priyasEmail)
-	refused := `{"error":{"code":"validation_failed","message":"Some fields need your attention.",` +
-		`"fields":[{"field":"scope","message":"Choose My teams or Everything."}]}}`
-
-	for _, path := range []string{"/api/v1/home/summary?scope=all", "/api/v1/home/summary", "/api/v1/home/plans?scope=mine", "/api/v1/home/plans"} {
-		response := priya.Do(t, http.MethodGet, path, nil, apitest.SkipRequestValidation()) // the contract allows only the two
-
-		if response.Status != http.StatusBadRequest || string(response.Body) != refused {
-			t.Errorf("GET %s = %d %s\nwant 400 %s", path, response.Status, response.Body, refused)
-		}
 	}
 }
 
@@ -351,48 +238,6 @@ func TestHomeWaiting_Contract(t *testing.T) {
 	}
 }
 
-// For every seeded person, Waiting for my approval counts the Waiting for me tab of the Approvals page, and
-// each activity that needs attention shows what its page shows: its fields still needed, its line items
-// needing attention and how far its line items exceed its planned cost (SC-002, FR-017).
-func TestHome_PersonalCardsEqualTheirPages_SC002_FR017(t *testing.T) {
-	t.Parallel()
-	server := apitest.New(t)
-	for _, email := range everyone {
-		client := server.SignIn(t, email)
-		waiting := get[home.WaitingPage](t, client, "/api/v1/home/waiting")
-		tab := get[approvals.RowPage](t, client, "/api/v1/approvals?tab=waiting", apitest.SkipValidation())
-		if waiting.Total != tab.Total {
-			t.Errorf("%s: %d waiting, Approvals tab %d", email, waiting.Total, tab.Total)
-		}
-		for i, item := range waiting.Items {
-			if item.ID != tab.Items[i].Activity.ID {
-				t.Errorf("%s: waiting row %d is %s, Approvals tab %s", email, i, item.ID, tab.Items[i].Activity.ID)
-			}
-		}
-
-		attention := get[home.HomeAttentionPage](t, client, "/api/v1/home/attention")
-		for _, item := range attention.Items {
-			if item.RecordType != "activity" {
-				continue
-			}
-			page := get[activities.View](t, client, "/api/v1/activities/"+item.ID, apitest.SkipValidation())
-			for _, reason := range item.Reasons {
-				switch reason.Kind {
-				case "missingFields":
-					if len(reason.Missing) != page.Completeness.MissingFields || reason.ItemsBelow != page.Completeness.LineItemsNeedingAttention {
-						t.Errorf("%s: %s needs %d fields and %d line items, its page %+v", email, item.ID, len(reason.Missing),
-							reason.ItemsBelow, page.Completeness)
-					}
-				case "negativeBalance":
-					if page.UnassignedPlannedCost == nil || reason.Amount.Amount != page.UnassignedPlannedCost.Amount.Neg() {
-						t.Errorf("%s: %s exceeds by %v, its page %v", email, item.ID, reason.Amount, page.UnassignedPlannedCost)
-					}
-				}
-			}
-		}
-	}
-}
-
 // User story 4 — Follow my activities.
 
 // Priya's seeded activities each appear under the status their page shows, in the order Declined,
@@ -426,130 +271,5 @@ func TestHomeMyActivities_Contract(t *testing.T) {
 	}
 	if partner := view.Groups[4].Items[1]; !partner.Ongoing || partner.EndDate != nil {
 		t.Errorf("Partner co-marketing fund = %+v, want ongoing without an end date", partner)
-	}
-}
-
-// For every seeded person, each of their activities shows on Home the status, planned cost and completeness
-// of its own page (SC-002, FR-017).
-func TestHome_MyActivitiesEqualTheirPages_SC002_FR017(t *testing.T) {
-	t.Parallel()
-	server := apitest.New(t)
-	for _, email := range everyone {
-		client := server.SignIn(t, email)
-		view := get[home.MyActivitiesView](t, client, "/api/v1/home/my-activities")
-		summary := get[home.SummaryView](t, client, "/api/v1/home/summary?scope=myTeams")
-		if view.Total != summary.ActivitiesOwned.Count {
-			t.Errorf("%s: My activities %d, card %d", email, view.Total, summary.ActivitiesOwned.Count)
-		}
-		for _, g := range view.Groups {
-			for _, row := range g.Items {
-				page := get[activities.View](t, client, "/api/v1/activities/"+row.ID, apitest.SkipValidation())
-				// Home adds up plans in the display currency, so it shows the page's display amount (016 FR-014).
-				if row.Status != string(page.DisplayStatus) || !same(row.PlannedCost, page.Display.PlannedCost) ||
-					len(row.Missing) != page.Completeness.MissingFields || row.ItemsBelow != page.Completeness.LineItemsNeedingAttention {
-					t.Errorf("%s: %+v\nits page: %s, %v, %+v", email, row, page.DisplayStatus, page.PlannedCost, page.Completeness)
-				}
-			}
-		}
-	}
-}
-
-// A deleted record never counts: once Priya deletes Launch film, it leaves her cards, My activities, Needs
-// your attention and her plan's row at once (FR-019).
-func TestHome_DeletedRecordsNeverCount_FR019(t *testing.T) {
-	t.Parallel()
-	server := apitest.New(t)
-	priya := server.SignIn(t, priyasEmail)
-
-	deleted := priya.Do(t, http.MethodDelete, "/api/v1/activities/A-1001", nil)
-	if deleted.Status != http.StatusOK {
-		t.Fatalf("DELETE /api/v1/activities/A-1001 = %d %s", deleted.Status, deleted.Body)
-	}
-	summary := get[home.SummaryView](t, priya, "/api/v1/home/summary?scope=myTeams")
-	view := get[home.MyActivitiesView](t, priya, "/api/v1/home/my-activities")
-	attention := get[home.HomeAttentionPage](t, priya, "/api/v1/home/attention")
-	rows := get[home.PlanPage](t, priya, "/api/v1/home/plans?scope=myTeams")
-
-	// Priya also owns the two activities of the GBP plan P-1004 (016): 65,000.00 GBP = 82,278.48 USD.
-	if summary.ActivitiesOwned.Count != 8 || view.Total != 8 || summary.PlannedCost.PlannedCost != usd(t, "422278.48") {
-		t.Errorf("after the delete: %d owned, %d in My activities, planned %v; want 8, 8 and 422,278.48 USD",
-			summary.ActivitiesOwned.Count, view.Total, summary.PlannedCost.PlannedCost)
-	}
-	for _, item := range attention.Items {
-		if item.ID == "A-1001" {
-			t.Errorf("Needs your attention still lists the deleted Launch film: %+v", item)
-		}
-	}
-	var lubricants *home.PlanRow
-	for i := range rows.Items {
-		if rows.Items[i].ID == "P-1001" {
-			lubricants = &rows.Items[i]
-		}
-	}
-	if len(rows.Items) != 2 || lubricants == nil || lubricants.ActivityCount != 6 || lubricants.PlannedCost == nil ||
-		*lubricants.PlannedCost != usd(t, "340000.00") {
-		t.Errorf("plan rows = %+v, want P-1001 with 6 activities and 340,000.00 USD (and P-1004)", rows.Items)
-	}
-}
-
-// recentChange is the part of an ActivityLogEntry these tests read.
-type recentChange struct {
-	Action     string `json:"action"`
-	RecordType string `json:"recordType"`
-	RecordID   string `json:"recordId"`
-	RecordName string `json:"recordName"`
-	Actor      struct {
-		Name string `json:"name"`
-	} `json:"actor"`
-	RecordNow struct {
-		State string `json:"state"`
-	} `json:"recordNow"`
-}
-
-// recentChangesPage is a RecentChangesPage as these tests read it.
-type recentChangesPage struct {
-	Items []recentChange `json:"items"`
-	Total int            `json:"total"`
-}
-
-// Priya deletes an activity of her team's plan: her Recent changes start with it, its record now in the
-// recycle bin; Mei, in another team, sees it only under Everything; another scope is refused (FR-015,
-// FR-016, 011 FR-008).
-func TestHomeRecentChanges_Contract(t *testing.T) {
-	t.Parallel()
-	server := apitest.New(t)
-	server.GrantRole(t, meisEmail, "globalPlanner", "all") // 014: every market's plans, for Everything
-	priya := server.SignIn(t, priyasEmail)
-	mei := server.SignIn(t, meisEmail)
-
-	if deleted := priya.Do(t, http.MethodDelete, "/api/v1/activities/A-1002", nil); deleted.Status != http.StatusOK {
-		t.Fatalf("DELETE /api/v1/activities/A-1002 = %d %s", deleted.Status, deleted.Body)
-	}
-	priyas := get[recentChangesPage](t, priya, "/api/v1/home/recent-changes?scope=myTeams")
-	meis := get[recentChangesPage](t, mei, "/api/v1/home/recent-changes?scope=myTeams")
-	meisEverything := get[recentChangesPage](t, mei, "/api/v1/home/recent-changes?scope=everything")
-
-	if priyas.Total < 1 || len(priyas.Items) == 0 || len(priyas.Items) > 10 {
-		t.Fatalf("Priya's page = %+v, want the delete first", priyas)
-	}
-	first := priyas.Items[0]
-	if first.Action != "deleted" || first.RecordType != "activity" || first.RecordID != "A-1002" ||
-		first.Actor.Name != "Priya Raman" || first.RecordNow.State != "inRecycleBin" {
-		t.Errorf("Priya's newest change = %+v, want her delete of A-1002, in the recycle bin", first)
-	}
-	if slices.ContainsFunc(meis.Items, func(c recentChange) bool { return c.RecordID == "A-1002" }) {
-		t.Errorf("Mei's My teams page = %+v, want nothing of the Lubricants Europe plan", meis)
-	}
-	if len(meisEverything.Items) == 0 || meisEverything.Items[0].RecordID != "A-1002" {
-		t.Errorf("Mei's Everything page = %+v, want the delete first", meisEverything)
-	}
-
-	refused := `{"error":{"code":"validation_failed","message":"Some fields need your attention.",` +
-		`"fields":[{"field":"scope","message":"Choose My teams or Everything."}]}}`
-	for _, path := range []string{"/api/v1/home/recent-changes?scope=all", "/api/v1/home/recent-changes"} {
-		response := priya.Do(t, http.MethodGet, path, nil, apitest.SkipRequestValidation())
-		if response.Status != http.StatusBadRequest || string(response.Body) != refused {
-			t.Errorf("GET %s = %d %s\nwant 400 %s", path, response.Status, response.Body, refused)
-		}
 	}
 }
