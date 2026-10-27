@@ -27,25 +27,20 @@ package store
 
 import (
 	"bytes"
-	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
-	"maps"
 	"net/http"
 	"os"
 	"path/filepath"
-	"reflect"
 	"regexp"
-	"slices"
 	"strings"
 	"sync"
 	"time"
 
 	"mapp/internal/platform/errs"
-	"mapp/internal/platform/memo"
 )
 
 // Transactor runs work in transactions. Services depend on this interface, never on the JSON store.
@@ -73,10 +68,6 @@ var (
 	}
 )
 
-// countersTable is saved first. The readable-ID counters must never go backwards, even when a save
-// breaks off half-way, or an ID could be given out twice (research R3, R4).
-const countersTable = "counters"
-
 // tableName is the form every table name must have, so that no file outside the data folder can ever be
 // touched.
 var tableName = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
@@ -95,27 +86,6 @@ type DB struct {
 	// rename replaces a data file with its new version. Tests replace it to simulate a failing disk.
 	rename func(from, to string) error
 }
-
-// tx is one transaction. A Write keeps its changes here until it saves them, so that a failed Write can
-// simply forget them.
-type tx struct {
-	db       *DB
-	writable bool
-	changed  map[string]map[string]json.RawMessage // this Write's own copies of the tables it changed
-	appended map[string][]json.RawMessage          // records this Write appended, per append-only table
-
-	memoMu sync.Mutex
-	memo   map[any]any // Memo's values and a Read's decoded tables (listKey); forgotten on every change
-}
-
-// listKey is the memo key of a table decoded as one record type in a Read (List).
-type listKey struct {
-	table  string
-	record reflect.Type
-}
-
-// txKey is the context key of the current transaction.
-type txKey struct{}
 
 // Open loads the data folder dir, creating it when it is missing; a table without a file is empty.
 // Temporary files left by an interrupted save are deleted, and a half-written last line of an
@@ -223,360 +193,6 @@ func lineOfError(data []byte, err error) int {
 	return 1 + bytes.Count(data[:offset], []byte("\n"))
 }
 
-// IsEmpty reports whether the store has no table at all: the data folder had no *.json or *.jsonl table
-// file and nothing has been saved since. The seed command loads the demo data only into an empty store.
-// Call it outside transactions.
-func (db *DB) IsEmpty() bool {
-	db.mu.RLock()
-	defer db.mu.RUnlock()
-	return len(db.tables) == 0 && len(db.logs) == 0
-}
-
-// Ready returns why the store cannot serve requests now: a save broke off half-way (ErrFailed), or the data
-// folder cannot be reached. Call it outside transactions.
-func (db *DB) Ready() error {
-	db.mu.RLock()
-	failed := db.failed
-	db.mu.RUnlock()
-	if failed {
-		return ErrFailed
-	}
-	if _, err := os.Stat(db.dir); err != nil {
-		return fmt.Errorf("store: data folder: %w", err)
-	}
-	return nil
-}
-
-// Write runs fn with exclusive access to the store. When fn returns nil, everything it changed is saved
-// to the data folder together; when fn returns an error, nothing changes and that error is returned
-// unchanged. Called inside another Write (its context carries that transaction), Write joins it: its
-// changes are saved or thrown away together with the outer Write's, so one service can call another.
-// Called inside a Read, it returns ErrReadOnly.
-//
-// fn must pass on the context it receives. A transaction started inside fn with a fresh context, such as
-// context.Background(), would wait forever for the one that is running.
-func (db *DB) Write(ctx context.Context, fn func(ctx context.Context) error) error {
-	if current, ok := ctx.Value(txKey{}).(*tx); ok {
-		if !current.writable {
-			return ErrReadOnly
-		}
-		return fn(ctx)
-	}
-
-	db.mu.Lock()
-	defer db.mu.Unlock() // deferred, so that a panic in fn never leaves the store locked
-	if db.failed {
-		return ErrFailed
-	}
-
-	t := &tx{
-		db:       db,
-		writable: true,
-		changed:  map[string]map[string]json.RawMessage{},
-		appended: map[string][]json.RawMessage{},
-	}
-	if err := fn(context.WithValue(ctx, txKey{}, t)); err != nil {
-		return err // the changes stay in t, which is forgotten
-	}
-	return db.commit(t)
-}
-
-// Read runs fn with a consistent view of the store: no Write changes the data while fn runs. Called
-// inside another transaction, it joins it.
-func (db *DB) Read(ctx context.Context, fn func(ctx context.Context) error) error {
-	if _, ok := ctx.Value(txKey{}).(*tx); ok {
-		return fn(ctx)
-	}
-
-	db.mu.RLock()
-	defer db.mu.RUnlock()
-	return fn(context.WithValue(ctx, txKey{}, &tx{db: db}))
-}
-
-// Get returns the record id of table, and false when there is none.
-func Get[T any](ctx context.Context, table, id string) (T, bool, error) {
-	var record T
-	t, err := transaction(ctx, table)
-	if err != nil {
-		return record, false, err
-	}
-	encoded, found := t.records(table)[id]
-	if !found {
-		return record, false, nil
-	}
-	if err := json.Unmarshal(encoded, &record); err != nil {
-		return record, false, fmt.Errorf("store: read %s %s: %w", table, id, err)
-	}
-	return record, true, nil
-}
-
-// List returns every record of table, ordered by id: shorter ids first, then alphabetically, so that
-// P-999 comes before P-1001. The list is never nil.
-//
-// A Read decodes the table once and gives every List of it the same records in a list of its own: the
-// caller may reorder or append to the list, but the records' slices, maps and pointed-to values are
-// shared with the other Lists of that Read and must not be changed in place. A Write decodes afresh on
-// every call, so records read to be changed and saved are always the caller's own.
-func List[T any](ctx context.Context, table string) ([]T, error) {
-	t, err := transaction(ctx, table)
-	if err != nil {
-		return nil, err
-	}
-	if t.writable {
-		return decodeTable[T](t, table)
-	}
-	list, err := memoIn(ctx, t, listKey{table: table, record: reflect.TypeFor[T]()},
-		func(context.Context) ([]T, error) { return decodeTable[T](t, table) })
-	if err != nil {
-		return nil, err
-	}
-	return slices.Clone(list), nil
-}
-
-// decodeTable decodes every record of table as the transaction sees it, ordered by id (List).
-func decodeTable[T any](t *tx, table string) ([]T, error) {
-	records := t.records(table)
-	list := make([]T, 0, len(records))
-	for _, id := range slices.SortedFunc(maps.Keys(records), compareIDs) {
-		var record T
-		if err := json.Unmarshal(records[id], &record); err != nil {
-			return nil, fmt.Errorf("store: read %s %s: %w", table, id, err)
-		}
-		list = append(list, record)
-	}
-	return list, nil
-}
-
-// Put saves record under id in table, replacing the record that had that id.
-func Put(ctx context.Context, table, id string, record any) error {
-	t, err := writableTransaction(ctx, table)
-	if err != nil {
-		return err
-	}
-	if id == "" {
-		return fmt.Errorf("store: put in %s: the id is empty", table)
-	}
-	encoded, err := json.Marshal(record)
-	if err != nil {
-		return fmt.Errorf("store: put %s %s: %w", table, id, err)
-	}
-	t.forgetMemos()
-	t.ownCopy(table)[id] = encoded
-	return nil
-}
-
-// Delete removes the record id from table. Deleting a record that does not exist changes nothing.
-func Delete(ctx context.Context, table, id string) error {
-	t, err := writableTransaction(ctx, table)
-	if err != nil {
-		return err
-	}
-	if _, found := t.records(table)[id]; found {
-		t.forgetMemos()
-		delete(t.ownCopy(table), id)
-	}
-	return nil
-}
-
-// Append adds record at the end of the append-only table.
-func Append(ctx context.Context, table string, record any) error {
-	t, err := writableTransaction(ctx, table)
-	if err != nil {
-		return err
-	}
-	encoded, err := json.Marshal(record) // one line: JSON escapes the line breaks inside strings
-	if err != nil {
-		return fmt.Errorf("store: append to %s: %w", table, err)
-	}
-	t.forgetMemos()
-	t.appended[table] = append(t.appended[table], encoded)
-	return nil
-}
-
-// Memo returns what load returns, worked out once per transaction for key: a later call with the same key
-// in the same transaction (or one that joined it) answers the first result without calling load again.
-// Every change in a Write (Put, Delete, Append) forgets all memos, so a memo never outlives the data it
-// was worked out from; an error is not kept. Every caller in the transaction gets the same value, so
-// callers must treat it as read-only. Keys start with their package, such as "settings:form:plan".
-// Outside a transaction of this store, such as one on PostgreSQL, memo.Get keeps it.
-func Memo[T any](ctx context.Context, key string, load func(ctx context.Context) (T, error)) (T, error) {
-	t, ok := ctx.Value(txKey{}).(*tx)
-	if !ok {
-		return memo.Get(ctx, key, load)
-	}
-	return memoIn(ctx, t, key, load)
-}
-
-// memoIn is Memo in the transaction t, for any comparable key.
-func memoIn[T any](ctx context.Context, t *tx, key any, load func(ctx context.Context) (T, error)) (T, error) {
-	var zero T
-	t.memoMu.Lock()
-	cached, found := t.memo[key]
-	t.memoMu.Unlock()
-	if found {
-		if value, ok := cached.(T); ok {
-			return value, nil
-		}
-		return zero, fmt.Errorf("store: memo %v holds a %T, not the type asked for", key, cached)
-	}
-	value, err := load(ctx) // outside the lock: load may use other memos
-	if err != nil {
-		return zero, err
-	}
-	t.memoMu.Lock()
-	if t.memo == nil {
-		t.memo = map[any]any{}
-	}
-	t.memo[key] = value
-	t.memoMu.Unlock()
-	return value, nil
-}
-
-// forgetMemos drops every value Memo kept: the data they were worked out from is about to change.
-func (t *tx) forgetMemos() {
-	t.memoMu.Lock()
-	t.memo = nil
-	t.memoMu.Unlock()
-}
-
-// Scan returns every record of the append-only table in the order they were appended, including the
-// records appended earlier in the same Write. The list is never nil.
-func Scan[T any](ctx context.Context, table string) ([]T, error) {
-	t, err := transaction(ctx, table)
-	if err != nil {
-		return nil, err
-	}
-	encoded := slices.Concat(t.db.logs[table], t.appended[table])
-	list := make([]T, 0, len(encoded))
-	for i, line := range encoded {
-		var record T
-		if err := json.Unmarshal(line, &record); err != nil {
-			return nil, fmt.Errorf("store: read %s record %d: %w", table, i+1, err)
-		}
-		list = append(list, record)
-	}
-	return list, nil
-}
-
-// transaction returns the transaction that ctx carries, after checking the table name.
-func transaction(ctx context.Context, table string) (*tx, error) {
-	if !tableName.MatchString(table) {
-		return nil, fmt.Errorf("store: %q is not a valid table name", table)
-	}
-	t, ok := ctx.Value(txKey{}).(*tx)
-	if !ok {
-		return nil, ErrNoTransaction
-	}
-	return t, nil
-}
-
-// writableTransaction is transaction for the helpers that change data, which need a Write.
-func writableTransaction(ctx context.Context, table string) (*tx, error) {
-	t, err := transaction(ctx, table)
-	if err != nil {
-		return nil, err
-	}
-	if !t.writable {
-		return nil, ErrReadOnly
-	}
-	return t, nil
-}
-
-// records returns table as this transaction sees it: its own changed copy, or else the saved table.
-func (t *tx) records(table string) map[string]json.RawMessage {
-	if records, ok := t.changed[table]; ok {
-		return records
-	}
-	return t.db.tables[table] // nil for a table that does not exist yet, which reads as empty
-}
-
-// ownCopy returns this transaction's own copy of table, made the first time the table changes. Changes
-// go only to the copy, so the saved table stays as it was until the commit.
-func (t *tx) ownCopy(table string) map[string]json.RawMessage {
-	records, ok := t.changed[table]
-	if !ok {
-		records = maps.Clone(t.db.tables[table])
-		if records == nil {
-			records = map[string]json.RawMessage{}
-		}
-		t.changed[table] = records
-	}
-	return records
-}
-
-// compareIDs orders ids as people expect: shorter ids first, then alphabetically.
-func compareIDs(a, b string) int {
-	return cmp.Or(cmp.Compare(len(a), len(b)), strings.Compare(a, b))
-}
-
-// commit saves a Write's changes (research R3), as safely as a laptop allows:
-//
-//  1. Write every changed table to <table>.json.tmp and flush it to disk. If that fails, the temporary
-//     files are deleted and nothing has changed.
-//  2. Replace each table's file with its temporary file: counters.json first, then the others by name.
-//  3. Append the new lines of the append-only tables and flush them to disk.
-//  4. Only then apply the changes to memory.
-//
-// From step 2 on, files on disk are being changed. If anything fails then, memory and disk may no longer
-// agree, so the store refuses every later Write until the API is restarted; reads keep working.
-func (db *DB) commit(t *tx) error {
-	tables := tablesInSaveOrder(t)
-	if err := db.writeTempFiles(t, tables); err != nil {
-		return err
-	}
-	for _, table := range tables {
-		if err := db.rename(db.tablePath(table)+".tmp", db.tablePath(table)); err != nil {
-			return db.fail(err)
-		}
-	}
-	for _, table := range slices.Sorted(maps.Keys(t.appended)) {
-		if err := appendLines(db.logPath(table), t.appended[table]); err != nil {
-			return db.fail(err)
-		}
-	}
-
-	maps.Copy(db.tables, t.changed)
-	for table, records := range t.appended {
-		db.logs[table] = append(db.logs[table], records...)
-	}
-	return nil
-}
-
-// tablesInSaveOrder returns the tables a transaction changed: counters first, then the others by name.
-func tablesInSaveOrder(t *tx) []string {
-	var tables []string
-	if _, ok := t.changed[countersTable]; ok {
-		tables = append(tables, countersTable)
-	}
-	for _, table := range slices.Sorted(maps.Keys(t.changed)) {
-		if table != countersTable {
-			tables = append(tables, table)
-		}
-	}
-	return tables
-}
-
-// writeTempFiles writes each table to its temporary file. On an error it deletes the temporary files it
-// wrote, so nothing has changed.
-func (db *DB) writeTempFiles(t *tx, tables []string) error {
-	var written []string
-	for _, table := range tables {
-		path := db.tablePath(table) + ".tmp"
-		data, err := json.MarshalIndent(t.changed[table], "", "  ")
-		if err == nil {
-			err = writeAndSync(path, append(data, '\n'))
-		}
-		if err != nil {
-			for _, done := range written {
-				_ = os.Remove(done) // best effort: Open deletes leftover temporary files anyway
-			}
-			return fmt.Errorf("store: save %s: %w", table, err)
-		}
-		written = append(written, path)
-	}
-	return nil
-}
-
 // writeAndSync writes data to a new file at path and flushes it to disk. On an error the file is removed.
 func writeAndSync(path string, data []byte) error {
 	file, err := os.Create(path)
@@ -621,14 +237,6 @@ func renameWithRetry(from, to string) error {
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
-}
-
-// fail puts the store in the failed state after a save broke off half-way. It logs the cause and returns
-// an error that carries ErrFailed, so the person sees what to do.
-func (db *DB) fail(err error) error {
-	db.failed = true
-	slog.Error("could not save the data folder; restart the API", "folder", db.dir, "error", err)
-	return fmt.Errorf("%w: %w", ErrFailed, err)
 }
 
 // tablePath is the file of a normal table.
