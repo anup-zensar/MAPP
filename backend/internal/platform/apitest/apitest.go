@@ -1,11 +1,12 @@
-// Package apitest runs the real MAPP API inside a test, on a data folder of its own holding the demo data
-// and with a clock fixed at 12 Mar 2026 09:00 UTC, and checks every request and answer against
-// backend/api/openapi.yaml. Only external test packages import it, because it builds the whole API.
+// Package apitest runs the real MAPP API inside a test, in memory on a copy of the demo data with a clock
+// fixed at 12 Mar 2026 09:00 UTC, and checks every request and answer against backend/api/openapi.yaml.
 package apitest
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -19,16 +20,19 @@ import (
 
 	"mapp/internal/app"
 	"mapp/internal/auth"
-	"mapp/internal/platform/store"
+	"mapp/internal/platform/fake"
 	"mapp/internal/stores"
+	"mapp/internal/stores/storestest"
 )
 
 var startTime = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 
+var errStorageDown = errors.New("apitest: the storage is down")
+
 // Server is one test's API. Advance must not run while a request is being served.
 type Server struct {
 	handler      http.Handler
-	db           *store.DB
+	set          stores.Set
 	contract     validator.Validator
 	now          time.Time
 	demoPassword string
@@ -38,9 +42,10 @@ type Option func(*settings)
 
 type settings struct {
 	env            string
-	dataDir        string
+	db             *fake.DB
 	withoutSeed    bool
 	withoutHistory bool
+	storageDown    bool
 }
 
 // WithEnv starts the API in env ("local", "development" or "production"); demo sign-in is off in production.
@@ -48,9 +53,13 @@ func WithEnv(env string) Option {
 	return func(s *settings) { s.env = env }
 }
 
-// WithDataDir lets two servers share one data folder; a folder that already holds data is used as it is.
-func WithDataDir(dir string) Option {
-	return func(s *settings) { s.dataDir = dir }
+// WithDB runs the API on db as it is, so two servers can share their data.
+func WithDB(db *fake.DB) Option {
+	return func(s *settings) { s.db = db }
+}
+
+func WithStorageDown() Option {
+	return func(s *settings) { s.storageDown = true }
 }
 
 func WithoutSeed() Option {
@@ -67,28 +76,33 @@ func New(t testing.TB, opts ...Option) *Server {
 	for _, opt := range opts {
 		opt(&s)
 	}
-	if s.dataDir == "" {
-		s.dataDir = t.TempDir()
-	}
 	variables := map[string]string{"APP_ENV": s.env}
 	cfg, err := app.LoadConfig(func(name string) string { return variables[name] })
 	if err != nil {
 		t.Fatalf("apitest: configuration: %v", err)
 	}
-	if !s.withoutSeed {
-		CopyDemoData(t, s.dataDir, s.withoutHistory)
+	set := storestest.New(s.dataOf(t))
+	if s.storageDown {
+		set.Ready = func(context.Context) error { return errStorageDown }
 	}
-	db, err := store.Open(s.dataDir)
-	if err != nil {
-		t.Fatalf("apitest: opening the data folder: %v", err)
-	}
-	server := &Server{db: db, contract: newContractValidator(t), now: startTime, demoPassword: cfg.DemoPassword}
-	built, err := app.New(cfg, stores.JSON(db), server.clock)
+	server := &Server{set: set, contract: newContractValidator(t), now: startTime, demoPassword: cfg.DemoPassword}
+	built, err := app.New(cfg, set, server.clock)
 	if err != nil {
 		t.Fatalf("apitest: starting the API: %v", err)
 	}
 	server.handler = built.Handler
 	return server
+}
+
+func (s settings) dataOf(tb testing.TB) *fake.DB {
+	tb.Helper()
+	switch {
+	case s.db != nil:
+		return s.db
+	case s.withoutSeed:
+		return fake.NewDB()
+	}
+	return DemoDB(tb, s.withoutHistory)
 }
 
 // The contract validator is built once per test binary and shared by every test server (contract.go).

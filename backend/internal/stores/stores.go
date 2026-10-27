@@ -1,16 +1,20 @@
-// Package stores gathers the store of every business area and the Transactor they share, on PostgreSQL for
-// the API and the seed (Postgres), or on the JSON file store, the tests' stand-in until feature 025 (JSON).
+// Package stores gathers the store of every business area and the transaction they share: on PostgreSQL for
+// the API and the seed (Postgres), in memory for tests (storestest).
 package stores
 
 import (
 	"context"
 
 	"mapp/internal/platform/ids"
-	"mapp/internal/platform/store"
 )
 
+type Transactor interface {
+	Read(ctx context.Context, fn func(ctx context.Context) error) error
+	Write(ctx context.Context, fn func(ctx context.Context) error) error
+}
+
 type Set struct {
-	Tx       store.Transactor
+	Tx       Transactor
 	Counters ids.Counters
 	Organisation
 	Planning
