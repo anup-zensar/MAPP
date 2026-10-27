@@ -25,8 +25,8 @@ func TestWrite_ReadsItsOwnWrites(t *testing.T) {
 			t.Errorf("Get after Put in the same Write = %+v, %v, %v; want the new note", got, found, err)
 		}
 
-		if err := Delete(ctx, "notes", "N-1"); err != nil {
-			return err
+		if deleteErr := Delete(ctx, "notes", "N-1"); deleteErr != nil {
+			return deleteErr
 		}
 		list, err := List[note](ctx, "notes")
 		if err != nil {
@@ -58,15 +58,15 @@ func TestWrite_FailedWriteKeepsTheOldValue(t *testing.T) {
 		}
 		return failure
 	})
-	if err != failure {
+	if !errors.Is(err, failure) {
 		t.Fatalf("Write = %v, want the function's error", err)
 	}
 
-	if got, _ := getNote(t, db, "N-1"); got.Title != "Old" {
+	if got, _ := getNote(t, db); got.Title != "Old" {
 		t.Errorf("in memory: title %q, want Old", got.Title)
 	}
 	reopened := mustOpen(t, dir)
-	if got, _ := getNote(t, reopened, "N-1"); got.Title != "Old" {
+	if got, _ := getNote(t, reopened); got.Title != "Old" {
 		t.Errorf("on disk: title %q, want Old", got.Title)
 	}
 	if log := scanLog(t, reopened); len(log) != 0 {
@@ -80,10 +80,10 @@ func TestReadAndWrite_ReturnTheFunctionsErrorUnchanged(t *testing.T) {
 	db, _ := openTempStore(t)
 	notFound := errs.NotFound("This sample folder no longer exists — someone may have deleted it.")
 
-	if err := db.Write(t.Context(), func(context.Context) error { return notFound }); err != notFound {
+	if err := db.Write(t.Context(), func(context.Context) error { return notFound }); err != notFound { //nolint:errorlint // the error itself, not one that wraps it
 		t.Errorf("Write = %v, want the function's error itself", err)
 	}
-	if err := db.Read(t.Context(), func(context.Context) error { return notFound }); err != notFound {
+	if err := db.Read(t.Context(), func(context.Context) error { return notFound }); err != notFound { //nolint:errorlint // the error itself, not one that wraps it
 		t.Errorf("Read = %v, want the function's error itself", err)
 	}
 }
@@ -103,8 +103,8 @@ func TestWrite_JoinsTheCallersTransaction(t *testing.T) {
 			return err
 		}
 		err = db.Read(ctx, func(ctx context.Context) error {
-			if _, found, err := Get[note](ctx, "notes", "N-1"); err != nil || !found {
-				t.Errorf("a Read inside the Write did not see the inner change: %v, %v", found, err)
+			if _, found, getErr := Get[note](ctx, "notes", "N-1"); getErr != nil || !found {
+				t.Errorf("a Read inside the Write did not see the inner change: %v, %v", found, getErr)
 			}
 			return nil
 		})
@@ -113,10 +113,10 @@ func TestWrite_JoinsTheCallersTransaction(t *testing.T) {
 		}
 		return failure
 	})
-	if err != failure {
+	if !errors.Is(err, failure) {
 		t.Fatalf("Write = %v, want the outer function's error", err)
 	}
-	if _, found := getNote(t, db, "N-1"); found {
+	if _, found := getNote(t, db); found {
 		t.Error("the inner change was saved although the outer Write failed")
 	}
 }
@@ -220,7 +220,7 @@ func TestWrite_PanicDoesNotLockTheStore(t *testing.T) {
 	}()
 
 	putNote(t, db, note{ID: "N-1", Title: "Saved after the panic"})
-	if _, found := getNote(t, db, "N-1"); !found {
+	if _, found := getNote(t, db); !found {
 		t.Error("the Write after the panic saved nothing")
 	}
 }

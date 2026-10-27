@@ -20,7 +20,7 @@ func TestOpen_ReloadsSavedData(t *testing.T) {
 
 	reopened := mustOpen(t, dir)
 
-	got, found := getNote(t, reopened, "N-1")
+	got, found := getNote(t, reopened)
 	if !found || got.Title != saved.Title || !slices.Equal(got.Tags, saved.Tags) {
 		t.Errorf("after reopening: %+v, %v; want %+v", got, found, saved)
 	}
@@ -58,7 +58,7 @@ func TestOpen_RemovesLeftoverTempFiles(t *testing.T) {
 			t.Errorf("%s still exists: %v", name, err)
 		}
 	}
-	if got, _ := getNote(t, db, "N-1"); got.Title != "Kept" {
+	if got, _ := getNote(t, db); got.Title != "Kept" {
 		t.Errorf("title %q, want Kept", got.Title)
 	}
 }
@@ -79,6 +79,7 @@ func TestOpen_InvalidJSONStopsWithAMessage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			dir := t.TempDir()
 			writeFile(t, dir, tt.file, tt.content)
 

@@ -47,7 +47,7 @@ func TestCommit_RenameFailure_NothingChangesAndLaterWritesAreRefused(t *testing.
 	db, dir := openTempStore(t)
 	putNote(t, db, note{ID: "N-1", Title: "Old"})
 	diskFailure := errors.New("the file is being used by another process")
-	db.rename = func(from, to string) error { return diskFailure }
+	db.rename = func(_, _ string) error { return diskFailure }
 
 	err := db.Write(t.Context(), func(ctx context.Context) error {
 		return Put(ctx, "notes", "N-1", note{ID: "N-1", Title: "New"})
@@ -56,10 +56,10 @@ func TestCommit_RenameFailure_NothingChangesAndLaterWritesAreRefused(t *testing.
 		t.Fatalf("Write = %v, want ErrFailed caused by the disk failure", err)
 	}
 
-	if got, _ := getNote(t, db, "N-1"); got.Title != "Old" {
+	if got, _ := getNote(t, db); got.Title != "Old" {
 		t.Errorf("in memory: title %q, want Old", got.Title)
 	}
-	if got, _ := getNote(t, mustOpen(t, dir), "N-1"); got.Title != "Old" {
+	if got, _ := getNote(t, mustOpen(t, dir)); got.Title != "Old" {
 		t.Errorf("on disk: title %q, want Old", got.Title)
 	}
 
@@ -78,12 +78,12 @@ func TestCommit_RenameFailure_NothingChangesAndLaterWritesAreRefused(t *testing.
 
 // When a temporary file cannot be written, the temporary files already written are deleted, nothing
 // changes, and the store keeps working (research R3).
-func TestCommit_TempFileFailure_NothingChangesAndTheStoreKeepsWorking(t *testing.T) {
+func TestCommit_TempFileFailure_NothingChangesAndTheStoreKeepsWorking(t *testing.T) { //nolint:gocyclo // 10: a failed save, then the leftover file, memory, disk and a later save checked in turn
 	t.Parallel()
 	db, dir := openTempStore(t)
 	putNote(t, db, note{ID: "N-1", Title: "Old"})
 	blocker := filepath.Join(dir, "zebra.json.tmp") // a folder where the temporary file must go
-	if err := os.Mkdir(blocker, 0o755); err != nil {
+	if err := os.Mkdir(blocker, 0o750); err != nil {
 		t.Fatal(err)
 	}
 
@@ -100,10 +100,10 @@ func TestCommit_TempFileFailure_NothingChangesAndTheStoreKeepsWorking(t *testing
 	if _, statErr := os.Stat(filepath.Join(dir, "notes.json.tmp")); !errors.Is(statErr, fs.ErrNotExist) {
 		t.Errorf("notes.json.tmp was left behind: %v", statErr)
 	}
-	if got, _ := getNote(t, db, "N-1"); got.Title != "Old" {
+	if got, _ := getNote(t, db); got.Title != "Old" {
 		t.Errorf("in memory: title %q, want Old", got.Title)
 	}
-	if got, _ := getNote(t, mustOpen(t, dir), "N-1"); got.Title != "Old" {
+	if got, _ := getNote(t, mustOpen(t, dir)); got.Title != "Old" {
 		t.Errorf("on disk: title %q, want Old", got.Title)
 	}
 
@@ -111,7 +111,7 @@ func TestCommit_TempFileFailure_NothingChangesAndTheStoreKeepsWorking(t *testing
 		t.Fatal(err)
 	}
 	putNote(t, db, note{ID: "N-1", Title: "New"})
-	if got, _ := getNote(t, db, "N-1"); got.Title != "New" {
+	if got, _ := getNote(t, db); got.Title != "New" {
 		t.Errorf("after the problem was gone: title %q, want New", got.Title)
 	}
 }
@@ -128,14 +128,16 @@ func renameWhileTheFileIsInUse(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, dir, "notes.json", `{}`)
 	writeFile(t, dir, "notes.json.tmp", `{"N-1": {"id": "N-1"}}`)
-	inUse, err := os.Open(filepath.Join(dir, "notes.json"))
+	inUse, err := os.Open(filepath.Join(dir, "notes.json")) //nolint:gosec // G304: a file of the test's own temporary folder
 	if err != nil {
 		t.Fatal(err)
 	}
 	released := make(chan struct{})
 	go func() {
 		time.Sleep(300 * time.Millisecond)
-		inUse.Close()
+		if closeErr := inUse.Close(); closeErr != nil {
+			t.Error(closeErr)
+		}
 		close(released)
 	}()
 
@@ -145,7 +147,7 @@ func renameWhileTheFileIsInUse(t *testing.T) {
 	if err != nil {
 		t.Fatalf("renameWithRetry: %v", err)
 	}
-	if content, _ := os.ReadFile(filepath.Join(dir, "notes.json")); string(content) != `{"N-1": {"id": "N-1"}}` {
+	if content, _ := os.ReadFile(filepath.Join(dir, "notes.json")); string(content) != `{"N-1": {"id": "N-1"}}` { //nolint:gosec // G304: a file of the test's own temporary folder
 		t.Errorf("notes.json = %s, want the new version", content)
 	}
 }

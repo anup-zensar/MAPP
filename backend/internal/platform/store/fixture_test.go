@@ -46,14 +46,14 @@ func putNote(t *testing.T, db *DB, n note) {
 	}
 }
 
-// getNote reads a note in a Read of its own.
-func getNote(t *testing.T, db *DB, id string) (note, bool) {
+// getNote reads the note N-1 in a Read of its own.
+func getNote(t *testing.T, db *DB) (note, bool) {
 	t.Helper()
 	var n note
 	var found bool
 	err := db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
-		n, found, err = Get[note](ctx, "notes", id)
+		n, found, err = Get[note](ctx, "notes", "N-1")
 		return err
 	})
 	if err != nil {
@@ -105,7 +105,7 @@ func noteIDs(notes []note) []string {
 
 func writeFile(t *testing.T, dir, name, content string) {
 	t.Helper()
-	if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o600); err != nil {
 		t.Fatal(err)
 	}
 }
