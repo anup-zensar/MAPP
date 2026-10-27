@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"mapp/internal/history"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/clock"
 	"mapp/internal/platform/date"
@@ -33,10 +34,10 @@ type Service struct {
 }
 
 // NewService returns the All work service. It reads the planning records through src, keeps saved views and
-// preferences in repo, gives saved views readable IDs with generator, works in transactions of tx and reads
-// the time from now.
-func NewService(tx store.Transactor, repo Store, src Source, generator *ids.Generator, now clock.Clock) *Service {
-	return &Service{tx: tx, repo: repo, src: src, ids: generator, now: now}
+// preferences in repo, gives saved views readable IDs with the tools' generator, works in their transactions
+// and reads the time from their clock; All work writes no activity log, so it leaves the tools' log alone.
+func NewService(tools history.Tools, repo Store, src Source) *Service {
+	return &Service{tx: tools.Tx, repo: repo, src: src, ids: tools.IDs, now: tools.Now}
 }
 
 // Query returns everything one view shows for q (FR-001 – FR-017, FR-025, FR-026), read in one transaction:
