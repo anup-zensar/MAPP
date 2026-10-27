@@ -38,12 +38,9 @@ var demoFigures = []want{
 }
 
 // check compares figures with the row w.
-func (w want) check(t *testing.T, f Figures) {
+func (w want) check(t *testing.T, f Figures) { //nolint:gocyclo // 11: the amounts, then one case per answer of the row's above column
 	t.Helper()
-	if f.PlannedCost == nil || *f.PlannedCost != usd(t, w.planned) || f.Committed != usd(t, w.committed) ||
-		f.Invoiced != usd(t, w.invoiced) || f.Paid != usd(t, w.paid) || f.Accrued != usd(t, w.accrued) ||
-		f.NotYetCommitted == nil || *f.NotYetCommitted != usd(t, w.notYet) || f.CommittedPercent == nil ||
-		w.percent != strconv.Itoa(*f.CommittedPercent) {
+	if !reflect.DeepEqual(f, w.withAmounts(t, f)) {
 		t.Errorf("%s = %+v, want %+v", w.id, f, w)
 	}
 	switch w.above {
@@ -64,6 +61,22 @@ func (w want) check(t *testing.T, f Figures) {
 	}
 }
 
+// withAmounts returns f with the amounts and the per cent of the row w, so that comparing it with f compares
+// only what the row holds.
+func (w want) withAmounts(t *testing.T, f Figures) Figures {
+	t.Helper()
+	planned, notYet := usd(t, w.planned), usd(t, w.notYet)
+	percent, err := strconv.Atoi(w.percent)
+	if err != nil {
+		t.Fatalf("%s: per cent %q: %v", w.id, w.percent, err)
+	}
+	expected := f
+	expected.PlannedCost, expected.NotYetCommitted, expected.CommittedPercent = &planned, &notYet, &percent
+	expected.Committed, expected.Invoiced = usd(t, w.committed), usd(t, w.invoiced)
+	expected.Paid, expected.Accrued = usd(t, w.paid), usd(t, w.accrued)
+	return expected
+}
+
 // Every record of data model §6.1 has its figures; every container's row in its parent's breakdown equals
 // its own card (FR-011, FR-012, SC-002, US2).
 func TestRecord_DemoFiguresAndRollUp_FR012(t *testing.T) {
@@ -72,12 +85,7 @@ func TestRecord_DemoFiguresAndRollUp_FR012(t *testing.T) {
 	for _, w := range demoFigures {
 		v := f.record(t, priya, w.id)
 		w.check(t, v.Figures)
-		for _, row := range v.Breakdown {
-			child := f.record(t, priya, row.Record.ID)
-			if !reflect.DeepEqual(row.Figures, child.Figures) {
-				t.Errorf("%s's breakdown row %s = %+v, card %+v", w.id, row.Record.ID, row.Figures, child.Figures)
-			}
-		}
+		f.checkBreakdownRowsAreCards(t, v)
 	}
 	counts := map[string]int{"A-1002": 7, "A-1003": 3, "L-1004": 4, "P-1001": 10}
 	for id, n := range counts {
@@ -85,7 +93,28 @@ func TestRecord_DemoFiguresAndRollUp_FR012(t *testing.T) {
 			t.Errorf("%s has %d transactions, want %d", id, got, n)
 		}
 	}
-	activity := f.record(t, priya, "A-1002")
+	checkActivityCard(t, f.record(t, priya, "A-1002"))
+	f.checkPlanCard(t)
+	if v := f.record(t, priya, "L-1003"); len(v.SwbsCodes) != 1 || v.SwbsCodes[0] != "DE03-M26-0003" {
+		t.Errorf("Venue hire SWBS codes = %v", v.SwbsCodes)
+	}
+}
+
+// checkBreakdownRowsAreCards checks that every breakdown row of the card v equals its record's own card.
+func (f *fixture) checkBreakdownRowsAreCards(t *testing.T, v RecordView) {
+	t.Helper()
+	for _, row := range v.Breakdown {
+		child := f.record(t, priya, row.Record.ID)
+		if !reflect.DeepEqual(row.Figures, child.Figures) {
+			t.Errorf("%s's breakdown row %s = %+v, card %+v", v.Record.ID, row.Record.ID, row.Figures, child.Figures)
+		}
+	}
+}
+
+// checkActivityCard checks the latest transactions, path, breakdown and source of the card of Social
+// always-on.
+func checkActivityCard(t *testing.T, activity RecordView) { //nolint:gocyclo // 13: the latest transactions, then the path, breakdown and source, in one condition each
+	t.Helper()
 	if len(activity.Latest) != 5 || activity.Latest[0].ID != "FT-1011" || activity.Latest[4].ID != "FT-1008" ||
 		activity.Latest[0].Link.State != StateLinked {
 		t.Errorf("latest = %v", rowIDs(activity.Latest))
@@ -95,12 +124,15 @@ func TestRecord_DemoFiguresAndRollUp_FR012(t *testing.T) {
 		s.AccrualMonth == nil || *s.AccrualMonth != "2026-09" {
 		t.Errorf("path %+v, breakdown %v %v, source %+v", activity.Path, activity.BreakdownLevel, activity.Breakdown, s)
 	}
+}
+
+// checkPlanCard checks that the plan's card breaks down into its campaigns and has no path, and that a line
+// item's card has no breakdown.
+func (f *fixture) checkPlanCard(t *testing.T) {
+	t.Helper()
 	if plan := f.record(t, priya, "P-1001"); plan.BreakdownLevel == nil || *plan.BreakdownLevel != LevelCampaign ||
 		plan.Breakdown[0].Record.Name != "Helix launch" || len(plan.Path) != 0 || f.record(t, priya, "L-1006").BreakdownLevel != nil {
 		t.Errorf("plan breakdown %v %+v, path %+v; want campaigns, Helix launch first, no path", plan.BreakdownLevel, plan.Breakdown, plan.Path)
-	}
-	if v := f.record(t, priya, "L-1003"); len(v.SwbsCodes) != 1 || v.SwbsCodes[0] != "DE03-M26-0003" {
-		t.Errorf("Venue hire SWBS codes = %v", v.SwbsCodes)
 	}
 }
 
@@ -180,7 +212,7 @@ func TestRecord_LineItemInTheBinLeavesTheFigures_FR012(t *testing.T) {
 		t.Errorf("link = %+v", view.Link)
 	}
 	_, err = f.service.Record(t.Context(), priya, "L-1006")
-	assertCode(t, err, http.StatusNotFound, errs.CodeNotFound)
+	_ = assertCode(t, err, http.StatusNotFound, errs.CodeNotFound)
 
 	f.planning.restore(removed)
 	demoFigures[4].check(t, f.record(t, priya, "A-1003").Figures)
@@ -208,7 +240,7 @@ func TestRecord_CopiesHaveNoTransactions_FR030(t *testing.T) {
 
 // A record without transactions shows 0.00 for every amount, its whole planned cost as not yet committed and
 // no latest transactions, so the card can say that none have come yet (FR-014).
-func TestRecord_NoTransactionsShowsZero_FR014(t *testing.T) {
+func TestRecord_NoTransactionsShowsZero_FR014(t *testing.T) { //nolint:gocyclo // 12: every figure of two records without transactions, in one condition
 	t.Parallel()
 	f := newFixture(t)
 	for id, planned := range map[string]string{"A-1001": "120000.00", "C-1002": "185000.00"} {

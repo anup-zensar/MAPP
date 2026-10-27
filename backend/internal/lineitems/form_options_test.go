@@ -13,7 +13,7 @@ import (
 // A new line item starts filled in (FR-008): the name "<activity name> – line item", the activity's owner,
 // USD, the unassigned planned cost, the plan's default spread and year, no finance budget item when the
 // plan's default budget has several, and Request SWBS code from GSAP on; with the activity and its balance.
-func TestFormOptions_Defaults_FR008(t *testing.T) {
+func TestFormOptions_Defaults_FR008(t *testing.T) { //nolint:gocyclo // 11: the defaults, the balance and the activity of one form, field by field
 	t.Parallel()
 	f := newTestService(t)
 	launchFilmWithTwoItems(t, f)
@@ -100,7 +100,7 @@ func TestFormOptions_NothingLeft_EdgeCase(t *testing.T) {
 // The form offers the plan's year and every year with active finance budget items, and their active items:
 // by year, the plan's default finance budget first, then by budget and item name. The item is pre-selected
 // only when the default budget has exactly one active item (FR-015, R12).
-func TestFormOptions_BudgetChoices_FR015(t *testing.T) {
+func TestFormOptions_BudgetChoices_FR015(t *testing.T) { //nolint:gocyclo // 12: the years, the items and the pre-selected item of two forms
 	t.Parallel()
 	f := newTestService(t)
 

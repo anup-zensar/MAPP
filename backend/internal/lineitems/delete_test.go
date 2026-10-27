@@ -33,8 +33,8 @@ func TestGet_GoneMessages_007P15(t *testing.T) {
 	assertError(t, unknown, errs.NotFound(lineItemGoneMessage))
 
 	err = f.db.Write(t.Context(), func(ctx context.Context) error {
-		_, err := f.history.MoveToBin(ctx, priya, activityKind, launchFilm)
-		return err
+		_, moveErr := f.history.MoveToBin(ctx, priya, activityKind, launchFilm)
+		return moveErr
 	})
 	if err != nil {
 		t.Fatalf("MoveToBin(activity): %v", err)
@@ -47,7 +47,7 @@ func TestGet_GoneMessages_007P15(t *testing.T) {
 
 // Delete moves the line item to the recycle bin, with its activity as its path, and logs "deleted"; the bin
 // entry is the answer, so the web app can offer Undo (FR-030).
-func TestDelete_MovesToBin_FR030(t *testing.T) {
+func TestDelete_MovesToBin_FR030(t *testing.T) { //nolint:gocyclo // 13: one delete, then the bin entry, the store, the log and the approval checked in turn
 	t.Parallel()
 	f := newTestService(t)
 	fee, film := launchFilmWithTwoItems(t, f)

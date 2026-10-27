@@ -104,7 +104,7 @@ func TestUpdate_NoChangeNoLog_FR027(t *testing.T) {
 
 // A save with changes gets a new version and one "changed" entry listing every changed field with its old
 // and new value as people read them; each Shell attribute is a change of its own (FR-027, data model §7.3).
-func TestUpdate_LogsOldAndNew_FR027(t *testing.T) {
+func TestUpdate_LogsOldAndNew_FR027(t *testing.T) { //nolint:gocyclo // 10: one save, then its bookkeeping and every change of its entry
 	t.Parallel()
 	f := newTestService(t)
 	fee := f.create(t, priya, launchFilm, complete(input("Agency fee", "USD", "50000.00")))
@@ -139,7 +139,7 @@ func TestUpdate_LogsOldAndNew_FR027(t *testing.T) {
 
 // A currency, owner or finance budget item that became inactive stays on the line item through any save and
 // still converts at its last rate; only a new choice must be active (FR-011, FR-016).
-func TestUpdate_KeepsInactiveValues_FR011_FR016(t *testing.T) {
+func TestUpdate_KeepsInactiveValues_FR011_FR016(t *testing.T) { //nolint:gocyclo // 10: the kept values read, saved again, then refused as a new choice
 	t.Parallel()
 	f := newTestService(t)
 	year := 2026

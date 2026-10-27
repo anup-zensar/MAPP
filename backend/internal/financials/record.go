@@ -52,7 +52,7 @@ func (b *book) recordView(n *tnode) RecordView {
 		Record: n.ref(), PlanID: n.PlanID, Path: n.path(), Figures: n.figures(b.display), Breakdown: []BreakdownRow{},
 		Latest: []TransactionRow{}, SwbsCodes: []string{}, Source: b.source(),
 	}
-	if level, found := childLevel[n.Level]; found {
+	if level, found := childLevel()[n.Level]; found {
 		v.BreakdownLevel = &level
 		for _, c := range n.children {
 			v.Breakdown = append(v.Breakdown, BreakdownRow{Record: c.ref(), Figures: c.figures(b.display)})
@@ -81,7 +81,7 @@ func levelWordOf(recordID string) string {
 		LevelActivity: ids.PrefixActivity, LevelLineItem: ids.PrefixLineItem,
 	} {
 		if p == prefix {
-			return levelWords[level]
+			return levelWords()[level]
 		}
 	}
 	return "record"

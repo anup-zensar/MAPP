@@ -234,5 +234,5 @@ func countOf(t *tree, q Query, m matches) Count {
 	case ShowInitiativesWithoutActivities:
 		return Count{Shown: m.initiatives, Total: t.total[LevelInitiative], Noun: "initiatives"}
 	}
-	return Count{Shown: m.activities.activities, Total: t.total[LevelActivity], Noun: "activities"}
+	return Count{Shown: m.activities.activities, Total: t.total[LevelActivity], Noun: nounActivities}
 }

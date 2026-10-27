@@ -182,6 +182,12 @@ type Count struct {
 	Noun  string `json:"noun"` // activities, campaigns or initiatives
 }
 
+// The nouns of the activities in the count and the totals row.
+const (
+	nounActivities = "activities"
+	nounActivity   = "activity"
+)
+
 // Totals is the totals row (AllWorkTotals, FR-014).
 type Totals struct {
 	Activities  int            `json:"activities"`

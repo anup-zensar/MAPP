@@ -113,7 +113,7 @@ func groupingsOf(attributes []Attribute) []Grouping {
 		{Key: byPlan, Label: "Plan", HasBudget: true},
 		{Key: byPlanType, Label: "Plan type", HasBudget: true},
 		{Key: byPlanCurrency, Label: "Plan currency", HasBudget: true},
-		{Key: byYear, Label: "Year", HasBudget: true},
+		{Key: byYear, Label: labelYear, HasBudget: true},
 		{Key: byTeam, Label: "Team", HasBudget: true},
 		{Key: byBusinessUnit, Label: "Business unit", HasBudget: true},
 		{Key: byActivityType, Label: "Activity type"},
@@ -222,9 +222,9 @@ func attributeValues(a Attribute, n *Node, units []string) []value {
 	}
 	if v.Yes != nil {
 		if *v.Yes {
-			return []value{{key: AttrYes, label: "Yes", order: 0}}
+			return []value{{key: AttrYes, label: labelYes, order: 0}}
 		}
-		return []value{{key: AttrNo, label: "No", order: 1}}
+		return []value{{key: AttrNo, label: labelNo, order: 1}}
 	}
 	list := make([]value, 0, len(v.OptionIDs))
 	for _, id := range v.OptionIDs {
