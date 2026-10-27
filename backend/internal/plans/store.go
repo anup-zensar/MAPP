@@ -16,10 +16,6 @@ type Store interface {
 	List(ctx context.Context) ([]Plan, error)
 	// ListInScope returns the plans the scope sees (authz.Scope.Sees): the lists people read.
 	ListInScope(ctx context.Context, scope authz.Scope) ([]Plan, error)
-	// GetInScope returns the plan with id when the scope sees it, and false when it does not or there is none.
-	GetInScope(ctx context.Context, scope authz.Scope, id string) (Plan, bool, error)
-	// PlansOfYear returns the plans of year, any status (005's moves and copies stay inside a year).
-	PlansOfYear(ctx context.Context, year int) ([]Plan, error)
 	// ListByIDs returns the stored plans among ids, at once, in the order of their ids.
 	ListByIDs(ctx context.Context, ids []string) ([]Plan, error)
 	// Put saves p, replacing the plan with the same id.
@@ -27,3 +23,8 @@ type Store interface {
 	// Delete removes the plan with id; removing one that does not exist changes nothing.
 	Delete(ctx context.Context, id string) error
 }
+
+var (
+	_ Store = (*PostgresStore)(nil)
+	_ Store = JSONStore{}
+)
