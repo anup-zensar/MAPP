@@ -129,8 +129,8 @@ func TestPlanFigures_PlanCurrencyAndDisplay_FR013(t *testing.T) {
 func TestPlanList_PlanCurrencyAmounts_FR014(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	usdPlan := seedPlan(t, "P-1001", "FY2027 USD plan", 2027, teamLubricants, priya.ID, "1000000.00", StatusDraft)
-	gbpPlan := seedPlan(t, "P-1002", "FY2027 GBP plan", 2027, teamLubricants, priya.ID, "600000.00", StatusDraft)
+	usdPlan := seedPlan(t, planSeed{"P-1001", "FY2027 USD plan", 2027, teamLubricants, priya.ID, "1000000.00", StatusDraft})
+	gbpPlan := seedPlan(t, planSeed{"P-1002", "FY2027 GBP plan", 2027, teamLubricants, priya.ID, "600000.00", StatusDraft})
 	gbpPlan.Currency, gbpPlan.PlanType = "GBP", TypeCrossMarket
 	f.put(t, usdPlan, gbpPlan)
 	planned := money.FromCents(1_000_000)

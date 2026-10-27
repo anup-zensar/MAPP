@@ -12,7 +12,7 @@ import (
 func rangePlans(t *testing.T, f *fixture) {
 	t.Helper()
 	plan := func(id, name string, year int, planType PlanType) Plan {
-		p := seedPlan(t, id, name, year, teamLubricants, priya.ID, "100000.00", StatusDraft)
+		p := seedPlan(t, planSeed{id, name, year, teamLubricants, priya.ID, "100000.00", StatusDraft})
 		p.PlanType = planType
 		return p
 	}

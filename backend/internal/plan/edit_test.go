@@ -90,7 +90,7 @@ func TestUpdate_NoChangeNoLog_FR031(t *testing.T) {
 func TestUpdate_PublishedStaysPublishedAndLogsFields_FR022(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	f.put(t, seedPlan(t, "P-1001", "FY2026 Lubricants Europe", 2026, teamLubricants, priya.ID, "1200000.00", StatusPublished))
+	f.put(t, seedPlan(t, planSeed{"P-1001", "FY2026 Lubricants Europe", 2026, teamLubricants, priya.ID, "1200000.00", StatusPublished}))
 	edit := updateOf(f.stored(t, "P-1001"))
 	edit.Budget = &money.Input{Amount: "1300000", Currency: "USD"}
 	edit.ModelID = ptr(mobilityModel)
@@ -148,7 +148,7 @@ func TestUpdate_OwnerNotInTeams_FR021(t *testing.T) {
 func TestUpdate_InactiveValuesKept_EdgeCase(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	p := seedPlan(t, "P-1001", "Old settings", 2026, teamClosed, "U-1009", "", StatusDraft)
+	p := seedPlan(t, planSeed{"P-1001", "Old settings", 2026, teamClosed, "U-1009", "", StatusDraft})
 	p.ModelID = oldModel
 	f.put(t, p)
 	edit := updateOf(f.stored(t, "P-1001"))

@@ -108,7 +108,7 @@ func TestDelete_NotFound_FR029(t *testing.T) {
 func TestUndo_RestoresExactly_FR030(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	f.put(t, seedPlan(t, "P-1001", "FY2026 Lubricants Europe", 2026, teamLubricants, priya.ID, "1200000.00", StatusPublished))
+	f.put(t, seedPlan(t, planSeed{"P-1001", "FY2026 Lubricants Europe", 2026, teamLubricants, priya.ID, "1200000.00", StatusPublished}))
 	before := f.stored(t, "P-1001")
 	var campaigns fakeChildren
 	campaigns.register(t, f, "P-1001", "C-1001")
@@ -151,7 +151,7 @@ func TestUndo_NameTaken_EdgeCase(t *testing.T) {
 func TestRestore_RenamesAndReturnsDraft_R14(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	f.put(t, seedPlan(t, "P-1050", "FY2026 Lubricants Europe", 2026, teamLubricants, priya.ID, "", StatusPublished))
+	f.put(t, seedPlan(t, planSeed{"P-1050", "FY2026 Lubricants Europe", 2026, teamLubricants, priya.ID, "", StatusPublished}))
 	entry := f.deletePlan(t, "P-1050")
 	f.create(t, priya, input("FY2026 Lubricants Europe"))
 	f.clock.Advance(time.Hour)

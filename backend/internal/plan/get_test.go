@@ -88,7 +88,7 @@ func TestGet_FactsFromLevels_FR012_FR016_FR017(t *testing.T) { //nolint:gocyclo 
 func TestGet_MissingFieldsAndOwnerProblem_FR017_FR021(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	p := seedPlan(t, "P-1001", "No business unit", 2026, teamMobility, priya.ID, "", StatusDraft)
+	p := seedPlan(t, planSeed{"P-1001", "No business unit", 2026, teamMobility, priya.ID, "", StatusDraft})
 	p.Attributes = settings.AttributeValues{}
 	f.put(t, p)
 
