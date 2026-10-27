@@ -10,24 +10,22 @@ import (
 	"time"
 
 	"mapp/internal/history"
+	"mapp/internal/history/historytest"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/money"
-	"mapp/internal/platform/store"
 )
 
-// The people of these tests.
 var (
 	alex  = actor.Actor{ID: "U-1001", Name: "Alex Morgan"}
 	priya = actor.Actor{ID: "U-1002", Name: "Priya Raman"}
 	lena  = actor.Actor{ID: "U-1008", Name: "Lena Vogel"} // shows amounts in EUR
 )
 
-// start is the time on the clock when every test begins: 20 Oct 2026 09:00 UTC (plan, "Tests").
 var start = time.Date(2026, 10, 20, 9, 0, 0, 0, time.UTC)
 
-// node builds a planning node.
 func node(level Level, id, parentID, planID, name string, order int, planned string) Node {
 	n := Node{Level: level, ID: id, ParentID: parentID, PlanID: planID, Name: name, PlanYear: 2026, Order: order}
 	if planned != "" {
@@ -40,8 +38,7 @@ func node(level Level, id, parentID, planID, name string, order int, planned str
 	return n
 }
 
-// demoTree is the seed's planning tree in the shape the planning adapter answers (data model §6.1): two
-// 2026 plans, line items with their USD planned costs.
+// demoTree is the seed's planning tree as the planning adapter answers it, planned costs in USD.
 func demoTree() []Node {
 	return []Node{
 		node(LevelPlan, "P-1001", "", "P-1001", "FY2026 Lubricants Europe", 0, ""),
@@ -72,7 +69,7 @@ func demoTree() []Node {
 	}
 }
 
-// demoRates are the seed's rates: units per 1 USD.
+// demoRates are units per 1 USD.
 func demoRates() money.Rates {
 	return money.Rates{
 		"USD": money.One, "EUR": money.RateFromMicros(920_000), "GBP": money.RateFromMicros(790_000),
@@ -80,10 +77,9 @@ func demoRates() money.Rates {
 	}
 }
 
-// fakePlanning is Planning in memory.
 type fakePlanning struct {
 	nodes   []Node
-	inBin   []string            // line items in the recycle bin
+	inBin   []string
 	myTeams map[string][]string // person → plans with one of their teams
 }
 
@@ -95,7 +91,6 @@ func (f *fakePlanning) MyTeamPlanIDs(_ context.Context, personID string) ([]stri
 	return f.myTeams[personID], nil
 }
 
-// moveToBin takes the line item id out of the live tree and puts it in the recycle bin.
 func (f *fakePlanning) moveToBin(id string) Node {
 	i := slices.IndexFunc(f.nodes, func(n Node) bool { return n.ID == id })
 	removed := f.nodes[i]
@@ -104,18 +99,15 @@ func (f *fakePlanning) moveToBin(id string) Node {
 	return removed
 }
 
-// restore puts a line item back from the recycle bin.
 func (f *fakePlanning) restore(n Node) {
 	f.nodes = append(f.nodes, n)
 	f.inBin = slices.DeleteFunc(f.inBin, func(id string) bool { return id == n.ID })
 }
 
-// fakeRates is Rates in memory.
 type fakeRates struct{ rates money.Rates }
 
 func (f *fakeRates) Rates(context.Context) (money.Rates, error) { return f.rates, nil }
 
-// fakeDisplays shows Lena Vogel's amounts in EUR at 0.92 and everyone else's in USD.
 type fakeDisplays struct{}
 
 func (fakeDisplays) Display(_ context.Context, personID string) (money.Display, error) {
@@ -125,13 +117,11 @@ func (fakeDisplays) Display(_ context.Context, personID string) (money.Display, 
 	return money.DisplayUSD, nil
 }
 
-// fakeAccess refuses what its fields say, with 403 forbidden.
 type fakeAccess struct {
 	noView, noImport, noLink bool
 	plans                    []string // nil: every plan
 }
 
-// refusal is the error of a refused check.
 var refusal = errs.Forbidden("Seeing financial data isn't part of your role (Viewer). Ask an administrator if you need it.")
 
 func (f *fakeAccess) SeeFinance(context.Context, actor.Actor) error { return refuse(f.noView) }
@@ -149,7 +139,6 @@ func (f *fakeAccess) VisiblePlanIDs(context.Context, actor.Actor) ([]string, err
 	return f.plans, nil
 }
 
-// refuse returns refusal when refused.
 func refuse(refused bool) error {
 	if refused {
 		return refusal
@@ -157,11 +146,9 @@ func refuse(refused bool) error {
 	return nil
 }
 
-// fixture is a financials service on a temporary store with fakes for every port, a fixed clock, a real
-// history service and the demo data loaded.
 type fixture struct {
 	service  *Service
-	db       *store.DB
+	db       *fake.DB
 	history  *history.Service
 	planning *fakePlanning
 	rates    *fakeRates
@@ -169,7 +156,7 @@ type fixture struct {
 	now      time.Time
 }
 
-// newFixture builds the fixture with the demo data of data model §6 loaded by the seed's code.
+// newFixture loads the demo data with the seed's code; newEmptyFixture has no GSAP data.
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 	f := newEmptyFixture(t)
@@ -188,22 +175,18 @@ func newFixture(t *testing.T) *fixture {
 	return f
 }
 
-// newEmptyFixture builds the fixture without GSAP data.
 func newEmptyFixture(t *testing.T) *fixture {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
+	db := fake.NewDB()
 	f := &fixture{
 		db: db, planning: &fakePlanning{nodes: demoTree(), myTeams: map[string][]string{priya.ID: {"P-1001"}}},
 		rates: &fakeRates{rates: demoRates()}, access: &fakeAccess{}, now: start,
 	}
-	generator := ids.NewGenerator(ids.NewJSONCounters())
+	generator := ids.NewGenerator(fake.NewCounters(db))
 	clock := func() time.Time { return f.now }
-	f.history = history.NewService(db, history.NewJSONStore(), generator, clock)
+	f.history = history.NewService(db, historytest.NewStore(db), generator, clock)
 	tools := history.Tools{Tx: db, IDs: generator, Log: f.history, Now: clock}
-	f.service = NewService(tools, NewJSONStore(), Deps{
+	f.service = NewService(tools, newFakeStore(db), Deps{
 		Planning: f.planning, Rates: f.rates, Displays: fakeDisplays{}, Access: f.access,
 	})
 	for _, k := range f.service.Kinds() {
@@ -214,7 +197,6 @@ func newEmptyFixture(t *testing.T) *fixture {
 	return f
 }
 
-// write runs fn in a Write and stops the test on an error.
 func (f *fixture) write(t *testing.T, fn func(ctx context.Context) error) {
 	t.Helper()
 	if err := f.db.Write(t.Context(), fn); err != nil {
@@ -222,7 +204,6 @@ func (f *fixture) write(t *testing.T, fn func(ctx context.Context) error) {
 	}
 }
 
-// record returns the card of recordID for a, stopping the test on an error.
 func (f *fixture) record(t *testing.T, a actor.Actor, recordID string) RecordView {
 	t.Helper()
 	v, err := f.service.Record(t.Context(), a, recordID)
@@ -232,7 +213,6 @@ func (f *fixture) record(t *testing.T, a actor.Actor, recordID string) RecordVie
 	return v
 }
 
-// transactions returns the stored transactions.
 func (f *fixture) transactions(t *testing.T) []Transaction {
 	t.Helper()
 	var list []Transaction
@@ -247,7 +227,6 @@ func (f *fixture) transactions(t *testing.T) []Transaction {
 	return list
 }
 
-// stored returns the transaction id as stored.
 func (f *fixture) stored(t *testing.T, id string) Transaction {
 	t.Helper()
 	for _, tr := range f.transactions(t) {
@@ -259,7 +238,7 @@ func (f *fixture) stored(t *testing.T, id string) Transaction {
 	return Transaction{}
 }
 
-// entries returns the activity-log entries, oldest first.
+// entries are oldest first.
 func (f *fixture) entries(t *testing.T) []history.Entry {
 	t.Helper()
 	entries, _, err := f.history.ListLog(t.Context(), alex, history.LogFilter{Limit: 200})
@@ -270,16 +249,13 @@ func (f *fixture) entries(t *testing.T) []history.Entry {
 	return entries
 }
 
-// file is a CSV file as an import request: lines joined with line breaks, as base64.
 func file(name string, lines ...string) ImportRequest {
 	content := strings.Join(lines, "\n") + "\n"
 	return ImportRequest{FileName: name, Content: base64.StdEncoding.EncodeToString([]byte(content))}
 }
 
-// header is the header row of the simulated GSAP extract.
 var header = strings.Join(csvColumns, ",")
 
-// amountOf parses an amount for the tests.
 func amountOf(t *testing.T, text string) money.Amount {
 	t.Helper()
 	a, err := money.ParseAmount(text)
@@ -289,13 +265,11 @@ func amountOf(t *testing.T, text string) money.Amount {
 	return a
 }
 
-// usd is an amount in US dollars.
 func usd(t *testing.T, text string) money.Money {
 	t.Helper()
 	return money.USD(amountOf(t, text))
 }
 
-// assertCode checks that err is the API error with code (and status).
 func assertCode(t *testing.T, err error, status int, code string) *errs.Error {
 	t.Helper()
 	var apiErr *errs.Error
@@ -308,7 +282,6 @@ func assertCode(t *testing.T, err error, status int, code string) *errs.Error {
 	return apiErr
 }
 
-// version returns a pointer to v.
 func version(v int) *int {
 	return &v
 }
