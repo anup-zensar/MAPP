@@ -212,7 +212,7 @@ func (y *yearReader) lineItemNode(ctx context.Context, li lineitem.LineItem, rat
 			"lineItem.description":      {Text: li.Description},
 			"lineItem.localPlannedCost": {Money: &money.Money{Amount: li.PlannedCost, Currency: li.Currency}},
 			"lineItem.currency":         {Text: li.Currency},
-			"lineItem.spread":           {Text: spreadWords[string(li.Spread.Method)]},
+			"lineItem.spread":           {Text: spreadWords()[string(li.Spread.Method)]},
 			"lineItem.requestSwbs":      {Yes: &li.RequestSwbs},
 		},
 	}

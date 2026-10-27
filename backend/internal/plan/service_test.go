@@ -17,7 +17,7 @@ import (
 
 // A plan name is saved without its surrounding spaces, has at most 120 characters (not bytes) and is
 // unique ignoring letter case and surrounding spaces, also when a second person saves it (FR-010, edge case).
-func TestCreate_NameRules_FR010(t *testing.T) {
+func TestCreate_NameRules_FR010(t *testing.T) { //nolint:tparallel // the subtests share one fixture
 	t.Parallel()
 	f := newFixture(t)
 	if saved := f.create(t, priya, input("  Ideas plan  ")); saved.Name != "Ideas plan" {
@@ -43,7 +43,7 @@ func TestCreate_NameRules_FR010(t *testing.T) {
 // Description at most 2,000 characters; budget in USD with at most two decimals and not negative; a goal
 // not negative, whole for INQ and MQL and with at most two decimals for revenue. Valid values are stored in
 // their exact form (FR-010).
-func TestCreate_DescriptionBudgetGoalChecks_FR010(t *testing.T) {
+func TestCreate_DescriptionBudgetGoalChecks_FR010(t *testing.T) { //nolint:tparallel // the subtests share one fixture
 	t.Parallel()
 	f := newFixture(t)
 	tests := []struct {
@@ -99,7 +99,7 @@ func TestCreate_DescriptionBudgetGoalChecks_FR010(t *testing.T) {
 }
 
 // Only active models may be chosen, and only a finance budget of the plan's year (FR-007).
-func TestCreate_ActiveModelAndYearFinanceBudget_FR007(t *testing.T) {
+func TestCreate_ActiveModelAndYearFinanceBudget_FR007(t *testing.T) { //nolint:tparallel // the subtests share one fixture
 	t.Parallel()
 	f := newFixture(t)
 	tests := []struct {
@@ -136,7 +136,7 @@ func TestCreate_ActiveModelAndYearFinanceBudget_FR007(t *testing.T) {
 
 // The owner must be a member of one of the chosen teams (R1); unknown and inactive teams and owners are
 // refused; teams are stored once each, sorted by name (FR-021, FR-007).
-func TestCreate_OwnerMustBeInChosenTeam_FR021(t *testing.T) {
+func TestCreate_OwnerMustBeInChosenTeam_FR021(t *testing.T) { //nolint:tparallel // the subtests share one fixture
 	t.Parallel()
 	f := newFixture(t)
 	tests := []struct {
@@ -182,16 +182,24 @@ func attributesOf(units ...string) settings.AttributeValues {
 
 // User story 2 — Find and compare plans.
 
-// seedPlan is a stored plan for the list tests, with a budget in USD ("" for none).
-func seedPlan(t *testing.T, id, name string, year int, team, owner, budget string, status Status) Plan {
+// planSeed is a stored plan for the list tests, with a budget in USD ("" for none).
+type planSeed struct {
+	id, name    string
+	year        int
+	team, owner string
+	budget      string
+	status      Status
+}
+
+func seedPlan(t *testing.T, seed planSeed) Plan {
 	t.Helper()
 	p := Plan{
-		ID: id, Name: name, Year: year, ModelID: lubricantsModel, TeamIDs: []string{team}, OwnerID: owner,
-		DefaultSpread: SpreadEvenly, GoalStage: StageINQ, Attributes: attributesOf(lubricants), Status: status,
+		ID: seed.id, Name: seed.name, Year: seed.year, ModelID: lubricantsModel, TeamIDs: []string{seed.team}, OwnerID: seed.owner,
+		DefaultSpread: SpreadEvenly, GoalStage: StageINQ, Attributes: attributesOf(lubricants), Status: seed.status,
 		Meta: record.NewMeta(priya, start),
 	}
-	if budget != "" {
-		amount := usd(t, budget)
+	if seed.budget != "" {
+		amount := usd(t, seed.budget)
 		p.Budget = &amount
 	}
 	return p

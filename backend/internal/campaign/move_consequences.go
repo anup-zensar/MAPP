@@ -21,7 +21,7 @@ type levelBelowPlan struct {
 func levelsBelowPlan() []levelBelowPlan {
 	return []levelBelowPlan{
 		{settings.LevelCampaign, campaignPlural}, {settings.LevelInitiative, initiativePlural},
-		{settings.LevelActivity, "activities"}, {settings.LevelLineItem, "line items"},
+		{settings.LevelActivity, activityPlural}, {settings.LevelLineItem, "line items"},
 	}
 }
 

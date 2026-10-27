@@ -1,8 +1,8 @@
-// Package plans holds plans (feature 004): one fiscal year of marketing for one business, the top of the
+// Package plan holds plans (feature 004): one fiscal year of marketing for one business, the top of the
 // planning tree Plan → Campaign → Initiative → Activity → Line item.
 //
 // The shared foundation wrote the data layer: the stored plan and the API types (this file), the level
-// registry types the features below the plan implement (levels.go) and the repository (repository.go,
+// registry types the features below the plan implement (levels.go) and the repository (store.go,
 // store_json.go). Feature 004 adds the service, the Settings and Directory interfaces with their adapters,
 // the history kind and the handler.
 package plan

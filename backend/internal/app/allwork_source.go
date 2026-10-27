@@ -3,8 +3,6 @@ package app
 import (
 	"context"
 	"slices"
-	"strconv"
-	"strings"
 
 	"mapp/internal/activity"
 	"mapp/internal/allwork"
@@ -158,13 +156,20 @@ func (y *yearReader) addPlan(ctx context.Context, p plan.Plan, missing int) erro
 	planNode.PhasingMethod = string(p.BudgetPhasing.Normalised().Method)
 	planNode.PhasedPlan, planNode.PhasedBudgetUSD = y.phased(p.ID, p.BudgetPhasing.MonthAmounts(p.Budget, p.Year))
 	y.nodes = append(y.nodes, planNode)
-	tree, err := y.s.campaigns.ListPlanCampaigns(ctx, actor.System, p.ID)
+	if err = y.addCampaigns(ctx, p.ID); err != nil {
+		return err
+	}
+	return y.addActivities(ctx, p.ID)
+}
+
+func (y *yearReader) addCampaigns(ctx context.Context, planID string) error {
+	tree, err := y.s.campaigns.ListPlanCampaigns(ctx, actor.System, planID)
 	if err != nil {
 		return err
 	}
 	for ci, c := range tree.Items {
-		err := y.addContainer(ctx, container{
-			level: allwork.LevelCampaign, id: c.ID, parentID: p.ID, planID: p.ID, order: ci, name: c.Name,
+		err = y.addContainer(ctx, container{
+			level: allwork.LevelCampaign, id: c.ID, parentID: planID, planID: planID, order: ci, name: c.Name,
 			description: c.Description, ownerID: c.OwnerID, start: c.StartDate, end: c.EndDate, budget: c.Budget,
 			progress: c.ApprovalProgress, timing: c.Timing, completeness: c.Completeness, meta: c.Meta,
 			attributes: c.Attributes, phasing: c.BudgetPhasing,
@@ -173,8 +178,8 @@ func (y *yearReader) addPlan(ctx context.Context, p plan.Plan, missing int) erro
 			return err
 		}
 		for ii, i := range c.Initiatives {
-			err := y.addContainer(ctx, container{
-				level: allwork.LevelInitiative, id: i.ID, parentID: c.ID, planID: p.ID, order: ii, name: i.Name,
+			err = y.addContainer(ctx, container{
+				level: allwork.LevelInitiative, id: i.ID, parentID: c.ID, planID: planID, order: ii, name: i.Name,
 				description: i.Description, ownerID: i.OwnerID, start: i.StartDate, end: i.EndDate, budget: i.Budget,
 				progress: i.ApprovalProgress, timing: i.Timing, completeness: i.Completeness, meta: i.Meta,
 				attributes: i.Attributes, phasing: i.BudgetPhasing,
@@ -185,7 +190,11 @@ func (y *yearReader) addPlan(ctx context.Context, p plan.Plan, missing int) erro
 			y.initiativeIDs = append(y.initiativeIDs, i.ID)
 		}
 	}
-	summaries, err := y.s.activities.ListForPlan(ctx, actor.System, p.ID)
+	return nil
+}
+
+func (y *yearReader) addActivities(ctx context.Context, planID string) error {
+	summaries, err := y.s.activities.ListForPlan(ctx, actor.System, planID)
 	if err != nil {
 		return err
 	}
@@ -200,10 +209,10 @@ func (y *yearReader) addPlan(ctx context.Context, p plan.Plan, missing int) erro
 		months, _ := lineitem.ActivityMonths(lineitem.ActivityFacts{StartDate: a.StartDate, EndDate: a.EndDate, Ongoing: a.Ongoing})
 		y.activities[a.ID] = len(y.nodes)
 		y.nodes = append(y.nodes, allwork.Node{
-			Level: allwork.LevelActivity, ID: a.ID, ParentID: a.InitiativeID, PlanID: p.ID, Order: order, Name: a.Name,
+			Level: allwork.LevelActivity, ID: a.ID, ParentID: a.InitiativeID, PlanID: planID, Order: order, Name: a.Name,
 			Owner: ownerOf(a.Owner), StartDate: a.StartDate, EndDate: a.EndDate, Ongoing: a.Ongoing, Months: months,
-			Status: string(a.DisplayStatus), Missing: a.Completeness.MissingFields, PlannedCost: y.usd(p.ID, planned),
-			PlannedCostPlan: y.inPlan(p.ID, planned), ActivityTypeID: a.ActivityType.ID,
+			Status: string(a.DisplayStatus), Missing: a.Completeness.MissingFields, PlannedCost: y.usd(planID, planned),
+			PlannedCostPlan: y.inPlan(planID, planned), ActivityTypeID: a.ActivityType.ID,
 			Fields: map[string]allwork.Value{
 				"activity.type":    {Text: a.ActivityType.Name, Inactive: !a.ActivityType.Active},
 				"activity.ongoing": {Yes: &a.Ongoing},
@@ -212,76 +221,6 @@ func (y *yearReader) addPlan(ctx context.Context, p plan.Plan, missing int) erro
 		y.planFacts(&y.nodes[len(y.nodes)-1])
 	}
 	return nil
-}
-
-// The words of stored values, as the plan and line-item forms show them (004, 007).
-var (
-	spreadWords = map[string]string{
-		"evenly": "Evenly", "firstMonth": "All in first month", "lastMonth": "All in last month", "custom": "Custom",
-	}
-	goalStageWords = map[plan.GoalStage]string{plan.StageINQ: "INQ", plan.StageMQL: "MQL", plan.StageRevenue: "Revenue"}
-)
-
-// planFields returns the plan-level columns of p (allwork data model §6.2): its stored fields with the names
-// of its model, teams (by name, as 004 shows them) and default finance budget, and — only when the view shows
-// them — the plan goals 004 works out from the model.
-func (y *yearReader) planFields(ctx context.Context, p plan.Plan) (map[string]allwork.Value, error) {
-	year := int64(p.Year)
-	fields := map[string]allwork.Value{
-		"plan.year":          {Number: &year},
-		"plan.strategic":     {Yes: &p.AOP},
-		"plan.description":   {Text: p.Description},
-		"plan.defaultSpread": {Text: spreadWords[string(p.DefaultSpread)]},
-		"plan.bcpir":         {Yes: &p.BCPIR},
-		"plan.goalStage":     {Text: goalStageWords[p.GoalStage]},
-	}
-	if m, found, err := y.s.settings.Model(ctx, p.ModelID); err != nil {
-		return nil, err
-	} else if found {
-		fields["plan.model"] = allwork.Value{Text: m.Name, Inactive: !m.Active}
-	}
-	refs, err := y.s.people.TeamRefs(ctx, p.TeamIDs)
-	if err != nil {
-		return nil, err
-	}
-	teams := []allwork.Choice{}
-	for _, id := range p.TeamIDs {
-		if t, found := refs[id]; found {
-			teams = append(teams, allwork.Choice{Label: t.Name, Inactive: !t.Active})
-		}
-	}
-	slices.SortFunc(teams, func(x, y allwork.Choice) int {
-		return strings.Compare(strings.ToLower(x.Label), strings.ToLower(y.Label))
-	})
-	fields["plan.teams"] = allwork.Value{Choices: teams}
-	if p.DefaultFinanceBudgetID != "" {
-		if b, found, err := y.s.settings.FinanceBudget(ctx, p.DefaultFinanceBudgetID); err != nil {
-			return nil, err
-		} else if found {
-			fields["plan.defaultFinanceBudget"] = allwork.Value{Text: b.Name}
-		}
-	}
-	if y.needs("plan.goalMql", "plan.goalRevenue") {
-		view, err := y.s.plans.Get(ctx, actor.System, p.ID) // actor.System sees amounts in USD
-		if err != nil {
-			return nil, err
-		}
-		fields["plan.goalMql"] = allwork.Value{Number: view.Goals.Plan.MQL}
-		if view.Goals.Plan.Revenue != nil {
-			fields["plan.goalRevenue"] = allwork.Value{USD: &view.Goals.Plan.Revenue.Amount}
-		}
-	}
-	if p.GoalAmount != "" {
-		if p.GoalStage == plan.StageRevenue {
-			if amount, err := money.ParseAmount(p.GoalAmount); err == nil {
-				fields["plan.goalAmount"] = allwork.Value{USD: &amount}
-			}
-		} else if n, err := strconv.ParseInt(p.GoalAmount, 10, 64); err == nil {
-			fields["plan.goalAmount"] = allwork.Value{Number: &n}
-		}
-	}
-	y.addAttributes(fields, settings.LevelPlan, p.Attributes)
-	return fields, nil
 }
 
 // plansOfYear returns the plans of year the person acting may see (014 FR-007, SC-004).

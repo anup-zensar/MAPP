@@ -37,7 +37,7 @@ func (s *Service) CopyCampaign(ctx context.Context, a actor.Actor, id string, in
 			return campaignNameTaken(target.siblings, target.plan, name, "")
 		})
 		if target.problem != "" {
-			problems.Add("planId", target.problem)
+			problems.Add(planIDField, target.problem)
 		}
 		if err = problems.Err(); err != nil {
 			return err
@@ -113,7 +113,7 @@ func (s *Service) CopyInitiative(ctx context.Context, a actor.Actor, id string, 
 			return initiativeNameTaken(target.siblings, target.campaign, name, "")
 		})
 		if target.problem != "" {
-			problems.Add("campaignId", target.problem)
+			problems.Add(campaignIDField, target.problem)
 		}
 		if err = problems.Err(); err != nil {
 			return err

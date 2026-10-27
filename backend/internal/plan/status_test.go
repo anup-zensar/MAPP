@@ -155,7 +155,7 @@ func TestPublishAndUnpublish_NotFound_FR024_FR025(t *testing.T) {
 func TestUnpublish_ReasonRules_FR025(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	f.put(t, seedPlan(t, "P-1001", "FY2026 Lubricants Europe", 2026, teamLubricants, priya.ID, "", StatusPublished))
+	f.put(t, seedPlan(t, planSeed{"P-1001", "FY2026 Lubricants Europe", 2026, teamLubricants, priya.ID, "", StatusPublished}))
 	cases := []struct {
 		reason string
 		want   *errs.Error
@@ -185,7 +185,7 @@ func TestUnpublish_ReasonRules_FR025(t *testing.T) {
 func TestUnpublish_ReturnsToDraftAndLogsReason_FR025(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	f.put(t, seedPlan(t, "P-1001", "FY2026 Lubricants Europe", 2026, teamLubricants, priya.ID, "", StatusPublished))
+	f.put(t, seedPlan(t, planSeed{"P-1001", "FY2026 Lubricants Europe", 2026, teamLubricants, priya.ID, "", StatusPublished}))
 	f.clock.Advance(time.Hour)
 
 	view, err := f.service.Unpublish(t.Context(), daniel, "P-1001", UnpublishRequest{Reason: "  Budget under review  "})

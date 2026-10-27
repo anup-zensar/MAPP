@@ -13,9 +13,9 @@ import (
 func (f *fixture) putDemoPlans(t *testing.T) {
 	t.Helper()
 	f.put(t,
-		seedPlan(t, "P-1001", "FY2026 Lubricants Europe", 2026, teamLubricants, priya.ID, "1200000.00", StatusPublished),
-		seedPlan(t, "P-1002", "FY2026 Mobility China", 2026, teamMobility, "U-1004", "800000.00", StatusDraft),
-		seedPlan(t, "P-1003", "FY2027 Global Brand", 2027, teamGlobal, "U-1001", "500000.00", StatusDraft))
+		seedPlan(t, planSeed{"P-1001", "FY2026 Lubricants Europe", 2026, teamLubricants, priya.ID, "1200000.00", StatusPublished}),
+		seedPlan(t, planSeed{"P-1002", "FY2026 Mobility China", 2026, teamMobility, "U-1004", "800000.00", StatusDraft}),
+		seedPlan(t, planSeed{"P-1003", "FY2027 Global Brand", 2027, teamGlobal, "U-1001", "500000.00", StatusDraft}))
 	planned := func(text string) *money.Amount { amount := usd(t, text); return &amount }
 	f.addLevel(t, "activity", map[string]Facts{
 		"P-1001": {PlannedCost: planned("960000.00")}, "P-1003": {PlannedCost: planned("100000.00")},
@@ -123,7 +123,7 @@ func TestList_200PlansOneFactsCallPerLevel_SC009(t *testing.T) {
 	f := newFixture(t)
 	many := make([]Plan, 0, 200)
 	for i := range 200 {
-		many = append(many, seedPlan(t, fmt.Sprintf("P-%d", 1001+i), fmt.Sprintf("Plan %03d", i), 2026, teamLubricants, priya.ID, "1000.00", StatusDraft))
+		many = append(many, seedPlan(t, planSeed{fmt.Sprintf("P-%d", 1001+i), fmt.Sprintf("Plan %03d", i), 2026, teamLubricants, priya.ID, "1000.00", StatusDraft}))
 	}
 	f.put(t, many...)
 	campaigns := f.addLevel(t, "campaign", nil)

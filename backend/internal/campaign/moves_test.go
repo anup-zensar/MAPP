@@ -156,7 +156,7 @@ func TestCopyPlanContents_ShiftsDatesKeepsNames_For004(t *testing.T) {
 	var newIDs map[string]string
 	err := f.db.Write(t.Context(), func(ctx context.Context) error { // joins the plan copy's Write
 		var err error
-		counts, newIDs, err = f.service.CopyPlanContents(ctx, daniel, "P-1003", "P-1002", 1)
+		counts, newIDs, err = f.service.CopyPlanContents(ctx, daniel, CopyPair{FromID: "P-1003", ToID: "P-1002"}, 1)
 		return err
 	})
 

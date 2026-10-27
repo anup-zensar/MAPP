@@ -94,10 +94,10 @@ func TestAdapter_ActivityDeletingKeepsRound_008P3(t *testing.T) {
 
 	var after approval.Round
 	err = db.Write(t.Context(), func(ctx context.Context) error {
-		if err := repo.PutRound(ctx, open); err != nil {
+		if err = repo.PutRound(ctx, open); err != nil {
 			return err
 		}
-		if err := hooks.ActivityDeleting(ctx, priya, activity.Activity{ID: "A-1004", Status: activity.StatusSubmitted}); err != nil {
+		if err = hooks.ActivityDeleting(ctx, priya, activity.Activity{ID: "A-1004", Status: activity.StatusSubmitted}); err != nil {
 			return err
 		}
 		after, _, err = repo.GetRound(ctx, open.ID)

@@ -157,7 +157,7 @@ func (s *Service) saveInitiativeCopy(ctx context.Context, a actor.Actor, source 
 // copyActivities has feature 006 copy the activities of the initiative pair.FromID, with their line items,
 // into the initiative pair.ToID within the year, and returns what it copied, by history kind.
 func (s *Service) copyActivities(ctx context.Context, a actor.Actor, pair CopyPair) (map[string]int, error) {
-	copied, err := s.deps.Activities.CopyAll(ctx, a, pair.FromID, pair.ToID, 0)
+	copied, err := s.deps.Activities.CopyAll(ctx, a, pair, 0)
 	if err != nil {
 		return nil, err
 	}

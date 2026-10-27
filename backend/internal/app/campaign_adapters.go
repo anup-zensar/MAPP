@@ -41,8 +41,10 @@ func (p campaignPlans) PlansOfYear(ctx context.Context, year int) ([]campaign.Pl
 	return facts, nil
 }
 
-// The names of the campaign and initiative levels of feature 004's level registry, also their history kinds.
+// The names of the campaign and initiative levels of feature 004's level registry, also their history kinds;
+// planKind is the plan's history kind.
 const (
+	planKind        = "plan"
 	campaignLevel   = "campaign"
 	initiativeLevel = "initiative"
 )
@@ -100,7 +102,7 @@ func campaignLevels(svc *campaign.Service) []plan.Level {
 	}
 	return []plan.Level{
 		{Name: campaignLevel, AddFacts: addFacts, Copy: func(ctx context.Context, job *plan.CopyJob) error {
-			counts, newIDs, err := svc.CopyPlanContents(ctx, job.Actor, job.SourcePlanID, job.TargetPlanID, job.Years)
+			counts, newIDs, err := svc.CopyPlanContents(ctx, job.Actor, campaign.CopyPair{FromID: job.SourcePlanID, ToID: job.TargetPlanID}, job.Years)
 			if err != nil {
 				return err
 			}

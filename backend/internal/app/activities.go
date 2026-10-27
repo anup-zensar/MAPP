@@ -29,8 +29,8 @@ func (x activitiesForCampaigns) Summaries(ctx context.Context, initiativeIDs []s
 
 // CopyAll copies every activity of an initiative, with its line items, into another initiative: the
 // copies of a campaign or an initiative (005 FR-027).
-func (x activitiesForCampaigns) CopyAll(ctx context.Context, a actor.Actor, fromInitiativeID, toInitiativeID string, yearShift int) (campaign.ActivityCopyCounts, error) {
-	counts, err := x.svc.CopyAll(ctx, a, fromInitiativeID, toInitiativeID, yearShift)
+func (x activitiesForCampaigns) CopyAll(ctx context.Context, a actor.Actor, pair campaign.CopyPair, yearShift int) (campaign.ActivityCopyCounts, error) {
+	counts, err := x.svc.CopyAll(ctx, a, pair.FromID, pair.ToID, yearShift)
 	return campaign.ActivityCopyCounts{Activities: counts.Activities, LineItems: counts.LineItems}, err
 }
 

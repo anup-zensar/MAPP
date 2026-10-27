@@ -181,7 +181,7 @@ func (a *fakeActivities) Summaries(_ context.Context, initiativeIDs []string) ([
 func (a *fakeActivities) CopyMany(ctx context.Context, by actor.Actor, pairs []CopyPair, years int) (ActivityCopyCounts, error) {
 	var counts ActivityCopyCounts
 	for _, p := range pairs {
-		copied, err := a.CopyAll(ctx, by, p.FromID, p.ToID, years)
+		copied, err := a.CopyAll(ctx, by, p, years)
 		if err != nil {
 			return ActivityCopyCounts{}, err
 		}
@@ -191,16 +191,16 @@ func (a *fakeActivities) CopyMany(ctx context.Context, by actor.Actor, pairs []C
 	return counts, nil
 }
 
-// CopyAll copies the summaries of fromInitiativeID into toInitiativeID with new IDs "<id>-copy", records the
-// call and counts the copies and their line items; copyErr, when set, makes it fail instead.
-func (a *fakeActivities) CopyAll(_ context.Context, _ actor.Actor, from, to string, years int) (ActivityCopyCounts, error) {
+// CopyAll copies the summaries of pair.FromID into pair.ToID with new IDs "<id>-copy", records the call and
+// counts the copies and their line items; copyErr, when set, makes it fail instead.
+func (a *fakeActivities) CopyAll(_ context.Context, _ actor.Actor, pair CopyPair, years int) (ActivityCopyCounts, error) {
 	if a.copyErr != nil {
 		return ActivityCopyCounts{}, a.copyErr
 	}
-	a.copies = append(a.copies, fmt.Sprintf("%s → %s +%d", from, to, years))
+	a.copies = append(a.copies, fmt.Sprintf("%s → %s +%d", pair.FromID, pair.ToID, years))
 	var counts ActivityCopyCounts
-	for _, s := range slices.Clone(a.byInitiative[from]) {
-		s.ID, s.InitiativeID = s.ID+"-copy", to
+	for _, s := range slices.Clone(a.byInitiative[pair.FromID]) {
+		s.ID, s.InitiativeID = s.ID+"-copy", pair.ToID
 		a.add(s)
 		counts.Activities++
 		counts.LineItems += s.LineItems
