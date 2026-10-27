@@ -8,15 +8,15 @@ import (
 	"time"
 
 	"mapp/internal/history"
+	"mapp/internal/history/historytest"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/record"
-	"mapp/internal/platform/store"
 )
 
-// start is the time on the clock when every test begins: 12 Mar 2026 09:00 UTC.
 var start = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 
 // The teams and people of the tests: the demo people and teams of the seed.
@@ -32,11 +32,10 @@ var (
 	carlos = actor.Actor{ID: "U-1005", Name: "Carlos Mendes"}
 	sara   = actor.Actor{ID: "U-1006", Name: "Sara Novak"}
 
-	janeActor = actor.Actor{ID: "U-1007", Name: "Jane Doe"}   // a person added in Settings › People
-	johnActor = actor.Actor{ID: "U-1008", Name: "John Smith"} // another one
+	janeActor = actor.Actor{ID: "U-1007", Name: "Jane Doe"} // people added in Settings › People
+	johnActor = actor.Actor{ID: "U-1008", Name: "John Smith"}
 )
 
-// fakeDirectory is the people and teams of feature 003 as access reads them, in memory.
 type fakeDirectory struct {
 	people []Person
 	teams  []authz.TeamRef
@@ -76,12 +75,11 @@ func (d *fakeDirectory) person(id string) *Person {
 	return nil
 }
 
-// fixture is the access service on a new data folder holding the roles of the seed and the six demo people
-// in their teams, with the history kinds of roles, the access rules and people registered.
+// fixture holds the roles of the seed and the six demo people in their teams, with their history kinds.
 type fixture struct {
 	service   *Service
 	history   *history.Service
-	db        *store.DB
+	db        *fake.DB
 	directory *fakeDirectory
 	now       time.Time
 }
@@ -97,10 +95,7 @@ const (
 
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
+	db := fake.NewDB()
 	f := &fixture{db: db, now: start, directory: &fakeDirectory{
 		teams: []authz.TeamRef{lubricants, mobility, globalOps},
 		people: []Person{
@@ -112,17 +107,17 @@ func newFixture(t *testing.T) *fixture {
 			person(sara, "Local finance advisor", lubricants.ID, mobility.ID),
 		},
 	}}
-	generator := ids.NewGenerator(ids.NewJSONCounters())
+	generator := ids.NewGenerator(fake.NewCounters(db))
 	clock := func() time.Time { return f.now }
-	f.history = history.NewService(db, history.NewJSONStore(), generator, clock)
-	f.service = NewService(history.Tools{Tx: db, IDs: generator, Log: f.history, Now: clock}, NewJSONStore(), f.directory)
+	f.history = history.NewService(db, historytest.NewStore(db), generator, clock)
+	f.service = NewService(history.Tools{Tx: db, IDs: generator, Log: f.history, Now: clock}, newFakeStore(db), f.directory)
 	for _, kind := range append(f.service.Kinds(), f.personKind()) {
 		if err := f.history.Register(kind); err != nil {
 			t.Fatalf("Register(%s): %v", kind.Name, err)
 		}
 	}
 	f.write(t, func(ctx context.Context) error {
-		repo := NewJSONStore()
+		repo := newFakeStore(db)
 		roles := []Role{
 			{Name: "Administrator", BuiltIn: authz.BuiltInAdministrator, Permissions: authz.All(), DefaultScope: authz.ScopeAll},
 			{Name: "Global planner", BuiltIn: authz.BuiltInGlobalPlanner, DefaultScope: authz.ScopeAll, Permissions: []authz.Permission{
@@ -171,13 +166,11 @@ func newFixture(t *testing.T) *fixture {
 	return f
 }
 
-// person is a demo person of the fake directory, at version 1.
 func person(a actor.Actor, jobTitle string, teamIDs ...string) Person {
 	return Person{Ref: authz.PersonRef{ID: a.ID, Name: a.Name, Initials: initials(a.Name), JobTitle: jobTitle, Active: true},
 		Email: a.ID + "@shell.com", TeamIDs: teamIDs, Version: 1}
 }
 
-// initials are the first letters of the first and last name.
 func initials(name string) string {
 	first, last := name[:1], ""
 	for i := len(name) - 1; i > 0; i-- {
@@ -189,8 +182,7 @@ func initials(name string) string {
 	return first + last
 }
 
-// personKind is the history kind of people as feature 003 registers it, enough for the log entries of a
-// person's roles.
+// personKind is the history kind of people, enough for the log entries of a person's roles.
 func (f *fixture) personKind() history.Kind {
 	return history.Kind{
 		Name: personKind, Singular: "person", Plural: "people",
@@ -213,7 +205,6 @@ func (f *fixture) personKind() history.Kind {
 	}
 }
 
-// write runs fn in one Write of the fixture's data folder and stops the test when it fails.
 func (f *fixture) write(t *testing.T, fn func(ctx context.Context) error) {
 	t.Helper()
 	if err := f.db.Write(t.Context(), fn); err != nil {
@@ -221,7 +212,6 @@ func (f *fixture) write(t *testing.T, fn func(ctx context.Context) error) {
 	}
 }
 
-// grants returns the Grants of the person now.
 func (f *fixture) grants(t *testing.T, personID string) authz.Grants {
 	t.Helper()
 	g, err := f.service.GrantsFor(t.Context(), personID)
@@ -231,7 +221,6 @@ func (f *fixture) grants(t *testing.T, personID string) authz.Grants {
 	return g
 }
 
-// log returns every activity-log entry, oldest first.
 func (f *fixture) log(t *testing.T) []history.Entry {
 	t.Helper()
 	entries, err := f.history.Entries(t.Context())
@@ -246,12 +235,10 @@ func planOf(teamIDs ...string) authz.PlanFacts {
 	return authz.PlanFacts{ID: "P-1001", TeamIDs: teamIDs, OwnerID: "U-9999", CreatedByID: "U-9999"}
 }
 
-// version returns a pointer to v, for the version of an update.
 func version(v int) *int {
 	return &v
 }
 
-// apiError returns err as an API error, and stops the test when it is not one.
 func apiError(t *testing.T, err error) *errs.Error {
 	t.Helper()
 	apiErr, ok := err.(*errs.Error)
