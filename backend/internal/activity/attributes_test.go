@@ -7,18 +7,15 @@ import (
 	"testing"
 
 	"mapp/internal/activity"
-	"mapp/internal/plan"
+	"mapp/internal/plan/plantest"
 	"mapp/internal/platform/money"
-	"mapp/internal/settings"
+	"mapp/internal/settings/settingstest"
 )
 
-// User story 3 — Shell attributes, % splits and goals.
-
-// setBusinessUnit sets the Business unit of plan P-1001 to the options given (Mobility SO-1001, Lubricants
-// SO-1002), as feature 004's plan edit would.
+// setBusinessUnit sets plan P-1001's Business unit (Mobility SO-1001, Lubricants SO-1002), as a plan edit would.
 func (f *fixture) setBusinessUnit(t *testing.T, optionIDs ...string) {
 	t.Helper()
-	repo := plan.NewJSONStore()
+	repo := plantest.NewStore(f.db)
 	f.change(t, func(ctx context.Context) error {
 		p, _, err := repo.Get(ctx, "P-1001")
 		if err != nil {
@@ -30,7 +27,6 @@ func (f *fixture) setBusinessUnit(t *testing.T, optionIDs ...string) {
 	})
 }
 
-// fieldsOf lists the fields of the "This activity" group of the check.
 func fieldsOf(v activity.View) []string {
 	var fields []string
 	for _, p := range v.Readiness.Activity {
@@ -39,13 +35,12 @@ func fieldsOf(v activity.View) []string {
 	return fields
 }
 
-// Values of a business-unit group that the plan's business unit hides are kept when a save leaves them
-// out, are not counted as needed, and count again once the group is shown (FR-015, D-108).
+// Hidden business-unit values are kept when a save leaves them out, not needed, and count again once shown.
 func TestUpdate_HiddenGroupValuesKept_FR015(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 	lubricantsValues := []string{brands, "SA-1023", "SA-1024", "SA-1025", "SA-1026"}
-	f.setBusinessUnit(t, "SO-1001") // Mobility only
+	f.setBusinessUnit(t, "SO-1001")
 
 	view := f.mustEdit(t, "A-1001", func(u *activity.Update) {
 		for _, id := range lubricantsValues {
@@ -75,8 +70,7 @@ func TestUpdate_HiddenGroupValuesKept_FR015(t *testing.T) {
 	}
 }
 
-// A split not adding up to exactly 100.00 % saves, but blocks submitting; an even split completes it
-// (FR-017, R10).
+// A split not adding up to exactly 100.00 % saves, but blocks submitting; an even split completes it.
 func TestUpdate_SplitNot100SavesButIsListed_FR017(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -98,23 +92,22 @@ func TestUpdate_SplitNot100SavesButIsListed_FR017(t *testing.T) {
 	}
 }
 
-// Calculated goals always use the model's current values, so a changed model changes them; typed goals stay
-// as typed (FR-018).
+// Calculated goals always use the model's current values; typed goals stay as typed.
 func TestView_GoalsUseCurrentModelValues_FR018(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	repo := settings.NewJSONStore()
+	repo := settingstest.NewStore(f.db)
 	f.change(t, func(ctx context.Context) error {
 		model, _, err := repo.GetModel(ctx, "MOD-1001")
 		if err != nil {
 			return err
 		}
-		model.InqToMqlRate = money.PercentFromHundredths(400) // 4.00 %
+		model.InqToMqlRate = money.PercentFromHundredths(400)
 		return repo.PutModel(ctx, model)
 	})
 
-	calculated := f.get(t, "A-1001").Goals // INQ 250,000
-	typed := f.get(t, "A-1009").Goals      // Mobility; MQL 2,000 and 400,000.00 USD typed
+	calculated := f.get(t, "A-1001").Goals
+	typed := f.get(t, "A-1009").Goals
 
 	if *calculated.MQL != 10_000 || *calculated.Deals != 500 || calculated.Revenue.Format() != "5,000,000.00 USD" || !calculated.Calculated {
 		t.Errorf("calculated goals = MQL %d, deals %d, revenue %v", *calculated.MQL, *calculated.Deals, calculated.Revenue)
@@ -124,8 +117,7 @@ func TestView_GoalsUseCurrentModelValues_FR018(t *testing.T) {
 	}
 }
 
-// Turning "Set later stages myself" off drops the typed values: MQL and revenue are calculated again
-// (FR-018).
+// Turning "Set later stages myself" off drops the typed values: MQL and revenue are calculated again.
 func TestUpdate_TypedGoalsTurnedOff_FR018(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

@@ -8,21 +8,20 @@ import (
 	"testing"
 
 	"mapp/internal/activity"
+	"mapp/internal/activity/activitytest"
 	"mapp/internal/plan"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/record"
 	"mapp/internal/settings"
 )
 
-// The demo plans of these tests.
 const (
 	lubricantsPlan = "P-1001"
 	mobilityPlan   = "P-1002"
 	globalPlan     = "P-1003" // no activities
 )
 
-// planFigures asks for the activity level's facts of planIDs, each starting from zero Facts, and writes
-// them as one line per plan.
+// planFigures writes the activity level's facts of planIDs, each from zero Facts, as one line per plan.
 func (f *fixture) planFigures(t *testing.T, planIDs ...string) map[string]string {
 	t.Helper()
 	facts := map[string]*plan.Facts{}
@@ -53,9 +52,7 @@ func (f *fixture) planFigures(t *testing.T, planIDs ...string) map[string]string
 	return figures
 }
 
-// The plan's figures — number of activities, approved ones, planned cost, goals as shown and the
-// activities with fields still needed — are worked out from the activities when they are read, so they
-// follow every create, edit, delete, Undo and copy (FR-005, D-105; 004's activity level).
+// The plan's figures are worked out from the activities when read: they follow every create, edit, delete, Undo and copy.
 func TestAddPlanFacts_FollowEveryChange_FR005(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -63,8 +60,7 @@ func TestAddPlanFacts_FollowEveryChange_FR005(t *testing.T) {
 	got := f.planFigures(t, lubricantsPlan, mobilityPlan, globalPlan)
 
 	want := map[string]string{
-		// A-1002, A-1003, A-1006 and A-1007 are approved; goals 250,000 + 40,000 + 20,000 INQ, calculated
-		// with Lubricants 1.0.
+		// A-1002, A-1003, A-1006 and A-1007 are approved; goals calculated with Lubricants 1.0.
 		lubricantsPlan: "7 activities, 4 approved, planned 460000.00, goals 310000/6200/3100000.00; " +
 			"attention: activity A-1001 (Company code, Cost centre, PIR)",
 		// A-1009's goals are typed; A-1010 has no planned cost.
@@ -110,17 +106,15 @@ func TestAddPlanFacts_FollowEveryChange_FR005(t *testing.T) {
 	}
 }
 
-// CopyAll copies every activity of an initiative into another for the copies of features 004 and 005
-// (R13, D-195): the same names and values, every date moved by the year shift (29 February → 28 February,
-// an ongoing activity keeps no end date), new IDs, the status Created, line items through feature 007, and
-// no log entries of their own.
+// CopyAll keeps names and values, moves dates by the year shift (29 February → 28 February), gives new IDs,
+// the status Created and the line items, and writes no log entries of its own.
 func TestCopyAll_ShiftsYears(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 	const events = "I-1003" // Partner co-marketing fund: Approved, ongoing from 1 Mar 2026
 	leap := date.MustParse("2028-02-29")
 	f.change(t, func(ctx context.Context) error {
-		return activity.NewJSONStore().Put(ctx, activity.Activity{
+		return activitytest.NewStore(f.db).Put(ctx, activity.Activity{
 			ID: "A-9001", InitiativeID: events, Name: "Leap day stunt", ActivityTypeID: eventType, StartDate: &leap,
 			EndDate: &leap, Status: activity.StatusSubmitted, Attributes: settings.AttributeValues{}, Meta: record.NewMeta(priya, start),
 		})
@@ -130,7 +124,7 @@ func TestCopyAll_ShiftsYears(t *testing.T) {
 	entriesBefore := len(f.entries(t))
 
 	var counts activity.CopyCounts
-	err := f.db.Write(t.Context(), func(ctx context.Context) error { // joins the caller's Write
+	err := f.db.Write(t.Context(), func(ctx context.Context) error {
 		var err error
 		counts, err = f.service.CopyAll(ctx, daniel, events, retailEvents, 1)
 		return err
@@ -168,8 +162,7 @@ func TestCopyAll_ShiftsYears(t *testing.T) {
 	}
 }
 
-// The activity level of a plan copy copies the activities of every copied initiative and leaves their line
-// items to the line-item level, so each line item is copied once (D-195).
+// A plan copy's activity level leaves line items to the line-item level, so each line item is copied once.
 func TestCopyForInitiatives_LeavesLineItemsToTheirLevel_D195(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -178,7 +171,7 @@ func TestCopyForInitiatives_LeavesLineItemsToTheirLevel_D195(t *testing.T) {
 	err := f.db.Write(t.Context(), func(ctx context.Context) error {
 		var err error
 		newIDs, err = f.service.CopyForInitiatives(ctx, priya, map[string]string{
-			lubricantsPlan: "P-2001", digitalAndSocial: printAndOutdoor, // a plan id matches no activity
+			lubricantsPlan: "P-2001", digitalAndSocial: printAndOutdoor,
 		}, 0)
 		return err
 	})
@@ -194,19 +187,15 @@ func TestCopyForInitiatives_LeavesLineItemsToTheirLevel_D195(t *testing.T) {
 	}
 }
 
-// byName returns the stored activities of the initiative initiativeID by name.
 func (f *fixture) byName(t *testing.T, initiativeID string) map[string]activity.Activity {
 	t.Helper()
-	named := map[string]activity.Activity{}
-	err := f.db.Read(t.Context(), func(ctx context.Context) error {
-		list, err := activity.NewJSONStore().ListByInitiative(ctx, initiativeID)
-		for _, a := range list {
-			named[a.Name] = a
-		}
-		return err
-	})
+	list, err := activitytest.NewStore(f.db).ListByInitiative(t.Context(), initiativeID)
 	if err != nil {
 		t.Fatalf("ListByInitiative(%s): %v", initiativeID, err)
+	}
+	named := map[string]activity.Activity{}
+	for _, a := range list {
+		named[a.Name] = a
 	}
 	return named
 }
