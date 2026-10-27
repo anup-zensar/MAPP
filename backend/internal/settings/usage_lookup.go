@@ -35,18 +35,18 @@ func newUsage(parts []UsagePart, records []history.RecordRef) Usage {
 }
 
 // usedBy returns the part "Used by <n> <records>" of tallies[key], or false when nothing is counted.
-func usedBy(tallies map[string]*tally, key, kind, singular, pluralNoun string) (UsagePart, bool) {
+func usedBy(tallies map[string]*tally, key, kind string, nouns [2]string) (UsagePart, bool) {
 	t := tallies[key]
 	if t == nil {
 		return UsagePart{}, false
 	}
-	return part(kind, *t, "Used by "+plural(t.count, singular, pluralNoun)), true
+	return part(kind, *t, "Used by "+plural(t.count, nouns[0], nouns[1])), true
 }
 
 // model returns the usage of the model id: the plans using it, and the live ones among them as records.
 func (u *usageIndex) model(id string) Usage {
 	var parts []UsagePart
-	if p, used := usedBy(u.plansByModel, id, string(LevelPlan), "plan", "plans"); used {
+	if p, used := usedBy(u.plansByModel, id, string(LevelPlan), [2]string{"plan", "plans"}); used {
 		parts = append(parts, p)
 	}
 	return newUsage(parts, u.livePlans(func(ref Reference) bool { return ref.ModelID == id }))
@@ -56,7 +56,7 @@ func (u *usageIndex) model(id string) Usage {
 // allow it.
 func (u *usageIndex) activityType(id string) Usage {
 	var parts []UsagePart
-	if p, used := usedBy(u.activitiesByType, id, string(LevelActivity), "activity", "activities"); used {
+	if p, used := usedBy(u.activitiesByType, id, string(LevelActivity), [2]string{"activity", "activities"}); used {
 		parts = append(parts, p)
 	}
 	if t := u.modelsByType[id]; t != nil {
@@ -70,7 +70,7 @@ func (u *usageIndex) activityType(id string) Usage {
 func (u *usageIndex) attribute(a Attribute) Usage {
 	var parts []UsagePart
 	nouns := levelNouns[a.Level]
-	if p, used := usedBy(u.valuesByAttribute, a.ID, string(a.Level), nouns[0], nouns[1]); used {
+	if p, used := usedBy(u.valuesByAttribute, a.ID, string(a.Level), nouns); used {
 		parts = append(parts, p)
 	}
 	if dependents := u.dependents[a.ID]; len(dependents) > 0 {
@@ -95,7 +95,7 @@ func (u *usageIndex) attribute(a Attribute) Usage {
 func (u *usageIndex) option(o Option, a Attribute) Usage {
 	var parts []UsagePart
 	nouns := levelNouns[a.Level]
-	if p, used := usedBy(u.valuesByOption, o.ID, string(a.Level), nouns[0], nouns[1]); used {
+	if p, used := usedBy(u.valuesByOption, o.ID, string(a.Level), nouns); used {
 		parts = append(parts, p)
 	}
 	linked := u.linkedOptions[o.ID]
@@ -115,7 +115,7 @@ func (u *usageIndex) option(o Option, a Attribute) Usage {
 // and the plans planned in it (016 FR-010), with those plans as records.
 func (u *usageIndex) currency(code string) Usage {
 	var parts []UsagePart
-	if p, used := usedBy(u.lineItemsByCurr, code, string(LevelLineItem), "line item", "line items"); used {
+	if p, used := usedBy(u.lineItemsByCurr, code, string(LevelLineItem), [2]string{"line item", "line items"}); used {
 		parts = append(parts, p)
 	}
 	if t := u.peopleByCurr[code]; t != nil {
