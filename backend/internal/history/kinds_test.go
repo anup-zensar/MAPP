@@ -6,7 +6,7 @@ import (
 
 // A kind that history could not work with stops the API from starting (research R8): every mistake is
 // refused with an error, and a refused kind is not registered.
-func TestRegister_RefusesBadKinds(t *testing.T) {
+func TestRegister_RefusesBadKinds(t *testing.T) { //nolint:tparallel // the checks after the subtests need them done
 	t.Parallel()
 	f := newBareFixture(t)
 	kinds := f.standardKinds()

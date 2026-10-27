@@ -86,7 +86,7 @@ func TestLog_RecordThatIsGone_PathStartsAtItsParent_FR022(t *testing.T) {
 
 // Every kind of change can be logged (FR-022). The verb is the action's own; a status change names its
 // own verb, such as "published" (011 FR-006). Mistakes in the calling code are refused and write nothing.
-func TestLog_EveryAction_FR022(t *testing.T) {
+func TestLog_EveryAction_FR022(t *testing.T) { //nolint:gocyclo,tparallel // 10: each action, then each mistake; the count after the subtests needs them done
 	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
@@ -175,8 +175,8 @@ func TestLog_TwoEntriesInOneWrite_FR022(t *testing.T) {
 
 	failed := errors.New("the change failed")
 	err = f.db.Write(t.Context(), func(ctx context.Context) error {
-		if _, err := f.service.Log(ctx, priya, parentOne(ActionChanged, "")); err != nil {
-			return err
+		if _, logErr := f.service.Log(ctx, priya, parentOne(ActionChanged, "")); logErr != nil {
+			return logErr
 		}
 		return failed
 	})
@@ -226,7 +226,7 @@ func TestLog_EntriesNeverChangeOrDisappear_FR023(t *testing.T) {
 
 // The log answers the newest matching entries first, at most as many as asked for, with the number of all
 // matching entries; it filters by record type and record (011 FR-009, FR-011). The limit is 1 to 200.
-func TestListLog_FilterLimitTotal(t *testing.T) {
+func TestListLog_FilterLimitTotal(t *testing.T) { //nolint:gocyclo // 11: each filter, then each limit below, above and at the bounds
 	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
@@ -255,6 +255,7 @@ func TestListLog_FilterLimitTotal(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got, total, err := f.service.ListLog(t.Context(), priya, tt.filter)
 
 			if err != nil || total != tt.total {

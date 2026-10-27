@@ -16,7 +16,7 @@ import (
 // Restore applies each kind's restore rules through PrepareRestore, which learns who restores, when and
 // whether it is an Undo. The changes it makes are saved and listed in the "restored" log entry, and its
 // notes end the entry's details and are the answer's details (FR-025, research R8).
-func TestRestore_AppliesPrepareRestore_FR025(t *testing.T) {
+func TestRestore_AppliesPrepareRestore_FR025(t *testing.T) { //nolint:gocyclo // 10: the restore rule written out here, then each thing it changed
 	t.Parallel()
 	f := newBareFixture(t)
 	kinds := f.standardKinds()
@@ -196,7 +196,7 @@ func TestAfterRestore_Notes(t *testing.T) {
 	t.Parallel()
 	f := newBareFixture(t)
 	kinds := f.standardKinds()
-	kinds[0].PrepareRestore = func(_ context.Context, rc RestoreContext, s *Snapshot) ([]string, error) {
+	kinds[0].PrepareRestore = func(_ context.Context, _ RestoreContext, s *Snapshot) ([]string, error) {
 		s.Name = "Parent one (restored)" // as a kind renames a record whose name is taken
 		return []string{"Renamed."}, nil
 	}

@@ -169,8 +169,8 @@ func (f *fixture) sendParentBack(ctx context.Context, rc RestoreContext, parentI
 	}
 	parent.Status = "created"
 	parent.Touch(rc.Actor, rc.Now)
-	if err := store.Put(ctx, childrenTable, parent.ID, parent); err != nil {
-		return err
+	if putErr := store.Put(ctx, childrenTable, parent.ID, parent); putErr != nil {
+		return putErr
 	}
 	_, err = f.service.Log(ctx, rc.Actor, LogInput{Kind: "child", RecordID: parent.ID, RecordName: parent.Name,
 		Action: ActionStatusChanged, Verb: "sent back to created",

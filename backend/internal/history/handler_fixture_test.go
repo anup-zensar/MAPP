@@ -29,10 +29,10 @@ func renameFolder(t *testing.T, c *apitest.Client, id, name string) {
 	}
 }
 
-// addNote adds a note to a sample folder and stops the test when that fails.
-func addNote(t *testing.T, c *apitest.Client, folderID, title string) {
+// addNote adds a note to the sample folder SF-1001 and stops the test when that fails.
+func addNote(t *testing.T, c *apitest.Client, title string) {
 	t.Helper()
-	response := c.Do(t, http.MethodPost, "/api/v1/sample-folders/"+folderID+"/notes", map[string]string{"title": title})
+	response := c.Do(t, http.MethodPost, "/api/v1/sample-folders/SF-1001/notes", map[string]string{"title": title})
 	if response.Status != http.StatusCreated {
 		t.Fatalf("adding the note %q: %d %s", title, response.Status, response.Body)
 	}

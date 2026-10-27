@@ -52,12 +52,12 @@ const (
 // with the note "Second idea" (BIN-1002); then a new folder takes the name "Ideas" (SF-1002).
 func binWithParent(t *testing.T, priya *apitest.Client) {
 	t.Helper()
-	createFolder(t, priya, "Ideas")             // SF-1001
-	addNote(t, priya, "SF-1001", "First idea")  // SN-1001
-	addNote(t, priya, "SF-1001", "Second idea") // SN-1002
-	deleteNote(t, priya, "SN-1001")             // BIN-1001
-	deleteFolder(t, priya, "SF-1001")           // BIN-1002
-	createFolder(t, priya, "Ideas")             // SF-1002
+	createFolder(t, priya, "Ideas")   // SF-1001
+	addNote(t, priya, "First idea")   // SN-1001
+	addNote(t, priya, "Second idea")  // SN-1002
+	deleteNote(t, priya, "SN-1001")   // BIN-1001
+	deleteFolder(t, priya, "SF-1001") // BIN-1002
+	createFolder(t, priya, "Ideas")   // SF-1002
 }
 
 // The recycle bin lists its entries newest first with their restore state, the entries to restore first,
@@ -148,7 +148,7 @@ func TestRestore_ParentCodes_409(t *testing.T) {
 // Delete permanently answers the record that was deleted for good, writes one "permanently deleted" entry
 // with the record's place and contents at the time of the delete, and leaves the entry waiting for it in
 // the bin, no longer restorable (011 FR-028, FR-030).
-func TestPurge_Contract(t *testing.T) {
+func TestPurge_Contract(t *testing.T) { //nolint:gocyclo // 11: one purge, then the bin and the new entry checked field by field
 	t.Parallel()
 	server := apitest.New(t, apitest.WithoutDemoHistory())
 	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: deleting permanently is an administrator's

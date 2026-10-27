@@ -39,7 +39,7 @@ func TestListActivityLog_EntriesAsTheContractSays_FR022(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	createFolder(t, priya, "Ideas") // SF-1001
 	renameFolder(t, priya, "SF-1001", "Ideas 2")
-	addNote(t, priya, "SF-1001", "First idea") // SN-1001
+	addNote(t, priya, "First idea") // SN-1001
 
 	response := priya.Do(t, http.MethodGet, "/api/v1/activity-log?limit=2", nil)
 
@@ -103,9 +103,9 @@ func TestListActivityLog_Filters_Contract(t *testing.T) {
 	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, danielsEmail)
-	createFolder(t, priya, "Ideas")             // SF-1001, LOG-1001
-	addNote(t, daniel, "SF-1001", "First idea") // SN-1001, LOG-1002
-	createFolder(t, daniel, "Plans")            // SF-1002, LOG-1003
+	createFolder(t, priya, "Ideas")  // SF-1001, LOG-1001
+	addNote(t, daniel, "First idea") // SN-1001, LOG-1002
+	createFolder(t, daniel, "Plans") // SF-1002, LOG-1003
 	server.Advance(time.Hour)
 	renameFolder(t, priya, "SF-1002", "Plans 2") // LOG-1004
 	deleteNote(t, priya, "SN-1001")              // LOG-1005
@@ -190,12 +190,12 @@ func TestActivityLogSummary_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t, apitest.WithoutDemoHistory())
 	daniel := server.SignIn(t, danielsEmail)
-	createFolder(t, daniel, "Ideas")           // yesterday
-	addNote(t, daniel, "SF-1001", "Old idea")  // yesterday
-	server.Advance(24 * time.Hour)             // 13 Mar 2026 09:00, a Friday
-	priya := server.SignIn(t, priyasEmail)     // a session of today: yesterday's would have expired
-	addNote(t, priya, "SF-1001", "First idea") // today
-	deleteNote(t, priya, "SN-1002")            // today
+	createFolder(t, daniel, "Ideas")       // yesterday
+	addNote(t, daniel, "Old idea")         // yesterday
+	server.Advance(24 * time.Hour)         // 13 Mar 2026 09:00, a Friday
+	priya := server.SignIn(t, priyasEmail) // a session of today: yesterday's would have expired
+	addNote(t, priya, "First idea")        // today
+	deleteNote(t, priya, "SN-1002")        // today
 
 	response := priya.Do(t, http.MethodGet,
 		"/api/v1/activity-log/summary?todayStart=2026-03-13T00:00:00Z&weekStart=2026-03-09T00:00:00Z", nil)

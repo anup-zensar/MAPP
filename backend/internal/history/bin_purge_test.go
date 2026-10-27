@@ -12,7 +12,7 @@ import (
 // and when and keeps no records, the records stay out of storage, and one "permanently deleted" entry names
 // the record, its place when it was deleted and what was inside it. The entries about the records stay,
 // now saying they are gone for good.
-func TestPurge_RemovesForGoodAndLogs_FR030(t *testing.T) {
+func TestPurge_RemovesForGoodAndLogs_FR030(t *testing.T) { //nolint:gocyclo // 13: one purge, then each place the records must be gone from
 	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
@@ -114,7 +114,7 @@ func TestEmptyBin_OneEntryWithItems_FR029_FR030(t *testing.T) {
 
 // Empty recycle bin leaves alone what someone else restored or deleted meanwhile and what the person did
 // not see; an id listed twice counts once (011 FR-029, FR-032, D-180).
-func TestEmptyBin_SkipsResolvedAndUnlisted_FR032(t *testing.T) {
+func TestEmptyBin_SkipsResolvedAndUnlisted_FR032(t *testing.T) { //nolint:gocyclo // 10: one Empty, then each entry it had to leave alone
 	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
