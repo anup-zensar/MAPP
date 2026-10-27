@@ -9,20 +9,18 @@ import (
 	"testing"
 	"time"
 
-	"mapp/internal/activity"
-	"mapp/internal/campaign"
+	"mapp/internal/activity/activitytest"
+	"mapp/internal/campaign/campaigntest"
 	"mapp/internal/history"
-	"mapp/internal/lineitem"
+	"mapp/internal/lineitem/lineitemtest"
 	"mapp/internal/platform/apitest"
 	"mapp/seed"
 )
 
 const day = 24 * time.Hour
 
-// The seed's demo history (011 plan "Demo data", T019): every entry is dated within the 14 days before the
-// seed time, in time order, with sequence numbers that follow time; the recycle bin holds one unresolved
-// entry, the initiative "Trade shows" with 1 activity and 1 line item, whose records are not stored and
-// whose restore state is restorable (D-188, FR-015, FR-017).
+// The demo history is dated within the 14 days before the seed time, in time order; the recycle bin holds the
+// initiative "Trade shows", restorable, with 1 activity and 1 line item that are no longer stored.
 func TestSeed_HistoryAndRecycleBin_011(t *testing.T) {
 	t.Parallel()
 	db := loadedStore(t)
@@ -75,15 +73,15 @@ func TestSeed_HistoryAndRecycleBin_011(t *testing.T) {
 		t.Errorf("snapshots = %q, want %q", snapshots, wantSnapshots)
 	}
 	read(t, db, func(ctx context.Context) error {
-		_, initiativeStored, err := campaign.NewJSONStore().GetInitiative(ctx, "I-1011")
+		_, initiativeStored, err := campaigntest.NewStore(db).GetInitiative(ctx, "I-1011")
 		if err != nil {
 			return err
 		}
-		_, activityStored, err := activity.NewJSONStore().Get(ctx, "A-1013")
+		_, activityStored, err := activitytest.NewStore(db).Get(ctx, "A-1013")
 		if err != nil {
 			return err
 		}
-		_, lineItemStored, err := lineitem.NewJSONStore().Get(ctx, "L-1011")
+		_, lineItemStored, err := lineitemtest.NewStore(db).Get(ctx, "L-1011")
 		if err != nil {
 			return err
 		}
@@ -115,10 +113,8 @@ func TestSeed_HistoryAndRecycleBin_011(t *testing.T) {
 	}
 }
 
-// Every seeded plan, campaign, initiative, activity and line item has exactly one "created" entry, by its
-// owner (Alex Morgan when it has none), between 14 and 10 days before the seed time, after the entries of
-// its parents; so have the three records of the deleted initiative, 12 days before (011 plan "Demo data"
-// steps 1 and 5).
+// Every seeded planning record has one "created" entry by its owner (Alex Morgan when it has none), 14 to 10
+// days before the seed time and after its parents'; the deleted initiative's three records, 12 days before.
 func TestSeed_History_CreatedEntries_011(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
@@ -143,7 +139,7 @@ func TestSeed_History_CreatedEntries_011(t *testing.T) {
 		}
 	}
 
-	owners := map[string]string{} // person ID → name
+	owners := map[string]string{}
 	for _, p := range d.people {
 		owners[p.ID] = p.Name
 	}
@@ -192,9 +188,8 @@ func TestSeed_History_CreatedEntries_011(t *testing.T) {
 	}
 }
 
-// Every Published plan has one "published" entry by its owner 7 days before, Draft → Published; and Priya
-// Raman changed the planned cost of her first FY2026 Lubricants Europe activity 5 days before, from 5,000.00
-// USD less to what is stored now (011 plan "Demo data" steps 2 and 4).
+// Each Published plan has one "published" entry by its owner 7 days before; Priya changed the planned cost of
+// her first FY2026 Lubricants Europe activity 5 days before, from 5,000.00 USD less to what is stored now.
 func TestSeed_History_PublishedAndCostChange_011(t *testing.T) {
 	t.Parallel()
 	entries, _ := demoLog(t, loadedStore(t))
@@ -240,10 +235,8 @@ func TestSeed_History_PublishedAndCostChange_011(t *testing.T) {
 	}
 }
 
-// The demo history comes out of the API as the Activity log and Home's Recent changes read it: the deleted
-// initiative's entries point at the recycle bin, the summary counts the seeded entries (011 FR-002,
-// FR-008; 009 FR-015). Priya reads every market's plans here (014: the log covers only what the reader may
-// see), so the summary counts the whole seeded history.
+// The deleted initiative's entries point at the recycle bin. Priya reads every market's plans here, because the
+// log covers only what its reader may see, so the summary counts the whole seeded history.
 func TestSeed_History_ThroughTheAPI_011(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
