@@ -8,22 +8,20 @@ import (
 
 	"mapp/internal/activity"
 	"mapp/internal/approval"
+	"mapp/internal/approval/approvaltest"
 	"mapp/internal/platform/actor"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/record"
-	"mapp/internal/platform/store"
 )
 
 // Feature 006 sees the stored approval workflows — inactive ones too, with their active flag and levels —
 // sorted by name, so the activity form offers only the active ones and labels the others (FR-007).
 func TestAdapter_WorkflowFacts_FR007(t *testing.T) {
 	t.Parallel()
-	db, err := store.Open(t.TempDir())
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
-	repo := approval.NewJSONStore()
+	db := fake.NewDB()
+	repo := approvaltest.NewStore(db)
 	meta := record.NewMeta(actor.System, time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC))
-	err = db.Write(t.Context(), func(ctx context.Context) error {
+	err := db.Write(t.Context(), func(ctx context.Context) error {
 		for _, w := range []approval.Workflow{
 			{ID: "WF-1001", Name: "Lubricants EU approval", Active: false, Levels: []approval.Level{{ApproverIDs: []string{"U-1003"}}}, Meta: meta},
 			{ID: "WF-1002", Name: "China BC approval workflow", Active: true,
@@ -77,11 +75,8 @@ func TestAdapter_WorkflowFacts_FR007(t *testing.T) {
 // the activity back Created (FR-023).
 func TestAdapter_ActivityDeletingKeepsRound_008P3(t *testing.T) {
 	t.Parallel()
-	db, err := store.Open(t.TempDir())
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
-	repo := approval.NewJSONStore()
+	db := fake.NewDB()
+	repo := approvaltest.NewStore(db)
 	at := time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 	priya := actor.Actor{ID: "U-1002", Name: "Priya Raman"}
 	open := approval.Round{
@@ -93,13 +88,14 @@ func TestAdapter_ActivityDeletingKeepsRound_008P3(t *testing.T) {
 	hooks := activityApprovalHooks{} // the delete needs nothing of the approvals service
 
 	var after approval.Round
-	err = db.Write(t.Context(), func(ctx context.Context) error {
-		if err = repo.PutRound(ctx, open); err != nil {
+	err := db.Write(t.Context(), func(ctx context.Context) error {
+		if err := repo.PutRound(ctx, open); err != nil {
 			return err
 		}
-		if err = hooks.ActivityDeleting(ctx, priya, activity.Activity{ID: "A-1004", Status: activity.StatusSubmitted}); err != nil {
+		if err := hooks.ActivityDeleting(ctx, priya, activity.Activity{ID: "A-1004", Status: activity.StatusSubmitted}); err != nil {
 			return err
 		}
+		var err error
 		after, _, err = repo.GetRound(ctx, open.ID)
 		return err
 	})

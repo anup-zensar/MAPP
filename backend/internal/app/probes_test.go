@@ -2,7 +2,6 @@ package app_test
 
 import (
 	"net/http"
-	"os"
 	"testing"
 
 	"mapp/internal/platform/apitest"
@@ -24,14 +23,10 @@ func TestProbes_LiveAndReady_022_FR007_FR008(t *testing.T) {
 	}
 }
 
-// Without its data folder the API is not ready (503), and still alive: liveness checks nothing else.
+// Without its storage the API is not ready (503), and still alive: liveness checks nothing else.
 func TestReadyz_DataFolderGone_Answers503_022_FR008(t *testing.T) {
 	t.Parallel()
-	dir := t.TempDir()
-	server := apitest.New(t, apitest.WithDataDir(dir))
-	if err := os.RemoveAll(dir); err != nil {
-		t.Fatalf("removing the data folder: %v", err)
-	}
+	server := apitest.New(t, apitest.WithStorageDown())
 
 	ready := server.Do(t, http.MethodGet, "/readyz", nil)
 	live := server.Do(t, http.MethodGet, "/healthz", nil)

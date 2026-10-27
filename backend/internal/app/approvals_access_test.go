@@ -8,30 +8,31 @@ import (
 	"time"
 
 	accessservice "mapp/internal/access"
-	"mapp/internal/activity"
+	"mapp/internal/access/accesstest"
+	"mapp/internal/activity/activitytest"
 	"mapp/internal/approval"
-	"mapp/internal/campaign"
+	"mapp/internal/campaign/campaigntest"
 	"mapp/internal/history"
-	"mapp/internal/lineitem"
+	"mapp/internal/history/historytest"
+	"mapp/internal/lineitem/lineitemtest"
 	"mapp/internal/people"
-	"mapp/internal/plan"
+	"mapp/internal/people/peopletest"
+	"mapp/internal/plan/plantest"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/ids"
-	"mapp/internal/platform/store"
 	"mapp/internal/settings"
-	"mapp/internal/stores"
+	"mapp/internal/settings/settingstest"
+	"mapp/internal/stores/storestest"
 	"mapp/seed"
 )
 
 // seededStore returns a store with the demo data, at 12 Mar 2026 09:00 UTC.
-func seededStore(t *testing.T) (*store.DB, func() time.Time) {
-	t.Helper()
-	db, err := store.Open(t.TempDir())
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
+func seededStore(tb testing.TB) (*fake.DB, func() time.Time) {
+	tb.Helper()
+	db := fake.NewDB()
 	now := func() time.Time { return time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC) }
-	if err := seed.Load(t.Context(), stores.JSON(db), now); err != nil {
-		t.Fatalf("seed.Load: %v", err)
+	if err := seed.Load(tb.Context(), storestest.New(db), now); err != nil {
+		tb.Fatalf("seed.Load: %v", err)
 	}
 	return db, now
 }
@@ -41,13 +42,13 @@ func seededStore(t *testing.T) (*store.DB, func() time.Time) {
 func TestAdapter_RuleFacts_FR010(t *testing.T) {
 	t.Parallel()
 	db, now := seededStore(t)
-	generator := ids.NewGenerator(ids.NewJSONCounters())
+	generator := ids.NewGenerator(fake.NewCounters(db))
 	settingsService := settings.NewService(history.Tools{
-		Tx: db, IDs: generator, Log: history.NewService(db, history.NewJSONStore(), generator, now), Now: now,
-	}, settings.NewJSONStore())
+		Tx: db, IDs: generator, Log: history.NewService(db, historytest.NewStore(db), generator, now), Now: now,
+	}, settingstest.NewStore(db))
 	adapter := &approvalsActivities{
-		activities: activity.NewJSONStore(), lineItems: lineitem.NewJSONStore(), campaigns: campaign.NewJSONStore(),
-		plans: plan.NewJSONStore(), settings: settings.NewJSONStore(), rates: settingsService.Rates, now: now,
+		activities: activitytest.NewStore(db), lineItems: lineitemtest.NewStore(db), campaigns: campaigntest.NewStore(db),
+		plans: plantest.NewStore(db), settings: settingstest.NewStore(db), rates: settingsService.Rates, now: now,
 	}
 
 	var fleet, launch approval.ActivityFacts
@@ -79,16 +80,16 @@ func TestAdapter_RuleFacts_FR010(t *testing.T) {
 func TestApprovalsAccess_RoleHolders_FR001(t *testing.T) {
 	t.Parallel()
 	db, now := seededStore(t)
-	generator := ids.NewGenerator(ids.NewJSONCounters())
-	historyService := history.NewService(db, history.NewJSONStore(), generator, now)
-	peopleService := people.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, people.NewJSONStore())
+	generator := ids.NewGenerator(fake.NewCounters(db))
+	historyService := history.NewService(db, historytest.NewStore(db), generator, now)
+	peopleService := people.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, peopletest.NewStore(db))
 	access := approvalsAccess{access: accessservice.NewService(
-		history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, accessservice.NewJSONStore(),
+		history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, accesstest.NewStore(db),
 		accessDirectory{people: peopleService})}
-	choices := approvalRuleChoices{settings: settings.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, settings.NewJSONStore())}
+	choices := approvalRuleChoices{settings: settings.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, settingstest.NewStore(db))}
 
 	err := db.Read(t.Context(), func(ctx context.Context) error {
-		lubricants, found, err := plan.NewJSONStore().Get(ctx, "P-1001")
+		lubricants, found, err := plantest.NewStore(db).Get(ctx, "P-1001")
 		if err != nil || !found {
 			t.Fatalf("plan P-1001: %v %v", found, err)
 		}

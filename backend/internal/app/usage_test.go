@@ -5,13 +5,10 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
-	"time"
 
 	"mapp/internal/people"
+	"mapp/internal/people/peopletest"
 	"mapp/internal/platform/apitest"
-	"mapp/internal/platform/store"
-	"mapp/internal/stores"
-	"mapp/seed"
 )
 
 // A team used by a plan cannot be deleted, also while the plan is in the bin; one no plan uses can be.
@@ -124,22 +121,14 @@ func TestImpact_OwnerNeedsAttention_FR013(t *testing.T) {
 // amounts in euros. The preference is stored before the API starts (D-061).
 func TestDisplayCurrencies_SettingsAndPeople_FR003_D061(t *testing.T) {
 	t.Parallel()
-	dir := t.TempDir()
-	db, err := store.Open(dir)
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
-	now := func() time.Time { return time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC) }
-	if err = seed.Load(t.Context(), stores.JSON(db), now); err != nil {
-		t.Fatalf("seed.Load: %v", err)
-	}
-	err = db.Write(t.Context(), func(ctx context.Context) error {
-		return people.NewJSONStore().PutPreferences(ctx, people.Preferences{PersonID: "U-1004", Theme: "system", DisplayCurrency: "EUR"})
+	db := apitest.DemoDB(t, false)
+	err := db.Write(t.Context(), func(ctx context.Context) error {
+		return peopletest.NewStore(db).PutPreferences(ctx, people.Preferences{PersonID: "U-1004", Theme: "system", DisplayCurrency: "EUR"})
 	})
 	if err != nil {
 		t.Fatalf("saving Mei Lin's display currency: %v", err)
 	}
-	server := apitest.New(t, apitest.WithDataDir(dir))
+	server := apitest.New(t, apitest.WithDB(db))
 	priya := server.SignIn(t, "priya.raman@shell.com")
 	server.GrantRole(t, "priya.raman@shell.com", "globalPlanner", "all")
 	mei := server.SignIn(t, "mei.lin@shell.com")
