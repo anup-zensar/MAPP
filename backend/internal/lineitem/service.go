@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"maps"
 	"slices"
 	"strings"
@@ -69,85 +68,6 @@ func (s *Service) gone(ctx context.Context, a actor.Actor, id string) error {
 	return errs.NotFound(lineItemGoneMessage)
 }
 
-// Update saves the whole form of the line item id (FR-027, D-153): the version it started from is needed
-// (missing: reported with every other problem; out of date: version_conflict naming who changed it); an
-// inactive owner, currency or finance budget item already stored may stay (FR-011, FR-016); the custom months
-// are kept only for a custom spread (FR-018) and stay when the cost or currency changes (FR-022). A save that
-// changes nothing creates no version and no log entry. Changing the planned cost or the currency of a line
-// item of a Submitted or Approved activity needs u.RestartApproval and sends the activity back to Created
-// (FR-031); other changes never change its status (FR-032). One "changed" entry lists every change, old and
-// new.
-func (s *Service) Update(ctx context.Context, a actor.Actor, id string, u Update) (View, error) {
-	var view View
-	err := s.tx.Write(ctx, func(ctx context.Context) error {
-		before, found, err := s.repo.Get(ctx, id)
-		if err != nil {
-			return err
-		}
-		if !found {
-			return s.gone(ctx, a, id)
-		}
-		f, err := s.facts(ctx, before.ActivityID)
-		if err != nil {
-			return err
-		}
-		siblings, err := s.siblings(ctx, before)
-		if err != nil {
-			return err
-		}
-		after, problems, err := s.check(ctx, f, siblings, u.input(), &before)
-		if err != nil {
-			return err
-		}
-		if u.Version == nil || *u.Version < 1 {
-			problems.Add("version", reloadMessage)
-		}
-		if err := problems.Err(); err != nil {
-			return err
-		}
-		if err := before.CheckVersion(*u.Version, lineItemSingular); err != nil {
-			return err
-		}
-		after.ID, after.ActivityID, after.Meta = before.ID, before.ActivityID, before.Meta
-		changes, err := s.changes(before, after)
-		if err != nil {
-			return err
-		}
-		if len(changes) == 0 {
-			view, err = s.shownView(ctx, a, f, before)
-			return err
-		}
-		costChanged := after.PlannedCost != before.PlannedCost || after.Currency != before.Currency
-		if costChanged {
-			if err := confirmRestart(nil, f, u.RestartApproval); err != nil {
-				return err
-			}
-		}
-		after.Touch(a, s.now())
-		if err := s.repo.Put(ctx, after); err != nil {
-			return err
-		}
-		if _, err := s.history.Log(ctx, a, history.LogInput{
-			Kind: lineItemKind, RecordID: after.ID, RecordName: after.Name, Action: history.ActionChanged, Changes: changes,
-		}); err != nil {
-			return err
-		}
-		if costChanged {
-			reason := fmt.Sprintf(changedReason, after.Name, after.ID, before.PlannedCost.Format(), before.Currency,
-				after.PlannedCost.Format(), after.Currency)
-			if f, err = s.restart(ctx, a, f, reason); err != nil {
-				return err
-			}
-		}
-		view, err = s.shownView(ctx, a, f, after)
-		return err
-	})
-	if err != nil {
-		return View{}, err
-	}
-	return view, nil
-}
-
 // siblings returns the other line items of li's activity.
 func (s *Service) siblings(ctx context.Context, li LineItem) ([]LineItem, error) {
 	items, err := s.repo.ListByActivity(ctx, li.ActivityID)
@@ -166,14 +86,14 @@ func (s *Service) changes(before, after LineItem) ([]history.Change, error) {
 	if err != nil {
 		return nil, err
 	}
-	ids := slices.Sorted(maps.Keys(before.Attributes))
+	attributeIDs := slices.Sorted(maps.Keys(before.Attributes))
 	for id := range after.Attributes {
-		if !slices.Contains(ids, id) {
-			ids = append(ids, id)
+		if !slices.Contains(attributeIDs, id) {
+			attributeIDs = append(attributeIDs, id)
 		}
 	}
-	slices.Sort(ids)
-	for _, id := range ids {
+	slices.Sort(attributeIDs)
+	for _, id := range attributeIDs {
 		old, value := before.Attributes[id], after.Attributes[id]
 		if !sameValue(old, value) {
 			changes = append(changes, history.Change{Field: "attributes." + id, Old: old, New: value})
