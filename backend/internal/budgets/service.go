@@ -30,18 +30,17 @@ type Service struct {
 }
 
 // NewService returns the global budgets service. It keeps global budgets and allocations in repo, gives them
-// readable IDs with generator, logs their changes and deletes them through hist, reads plans, people and
-// rates and asks the access rules through deps, works in transactions of tx and reads the time from now.
+// readable IDs, logs their changes and deletes them, works in transactions and reads the time with tools,
+// and reads plans, people and rates and asks the access rules through deps.
 // Without deps.Access every action is allowed (internal calls, the seed, tests).
-func NewService(tx store.Transactor, repo Store, generator *ids.Generator, hist *history.Service, deps Deps,
-	now clock.Clock) *Service {
+func NewService(tools history.Tools, repo Store, deps Deps) *Service {
 	access := deps.Access
 	if access == nil {
 		access = unrestricted{}
 	}
 	return &Service{
-		tx: tx, repo: repo, ids: generator, history: hist, plans: deps.Plans, directory: deps.Directory,
-		rates: deps.Rates, access: access, now: now,
+		tx: tools.Tx, repo: repo, ids: tools.IDs, history: tools.Log, plans: deps.Plans, directory: deps.Directory,
+		rates: deps.Rates, access: access, now: tools.Now,
 	}
 }
 

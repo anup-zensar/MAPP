@@ -258,9 +258,10 @@ func newFixture(t *testing.T) *fixture {
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	hist := history.NewService(db, history.NewJSONStore(), generator, clock.Now)
 	f := &fixture{db: db, clock: clock, plans: newFakePlans(t), access: &fakeAccess{}, history: hist}
-	f.service = NewService(db, NewJSONStore(), generator, hist, Deps{
+	tools := history.Tools{Tx: db, IDs: generator, Log: hist, Now: clock.Now}
+	f.service = NewService(tools, NewJSONStore(), Deps{
 		Plans: f.plans, Directory: fakeDirectory{}, Rates: fakeRates{t: t}, Access: f.access,
-	}, clock.Now)
+	})
 	for _, kind := range append([]history.Kind{f.plans.planKind()}, f.service.Kinds()...) {
 		if err := hist.Register(kind); err != nil {
 			t.Fatalf("Register(%s): %v", kind.Name, err)

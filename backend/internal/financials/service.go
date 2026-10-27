@@ -51,13 +51,12 @@ type Service struct {
 }
 
 // NewService returns the financials service. It keeps transactions and imports in repo, gives out readable
-// IDs with generator, logs with hist, reads the other features through deps, works in transactions of tx
-// and reads the time from now. Uploaded files are read by the simulated GSAP extract (CSVFeed).
-func NewService(tx store.Transactor, repo Store, generator *ids.Generator, hist *history.Service, deps Deps,
-	now clock.Clock) *Service {
+// IDs, logs, works in transactions and reads the time with tools, and reads the other features through
+// deps. Uploaded files are read by the simulated GSAP extract (CSVFeed).
+func NewService(tools history.Tools, repo Store, deps Deps) *Service {
 	return &Service{
-		tx: tx, repo: repo, ids: generator, history: hist, planning: deps.Planning, rates: deps.Rates,
-		displays: deps.Displays, access: deps.Access, feed: CSVFeed{}, now: now,
+		tx: tools.Tx, repo: repo, ids: tools.IDs, history: tools.Log, planning: deps.Planning, rates: deps.Rates,
+		displays: deps.Displays, access: deps.Access, feed: CSVFeed{}, now: tools.Now,
 	}
 }
 
@@ -492,13 +491,22 @@ func (s *Service) applier(ctx context.Context, a actor.Actor, feed Feed) (applie
 	return applier{repo: s.repo, ids: s.ids, items: items, rates: rates, actor: a, now: s.now(), feed: feed}, nil
 }
 
+// DemoLoad is what LoadDemo matches and dates the demo data with: the line items the seed stored, the
+// rates of its currencies and the seed time.
+type DemoLoad struct {
+	Items LineItemStates
+	Rates money.Rates
+	At    time.Time
+}
+
 // LoadDemo loads the demo data of FR-031 inside the caller's Write: the demo feed's 11 transactions
-// through the same apply code as an import, as MAPP (actor.System) at the time at, and one import
-// record "Demo data (simulated GSAP)". It writes no activity-log entry (D-188). The seed calls it, with the
-// line items it stored and the rates of its currencies.
-func LoadDemo(ctx context.Context, repo Store, generator *ids.Generator, items LineItemStates, rates money.Rates,
-	at time.Time) (Import, error) {
-	ap := applier{repo: repo, ids: generator, items: items, rates: rates, actor: actor.System, now: at, feed: DemoFeed{}}
+// through the same apply code as an import, as MAPP (actor.System) at the time demo.At, and one import
+// record "Demo data (simulated GSAP)". It writes no activity-log entry (D-188). The seed calls it.
+func LoadDemo(ctx context.Context, repo Store, generator *ids.Generator, demo DemoLoad) (Import, error) {
+	ap := applier{
+		repo: repo, ids: generator, items: demo.Items, rates: demo.Rates, actor: actor.System, now: demo.At,
+		feed: DemoFeed{},
+	}
 	done, err := ap.apply(ctx, Delivery{})
 	if err != nil {
 		return Import{}, err
