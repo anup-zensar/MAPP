@@ -5,6 +5,7 @@ import (
 	"slices"
 	"testing"
 
+	"mapp/internal/activities"
 	"mapp/internal/platform/errs"
 	"mapp/internal/settings"
 )
@@ -47,16 +48,8 @@ func TestNewForm_Defaults_FR008_FR009_FR012(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewForm: %v", err)
 	}
-	d := form.Defaults
-	if d == nil || d.Owner == nil || d.Owner.Name != "Priya Raman" || d.StartDate.String() != "2026-01-01" ||
-		d.EndDate.String() != "2026-06-30" || d.ApprovalWorkflowID != nil {
-		t.Fatalf("defaults = %+v, want Priya Raman, 1 Jan – 30 Jun 2026 and no workflow (three are active)", d)
-	}
-	if form.Context.Initiative.Owner == nil || form.Context.LatestEndDate.String() != "2036-12-31" ||
-		form.Context.Model.Name != "Lubricants 1.0" || len(form.Context.BusinessUnits) != 1 ||
-		form.Context.BusinessUnits[0].Label != "Lubricants" || form.Context.Campaign.Name != "Helix launch" {
-		t.Errorf("context = %+v", form.Context)
-	}
+	assertInitiativeDefaults(t, form.Defaults)
+	assertDigitalAndSocialContext(t, form.Context)
 
 	f.deactivateWorkflow(t, chinaFlow)
 	f.deactivateWorkflow(t, "WF-1003") // 017's Standard marketing approval (017 FR-037)
@@ -71,6 +64,27 @@ func TestNewForm_Defaults_FR008_FR009_FR012(t *testing.T) {
 	if len(form.ApprovalWorkflows) != 1 || form.ApprovalWorkflows[0].Levels[0].Name != "Level 1" ||
 		form.ApprovalWorkflows[0].Levels[0].Approvers[0].Name != "Daniel Okoro" {
 		t.Errorf("workflows = %+v, want only the active one with its level and approver", form.ApprovalWorkflows)
+	}
+}
+
+// assertInitiativeDefaults checks the defaults of a new activity of Digital & social while its owner and three
+// workflows are active: the owner, the initiative's dates and no workflow.
+func assertInitiativeDefaults(t *testing.T, d *activities.Defaults) {
+	t.Helper()
+	if d == nil || d.Owner == nil || d.Owner.Name != "Priya Raman" || d.StartDate.String() != "2026-01-01" ||
+		d.EndDate.String() != "2026-06-30" || d.ApprovalWorkflowID != nil {
+		t.Fatalf("defaults = %+v, want Priya Raman, 1 Jan – 30 Jun 2026 and no workflow (three are active)", d)
+	}
+}
+
+// assertDigitalAndSocialContext checks the plan context of the form of Digital & social: its owner, the
+// latest end date, the model, the business unit and the campaign.
+func assertDigitalAndSocialContext(t *testing.T, c activities.FormContext) {
+	t.Helper()
+	if c.Initiative.Owner == nil || c.LatestEndDate.String() != "2036-12-31" ||
+		c.Model.Name != "Lubricants 1.0" || len(c.BusinessUnits) != 1 ||
+		c.BusinessUnits[0].Label != "Lubricants" || c.Campaign.Name != "Helix launch" {
+		t.Errorf("context = %+v", c)
 	}
 }
 
