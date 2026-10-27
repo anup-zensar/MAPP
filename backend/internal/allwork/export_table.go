@@ -13,15 +13,7 @@ import (
 // table returns the heading row, the rows of the view and the totals row (FR-032, FR-033).
 func (e exporter) table() [][]sheet.Cell {
 	r := e.b.result
-	withContext := false
-	rows := make([]Row, 0, len(r.Rows))
-	for _, row := range r.Rows {
-		if row.Level == LevelUnassigned && !e.unassigned {
-			continue
-		}
-		rows = append(rows, row)
-		withContext = withContext || row.Role == RoleContext
-	}
+	rows, withContext := e.rows()
 	heading := []sheet.Cell{sheet.Bold("Level"), sheet.Bold("Path"), sheet.Bold("Name")}
 	if withContext {
 		heading = append(heading, sheet.Bold("Shown for context"))
@@ -33,21 +25,37 @@ func (e exporter) table() [][]sheet.Cell {
 		if withContext {
 			yes := ""
 			if row.Role == RoleContext {
-				yes = "Yes"
+				yes = labelYes
 			}
 			line = append(line, sheet.Text(yes))
 		}
 		table = append(table, append(line, e.values(row)...))
 	}
-	noun := "activities"
+	noun := nounActivities
 	if r.Totals.Activities == 1 {
-		noun = "activity"
+		noun = nounActivity
 	}
 	totals := []sheet.Cell{{}, {}, sheet.Bold(fmt.Sprintf("Total · %d %s", r.Totals.Activities, noun))}
 	if withContext {
 		totals = append(totals, sheet.Cell{})
 	}
 	return append(table, append(totals, e.totals()...))
+}
+
+// rows returns the rows of the file, the unassigned planned cost rows only when they are asked for, and
+// whether any of them is shown for context.
+func (e exporter) rows() ([]Row, bool) {
+	r := e.b.result
+	withContext := false
+	rows := make([]Row, 0, len(r.Rows))
+	for _, row := range r.Rows {
+		if row.Level == LevelUnassigned && !e.unassigned {
+			continue
+		}
+		rows = append(rows, row)
+		withContext = withContext || row.Role == RoleContext
+	}
+	return rows, withContext
 }
 
 // headings returns the headings of the view's columns (FR-033): money with the currency, "Planned cost
@@ -89,19 +97,7 @@ func (e exporter) values(row Row) []sheet.Cell {
 	}
 	switch e.b.result.View {
 	case ViewCalendar:
-		end := sheet.Date(row.EndDate)
-		if row.Ongoing {
-			end = sheet.Text(ongoingWord)
-		}
-		owner := sheet.Cell{}
-		if row.Owner != nil {
-			owner = sheet.Text(inactiveLabel(row.Owner.Name, row.Owner.Inactive))
-		}
-		status := sheet.Cell{}
-		if row.Status != nil {
-			status = sheet.Text(row.Status.Label)
-		}
-		return []sheet.Cell{id, status, sheet.Date(row.StartDate), end, owner, moneyValue(row.PlannedCost)}
+		return calendarValues(id, row)
 	case ViewBudget:
 		values := []sheet.Cell{id, moneyValue(row.Budget)}
 		for _, a := range row.Periods {
@@ -121,6 +117,23 @@ func (e exporter) values(row Row) []sheet.Cell {
 		}
 	}
 	return values
+}
+
+// calendarValues returns the values of a row in the Calendar's columns, after its id.
+func calendarValues(id sheet.Cell, row Row) []sheet.Cell {
+	end := sheet.Date(row.EndDate)
+	if row.Ongoing {
+		end = sheet.Text(ongoingWord)
+	}
+	owner := sheet.Cell{}
+	if row.Owner != nil {
+		owner = sheet.Text(inactiveLabel(row.Owner.Name, row.Owner.Inactive))
+	}
+	status := sheet.Cell{}
+	if row.Status != nil {
+		status = sheet.Text(row.Status.Label)
+	}
+	return []sheet.Cell{id, status, sheet.Date(row.StartDate), end, owner, moneyValue(row.PlannedCost)}
 }
 
 // totals returns the totals row's values in the view's columns (FR-014, FR-024).

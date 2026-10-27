@@ -8,7 +8,7 @@ import (
 // Search finds the text in the name, ID, external name or description of a record, ignoring letter case;
 // the record's path is shown as context, the fields that matched are named, and a hit in a long text comes
 // with an excerpt (FR-006, US2 scenario 1).
-func TestSearch_MatchesNameIdExternalNameDescription_IgnoringCase_FR006(t *testing.T) {
+func TestSearch_MatchesNameIdExternalNameDescription_IgnoringCase_FR006(t *testing.T) { //nolint:gocyclo // 11: each search, then its match, its hit and its context rows
 	t.Parallel()
 	b := seedYear()
 	tests := []struct {

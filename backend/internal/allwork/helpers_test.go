@@ -77,6 +77,18 @@ func cellText(c *Cell) string {
 	if c == nil {
 		return ""
 	}
+	text := valueText(c)
+	if c.Inactive {
+		text += " (inactive)"
+	}
+	if c.Unfiltered != nil {
+		text += " [all: " + cellText(c.Unfiltered) + "]"
+	}
+	return text
+}
+
+// valueText writes the value of a cell by its kind.
+func valueText(c *Cell) string {
 	var text string
 	switch c.Kind {
 	case KindEmpty:
@@ -95,12 +107,6 @@ func cellText(c *Cell) string {
 		text = c.Text + "/" + string(c.Tone)
 	default:
 		text = c.Text
-	}
-	if c.Inactive {
-		text += " (inactive)"
-	}
-	if c.Unfiltered != nil {
-		text += " [all: " + cellText(c.Unfiltered) + "]"
 	}
 	return text
 }

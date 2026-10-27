@@ -291,7 +291,7 @@ func (b rowBuilder) totals(m matches) Totals {
 		switch c.Key {
 		case "planBudget":
 			totals.Cells[i] = moneyCell(cur, m.planBudget)
-		case "plannedCost", "lineItems", "unassigned", "activities", "inq", "mql", "revenue",
+		case columnPlannedCost, columnLineItems, columnUnassigned, columnActivities, columnINQ, columnMQL, columnRevenue,
 			columnCommitted, columnInvoiced, columnPaid, columnAccrued, columnNotYetCommitted:
 			totals.Cells[i] = rolledCell(c.Key, &tnode{n: &Node{}}, m.activities, cur)
 		}

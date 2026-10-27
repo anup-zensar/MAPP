@@ -62,7 +62,7 @@ func TestPeriods_OtherYearsOutsideRange_FR035(t *testing.T) {
 // Compare with phased budget gives plans, campaigns and initiatives their phased budget per period and the
 // periods where the planned cost is above it (FR-038): P-2001 is phased at 1,000.00 a month; March holds A-3's
 // 8,000.00 and June the 3,000.00 of A-4's line item.
-func TestCompare_PhasedBudgetAndOverPeriods_FR038(t *testing.T) {
+func TestCompare_PhasedBudgetAndOverPeriods_FR038(t *testing.T) { //nolint:gocyclo // 14: the phased budget and the periods over it of a plan, a campaign and an activity
 	t.Parallel()
 	var year2027 []Node
 	for _, n := range twoYears() {

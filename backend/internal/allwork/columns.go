@@ -20,6 +20,18 @@ const (
 	GroupLineItem   = "lineItem"
 )
 
+// The keys of the roll-up columns of the Standard group.
+const (
+	columnBudgetUsed  = "budgetUsed"
+	columnPlannedCost = "plannedCost"
+	columnLineItems   = "lineItems"
+	columnUnassigned  = "unassigned"
+	columnActivities  = "activities"
+	columnINQ         = "inq"
+	columnMQL         = "mql"
+	columnRevenue     = "revenue"
+)
+
 // The level sets of the columns.
 var (
 	recordLevels    = []Level{LevelPlan, LevelCampaign, LevelInitiative, LevelActivity, LevelLineItem}
@@ -72,7 +84,7 @@ var DefaultColumns = []string{
 // rolledColumns are the roll-up columns: on a container they add up the matching activities shown below it
 // and carry the unfiltered value when filters hide some (FR-013).
 var rolledColumns = []string{
-	"budgetUsed", "plannedCost", "lineItems", "unassigned", "activities", "inq", "mql", "revenue",
+	columnBudgetUsed, columnPlannedCost, columnLineItems, columnUnassigned, columnActivities, columnINQ, columnMQL, columnRevenue,
 	columnCommitted, columnInvoiced, columnPaid, columnAccrued, columnNotYetCommitted, // feature 015 (finance.go)
 }
 
@@ -269,7 +281,7 @@ func recordCell(key string, r cellRow, cur Currency) *Cell {
 		return moneyCell(cur, n.Budget)
 	case "remainingBudget":
 		return remainingCell(r.t, cur)
-	case "plannedCost":
+	case columnPlannedCost:
 		return moneyCell(cur, n.PlannedCost)
 	case "createdAt":
 		return dateTimeCell(n.CreatedAt)

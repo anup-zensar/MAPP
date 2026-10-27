@@ -66,7 +66,7 @@ func newViewBody(name string, isDefault bool) map[string]any {
 
 // Saved views are created (201), listed by name, changed, made the default and deleted by their owner; for
 // anyone else they are not found (FR-029 – FR-031, US6).
-func TestSavedViews_CRUD_Contract(t *testing.T) {
+func TestSavedViews_CRUD_Contract(t *testing.T) { //nolint:gocyclo // 13: one view created, changed, listed and deleted, each answer checked in turn
 	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)

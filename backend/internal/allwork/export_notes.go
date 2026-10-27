@@ -8,17 +8,23 @@ import (
 	"mapp/internal/platform/date"
 )
 
+// The words of the notes.
+const (
+	labelNone = "None"
+	labelYear = "Year"
+)
+
 // notes returns the notes before the data (FR-034): the view, the year, one line per active filter (or
 // None), the search, Show levels, the display currency, who exported it and when.
 func (e exporter) notes(a actor.Actor) [][2]string {
 	r := e.b.result
-	notes := [][2]string{{"View", viewNames[r.View]}, {"Year", strconv.Itoa(r.Year)}}
+	notes := [][2]string{{"View", viewNames[r.View]}, {labelYear, strconv.Itoa(r.Year)}}
 	if r.YearTo > r.YearFrom && r.YearFrom != 0 { // 016 FR-034: the range
 		notes[1] = [2]string{"Years", yearsText(r, " – ")}
 	}
 	chips := e.chips()
 	if len(chips) == 0 {
-		chips = []string{"None"}
+		chips = []string{labelNone}
 	}
 	for i, chip := range chips {
 		label := ""
@@ -29,7 +35,7 @@ func (e exporter) notes(a actor.Actor) [][2]string {
 	}
 	search := e.b.query.Search
 	if search == "" {
-		search = "None"
+		search = labelNone
 	}
 	now := e.in.now.UTC()
 	if showsFinance(e.b.result.Columns) {
@@ -112,9 +118,9 @@ func attributeValueLabel(a Attribute, v string) string {
 	case AttrNotFilledIn:
 		return labelNotFilledIn
 	case AttrYes:
-		return "Yes"
+		return labelYes
 	case AttrNo:
-		return "No"
+		return labelNo
 	}
 	return optionLabel(a.Options)(v)
 }

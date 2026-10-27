@@ -11,6 +11,12 @@ import (
 	"mapp/internal/rollup"
 )
 
+// The answers of a yes/no value as people read them.
+const (
+	labelYes = "Yes"
+	labelNo  = "No"
+)
+
 // fieldCell returns the cell of a level-specific value (FR-020): "—" when empty; a choice by its label,
 // several joined with ", ", a % split with the shares ("Germany 60 %, France 40 %"); inactive values
 // labelled; Yes or No; an amount in USD in the display currency, a local amount as it is.
@@ -29,6 +35,13 @@ func fieldCell(v Value, cur Currency) *Cell {
 		return numberCell(v.Number)
 	case v.Yes != nil:
 		return textCell(yesNo(*v.Yes))
+	}
+	return choiceCell(v)
+}
+
+// choiceCell returns the cell of a value of choices, or of text.
+func choiceCell(v Value) *Cell {
+	switch {
 	case len(v.Choices) == 1 && v.Choices[0].Share == nil:
 		return &Cell{Kind: KindText, Text: v.Choices[0].Label, Inactive: v.Choices[0].Inactive}
 	case len(v.Choices) > 0:
@@ -53,9 +66,9 @@ func fieldCell(v Value, cur Currency) *Cell {
 // yesNo is a yes/no value as people read it.
 func yesNo(yes bool) string {
 	if yes {
-		return "Yes"
+		return labelYes
 	}
-	return "No"
+	return labelNo
 }
 
 // shareText writes a share without trailing zeros: 60.00 → "60", 33.50 → "33.5".
@@ -64,24 +77,24 @@ func shareText(p money.Percent) string {
 }
 
 // rolledCell returns the value of a roll-up column from figures f of the record t.
-func rolledCell(key string, t *tnode, f figures, cur Currency) *Cell {
+func rolledCell(key string, t *tnode, f figures, cur Currency) *Cell { //nolint:gocyclo // 10: one case per roll-up column
 	switch key {
-	case "budgetUsed":
+	case columnBudgetUsed:
 		return budgetUsedCell(f.planned, t.n.Budget)
-	case "plannedCost":
+	case columnPlannedCost:
 		return moneyCell(cur, f.planned)
-	case "lineItems":
+	case columnLineItems:
 		return moneyCell(cur, f.lineItems)
-	case "unassigned":
+	case columnUnassigned:
 		return moneyCell(cur, f.unassigned)
-	case "activities":
+	case columnActivities:
 		count := int64(f.activities)
 		return numberCell(&count)
-	case "inq":
+	case columnINQ:
 		return numberCell(f.inq)
-	case "mql":
+	case columnMQL:
 		return numberCell(f.mql)
-	case "revenue":
+	case columnRevenue:
 		return moneyCell(cur, f.revenue)
 	}
 	if slices.Contains(financialKeys, key) {

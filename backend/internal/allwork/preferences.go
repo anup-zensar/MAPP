@@ -52,14 +52,8 @@ func (s *Service) UpdatePreferences(ctx context.Context, a actor.Actor, p Prefer
 	checkColumns(&problems, "columns", columns)
 	var saved Preferences
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
-		if p.Sort != nil {
-			columns, err := s.catalogue(ctx)
-			if err != nil {
-				return err
-			}
-			if _, known := catalogueOf(columns)[p.Sort.Column]; !known || !validDirection(p.Sort.Direction) {
-				problems.Add("sort", msgChooseSort)
-			}
+		if err := s.checkSort(ctx, p.Sort, &problems); err != nil {
+			return err
 		}
 		if err := problems.Err(); err != nil {
 			return err
@@ -80,6 +74,21 @@ func (s *Service) UpdatePreferences(ctx context.Context, a actor.Actor, p Prefer
 		return Preferences{}, err
 	}
 	return saved, nil
+}
+
+// checkSort adds a problem when sort names no column of the grid or no direction; nil asks for no sort.
+func (s *Service) checkSort(ctx context.Context, sort *Sort, problems *errs.Problems) error {
+	if sort == nil {
+		return nil
+	}
+	columns, err := s.catalogue(ctx)
+	if err != nil {
+		return err
+	}
+	if _, known := catalogueOf(columns)[sort.Column]; !known || !validDirection(sort.Direction) {
+		problems.Add("sort", msgChooseSort)
+	}
+	return nil
 }
 
 // sameSort reports whether two sorts are the same (both none, or the same column and direction).
