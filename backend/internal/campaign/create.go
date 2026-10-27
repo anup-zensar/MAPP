@@ -36,7 +36,7 @@ func (s *Service) CreateCampaign(ctx context.Context, a actor.Actor, planID stri
 		if err = s.checkOwner(ctx, &problems, f.OwnerID, nil); err != nil {
 			return err
 		}
-		values, err := s.checkAttributes(ctx, &problems, settings.LevelCampaign, plan, in.Attributes, nil)
+		values, err := s.checkAttributes(ctx, &problems, attributesSent{settings.LevelCampaign, plan, in.Attributes, nil})
 		if err != nil {
 			return err
 		}
@@ -100,7 +100,7 @@ func (s *Service) CreateInitiative(ctx context.Context, a actor.Actor, campaignI
 			return err
 		}
 		checkInsideCampaign(&problems, campaign, f.StartDate, f.EndDate)
-		values, err := s.checkAttributes(ctx, &problems, settings.LevelInitiative, plan, in.Attributes, nil)
+		values, err := s.checkAttributes(ctx, &problems, attributesSent{settings.LevelInitiative, plan, in.Attributes, nil})
 		if err != nil {
 			return err
 		}

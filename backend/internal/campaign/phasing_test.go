@@ -157,7 +157,7 @@ func TestMoveCopy_KeepPhasing_FR025(t *testing.T) {
 		Currency: "GBP", ModelID: "MOD-1001", Attributes: settings.AttributeValues{}}
 
 	copied, err := f.service.CopyCampaign(t.Context(), priya, c.ID, CampaignCopy{PlanID: "P-1004", Name: "Helix (copy)"})
-	_, newIDs, planErr := f.service.CopyPlanContents(t.Context(), priya, "P-1004", "P-1006", 1)
+	_, newIDs, planErr := f.service.CopyPlanContents(t.Context(), priya, CopyPair{FromID: "P-1004", ToID: "P-1006"}, 1)
 
 	if err != nil || copied.BudgetPhasing.Months[0].Month != "2027-03" || copied.Initiatives[0].BudgetPhasing.Method != rollup.MethodEvenly {
 		t.Errorf("copy = %+v, %v", copied.BudgetPhasing, err)

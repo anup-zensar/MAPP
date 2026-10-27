@@ -8,6 +8,7 @@ import (
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
 	"mapp/internal/settings"
 )
 
@@ -225,6 +226,14 @@ func checkVersionSent(problems *errs.Problems, version *int) {
 	if version == nil || *version < 1 {
 		problems.Add("version", reloadMessage)
 	}
+}
+
+// checkVersionIfSent leaves a missing or invalid version to checkVersionSent, which reports it with the form.
+func checkVersionIfSent(m record.Meta, version *int, noun string) error {
+	if version == nil || *version < 1 {
+		return nil
+	}
+	return m.CheckVersion(*version, noun)
 }
 
 // campaignNameTaken returns the "already has" message when another campaign of plan than exceptID has name,

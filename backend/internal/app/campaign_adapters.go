@@ -100,7 +100,7 @@ func campaignLevels(svc *campaign.Service) []plan.Level {
 	}
 	return []plan.Level{
 		{Name: campaignLevel, AddFacts: addFacts, Copy: func(ctx context.Context, job *plan.CopyJob) error {
-			counts, newIDs, err := svc.CopyPlanContents(ctx, job.Actor, job.SourcePlanID, job.TargetPlanID, job.Years)
+			counts, newIDs, err := svc.CopyPlanContents(ctx, job.Actor, campaign.CopyPair{FromID: job.SourcePlanID, ToID: job.TargetPlanID}, job.Years)
 			if err != nil {
 				return err
 			}

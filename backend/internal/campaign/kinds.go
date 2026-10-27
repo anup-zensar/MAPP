@@ -26,6 +26,7 @@ const (
 	initiativeSingular = "initiative"
 	campaignPlural     = "campaigns"
 	initiativePlural   = "initiatives"
+	activityPlural     = "activities"
 )
 
 // Messages of the plan's "History kinds" about bringing a record back.

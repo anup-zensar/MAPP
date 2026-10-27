@@ -1,11 +1,3 @@
-// Package campaigns holds campaigns and initiatives (feature 005): a campaign is a theme inside one plan,
-// an initiative a group of similar work inside one campaign. Neither has a stored status (D-012): every
-// figure is derived on read.
-//
-// The shared foundation wrote the data layer: the stored records and the API types (this file), the
-// activity seam feature 006 implements (hooks.go) and the repository (repository.go, store_json.go).
-// Feature 005 adds the service, the dependency interfaces with their adapters, the roll-ups, the history
-// kinds and the handler. The package never imports plans or activities.
 package campaign
 
 import (

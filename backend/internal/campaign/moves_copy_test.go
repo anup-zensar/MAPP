@@ -99,27 +99,34 @@ func TestMoveInitiative_KeepsIDDatesValuesAndChildren_FR025(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MoveInitiative: %v", err)
 	}
-	stored, _ := f.storedInitiative(t, d.digital.ID)
-	if stored.CampaignID != d.rimula.ID || stored.Name != "Digital & social" || stored.StartDate.String() != "2026-03-01" ||
-		amountText(stored.Budget) != "100000.00" || string(stored.Attributes[fit4ID]) != "true" || stored.Version != 2 ||
-		stored.UpdatedBy.ID != daniel.ID {
+	if stored, _ := f.storedInitiative(t, d.digital.ID); !movedWithItsValues(stored, d.rimula.ID) {
 		t.Errorf("stored = %+v, want it in Rimula fleet with its values, version 2, changed by Daniel", stored)
 	}
 	if moved.Campaign.Name != "Rimula fleet" || moved.Counts.Activities != 3 || moved.Counts.LineItems != 2 {
 		t.Errorf("view = in %q with %+v, want Rimula fleet with its 3 activities", moved.Campaign.Name, moved.Counts)
 	}
 	for _, c := range f.list(t, "P-1001").Items {
-		switch c.ID {
-		case d.helix.ID:
-			if c.Counts.Initiatives != 1 || c.Counts.Activities != 0 || amountText(c.BudgetAndCost.RemainingForChildren) != "400000.00" {
-				t.Errorf("Helix launch = %+v %+v", c.Counts, c.BudgetAndCost)
-			}
-		case d.rimula.ID:
-			if c.Counts.Initiatives != 2 || c.Counts.Activities != 3 || amountText(c.BudgetAndCost.OverAllocatedBy) != "50000.00" {
-				t.Errorf("Rimula fleet = %+v %+v", c.Counts, c.BudgetAndCost)
-			}
+		if !rolledUpAfterMove(c, d) {
+			t.Errorf("%s = %+v %+v", c.Name, c.Counts, c.BudgetAndCost)
 		}
 	}
+}
+
+func movedWithItsValues(stored Initiative, campaignID string) bool {
+	return stored.CampaignID == campaignID && stored.Name == "Digital & social" && stored.StartDate.String() == "2026-03-01" &&
+		amountText(stored.Budget) == "100000.00" && string(stored.Attributes[fit4ID]) == "true" && stored.Version == 2 &&
+		stored.UpdatedBy.ID == daniel.ID
+}
+
+// rolledUpAfterMove passes every campaign other than Helix launch and Rimula fleet.
+func rolledUpAfterMove(c CampaignView, d demo) bool {
+	switch c.ID {
+	case d.helix.ID:
+		return c.Counts.Initiatives == 1 && c.Counts.Activities == 0 && amountText(c.BudgetAndCost.RemainingForChildren) == "400000.00"
+	case d.rimula.ID:
+		return c.Counts.Initiatives == 2 && c.Counts.Activities == 3 && amountText(c.BudgetAndCost.OverAllocatedBy) == "50000.00"
+	}
+	return true
 }
 
 // A move to a campaign that is gone, of another plan, or the initiative's own is refused with its reason;
