@@ -5,8 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"os"
-	"path/filepath"
+	"encoding/json"
 	"slices"
 	"testing"
 	"time"
@@ -114,7 +113,7 @@ func TestSignIn_ReplacesOldSessionAndPrunesExpired_FR006(t *testing.T) {
 	}
 }
 
-// A copied data file cannot be used to sign in (research R6).
+// A copy of the stored data cannot be used to sign in (research R6).
 func TestSignIn_StoresOnlyTokenHash_FR006(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -129,11 +128,11 @@ func TestSignIn_StoresOnlyTokenHash_FR006(t *testing.T) {
 	if got := f.sessions(t); len(got) != 1 || got[0] != want {
 		t.Errorf("stored sessions = %+v, want only %+v", got, want)
 	}
-	file, err := os.ReadFile(filepath.Join(f.dir, "sessions.json"))
+	stored, err := json.Marshal(f.sessions(t))
 	if err != nil {
-		t.Fatalf("reading sessions.json: %v", err)
+		t.Fatalf("encoding the stored sessions: %v", err)
 	}
-	if bytes.Contains(file, []byte(token)) {
-		t.Error("sessions.json contains the token itself")
+	if bytes.Contains(stored, []byte(token)) {
+		t.Error("the stored sessions contain the token itself")
 	}
 }

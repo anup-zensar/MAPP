@@ -3,37 +3,28 @@ package allwork
 import (
 	"context"
 	"errors"
-	"os"
-	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
 
 	"mapp/internal/history"
+	"mapp/internal/history/historytest"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/ids"
-	"mapp/internal/platform/store"
 )
 
-// priyaActs is the actor of the service tests.
 var priyaActs = actor.Actor{ID: "U-1002", Name: "Priya Raman"}
 
-// newTestService returns the service on an empty data folder with src, at 18 Oct 2026 14:05 UTC, and the
-// folder.
-func newTestService(t *testing.T, src Source) (*Service, string) {
+// newTestService returns the service on an empty database with src, at 18 Oct 2026 14:05 UTC.
+func newTestService(t *testing.T, src Source) (*Service, *fake.DB) {
 	t.Helper()
-	dir := t.TempDir()
-	db, err := store.Open(dir)
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
-	tools := history.Tools{Tx: db, IDs: ids.NewGenerator(ids.NewJSONCounters()), Now: func() time.Time { return fixtureNow }}
-	return NewService(tools, NewJSONStore(), src), dir
+	db := fake.NewDB()
+	tools := history.Tools{Tx: db, IDs: ids.NewGenerator(fake.NewCounters(db)), Now: func() time.Time { return fixtureNow }}
+	return NewService(tools, newFakeStore(db), src), db
 }
 
-// Without a year the view shows the current year (FR-004); the answer names the year, today, the display
-// currency and when it was read.
 func TestQuery_DefaultYearIsCurrentYear_FR004(t *testing.T) {
 	t.Parallel()
 	src := newFakeSource(seedYear())
@@ -56,18 +47,17 @@ func TestQuery_DefaultYearIsCurrentYear_FR004(t *testing.T) {
 	}
 }
 
-// All work never creates, changes or deletes a record (FR-002): a query leaves every file of the data
-// folder — the business records and the activity log — as it was.
+// A query leaves every record — the business records and the activity log — as it was.
 func TestQuery_NeverWrites_FR002(t *testing.T) {
 	t.Parallel()
-	s, dir := newTestService(t, newFakeSource(seedYear()))
+	s, db := newTestService(t, newFakeSource(seedYear()))
 	err := s.tx.Write(t.Context(), func(ctx context.Context) error { // some data first
-		return store.Put(ctx, "plans", "P-1001", map[string]string{"id": "P-1001"})
+		return plansOf(db).Put(ctx, map[string]string{"id": "P-1001"})
 	})
 	if err != nil {
 		t.Fatalf("Write: %v", err)
 	}
-	before := folderContents(t, dir)
+	before := dataOf(t, db)
 
 	for _, v := range []string{ViewGrid, ViewCalendar, ViewBudget} {
 		if _, err := s.Query(t.Context(), priyaActs, Query{View: v}); err != nil {
@@ -78,31 +68,30 @@ func TestQuery_NeverWrites_FR002(t *testing.T) {
 		t.Fatalf("Locate: %v", err)
 	}
 
-	if after := folderContents(t, dir); !reflect.DeepEqual(after, before) {
-		t.Errorf("the data folder changed:\nbefore %v\nafter  %v", before, after)
+	if after := dataOf(t, db); !reflect.DeepEqual(after, before) {
+		t.Errorf("the data changed:\nbefore %v\nafter  %v", before, after)
 	}
 }
 
-// folderContents returns every file of dir with its content.
-func folderContents(t *testing.T, dir string) map[string]string {
+func plansOf(db *fake.DB) *fake.Table[map[string]string] {
+	return fake.TableOf(db, "plans", func(p map[string]string) string { return p["id"] })
+}
+
+// dataOf returns everything the service could change: records, log, views, preferences and ID counters.
+func dataOf(t *testing.T, db *fake.DB) []any {
 	t.Helper()
-	files := map[string]string{}
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		t.Fatalf("ReadDir: %v", err)
+	repo := newFakeStore(db)
+	plans, plansErr := plansOf(db).List()
+	log, logErr := historytest.NewStore(db).Entries(t.Context())
+	views, viewsErr := repo.views.List()
+	preferences, preferencesErr := repo.preferences.List()
+	if err := errors.Join(plansErr, logErr, viewsErr, preferencesErr); err != nil {
+		t.Fatalf("read the data: %v", err)
 	}
-	for _, e := range entries {
-		data, err := os.ReadFile(filepath.Join(dir, e.Name()))
-		if err != nil {
-			t.Fatalf("ReadFile: %v", err)
-		}
-		files[e.Name()] = string(data)
-	}
-	return files
+	return []any{plans, log, views, preferences, fake.NewCounters(db).Used()}
 }
 
-// The Calendar shows the Grid's rows without line items and unassigned rows (FR-025), and no grid
-// columns.
+// The Calendar shows the Grid's rows without line items and unassigned rows, and no grid columns.
 func TestQuery_CalendarViewHasNoLineItemRows_FR025(t *testing.T) {
 	t.Parallel()
 	s, _ := newTestService(t, newFakeSource(seedYear()))
@@ -122,8 +111,7 @@ func TestQuery_CalendarViewHasNoLineItemRows_FR025(t *testing.T) {
 	}
 }
 
-// The Calendar gets today for the Today line and, on every row, the dates, Ongoing, owner, status and
-// planned cost its bars and tips show (FR-026).
+// The Calendar's bars and tips need today and each row's dates, Ongoing, owner, status and planned cost.
 func TestQuery_TodayAndDatesForCalendar_FR026(t *testing.T) {
 	t.Parallel()
 	s, _ := newTestService(t, newFakeSource(seedYear()))
@@ -155,8 +143,7 @@ func TestQuery_TodayAndDatesForCalendar_FR026(t *testing.T) {
 	}
 }
 
-// A row's record that someone deleted is in the recycle bin: "This activity was deleted — it is in the
-// recycle bin" (edge case, D-123); a record that still exists is located with its plan.
+// A deleted record is in the recycle bin; a record that still exists is located with its plan.
 func TestLocate_DeletedRecordInRecycleBin_EdgeCase(t *testing.T) {
 	t.Parallel()
 	src := newFakeSource(seedYear())
@@ -177,8 +164,7 @@ func TestLocate_DeletedRecordInRecycleBin_EdgeCase(t *testing.T) {
 	}
 }
 
-// A record that is gone and not in the recycle bin "no longer exists" (edge case); an ID of no planning
-// level is a record that does not exist.
+// An ID of no planning level is a record that does not exist.
 func TestLocate_UnknownRecord_EdgeCase(t *testing.T) {
 	t.Parallel()
 	s, _ := newTestService(t, newFakeSource(seedYear()))
@@ -195,9 +181,7 @@ func TestLocate_UnknownRecord_EdgeCase(t *testing.T) {
 	}
 }
 
-// The filter bar's choices for a year (FR-004): the years with plans and the current year, newest first;
-// the year's plans by name; the people who own something in the year's plans, by name, inactive ones kept;
-// the teams with the person's own first; the business units and activity types; the column catalogue.
+// Years newest first; plans by name; owners by name, inactive ones kept; the person's own teams first.
 func TestOptions_YearsOwnersTeamsMineFirst_FR004(t *testing.T) {
 	t.Parallel()
 	src := newFakeSource(seedYear())
@@ -214,7 +198,7 @@ func TestOptions_YearsOwnersTeamsMineFirst_FR004(t *testing.T) {
 		t.Errorf("year %d, current %d, years %v", o.Year, o.CurrentYear, o.Years)
 	}
 	want := []PlanOption{
-		{ID: "P-1001", Label: "FY2026 Lubricants Europe", Status: "published", Year: 2026}, // 016: each plan with its year
+		{ID: "P-1001", Label: "FY2026 Lubricants Europe", Status: "published", Year: 2026},
 		{ID: "P-1002", Label: "FY2026 Mobility China", Status: "draft", Year: 2026},
 	}
 	if !reflect.DeepEqual(o.Plans, want) {
@@ -236,16 +220,13 @@ func TestOptions_YearsOwnersTeamsMineFirst_FR004(t *testing.T) {
 		!reflect.DeepEqual(o.DefaultColumns, DefaultColumns) || len(o.ColumnGroups) == 0 || o.ColumnGroups[0].Label != "Standard" {
 		t.Errorf("business units %+v, activity types %+v, groups %+v", o.BusinessUnits, o.ActivityTypes, o.ColumnGroups)
 	}
-	// Another year has its own plans and owners.
 	other, err := s.Options(t.Context(), priyaActs, 2027)
 	if err != nil || other.Year != 2027 || len(other.Plans) != 1 || len(other.Owners) != 0 {
 		t.Errorf("2027 options = %+v, %v", other, err)
 	}
 }
 
-// Filter values and columns that no longer exist are ignored, the rest applies, and each is named in
-// leftOut (FR-031): a plan that is not a plan of the year, a person, team, business unit or activity type
-// that does not exist, an unknown column and an unknown sort column.
+// Unknown filter values and columns are ignored, the rest applies, and each is named in leftOut.
 func TestQuery_UnknownIdsAndColumnsLeftOut_FR031(t *testing.T) {
 	t.Parallel()
 	s, _ := newTestService(t, newFakeSource(seedYear()))
@@ -274,7 +255,6 @@ func TestQuery_UnknownIdsAndColumnsLeftOut_FR031(t *testing.T) {
 	}
 }
 
-// assertNotFound checks that err is not_found with message.
 func assertNotFound(t *testing.T, err error, message string) {
 	t.Helper()
 	var apiErr *errs.Error
