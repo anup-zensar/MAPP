@@ -14,12 +14,12 @@ import (
 // restarts its approval, and the initiatives of the plan — its own first — with Move's date rule as the
 // reason an initiative can't take the new activity.
 func (s *Service) SplitOptions(ctx context.Context, a actor.Actor, id string) (SplitOptions, error) {
-	destinations, err := s.Destinations(ctx, a, id) // its own Read
-	if err != nil {
-		return SplitOptions{}, err
+	destinations, destinationsErr := s.Destinations(ctx, a, id) // its own Read
+	if destinationsErr != nil {
+		return SplitOptions{}, destinationsErr
 	}
 	var options SplitOptions
-	err = s.tx.Read(ctx, func(ctx context.Context) error {
+	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		activity, pc, err := s.load(ctx, id)
 		if err != nil {
 			return err
@@ -39,7 +39,7 @@ func (s *Service) SplitOptions(ctx context.Context, a actor.Actor, id string) (S
 			Destinations: splitDestinations(destinations),
 		}
 		for _, li := range items {
-			options.LineItems = append(options.LineItems, SplitLineItem{ID: li.ID, Name: li.Name, PlannedCost: li.PlannedCost, PlannedCostPlan: li.PlannedCostPlan})
+			options.LineItems = append(options.LineItems, SplitLineItem(li))
 		}
 		return nil
 	})

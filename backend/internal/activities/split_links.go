@@ -17,17 +17,9 @@ func (s *Service) splitLinks(ctx context.Context, a Activity, planID string) (*S
 	if err != nil {
 		return nil, nil, err
 	}
-	var from *SplitLink
-	if a.SplitFromID != "" {
-		link := SplitLink{ID: a.SplitFromID, Name: a.SplitFromID, PlanID: planID, Deleted: true}
-		if other, found, err := s.repo.Get(ctx, a.SplitFromID); err != nil {
-			return nil, nil, err
-		} else if found {
-			link.Name, link.Deleted = other.Name, false
-		} else if snapshot, inBin := snapshotOf(binned, a.SplitFromID); inBin {
-			link.Name = snapshot.Name
-		}
-		from = &link
+	from, err := s.splitFrom(ctx, a, planID, binned)
+	if err != nil {
+		return nil, nil, err
 	}
 	all, err := s.splitOff(ctx, a.ID)
 	if err != nil {
@@ -38,7 +30,7 @@ func (s *Service) splitLinks(ctx context.Context, a Activity, planID string) (*S
 	}
 	for _, snapshot := range binned {
 		var stored Activity
-		if err := json.Unmarshal(snapshot.Data, &stored); err != nil {
+		if err = json.Unmarshal(snapshot.Data, &stored); err != nil {
 			return nil, nil, err
 		}
 		if stored.SplitFromID == a.ID {
@@ -47,6 +39,25 @@ func (s *Service) splitLinks(ctx context.Context, a Activity, planID string) (*S
 	}
 	slices.SortFunc(into, func(x, y SplitLink) int { return compareIDs(x.ID, y.ID) })
 	return from, into, nil
+}
+
+// splitFrom is the link to the activity a was split from, named as it is live or in the recycle bin (binned);
+// nil when a was not split from another.
+func (s *Service) splitFrom(ctx context.Context, a Activity, planID string, binned []history.Snapshot) (*SplitLink, error) {
+	if a.SplitFromID == "" {
+		return nil, nil
+	}
+	link := SplitLink{ID: a.SplitFromID, Name: a.SplitFromID, PlanID: planID, Deleted: true}
+	other, found, err := s.repo.Get(ctx, a.SplitFromID)
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		link.Name, link.Deleted = other.Name, false
+	} else if snapshot, inBin := snapshotOf(binned, a.SplitFromID); inBin {
+		link.Name = snapshot.Name
+	}
+	return &link, nil
 }
 
 // splitOff returns the stored activities split off the activity id.

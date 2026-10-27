@@ -10,7 +10,7 @@ import (
 
 // PreviewSplit returns both activities as the split of in would leave them, with every problem the split
 // would answer, and saves nothing (FR-027). A wrong version is not a problem here: the split itself answers it.
-func (s *Service) PreviewSplit(ctx context.Context, a actor.Actor, id string, in SplitRequest) (SplitPreview, error) {
+func (s *Service) PreviewSplit(ctx context.Context, _ actor.Actor, id string, in SplitRequest) (SplitPreview, error) {
 	preview := SplitPreview{Problems: []errs.FieldError{}}
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		p, err := s.planSplit(ctx, id, in)
@@ -47,15 +47,18 @@ func (p splitPlan) sides() (original, created SplitSide) {
 	if p.restart {
 		status = StatusCreated
 	}
-	original = side(p.original.Name, p.pc.initiative.Name, remaining, p.kept, status, p.pc.plan.Currency)
-	created = side(p.name, p.target.initiative.Name, p.amount, p.moved, StatusCreated, p.pc.plan.Currency)
+	original = side(SplitSide{Name: p.original.Name, InitiativeName: p.pc.initiative.Name, PlannedCost: remaining, Status: status},
+		p.kept, p.pc.plan.Currency)
+	created = side(SplitSide{Name: p.name, InitiativeName: p.target.initiative.Name, PlannedCost: p.amount, Status: StatusCreated},
+		p.moved, p.pc.plan.Currency)
 	return original, created
 }
 
-// side is one activity of a split: its unassigned planned cost is the planned cost minus its line items in
-// the plan currency.
-func side(name, initiative string, planned *money.Money, items []LineItemBrief, status Status, currency string) SplitSide {
-	s := SplitSide{Name: name, InitiativeName: initiative, PlannedCost: planned, LineItemNames: []string{}, Status: status,
+// side is one activity of a split, named, placed and with its planned cost and status as in, with items as its
+// line items: its unassigned planned cost is the planned cost minus its line items in the plan currency.
+func side(in SplitSide, items []LineItemBrief, currency string) SplitSide {
+	planned := in.PlannedCost
+	s := SplitSide{Name: in.Name, InitiativeName: in.InitiativeName, PlannedCost: planned, LineItemNames: []string{}, Status: in.Status,
 		UnassignedState: unassignedNoPlannedCost}
 	var assigned money.Amount
 	for _, li := range items {
