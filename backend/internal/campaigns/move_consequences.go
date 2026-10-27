@@ -11,14 +11,18 @@ import (
 	"mapp/internal/settings"
 )
 
-// levelsBelowPlan are the levels whose Shell attributes move with a campaign, top-down, with their names in
-// the attribute groups of the move consequences (FR-024).
-var levelsBelowPlan = []struct {
+// levelBelowPlan is a level whose Shell attributes move with a campaign, with its name in the attribute
+// groups of the move consequences (FR-024).
+type levelBelowPlan struct {
 	level  settings.Level
 	plural string
-}{
-	{settings.LevelCampaign, "campaigns"}, {settings.LevelInitiative, "initiatives"},
-	{settings.LevelActivity, "activities"}, {settings.LevelLineItem, "line items"},
+}
+
+func levelsBelowPlan() []levelBelowPlan {
+	return []levelBelowPlan{
+		{settings.LevelCampaign, campaignPlural}, {settings.LevelInitiative, initiativePlural},
+		{settings.LevelActivity, "activities"}, {settings.LevelLineItem, "line items"},
+	}
 }
 
 // activitiesBelow returns the activities of the campaign id's initiatives, in tree order: initiative by
@@ -49,11 +53,7 @@ func (s *Service) activitiesBelow(ctx context.Context, id string) ([]ActivitySum
 // activities below whose type that model does not allow (they keep it), and the attribute groups that would
 // be hidden there, with their values kept, or shown again.
 func (s *Service) consequences(ctx context.Context, from, to PlanFacts, below []ActivitySummary) (*MoveConsequences, error) {
-	fromUnit, err := s.deps.Settings.BusinessUnit(ctx, from.Attributes)
-	if err != nil {
-		return nil, err
-	}
-	toUnit, err := s.deps.Settings.BusinessUnit(ctx, to.Attributes)
+	fromUnit, toUnit, err := s.businessUnits(ctx, from, to)
 	if err != nil {
 		return nil, err
 	}
@@ -71,26 +71,53 @@ func (s *Service) consequences(ctx context.Context, from, to PlanFacts, below []
 		TypesNotAllowed: []TypeNotAllowed{}, GroupsHidden: []string{}, GroupsShown: []string{},
 	}
 	if modelChanges {
-		for _, a := range below {
-			if a.TypeID == "" || (found && model.Allows(a.TypeID)) {
-				continue
-			}
-			t, _, err := s.deps.Settings.ActivityType(ctx, a.TypeID)
-			if err != nil {
-				return nil, err
-			}
-			c.TypesNotAllowed = append(c.TypesNotAllowed, TypeNotAllowed{ID: a.ID, Name: a.Name, TypeName: cmp.Or(t.Name, a.TypeID)})
+		if c.TypesNotAllowed, err = s.typesNotAllowed(ctx, model, found, below); err != nil {
+			return nil, err
 		}
 	}
 	if unitChanges {
-		if c.GroupsHidden, err = s.groupNames(ctx, fromUnit, toUnit); err != nil {
-			return nil, err
-		}
-		if c.GroupsShown, err = s.groupNames(ctx, toUnit, fromUnit); err != nil {
+		if c.GroupsHidden, c.GroupsShown, err = s.groupChanges(ctx, fromUnit, toUnit); err != nil {
 			return nil, err
 		}
 	}
 	return c, nil
+}
+
+func (s *Service) businessUnits(ctx context.Context, from, to PlanFacts) (fromUnit, toUnit []string, err error) {
+	if fromUnit, err = s.deps.Settings.BusinessUnit(ctx, from.Attributes); err != nil {
+		return nil, nil, err
+	}
+	if toUnit, err = s.deps.Settings.BusinessUnit(ctx, to.Attributes); err != nil {
+		return nil, nil, err
+	}
+	return fromUnit, toUnit, nil
+}
+
+func (s *Service) groupChanges(ctx context.Context, fromUnit, toUnit []string) (hidden, shown []string, err error) {
+	if hidden, err = s.groupNames(ctx, fromUnit, toUnit); err != nil {
+		return nil, nil, err
+	}
+	if shown, err = s.groupNames(ctx, toUnit, fromUnit); err != nil {
+		return nil, nil, err
+	}
+	return hidden, shown, nil
+}
+
+// typesNotAllowed lists the activities of below whose type the model does not allow, every typed one when the
+// model was not found.
+func (s *Service) typesNotAllowed(ctx context.Context, model settings.Model, found bool, below []ActivitySummary) ([]TypeNotAllowed, error) {
+	notAllowed := []TypeNotAllowed{}
+	for _, a := range below {
+		if a.TypeID == "" || (found && model.Allows(a.TypeID)) {
+			continue
+		}
+		t, _, err := s.deps.Settings.ActivityType(ctx, a.TypeID)
+		if err != nil {
+			return nil, err
+		}
+		notAllowed = append(notAllowed, TypeNotAllowed{ID: a.ID, Name: a.Name, TypeName: cmp.Or(t.Name, a.TypeID)})
+	}
+	return notAllowed, nil
 }
 
 // groupNames names the attribute groups below a plan that are shown with the business unit from and hidden
@@ -102,23 +129,20 @@ func (s *Service) groupNames(ctx context.Context, from, to []string) ([]string, 
 		name            string
 	}
 	var groups []group
-	for levelIndex, l := range levelsBelowPlan {
+	for levelIndex, l := range levelsBelowPlan() {
 		attributes, err := s.deps.Settings.Attributes(ctx, l.level)
 		if err != nil {
 			return nil, err
 		}
 		for _, attribute := range attributes {
-			if !attribute.Active || !settings.Visible(attribute, from) || settings.Visible(attribute, to) {
+			if !hiddenByMove(attribute, from, to) {
 				continue
 			}
 			// Shown with from but not with to: one of its condition's options is in from, not in to.
 			unit := attribute.Condition[slices.IndexFunc(attribute.Condition, func(id string) bool { return slices.Contains(from, id) })]
-			o, found, err := s.deps.Settings.Option(ctx, unit)
+			o, err := s.unitOption(ctx, unit)
 			if err != nil {
 				return nil, err
-			}
-			if !found {
-				o.Label = unit // an option that no longer exists is named by its id
 			}
 			name := fmt.Sprintf(attributeGroupName, o.Label, l.plural)
 			if !slices.ContainsFunc(groups, func(g group) bool { return g.name == name }) {
@@ -134,6 +158,22 @@ func (s *Service) groupNames(ctx context.Context, from, to []string) ([]string, 
 		names = append(names, g.name)
 	}
 	return names, nil
+}
+
+// hiddenByMove reports whether the active attribute is shown with the business unit from and hidden with to.
+func hiddenByMove(attribute settings.Attribute, from, to []string) bool {
+	return attribute.Active && settings.Visible(attribute, from) && !settings.Visible(attribute, to)
+}
+
+func (s *Service) unitOption(ctx context.Context, id string) (settings.Option, error) {
+	o, found, err := s.deps.Settings.Option(ctx, id)
+	if err != nil {
+		return settings.Option{}, err
+	}
+	if !found {
+		o.Label = id // an option that no longer exists is named by its id
+	}
+	return o, nil
 }
 
 // sameOptions reports whether two lists of option ids hold the same options, in any order.

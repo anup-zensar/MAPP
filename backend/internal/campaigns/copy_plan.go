@@ -17,7 +17,7 @@ type CopyCounts struct {
 // caller's Write and writes no log entries: the plan copy writes the one "copied" entry. It returns the
 // counts and the old → new ID of every campaign and initiative, for 004's CopyJob.NewIDs; the activities and
 // line items below are copied by their own levels of the plan copy, not here (D-195).
-func (s *Service) CopyPlanContents(ctx context.Context, a actor.Actor, fromPlanID, toPlanID string, shiftYears int) (CopyCounts, map[string]string, error) {
+func (s *Service) CopyPlanContents(ctx context.Context, a actor.Actor, fromPlanID, toPlanID string, shiftYears int) (CopyCounts, map[string]string, error) { //nolint:revive // argument-limit 5: the call of the plan-copy level in internal/app.
 	var counts CopyCounts
 	newIDs := map[string]string{}
 	err := s.tx.Write(ctx, func(ctx context.Context) error {

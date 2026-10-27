@@ -6,7 +6,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"mapp/internal/history"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/date"
@@ -26,61 +25,69 @@ func (s *Service) CopyCampaign(ctx context.Context, a actor.Actor, id string, in
 		if err != nil {
 			return err
 		}
-		target, found, err := s.deps.Plans.Plan(ctx, strings.TrimSpace(in.PlanID))
+		target, err := s.campaignCopyTargetOf(ctx, plan, in.PlanID)
 		if err != nil {
 			return err
-		}
-		if found { // the destination needs "Add, edit, move and copy campaigns" (014 FR-014)
-			if err := authz.RequireIn(ctx, authz.CampaignsEdit, target.Access); err != nil {
-				return err
-			}
-		}
-		var targetProblem string
-		var siblings []Campaign
-		switch {
-		case !found:
-			targetProblem = planGoneChooseMessage
-		case target.Year != plan.Year:
-			targetProblem = fmt.Sprintf(campaignCopyOtherYear, plan.Year)
-		case target.Currency != plan.Currency: // 016 FR-017
-			targetProblem = fmt.Sprintf(otherCurrencyReason, target.Currency, plan.Currency)
-		default:
-			if siblings, err = s.repo.CampaignsOfPlan(ctx, target.ID); err != nil {
-				return err
-			}
 		}
 		var problems errs.Problems
 		name := checkName(&problems, in.Name, func(name string) string {
-			if targetProblem != "" {
+			if target.problem != "" {
 				return "" // the name is checked in a plan it can go to
 			}
-			return campaignNameTaken(siblings, target, name, "")
+			return campaignNameTaken(target.siblings, target.plan, name, "")
 		})
-		if targetProblem != "" {
-			problems.Add("planId", targetProblem)
+		if target.problem != "" {
+			problems.Add("planId", target.problem)
 		}
-		if err := problems.Err(); err != nil {
+		if err = problems.Err(); err != nil {
 			return err
 		}
 
-		dup := []Campaign{s.campaignCopy(a, source, copyPlace{parentID: target.ID, name: name})}
-		if err = s.addCampaignCopies(ctx, dup); err != nil {
-			return err
-		}
-		counts, err := s.copyBelowCampaign(ctx, a, CopyPair{FromID: source.ID, ToID: dup[0].ID})
+		copied, err := s.saveCampaignCopy(ctx, a, source, copyPlace{parentID: target.plan.ID, name: name})
 		if err != nil {
 			return err
 		}
-		if err = s.logCopy(ctx, a, campaignKind, dup[0].ID, dup[0].Name, source.Name, source.ID, counts); err != nil {
-			return err
-		}
-		view, err = s.campaignView(ctx, dup[0].ID)
+		view, err = s.campaignView(ctx, copied.ID)
 		return err
 	})
 	if err != nil {
 		return CampaignView{}, err
 	}
 	return s.shownCampaign(ctx, a, view)
+}
+
+// campaignCopyTarget is the plan a campaign copy goes to, with its campaigns; problem says why the copy
+// cannot go there, "" when it can.
+type campaignCopyTarget struct {
+	plan     PlanFacts
+	siblings []Campaign
+	problem  string
+}
+
+func (s *Service) campaignCopyTargetOf(ctx context.Context, plan PlanFacts, planID string) (campaignCopyTarget, error) {
+	target, found, err := s.deps.Plans.Plan(ctx, strings.TrimSpace(planID))
+	if err != nil {
+		return campaignCopyTarget{}, err
+	}
+	if found { // the destination needs "Add, edit, move and copy campaigns" (014 FR-014)
+		if err = authz.RequireIn(ctx, authz.CampaignsEdit, target.Access); err != nil {
+			return campaignCopyTarget{}, err
+		}
+	}
+	t := campaignCopyTarget{plan: target}
+	switch {
+	case !found:
+		t.problem = planGoneChooseMessage
+	case target.Year != plan.Year:
+		t.problem = fmt.Sprintf(campaignCopyOtherYear, plan.Year)
+	case target.Currency != plan.Currency: // 016 FR-017
+		t.problem = fmt.Sprintf(otherCurrencyReason, target.Currency, plan.Currency)
+	default:
+		if t.siblings, err = s.repo.CampaignsOfPlan(ctx, target.ID); err != nil {
+			return campaignCopyTarget{}, err
+		}
+	}
+	return t, nil
 }
 
 // CopyInitiative copies the initiative id, with its activities and line items, into its own campaign or
@@ -90,66 +97,33 @@ func (s *Service) CopyCampaign(ctx context.Context, a actor.Actor, id string, in
 func (s *Service) CopyInitiative(ctx context.Context, a actor.Actor, id string, in InitiativeCopy) (InitiativeView, error) {
 	var view InitiativeView
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
-		source, found, err := s.repo.GetInitiative(ctx, id)
+		source, c, err := s.initiativeAndCampaign(ctx, id)
 		if err != nil {
 			return err
 		}
-		if !found {
-			return errs.NotFound(initiativeGoneMessage)
-		}
-		c, found, err := s.repo.GetCampaign(ctx, source.CampaignID)
+		target, err := s.initiativeCopyTargetOf(ctx, source, c, in.CampaignID)
 		if err != nil {
 			return err
-		}
-		if !found {
-			return errs.NotFound(initiativeGoneMessage)
-		}
-		target, found, err := s.repo.GetCampaign(ctx, strings.TrimSpace(in.CampaignID))
-		if err != nil {
-			return err
-		}
-		inPlan := found && target.PlanID == c.PlanID
-		var targetProblem string
-		var siblings []Initiative
-		switch {
-		case !found:
-			targetProblem = campaignGoneChooseMessage
-		case !inPlan:
-			targetProblem = initiativeCopyOtherPlan
-		default:
-			if !fitsInside(source, target) {
-				targetProblem = fmt.Sprintf(datesDontFitMessage, date.FormatRange(*target.StartDate, *target.EndDate))
-			}
-			if siblings, err = s.repo.InitiativesOfCampaign(ctx, target.ID); err != nil {
-				return err
-			}
 		}
 		var problems errs.Problems
 		name := checkName(&problems, in.Name, func(name string) string {
-			if !inPlan {
+			if !target.inPlan {
 				return "" // the name is checked in a campaign it can go to
 			}
-			return initiativeNameTaken(siblings, target, name, "")
+			return initiativeNameTaken(target.siblings, target.campaign, name, "")
 		})
-		if targetProblem != "" {
-			problems.Add("campaignId", targetProblem)
+		if target.problem != "" {
+			problems.Add("campaignId", target.problem)
 		}
-		if err := problems.Err(); err != nil {
+		if err = problems.Err(); err != nil {
 			return err
 		}
 
-		dup := []Initiative{s.initiativeCopy(a, source, copyPlace{parentID: target.ID, name: name})}
-		if err = s.addInitiativeCopies(ctx, dup); err != nil {
+		copied, err := s.saveInitiativeCopy(ctx, a, source, copyPlace{parentID: target.campaign.ID, name: name})
+		if err != nil {
 			return err
 		}
-		counts := map[string]int{}
-		if err = s.copyActivities(ctx, a, source.ID, dup[0].ID, counts); err != nil {
-			return err
-		}
-		if err = s.logCopy(ctx, a, initiativeKind, dup[0].ID, dup[0].Name, source.Name, source.ID, counts); err != nil {
-			return err
-		}
-		view, err = s.initiativeView(ctx, dup[0].ID)
+		view, err = s.initiativeView(ctx, copied.ID)
 		return err
 	})
 	if err != nil {
@@ -158,29 +132,35 @@ func (s *Service) CopyInitiative(ctx context.Context, a actor.Actor, id string, 
 	return s.shownInitiative(ctx, a, view)
 }
 
-// copyActivities has feature 006 copy the activities of the initiative fromID, with their line items, into
-// the initiative toID within the year, and adds what it copied to counts, by history kind.
-func (s *Service) copyActivities(ctx context.Context, a actor.Actor, fromID, toID string, counts map[string]int) error {
-	copied, err := s.deps.Activities.CopyAll(ctx, a, fromID, toID, 0)
-	if err != nil {
-		return err
-	}
-	counts[activityKindName] += copied.Activities
-	counts[lineItemKindName] += copied.LineItems
-	return nil
+// initiativeCopyTarget is the campaign an initiative copy goes to, with its initiatives; problem says why the
+// copy cannot go there, "" when it can.
+type initiativeCopyTarget struct {
+	campaign Campaign
+	siblings []Initiative
+	inPlan   bool
+	problem  string
 }
 
-// logCopy writes the one "copied" entry of a campaign or initiative copy, on the new record id: "Copied
-// from '<source name>' (<source id>)", with what came along (D-097).
-func (s *Service) logCopy(ctx context.Context, a actor.Actor, kind, id, name, sourceName, sourceID string, counts map[string]int) error {
-	details := fmt.Sprintf(copiedFromDetails, sourceName, sourceID)
-	if with := s.history.CountsText(counts); with != "" {
-		details += ", " + with
+func (s *Service) initiativeCopyTargetOf(ctx context.Context, source Initiative, c Campaign, campaignID string) (initiativeCopyTarget, error) {
+	target, found, err := s.repo.GetCampaign(ctx, strings.TrimSpace(campaignID))
+	if err != nil {
+		return initiativeCopyTarget{}, err
 	}
-	_, err := s.history.Log(ctx, a, history.LogInput{
-		Kind: kind, RecordID: id, RecordName: name, Action: history.ActionCopied, Details: details,
-	})
-	return err
+	t := initiativeCopyTarget{campaign: target, inPlan: found && target.PlanID == c.PlanID}
+	switch {
+	case !found:
+		t.problem = campaignGoneChooseMessage
+	case !t.inPlan:
+		t.problem = initiativeCopyOtherPlan
+	default:
+		if !fitsInside(source, target) {
+			t.problem = fmt.Sprintf(datesDontFitMessage, date.FormatRange(*target.StartDate, *target.EndDate))
+		}
+		if t.siblings, err = s.repo.InitiativesOfCampaign(ctx, target.ID); err != nil {
+			return initiativeCopyTarget{}, err
+		}
+	}
+	return t, nil
 }
 
 // suggestCopyName returns the name a copy suggests (R13, FR-026): "<name> (copy)", then "<name> (copy 2)",

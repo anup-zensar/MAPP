@@ -131,3 +131,23 @@ func (s *Service) campaignAndPlan(ctx context.Context, id string) (Campaign, Pla
 	}
 	return c, plan, nil
 }
+
+// initiativeAndCampaign reads the initiative id and its campaign inside the caller's transaction; an
+// initiative that is gone, or whose campaign is gone, is not found.
+func (s *Service) initiativeAndCampaign(ctx context.Context, id string) (Initiative, Campaign, error) {
+	i, found, err := s.repo.GetInitiative(ctx, id)
+	if err != nil {
+		return Initiative{}, Campaign{}, err
+	}
+	if !found {
+		return Initiative{}, Campaign{}, errs.NotFound(initiativeGoneMessage)
+	}
+	c, found, err := s.repo.GetCampaign(ctx, i.CampaignID)
+	if err != nil {
+		return Initiative{}, Campaign{}, err
+	}
+	if !found {
+		return Initiative{}, Campaign{}, errs.NotFound(initiativeGoneMessage)
+	}
+	return i, c, nil
+}

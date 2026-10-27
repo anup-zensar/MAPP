@@ -26,50 +26,19 @@ func (s *Service) CampaignDestinations(ctx context.Context, a actor.Actor, id, p
 	}
 	var list DestinationList
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		c, plan, err := s.campaignAndPlan(ctx, id)
+		origin, err := s.campaignOriginOf(ctx, id)
 		if err != nil {
 			return err
 		}
-		plans, err := s.deps.Plans.PlansOfYear(ctx, plan.Year)
-		if err != nil {
-			return err
-		}
-		below, err := s.activitiesBelow(ctx, c.ID)
-		if err != nil {
-			return err
-		}
-		campaignsOf, err := s.campaignsOfPlans(ctx, plans)
-		if err != nil {
-			return err
-		}
-		list = DestinationList{Items: make([]Destination, 0, len(plans)), Rule: campaignRuleMove}
-		if purpose == PurposeCopy {
-			list.Rule = campaignRuleCopy
-		}
-		for _, p := range plans {
-			current := p.ID == plan.ID
+		list = newDestinationList(len(origin.plans), purpose, campaignRuleMove, campaignRuleCopy)
+		for _, p := range origin.plans {
+			current := p.ID == origin.plan.ID
 			if (current && purpose == PurposeMove) || !authz.InScope(ctx, authz.CampaignsEdit, p.Access) { // 014 FR-014
 				continue
 			}
-			siblings := campaignsOf[p.ID]
-			status := p.Status
-			d := Destination{ID: p.ID, Name: p.Name, Current: current, Available: true, PlanStatus: &status}
-			d.RemainingAfter, d.OverAllocatedBy = remainingAfter(p.Budget, campaignBudgets(siblings), c.Budget)
-			if p.Currency != plan.Currency { // 016 FR-017: amounts are never converted silently
-				d.RemainingAfter, d.OverAllocatedBy = nil, nil
-				unavailable(&d, fmt.Sprintf(otherCurrencyReason, p.Currency, plan.Currency))
-			} else if purpose == PurposeMove {
-				if other, taken := campaignNamed(siblings, c.Name, c.ID); taken {
-					unavailable(&d, fmt.Sprintf(campaignNameTakenReason, other.Name))
-				}
-			} else {
-				name := suggestCopyName(c.Name, func(n string) bool { _, taken := campaignNamed(siblings, n, ""); return taken })
-				d.SuggestedName = &name
-			}
-			if !current {
-				if d.Consequences, err = s.consequences(ctx, plan, p, below); err != nil {
-					return err
-				}
+			var d Destination
+			if d, err = s.campaignDestination(ctx, origin, p, purpose); err != nil {
+				return err
 			}
 			list.Items = append(list.Items, d)
 		}
@@ -83,6 +52,63 @@ func (s *Service) CampaignDestinations(ctx context.Context, a actor.Actor, id, p
 		return DestinationList{}, err
 	}
 	return s.shownDestinations(ctx, a, list)
+}
+
+// campaignOrigin is a campaign with what its destinations are worked out from.
+type campaignOrigin struct {
+	campaign    Campaign
+	plan        PlanFacts
+	plans       []PlanFacts // of the plan's year
+	below       []ActivitySummary
+	campaignsOf map[string][]Campaign
+}
+
+func (s *Service) campaignOriginOf(ctx context.Context, id string) (campaignOrigin, error) {
+	c, plan, err := s.campaignAndPlan(ctx, id)
+	if err != nil {
+		return campaignOrigin{}, err
+	}
+	plans, err := s.deps.Plans.PlansOfYear(ctx, plan.Year)
+	if err != nil {
+		return campaignOrigin{}, err
+	}
+	below, err := s.activitiesBelow(ctx, c.ID)
+	if err != nil {
+		return campaignOrigin{}, err
+	}
+	campaignsOf, err := s.campaignsOfPlans(ctx, plans)
+	if err != nil {
+		return campaignOrigin{}, err
+	}
+	return campaignOrigin{campaign: c, plan: plan, plans: plans, below: below, campaignsOf: campaignsOf}, nil
+}
+
+func (s *Service) campaignDestination(ctx context.Context, origin campaignOrigin, p PlanFacts, purpose string) (Destination, error) {
+	c, plan := origin.campaign, origin.plan
+	current := p.ID == plan.ID
+	siblings := origin.campaignsOf[p.ID]
+	status := p.Status
+	d := Destination{ID: p.ID, Name: p.Name, Current: current, Available: true, PlanStatus: &status}
+	d.RemainingAfter, d.OverAllocatedBy = remainingAfter(p.Budget, campaignBudgets(siblings), c.Budget)
+	switch {
+	case p.Currency != plan.Currency: // 016 FR-017: amounts are never converted silently
+		d.RemainingAfter, d.OverAllocatedBy = nil, nil
+		unavailable(&d, fmt.Sprintf(otherCurrencyReason, p.Currency, plan.Currency))
+	case purpose == PurposeMove:
+		if other, taken := campaignNamed(siblings, c.Name, c.ID); taken {
+			unavailable(&d, fmt.Sprintf(campaignNameTakenReason, other.Name))
+		}
+	default:
+		name := suggestCopyName(c.Name, func(n string) bool { _, taken := campaignNamed(siblings, n, ""); return taken })
+		d.SuggestedName = &name
+	}
+	if !current {
+		var err error
+		if d.Consequences, err = s.consequences(ctx, plan, p, origin.below); err != nil {
+			return Destination{}, err
+		}
+	}
+	return d, nil
 }
 
 func (s *Service) campaignsOfPlans(ctx context.Context, plans []PlanFacts) (map[string][]Campaign, error) {
@@ -112,65 +138,16 @@ func (s *Service) InitiativeDestinations(ctx context.Context, a actor.Actor, id,
 	}
 	var list DestinationList
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		i, found, err := s.repo.GetInitiative(ctx, id)
+		origin, err := s.initiativeOriginOf(ctx, id)
 		if err != nil {
 			return err
 		}
-		if !found {
-			return errs.NotFound(initiativeGoneMessage)
-		}
-		c, found, err := s.repo.GetCampaign(ctx, i.CampaignID)
-		if err != nil {
-			return err
-		}
-		if !found {
-			return errs.NotFound(initiativeGoneMessage)
-		}
-		campaigns, err := s.repo.CampaignsOfPlan(ctx, c.PlanID)
-		if err != nil {
-			return err
-		}
-		campaignIDs := make([]string, 0, len(campaigns))
-		for _, t := range campaigns {
-			campaignIDs = append(campaignIDs, t.ID)
-		}
-		initiatives, err := s.repo.InitiativesOfCampaigns(ctx, campaignIDs)
-		if err != nil {
-			return err
-		}
-		initiativesOf := map[string][]Initiative{}
-		for _, x := range initiatives {
-			initiativesOf[x.CampaignID] = append(initiativesOf[x.CampaignID], x)
-		}
-
-		list = DestinationList{Items: make([]Destination, 0, len(campaigns)), Rule: initiativeRuleMove}
-		if purpose == PurposeCopy {
-			list.Rule = initiativeRuleCopy
-		}
-		for _, t := range campaigns {
-			current := t.ID == c.ID
-			if current && purpose == PurposeMove {
+		list = newDestinationList(len(origin.campaigns), purpose, initiativeRuleMove, initiativeRuleCopy)
+		for _, t := range origin.campaigns {
+			if t.ID == origin.campaign.ID && purpose == PurposeMove {
 				continue
 			}
-			siblings := initiativesOf[t.ID]
-			d := Destination{ID: t.ID, Name: t.Name, Current: current, Available: true, StartDate: t.StartDate, EndDate: t.EndDate}
-			d.RemainingAfter, d.OverAllocatedBy = remainingAfter(t.Budget, initiativeBudgets(siblings), i.Budget)
-			var reasons []string
-			if purpose == PurposeMove {
-				if other, taken := initiativeNamed(siblings, i.Name, i.ID); taken {
-					reasons = append(reasons, fmt.Sprintf(initiativeNameTakenReason, other.Name))
-				}
-			} else {
-				name := suggestCopyName(i.Name, func(n string) bool { _, taken := initiativeNamed(siblings, n, ""); return taken })
-				d.SuggestedName = &name
-			}
-			if !fitsInside(i, t) {
-				reasons = append(reasons, fmt.Sprintf(datesDontFitReason, date.FormatRange(*t.StartDate, *t.EndDate)))
-			}
-			if len(reasons) > 0 {
-				unavailable(&d, strings.Join(reasons, reasonSeparator))
-			}
-			list.Items = append(list.Items, d)
+			list.Items = append(list.Items, initiativeDestination(origin, t, purpose))
 		}
 		slices.SortStableFunc(list.Items, func(x, y Destination) int {
 			return cmp.Or(compareCurrent(x, y), compareInTree(x.StartDate, x.Name, x.ID, y.StartDate, y.Name, y.ID))
@@ -182,6 +159,69 @@ func (s *Service) InitiativeDestinations(ctx context.Context, a actor.Actor, id,
 		return DestinationList{}, err
 	}
 	return s.shownDestinations(ctx, a, list)
+}
+
+// initiativeOrigin is an initiative with what its destinations are worked out from.
+type initiativeOrigin struct {
+	initiative    Initiative
+	campaign      Campaign
+	campaigns     []Campaign // of the campaign's plan
+	initiativesOf map[string][]Initiative
+}
+
+func (s *Service) initiativeOriginOf(ctx context.Context, id string) (initiativeOrigin, error) {
+	i, c, err := s.initiativeAndCampaign(ctx, id)
+	if err != nil {
+		return initiativeOrigin{}, err
+	}
+	campaigns, err := s.repo.CampaignsOfPlan(ctx, c.PlanID)
+	if err != nil {
+		return initiativeOrigin{}, err
+	}
+	campaignIDs := make([]string, 0, len(campaigns))
+	for _, t := range campaigns {
+		campaignIDs = append(campaignIDs, t.ID)
+	}
+	initiatives, err := s.repo.InitiativesOfCampaigns(ctx, campaignIDs)
+	if err != nil {
+		return initiativeOrigin{}, err
+	}
+	initiativesOf := map[string][]Initiative{}
+	for _, x := range initiatives {
+		initiativesOf[x.CampaignID] = append(initiativesOf[x.CampaignID], x)
+	}
+	return initiativeOrigin{initiative: i, campaign: c, campaigns: campaigns, initiativesOf: initiativesOf}, nil
+}
+
+func initiativeDestination(origin initiativeOrigin, t Campaign, purpose string) Destination {
+	i := origin.initiative
+	siblings := origin.initiativesOf[t.ID]
+	d := Destination{ID: t.ID, Name: t.Name, Current: t.ID == origin.campaign.ID, Available: true, StartDate: t.StartDate, EndDate: t.EndDate}
+	d.RemainingAfter, d.OverAllocatedBy = remainingAfter(t.Budget, initiativeBudgets(siblings), i.Budget)
+	var reasons []string
+	if purpose == PurposeMove {
+		if other, taken := initiativeNamed(siblings, i.Name, i.ID); taken {
+			reasons = append(reasons, fmt.Sprintf(initiativeNameTakenReason, other.Name))
+		}
+	} else {
+		name := suggestCopyName(i.Name, func(n string) bool { _, taken := initiativeNamed(siblings, n, ""); return taken })
+		d.SuggestedName = &name
+	}
+	if !fitsInside(i, t) {
+		reasons = append(reasons, fmt.Sprintf(datesDontFitReason, date.FormatRange(*t.StartDate, *t.EndDate)))
+	}
+	if len(reasons) > 0 {
+		unavailable(&d, strings.Join(reasons, reasonSeparator))
+	}
+	return d
+}
+
+func newDestinationList(size int, purpose, moveRule, copyRule string) DestinationList {
+	list := DestinationList{Items: make([]Destination, 0, size), Rule: moveRule}
+	if purpose == PurposeCopy {
+		list.Rule = copyRule
+	}
+	return list
 }
 
 // checkPurpose refuses a destinations query for anything but a move or a copy.
