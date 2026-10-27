@@ -218,3 +218,29 @@ func sameDate(a, b *date.Date) bool {
 	}
 	return *a == *b
 }
+
+// checkVersionSent adds the version problem when an update sends no version, or one below 1: the version
+// check cannot work then (FR-018).
+func checkVersionSent(problems *errs.Problems, version *int) {
+	if version == nil || *version < 1 {
+		problems.Add("version", reloadMessage)
+	}
+}
+
+// campaignNameTaken returns the "already has" message when another campaign of plan than exceptID has name,
+// ignoring letter case (FR-005); "" otherwise.
+func campaignNameTaken(siblings []Campaign, plan PlanFacts, name, exceptID string) string {
+	if other, taken := campaignNamed(siblings, name, exceptID); taken {
+		return fmt.Sprintf(campaignNameTakenMessage, plan.Name, other.Name)
+	}
+	return ""
+}
+
+// initiativeNameTaken returns the "already has" message when another initiative of campaign than exceptID
+// has name, ignoring letter case (FR-005); "" otherwise.
+func initiativeNameTaken(siblings []Initiative, campaign Campaign, name, exceptID string) string {
+	if other, taken := initiativeNamed(siblings, name, exceptID); taken {
+		return fmt.Sprintf(initiativeNameTakenMessage, campaign.Name, other.Name)
+	}
+	return ""
+}
