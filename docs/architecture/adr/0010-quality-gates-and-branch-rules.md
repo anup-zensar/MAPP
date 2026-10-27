@@ -36,6 +36,7 @@ implements this decision.
 | Gate 12, first-page JavaScript budget | Not checked | The web app is split per route |
 | Gate 14, comment budget and file length | Checked by the reviewer, not by a tool | — (permanent) |
 | VII, release age of Go modules | Checked by the reviewer; Go has no built-in setting | — (permanent) |
+| B9, fuzz tests for parsers of untrusted input | Not written for the file importers (GSAP transactions and rates, Shell attribute options CSV/XLSX); decided 2026-10-27 | Live GSAP integration |
 
 ## Consequences
 - Every pull request shows three checks; a failed check's log names the gate that failed.
