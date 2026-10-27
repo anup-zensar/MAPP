@@ -13,7 +13,7 @@ import (
 )
 
 // ListRateImports returns the latest limit imports, newest first (FR-007): 10 when limit is 0, at most 50.
-func (s *Service) ListRateImports(ctx context.Context, a actor.Actor, limit int) (RateImportPage, error) {
+func (s *Service) ListRateImports(ctx context.Context, _ actor.Actor, limit int) (RateImportPage, error) {
 	if limit <= 0 {
 		limit = defaultRecentImports
 	}

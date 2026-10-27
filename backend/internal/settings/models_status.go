@@ -10,26 +10,26 @@ import (
 // SetModelActive sets the model id inactive or reactivates it (FR-004): plans using an inactive model keep
 // it and still calculate goals; new plans cannot choose it. The same status again changes nothing.
 func (s *Service) SetModelActive(ctx context.Context, a actor.Actor, id string, update StatusUpdate) (ModelView, error) {
-	active, version, err := checkStatus(update)
-	if err != nil {
-		return ModelView{}, err
+	active, version, statusErr := checkStatus(update)
+	if statusErr != nil {
+		return ModelView{}, statusErr
 	}
 	var view ModelView
-	err = s.tx.Write(ctx, func(ctx context.Context) error {
+	err := s.tx.Write(ctx, func(ctx context.Context) error {
 		m, err := s.storedModel(ctx, id)
 		if err != nil {
 			return err
 		}
-		if err := m.CheckVersion(version, modelNoun); err != nil {
+		if err = m.CheckVersion(version, modelNoun); err != nil {
 			return err
 		}
 		if m.Active != active {
 			m.Active = active
 			m.Touch(a, s.now())
-			if err := s.repo.PutModel(ctx, m); err != nil {
+			if err = s.repo.PutModel(ctx, m); err != nil {
 				return err
 			}
-			if err := s.logStatus(ctx, a, modelKind, m.ID, m.Name, active); err != nil {
+			if err = s.logStatus(ctx, a, modelKind, m.ID, m.Name, active); err != nil {
 				return err
 			}
 		}

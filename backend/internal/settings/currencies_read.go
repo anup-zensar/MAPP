@@ -13,7 +13,7 @@ import (
 // ListCurrencies returns every currency, active and inactive, USD first and then by code, each with its
 // current rate both ways and where it came from, its usage and its locks (FR-028, US4-2; 016 FR-003). Every
 // signed-in person may see them (FR-008).
-func (s *Service) ListCurrencies(ctx context.Context, a actor.Actor) ([]CurrencyView, error) {
+func (s *Service) ListCurrencies(ctx context.Context, _ actor.Actor) ([]CurrencyView, error) {
 	var views []CurrencyView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		currencies, err := s.repo.ListCurrencies(ctx)
@@ -44,7 +44,7 @@ func (s *Service) ListCurrencies(ctx context.Context, a actor.Actor) ([]Currency
 
 // GetCurrency returns the currency with the code, with its usage, its locks and who last changed its rate
 // (US4-2).
-func (s *Service) GetCurrency(ctx context.Context, a actor.Actor, code string) (CurrencyView, error) {
+func (s *Service) GetCurrency(ctx context.Context, _ actor.Actor, code string) (CurrencyView, error) {
 	var view CurrencyView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		c, err := s.storedCurrency(ctx, code)

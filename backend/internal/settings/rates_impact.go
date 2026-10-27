@@ -15,7 +15,7 @@ import (
 // D-044): when it becomes the current rate, the line items in the currency and the plans planned in it. A
 // future-dated rate changes nothing before its date, so it answers no warning. It is checked as AddRate
 // checks it; nothing is saved.
-func (s *Service) AddRateImpact(ctx context.Context, a actor.Actor, code string, in RateInput) (ChangeImpact, error) {
+func (s *Service) AddRateImpact(ctx context.Context, _ actor.Actor, code string, in RateInput) (ChangeImpact, error) {
 	impact := ChangeImpact{Warnings: []ImpactWarning{}}
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		c, err := s.storedCurrency(ctx, code)
@@ -28,7 +28,7 @@ func (s *Service) AddRateImpact(ctx context.Context, a actor.Actor, code string,
 		}
 		var problems errs.Problems
 		day, rate := checkRateInput(c, in, book, &problems)
-		if err := problems.Err(); err != nil {
+		if err = problems.Err(); err != nil {
 			return err
 		}
 		today := s.today()
@@ -43,7 +43,7 @@ func (s *Service) AddRateImpact(ctx context.Context, a actor.Actor, code string,
 
 // UpdateRateImpact says, before a changed rate is saved, what it would change: only a change of the current
 // rate changes conversions (FR-005). Nothing is saved.
-func (s *Service) UpdateRateImpact(ctx context.Context, a actor.Actor, id string, update RateUpdate) (ChangeImpact, error) {
+func (s *Service) UpdateRateImpact(ctx context.Context, _ actor.Actor, id string, update RateUpdate) (ChangeImpact, error) {
 	impact := ChangeImpact{Warnings: []ImpactWarning{}}
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		stored, err := s.storedRate(ctx, id)
@@ -52,7 +52,7 @@ func (s *Service) UpdateRateImpact(ctx context.Context, a actor.Actor, id string
 		}
 		var problems errs.Problems
 		rate := checkRate(update.Rate, &problems)
-		if err := problems.Err(); err != nil {
+		if err = problems.Err(); err != nil {
 			return err
 		}
 		c, err := s.storedCurrency(ctx, stored.Currency)

@@ -74,7 +74,7 @@ func (s *Service) CurrentRate(ctx context.Context, code string) (RateInfo, bool,
 }
 
 // ListCurrentRates answers GET /api/v1/exchange-rates/current. Every signed-in person may read it (014 Table C).
-func (s *Service) ListCurrentRates(ctx context.Context, a actor.Actor) (CurrentRatePage, error) {
+func (s *Service) ListCurrentRates(ctx context.Context, _ actor.Actor) (CurrentRatePage, error) {
 	infos, err := s.CurrentRates(ctx)
 	if err != nil {
 		return CurrentRatePage{}, err
@@ -143,7 +143,7 @@ func rateName(r ExchangeRate) string {
 
 // ListRates returns the rate history of the currency code, newest date first, with its current rate (FR-001,
 // FR-003). USD has none. Every signed-in person may read it.
-func (s *Service) ListRates(ctx context.Context, a actor.Actor, code string) (ExchangeRatePage, error) {
+func (s *Service) ListRates(ctx context.Context, _ actor.Actor, code string) (ExchangeRatePage, error) {
 	var page ExchangeRatePage
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		c, err := s.storedCurrency(ctx, code)

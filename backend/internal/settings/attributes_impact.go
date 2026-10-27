@@ -14,7 +14,7 @@ import (
 // incomplete — counted as MissingAttributes counts, so records where it is hidden, or a dependent without
 // options for the chosen parent (D-034), are not; a type without options removes its options. The body is
 // checked as UpdateAttribute checks it, except the version; nothing is saved.
-func (s *Service) AttributeImpact(ctx context.Context, a actor.Actor, id string, update ShellAttributeUpdate) (ChangeImpact, error) {
+func (s *Service) AttributeImpact(ctx context.Context, _ actor.Actor, id string, update ShellAttributeUpdate) (ChangeImpact, error) {
 	impact := ChangeImpact{Warnings: []ImpactWarning{}}
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		f, stored, u, err := s.attributeToChange(ctx, id)

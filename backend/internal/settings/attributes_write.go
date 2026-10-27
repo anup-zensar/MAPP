@@ -35,14 +35,14 @@ func (s *Service) CreateAttribute(ctx context.Context, a actor.Actor, input Shel
 		var problems errs.Problems
 		attribute := f.applyAttribute(Attribute{Condition: []string{}}, all, nil, &problems)
 		options := f.newOptions(attribute, input.Options, &problems)
-		if err := problems.Err(); err != nil {
+		if err = problems.Err(); err != nil {
 			return err
 		}
 		if attribute.ID, err = s.ids.Next(ctx, ids.PrefixShellAttribute); err != nil {
 			return err
 		}
 		attribute.Active, attribute.Meta = true, record.NewMeta(a, s.now())
-		if err := s.repo.PutAttribute(ctx, attribute); err != nil {
+		if err = s.repo.PutAttribute(ctx, attribute); err != nil {
 			return err
 		}
 		for i := range options {
@@ -51,11 +51,7 @@ func (s *Service) CreateAttribute(ctx context.Context, a actor.Actor, input Shel
 		if err = s.addOptions(ctx, a, options, 0); err != nil {
 			return err
 		}
-		details := ""
-		if len(options) > 0 {
-			details = fmt.Sprintf(withOptionsDetails, plural(len(options), "option", "options"))
-		}
-		if err := s.logCreated(ctx, a, attributeKind, attribute.ID, attribute.Label, details); err != nil {
+		if err = s.logCreated(ctx, a, attributeKind, attribute.ID, attribute.Label, withOptions(options)); err != nil {
 			return err
 		}
 		view, err = s.attributeViewOf(ctx, attribute.ID)
@@ -80,10 +76,10 @@ func (s *Service) UpdateAttribute(ctx context.Context, a actor.Actor, id string,
 		var problems errs.Problems
 		checkVersion(&problems, update.Version)
 		change := f.planAttributeChange(stored, update, u, &problems)
-		if err := problems.Err(); err != nil {
+		if err = problems.Err(); err != nil {
 			return err
 		}
-		if err := stored.CheckVersion(*update.Version, attributeNoun); err != nil {
+		if err = stored.CheckVersion(*update.Version, attributeNoun); err != nil {
 			return err
 		}
 		changes, err := history.Diff(stored, change.attribute)
@@ -91,41 +87,69 @@ func (s *Service) UpdateAttribute(ctx context.Context, a actor.Actor, id string,
 			return err
 		}
 		if len(changes) > 0 {
-			details := ""
-			if len(change.removed) > 0 {
-				labels, removed := make([]string, 0, len(change.removed)), make([]string, 0, len(change.removed))
-				for _, o := range change.removed {
-					labels, removed = append(labels, o.Label), append(removed, o.ID)
-				}
-				if err = s.repo.DeleteOptions(ctx, removed); err != nil {
-					return err
-				}
-				details = fmt.Sprintf(removedOptionsDetails, plural(len(labels), "option", "options"), strings.Join(labels, ", "))
-			}
-			changed := change.attribute
-			changed.Touch(a, s.now())
-			if err := s.repo.PutAttribute(ctx, changed); err != nil {
-				return err
-			}
-			if err := s.logChanged(ctx, a, attributeKind, changed.ID, changed.Label, changes, details); err != nil {
+			if err = s.saveAttributeChange(ctx, a, change, changes); err != nil {
 				return err
 			}
 		}
-		for _, o := range change.linked {
-			linkChanges, err := history.Diff(f.optionByID[o.ID], o)
-			if err != nil {
-				return err
-			}
-			o.Touch(a, s.now())
-			if err := s.repo.PutOption(ctx, o); err != nil {
-				return err
-			}
-			if err := s.logChanged(ctx, a, optionKind, o.ID, o.Label, linkChanges, ""); err != nil {
-				return err
-			}
+		if err = s.saveLinkedOptions(ctx, a, f, change.linked); err != nil {
+			return err
 		}
 		view, err = s.attributeViewOf(ctx, id)
 		return err
 	})
 	return view, err
+}
+
+// saveAttributeChange first removes the options a type without options can't keep (D-049).
+func (s *Service) saveAttributeChange(ctx context.Context, a actor.Actor, change attributeChange, changes []history.Change) error {
+	details, err := s.removeOptions(ctx, change.removed)
+	if err != nil {
+		return err
+	}
+	changed := change.attribute
+	changed.Touch(a, s.now())
+	if err = s.repo.PutAttribute(ctx, changed); err != nil {
+		return err
+	}
+	return s.logChanged(ctx, a, attributeKind, changed.ID, changed.Label, changes, details)
+}
+
+// removeOptions returns what the log entry says of the removed options: "" when there are none.
+func (s *Service) removeOptions(ctx context.Context, options []Option) (string, error) {
+	if len(options) == 0 {
+		return "", nil
+	}
+	labels, removed := make([]string, 0, len(options)), make([]string, 0, len(options))
+	for _, o := range options {
+		labels, removed = append(labels, o.Label), append(removed, o.ID)
+	}
+	if err := s.repo.DeleteOptions(ctx, removed); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf(removedOptionsDetails, plural(len(labels), "option", "options"), strings.Join(labels, ", ")), nil
+}
+
+func (s *Service) saveLinkedOptions(ctx context.Context, a actor.Actor, f formData, linked []Option) error {
+	for _, o := range linked {
+		linkChanges, err := history.Diff(f.optionByID[o.ID], o)
+		if err != nil {
+			return err
+		}
+		o.Touch(a, s.now())
+		if err = s.repo.PutOption(ctx, o); err != nil {
+			return err
+		}
+		if err = s.logChanged(ctx, a, optionKind, o.ID, o.Label, linkChanges, ""); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// withOptions is "with 3 options", or "" for an attribute without options.
+func withOptions(options []Option) string {
+	if len(options) == 0 {
+		return ""
+	}
+	return fmt.Sprintf(withOptionsDetails, plural(len(options), "option", "options"))
 }

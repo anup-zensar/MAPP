@@ -12,7 +12,7 @@ import (
 // GetOption returns the option id as it is stored now, with its parent options, usage and locks (D-211):
 // the web app reads it after a version conflict. Every signed-in person may read it (FR-008), so a is not
 // used yet.
-func (s *Service) GetOption(ctx context.Context, a actor.Actor, id string) (OptionView, error) {
+func (s *Service) GetOption(ctx context.Context, _ actor.Actor, id string) (OptionView, error) {
 	var view OptionView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		f, stored, attribute, err := s.optionToChange(ctx, id)
@@ -46,7 +46,7 @@ const (
 // whose label contains filter.Q ignoring letter case and surrounding spaces ("0220" finds "CN04000220",
 // SC-007), of the status asked, at most filter.Limit (1 to 500) after skipping filter.Offset; the page's
 // total counts every match. Each option has its parent options and its own usage (US2-3).
-func (s *Service) ListOptions(ctx context.Context, a actor.Actor, attributeID string, filter OptionFilter) (OptionPage, error) {
+func (s *Service) ListOptions(ctx context.Context, _ actor.Actor, attributeID string, filter OptionFilter) (OptionPage, error) {
 	var problems errs.Problems
 	if filter.Limit < 1 || filter.Limit > maxOptionLimit {
 		problems.Add("limit", limitMessage)

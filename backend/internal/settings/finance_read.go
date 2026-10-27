@@ -11,7 +11,7 @@ import (
 // ListFinanceBudgets returns the finance budgets of year (the clock's UTC year when nil) that have at least
 // one item, by name, each with its items by name, its active item count and its usage; and the years that
 // can be chosen (FR-014, FR-015, US5-3). Every signed-in person may see them (FR-008).
-func (s *Service) ListFinanceBudgets(ctx context.Context, a actor.Actor, year *int) (FinanceBudgetPage, error) {
+func (s *Service) ListFinanceBudgets(ctx context.Context, _ actor.Actor, year *int) (FinanceBudgetPage, error) {
 	current := s.now().UTC().Year()
 	shown := current
 	if year != nil {
@@ -61,7 +61,7 @@ func (s *Service) ListFinanceBudgets(ctx context.Context, a actor.Actor, year *i
 
 // GetFinanceBudgetItem returns the finance budget item id with its year, budget name, usage and locks
 // (US5-4).
-func (s *Service) GetFinanceBudgetItem(ctx context.Context, a actor.Actor, id string) (FinanceBudgetItemView, error) {
+func (s *Service) GetFinanceBudgetItem(ctx context.Context, _ actor.Actor, id string) (FinanceBudgetItemView, error) {
 	var view FinanceBudgetItemView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		item, err := s.storedItem(ctx, id)

@@ -11,7 +11,7 @@ import (
 // ListAttributes returns the Shell attributes of level, or of every level top-down when level is nil, in
 // display order (FR-002, FR-019), each with its options counted, its usage and its locks. Every signed-in
 // person may see them (FR-008).
-func (s *Service) ListAttributes(ctx context.Context, a actor.Actor, level *Level) ([]ShellAttributeView, error) {
+func (s *Service) ListAttributes(ctx context.Context, _ actor.Actor, level *Level) ([]ShellAttributeView, error) {
 	var views []ShellAttributeView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		var err error
@@ -51,7 +51,7 @@ func (s *Service) attributeList(ctx context.Context, level *Level) ([]ShellAttri
 
 // GetAttribute returns the Shell attribute id with its usage and locks; its options are listed separately
 // (FR-020).
-func (s *Service) GetAttribute(ctx context.Context, a actor.Actor, id string) (ShellAttributeView, error) {
+func (s *Service) GetAttribute(ctx context.Context, _ actor.Actor, id string) (ShellAttributeView, error) {
 	var view ShellAttributeView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		var err error

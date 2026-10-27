@@ -10,7 +10,7 @@ import (
 
 // ListModels returns every model, active and inactive, by name ignoring letter case, each with its
 // allowed activity types and its usage (FR-002, FR-003). Every signed-in person may see them (FR-008).
-func (s *Service) ListModels(ctx context.Context, a actor.Actor) ([]ModelView, error) {
+func (s *Service) ListModels(ctx context.Context, _ actor.Actor) ([]ModelView, error) {
 	var views []ModelView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		models, err := s.repo.ListModels(ctx)
@@ -25,7 +25,7 @@ func (s *Service) ListModels(ctx context.Context, a actor.Actor) ([]ModelView, e
 }
 
 // GetModel returns the model id with its usage and the live plans using it (US1-3).
-func (s *Service) GetModel(ctx context.Context, a actor.Actor, id string) (ModelView, error) {
+func (s *Service) GetModel(ctx context.Context, _ actor.Actor, id string) (ModelView, error) {
 	var view ModelView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		m, err := s.storedModel(ctx, id)

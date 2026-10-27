@@ -12,7 +12,7 @@ import (
 // D-044): for each model that would no longer allow it, the live activities of the type in that model's
 // live plans, which keep their type. The body is checked as UpdateActivityType checks it, except the
 // version; nothing is saved.
-func (s *Service) ActivityTypeImpact(ctx context.Context, a actor.Actor, id string, update ActivityTypeUpdate) (ChangeImpact, error) {
+func (s *Service) ActivityTypeImpact(ctx context.Context, _ actor.Actor, id string, update ActivityTypeUpdate) (ChangeImpact, error) {
 	impact := ChangeImpact{Warnings: []ImpactWarning{}}
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		stored, err := s.storedActivityType(ctx, id)
@@ -24,7 +24,7 @@ func (s *Service) ActivityTypeImpact(ctx context.Context, a actor.Actor, id stri
 		if err != nil {
 			return err
 		}
-		if err := problems.Err(); err != nil {
+		if err = problems.Err(); err != nil {
 			return err
 		}
 		refs, err := s.references(ctx)

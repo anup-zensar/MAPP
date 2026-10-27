@@ -10,26 +10,26 @@ import (
 // SetFinanceBudgetItemActive sets the finance budget item id inactive or reactivates it (FR-004): line
 // items cannot link to an inactive item; those linked keep it. The same status again changes nothing.
 func (s *Service) SetFinanceBudgetItemActive(ctx context.Context, a actor.Actor, id string, update StatusUpdate) (FinanceBudgetItemView, error) {
-	active, version, err := checkStatus(update)
-	if err != nil {
-		return FinanceBudgetItemView{}, err
+	active, version, statusErr := checkStatus(update)
+	if statusErr != nil {
+		return FinanceBudgetItemView{}, statusErr
 	}
 	var view FinanceBudgetItemView
-	err = s.tx.Write(ctx, func(ctx context.Context) error {
+	err := s.tx.Write(ctx, func(ctx context.Context) error {
 		item, err := s.storedItem(ctx, id)
 		if err != nil {
 			return err
 		}
-		if err := item.CheckVersion(version, itemNoun); err != nil {
+		if err = item.CheckVersion(version, itemNoun); err != nil {
 			return err
 		}
 		if item.Active != active {
 			item.Active = active
 			item.Touch(a, s.now())
-			if err := s.repo.PutFinanceBudgetItem(ctx, item); err != nil {
+			if err = s.repo.PutFinanceBudgetItem(ctx, item); err != nil {
 				return err
 			}
-			if err := s.logStatus(ctx, a, itemKind, item.ID, item.Name, active); err != nil {
+			if err = s.logStatus(ctx, a, itemKind, item.ID, item.Name, active); err != nil {
 				return err
 			}
 		}

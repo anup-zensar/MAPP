@@ -10,26 +10,26 @@ import (
 // SetActivityTypeActive sets the activity type id inactive or reactivates it (FR-004): new activities cannot
 // choose an inactive type; activities using it keep it. The same status again changes nothing.
 func (s *Service) SetActivityTypeActive(ctx context.Context, a actor.Actor, id string, update StatusUpdate) (ActivityTypeView, error) {
-	active, version, err := checkStatus(update)
-	if err != nil {
-		return ActivityTypeView{}, err
+	active, version, statusErr := checkStatus(update)
+	if statusErr != nil {
+		return ActivityTypeView{}, statusErr
 	}
 	var view ActivityTypeView
-	err = s.tx.Write(ctx, func(ctx context.Context) error {
+	err := s.tx.Write(ctx, func(ctx context.Context) error {
 		t, err := s.storedActivityType(ctx, id)
 		if err != nil {
 			return err
 		}
-		if err := t.CheckVersion(version, activityTypeNoun); err != nil {
+		if err = t.CheckVersion(version, activityTypeNoun); err != nil {
 			return err
 		}
 		if t.Active != active {
 			t.Active = active
 			t.Touch(a, s.now())
-			if err := s.repo.PutActivityType(ctx, t); err != nil {
+			if err = s.repo.PutActivityType(ctx, t); err != nil {
 				return err
 			}
-			if err := s.logStatus(ctx, a, activityTypeKind, t.ID, t.Name, active); err != nil {
+			if err = s.logStatus(ctx, a, activityTypeKind, t.ID, t.Name, active); err != nil {
 				return err
 			}
 		}

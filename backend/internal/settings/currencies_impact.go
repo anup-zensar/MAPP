@@ -12,7 +12,7 @@ import (
 // D-044): a new rate recalculates the USD amounts of the live line items in the currency and of the plans
 // planned in it (016 FR-005). The body is checked as UpdateCurrency checks it, except the version; nothing is
 // saved.
-func (s *Service) CurrencyImpact(ctx context.Context, a actor.Actor, code string, update CurrencyUpdate) (ChangeImpact, error) {
+func (s *Service) CurrencyImpact(ctx context.Context, _ actor.Actor, code string, update CurrencyUpdate) (ChangeImpact, error) {
 	impact := ChangeImpact{Warnings: []ImpactWarning{}}
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		stored, err := s.storedCurrency(ctx, code)
@@ -25,7 +25,7 @@ func (s *Service) CurrencyImpact(ctx context.Context, a actor.Actor, code string
 		}
 		var problems errs.Problems
 		_, rate := applyCurrency(stored, update, currencies, stored.Code, &problems)
-		if err := problems.Err(); err != nil {
+		if err = problems.Err(); err != nil {
 			return err
 		}
 		if rate == nil || stored.Code == money.BaseCurrency {

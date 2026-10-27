@@ -13,17 +13,17 @@ import (
 // an attribute that active attributes depend on, and a dependent of an inactive attribute (reactivating)
 // are refused with the lock's reason. The same status again changes nothing.
 func (s *Service) SetAttributeActive(ctx context.Context, a actor.Actor, id string, update StatusUpdate) (ShellAttributeView, error) {
-	active, version, err := checkStatus(update)
-	if err != nil {
-		return ShellAttributeView{}, err
+	active, version, statusErr := checkStatus(update)
+	if statusErr != nil {
+		return ShellAttributeView{}, statusErr
 	}
 	var view ShellAttributeView
-	err = s.tx.Write(ctx, func(ctx context.Context) error {
+	err := s.tx.Write(ctx, func(ctx context.Context) error {
 		_, stored, u, err := s.attributeToChange(ctx, id)
 		if err != nil {
 			return err
 		}
-		if err := stored.CheckVersion(version, attributeNoun); err != nil {
+		if err = stored.CheckVersion(version, attributeNoun); err != nil {
 			return err
 		}
 		if stored.Active != active {
@@ -32,10 +32,10 @@ func (s *Service) SetAttributeActive(ctx context.Context, a actor.Actor, id stri
 			}
 			stored.Active = active
 			stored.Touch(a, s.now())
-			if err := s.repo.PutAttribute(ctx, stored); err != nil {
+			if err = s.repo.PutAttribute(ctx, stored); err != nil {
 				return err
 			}
-			if err := s.logStatus(ctx, a, attributeKind, stored.ID, stored.Label, active); err != nil {
+			if err = s.logStatus(ctx, a, attributeKind, stored.ID, stored.Label, active); err != nil {
 				return err
 			}
 		}

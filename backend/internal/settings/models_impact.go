@@ -13,7 +13,7 @@ import (
 // changed rates or deal size recalculate the goals of the live plans using it; each activity type no longer
 // allowed is kept by the live activities of those plans that use it. The body is checked as UpdateModel
 // checks it, except the version; nothing is saved.
-func (s *Service) ModelImpact(ctx context.Context, a actor.Actor, id string, update ModelUpdate) (ChangeImpact, error) {
+func (s *Service) ModelImpact(ctx context.Context, _ actor.Actor, id string, update ModelUpdate) (ChangeImpact, error) {
 	impact := ChangeImpact{Warnings: []ImpactWarning{}}
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		m, err := s.storedModel(ctx, id)
@@ -25,7 +25,7 @@ func (s *Service) ModelImpact(ctx context.Context, a actor.Actor, id string, upd
 		if err != nil {
 			return err
 		}
-		if err := problems.Err(); err != nil {
+		if err = problems.Err(); err != nil {
 			return err
 		}
 		refs, err := s.references(ctx)

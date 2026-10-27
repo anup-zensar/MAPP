@@ -28,7 +28,7 @@ func (s *Service) MoveOption(ctx context.Context, a actor.Actor, id string, in O
 		if err != nil {
 			return err
 		}
-		if err := stored.CheckVersion(*in.Version, optionNoun); err != nil {
+		if err = stored.CheckVersion(*in.Version, optionNoun); err != nil {
 			return err
 		}
 		options := f.options[attribute.ID]
@@ -48,10 +48,10 @@ func (s *Service) MoveOption(ctx context.Context, a actor.Actor, id string, in O
 		for _, changed := range repositionedOptions(options, order) {
 			change := history.Change{Field: "position", Old: jsonOf(f.optionByID[changed.ID].Position), New: jsonOf(changed.Position)}
 			changed.Touch(a, s.now())
-			if err := s.repo.PutOption(ctx, changed); err != nil {
+			if err = s.repo.PutOption(ctx, changed); err != nil {
 				return err
 			}
-			if err := s.logChanged(ctx, a, optionKind, changed.ID, changed.Label, []history.Change{change}, ""); err != nil {
+			if err = s.logChanged(ctx, a, optionKind, changed.ID, changed.Label, []history.Change{change}, ""); err != nil {
 				return err
 			}
 			if changed.ID == id {

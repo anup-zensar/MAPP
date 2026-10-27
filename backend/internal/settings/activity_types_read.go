@@ -11,7 +11,7 @@ import (
 // ListActivityTypes returns every activity type, active and inactive, by name ignoring letter case, each
 // with the models that allow it and its usage (FR-002, FR-003). Every signed-in person may see them
 // (FR-008).
-func (s *Service) ListActivityTypes(ctx context.Context, a actor.Actor) ([]ActivityTypeView, error) {
+func (s *Service) ListActivityTypes(ctx context.Context, _ actor.Actor) ([]ActivityTypeView, error) {
 	var views []ActivityTypeView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		types, err := s.repo.ListActivityTypes(ctx)
@@ -26,7 +26,7 @@ func (s *Service) ListActivityTypes(ctx context.Context, a actor.Actor) ([]Activ
 }
 
 // GetActivityType returns the activity type id with its models and usage (US5-2).
-func (s *Service) GetActivityType(ctx context.Context, a actor.Actor, id string) (ActivityTypeView, error) {
+func (s *Service) GetActivityType(ctx context.Context, _ actor.Actor, id string) (ActivityTypeView, error) {
 	var view ActivityTypeView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		t, err := s.storedActivityType(ctx, id)
