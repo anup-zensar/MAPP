@@ -78,18 +78,6 @@ func (s *Service) attributeViewOf(ctx context.Context, id string) (ShellAttribut
 	return f.attributeView(attribute, u), nil
 }
 
-// storedAttribute reads the attribute id, or answers not found.
-func (s *Service) storedAttribute(ctx context.Context, id string) (Attribute, error) {
-	attribute, found, err := s.repo.GetAttribute(ctx, id)
-	if err != nil {
-		return Attribute{}, err
-	}
-	if !found {
-		return Attribute{}, errs.NotFound(attributeGoneMessage)
-	}
-	return attribute, nil
-}
-
 // attributeView returns the attribute a as the API answers it.
 func (f formData) attributeView(a Attribute, u *usageIndex) ShellAttributeView {
 	var parent *SettingRef
@@ -124,40 +112,55 @@ func (f formData) attributeView(a Attribute, u *usageIndex) ShellAttributeView {
 func attributeLocks(a Attribute, u *usageIndex) []Lock {
 	locks := []Lock{}
 	add := func(field, reason string) {
-		for _, l := range locks {
-			if l.Field == field {
-				return // one reason per field: the first that applies
-			}
+		if _, locked := lockOf(locks, field); !locked { // one reason per field: the first that applies
+			locks = append(locks, Lock{Field: field, Reason: reason})
 		}
-		locks = append(locks, Lock{Field: field, Reason: reason})
 	}
 	if a.Role == RoleBusinessUnit {
-		for _, field := range businessUnitLocks {
+		for _, field := range businessUnitLocks() {
 			add(field, businessUnitLock)
 		}
 		return locks
 	}
 	if u.valuesByAttribute[a.ID] != nil {
-		add("type", typeLockedMessage)
-		add("level", levelLockedMessage)
+		add(fieldType, typeLockedMessage)
+		add(fieldLevel, levelLockedMessage)
 	}
 	dependents := u.dependents[a.ID]
 	if len(dependents) > 0 {
-		add("type", fmt.Sprintf(parentTypeLock, dependents[0].record.Label))
+		add(fieldType, fmt.Sprintf(parentTypeLock, dependents[0].record.Label))
 	}
 	if len(dependents) > 0 || a.ParentAttributeID != "" {
-		add("level", levelDependencyLock)
+		add(fieldLevel, levelDependencyLock)
 	}
-	if a.Active {
-		for _, d := range dependents {
-			if !d.inBin && d.record.Active {
-				add("active", fmt.Sprintf(dependentActiveLock, d.record.Label, a.Label))
-			}
-		}
-	} else if parent, found := u.attributes[a.ParentAttributeID]; found && !parent.Active {
-		add("active", fmt.Sprintf(reactivateParentLock, parent.Label, a.Label))
+	if reason, locked := statusLock(a, u); locked {
+		add(fieldActive, reason)
 	}
 	return locks
+}
+
+// businessUnitLocks are the fields and actions the Business unit attribute never allows, because the
+// conditions of other attributes depend on it (FR-023, D-055).
+func businessUnitLocks() []string {
+	return []string{fieldType, fieldLevel, fieldSection, fieldPosition, fieldCondition, fieldParent, fieldActive, actionDelete}
+}
+
+// statusLock is why the status of a can't change: it has active dependents, or (inactive) its parent is
+// inactive too.
+func statusLock(a Attribute, u *usageIndex) (string, bool) {
+	if !a.Active {
+		parent, found := u.attributes[a.ParentAttributeID]
+		if found && !parent.Active {
+			return fmt.Sprintf(reactivateParentLock, parent.Label, a.Label), true
+		}
+		return "", false
+	}
+	for _, d := range u.dependents[a.ID] {
+		if !d.inBin && d.record.Active {
+			return fmt.Sprintf(dependentActiveLock, d.record.Label, a.Label), true
+		}
+	}
+	return "", false
 }
 
 // lockOf returns the reason of the lock on field among locks, and false when the field is not locked.

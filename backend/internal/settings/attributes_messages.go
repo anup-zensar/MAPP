@@ -56,7 +56,3 @@ const (
 	dependentActiveLock  = "Set '%s' inactive first — it depends on '%s'."
 	reactivateParentLock = "Reactivate '%s' first — '%s' depends on it."
 )
-
-// businessUnitLocks are the fields and actions the Business unit attribute never allows, because the
-// conditions of other attributes depend on it (FR-023, D-055).
-var businessUnitLocks = []string{"type", "level", "section", "position", "condition", "parentAttributeId", "active", "delete"}

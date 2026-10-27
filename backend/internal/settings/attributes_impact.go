@@ -3,6 +3,7 @@ package settings
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"mapp/internal/platform/actor"
@@ -40,19 +41,7 @@ func (s *Service) AttributeImpact(ctx context.Context, _ actor.Actor, id string,
 			})
 		}
 		if n := len(change.removed); n > 0 {
-			message := fmt.Sprintf(optionRemovedMessage, change.removed[0].Label)
-			if n > 1 {
-				labels := []string{}
-				for _, o := range change.removed[:min(n, maxListedLabels)] {
-					labels = append(labels, o.Label)
-				}
-				listed := strings.Join(labels, ", ")
-				if n > maxListedLabels {
-					listed += fmt.Sprintf(" and %d more", n-maxListedLabels)
-				}
-				message = fmt.Sprintf(optionsRemovedMessage, n, listed)
-			}
-			impact.Warnings = append(impact.Warnings, ImpactWarning{Kind: ImpactOptionsRemoved, Message: message, Count: n})
+			impact.Warnings = append(impact.Warnings, ImpactWarning{Kind: ImpactOptionsRemoved, Message: removedOptionsWarning(change.removed), Count: n})
 		}
 		return nil
 	})
@@ -70,23 +59,45 @@ func (f formData) becomeIncomplete(before, after Attribute, refs []Reference) in
 	form := f
 	form.level = after.Level
 	form.attributes = displayOrder(append(filter(f.levelAttributes(after.Level), func(a Attribute) bool { return a.ID != after.ID }), after))
+	planValues := planValuesOf(refs)
+	field, n := "attributes."+after.ID, 0
+	for _, ref := range refs {
+		if ref.InBin || ref.Level != after.Level {
+			continue
+		}
+		missing := form.missing(ref.Attributes, f.businessUnitOf(planValues[ref.PlanID]))
+		if slices.ContainsFunc(missing, func(m MissingField) bool { return m.Field == field }) {
+			n++
+		}
+	}
+	return n
+}
+
+// removedOptionsWarning names the removed options, at most maxListedLabels of them.
+func removedOptionsWarning(removed []Option) string {
+	n := len(removed)
+	message := fmt.Sprintf(optionRemovedMessage, removed[0].Label)
+	if n > 1 {
+		labels := []string{}
+		for _, o := range removed[:min(n, maxListedLabels)] {
+			labels = append(labels, o.Label)
+		}
+		listed := strings.Join(labels, ", ")
+		if n > maxListedLabels {
+			listed += fmt.Sprintf(" and %d more", n-maxListedLabels)
+		}
+		message = fmt.Sprintf(optionsRemovedMessage, n, listed)
+	}
+	return message
+}
+
+// planValuesOf returns the attribute values of every plan among refs, by plan id.
+func planValuesOf(refs []Reference) map[string]AttributeValues {
 	planValues := map[string]AttributeValues{}
 	for _, ref := range refs {
 		if ref.Level == LevelPlan {
 			planValues[ref.PlanID] = ref.Attributes
 		}
 	}
-	field, n := "attributes."+after.ID, 0
-	for _, ref := range refs {
-		if ref.InBin || ref.Level != after.Level {
-			continue
-		}
-		for _, m := range form.missing(ref.Attributes, f.businessUnitOf(planValues[ref.PlanID])) {
-			if m.Field == field {
-				n++
-				break
-			}
-		}
-	}
-	return n
+	return planValues
 }

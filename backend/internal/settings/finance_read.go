@@ -31,28 +31,14 @@ func (s *Service) ListFinanceBudgets(ctx context.Context, _ actor.Actor, year *i
 		if err != nil {
 			return err
 		}
-		itemsOf := map[string][]FinanceBudgetItem{}
-		for _, i := range items {
-			itemsOf[i.BudgetID] = append(itemsOf[i.BudgetID], i)
-		}
-		years := map[int]bool{}
-		for y := current - yearsBefore; y <= current+yearsAfter; y++ {
-			years[y] = true
-		}
+		itemsOf := itemsByBudget(items)
 		slices.SortStableFunc(budgets, func(x, y FinanceBudget) int { return compareNames(x.Name, y.Name) })
 		for _, b := range budgets {
-			if len(itemsOf[b.ID]) == 0 {
-				continue
-			}
-			years[b.Year] = true
-			if b.Year == shown {
+			if b.Year == shown && len(itemsOf[b.ID]) > 0 {
 				page.Items = append(page.Items, budgetView(b, itemsOf[b.ID], u))
 			}
 		}
-		for y := range years {
-			page.Years = append(page.Years, y)
-		}
-		slices.Sort(page.Years)
+		page.Years = budgetYears(current, budgets, itemsOf)
 		return nil
 	})
 	page.Total = len(page.Items)
@@ -119,4 +105,32 @@ func itemView(i FinanceBudgetItem, b FinanceBudget, u *usageIndex) FinanceBudget
 		ID: i.ID, BudgetID: i.BudgetID, BudgetName: b.Name, Year: b.Year, Name: i.Name, Code: i.Code, Active: i.Active,
 		Usage: u.item(i.ID), Locks: []Lock{{Field: "year", Reason: yearLockedMessage}}, Meta: i.Meta,
 	}
+}
+
+func itemsByBudget(items []FinanceBudgetItem) map[string][]FinanceBudgetItem {
+	itemsOf := map[string][]FinanceBudgetItem{}
+	for _, i := range items {
+		itemsOf[i.BudgetID] = append(itemsOf[i.BudgetID], i)
+	}
+	return itemsOf
+}
+
+// budgetYears returns the years that can be chosen, ascending: current − 1 to + 5 and every year of a budget
+// with items.
+func budgetYears(current int, budgets []FinanceBudget, itemsOf map[string][]FinanceBudgetItem) []int {
+	years := map[int]bool{}
+	for y := current - yearsBefore; y <= current+yearsAfter; y++ {
+		years[y] = true
+	}
+	for _, b := range budgets {
+		if len(itemsOf[b.ID]) > 0 {
+			years[b.Year] = true
+		}
+	}
+	list := make([]int, 0, len(years))
+	for y := range years {
+		list = append(list, y)
+	}
+	slices.Sort(list)
+	return list
 }

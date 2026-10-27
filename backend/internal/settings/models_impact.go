@@ -40,27 +40,34 @@ func (s *Service) ModelImpact(ctx context.Context, _ actor.Actor, id string, upd
 				Count:   len(plans),
 			})
 		}
-		for _, typeID := range m.ActivityTypeIDs {
-			if slices.Contains(changed.ActivityTypeIDs, typeID) {
-				continue
-			}
-			n := liveActivitiesOfType(refs, typeID, plans)
-			if n == 0 {
-				continue
-			}
-			t, _, err := s.repo.GetActivityType(ctx, typeID)
-			if err != nil {
-				return err
-			}
-			message := fmt.Sprintf(typeRemovedMessage, plural(n, "activity", "activities"), t.Name)
-			if n == 1 {
-				message = fmt.Sprintf(typeRemovedOneMessage, t.Name)
-			}
-			impact.Warnings = append(impact.Warnings, ImpactWarning{Kind: ImpactActivityTypeRemoved, Message: message, Count: n})
-		}
-		return nil
+		removed := filter(m.ActivityTypeIDs, func(typeID string) bool { return !slices.Contains(changed.ActivityTypeIDs, typeID) })
+		warnings, err := s.typeRemovedWarnings(ctx, removed, refs, plans)
+		impact.Warnings = append(impact.Warnings, warnings...)
+		return err
 	})
 	return impact, err
+}
+
+// typeRemovedWarnings warns, for each activity type of typeIDs that a model no longer allows, of the live
+// activities of plans that keep it.
+func (s *Service) typeRemovedWarnings(ctx context.Context, typeIDs []string, refs []Reference, plans map[string]bool) ([]ImpactWarning, error) {
+	warnings := []ImpactWarning{}
+	for _, typeID := range typeIDs {
+		n := liveActivitiesOfType(refs, typeID, plans)
+		if n == 0 {
+			continue
+		}
+		t, _, err := s.repo.GetActivityType(ctx, typeID)
+		if err != nil {
+			return nil, err
+		}
+		message := fmt.Sprintf(typeRemovedMessage, plural(n, "activity", "activities"), t.Name)
+		if n == 1 {
+			message = fmt.Sprintf(typeRemovedOneMessage, t.Name)
+		}
+		warnings = append(warnings, ImpactWarning{Kind: ImpactActivityTypeRemoved, Message: message, Count: n})
+	}
+	return warnings, nil
 }
 
 // goalsChange reports whether a change of a model changes the goals it calculates: its rates or its deal

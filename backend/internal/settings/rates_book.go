@@ -13,6 +13,14 @@ import (
 // out from. It is read once per request.
 type rateBook map[string][]ExchangeRate
 
+// rateDay is what the current rate of a currency on a day and its source are read from: every dated rate and
+// the file name of every import.
+type rateDay struct {
+	book  rateBook
+	day   date.Date
+	files map[string]string
+}
+
 // rateBook reads every dated rate inside the caller's transaction.
 func (s *Service) rateBook(ctx context.Context) (rateBook, error) {
 	all, err := s.repo.ListRates(ctx)

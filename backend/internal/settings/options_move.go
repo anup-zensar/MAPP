@@ -14,12 +14,7 @@ import (
 // the version the person started at. At the ends it is refused on direction. Both options get one
 // "changed" entry (field position).
 func (s *Service) MoveOption(ctx context.Context, a actor.Actor, id string, in OptionMoveInput) (OptionView, error) {
-	var problems errs.Problems
-	if in.Direction != MoveUp && in.Direction != MoveDown {
-		problems.Add("direction", reloadMessage)
-	}
-	checkVersion(&problems, in.Version)
-	if err := problems.Err(); err != nil {
+	if err := checkOptionMove(in); err != nil {
 		return OptionView{}, err
 	}
 	var view OptionView
@@ -33,20 +28,14 @@ func (s *Service) MoveOption(ctx context.Context, a actor.Actor, id string, in O
 		}
 		options := f.options[attribute.ID]
 		i := slices.IndexFunc(options, func(o Option) bool { return o.ID == id })
-		j := i - 1
-		if in.Direction == MoveDown {
-			j = i + 1
-		}
-		switch {
-		case j < 0:
-			return errs.Validation(errs.FieldError{Field: "direction", Message: fmt.Sprintf(firstOptionMessage, stored.Label)})
-		case j >= len(options):
-			return errs.Validation(errs.FieldError{Field: "direction", Message: fmt.Sprintf(lastOptionMessage, stored.Label)})
+		j, err := neighbour(options, i, in.Direction, stored.Label)
+		if err != nil {
+			return err
 		}
 		order := slices.Clone(options)
 		order[i], order[j] = order[j], order[i]
 		for _, changed := range repositionedOptions(options, order) {
-			change := history.Change{Field: "position", Old: jsonOf(f.optionByID[changed.ID].Position), New: jsonOf(changed.Position)}
+			change := history.Change{Field: fieldPosition, Old: jsonOf(f.optionByID[changed.ID].Position), New: jsonOf(changed.Position)}
 			changed.Touch(a, s.now())
 			if err = s.repo.PutOption(ctx, changed); err != nil {
 				return err
@@ -62,6 +51,32 @@ func (s *Service) MoveOption(ctx context.Context, a actor.Actor, id string, in O
 		return err
 	})
 	return view, err
+}
+
+// checkOptionMove adds a problem for a direction other than up or down and for a missing version.
+func checkOptionMove(in OptionMoveInput) error {
+	var problems errs.Problems
+	if in.Direction != MoveUp && in.Direction != MoveDown {
+		problems.Add(fieldDirection, reloadMessage)
+	}
+	checkVersion(&problems, in.Version)
+	return problems.Err()
+}
+
+// neighbour returns the index of the option the option label at i swaps with in direction, or the refusal at
+// an end of the list.
+func neighbour(options []Option, i int, direction, label string) (int, error) {
+	j := i - 1
+	if direction == MoveDown {
+		j = i + 1
+	}
+	switch {
+	case j < 0:
+		return 0, errs.Validation(errs.FieldError{Field: fieldDirection, Message: fmt.Sprintf(firstOptionMessage, label)})
+	case j >= len(options):
+		return 0, errs.Validation(errs.FieldError{Field: fieldDirection, Message: fmt.Sprintf(lastOptionMessage, label)})
+	}
+	return j, nil
 }
 
 // repositionedOptions gives the options of order — the options of one attribute, which are in display

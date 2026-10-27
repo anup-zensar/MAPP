@@ -57,7 +57,7 @@ func (s *Service) CreateOption(ctx context.Context, a actor.Actor, attributeID s
 			problems.Add("label", tooManyOptionsMessage)
 		}
 		if parent, dependent := f.byID[attribute.ParentAttributeID]; dependent {
-			o.ParentOptionIDs = f.checkLinks(&problems, "parentOptionIds", o.Label, parent, input.ParentOptionIDs, nil)
+			o.ParentOptionIDs = f.checkLinks(&problems, linkCheck{field: fieldParentOptions, label: o.Label, parent: parent, links: input.ParentOptionIDs})
 		}
 		if err := problems.Err(); err != nil {
 			return err
@@ -99,7 +99,9 @@ func (s *Service) UpdateOption(ctx context.Context, a actor.Actor, id string, up
 			changed.Label = f.checkOptionLabel(&problems, *update.Label, attribute, stored.ID)
 		}
 		if parent, dependent := f.byID[attribute.ParentAttributeID]; dependent && update.ParentOptionIDs != nil {
-			changed.ParentOptionIDs = f.checkLinks(&problems, "parentOptionIds", changed.Label, parent, *update.ParentOptionIDs, stored.ParentOptionIDs)
+			changed.ParentOptionIDs = f.checkLinks(&problems, linkCheck{
+				field: fieldParentOptions, label: changed.Label, parent: parent, links: *update.ParentOptionIDs, previous: stored.ParentOptionIDs,
+			})
 		}
 		if err := problems.Err(); err != nil {
 			return err

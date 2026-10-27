@@ -27,8 +27,8 @@ func (s *Service) SetAttributeActive(ctx context.Context, a actor.Actor, id stri
 			return err
 		}
 		if stored.Active != active {
-			if reason, locked := lockOf(attributeLocks(stored, u), "active"); locked {
-				return errs.Validation(errs.FieldError{Field: "active", Message: reason})
+			if reason, locked := lockOf(attributeLocks(stored, u), fieldActive); locked {
+				return errs.Validation(errs.FieldError{Field: fieldActive, Message: reason})
 			}
 			stored.Active = active
 			stored.Touch(a, s.now())
@@ -56,7 +56,7 @@ func (s *Service) DeleteAttribute(ctx context.Context, a actor.Actor, id string)
 		if err != nil {
 			return err
 		}
-		if reason, locked := lockOf(attributeLocks(stored, u), "delete"); locked {
+		if reason, locked := lockOf(attributeLocks(stored, u), actionDelete); locked {
 			return errs.InUse(reason)
 		}
 		if usage := u.attribute(stored); usage.InUse {

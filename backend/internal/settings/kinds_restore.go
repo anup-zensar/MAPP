@@ -173,24 +173,34 @@ func (s *Service) prepareItemRestore(ctx context.Context, rc history.RestoreCont
 	}
 	changed := name != item.Name
 	item.Name = name
-	if item.Code != "" {
-		other, taken, err := s.itemWithCode(ctx, item.BudgetID, item.Code, item.ID)
-		if err != nil {
-			return nil, err
-		}
-		if taken && rc.Undo {
-			return nil, errs.NameTaken(fmt.Sprintf(undoItemCodeTakenMessage, item.Code, other.Name))
-		}
-		if taken {
-			notes = append(notes, fmt.Sprintf(itemCodeRemovedNote, item.Code))
-			item.Code, changed = "", true
-		}
+	codeTaken, err := s.itemCodeTaken(ctx, rc, item)
+	if err != nil {
+		return nil, err
+	}
+	if codeTaken {
+		notes = append(notes, fmt.Sprintf(itemCodeRemovedNote, item.Code))
+		item.Code, changed = "", true
 	}
 	if !changed {
 		return nil, nil
 	}
 	item.Touch(rc.Actor, rc.Now)
 	return notes, resnapshot(snap, item, item.Name)
+}
+
+// itemCodeTaken reports whether another item of the year of item now has its code, which refuses an Undo.
+func (s *Service) itemCodeTaken(ctx context.Context, rc history.RestoreContext, item FinanceBudgetItem) (bool, error) {
+	if item.Code == "" {
+		return false, nil
+	}
+	other, taken, err := s.itemWithCode(ctx, item.BudgetID, item.Code, item.ID)
+	if err != nil {
+		return false, err
+	}
+	if taken && rc.Undo {
+		return false, errs.NameTaken(fmt.Sprintf(undoItemCodeTakenMessage, item.Code, other.Name))
+	}
+	return taken, nil
 }
 
 // resnapshot stores the changed record back into s, with its new name, after a PrepareRestore changed it.

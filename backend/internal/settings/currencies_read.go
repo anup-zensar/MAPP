@@ -35,7 +35,7 @@ func (s *Service) ListCurrencies(ctx context.Context, _ actor.Actor) ([]Currency
 		}
 		views = make([]CurrencyView, 0, len(currencies))
 		for _, c := range currencies {
-			views = append(views, currencyView(c, u, book, s.today(), files))
+			views = append(views, currencyView(c, u, rateDay{book: book, day: s.today(), files: files}))
 		}
 		return nil
 	})
@@ -83,21 +83,21 @@ func (s *Service) currencyView(ctx context.Context, c Currency) (CurrencyView, e
 	if err != nil {
 		return CurrencyView{}, err
 	}
-	return currencyView(c, u, book, s.today(), files), nil
+	return currencyView(c, u, rateDay{book: book, day: s.today(), files: files}), nil
 }
 
 // currencyView returns the stored currency c as the API answers it on day: its current rate also inverted
 // ("1 EUR = 1.086957 USD") with its date and source (016 FR-003), its usage and its locks — the code always,
 // and USD's rate, status and delete (FR-028).
-func currencyView(c Currency, u *usageIndex, book rateBook, day date.Date, files map[string]string) CurrencyView {
-	locks := []Lock{{Field: "code", Reason: codeLockedMessage}}
+func currencyView(c Currency, u *usageIndex, rates rateDay) CurrencyView {
+	locks := []Lock{{Field: fieldCode, Reason: codeLockedMessage}}
 	if c.Code == money.BaseCurrency {
-		for _, field := range []string{"rate", "active", "delete"} {
+		for _, field := range []string{fieldRate, fieldActive, actionDelete} {
 			locks = append(locks, Lock{Field: field, Reason: usdLockedMessage})
 		}
 	}
-	current := withRate(c, book, day)
-	info := rateInfoOf(c, book, day, files)
+	current := withRate(c, rates.book, rates.day)
+	info := rateInfoOf(c, rates.book, rates.day, rates.files)
 	rateDate, source := date.Today(current.RateChangedAt), RateManual // USD: since it exists, by hand
 	if info.RateDate != nil {
 		rateDate, source = *info.RateDate, *info.Source

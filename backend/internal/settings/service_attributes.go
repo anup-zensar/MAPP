@@ -84,7 +84,7 @@ func (f formData) planAttributeChange(stored Attribute, update ShellAttributeUpd
 		case sent && !o.Active && len(unique(given)) == 0:
 			next = []string{} // an inactive option may stay unlinked
 		case sent:
-			next = f.checkLinks(problems, field, o.Label, parent, given, previous)
+			next = f.checkLinks(problems, linkCheck{field: field, label: o.Label, parent: parent, links: given, previous: previous})
 		case !newParent:
 			continue // keeps its links
 		case o.Active:

@@ -42,6 +42,22 @@ type Lock struct {
 	Reason string `json:"reason"`
 }
 
+// The fields and actions that locks, problems and log changes name, as the contract spells them.
+const (
+	fieldType          = "type"
+	fieldLevel         = "level"
+	fieldCode          = "code"
+	fieldRate          = "rate"
+	fieldSection       = "section"
+	fieldPosition      = "position"
+	fieldCondition     = "condition"
+	fieldParent        = "parentAttributeId"
+	fieldParentOptions = "parentOptionIds"
+	fieldActive        = "active"
+	fieldDirection     = "direction"
+	actionDelete       = "delete"
+)
+
 // The kinds of impact warnings (contract ImpactWarning.kind).
 const (
 	ImpactGoalsRecalculated   = "goalsRecalculated"

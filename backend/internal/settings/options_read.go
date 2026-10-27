@@ -47,17 +47,7 @@ const (
 // SC-007), of the status asked, at most filter.Limit (1 to 500) after skipping filter.Offset; the page's
 // total counts every match. Each option has its parent options and its own usage (US2-3).
 func (s *Service) ListOptions(ctx context.Context, _ actor.Actor, attributeID string, filter OptionFilter) (OptionPage, error) {
-	var problems errs.Problems
-	if filter.Limit < 1 || filter.Limit > maxOptionLimit {
-		problems.Add("limit", limitMessage)
-	}
-	if filter.Offset < 0 {
-		problems.Add("offset", offsetMessage)
-	}
-	if filter.Status != "" && filter.Status != statusAll && filter.Status != statusActive && filter.Status != statusInactive {
-		problems.Add("status", optionStatusMessage)
-	}
-	if err := problems.Err(); err != nil {
+	if err := checkOptionFilter(filter); err != nil {
 		return OptionPage{}, err
 	}
 
@@ -75,16 +65,7 @@ func (s *Service) ListOptions(ctx context.Context, _ actor.Actor, attributeID st
 		if err != nil {
 			return err
 		}
-		search := strings.ToLower(strings.TrimSpace(filter.Q))
-		var matches []Option
-		for _, o := range f.options[attributeID] {
-			if (filter.Status == statusActive && !o.Active) || (filter.Status == statusInactive && o.Active) {
-				continue
-			}
-			if strings.Contains(strings.ToLower(o.Label), search) {
-				matches = append(matches, o)
-			}
-		}
+		matches := matchingOptions(f.options[attributeID], filter)
 		page.Total = len(matches)
 		for _, o := range matches[min(filter.Offset, len(matches)):min(filter.Offset+filter.Limit, len(matches))] {
 			page.Items = append(page.Items, f.optionView(o, attribute, u))
@@ -92,6 +73,36 @@ func (s *Service) ListOptions(ctx context.Context, _ actor.Actor, attributeID st
 		return nil
 	})
 	return page, err
+}
+
+// checkOptionFilter adds a problem for a limit outside 1 to 500, a negative offset and an unknown status.
+func checkOptionFilter(filter OptionFilter) error {
+	var problems errs.Problems
+	if filter.Limit < 1 || filter.Limit > maxOptionLimit {
+		problems.Add("limit", limitMessage)
+	}
+	if filter.Offset < 0 {
+		problems.Add("offset", offsetMessage)
+	}
+	if filter.Status != "" && filter.Status != statusAll && filter.Status != statusActive && filter.Status != statusInactive {
+		problems.Add("status", optionStatusMessage)
+	}
+	return problems.Err()
+}
+
+// matchingOptions returns the options of filter.Status whose label contains filter.Q, in their order.
+func matchingOptions(options []Option, filter OptionFilter) []Option {
+	search := strings.ToLower(strings.TrimSpace(filter.Q))
+	var matches []Option
+	for _, o := range options {
+		if (filter.Status == statusActive && !o.Active) || (filter.Status == statusInactive && o.Active) {
+			continue
+		}
+		if strings.Contains(strings.ToLower(o.Label), search) {
+			matches = append(matches, o)
+		}
+	}
+	return matches
 }
 
 // optionView returns the option o of the attribute a as the API answers it.
@@ -116,7 +127,7 @@ func (f formData) optionLocks(o Option, a Attribute) []Lock {
 		count++
 	}
 	if a.IsChoice() && count <= 1 {
-		return []Lock{{Field: "delete", Reason: fmt.Sprintf(lastOptionLockMessage, a.Label, o.Label)}}
+		return []Lock{{Field: actionDelete, Reason: fmt.Sprintf(lastOptionLockMessage, a.Label, o.Label)}}
 	}
 	return []Lock{}
 }

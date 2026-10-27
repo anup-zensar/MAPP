@@ -46,7 +46,7 @@ func usedBy(tallies map[string]*tally, key, kind string, nouns [2]string) (Usage
 // model returns the usage of the model id: the plans using it, and the live ones among them as records.
 func (u *usageIndex) model(id string) Usage {
 	var parts []UsagePart
-	if p, used := usedBy(u.plansByModel, id, string(LevelPlan), [2]string{"plan", "plans"}); used {
+	if p, used := usedBy(u.plansByModel, id, string(LevelPlan), levelNouns[LevelPlan]); used {
 		parts = append(parts, p)
 	}
 	return newUsage(parts, u.livePlans(func(ref Reference) bool { return ref.ModelID == id }))
@@ -56,7 +56,7 @@ func (u *usageIndex) model(id string) Usage {
 // allow it.
 func (u *usageIndex) activityType(id string) Usage {
 	var parts []UsagePart
-	if p, used := usedBy(u.activitiesByType, id, string(LevelActivity), [2]string{"activity", "activities"}); used {
+	if p, used := usedBy(u.activitiesByType, id, string(LevelActivity), levelNouns[LevelActivity]); used {
 		parts = append(parts, p)
 	}
 	if t := u.modelsByType[id]; t != nil {
@@ -115,7 +115,7 @@ func (u *usageIndex) option(o Option, a Attribute) Usage {
 // and the plans planned in it (016 FR-010), with those plans as records.
 func (u *usageIndex) currency(code string) Usage {
 	var parts []UsagePart
-	if p, used := usedBy(u.lineItemsByCurr, code, string(LevelLineItem), [2]string{"line item", "line items"}); used {
+	if p, used := usedBy(u.lineItemsByCurr, code, string(LevelLineItem), levelNouns[LevelLineItem]); used {
 		parts = append(parts, p)
 	}
 	if t := u.peopleByCurr[code]; t != nil {

@@ -14,19 +14,7 @@ import (
 // other one has, ignoring letter case, and — when a depends on another attribute — linked to at least one
 // active option of it; other types have none.
 func (f formData) newOptions(a Attribute, inputs []NewOption, problems *errs.Problems) []Option {
-	switch {
-	case a.Type == "":
-		return nil // no type chosen: its options cannot be checked yet
-	case !a.IsChoice():
-		if len(inputs) > 0 {
-			problems.Add("options", onlyChoiceOptionsMessage)
-		}
-		return nil
-	case len(inputs) == 0:
-		problems.Add("options", addOptionMessage)
-		return nil
-	case len(inputs) > maxOptions:
-		problems.Add("options", tooManyOptionsMessage)
+	if !takesOptions(a, inputs, problems) {
 		return nil
 	}
 	parent, dependent := f.parentOf(a)
@@ -48,31 +36,60 @@ func (f formData) newOptions(a Attribute, inputs []NewOption, problems *errs.Pro
 		}
 		links := []string{}
 		if dependent {
-			links = f.checkLinks(problems, field+".parentOptionIds", label, parent, in.ParentOptionIDs, nil)
+			links = f.checkLinks(problems, linkCheck{field: field + ".parentOptionIds", label: label, parent: parent, links: in.ParentOptionIDs})
 		}
 		options = append(options, Option{Label: label, ParentOptionIDs: links})
 	}
 	return options
 }
 
-// checkLinks checks the parent options that the option label of a dependent attribute is linked to
-// (FR-022): at least one, each an option of parent, and each active unless it was linked already
-// (previous). It returns them once each, in the order given.
-func (f formData) checkLinks(problems *errs.Problems, field, label string, parent Attribute, links, previous []string) []string {
-	links = unique(links)
-	parentName := midSentence(parent.Label)
+// takesOptions reports whether the new attribute a has options to check, adding the problem when inputs
+// can't be its options.
+func takesOptions(a Attribute, inputs []NewOption, problems *errs.Problems) bool {
+	switch {
+	case a.Type == "":
+		return false // no type chosen: its options cannot be checked yet
+	case !a.IsChoice():
+		if len(inputs) > 0 {
+			problems.Add("options", onlyChoiceOptionsMessage)
+		}
+		return false
+	case len(inputs) == 0:
+		problems.Add("options", addOptionMessage)
+		return false
+	case len(inputs) > maxOptions:
+		problems.Add("options", tooManyOptionsMessage)
+		return false
+	}
+	return true
+}
+
+// linkCheck is the parent options that the option label of a dependent attribute is linked to, with those
+// it was linked to before (previous); field is where a problem goes.
+type linkCheck struct {
+	field, label string
+	parent       Attribute
+	links        []string
+	previous     []string
+}
+
+// checkLinks checks the links of c (FR-022): at least one, each an option of the parent, and each active
+// unless it was linked already. It returns them once each, in the order given.
+func (f formData) checkLinks(problems *errs.Problems, c linkCheck) []string {
+	links := unique(c.links)
+	parentName := midSentence(c.parent.Label)
 	if len(links) == 0 {
-		problems.Add(field, fmt.Sprintf(linkOptionMessage, label, parentName))
+		problems.Add(c.field, fmt.Sprintf(linkOptionMessage, c.label, parentName))
 		return links
 	}
 	for _, id := range links {
 		o, found := f.optionByID[id]
 		switch {
-		case !found || o.AttributeID != parent.ID:
-			problems.Add(field, fmt.Sprintf(linkParentOnlyMessage, label, parentName))
+		case !found || o.AttributeID != c.parent.ID:
+			problems.Add(c.field, fmt.Sprintf(linkParentOnlyMessage, c.label, parentName))
 			return links
-		case !o.Active && !slices.Contains(previous, id):
-			problems.Add(field, fmt.Sprintf(inactiveLinkMessage, o.Label, parentName))
+		case !o.Active && !slices.Contains(c.previous, id):
+			problems.Add(c.field, fmt.Sprintf(inactiveLinkMessage, o.Label, parentName))
 		}
 	}
 	return links
