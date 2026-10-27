@@ -4,20 +4,17 @@ import (
 	"context"
 
 	"mapp/internal/platform/actor"
-	"mapp/internal/platform/store"
+	"mapp/internal/platform/memo"
 )
 
-// formOf is loadForm for the rules that only read the form (completeness, the needed-field checks and the
-// attribute checks of a save): the form is read once per transaction and shared, because these rules run
-// once per record and a page such as Home or the Plans list checks every record of every plan. The form
-// must not be changed by its callers. Code that changes Settings uses loadForm.
+// formOf shares one read of the form per transaction with the rules run once per record, as on Home; its
+// callers must not change it, so code that changes Settings uses loadForm.
 func (s *Service) formOf(ctx context.Context, level Level) (formData, error) {
-	return store.Memo(ctx, "settings:form:"+string(level), func(ctx context.Context) (formData, error) {
+	return memo.Get(ctx, "settings:form:"+string(level), func(ctx context.Context) (formData, error) {
 		return s.loadForm(ctx, level)
 	})
 }
 
-// loadForm reads the form of level inside the caller's transaction.
 func (s *Service) loadForm(ctx context.Context, level Level) (formData, error) {
 	attributes, err := s.repo.ListAttributes(ctx)
 	if err != nil {
@@ -45,10 +42,7 @@ func (s *Service) loadForm(ctx context.Context, level Level) (formData, error) {
 	return f, nil
 }
 
-// Form returns everything a level's form needs to show its Shell attributes (FR-024, GET
-// /api/v1/shell-attribute-forms/{level}): its sections in display order with every attribute, active and
-// inactive, and every option; and the Business unit attribute's options for condition notes. Every
-// signed-in person may read it (FR-008), so a is not used yet.
+// Form holds every attribute and option, active or not, and the Business unit options for condition notes.
 func (s *Service) Form(ctx context.Context, _ actor.Actor, level Level) (FormView, error) {
 	var view FormView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -62,7 +56,6 @@ func (s *Service) Form(ctx context.Context, _ actor.Actor, level Level) (FormVie
 	return view, err
 }
 
-// view returns the form as the API answers it.
 func (f formData) view() FormView {
 	view := FormView{Level: f.level, Sections: []FormSection{}, BusinessUnitOptions: []FormOption{}}
 	for _, a := range f.attributes {
@@ -83,7 +76,6 @@ func (f formData) view() FormView {
 	return view
 }
 
-// formAttribute returns the attribute a as forms need it.
 func (f formData) formAttribute(a Attribute) FormAttribute {
 	var parent *string
 	if a.ParentAttributeID != "" {
@@ -96,7 +88,6 @@ func (f formData) formAttribute(a Attribute) FormAttribute {
 	}
 }
 
-// formOptions returns the options of the attribute attributeID as forms need them, in display order.
 func (f formData) formOptions(attributeID string) []FormOption {
 	options := []FormOption{}
 	for _, o := range f.options[attributeID] {
@@ -105,7 +96,6 @@ func (f formData) formOptions(attributeID string) []FormOption {
 	return options
 }
 
-// nonNil returns list, or an empty list for nil.
 func nonNil(list []string) []string {
 	if list == nil {
 		return []string{}
