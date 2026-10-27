@@ -16,14 +16,14 @@ func TestActivityTypeImpact_RemovedModel_FR012(t *testing.T) {
 	lubricants := f.createModel(t, modelInput("Lubricants 1.0", event.ID, digital.ID))
 	mobility := f.createModel(t, modelInput("Mobility 1.0", event.ID, digital.ID))
 	unused := f.createModel(t, modelInput("Unused", event.ID, digital.ID))
-	f.refs = []Reference{planRef("P-1001", "A", lubricants.ID, false, nil), planRef("P-1002", "B", mobility.ID, false, nil)}
+	f.refs = []Reference{planRef("P-1001", "A", lubricants.ID, nil), planRef("P-1002", "B", mobility.ID, nil)}
 	for _, id := range []string{"A-1001", "A-1002", "A-1003", "A-1004"} {
-		f.refs = append(f.refs, activityRef(id, "P-1001", event.ID, false, nil))
+		f.refs = append(f.refs, activityRef(id, "P-1001", event.ID, nil))
 	}
 	f.refs = append(f.refs,
-		activityRef("A-1005", "P-1001", event.ID, true, nil),    // in the recycle bin
-		activityRef("A-1006", "P-1001", digital.ID, false, nil), // another type
-		activityRef("A-1007", "P-1002", event.ID, false, nil))
+		inRecycleBin(activityRef("A-1005", "P-1001", event.ID, nil)), // in the recycle bin
+		activityRef("A-1006", "P-1001", digital.ID, nil),             // another type
+		activityRef("A-1007", "P-1002", event.ID, nil))
 
 	impact, err := f.service.ActivityTypeImpact(t.Context(), alex, event.ID, ActivityTypeUpdate{ModelIDs: &[]string{}, Version: version(1)})
 	added, err2 := f.service.ActivityTypeImpact(t.Context(), alex, event.ID, ActivityTypeUpdate{

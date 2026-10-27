@@ -161,7 +161,7 @@ func TestRenameBudget_AllItemsFollow_FR015(t *testing.T) {
 	f := newTestService(t)
 	digital := f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", ""))
 	f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Events", ""))
-	plan := planRef("P-1001", "Lubricants FY2026", "MOD-1001", false, nil)
+	plan := planRef("P-1001", "Lubricants FY2026", "MOD-1001", nil)
 	plan.FinanceBudgetID = digital.BudgetID
 	f.refs = []Reference{plan}
 	f.clock.now = start.Add(time.Hour)
@@ -207,7 +207,7 @@ func TestListBudgets_YearFilterAndGrouping_FR015(t *testing.T) {
 	f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Events", ""))
 	brand := f.createItem(t, itemInput(2026, "2026 lubricants budget", "europe – Brand", ""))
 	f.createItem(t, itemInput(2027, "2027 Lubricants Budget", "Europe – Events", ""))
-	f.addItem(t, 2020, "2020 Budget", "Old item", "", true)
+	f.addItem(t, itemInput(2020, "2020 Budget", "Old item", ""), true)
 	if _, err := f.service.SetFinanceBudgetItemActive(t.Context(), alex, brand.ID, StatusUpdate{Active: yes(false), Version: version(1)}); err != nil {
 		t.Fatalf("SetFinanceBudgetItemActive: %v", err)
 	}

@@ -3,7 +3,6 @@ package settings_test
 import (
 	"net/http"
 	"slices"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -65,11 +64,11 @@ const (
 // retailBody is the new item of US5-3: "Europe – Retail" in "2026 Lubricants Budget", code "LUB-EU-RET".
 var retailBody = map[string]any{"year": 2026, "budgetName": "2026 Lubricants Budget", "name": "Europe – Retail", "code": "LUB-EU-RET"}
 
-// retailAnswer is the answer for the item retailBody (FBI-1007) in the budget budget (id and name) at
-// version, with its code, status and bookkeeping meta.
-func retailAnswer(budgetID, budgetName, code string, version int, active bool, meta string) string {
+// retailAnswer is the answer for the active item retailBody (FBI-1007) in the budget budget (id and name) at
+// version, with its code, created by Alex.
+func retailAnswer(budgetID, budgetName, code string, version int) string {
 	return `{"id":"FBI-1007","budgetId":"` + budgetID + `","budgetName":"` + budgetName + `","year":2026,"name":"Europe – Retail","code":"` + code +
-		`","active":` + strconv.FormatBool(active) + `,"usage":` + unusedBody + `,"locks":` + yearLockBody + `,"version":` + itoa(version) + `,` + meta + `}`
+		`","active":true,"usage":` + unusedBody + `,"locks":` + yearLockBody + `,"version":` + itoa(version) + `,` + alexAtStart + `}`
 }
 
 // A new item answers 201 in the budget of its year and name and is read back; a new budget name moves it to
@@ -86,9 +85,9 @@ func TestFinanceAPI_CreateGetUpdate_FR014(t *testing.T) {
 	stale := alex.Do(t, http.MethodPatch, "/api/v1/finance-budget-items/FBI-1007", map[string]any{"name": "X", "version": 1})
 	gone := alex.Do(t, http.MethodPatch, "/api/v1/finance-budget-items/FBI-9999", map[string]any{"name": "X", "version": 1})
 
-	assertAnswer(t, created, http.StatusCreated, retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 1, true, alexAtStart))
-	assertAnswer(t, got, http.StatusOK, retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 1, true, alexAtStart))
-	assertAnswer(t, moved, http.StatusOK, retailAnswer("FB-1003", "2026 Retail Budget", "", 2, true, alexAtStart))
+	assertAnswer(t, created, http.StatusCreated, retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 1))
+	assertAnswer(t, got, http.StatusOK, retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 1))
+	assertAnswer(t, moved, http.StatusOK, retailAnswer("FB-1003", "2026 Retail Budget", "", 2))
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"year","message":"Choose a year from 2025 to 2031."},`+
 		`{"field":"budgetName","message":"Enter a budget name."},{"field":"name","message":"Enter a name."}`))
 	if stale.Status != http.StatusConflict {
@@ -143,7 +142,7 @@ func TestFinanceAPI_Status_FR004(t *testing.T) {
 	active := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items/FBI-1007/status", map[string]any{"active": true, "version": 2})
 	gone := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items/FBI-9999/status", map[string]any{"active": true, "version": 1})
 
-	assertAnswer(t, inactive, http.StatusOK, retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 2, false, alexAtStart))
+	assertAnswer(t, inactive, http.StatusOK, replace(retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 2), `"active":true`, `"active":false`))
 	if stale.Status != http.StatusConflict || active.Status != http.StatusOK {
 		t.Errorf("stale %d %s; reactivate %d %s", stale.Status, stale.Body, active.Status, active.Body)
 	}
@@ -176,7 +175,7 @@ func TestFinanceAPI_Delete_FR004(t *testing.T) {
 	assertAnswer(t, undone, http.StatusOK, `{"recordType":"financeBudgetItem","recordTypeLabel":"finance budget item","recordId":"FBI-1007",`+
 		`"recordName":"Europe – Retail","details":""}`)
 	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/v1/finance-budget-items/FBI-1007", nil), http.StatusOK,
-		retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 1, true, alexAtStart))
+		retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 1))
 	if inUse.Status != http.StatusConflict || refused.Error.Code != "in_use" ||
 		!strings.HasPrefix(refused.Error.Message, "'Europe – Digital' is in use (linked to ") {
 		t.Errorf("deleting Europe – Digital = %d %s", inUse.Status, inUse.Body)

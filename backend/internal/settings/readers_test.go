@@ -27,10 +27,10 @@ func TestReaders_SortedWithoutBinRecords_FR007(t *testing.T) {
 		testAttribute{level: LevelActivity, label: "Channel", typ: TypeMultipleChoice},
 		testAttribute{level: LevelCampaign, label: "Cluster", typ: TypeMultipleChoice},
 	)
-	europe := f.addItem(t, 2026, "B budget", "Europe", "", true)
-	asia := f.addItem(t, 2026, "B budget", "asia", "", true)
-	other := f.addItem(t, 2026, "A budget", "Other", "", true)
-	f.addItem(t, 2027, "Next budget", "Next", "", true)
+	europe := f.addItem(t, itemInput(2026, "B budget", "Europe", ""), true)
+	asia := f.addItem(t, itemInput(2026, "B budget", "asia", ""), true)
+	other := f.addItem(t, itemInput(2026, "A budget", "Other", ""), true)
+	f.addItem(t, itemInput(2027, "Next budget", "Next", ""), true)
 	f.write(t, func(ctx context.Context, _ Store) error {
 		_, err := f.history.MoveToBin(ctx, alex, modelKind, gone.ID)
 		return err

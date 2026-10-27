@@ -108,7 +108,7 @@ func (f *fixture) addModel(t *testing.T, name string, typeIDs ...string) Model {
 }
 
 // addCurrency stores a currency directly.
-func (f *fixture) addCurrency(t *testing.T, code, rate string, active bool) Currency {
+func (f *fixture) addCurrency(t *testing.T, code, rate string, active bool) {
 	t.Helper()
 	r, err := money.ParseRate(rate)
 	if err != nil {
@@ -117,11 +117,10 @@ func (f *fixture) addCurrency(t *testing.T, code, rate string, active bool) Curr
 	c := Currency{Code: code, Name: code + " name", Rate: r, RateChangedAt: start, RateChangedBy: actor.System, Active: active,
 		Meta: record.NewMeta(actor.System, start)}
 	f.write(t, func(ctx context.Context, repo Store) error { return repo.PutCurrency(ctx, c) })
-	return c
 }
 
-// addItem stores a finance budget item directly, with its budget when the budget is new.
-func (f *fixture) addItem(t *testing.T, year int, budgetName, name, code string, active bool) FinanceBudgetItem {
+// addItem stores the finance budget item in directly, with its budget when the budget is new.
+func (f *fixture) addItem(t *testing.T, in ItemInput, active bool) FinanceBudgetItem {
 	t.Helper()
 	var item FinanceBudgetItem
 	f.write(t, func(ctx context.Context, repo Store) error {
@@ -129,14 +128,14 @@ func (f *fixture) addItem(t *testing.T, year int, budgetName, name, code string,
 		if err != nil {
 			return err
 		}
-		budget, found := findNamed(budgets, budgetName, "", func(b FinanceBudget) (string, string) { return b.ID, b.Name })
-		if !found || budget.Year != year {
-			budget = FinanceBudget{ID: f.next(ctx, ids.PrefixFinanceBudget), Year: year, Name: budgetName, Meta: record.NewMeta(actor.System, start)}
+		budget, found := findNamed(budgets, in.BudgetName, "", func(b FinanceBudget) (string, string) { return b.ID, b.Name })
+		if !found || budget.Year != *in.Year {
+			budget = FinanceBudget{ID: f.next(ctx, ids.PrefixFinanceBudget), Year: *in.Year, Name: in.BudgetName, Meta: record.NewMeta(actor.System, start)}
 			if err := repo.PutFinanceBudget(ctx, budget); err != nil {
 				return err
 			}
 		}
-		item = FinanceBudgetItem{ID: f.next(ctx, ids.PrefixFinanceBudgetItem), BudgetID: budget.ID, Name: name, Code: code, Active: active,
+		item = FinanceBudgetItem{ID: f.next(ctx, ids.PrefixFinanceBudgetItem), BudgetID: budget.ID, Name: in.Name, Code: in.Code, Active: active,
 			Meta: record.NewMeta(actor.System, start)}
 		return repo.PutFinanceBudgetItem(ctx, item)
 	})

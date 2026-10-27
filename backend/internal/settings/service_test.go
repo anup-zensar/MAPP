@@ -18,8 +18,8 @@ func TestOverview_ActiveCounts_FR001(t *testing.T) {
 	f.addCurrency(t, "EUR", "0.92", true)
 	f.addCurrency(t, "JPY", "150", false)
 	f.addAttributes(t, testAttribute{level: LevelPlan, label: "Business unit", typ: TypeMultipleChoice, options: []string{"Mobility"}})
-	f.addItem(t, 2026, "2026 Lubricants Budget", "Europe – Digital", "LUB-EU-DIG", true)
-	f.addItem(t, 2026, "2026 Lubricants Budget", "Europe – Events", "", false)
+	f.addItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", "LUB-EU-DIG"), true)
+	f.addItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Events", ""), false)
 
 	overview, err := f.service.Overview(t.Context(), alex)
 

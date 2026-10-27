@@ -14,12 +14,12 @@ func TestItemUsage_LineItemsAndPlans_FR003(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
 	item := f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", ""))
-	plan := planRef("P-1001", "Lubricants FY2026", "MOD-1001", false, nil)
+	plan := planRef("P-1001", "Lubricants FY2026", "MOD-1001", nil)
 	plan.FinanceBudgetID = item.BudgetID
 	f.refs = []Reference{plan}
 	for i, id := range []string{"L-1001", "L-1002", "L-1003", "L-1004", "L-1005", "L-1006"} {
-		ref := lineItemRef(id, "P-1001", "A-1001", "USD", "100.00", i == 5)
-		ref.FinanceBudgetItemID = item.ID
+		ref := lineItemRef(id, "A-1001", "USD", "100.00")
+		ref.InBin, ref.FinanceBudgetItemID = i == 5, item.ID
 		f.refs = append(f.refs, ref)
 	}
 
@@ -46,7 +46,7 @@ func TestDeleteItem_InUseRefused_FR004(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
 	item := f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", ""))
-	ref := lineItemRef("L-1001", "P-1001", "A-1001", "USD", "100.00", true)
+	ref := inRecycleBin(lineItemRef("L-1001", "A-1001", "USD", "100.00"))
 	ref.FinanceBudgetItemID = item.ID
 	f.refs = []Reference{ref}
 

@@ -153,7 +153,7 @@ func TestDeleteOption_InUseRefused_FR004(t *testing.T) {
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	tv := tf.option(LevelActivity, "Channel", "TV")
-	f.refs = []Reference{activityRef("A-1001", "P-1001", "", true, values(tf.attribute(LevelActivity, "Channel").ID, `["`+tv+`"]`))}
+	f.refs = []Reference{inRecycleBin(activityRef("A-1001", "P-1001", "", values(tf.attribute(LevelActivity, "Channel").ID, `["`+tv+`"]`)))}
 
 	_, value := f.service.DeleteOption(t.Context(), alex, tv)
 	_, linked := f.service.DeleteOption(t.Context(), alex, tf.option(LevelActivity, "Cluster", "Retail – China"))
@@ -269,8 +269,8 @@ func TestOptionUsage_PerOption_FR020(t *testing.T) {
 	channel := tf.attribute(LevelActivity, "Channel")
 	tv := tf.option(LevelActivity, "Channel", "TV")
 	f.refs = []Reference{
-		activityRef("A-1001", "P-1001", "", false, values(channel.ID, `["`+tv+`"]`)),
-		activityRef("A-1002", "P-1001", "", true, values(channel.ID, `["`+tv+`"]`)),
+		activityRef("A-1001", "P-1001", "", values(channel.ID, `["`+tv+`"]`)),
+		inRecycleBin(activityRef("A-1002", "P-1001", "", values(channel.ID, `["`+tv+`"]`))),
 	}
 
 	page, err := f.service.ListOptions(t.Context(), alex, channel.ID, OptionFilter{Limit: 100})

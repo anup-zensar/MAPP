@@ -13,9 +13,9 @@ func TestModelImpact_RatesInUse_FR011(t *testing.T) {
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	m := f.createModel(t, modelInput("Lubricants 1.0", event.ID))
-	f.refs = []Reference{planRef("P-1001", "A", m.ID, false, nil), planRef("P-1002", "B", m.ID, false, nil), planRef("P-1003", "C", m.ID, true, nil)}
+	f.refs = []Reference{planRef("P-1001", "A", m.ID, nil), planRef("P-1002", "B", m.ID, nil), inRecycleBin(planRef("P-1003", "C", m.ID, nil))}
 	for i := range 31 {
-		f.refs = append(f.refs, activityRef(fmt.Sprintf("A-%d", 1001+i), "P-1001", event.ID, false, nil))
+		f.refs = append(f.refs, activityRef(fmt.Sprintf("A-%d", 1001+i), "P-1001", event.ID, nil))
 	}
 
 	impact, err := f.service.ModelImpact(t.Context(), alex, m.ID, ModelUpdate{MqlToDealRate: text("6"), Version: version(1)})
@@ -39,7 +39,7 @@ func TestModelImpact_Unused_NoWarning_FR011(t *testing.T) {
 	event := f.addType(t, "Event", true)
 	m := f.createModel(t, modelInput("Model", event.ID))
 	used := f.createModel(t, modelInput("Used", event.ID))
-	f.refs = []Reference{planRef("P-1001", "A", used.ID, false, nil)}
+	f.refs = []Reference{planRef("P-1001", "A", used.ID, nil)}
 
 	unused, err1 := f.service.ModelImpact(t.Context(), alex, m.ID, ModelUpdate{InqToMqlRate: text("3"), Version: version(1)})
 	renamed, err2 := f.service.ModelImpact(t.Context(), alex, used.ID, ModelUpdate{Name: text("Used 2"), Version: version(1)})
@@ -58,14 +58,14 @@ func TestModelImpact_RemovedTypeInUse_FR012(t *testing.T) {
 	digital := f.addType(t, "Digital media", true)
 	m := f.createModel(t, modelInput("Lubricants 1.0", event.ID, digital.ID))
 	other := f.createModel(t, modelInput("Other", event.ID))
-	f.refs = []Reference{planRef("P-1001", "A", m.ID, false, nil), planRef("P-1002", "B", other.ID, false, nil)}
+	f.refs = []Reference{planRef("P-1001", "A", m.ID, nil), planRef("P-1002", "B", other.ID, nil)}
 	for _, id := range []string{"A-1001", "A-1002", "A-1003", "A-1004", "A-1005"} {
-		f.refs = append(f.refs, activityRef(id, "P-1001", event.ID, false, nil))
+		f.refs = append(f.refs, activityRef(id, "P-1001", event.ID, nil))
 	}
 	f.refs = append(f.refs,
-		activityRef("A-1006", "P-1002", event.ID, false, nil), // another model's plan
-		activityRef("A-1007", "P-1001", event.ID, true, nil),  // in the recycle bin
-		activityRef("A-1008", "P-1001", digital.ID, false, nil))
+		activityRef("A-1006", "P-1002", event.ID, nil),               // another model's plan
+		inRecycleBin(activityRef("A-1007", "P-1001", event.ID, nil)), // in the recycle bin
+		activityRef("A-1008", "P-1001", digital.ID, nil))
 
 	five, err1 := f.service.ModelImpact(t.Context(), alex, m.ID, ModelUpdate{ActivityTypeIDs: &[]string{digital.ID}})
 	one, err2 := f.service.ModelImpact(t.Context(), alex, m.ID, ModelUpdate{ActivityTypeIDs: &[]string{event.ID}})

@@ -44,7 +44,7 @@ func TestUpdateAttribute_TypeAndLevelLockedWhenValues_FR021(t *testing.T) {
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	channel := tf.attribute(LevelActivity, "Channel")
-	f.refs = []Reference{activityRef("A-1001", "P-1001", "", true, values(channel.ID, `["`+tf.option(LevelActivity, "Channel", "TV")+`"]`))}
+	f.refs = []Reference{inRecycleBin(activityRef("A-1001", "P-1001", "", values(channel.ID, `["`+tf.option(LevelActivity, "Channel", "TV")+`"]`)))}
 
 	_, locked := f.service.UpdateAttribute(t.Context(), alex, channel.ID, ShellAttributeUpdate{Type: text("singleChoice"), Level: text("lineItem"),
 		Version: version(1)})
@@ -135,22 +135,22 @@ func TestAttributeImpact_MarkingMakesIncomplete_FR021(t *testing.T) {
 	china, india := `"`+tf.option(LevelActivity, "Cluster", "Retail – China")+`"`, `"`+tf.option(LevelActivity, "Cluster", "Retail – India")+`"`
 	unit := tf.attribute(LevelPlan, "Business unit").ID
 	f.refs = []Reference{
-		planRef("P-1001", "Lubricants FY2026", "", false, values(unit, `["`+tf.option(LevelPlan, "Business unit", "Lubricants")+`"]`)),
-		planRef("P-1002", "Mobility FY2026", "", false, values(unit, `["`+tf.option(LevelPlan, "Business unit", "Mobility")+`"]`)),
+		planRef("P-1001", "Lubricants FY2026", "", values(unit, `["`+tf.option(LevelPlan, "Business unit", "Lubricants")+`"]`)),
+		planRef("P-1002", "Mobility FY2026", "", values(unit, `["`+tf.option(LevelPlan, "Business unit", "Mobility")+`"]`)),
 	}
 	for i := range 7 { // no Region yet: counted
 		v := values(cluster, china)
 		if i >= 5 {
 			v = nil
 		}
-		f.refs = append(f.refs, activityRef(fmt.Sprintf("A-10%02d", i), "P-1001", "", false, v))
+		f.refs = append(f.refs, activityRef(fmt.Sprintf("A-10%02d", i), "P-1001", "", v))
 	}
 	f.refs = append(f.refs,
-		activityRef("A-1100", "P-1001", "", false, values(cluster, india)), // no region for this cluster (D-034)
-		activityRef("A-1101", "P-1001", "", false, values(cluster, china, region.ID, `"`+tf.option(LevelActivity, "Region", "RETAIL – CHINA")+`"`)),
-		activityRef("A-1102", "P-1001", "", true, nil), // in the recycle bin
+		activityRef("A-1100", "P-1001", "", values(cluster, india)), // no region for this cluster (D-034)
+		activityRef("A-1101", "P-1001", "", values(cluster, china, region.ID, `"`+tf.option(LevelActivity, "Region", "RETAIL – CHINA")+`"`)),
+		inRecycleBin(activityRef("A-1102", "P-1001", "", nil)), // in the recycle bin
 		// Mobility: Brands is hidden; it has a Region, so it counts for neither attribute.
-		activityRef("A-1103", "P-1002", "", false, values(cluster, china, region.ID, `"`+tf.option(LevelActivity, "Region", "RETAIL – CHINA")+`"`)),
+		activityRef("A-1103", "P-1002", "", values(cluster, china, region.ID, `"`+tf.option(LevelActivity, "Region", "RETAIL – CHINA")+`"`)),
 	)
 	needed := ShellAttributeUpdate{Marking: text("neededToSubmit"), Version: version(1)}
 
@@ -234,7 +234,9 @@ func TestAttributeUsage_RecordsAndBin_FR003_FR020(t *testing.T) {
 		if i < 2 {
 			value = `["` + tv + `","` + radio + `"]`
 		}
-		f.refs = append(f.refs, activityRef(fmt.Sprintf("A-10%02d", i), "P-1001", "", i == 11, values(channel.ID, value)))
+		ref := activityRef(fmt.Sprintf("A-10%02d", i), "P-1001", "", values(channel.ID, value))
+		ref.InBin = i == 11
+		f.refs = append(f.refs, ref)
 	}
 
 	view, err := f.service.GetAttribute(t.Context(), alex, channel.ID)
@@ -262,7 +264,7 @@ func TestDeleteAttribute_InUseRefused_FR004(t *testing.T) {
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	channel, cluster := tf.attribute(LevelActivity, "Channel"), tf.attribute(LevelActivity, "Cluster")
-	f.refs = []Reference{activityRef("A-1001", "P-1001", "", false, values(channel.ID, `["`+tf.option(LevelActivity, "Channel", "TV")+`"]`))}
+	f.refs = []Reference{activityRef("A-1001", "P-1001", "", values(channel.ID, `["`+tf.option(LevelActivity, "Channel", "TV")+`"]`))}
 
 	_, used := f.service.DeleteAttribute(t.Context(), alex, channel.ID)
 	_, parent := f.service.DeleteAttribute(t.Context(), alex, cluster.ID)

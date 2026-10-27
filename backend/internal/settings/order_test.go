@@ -41,7 +41,7 @@ func TestMoveAttribute_WithinSection_FR019(t *testing.T) {
 	if got := positionsOf(list); err != nil || !slices.Equal(got, []string{"Cluster:1", "Channel:2", "Region:3", "Brands:4"}) {
 		t.Errorf("after the move = %q, %v", got, err)
 	}
-	if got := f.labelsOf(t, LevelActivity); !slices.Equal(got, []string{"Cluster", "Channel", "Region", "Brands"}) {
+	if got := f.activityLabels(t); !slices.Equal(got, []string{"Cluster", "Channel", "Region", "Brands"}) {
 		t.Errorf("the form's order = %q", got)
 	}
 }
@@ -99,7 +99,7 @@ func TestMove_DependentStaysBelowParent_EdgeCase(t *testing.T) {
 	assertError(t, up, problems("direction", "Region must stay below Cluster."))
 	assertError(t, down, problems("direction", "Region must stay below Cluster."))
 	assertError(t, section, problems("section", "Region must stay below Cluster."))
-	if got := f.labelsOf(t, LevelActivity); !slices.Equal(got, []string{"Cluster", "Region", "Channel", "Brands"}) {
+	if got := f.activityLabels(t); !slices.Equal(got, []string{"Cluster", "Region", "Channel", "Brands"}) {
 		t.Errorf("order = %q", got)
 	}
 }
@@ -133,7 +133,7 @@ func TestChangeSection_GoesLastInNewSection_FR019(t *testing.T) {
 	if err != nil || existing.Position != 5 {
 		t.Fatalf("to Lubricants attributes = %+v, %v", existing, err)
 	}
-	if got := f.labelsOf(t, LevelActivity); !slices.Equal(got, []string{"Cluster", "Region", "Brands", "Channel"}) {
+	if got := f.activityLabels(t); !slices.Equal(got, []string{"Cluster", "Region", "Brands", "Channel"}) {
 		t.Errorf("order = %q", got)
 	}
 	added, err := f.service.UpdateAttribute(t.Context(), alex, tf.attribute(LevelActivity, "Cluster").ID, ShellAttributeUpdate{HelpText: text("Where"), Version: version(1)})
@@ -141,7 +141,7 @@ func TestChangeSection_GoesLastInNewSection_FR019(t *testing.T) {
 		t.Errorf("an edit without a new section moved it: %+v, %v", added, err)
 	}
 	media, err := f.service.UpdateAttribute(t.Context(), alex, channel.ID, ShellAttributeUpdate{Section: text("Media"), Version: version(2)})
-	if err != nil || media.Position != 5 || f.labelsOf(t, LevelActivity)[3] != "Channel" {
+	if err != nil || media.Position != 5 || f.activityLabels(t)[3] != "Channel" {
 		t.Errorf("to a new section = %+v, %v", media, err)
 	}
 	list, _ := f.service.ListAttributes(t.Context(), alex, nil)

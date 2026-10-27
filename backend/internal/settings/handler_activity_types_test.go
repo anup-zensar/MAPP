@@ -49,8 +49,8 @@ func TestActivityTypesAPI_ListCreateGet_FR013(t *testing.T) {
 		t.Errorf("Event = %+v", event)
 	}
 	assertAnswer(t, gone, http.StatusNotFound, activityTypeGoneBody)
-	assertAnswer(t, created, http.StatusCreated, webinarAnswer(1, lubricantsRef, allowedInOneModel, alexAtStart))
-	assertAnswer(t, got, http.StatusOK, webinarAnswer(1, lubricantsRef, allowedInOneModel, alexAtStart))
+	assertAnswer(t, created, http.StatusCreated, webinarAnswer(1, lubricantsRef, allowedInOneModel))
+	assertAnswer(t, got, http.StatusOK, webinarAnswer(1, lubricantsRef, allowedInOneModel))
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(
 		`{"field":"name","message":"An activity type called 'Event' already exists."},`+
 			`{"field":"defaultPlannedCost","message":"Enter an amount of 0 or more, with at most two decimals."},`+
@@ -77,10 +77,10 @@ func webinarBody(modelIDs ...string) map[string]any {
 }
 
 // webinarAnswer is the answer for the activity type webinarBody (AT-1007) at version, with the models
-// allowing it (JSON objects, comma separated), its usage and its bookkeeping meta.
-func webinarAnswer(version int, models, usage, meta string) string {
+// allowing it (JSON objects, comma separated) and its usage, created by Alex.
+func webinarAnswer(version int, models, usage string) string {
 	return `{"id":"AT-1007","name":"Webinar","defaultPlannedCost":{"amount":"5000.00","currency":"USD"},"models":[` + models +
-		`],"active":true,"usage":` + usage + `,"version":` + itoa(version) + `,` + meta + `}`
+		`],"active":true,"usage":` + usage + `,"version":` + itoa(version) + `,` + alexAtStart + `}`
 }
 
 // A save from an out-of-date copy is refused with who changed the activity type and when (FR-007).
@@ -132,7 +132,7 @@ func TestActivityTypesAPI_Impact_FR012(t *testing.T) {
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"modelIds","message":"A model you ticked no longer exists — reload the page and try again."}`))
 	assertAnswer(t, gone, http.StatusNotFound, activityTypeGoneBody)
 	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/v1/activity-types/AT-1007", nil), http.StatusOK,
-		webinarAnswer(1, lubricantsRef, allowedInOneModel, alexAtStart))
+		webinarAnswer(1, lubricantsRef, allowedInOneModel))
 }
 
 // Set inactive and Reactivate answer the activity type with its new status; an out-of-date version is
@@ -147,7 +147,7 @@ func TestActivityTypesAPI_Status_FR004(t *testing.T) {
 	stale := alex.Do(t, http.MethodPost, "/api/v1/activity-types/AT-1007/status", map[string]any{"active": true, "version": 1})
 	active := alex.Do(t, http.MethodPost, "/api/v1/activity-types/AT-1007/status", map[string]any{"active": true, "version": 2})
 
-	assertAnswer(t, inactive, http.StatusOK, replace(webinarAnswer(2, "", unusedBody, alexAtStart), `"active":true`, `"active":false`))
+	assertAnswer(t, inactive, http.StatusOK, replace(webinarAnswer(2, "", unusedBody), `"active":true`, `"active":false`))
 	if stale.Status != http.StatusConflict || active.Status != http.StatusOK {
 		t.Errorf("stale %d %s; reactivate %d %s", stale.Status, stale.Body, active.Status, active.Body)
 	}
@@ -177,7 +177,7 @@ func TestActivityTypesAPI_DeleteAndUndo_FR004(t *testing.T) {
 	assertAnswer(t, afterDelete, http.StatusNotFound, activityTypeGoneBody)
 	assertAnswer(t, undone, http.StatusOK, `{"recordType":"activityType","recordTypeLabel":"activity type","recordId":"AT-1007",`+
 		`"recordName":"Webinar","details":""}`)
-	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/v1/activity-types/AT-1007", nil), http.StatusOK, webinarAnswer(1, "", unusedBody, alexAtStart))
+	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/v1/activity-types/AT-1007", nil), http.StatusOK, webinarAnswer(1, "", unusedBody))
 	if inUse.Status != http.StatusConflict || refused.Error.Code != "in_use" || !strings.HasPrefix(refused.Error.Message, "'Event' is in use (used by ") ||
 		!strings.HasSuffix(refused.Error.Message, " · Allowed in 2 models) — set it inactive instead.") {
 		t.Errorf("deleting Event = %d %s", inUse.Status, inUse.Body)

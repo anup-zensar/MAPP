@@ -8,25 +8,30 @@ import (
 )
 
 // planRef is a plan using the model modelID, as feature 004's source reports it.
-func planRef(id, name, modelID string, inBin bool, values AttributeValues) Reference {
-	return Reference{Record: history.RecordRef{Type: "plan", ID: id, Name: name}, InBin: inBin, Level: LevelPlan, PlanID: id,
+func planRef(id, name, modelID string, values AttributeValues) Reference {
+	return Reference{Record: history.RecordRef{Type: "plan", ID: id, Name: name}, Level: LevelPlan, PlanID: id,
 		ModelID: modelID, Attributes: values}
 }
 
 // activityRef is an activity of the plan planID and the activity type typeID.
-func activityRef(id, planID, typeID string, inBin bool, values AttributeValues) Reference {
-	return Reference{Record: history.RecordRef{Type: "activity", ID: id, Name: "Activity " + id}, InBin: inBin,
+func activityRef(id, planID, typeID string, values AttributeValues) Reference {
+	return Reference{Record: history.RecordRef{Type: "activity", ID: id, Name: "Activity " + id},
 		Level: LevelActivity, PlanID: planID, ActivityID: id, ActivityTypeID: typeID, Attributes: values}
 }
 
-// lineItemRef is a line item of the activity activityID with a planned cost in currency.
-func lineItemRef(id, planID, activityID, currency, cost string, inBin bool) Reference {
+// lineItemRef is a line item of the activity activityID of the plan P-1001 with a planned cost in currency.
+func lineItemRef(id, activityID, currency, cost string) Reference {
 	amount, err := money.ParseAmount(cost)
 	if err != nil {
 		panic(err)
 	}
-	return Reference{Record: history.RecordRef{Type: "lineItem", ID: id, Name: "Line item " + id}, InBin: inBin,
-		Level: LevelLineItem, PlanID: planID, ActivityID: activityID, Currency: currency, PlannedCost: &amount}
+	return Reference{Record: history.RecordRef{Type: "lineItem", ID: id, Name: "Line item " + id},
+		Level: LevelLineItem, PlanID: "P-1001", ActivityID: activityID, Currency: currency, PlannedCost: &amount}
+}
+
+func inRecycleBin(ref Reference) Reference {
+	ref.InBin = true
+	return ref
 }
 
 // personRef is a person showing amounts in the display currency currency.

@@ -163,9 +163,10 @@ func (f *fixture) storedAttribute(t *testing.T, id string) (Attribute, bool, err
 	return a, found, err
 }
 
-// labelsOf returns the labels of the attributes of level in display order.
-func (f *fixture) labelsOf(t *testing.T, level Level) []string {
+// activityLabels returns the labels of the activity attributes in display order.
+func (f *fixture) activityLabels(t *testing.T) []string {
 	t.Helper()
+	level := LevelActivity
 	listed, err := f.service.ListAttributes(t.Context(), alex, &level)
 	if err != nil {
 		t.Fatalf("ListAttributes: %v", err)

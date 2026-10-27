@@ -36,9 +36,9 @@ func TestUpdateModel_LogsEachOldAndNewValue_FR006_FR011(t *testing.T) {
 	event := f.addType(t, "Event", true)
 	m := f.createModel(t, modelInput("Lubricants 1.0", event.ID))
 	f.refs = []Reference{
-		planRef("P-1001", "Plan A", m.ID, false, nil), planRef("P-1002", "Plan B", m.ID, false, nil),
-		activityRef("A-1001", "P-1001", event.ID, false, nil), activityRef("A-1002", "P-1002", event.ID, false, nil),
-		activityRef("A-1003", "P-1002", event.ID, true, nil), // in the recycle bin: not counted
+		planRef("P-1001", "Plan A", m.ID, nil), planRef("P-1002", "Plan B", m.ID, nil),
+		activityRef("A-1001", "P-1001", event.ID, nil), activityRef("A-1002", "P-1002", event.ID, nil),
+		inRecycleBin(activityRef("A-1003", "P-1002", event.ID, nil)), // in the recycle bin: not counted
 	}
 	f.clock.now = start.Add(time.Hour)
 
@@ -134,7 +134,7 @@ func TestModelUsage_CountsRecycleBin_FR003(t *testing.T) {
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	m := f.createModel(t, modelInput("Lubricants 1.0", event.ID))
-	f.refs = []Reference{planRef("P-1001", "Lubricants FY2026", m.ID, false, nil), planRef("P-1003", "Old", m.ID, true, nil)}
+	f.refs = []Reference{planRef("P-1001", "Lubricants FY2026", m.ID, nil), inRecycleBin(planRef("P-1003", "Old", m.ID, nil))}
 
 	view, err := f.service.GetModel(t.Context(), alex, m.ID)
 
@@ -156,7 +156,7 @@ func TestDeleteModel_InUseRefused_FR004(t *testing.T) {
 	event := f.addType(t, "Event", true)
 	m := f.createModel(t, modelInput("Lubricants 1.0", event.ID))
 	inBin := f.createModel(t, modelInput("Mobility 1.0", event.ID))
-	f.refs = []Reference{planRef("P-1001", "A", m.ID, false, nil), planRef("P-1002", "B", m.ID, false, nil), planRef("P-1003", "C", inBin.ID, true, nil)}
+	f.refs = []Reference{planRef("P-1001", "A", m.ID, nil), planRef("P-1002", "B", m.ID, nil), inRecycleBin(planRef("P-1003", "C", inBin.ID, nil))}
 
 	_, used := f.service.DeleteModel(t.Context(), alex, m.ID)
 	_, usedInBin := f.service.DeleteModel(t.Context(), alex, inBin.ID)

@@ -20,8 +20,8 @@ func TestActivityTypeUsage_ActivitiesAndModels_FR003(t *testing.T) {
 		t.Fatalf("DeleteModel: %v", err)
 	}
 	f.refs = []Reference{
-		activityRef("A-1001", "P-1001", event.ID, false, nil), activityRef("A-1002", "P-1001", event.ID, false, nil),
-		activityRef("A-1003", "P-1001", event.ID, false, nil), activityRef("A-1004", "P-1002", event.ID, true, nil),
+		activityRef("A-1001", "P-1001", event.ID, nil), activityRef("A-1002", "P-1001", event.ID, nil),
+		activityRef("A-1003", "P-1001", event.ID, nil), inRecycleBin(activityRef("A-1004", "P-1002", event.ID, nil)),
 	}
 
 	view, err := f.service.GetActivityType(t.Context(), alex, event.ID)
@@ -47,7 +47,7 @@ func TestDeleteActivityType_InUseRefused_FR004(t *testing.T) {
 	event := f.addType(t, "Event", true)
 	webinar := f.addType(t, "Webinar", true)
 	f.createModel(t, modelInput("Lubricants 1.0", webinar.ID))
-	f.refs = []Reference{activityRef("A-1001", "P-1001", event.ID, true, nil)}
+	f.refs = []Reference{inRecycleBin(activityRef("A-1001", "P-1001", event.ID, nil))}
 
 	_, used := f.service.DeleteActivityType(t.Context(), alex, event.ID)
 	_, allowed := f.service.DeleteActivityType(t.Context(), alex, webinar.ID)

@@ -17,7 +17,7 @@ func TestKinds_DescribeTexts_FR006(t *testing.T) {
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	digital := f.addType(t, "Digital media", true)
-	item := f.addItem(t, 2026, "2026 Lubricants Budget", "Europe – Digital", "", true)
+	item := f.addItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", ""), true)
 	tf := f.addAttributes(t,
 		testAttribute{level: LevelPlan, label: "Business unit", typ: TypeMultipleChoice, options: []string{"Mobility", "Lubricants"}},
 		testAttribute{level: LevelCampaign, label: "Cluster", typ: TypeMultipleChoice, options: []string{"Europe"}},

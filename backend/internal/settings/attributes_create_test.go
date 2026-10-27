@@ -22,7 +22,7 @@ func TestCreateAttribute_ListedLastInSection_FR019(t *testing.T) {
 		created.ActiveOptionCount != 4 || !created.Active || created.Section != "Shell attributes" {
 		t.Errorf("created = %+v", created)
 	}
-	if got := f.labelsOf(t, LevelActivity); !slices.Equal(got, []string{"Cluster", "Region", "Channel", "Media channel", "Brands"}) {
+	if got := f.activityLabels(t); !slices.Equal(got, []string{"Cluster", "Region", "Channel", "Media channel", "Brands"}) {
 		t.Errorf("activity attributes = %q", got)
 	}
 	if got := f.optionLabels(t, created.ID); !slices.Equal(got, []string{"TV", "Radio", "Print", "Online"}) {
@@ -66,7 +66,7 @@ func TestCreateAttribute_OptionProblemsTogether_FR018(t *testing.T) {
 	assertError(t, together, problems("label", "Enter a label.", "options[1].label", "'TV' appears twice.",
 		"options[2].label", "Enter a label for every option.", "options[4].label", "Use 120 characters or fewer."))
 	assertError(t, text, problems("options", "Only choice attributes have options."))
-	if got := f.labelsOf(t, LevelActivity); len(got) != 4 || len(f.logEntries(t)) != 0 {
+	if got := f.activityLabels(t); len(got) != 4 || len(f.logEntries(t)) != 0 {
 		t.Errorf("after refused creates: %q and %d log entries", got, len(f.logEntries(t)))
 	}
 }
