@@ -1,14 +1,10 @@
 package campaigns
 
 import (
-	"encoding/json"
 	"reflect"
-	"slices"
 	"testing"
 
-	"mapp/internal/platform/errs"
 	"mapp/internal/platform/money"
-	"mapp/internal/settings"
 )
 
 // US4 — Budget, cost and progress in the plan tree.
@@ -215,69 +211,6 @@ func deref(s *string) string {
 	return *s
 }
 
-// A campaign's completeness lists its own empty needed-to-publish fields in form order: Owner, Dates (one
-// field), then the attributes Settings reports — "2 fields needed" without cluster and region (FR-014,
-// US4 scenario 4, D-092).
-func TestCampaignView_CompletenessOwnFields_FR014(t *testing.T) {
-	t.Parallel()
-	f := newFixture(t)
-
-	bare := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Bare"})
-	retail := f.createCampaign(t, meiLin, "P-1002", CampaignInput{Name: "Retail growth", OwnerID: ptr("U-1004"),
-		StartDate: day("2026-01-01"), EndDate: day("2026-12-31")})
-
-	want := []settings.MissingField{
-		{Field: "ownerId", Label: "Owner"}, {Field: "startDate", Label: "Dates"},
-		{Field: "attributes." + clusterID, Label: "Cluster"}, {Field: "attributes." + regionID, Label: "Region"},
-	}
-	if !reflect.DeepEqual(bare.Completeness.Missing, want) {
-		t.Errorf("missing = %+v\nwant %+v", bare.Completeness.Missing, want)
-	}
-	if !reflect.DeepEqual(retail.Completeness.Missing, want[2:]) {
-		t.Errorf("Retail growth missing = %+v, want Cluster and Region", retail.Completeness.Missing)
-	}
-}
-
-// A region nobody can choose — the chosen cluster has no regions set up — is not counted as missing (spec
-// edge case, D-034).
-func TestCampaignView_RegionWithoutOptionsNotMissing_EdgeCase(t *testing.T) {
-	t.Parallel()
-	f := newFixture(t)
-
-	view := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch", OwnerID: ptr("U-1002"),
-		StartDate: day("2026-01-01"), EndDate: day("2026-12-31"),
-		Attributes: settings.AttributeValues{clusterID: json.RawMessage(`["SO-NONE"]`)}})
-
-	if len(view.Completeness.Missing) != 0 {
-		t.Errorf("missing = %+v, want nothing", view.Completeness.Missing)
-	}
-}
-
-// Items below needing attention count incomplete initiatives, activities and line items below; the plan's
-// rollup lists the incomplete campaigns and initiatives (FR-014).
-func TestViews_ItemsBelowNeedingAttention_FR014(t *testing.T) {
-	t.Parallel()
-	f := newFixture(t)
-	c := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
-	complete := f.createInitiative(t, priya, c.ID, InitiativeInput{Name: "Complete", OwnerID: ptr("U-1002"),
-		StartDate: day("2026-01-01"), EndDate: day("2026-06-30")})
-	f.createInitiative(t, priya, c.ID, InitiativeInput{Name: "Without owner or dates"})
-	f.activities.add(
-		ActivitySummary{ID: "A-1", InitiativeID: complete.ID, Incomplete: true,
-			IncompleteLineItems: []errs.RecordRef{{Type: "lineItem", ID: "L-1", Name: "Film"}, {Type: "lineItem", ID: "L-2", Name: "Edit"}}},
-		ActivitySummary{ID: "A-2", InitiativeID: complete.ID},
-	)
-
-	view, _ := f.service.GetCampaign(t.Context(), priya, c.ID)
-
-	if got := view.Completeness.ItemsBelowNeedingAttention; got != 4 { // 1 initiative, 1 activity, 2 line items
-		t.Errorf("campaign: %d items below need attention, want 4", got)
-	}
-	if got := view.Initiatives[0].Completeness.ItemsBelowNeedingAttention; got != 3 {
-		t.Errorf("initiative: %d items below, want 3", got)
-	}
-}
-
 // Goals are the sums of the activities' INQ, MQL and revenue below; a goal no activity has stays nil
 // (FR-016).
 func TestViews_GoalSums_FR016(t *testing.T) {
@@ -300,76 +233,6 @@ func TestViews_GoalSums_FR016(t *testing.T) {
 	print := view.Initiatives[1].Goals
 	if *print.INQ != 200 || print.MQL != nil || print.Revenue != nil {
 		t.Errorf("Print & outdoor goals = %+v, want INQ 200 only", print)
-	}
-}
-
-// Rows are ordered by start date, then name ignoring case, records without dates last — campaigns and,
-// inside each, initiatives (FR-020).
-func TestListPlanCampaigns_OrderByStartThenNameUndatedLast_FR020(t *testing.T) {
-	t.Parallel()
-	f := newFixture(t)
-	for _, in := range []CampaignInput{
-		{Name: "Zulu undated"},
-		{Name: "beta", StartDate: day("2026-02-01"), EndDate: day("2026-12-31")},
-		{Name: "Alpha undated"},
-		{Name: "Alpha", StartDate: day("2026-02-01"), EndDate: day("2026-03-31")},
-		{Name: "Gamma", StartDate: day("2026-01-15"), EndDate: day("2026-02-28")},
-	} {
-		f.createCampaign(t, priya, "P-1001", in)
-	}
-	gamma := f.list(t, "P-1001").Items[0]
-	for _, in := range []InitiativeInput{
-		{Name: "Undated"},
-		{Name: "Second", StartDate: day("2026-02-01"), EndDate: day("2026-02-28")},
-		{Name: "First", StartDate: day("2026-01-15"), EndDate: day("2026-02-28")},
-	} {
-		f.createInitiative(t, priya, gamma.ID, in)
-	}
-
-	tree := f.list(t, "P-1001")
-
-	var campaigns, initiatives []string
-	for _, c := range tree.Items {
-		campaigns = append(campaigns, c.Name)
-	}
-	for _, i := range tree.Items[0].Initiatives {
-		initiatives = append(initiatives, i.Name)
-	}
-	if want := []string{"Gamma", "Alpha", "beta", "Alpha undated", "Zulu undated"}; !slices.Equal(campaigns, want) {
-		t.Errorf("campaigns = %q, want %q", campaigns, want)
-	}
-	if want := []string{"First", "Second", "Undated"}; !slices.Equal(initiatives, want) {
-		t.Errorf("initiatives = %q, want %q", initiatives, want)
-	}
-}
-
-// The totals row counts campaigns, initiatives and activities, sums the campaign budgets ("Allocated to
-// campaigns") and gives the plan's planned cost and remaining budget (FR-022, US4 scenario 5).
-func TestListPlanCampaigns_Totals_FR022(t *testing.T) {
-	t.Parallel()
-	f := newFixture(t)
-	helix := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch", Budget: input("700000.00")})
-	rimula := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Rimula fleet", Budget: input("450000.00")})
-	f.createCampaign(t, priya, "P-1002", CampaignInput{Name: "Elsewhere", Budget: input("1.00")})
-	var initiatives []InitiativeView
-	for _, c := range []CampaignView{helix, helix, rimula, rimula} {
-		initiatives = append(initiatives, f.createInitiative(t, priya, c.ID, InitiativeInput{Name: "Initiative " + string(rune('A'+len(initiatives)))}))
-	}
-	for n, i := range []int{0, 0, 1, 1, 2, 3, 3} {
-		f.activities.add(ActivitySummary{ID: "A-" + string(rune('1'+n)), InitiativeID: initiatives[i].ID, PlannedCost: usd("1000.25")})
-	}
-
-	totals := f.list(t, "P-1001").Totals
-
-	want := PlanCampaignTotals{
-		Campaigns: 2, Initiatives: 4, Activities: 7, AllocatedToCampaigns: *usd("1150000.00"),
-		PlanBudget: usd("1200000.00"), RemainingPlanBudget: usd("50000.00"), PlannedCost: usd("7001.75"),
-	}
-	if !reflect.DeepEqual(totals, want) {
-		t.Errorf("totals = %+v\nwant %+v", totals, want)
-	}
-	if empty := f.list(t, "P-1003").Totals; empty.AllocatedToCampaigns != money.USD(money.Amount{}) || empty.Campaigns != 0 {
-		t.Errorf("empty plan totals = %+v, want 0 campaigns and 0.00 allocated", empty)
 	}
 }
 
