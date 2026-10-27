@@ -57,7 +57,8 @@ func (w *wiring) rates() error {
 }
 
 func (w *wiring) plansArea() error {
-	w.plans = plans.NewService(w.set.Tx, w.set.Plans, w.generator, w.history, w.settings, w.people, w.now)
+	tools := history.Tools{Tx: w.set.Tx, IDs: w.generator, Log: w.history, Now: w.now}
+	w.plans = plans.NewService(tools, w.set.Plans, w.settings, w.people)
 	if err := w.register(w.plans.Kinds()); err != nil {
 		return err
 	}

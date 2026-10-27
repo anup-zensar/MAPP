@@ -43,13 +43,12 @@ type Service struct {
 	allocations Allocations // 014's global-budget allocations (UseAllocations); nil: no plan is allocated
 }
 
-// NewService returns the plans service. It keeps plans in repo, gives them readable IDs with generator,
-// logs their changes and deletes them through hist, reads Settings and people and teams through settings
-// and directory, works in transactions of tx and reads the time from now. It knows no level below the plan
-// until RegisterLevel adds one.
-func NewService(tx store.Transactor, repo Store, generator *ids.Generator, hist *history.Service,
-	settings Settings, directory Directory, now clock.Clock) *Service {
-	return &Service{tx: tx, repo: repo, ids: generator, history: hist, settings: settings, directory: directory, now: now}
+// NewService returns the plans service. It keeps plans in repo and reads Settings and people and teams
+// through settings and directory. It knows no level below the plan until RegisterLevel adds one.
+func NewService(tools history.Tools, repo Store, settings Settings, directory Directory) *Service {
+	return &Service{
+		tx: tools.Tx, repo: repo, ids: tools.IDs, history: tools.Log, settings: settings, directory: directory, now: tools.Now,
+	}
 }
 
 // Defaults returns what a new plan starts with for a (FR-006): the current year and the years a plan may
