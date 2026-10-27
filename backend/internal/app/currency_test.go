@@ -3,22 +3,21 @@ package app
 import (
 	"context"
 	"testing"
-	"time"
 
-	"mapp/internal/activity"
+	"mapp/internal/activity/activitytest"
 	"mapp/internal/allwork"
 	"mapp/internal/approval"
-	"mapp/internal/campaign"
+	"mapp/internal/campaign/campaigntest"
 	"mapp/internal/history"
-	"mapp/internal/lineitem"
-	"mapp/internal/plan"
+	"mapp/internal/history/historytest"
+	"mapp/internal/lineitem/lineitemtest"
+	"mapp/internal/plan/plantest"
 	"mapp/internal/platform/date"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/money"
-	"mapp/internal/platform/store"
 	"mapp/internal/settings"
-	"mapp/internal/stores"
-	"mapp/seed"
+	"mapp/internal/settings/settingstest"
 )
 
 // P-1004 is planned in GBP at 0.79 per USD: 600,000.00 GBP = 759,493.67 USD; A-1011 40,000.00 GBP = 50,632.91
@@ -83,25 +82,18 @@ func launchCampaignID(data allwork.YearData) string {
 // A-1011's unassigned 40,000.00 − (15,000.00 + 19,750.00) = 5,250.00 GBP = 6,645.57 USD (D-213).
 func TestApprovals_DisplayFromPlanCurrency(t *testing.T) {
 	t.Parallel()
-	db, err := store.Open(t.TempDir())
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
-	now := func() time.Time { return time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC) }
-	if err = seed.Load(t.Context(), stores.JSON(db), now); err != nil {
-		t.Fatalf("seed.Load: %v", err)
-	}
-	generator := ids.NewGenerator(ids.NewJSONCounters())
+	db, now := seededStore(t)
+	generator := ids.NewGenerator(fake.NewCounters(db))
 	settingsService := settings.NewService(history.Tools{
-		Tx: db, IDs: generator, Log: history.NewService(db, history.NewJSONStore(), generator, now), Now: now,
-	}, settings.NewJSONStore())
+		Tx: db, IDs: generator, Log: history.NewService(db, historytest.NewStore(db), generator, now), Now: now,
+	}, settingstest.NewStore(db))
 	adapter := &approvalsActivities{
-		activities: activity.NewJSONStore(), lineItems: lineitem.NewJSONStore(), campaigns: campaign.NewJSONStore(),
-		plans: plan.NewJSONStore(), settings: settings.NewJSONStore(), rates: settingsService.Rates, now: now,
+		activities: activitytest.NewStore(db), lineItems: lineitemtest.NewStore(db), campaigns: campaigntest.NewStore(db),
+		plans: plantest.NewStore(db), settings: settingstest.NewStore(db), rates: settingsService.Rates, now: now,
 	}
 
 	var launch, usdActivity approval.ActivityFacts
-	err = db.Read(t.Context(), func(ctx context.Context) error {
+	err := db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
 		if launch, _, err = adapter.Activity(ctx, "A-1011"); err != nil {
 			return err

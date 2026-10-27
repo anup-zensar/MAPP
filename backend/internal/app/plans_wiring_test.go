@@ -5,38 +5,29 @@ import (
 	"encoding/json"
 	"reflect"
 	"testing"
-	"time"
 
 	"mapp/internal/history"
+	"mapp/internal/history/historytest"
 	"mapp/internal/people"
+	"mapp/internal/people/peopletest"
 	"mapp/internal/plan"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/ids"
-	"mapp/internal/platform/store"
 	"mapp/internal/settings"
-	"mapp/internal/stores"
-	"mapp/seed"
+	"mapp/internal/settings/settingstest"
 )
 
-// Plans reads Settings and people and teams through 002's and 003's services, which app.New passes to
-// plan.NewService as its plan.Settings and plan.Directory. Here on the demo data: Lubricants 1.0 with
-// its rates and deal size, Priya's team, the Business unit options and US dollars as her display currency
-// (004 T030).
+// Plans reads Settings, people and teams through their services, as app.New wires them; on the demo data:
+// Lubricants 1.0 with its rates and deal size, Priya's team, the Business unit options and her US dollars.
 func TestPlansDependencies_ReadTheDemoData(t *testing.T) {
 	t.Parallel()
-	db, err := store.Open(t.TempDir())
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
-	now := func() time.Time { return time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC) }
-	if err = seed.Load(t.Context(), stores.JSON(db), now); err != nil {
-		t.Fatalf("seed.Load: %v", err)
-	}
-	generator := ids.NewGenerator(ids.NewJSONCounters())
-	historyService := history.NewService(db, history.NewJSONStore(), generator, now)
-	var s plan.Settings = settings.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, settings.NewJSONStore())
-	var d plan.Directory = people.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, people.NewJSONStore())
+	db, now := seededStore(t)
+	generator := ids.NewGenerator(fake.NewCounters(db))
+	historyService := history.NewService(db, historytest.NewStore(db), generator, now)
+	var s plan.Settings = settings.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, settingstest.NewStore(db))
+	var d plan.Directory = people.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, peopletest.NewStore(db))
 
-	err = db.Read(t.Context(), func(ctx context.Context) error {
+	err := db.Read(t.Context(), func(ctx context.Context) error {
 		model, found, err := s.Model(ctx, "MOD-1001")
 		if err != nil || !found || model.Name != "Lubricants 1.0" || model.InqToMqlRate.String() != "2.00" ||
 			model.MqlToDealRate.String() != "5.00" || model.AverageDealSize.Format() != "10,000.00 USD" || !model.Active {

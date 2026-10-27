@@ -4,37 +4,31 @@ import (
 	"context"
 	"reflect"
 	"testing"
-	"time"
 
 	"mapp/internal/campaign"
+	"mapp/internal/campaign/campaigntest"
 	"mapp/internal/history"
-	"mapp/internal/people"
+	"mapp/internal/history/historytest"
+	"mapp/internal/people/peopletest"
 	"mapp/internal/plan"
+	"mapp/internal/plan/plantest"
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/ids"
-	"mapp/internal/platform/store"
 	"mapp/internal/settings"
-	"mapp/internal/stores"
-	"mapp/seed"
+	"mapp/internal/settings/settingstest"
 )
 
 // Lubricants Europe is complete; Mobility China's Retail growth has no cluster or region and Fleet cards no dates.
 func TestCampaignLevels_AddFacts_For004(t *testing.T) {
 	t.Parallel()
-	db, err := store.Open(t.TempDir())
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
-	now := func() time.Time { return time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC) }
-	if err = seed.Load(t.Context(), stores.JSON(db), now); err != nil {
-		t.Fatalf("seed.Load: %v", err)
-	}
-	generator := ids.NewGenerator(ids.NewJSONCounters())
-	historyService := history.NewService(db, history.NewJSONStore(), generator, now)
-	svc := campaign.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, campaign.NewJSONStore(), campaign.Deps{
-		Plans:      campaignPlans{repo: plan.NewJSONStore()},
-		People:     people.NewJSONStore(),
-		Settings:   settings.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, settings.NewJSONStore()),
+	db, now := seededStore(t)
+	generator := ids.NewGenerator(fake.NewCounters(db))
+	historyService := history.NewService(db, historytest.NewStore(db), generator, now)
+	svc := campaign.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, campaigntest.NewStore(db), campaign.Deps{
+		Plans:      campaignPlans{repo: plantest.NewStore(db)},
+		People:     peopletest.NewStore(db),
+		Settings:   settings.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, settingstest.NewStore(db)),
 		Activities: campaign.NoActivities{},
 	})
 	planIDs := []string{"P-1001", "P-1002", "P-1003"}
@@ -43,7 +37,7 @@ func TestCampaignLevels_AddFacts_For004(t *testing.T) {
 		facts[id] = &plan.Facts{}
 	}
 
-	err = db.Read(t.Context(), func(ctx context.Context) error { // 004 calls the levels inside its transaction
+	err := db.Read(t.Context(), func(ctx context.Context) error { // 004 calls the levels inside its transaction
 		for _, level := range campaignLevels(svc) {
 			if err := level.AddFacts(ctx, planIDs, facts); err != nil {
 				return err
