@@ -18,6 +18,7 @@ import (
 // My teams covers the plans with at least one of the person's teams, each once even when two of its teams
 // are the person's; Everything covers every plan (FR-003, FR-004).
 func TestPlansInScope_MyTeamsAndEverything_FR003_FR004(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	f.plans = []Plan{
 		newPlan("P-1001", "FY2026 Lubricants Europe", 2026, lubricantsEurope),
@@ -50,6 +51,7 @@ func TestPlansInScope_MyTeamsAndEverything_FR003_FR004(t *testing.T) {
 
 // Only myTeams and everything are scopes; anything else is refused on the field scope.
 func TestScope_Invalid(t *testing.T) {
+	t.Parallel()
 	for _, text := range []string{"myTeams", "everything"} {
 		if scope, err := ParseScope(text); err != nil || string(scope) != text {
 			t.Errorf("ParseScope(%q) = %q, %v", text, scope, err)
@@ -70,6 +72,7 @@ func TestScope_Invalid(t *testing.T) {
 // The cards count the plans in scope by status, the activities the person owns with the Declined and
 // Submitted ones, and what waits for their approval with the oldest "waiting since" (FR-005, D-175).
 func TestSummary_Counts_FR005(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	published := newPlan("P-1001", "FY2026 Lubricants Europe", 2026, lubricantsEurope)
 	published.Status = "published"
@@ -112,6 +115,7 @@ func TestSummary_Counts_FR005(t *testing.T) {
 // The person's own activities count in every plan, also outside their teams and whatever the scope (edge
 // case, FR-003 hint).
 func TestSummary_OwnedActivitiesCoverAllPlans_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	f.plans = []Plan{newPlan("P-1001", "FY2026 Lubricants Europe", 2026, lubricantsEurope),
 		newPlan("P-1002", "FY2026 Mobility China", 2026, mobilityChina)}
@@ -131,6 +135,7 @@ func TestSummary_OwnedActivitiesCoverAllPlans_EdgeCase(t *testing.T) {
 // Budget used is the total planned cost of the plans in scope over their total plan budget, half up to a
 // whole percent; over budget is compared exactly, so 100.4 % shows 100 and is over (FR-006, D-176).
 func TestSummary_BudgetUsed_FR006(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	lubricants := newPlan("P-1001", "FY2026 Lubricants Europe", 2026, lubricantsEurope)
 	lubricants.Budget, lubricants.PlannedCost = usdPtr(t, "1200000.00"), usdPtr(t, "460000.00")
@@ -163,6 +168,7 @@ func TestSummary_BudgetUsed_FR006(t *testing.T) {
 
 // Plans without a budget add their planned cost but no budget, and are counted (FR-006, edge case).
 func TestSummary_PlansWithoutBudget_FR006(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	withBudget := newPlan("P-1001", "FY2026 Lubricants Europe", 2026, lubricantsEurope)
 	withBudget.Budget, withBudget.PlannedCost = usdPtr(t, "1000000.00"), usdPtr(t, "400000.00")
@@ -184,6 +190,7 @@ func TestSummary_PlansWithoutBudget_FR006(t *testing.T) {
 // Without any plan budget the card shows "—" and "No plan budgets set"; without plans, nothing at all
 // (FR-006).
 func TestSummary_NoBudgetAtAll_FR006(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	p := newPlan("P-1003", "FY2027 Global Brand", 2027, globalMarketingOps)
 	p.PlannedCost = usdPtr(t, "250000.00")
@@ -206,6 +213,7 @@ func TestSummary_NoBudgetAtAll_FR006(t *testing.T) {
 // Totals are added in US dollars and converted once: 1,000.05 + 1,000.05 USD at 0.92 is 1,840.09 EUR, not
 // the 1,840.10 of two converted amounts (FR-017, D-010).
 func TestSummary_TotalsConvertedOnce_FR017(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	one := newPlan("P-1001", "Plan one", 2026, lubricantsEurope)
 	one.Budget, one.PlannedCost = usdPtr(t, "1000.05"), usdPtr(t, "1000.05")
@@ -229,6 +237,7 @@ func TestSummary_TotalsConvertedOnce_FR017(t *testing.T) {
 // Getting started shows for a person in no team (notInTeam) and for one whose teams have no plan
 // (noTeamPlans), in both scopes; once one of their teams has a plan it is gone (FR-020, D-170, US5).
 func TestSummary_GettingStarted_FR020(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	f.plans = []Plan{newPlan("P-1001", "FY2026 Lubricants Europe", 2026, lubricantsEurope)}
 	s := newService(t, f)
@@ -267,6 +276,7 @@ func TestSummary_GettingStarted_FR020(t *testing.T) {
 // budget, planned cost and budget used in the display currency: red above 100 %, "—" without a budget, and
 // a plan with no activities shows 0 of 0 (FR-008, FR-009, US2 scenarios 1–3).
 func TestPlansAtAGlance_RowFigures_FR008_FR009(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	lubricants := newPlan("P-1001", "FY2026 Lubricants Europe", 2026, lubricantsEurope)
 	lubricants.Status, lubricants.Budget, lubricants.PlannedCost = "published", usdPtr(t, "1200000.00"), usdPtr(t, "460000.00")
@@ -304,6 +314,7 @@ func TestPlansAtAGlance_RowFigures_FR008_FR009(t *testing.T) {
 
 // A plan's teams list the person's own teams first, then the others, each by name (FR-008).
 func TestPlansAtAGlance_OwnTeamsFirst_FR008(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	f.plans = []Plan{newPlan("P-1004", "FY2026 Joint plan", 2026, globalMarketingOps, lubricantsEurope, mobilityChina)}
 	s := newService(t, f)
@@ -321,6 +332,7 @@ func TestPlansAtAGlance_OwnTeamsFirst_FR008(t *testing.T) {
 // Rows are ordered by year, newest first, then by name ignoring letter case, then by ID; at most 10 are
 // shown, and the total counts every plan in scope (FR-010).
 func TestPlansAtAGlance_OrderAndLimit_FR010(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	f.plans = []Plan{
 		newPlan("P-1001", "beta", 2026, lubricantsEurope), newPlan("P-1002", "Alpha", 2026, lubricantsEurope),
@@ -349,6 +361,7 @@ func TestPlansAtAGlance_OrderAndLimit_FR010(t *testing.T) {
 // A display currency set inactive in Settings stays in use with its rate, as on every other page (D-201,
 // D-063, D-217).
 func TestSummary_InactiveDisplayCurrencyStaysInUse(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	p := newPlan("P-1001", "FY2026 Lubricants Europe", 2026, lubricantsEurope)
 	p.PlannedCost = usdPtr(t, "100.00")
@@ -367,6 +380,7 @@ func TestSummary_InactiveDisplayCurrencyStaysInUse(t *testing.T) {
 // first 5 with "Level n of m", owner, plan, planned cost in the display currency and since when each waits,
 // and how many wait in all (FR-013, US3 scenario 5).
 func TestWaiting_SameListOldestFirst_FR013(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	for i := range 7 {
 		f.waiting[daniel.ID] = append(f.waiting[daniel.ID], Waiting{
@@ -401,6 +415,9 @@ func TestWaiting_SameListOldestFirst_FR013(t *testing.T) {
 // With 50 plans in scope and 5,000 activities, all owned by the person and each needing attention, every
 // Home operation answers within 300 ms on the fakes: each is one pass over its inputs (SC-004).
 func TestHome_LargeScope_SC004(t *testing.T) {
+	if testing.Short() || race.Enabled {
+		t.Skip("a timing test: it runs without -short and without the race detector, in CI's Timing tests step")
+	}
 	f := newFakeSources()
 	for i := range 50 {
 		p := newPlan(fmt.Sprintf("P-%d", 1001+i), fmt.Sprintf("Plan %02d", i), 2026, lubricantsEurope, mobilityChina)
@@ -436,7 +453,7 @@ func TestHome_LargeScope_SC004(t *testing.T) {
 	for name, operation := range operations {
 		started := time.Now()
 		err := operation()
-		if took := time.Since(started); err != nil || (took > 300*time.Millisecond && !race.Enabled) {
+		if took := time.Since(started); err != nil || took > 300*time.Millisecond {
 			t.Errorf("%s took %v, %v; want under 300 ms", name, took, err)
 		}
 	}
@@ -446,6 +463,7 @@ func TestHome_LargeScope_SC004(t *testing.T) {
 // person's team plans, Everything every plan (nil); My teams without team plans answers an empty page
 // without asking; another scope is refused (FR-015).
 func TestRecentChanges_Scope_FR015(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	f.plans = []Plan{
 		newPlan("P-1001", "FY2026 Lubricants Europe", 2026, lubricantsEurope),

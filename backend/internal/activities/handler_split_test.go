@@ -39,6 +39,7 @@ func splitBody(name, initiativeID string, lineItemIDs []string, plannedCost any,
 // The Split dialog of UK launch event lists its line items with their amounts in GBP, suggests "UK launch
 // event (split)" and offers the plan's initiatives, its own first (FR-026).
 func TestSplitOptions_Contract_FR026(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -62,6 +63,7 @@ func TestSplitOptions_Contract_FR026(t *testing.T) {
 // with 5,250.00 GBP unassigned, the new one at 19,750.00 GBP with 0.00 unassigned; the split then gives the
 // same figures, keeps L-1010's ID and links both activities (FR-027, FR-028, FR-031).
 func TestSplitPreview_MatchesSplit_FR027(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	body := splitBody("Ireland roadshow", irelandInit, []string{agencyItem}, "19750.00", false, 1)
@@ -112,6 +114,7 @@ func TestSplitPreview_MatchesSplit_FR027(t *testing.T) {
 // A split moves amounts, never creates or loses them: the plan's planned cost and line items stay the same
 // (SC-005).
 func TestSplit_SumsUnchanged_SC005(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	type plan struct {
@@ -137,6 +140,7 @@ func TestSplit_SumsUnchanged_SC005(t *testing.T) {
 // Nothing ticked and 0.00 to move: the preview lists the problem and the split refuses it, changing nothing
 // (FR-027, US4-4).
 func TestSplit_NothingChosen_FR027(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	body := splitBody("Ireland roadshow", irelandInit, nil, "0", false, 1)
@@ -156,6 +160,7 @@ func TestSplit_NothingChosen_FR027(t *testing.T) {
 
 // At most the activity's planned cost moves (FR-026); a line item of another activity is refused too.
 func TestSplit_AmountTooHigh_FR026(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -169,6 +174,7 @@ func TestSplit_AmountTooHigh_FR026(t *testing.T) {
 
 // The new activity's name is unique in the chosen initiative, ignoring letter case (FR-026).
 func TestSplit_NameUnique_FR026(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -182,6 +188,7 @@ func TestSplit_NameUnique_FR026(t *testing.T) {
 // The new activity's initiative follows Move's rules: another plan's initiative is refused, and so is one
 // whose dates do not contain the activity's (FR-026, US4-5).
 func TestSplit_DestinationRules_FR026(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -208,6 +215,7 @@ func TestSplit_DestinationRules_FR026(t *testing.T) {
 // The new activity copies the original's type, owner, dates, workflow, description, external name and Shell
 // attributes, with no goals ("Goals stay on …") and status Created (FR-028).
 func TestSplit_CreatesCopyOfFieldsWithoutGoals_FR028(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	var original activities.View
@@ -238,6 +246,7 @@ func TestSplit_CreatesCopyOfFieldsWithoutGoals_FR028(t *testing.T) {
 // Splitting the Approved Social always-on needs the person's confirmation and returns it to Created (FR-029,
 // US4-3); the moved line item is ready to send no more, because its new activity is Created.
 func TestSplit_ApprovedNeedsRestart_FR029(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	var options activities.SplitOptions
@@ -272,6 +281,7 @@ func TestSplit_ApprovedNeedsRestart_FR029(t *testing.T) {
 // A split is logged on the original ("split", what moved, planned cost old → new), on the new activity
 // (created, "Split from …") and on each moved line item (moved) (FR-030).
 func TestSplit_Logs_FR030(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -302,6 +312,7 @@ func TestSplit_Logs_FR030(t *testing.T) {
 // When the original goes to the recycle bin, the new activity's link says so ("deleted"); a copy of the new
 // activity carries no link (FR-031).
 func TestSplitLinks_DeletedOriginal_FR031(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	split := priya.Do(t, http.MethodPost, "/api/v1/activities/"+ukLaunchEvent+"/split",
@@ -321,6 +332,7 @@ func TestSplitLinks_DeletedOriginal_FR031(t *testing.T) {
 
 // A copy never carries the split link (FR-031, R13).
 func TestCopy_DoesNotCarrySplitFrom_FR031(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	split := priya.Do(t, http.MethodPost, "/api/v1/activities/"+ukLaunchEvent+"/split",

@@ -17,6 +17,7 @@ import (
 // declined, Fleet card launch waits at level 2 for Alex Morgan after Carlos Mendes approved level 1; Created
 // activities have none (FR-037).
 func TestLoad_ApprovalRounds_FR037(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	statusOf := map[string]activities.Status{}
 	nameOf := map[string]string{}
@@ -72,6 +73,7 @@ func TestLoad_ApprovalRounds_FR037(t *testing.T) {
 // Each round has its history entries, oldest first: the submission, then each decision with its comment
 // (008 data model §3).
 func TestLoad_ApprovalHistory_FR025(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	var got []string
 	for _, a := range d.actions {
@@ -106,6 +108,7 @@ func TestLoad_ApprovalHistory_FR025(t *testing.T) {
 // The notifications of 008 data model §8: Daniel, Alex and Mei Lin each have one unread; Priya Raman has
 // the unread decline of Fleet roadshow and five read ones (FR-033).
 func TestLoad_Notifications_FR033(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	var got []string
 	for _, p := range d.people {
@@ -151,6 +154,7 @@ func days(d time.Duration) string {
 // "Standard marketing approval" with its three rules; the seeded rounds carry their facts, timings and
 // backups, Trade magazine ads waiting since its submission; DLG-1001 Daniel Okoro → Carlos Mendes, planned.
 func TestSeed_ApprovalRules_FR037(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	managers := map[string]string{}
 	for _, p := range d.people {

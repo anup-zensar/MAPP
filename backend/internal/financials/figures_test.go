@@ -11,6 +11,7 @@ import (
 // A transaction converts to USD at its currency's current rate, half up to the cent; USD needs no rate; a
 // currency no longer in Settings gives no value (FR-010, D-052, D-257).
 func TestUSD_HalfUpPerTransaction_FR010(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		amount, currency string
 		want             string // "" for none
@@ -37,6 +38,7 @@ func TestUSD_HalfUpPerTransaction_FR010(t *testing.T) {
 // The committed percentage is a whole number, half up, may exceed 100 and is null without a planned cost
 // above 0.00 (FR-011).
 func TestPercent_HalfUpAndNull_FR011(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		committed, planned string
 		want               *int
@@ -72,6 +74,7 @@ func deref(n *int) any {
 // month count as Accrued; a transaction without a USD value is counted but left out of the sums (FR-010,
 // D-243, D-244, D-257).
 func TestFacts_TypesCreditsAccrualMonth_FR010(t *testing.T) {
+	t.Parallel()
 	list := []*Transaction{
 		{Fields: Fields{Type: TypePurchaseOrder, Amount: amountOf(t, "1000.00"), Currency: "USD"}},
 		{Fields: Fields{Type: TypeInvoice, Amount: amountOf(t, "600.00"), Currency: "USD"}},
@@ -104,6 +107,7 @@ func TestFacts_TypesCreditsAccrualMonth_FR010(t *testing.T) {
 // A record without a planned cost has no not-yet-committed figure and no percentage; a planned cost of
 // 0.00 gives a figure but no percentage; above planned is an exact comparison (FR-011, FR-013).
 func TestFiguresOf_NullCasesAndAbovePlanned_FR013(t *testing.T) {
+	t.Parallel()
 	facts := Facts{Committed: amountOf(t, "100.00"), Count: 1}
 	none := figuresOf(facts, nil, false, 0, nil, money.DisplayUSD)
 	if none.PlannedCost != nil || none.NotYetCommitted != nil || none.CommittedPercent != nil || none.CommittedAbovePlanned {
@@ -147,6 +151,7 @@ func TestFiguresOf_NullCasesAndAbovePlanned_FR013(t *testing.T) {
 // A container's planned cost is the roll-up of its activities (D-090): a container with no activity
 // planned cost has none; an activity's own planned cost wins over its line items'.
 func TestTree_PlannedCostRollUp_FR012(t *testing.T) {
+	t.Parallel()
 	tree := buildTree([]Node{
 		node(LevelPlan, "P-1", "", "P-1", "Plan", 0, ""),
 		node(LevelCampaign, "C-1", "P-1", "P-1", "With cost", 0, ""),
@@ -177,6 +182,7 @@ func TestTree_PlannedCostRollUp_FR012(t *testing.T) {
 // Every USD figure is converted once to the display currency; sums are taken in USD before converting
 // (data model §5, D-061).
 func TestFiguresOf_OneDisplayConversion_FR011(t *testing.T) {
+	t.Parallel()
 	eur := money.DisplayIn("EUR", "0.92")
 	planned := amountOf(t, "10000.00")
 	got := figuresOf(Facts{Committed: amountOf(t, "10652.17")}, &planned, true, 0, nil, eur)

@@ -15,6 +15,7 @@ import (
 // the API as the cards read it, the counts, and Priya Raman's Home card. Every record's card equals its row
 // in its parent's breakdown and the totals of the Financials page filtered on it (SC-002).
 func TestSeed_FinancialsStory_015(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, "priya.raman@shell.com")
 	get := func(path string, v any) {
@@ -56,9 +57,8 @@ func TestSeed_FinancialsStory_015(t *testing.T) {
 	}
 
 	seen := map[string]bool{}
-	var walk func(id string)
-	walk = func(id string) {
-		v := card(id)
+	var walk func(v financials.RecordView)
+	walk = func(v financials.RecordView) {
 		if w, listed := table[v.Record.Name]; listed {
 			seen[v.Record.Name] = true
 			f := v.Figures
@@ -73,21 +73,22 @@ func TestSeed_FinancialsStory_015(t *testing.T) {
 			}
 		}
 		var page financials.TransactionPage
-		get("/api/v1/financials/transactions?recordId="+id, &page)
+		get("/api/v1/financials/transactions?recordId="+v.Record.ID, &page)
 		if page.Totals != (financials.Totals{Committed: v.Figures.Committed, Invoiced: v.Figures.Invoiced, Paid: v.Figures.Paid,
 			Accrued: v.Figures.Accrued}) || page.Total != v.Figures.TransactionCount {
 			t.Errorf("%s: the Financials page totals %+v (%d), the card %+v", v.Record.Name, page.Totals, page.Total, v.Figures)
 		}
 		for _, row := range v.Breakdown {
-			if child := card(row.Record.ID); !reflect.DeepEqual(child.Figures, row.Figures) {
+			child := card(row.Record.ID)
+			if !reflect.DeepEqual(child.Figures, row.Figures) {
 				t.Errorf("%s's row %s = %+v, card %+v", v.Record.Name, row.Record.Name, row.Figures, child.Figures)
 			}
 			if row.Figures.TransactionCount > 0 || table[row.Record.Name] != [8]string{} {
-				walk(row.Record.ID)
+				walk(child)
 			}
 		}
 	}
-	walk("P-1001")
+	walk(card("P-1001"))
 	for name := range table {
 		if !seen[name] {
 			t.Errorf("%s is not in the plan's tree", name)
@@ -119,6 +120,7 @@ func TestSeed_FinancialsStory_015(t *testing.T) {
 // The demo data links only to Venue hire, Speaker fees and Stand build, and leaves one PO not linked
 // (D-306): the other line items have no transactions.
 func TestSeed_FinancialsLinkOnlyThreeLineItems_D306(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, "alex.morgan@shell.com")
 	response := alex.Do(t, http.MethodGet, "/api/v1/financials/transactions?pageSize=50", nil)

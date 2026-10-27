@@ -57,6 +57,7 @@ func plan(teams ...string) authz.PlanFacts {
 // A person may do what any of their roles allows: the union (FR-002). Daniel is Planner and Approver for his
 // teams, so he edits plans (Planner) and approves (Approver).
 func TestGrants_UnionOfRoles_FR002(t *testing.T) {
+	t.Parallel()
 	daniel := grants("U-1003", []string{lubricants}, planner, approver)
 
 	for _, p := range []authz.Permission{authz.PlansEdit, authz.ApprovalsDecide, authz.DataExport} {
@@ -72,6 +73,7 @@ func TestGrants_UnionOfRoles_FR002(t *testing.T) {
 // My teams is the person's membership now; Chosen teams is the list of the assignment; All markets is
 // everywhere. Scoped permissions apply only to plans in scope; the others apply everywhere (FR-004, FR-005).
 func TestGrants_Scopes_FR004(t *testing.T) {
+	t.Parallel()
 	priya := grants("U-1002", []string{lubricants}, planner)
 	sara := grants("U-1006", []string{lubricants, mobility}, viewer, role("RL-1003", "Planner", authz.BuiltInPlanner, authz.ScopeTeams, mobility))
 	carlos := grants("U-1005", []string{mobility, globalOps}, globalPlanner)
@@ -110,6 +112,7 @@ func TestGrants_Scopes_FR004(t *testing.T) {
 // Permissions that are not scoped apply everywhere, whatever the role's scope (FR-004): Daniel's Approver
 // role is My teams, yet "Approve or decline when named" is his everywhere.
 func TestGrants_UnscopedPermissionsApplyEverywhere_FR004(t *testing.T) {
+	t.Parallel()
 	daniel := grants("U-1003", []string{lubricants}, approver)
 
 	if all, _ := daniel.Teams(authz.ApprovalsDecide); !all {
@@ -123,6 +126,7 @@ func TestGrants_UnscopedPermissionsApplyEverywhere_FR004(t *testing.T) {
 // A plan without a team is in scope for the person who created it, as their roles allow, and for All
 // markets; not for others (FR-005, Edge cases).
 func TestGrants_TeamlessPlanForItsCreator_FR005(t *testing.T) {
+	t.Parallel()
 	priya := grants("U-1002", []string{lubricants}, planner)
 	mei := grants("U-1004", []string{mobility}, planner)
 	draft := authz.PlanFacts{ID: "P-1004", CreatedByID: "U-1002", OwnerID: ""}
@@ -141,6 +145,7 @@ func TestGrants_TeamlessPlanForItsCreator_FR005(t *testing.T) {
 // A person sees a plan through "View plans" in its scope or as its owner; an activity also as its owner or
 // a named approver (FR-006).
 func TestGrants_CanView_FR006(t *testing.T) {
+	t.Parallel()
 	mei := grants("U-1004", []string{mobility}, planner)
 	lubricantsPlan := authz.PlanFacts{ID: "P-1001", TeamIDs: []string{lubricants}, OwnerID: "U-1002"}
 	ownedByMei := authz.PlanFacts{ID: "P-1001", TeamIDs: []string{lubricants}, OwnerID: "U-1004"}
@@ -165,6 +170,7 @@ func TestGrants_CanView_FR006(t *testing.T) {
 // The Administrator role holds every permission everywhere, also one MAPP adds later (data model
 // §1.1).
 func TestGrants_AdministratorHoldsEverything_FR003(t *testing.T) {
+	t.Parallel()
 	alex := grants("U-1001", nil, administrator)
 
 	for _, p := range append(authz.All(), authz.Permission("future.permission")) {
@@ -179,6 +185,7 @@ func TestGrants_AdministratorHoldsEverything_FR003(t *testing.T) {
 
 // A person without a role holds nothing and sees no plan they do not own.
 func TestGrants_NoRole_HoldsNothing_FR001(t *testing.T) {
+	t.Parallel()
 	nobody := grants("U-1007", []string{lubricants})
 
 	for _, p := range authz.All() {
@@ -194,6 +201,7 @@ func TestGrants_NoRole_HoldsNothing_FR001(t *testing.T) {
 // A role whose chosen teams were all deleted, or My teams for a person without a team, grants nothing in
 // any plan (data model §1.2) while the permission is still "held" for the message.
 func TestGrants_EmptyScopeGrantsNothing_FR004(t *testing.T) {
+	t.Parallel()
 	newcomer := grants("U-1007", nil, planner)
 
 	if !newcomer.Has(authz.PlansCreate) {
@@ -206,6 +214,7 @@ func TestGrants_EmptyScopeGrantsNothing_FR004(t *testing.T) {
 
 // The merged permissions are listed in Table A order with where they apply (MyAccess.permissions).
 func TestGrants_Permissions_InTableAOrder_FR024(t *testing.T) {
+	t.Parallel()
 	sara := grants("U-1006", []string{lubricants, mobility}, viewer)
 	names := func(ids []string) []authz.TeamRef {
 		refs := []authz.TeamRef{}

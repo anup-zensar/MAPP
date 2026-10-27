@@ -43,6 +43,7 @@ func useEuros(t *testing.T, c *apitest.Client) {
 // and initiative's budget, budget and cost and the totals row — converted once from USD at 0.92, while the
 // USD amounts the forms use stay as they are (D-061, D-220).
 func TestListPlanCampaigns_DisplayCurrency_D220(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	useEuros(t, priya)
@@ -89,6 +90,7 @@ func TestListPlanCampaigns_DisplayCurrency_D220(t *testing.T) {
 // A campaign and an initiative read on their own carry the same display amounts; a reader in USD sees the
 // USD amounts twice (D-220).
 func TestGetCampaignAndInitiative_DisplayCurrency_D220(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, danielsEmail)

@@ -13,6 +13,7 @@ import (
 // and the table; numbers have no thousands separators, dates are YYYY-MM-DD, and a text a spreadsheet would
 // take for a formula starts with an apostrophe (D-120, FR-033, FR-034).
 func TestCSV_BOMNotesThenTable(t *testing.T) {
+	t.Parallel()
 	amount, _ := money.ParseAmount("12500")
 	var buf bytes.Buffer
 

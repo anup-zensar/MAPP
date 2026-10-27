@@ -50,6 +50,7 @@ func (f *fixture) storedRates(t *testing.T, code string) []ExchangeRate {
 // was last changed, entered by hand by whoever changed it — and stores the currency without the legacy
 // fields; it writes no log entry (data-model §2.2).
 func TestMigrateRates_CreatesOneRatePerCurrency(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.addCurrency(t, "USD", "1", true)
 	f.addCurrency(t, "EUR", "0.92", true)
@@ -92,6 +93,7 @@ func TestMigrateRates_CreatesOneRatePerCurrency(t *testing.T) {
 
 // A second start changes nothing (data-model §2.2).
 func TestMigrateRates_SecondRunDoesNothing(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.addCurrency(t, "EUR", "0.92", true)
 	if err := f.service.MigrateRates(t.Context()); err != nil {
@@ -111,6 +113,7 @@ func TestMigrateRates_SecondRunDoesNothing(t *testing.T) {
 // The current rate is the rate with the latest date on or before today (FR-002): a day without a rate uses
 // the latest earlier one.
 func TestRates_LatestOnOrBeforeToday_FR002(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.addCurrency(t, "USD", "1", true)
 	f.addCurrency(t, "EUR", "0.90", true)
@@ -133,6 +136,7 @@ func TestRates_LatestOnOrBeforeToday_FR002(t *testing.T) {
 // A future-dated rate is not used before its date and becomes current on its date without anyone saving
 // anything (FR-002, US1-1).
 func TestRates_FutureRateNotUsed_FR002(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.addCurrency(t, "EUR", "0.90", true)
 	f.addRate(t, "EUR", "2026-10-19", "0.92", RateManual, "")
@@ -150,6 +154,7 @@ func TestRates_FutureRateNotUsed_FR002(t *testing.T) {
 
 // RatesOn converts at any day: the rate current on that day (D-275).
 func TestRatesOn(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.addCurrency(t, "USD", "1", true)
 	f.addCurrency(t, "EUR", "0.90", true)
@@ -169,6 +174,7 @@ func TestRatesOn(t *testing.T) {
 // Every currency's current rate comes with its date and source, and an imported rate with its file: what the
 // web app shows beside converted amounts (FR-009). USD first, without a date or source.
 func TestCurrentRates_DateAndSource_FR009(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.addCurrency(t, "USD", "1", true)
 	f.addCurrency(t, "GBP", "0.80", true)

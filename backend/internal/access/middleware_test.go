@@ -53,6 +53,7 @@ func (h *reached) serve(c *gin.Context) {
 
 // The middleware puts the person's Grants in the request's context for the services (FR-009).
 func TestAuthorize_GrantsInContext_FR009(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	var h reached
 
@@ -67,6 +68,7 @@ func TestAuthorize_GrantsInContext_FR009(t *testing.T) {
 // A Need operation without the permission is refused with 403 forbidden and the role message before the
 // handler runs (FR-009, FR-010, message 2).
 func TestAuthorize_NeedRefused403_FR010(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	var h reached
 
@@ -90,6 +92,7 @@ func TestAuthorize_NeedRefused403_FR010(t *testing.T) {
 // An InPlan operation is refused when no role includes the permission anywhere; a person who holds it in
 // some scope passes on to the service, which checks the record's plan (FR-009).
 func TestAuthorize_InPlanPreCheck_FR009(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	var viewer, planner reached
 
@@ -108,6 +111,7 @@ func TestAuthorize_InPlanPreCheck_FR009(t *testing.T) {
 // View, Custom and SignedIn operations pass on to the service whatever the roles; a person without any role
 // still reaches the operations open to everyone signed in (FR-009).
 func TestAuthorize_ViewAndSignedInPass_FR009(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	if _, err := f.service.SetPersonRoles(t.Context(), alex, sara.ID, PersonRolesUpdate{Version: version(1), Roles: []AssignmentInput{}}); err != nil {
 		t.Fatalf("SetPersonRoles: %v", err)
@@ -122,6 +126,7 @@ func TestAuthorize_ViewAndSignedInPass_FR009(t *testing.T) {
 
 // An operation without an access rule is refused, whoever asks (fail closed, FR-010).
 func TestAuthorize_NoRuleRefused_FR010(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	var h reached
 

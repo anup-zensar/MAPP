@@ -15,6 +15,7 @@ import (
 // Deleting moves the activity to the recycle bin with one "deleted" entry; feature 008 is told first; it
 // is gone from its plan (FR-031).
 func TestDelete_MovesToBin_FR031(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	entry, err := f.service.Delete(t.Context(), priya, "A-1004")
@@ -47,6 +48,7 @@ func TestDelete_MovesToBin_FR031(t *testing.T) {
 // Undo right after the delete brings the activity back exactly: same ID, values, status and version
 // (FR-031, R14).
 func TestUndo_RestoresExactly_FR031(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	before, _ := f.stored(t, "A-1002") // Approved
 	entry, err := f.service.Delete(t.Context(), priya, "A-1002")
@@ -69,6 +71,7 @@ func TestUndo_RestoresExactly_FR031(t *testing.T) {
 // Undo is refused when another activity of the initiative has meanwhile taken the name; the activity stays
 // in the recycle bin (FR-031).
 func TestUndo_NameTakenRefused_FR031(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	entry, err := f.service.Delete(t.Context(), priya, "A-1001")
 	if err != nil {
@@ -87,6 +90,7 @@ func TestUndo_NameTakenRefused_FR031(t *testing.T) {
 // A restore from the recycle bin brings the activity back as Created (R14), renamed when its name was
 // taken, and tells feature 008 (FR-031, D-196).
 func TestRestore_ResetsToCreatedAndRenames_FR031(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	entry, err := f.service.Delete(t.Context(), priya, "A-1002")
 	if err != nil {

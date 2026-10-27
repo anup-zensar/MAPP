@@ -12,6 +12,7 @@ import (
 // the Settings pages show them, and records in the recycle bin are never returned (FR-007, plan
 // "Readers").
 func TestReaders_SortedWithoutBinRecords_FR007(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	webinar := f.addType(t, "webinar", true)
 	event := f.addType(t, "Event", false)
@@ -98,6 +99,7 @@ func TestReaders_SortedWithoutBinRecords_FR007(t *testing.T) {
 
 // A record may keep an inactive setting it already has, but never choose one newly (FR-004).
 func TestCanChoose_KeepsInactiveNeverChoosesNew_FR004(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		active         bool
@@ -120,6 +122,7 @@ func TestCanChoose_KeepsInactiveNeverChoosesNew_FR004(t *testing.T) {
 // An attribute with a condition is shown when the plan's business unit includes any of the condition's
 // options; one without a condition is always shown (FR-023, FR-026).
 func TestVisible_ConditionAnyBusinessUnit_FR023_FR026(t *testing.T) {
+	t.Parallel()
 	always := Attribute{Condition: []string{}}
 	lubricants := Attribute{Condition: []string{"SO-1002"}}
 	either := Attribute{Condition: []string{"SO-1001", "SO-1002"}}

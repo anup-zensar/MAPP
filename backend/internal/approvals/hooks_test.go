@@ -28,6 +28,7 @@ func (f *fixture) restart(t *testing.T, a actor.Actor, id string, changes ...his
 // who changed it is not, and approvals writes no log entry of its own: the saving feature did (FR-022,
 // FR-035, FR-036).
 func TestApprovalRestarted_Submitted_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
 	f.submit(t, mei, "A-1009", "")
@@ -84,6 +85,7 @@ func TestApprovalRestarted_Submitted_FR022(t *testing.T) {
 // approved the round are told — here the owner made the change, so only the approvers (FR-022, D-161). An
 // activity without a round, or one that was not in approval, is left alone.
 func TestApprovalRestarted_Approved_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
 	f.addActivity(t, "A-1008", "Grand opening Shanghai", mei.ID, chinaFlow)
@@ -136,6 +138,7 @@ func TestApprovalRestarted_Approved_FR022(t *testing.T) {
 // at the delete ends as cancelled at its waiting level, dated at the delete and by the person who deleted
 // it, with a note for the "restored" log entry; nobody is told (FR-023, 008-P3).
 func TestActivityRestored_CancelsOpenRound_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1004", "Trade magazine ads", priya.ID, lubricantsFlow)
 	f.submit(t, priya, "A-1004", "")

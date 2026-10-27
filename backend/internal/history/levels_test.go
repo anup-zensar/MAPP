@@ -71,6 +71,7 @@ func noteEach(k Kind) Kind {
 // record at a time does: the same snapshots in tree order, the same records back, the notes in tree order;
 // each level costs one call per kind (028 FR-004).
 func TestMoveToBinAndRestore_ManyAtOnceAsOneByOne_028_FR004(t *testing.T) {
+	t.Parallel()
 	var calls []string
 	one, many := newBareFixture(t), newBareFixture(t)
 	for _, k := range one.standardKinds() {
@@ -114,6 +115,7 @@ func TestMoveToBinAndRestore_ManyAtOnceAsOneByOne_028_FR004(t *testing.T) {
 // A page of the log reads where its records are now kind by kind and gives the same answer as reading them
 // one at a time: stored with their current place, or in the recycle bin (028 FR-002).
 func TestQueryLog_RecordsNowManyAtOnceAsOneByOne_028_FR002(t *testing.T) {
+	t.Parallel()
 	var calls []string
 	one, many := newBareFixture(t), newBareFixture(t)
 	one.register(t, one.standardKinds()...)

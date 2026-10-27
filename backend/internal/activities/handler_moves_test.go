@@ -12,6 +12,7 @@ import (
 // The destinations of Launch film are the four initiatives of its plan, its own first, with why it can't go
 // to Retail events (FR-029, FR-030).
 func TestActivityDestinations_Contract_FR029(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -32,6 +33,7 @@ func TestActivityDestinations_Contract_FR029(t *testing.T) {
 // Moving Launch film to Print & outdoor answers it there with a new version; Retail events is refused with
 // the dates message, and a move from an out-of-date version with version_conflict (FR-029).
 func TestMoveActivity_Contract_FR029(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, "daniel.okoro@shell.com")
@@ -57,6 +59,7 @@ func TestMoveActivity_Contract_FR029(t *testing.T) {
 // Copying the Approved Social always-on answers 201 with "Social always-on (copy)", Created, with copies of
 // its 2 line items (FR-030, US5 scenario 2).
 func TestCopyActivity_Contract_FR030(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 

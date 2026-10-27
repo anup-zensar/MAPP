@@ -42,6 +42,7 @@ func allocatedFixture(t *testing.T) (*fixture, PlanView) {
 // The plan page says where an allocated plan's budget comes from and whom to ask; a plan without an
 // allocation has none (FR-031, FR-033).
 func TestGet_AllocationOfThePlan_FR031_FR033(t *testing.T) {
+	t.Parallel()
 	f, created := allocatedFixture(t)
 	other := f.create(t, priya, input("FY2026 Other"))
 
@@ -65,6 +66,7 @@ func TestGet_AllocationOfThePlan_FR031_FR033(t *testing.T) {
 // the sentence of the plan form, and changes nothing; a save that keeps it changes the rest (FR-031, US6
 // scenario 3).
 func TestUpdate_AllocatedBudgetIsReadOnly_FR031(t *testing.T) {
+	t.Parallel()
 	f, created := allocatedFixture(t)
 	changedBudget := updateOf(f.stored(t, created.ID))
 	changedBudget.Budget = &money.Input{Amount: "1300000.00", Currency: "USD"}
@@ -90,6 +92,7 @@ func TestUpdate_AllocatedBudgetIsReadOnly_FR031(t *testing.T) {
 // and one "changed" entry, Plan budget 1,200,000.00 USD → 1,300,000.00 USD, with the comment naming the global
 // budget (data model §3). A plan version that is out of date is refused naming who changed the plan.
 func TestSetBudgetFromAllocation_FR030(t *testing.T) {
+	t.Parallel()
 	f, created := allocatedFixture(t)
 	f.clock.Advance(time.Hour)
 
@@ -117,6 +120,7 @@ func TestSetBudgetFromAllocation_FR030(t *testing.T) {
 // An allocation of the amount the plan already has (the plan is newly allocated) logs only the comment and
 // keeps the plan's version (data model §3).
 func TestSetBudgetFromAllocation_SameAmountLogsTheCommentOnly_FR030(t *testing.T) {
+	t.Parallel()
 	f, created := allocatedFixture(t)
 
 	err := f.service.SetBudgetFromAllocation(t.Context(), carlos, created.ID, usd(t, "1200000.00"), 1,
@@ -133,6 +137,7 @@ func TestSetBudgetFromAllocation_SameAmountLogsTheCommentOnly_FR030(t *testing.T
 // Removing an allocation logs on the plan that it was removed and leaves the plan, its budget and its
 // version as they are (FR-034, data model §3).
 func TestAllocationRemoved_FR034(t *testing.T) {
+	t.Parallel()
 	f, created := allocatedFixture(t)
 
 	err := f.service.AllocationRemoved(t.Context(), carlos, created.ID, "Allocation from 'FY2026 Global marketing budget' removed")
@@ -148,6 +153,7 @@ func TestAllocationRemoved_FR034(t *testing.T) {
 
 // A copy of an allocated plan copies its budget as a typed amount and has no allocation (FR-035).
 func TestCopy_AllocatedPlanCopyHasNoAllocation_FR035(t *testing.T) {
+	t.Parallel()
 	f, created := allocatedFixture(t)
 
 	result, err := f.service.Copy(t.Context(), priya, created.ID, CopyRequest{Name: "FY2026 Lubricants Copy", Year: ptr(2026)})
@@ -161,6 +167,7 @@ func TestCopy_AllocatedPlanCopyHasNoAllocation_FR035(t *testing.T) {
 // PlannedCosts gives each plan's planned cost in USD from the levels below, nil for a plan without one, with
 // one call per level (FR-032, SC-009).
 func TestPlannedCosts_FR032(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	first := f.create(t, priya, input("FY2026 First"))
 	second := f.create(t, priya, input("FY2026 Second"))

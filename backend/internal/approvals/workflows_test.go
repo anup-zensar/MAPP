@@ -81,6 +81,7 @@ func (f *fixture) workflowViews(t *testing.T, a actor.Actor) []WorkflowView {
 // A new workflow is active, with an id WF-…, its texts without surrounding spaces and its levels in the
 // order given; an unnamed level is labelled "Level <n>". It is logged as created (FR-002, FR-026).
 func TestCreateWorkflow_SavesOrderedLevels_FR002(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	view, err := f.service.CreateWorkflow(t.Context(), alex, WorkflowInput{
@@ -123,6 +124,7 @@ func TestCreateWorkflow_SavesOrderedLevels_FR002(t *testing.T) {
 // The name is required, at most 120 characters, and unique among all workflows, inactive ones too,
 // ignoring letter case and surrounding spaces (FR-002).
 func TestCreateWorkflow_NameRules_FR002(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	china, _ := f.storedWorkflow(t, chinaFlow)
 	china.Active = false
@@ -148,6 +150,7 @@ func TestCreateWorkflow_NameRules_FR002(t *testing.T) {
 // description, a level without approvers, a too-long level name, a person listed twice, an inactive person
 // added and a person who does not exist; a workflow without levels is refused too. Nothing is saved (FR-003).
 func TestCreateWorkflow_AllProblemsAtOnce_FR003(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.deactivatePerson(t, sara)
 
@@ -178,6 +181,7 @@ func TestCreateWorkflow_AllProblemsAtOnce_FR003(t *testing.T) {
 // An approver who became inactive may stay in their level, with a warning, but may not be added to a level
 // (FR-003, 008-P8).
 func TestUpdateWorkflow_InactiveApproverStaysButCannotBeAdded_FR003(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.deactivatePerson(t, alex)
 
@@ -204,6 +208,7 @@ func TestUpdateWorkflow_InactiveApproverStaysButCannotBeAdded_FR003(t *testing.T
 // The version the person started from is required and must still be the stored one; otherwise the update
 // is refused saying who changed the workflow and when (FR-003, D-030).
 func TestUpdateWorkflow_VersionConflict_FR003(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.clock.Advance(time.Hour)
 	changedAt := f.clock.Now()
@@ -231,6 +236,7 @@ func TestUpdateWorkflow_VersionConflict_FR003(t *testing.T) {
 // A save that changes nothing — the same values, or only surrounding spaces — makes no new version and no
 // log entry (FR-026).
 func TestUpdateWorkflow_NoChangeNoLog_FR026(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	view, err := f.service.UpdateWorkflow(t.Context(), priya, chinaFlow, WorkflowUpdate{
@@ -247,6 +253,7 @@ func TestUpdateWorkflow_NoChangeNoLog_FR026(t *testing.T) {
 // An edit applies to later submissions only: the open round keeps the levels it was submitted with and
 // goes on with them; the next submission copies the new levels (FR-006).
 func TestUpdateWorkflow_OpenRoundsKeepLevels_FR006(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
 	f.addActivity(t, "A-1010", "Lunar new year promo", mei.ID, chinaFlow)
@@ -277,6 +284,7 @@ func TestUpdateWorkflow_OpenRoundsKeepLevels_FR006(t *testing.T) {
 // in the Approval workflow field or through a round — those waiting for approval with it, and a warning
 // for each level without an active approver (FR-005, edge case).
 func TestListWorkflows_UsageAndWarnings_FR005(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1001", "Launch film", priya.ID, chinaFlow) // Created: used by its field
 	f.addActivity(t, "A-1002", "Fleet card launch", mei.ID, chinaFlow)
@@ -315,6 +323,7 @@ func TestListWorkflows_UsageAndWarnings_FR005(t *testing.T) {
 // path, displayed status and whether they wait for approval; a workflow that is gone answers not_found
 // (FR-005).
 func TestGetWorkflow_ActivitiesUsingIt_FR005(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1001", "Zeta event", priya.ID, chinaFlow)
 	mobility := f.addActivity(t, "A-1002", "Alpha launch", mei.ID, chinaFlow)
@@ -357,6 +366,7 @@ func TestGetWorkflow_ActivitiesUsingIt_FR005(t *testing.T) {
 // deactivated and reactivated; the same status again changes nothing; an open round of an inactive
 // workflow goes on (FR-007, FR-026).
 func TestSetWorkflowActive_FR007(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
 	f.submit(t, mei, "A-1009", "")
@@ -398,6 +408,7 @@ func TestSetWorkflowActive_FR007(t *testing.T) {
 
 // A workflow no activity uses moves to the recycle bin and can be undone (FR-008).
 func TestDeleteWorkflow_Unused_FR008(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	created := f.createWorkflow(t, alex, "Temp flow", []string{carlos.ID})
 
@@ -425,6 +436,7 @@ func TestDeleteWorkflow_Unused_FR008(t *testing.T) {
 // A workflow that a stored activity uses — in its Approval workflow field or through a round — cannot be
 // deleted: the refusal says how many use it and suggests setting it inactive (FR-008).
 func TestDeleteWorkflow_InUseRefused_FR008(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1001", "Launch film", priya.ID, chinaFlow)
 	_, one := f.service.DeleteWorkflow(t.Context(), alex, chinaFlow)
@@ -449,6 +461,7 @@ func TestDeleteWorkflow_InUseRefused_FR008(t *testing.T) {
 // Every change of a workflow is logged once, with readable labels and texts: the levels as their levels
 // text (FR-026).
 func TestWorkflowChanges_Logged_FR026(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	created := f.createWorkflow(t, alex, "Temp flow", []string{carlos.ID})
 	_, err := f.service.UpdateWorkflow(t.Context(), priya, created.ID, WorkflowUpdate{

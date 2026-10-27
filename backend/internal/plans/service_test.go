@@ -23,6 +23,7 @@ import (
 // A new plan starts with the current year (choices 2025–2031), the person's active teams, the person as
 // owner when they have a team, the only active model, No, Evenly and INQ (FR-006, US1 scenario 1).
 func TestDefaults_FR006(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	defaults, err := f.service.Defaults(t.Context(), priya)
@@ -49,6 +50,7 @@ func TestDefaults_FR006(t *testing.T) {
 // Only name, year and model are needed to save; a plan without teams, owner or business unit is saved as
 // Draft, its missing fields listed (FR-010, spec edge case "The user belongs to no team").
 func TestCreate_OnlyNameYearModelRequired_FR010(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	view, err := f.service.Create(t.Context(), nina, PlanInput{Name: "Bare plan", Year: ptr(2026), ModelID: ptr(lubricantsModel)})
@@ -76,6 +78,7 @@ func TestCreate_OnlyNameYearModelRequired_FR010(t *testing.T) {
 // Every problem of a form is reported in one attempt, also a name another plan has in other letters; and
 // nothing is saved (FR-010, US1 scenario 3).
 func TestCreate_AllProblemsAtOnce_FR010(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.create(t, priya, input("FY2026 Lubricants Test"))
 	empty := input(" ")
@@ -98,8 +101,9 @@ func TestCreate_AllProblemsAtOnce_FR010(t *testing.T) {
 }
 
 // A plan name is saved without its surrounding spaces, has at most 120 characters (not bytes) and is
-// unique ignoring letter case and surrounding spaces (FR-010).
+// unique ignoring letter case and surrounding spaces, also when a second person saves it (FR-010, edge case).
 func TestCreate_NameRules_FR010(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	if saved := f.create(t, priya, input("  Ideas plan  ")); saved.Name != "Ideas plan" {
 		t.Errorf("name = %q, want it trimmed", saved.Name)
@@ -114,7 +118,7 @@ func TestCreate_NameRules_FR010(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := f.service.Create(t.Context(), priya, input(tt.input))
+			_, err := f.service.Create(t.Context(), daniel, input(tt.input))
 
 			assertError(t, err, problems("name", tt.message))
 		})
@@ -125,6 +129,7 @@ func TestCreate_NameRules_FR010(t *testing.T) {
 // not negative, whole for INQ and MQL and with at most two decimals for revenue. Valid values are stored in
 // their exact form (FR-010).
 func TestCreate_DescriptionBudgetGoalChecks_FR010(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	tests := []struct {
 		name    string
@@ -180,6 +185,7 @@ func TestCreate_DescriptionBudgetGoalChecks_FR010(t *testing.T) {
 
 // A new plan's year is from the current year − 1 to + 5 (FR-006).
 func TestCreate_YearRange_FR006(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	for _, year := range []int{2025, 2031} {
 		in := input(fmt.Sprintf("Plan of %d", year))
@@ -200,6 +206,7 @@ func TestCreate_YearRange_FR006(t *testing.T) {
 
 // Only active models may be chosen, and only a finance budget of the plan's year (FR-007).
 func TestCreate_ActiveModelAndYearFinanceBudget_FR007(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	tests := []struct {
 		name    string
@@ -236,6 +243,7 @@ func TestCreate_ActiveModelAndYearFinanceBudget_FR007(t *testing.T) {
 // Without a team the owner can't be chosen: the owner must belong to one of the plan's teams (FR-007, R1,
 // US1 scenario 4).
 func TestCreate_OwnerNeedsTeams_FR007(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	in := input("No teams")
 	in.TeamIDs = nil
@@ -248,6 +256,7 @@ func TestCreate_OwnerNeedsTeams_FR007(t *testing.T) {
 // The owner must be a member of one of the chosen teams (R1); unknown and inactive teams and owners are
 // refused; teams are stored once each, sorted by name (FR-021, FR-007).
 func TestCreate_OwnerMustBeInChosenTeam_FR021(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	tests := []struct {
 		name    string
@@ -286,6 +295,7 @@ func TestCreate_OwnerMustBeInChosenTeam_FR021(t *testing.T) {
 
 // The problems Settings finds in the Shell attribute values are reported with the others (FR-008).
 func TestCreate_AttributeProblemsCollected_FR008(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.settings.attributeProblems = []errs.FieldError{{Field: "attributes.SA-BU", Message: "'Marine' is inactive — choose another option."}}
 
@@ -297,6 +307,7 @@ func TestCreate_AttributeProblemsCollected_FR008(t *testing.T) {
 // A new plan is Draft with the next permanent ID, P-1001, its creator and time, and one "created" log entry
 // by its creator (FR-010, FR-031, US1 scenario 2).
 func TestCreate_DraftWithIDAndLog_FR010_FR031(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	in := input("FY2026 Lubricants Test")
 	in.Budget = &money.Input{Amount: "1200000.00", Currency: "USD"}
@@ -322,19 +333,9 @@ func TestCreate_DraftWithIDAndLog_FR010_FR031(t *testing.T) {
 	}
 }
 
-// Two people saving plans with the same name: the second gets the duplicate-name message (spec edge case).
-// Writes run one after the other, and the name is checked inside the Write that saves.
-func TestCreate_SameNameTwice_EdgeCase(t *testing.T) {
-	f := newFixture(t)
-	f.create(t, priya, input("Shared name"))
-
-	_, err := f.service.Create(t.Context(), daniel, input("Shared name"))
-
-	assertError(t, err, problems("name", "There is already a plan called 'Shared name'. Choose another name."))
-}
-
 // The plan page shows a plan by its ID; an ID that does not exist answers not found (FR-011).
 func TestGet_NotFound_FR011(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	created := f.create(t, priya, input("Visible plan"))
 
@@ -412,6 +413,7 @@ func itemIDs(list PlanList) []string {
 // the plans in the team scope, and the summary covers the scope and the chosen year whatever the status
 // (FR-001, FR-003, D-080, US2 scenarios 1 and 2).
 func TestList_FiltersSortAndSummary_FR001_FR003(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.putDemoPlans(t)
 	usdOf := func(text string) *money.Money { m := money.USD(usd(t, text)); return &m }
@@ -453,6 +455,7 @@ func TestList_FiltersSortAndSummary_FR001_FR003(t *testing.T) {
 // My teams keeps the plans with one of the person's teams; All plans is every plan (FR-004, Q-006, US2
 // scenario 4).
 func TestList_MyTeams_FR004(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.putDemoPlans(t)
 
@@ -474,6 +477,7 @@ func TestList_MyTeams_FR004(t *testing.T) {
 // The search finds any part of the name or of the ID, ignoring letter case and surrounding spaces (FR-003,
 // US2 scenario 3).
 func TestList_SearchNameOrID_FR003(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.putDemoPlans(t)
 	for _, q := range []string{"MOBILITY", "p-1002", " 1002 "} {
@@ -487,6 +491,7 @@ func TestList_SearchNameOrID_FR003(t *testing.T) {
 
 // With 200 plans the list asks each level below once for all of them, never once per plan (SC-009).
 func TestList_200PlansOneFactsCallPerLevel_SC009(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	many := make([]Plan, 0, 200)
 	for i := range 200 {
@@ -515,6 +520,7 @@ func actorOf(id, name string) actor.Actor {
 // approved, 60 % of the INQ goal planned, and the campaign that needs attention (FR-012, FR-015 – FR-017,
 // US3 scenarios 2, 3 and 5).
 func TestGet_FactsFromLevels_FR012_FR016_FR017(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	in := input("FY2026 Lubricants Europe")
 	in.Budget = &money.Input{Amount: "1200000.00", Currency: "USD"}
@@ -566,6 +572,7 @@ func TestGet_FactsFromLevels_FR012_FR016_FR017(t *testing.T) {
 // A plan without business unit shows it as the one field needed (FR-017, US3 scenario 4); an owner who is
 // in none of the plan's teams is flagged with the R1 message (FR-021, D-085).
 func TestGet_MissingFieldsAndOwnerProblem_FR017_FR021(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	p := seedPlan(t, "P-1001", "No business unit", 2026, teamMobility, priya.ID, "", StatusDraft)
 	p.Attributes = settings.AttributeValues{}
@@ -585,6 +592,7 @@ func TestGet_MissingFieldsAndOwnerProblem_FR017_FR021(t *testing.T) {
 // Every change of a plan writes exactly one activity-log entry naming who made it: create, edit, publish,
 // unpublish, copy (on the new plan) and delete (FR-031).
 func TestEveryChangeLogged_FR031(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	plan := f.create(t, priya, input("FY2026 Lubricants Test"))
 	edit := updateOf(f.stored(t, plan.ID))
@@ -630,6 +638,7 @@ func TestEveryChangeLogged_FR031(t *testing.T) {
 // There are no role checks: anyone signed in may edit, publish, unpublish, copy and delete a plan someone else
 // created, even someone in none of its teams (FR-032, D-004).
 func TestNoRoleChecks_FR032(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	plan := f.create(t, priya, input("FY2026 Lubricants Test"))
 	edit := updateOf(f.stored(t, plan.ID))
@@ -653,6 +662,7 @@ func TestNoRoleChecks_FR032(t *testing.T) {
 // plans in the recycle bin included and marked, for the "Used by" counts of 002 and 003; a recycle-bin
 // snapshot decodes to the same references as the stored plan.
 func TestLookupAndReferences(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	kept := f.create(t, priya, input("FY2026 Lubricants Test"))
 	in := input("FY2026 Mobility Test")

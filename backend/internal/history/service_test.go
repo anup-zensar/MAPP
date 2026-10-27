@@ -30,6 +30,7 @@ var start = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 // A kind that history could not work with stops the API from starting (research R8): every mistake is
 // refused with an error, and a refused kind is not registered.
 func TestRegister_RefusesBadKinds(t *testing.T) {
+	t.Parallel()
 	f := newBareFixture(t)
 	kinds := f.standardKinds()
 	parent, child := kinds[0], kinds[1]
@@ -72,6 +73,7 @@ func TestRegister_RefusesBadKinds(t *testing.T) {
 // who and when, the record's type, ID and name, its path top level first, and every changed field with a
 // readable label and readable values, from the kind's Describe or else the defaults.
 func TestLog_StoresPathAndTexts_FR022(t *testing.T) {
+	t.Parallel()
 	f := newBareFixture(t)
 	kinds := f.standardKinds()
 	kinds[2].Describe = describeOwner // grandchildren name the person in their field "owner"
@@ -115,6 +117,7 @@ func TestLog_StoresPathAndTexts_FR022(t *testing.T) {
 // For a record that is no longer stored, the caller names its parent and the path starts there. Without
 // it, history cannot know where the record was: a mistake in the calling code (FR-022).
 func TestLog_RecordThatIsGone_PathStartsAtItsParent_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 
@@ -141,6 +144,7 @@ func TestLog_RecordThatIsGone_PathStartsAtItsParent_FR022(t *testing.T) {
 // Every kind of change can be logged (FR-022). The verb is the action's own; a status change names its
 // own verb, such as "published" (011 FR-006). Mistakes in the calling code are refused and write nothing.
 func TestLog_EveryAction_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	actions := []struct {
@@ -188,6 +192,7 @@ func TestLog_EveryAction_FR022(t *testing.T) {
 // Two changes of the same record in the same millisecond are both kept, in the order they were made: their
 // sequence numbers order them, because their times are equal (spec edge case).
 func TestLog_SameMillisecondKeepsOrder_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 
@@ -207,6 +212,7 @@ func TestLog_SameMillisecondKeepsOrder_EdgeCase(t *testing.T) {
 // Log joins the caller's Write: entries written in one transaction are saved together with the change,
 // each with its own id, and a Write that fails saves none of them (FR-022, research R3).
 func TestLog_TwoEntriesInOneWrite_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 
@@ -243,6 +249,7 @@ func TestLog_TwoEntriesInOneWrite_FR022(t *testing.T) {
 // Activity-log entries are only ever added: deletes, Undo, Restore and a restart of the API leave every
 // earlier entry exactly as it was, in its place (FR-023).
 func TestLog_EntriesNeverChangeOrDisappear_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	renamed, err := Diff(map[string]string{"name": "Parent"}, map[string]string{"name": "Parent one"})
@@ -278,6 +285,7 @@ func TestLog_EntriesNeverChangeOrDisappear_FR023(t *testing.T) {
 // when, removes them (children first) and writes one log entry (FR-024). The entry counts what was under
 // the record by kind, in the order the kinds were registered, and lists only kinds it holds.
 func TestMoveToBin_WithChildren_FR024(t *testing.T) {
+	t.Parallel()
 	f := newBareFixture(t)
 	attachments := f.testKind("attachment", "attachments", "parent", "attachments") // none under P-1
 	f.register(t, append(f.standardKinds(), attachments)...)
@@ -347,6 +355,7 @@ func TestMoveToBin_WithChildren_FR024(t *testing.T) {
 // One record of a kind under the deleted one is counted in the singular: "with 1 grandchild". A record with
 // a parent keeps where it was: its path and its parent (FR-024).
 func TestMoveToBin_OneNoteSaysSingular_FR024(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 
@@ -370,6 +379,7 @@ func TestMoveToBin_OneNoteSaysSingular_FR024(t *testing.T) {
 // A delete, its recycle-bin entry and its log entry are saved together with the caller's change, or not at
 // all: when the caller's Write fails, every record is still there and nothing was binned or logged (FR-024).
 func TestMoveToBin_JoinsTheCallersWrite_FR024(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	before := f.allRecords(t)
@@ -399,6 +409,7 @@ func TestMoveToBin_JoinsTheCallersWrite_FR024(t *testing.T) {
 // Undo puts back exactly what was deleted: the same IDs, data and versions (FR-026, domain model R14). The
 // entry leaves the bin with who undid it and when, keeps no snapshots, and one "restored" entry is logged.
 func TestUndo_RestoresExactly_FR026(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	changed := newRecord("C-1", "Child one", "P-1")
@@ -438,6 +449,7 @@ func TestUndo_RestoresExactly_FR026(t *testing.T) {
 // The server accepts Undo for 2 minutes after the delete (FR-026, D-037): at exactly 2 minutes it works; a
 // millisecond later it is refused with undo_expired and nothing changes. Restore has no time limit.
 func TestUndo_ExpiresAfterTwoMinutes_FR026(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	f.put(t, parentsTable, newRecord("P-2", "Parent two", ""))
@@ -472,6 +484,7 @@ func TestUndo_ExpiresAfterTwoMinutes_FR026(t *testing.T) {
 // naming the parent to restore first, and nothing changes. Once the parent is back, the record follows
 // (FR-025).
 func TestRestore_ParentMissing_FR025(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	child := f.moveToBin(t, "child", "C-1")
@@ -512,6 +525,7 @@ func TestRestore_ParentMissing_FR025(t *testing.T) {
 // An entry that has already left the bin cannot be undone or restored again: the refusal says how, by whom
 // and when, so the person understands what happened (FR-025, 011 FR-032). Nothing changes.
 func TestUndo_AlreadyResolved_FR025(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	f.put(t, parentsTable, newRecord("P-2", "Parent two", ""))
@@ -547,6 +561,7 @@ func TestUndo_AlreadyResolved_FR025(t *testing.T) {
 // An entry can come back only where all its kinds are registered: in an environment without the developer
 // sample records, their entries answer not_found. So does an id the bin never had (FR-025).
 func TestUndo_KindNotRegistered_FR025(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	deleted := f.moveToBin(t, "parent", "P-1")
@@ -586,6 +601,7 @@ func TestUndo_KindNotRegistered_FR025(t *testing.T) {
 // whether it is an Undo. The changes it makes are saved and listed in the "restored" log entry, and its
 // notes end the entry's details and are the answer's details (FR-025, research R8).
 func TestRestore_AppliesPrepareRestore_FR025(t *testing.T) {
+	t.Parallel()
 	f := newBareFixture(t)
 	kinds := f.standardKinds()
 	var seen []RestoreContext
@@ -650,6 +666,7 @@ func TestRestore_AppliesPrepareRestore_FR025(t *testing.T) {
 // When a kind's PrepareRestore refuses, nothing comes back, even the records already put back in the same
 // restore, and the entry stays in the bin (spec edge case: an Undo of a name that is now taken).
 func TestUndo_RefusedByPrepareRestoreChangesNothing_FR026(t *testing.T) {
+	t.Parallel()
 	f := newBareFixture(t)
 	kinds := f.standardKinds()
 	refusal := errs.NameTaken("Can't undo — there is now another grandchild called 'Grandchild one'. Restore it from the recycle bin instead.")
@@ -684,6 +701,7 @@ func TestUndo_RefusedByPrepareRestoreChangesNothing_FR026(t *testing.T) {
 // and in a Restore alike: feature 008 ends an approval round that was open at the delete with that time and
 // person (008 FR-023, 008-P3).
 func TestRestore_ContextHasDeleteTimeAndPerson_FR023(t *testing.T) {
+	t.Parallel()
 	f := newBareFixture(t)
 	kinds := f.standardKinds()
 	var prepared, after []RestoreContext
@@ -725,6 +743,7 @@ func TestRestore_ContextHasDeleteTimeAndPerson_FR023(t *testing.T) {
 // every record is back, with that record as it was put back: deleting a child runs only the child's hook,
 // deleting the parent only the parent's (007 FR-033, D-147).
 func TestAfterRestore_RunsOnceForDeletedRecord_FR033(t *testing.T) {
+	t.Parallel()
 	f := newBareFixture(t)
 	kinds := f.standardKinds()
 	var calls []string
@@ -758,6 +777,7 @@ func TestAfterRestore_RunsOnceForDeletedRecord_FR033(t *testing.T) {
 // The notes of AfterRestore follow those of PrepareRestore in the "restored" entry's details and in the
 // answer's details; the hook sees the record as PrepareRestore left it (007 FR-033).
 func TestAfterRestore_Notes(t *testing.T) {
+	t.Parallel()
 	f := newBareFixture(t)
 	kinds := f.standardKinds()
 	kinds[0].PrepareRestore = func(_ context.Context, rc RestoreContext, s *Snapshot) ([]string, error) {
@@ -791,6 +811,7 @@ func TestAfterRestore_Notes(t *testing.T) {
 // When AfterRestore refuses, nothing changes: the records stay in the bin, the changes the hook made to
 // other records are undone with the rest of the Write, and nothing is logged (007 FR-033).
 func TestAfterRestore_ErrorChangesNothing(t *testing.T) {
+	t.Parallel()
 	f := newBareFixture(t)
 	kinds := f.standardKinds()
 	refusal := errors.New("the other feature failed")
@@ -830,6 +851,7 @@ func TestAfterRestore_ErrorChangesNothing(t *testing.T) {
 // The log answers the newest matching entries first, at most as many as asked for, with the number of all
 // matching entries; it filters by record type and record (011 FR-009, FR-011). The limit is 1 to 200.
 func TestListLog_FilterLimitTotal(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	none, total, err := f.service.ListLog(t.Context(), priya, LogFilter{Limit: 50})
@@ -881,6 +903,7 @@ func TestListLog_FilterLimitTotal(t *testing.T) {
 // The recycle bin lists what is still in it, newest first; entries that were undone or restored are left
 // out (data model §6).
 func TestListBin_UnresolvedNewestFirst(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	f.put(t, parentsTable, newRecord("P-2", "Parent two", ""), newRecord("P-3", "Parent three", ""))
@@ -905,6 +928,7 @@ func TestListBin_UnresolvedNewestFirst(t *testing.T) {
 // records under them — oldest entry first, leaving out entries that were undone or restored, so that
 // feature 002 can count them as still in use (FR-003, data model §10). It joins the caller's transaction.
 func TestSnapshotsInBin_KindAndContents_FR003(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	f.put(t, parentsTable, newRecord("P-2", "Parent two", ""))

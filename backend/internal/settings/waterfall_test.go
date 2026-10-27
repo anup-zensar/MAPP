@@ -22,6 +22,7 @@ func model(t *testing.T, inqToMql, mqlToDeal, dealSize string) Model {
 // The waterfall of every seeded model matches domain model §4.5 (data model §2.1 table; the web app's
 // waterfall.test.ts uses the same table).
 func TestWaterfall_SeededModels_FR010_SC006(t *testing.T) {
+	t.Parallel()
 	lubricants := model(t, "2.00", "5.00", "10000.00")
 	mobility := model(t, "3.00", "4.00", "5000.00")
 	tests := []struct {
@@ -46,6 +47,7 @@ func TestWaterfall_SeededModels_FR010_SC006(t *testing.T) {
 // MQL and deals are rounded half-up to whole numbers, as goals are (FR-010): 2.00 % of 25 is 0.5 → 1,
 // 50.00 % of 3 is 1.5 → 2.
 func TestWaterfall_RoundsHalfUp_FR010(t *testing.T) {
+	t.Parallel()
 	goals, err := Waterfall(25, model(t, "2.00", "50.00", "100.00"))
 	if err != nil || goals.MQL != 1 || goals.Deals != 1 || goals.Revenue.String() != "100.00" {
 		t.Errorf("Waterfall(25) = %+v, %v; want 1 MQL, 1 deal", goals, err)
@@ -58,6 +60,7 @@ func TestWaterfall_RoundsHalfUp_FR010(t *testing.T) {
 
 // A revenue beyond what money keeps exactly is refused, never rounded or wrapped (FR-010).
 func TestWaterfall_TooLarge_FR010(t *testing.T) {
+	t.Parallel()
 	_, err := Waterfall(1_000_000_000_000, model(t, "100.00", "100.00", "100000000.00"))
 	if !errors.Is(err, money.ErrOutOfRange) {
 		t.Errorf("error = %v, want money.ErrOutOfRange", err)

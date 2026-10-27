@@ -18,6 +18,7 @@ import (
 // goals with the same view builder as the plan tree, and lists the campaigns and initiatives that block
 // publishing, in tree order. A plan without campaigns, or one that is gone, gets zeros (feature 004 FR-024).
 func TestPlanRollups_CountsMoneyAndPublishProblems_For004(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	complete := settings.AttributeValues{clusterID: json.RawMessage(`["SO-1"]`), regionID: json.RawMessage(`["SO-9"]`)}
 	helix := f.createCampaign(t, priya, "P-1001", CampaignInput{
@@ -93,6 +94,7 @@ func TestPlanRollups_CountsMoneyAndPublishProblems_For004(t *testing.T) {
 // defaults of a new activity); InitiativesOfPlan lists every initiative of a plan in tree order, campaign by
 // campaign (move targets grouped by campaign).
 func TestInitiativeFacts_For006(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	rimula := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Rimula fleet", StartDate: day("2026-05-01"), EndDate: day("2026-12-31")})
 	helix := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch", StartDate: day("2026-02-01"), EndDate: day("2026-11-30")})
@@ -137,6 +139,7 @@ func TestInitiativeFacts_For006(t *testing.T) {
 // and values, every date moved by the year shift (29 February → 28 February), new IDs, the copier as
 // creator and no log entries; it returns the old → new IDs for the levels below.
 func TestCopyPlanContents_ShiftsDatesKeepsNames_For004(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	brand := f.createCampaign(t, priya, "P-1003", CampaignInput{
 		Name: "Brand platform", OwnerID: ptr("U-1001"), StartDate: day("2027-01-01"), EndDate: day("2028-02-29"),

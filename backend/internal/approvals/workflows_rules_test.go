@@ -20,6 +20,7 @@ func days(n int) *int {
 // conditions, wrong amounts, unknown business units and types, a missing or unusable backup approver, wrong
 // day counts.
 func TestCreateWorkflow_RuleProblemsAtOnce_FR008(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.access.cannotApprove[sara.ID] = true
 	f.deactivatePerson(t, mei)
@@ -69,6 +70,7 @@ func TestCreateWorkflow_RuleProblemsAtOnce_FR008(t *testing.T) {
 // can be off (null). Escalation needs a backup approver on every level (017 FR-006, FR-007). The timings and
 // backups are saved, shown and changed like any field; null turns them off.
 func TestWorkflow_BackupAndTimings_FR006_FR007(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	view, err := f.service.CreateWorkflow(t.Context(), alex, WorkflowInput{
@@ -129,6 +131,7 @@ func TestWorkflow_BackupAndTimings_FR006_FR007(t *testing.T) {
 // of line-manager and role levels, the role of other levels; a line-manager level is always "any one
 // approves"; a level without a source is named people.
 func TestUpdateWorkflow_Normalises_FR001_FR002(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	view, err := f.service.UpdateWorkflow(t.Context(), alex, chinaFlow, WorkflowUpdate{
@@ -161,6 +164,7 @@ func TestUpdateWorkflow_Normalises_FR001_FR002(t *testing.T) {
 // A backup approver and a role level must be able to approve (017 FR-025, 014 FR-028); one who lost the
 // permission or became inactive after the save stays, with a warning, as does a role that no longer exists.
 func TestWorkflow_BackupAndRoleMustApprove_FR025(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.access.cannotApprove[sara.ID] = true
 
@@ -215,6 +219,7 @@ func TestWorkflow_BackupAndRoleMustApprove_FR025(t *testing.T) {
 // Changes of a workflow's rules are logged with readable texts (017 FR-035): the levels as their rule
 // summaries, the reminder and escalation days as "3 days" or "Off".
 func TestWorkflowChanges_LoggedWithRules_FR035(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	created := f.createWorkflow(t, alex, "Temp flow", []string{carlos.ID})
 	below := "10000.00"

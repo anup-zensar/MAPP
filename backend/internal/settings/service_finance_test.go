@@ -36,6 +36,7 @@ var unused = Usage{Summary: "Not used yet", Parts: []UsagePart{}, Records: []his
 // A new item with a budget name not used yet that year creates the budget: one "created" entry for the
 // budget, then one for the item, which is listed in its budget (US5-3, FR-014).
 func TestCreateItem_CreatesBudget_FR014(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.clock.now = start.Add(time.Hour)
 
@@ -76,6 +77,7 @@ func TestCreateItem_CreatesBudget_FR014(t *testing.T) {
 // Every problem of an item is shown at once: the year (current − 1 to + 5), the budget name, the item name
 // (unique in its budget) and the code (unique in the year, ignoring case) (FR-014, SC-003).
 func TestCreateItem_Validation_FR014(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	digital := f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", "LUB-EU-DIG"))
 	entries := len(f.logEntries(t))
@@ -107,6 +109,7 @@ func TestCreateItem_Validation_FR014(t *testing.T) {
 // An item joins the budget of its year whose name matches ignoring letter case and spaces; the same budget
 // name in another year is another budget (FR-014, data model §7).
 func TestCreateItem_JoinsBudgetIgnoringCase_FR014(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	first := f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", ""))
 
@@ -134,6 +137,7 @@ func TestCreateItem_JoinsBudgetIgnoringCase_FR014(t *testing.T) {
 // found ignoring case or created, and the change is logged with the budget names. The item's name must be
 // free in the budget it moves to (FR-014, US5-4, FR-007).
 func TestUpdateItem_YearLocked_MovesBudget_FR014(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	item := f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", "LUB-EU-DIG"))
 	mobility := f.createItem(t, itemInput(2026, "2026 Mobility Budget", "China – Retail", "MOB-CN-RET"))
@@ -186,6 +190,7 @@ func TestUpdateItem_YearLocked_MovesBudget_FR014(t *testing.T) {
 // Rename budget renames the one budget record, so all its items and the plans using it as their default
 // show the new name at once; one "changed" entry on the budget (US5-4, FR-015).
 func TestRenameBudget_AllItemsFollow_FR015(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	digital := f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", ""))
 	f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Events", ""))
@@ -228,6 +233,7 @@ func TestRenameBudget_AllItemsFollow_FR015(t *testing.T) {
 // A budget name is unique within its year, ignoring letter case; the same name in another year is free
 // (FR-015).
 func TestRenameBudget_NameTakenInYear_FR015(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", ""))
 	mobility := f.createItem(t, itemInput(2026, "2026 Mobility Budget", "China – Retail", ""))
@@ -250,6 +256,7 @@ func TestRenameBudget_NameTakenInYear_FR015(t *testing.T) {
 // items by name; a budget without items is not listed; the years offered run from the current year − 1 to
 // + 5, plus any other year with items (FR-015, US5-3).
 func TestListBudgets_YearFilterAndGrouping_FR015(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	china := f.createItem(t, itemInput(2026, "2026 Mobility Budget", "China – Retail", ""))
 	f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Events", ""))
@@ -298,6 +305,7 @@ func ptr(n int) *int { return &n }
 // An item counts the line items linked to it, those in the recycle bin too; its budget shows the plans
 // using it as their default finance budget (US5-4, FR-003).
 func TestItemUsage_LineItemsAndPlans_FR003(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	item := f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", ""))
 	plan := planRef("P-1001", "Lubricants FY2026", "MOD-1001", false, nil)
@@ -329,6 +337,7 @@ func TestItemUsage_LineItemsAndPlans_FR003(t *testing.T) {
 // An item in use — linked to line items, also in the recycle bin — cannot be deleted: the answer says
 // where it is used and to set it inactive instead (FR-004, SC-004).
 func TestDeleteItem_InUseRefused_FR004(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	item := f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", ""))
 	ref := lineItemRef("L-1001", "P-1001", "A-1001", "USD", "100.00", true)
@@ -345,6 +354,7 @@ func TestDeleteItem_InUseRefused_FR004(t *testing.T) {
 // An unused item can be set inactive and reactivated, each logged; deleted, it moves to the recycle bin
 // under its budget and Undo brings it back exactly (US5-5, FR-004, FR-006).
 func TestDeleteItem_Unused_Undo_FR004(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	item := f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", "LUB-EU-DIG"))
 
@@ -379,6 +389,7 @@ func TestDeleteItem_Unused_Undo_FR004(t *testing.T) {
 // An item whose code another item of its year took meanwhile: Undo is refused, and Restore brings it back
 // without the code and says so (FR-014, D-054).
 func TestRestoreItem_CodeTaken_FR014(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	item := f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", "LUB-EU-DIG"))
 	entry, err := f.service.DeleteFinanceBudgetItem(t.Context(), alex, item.ID)

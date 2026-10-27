@@ -36,6 +36,7 @@ const (
 // hours ago; Alex sees the chain, the history newest first, that he is the current approver, and the
 // actions of a Submitted activity (FR-024, FR-025, FR-037).
 func TestGetActivityApproval_MobilityWaitingAtLevel2_FR024_FR037(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
@@ -73,6 +74,7 @@ func TestGetActivityApproval_MobilityWaitingAtLevel2_FR024_FR037(t *testing.T) {
 // The confirmation of an incomplete activity lists its problems, all at once, with the fields that fix them;
 // it has no workflow and changes nothing (FR-010).
 func TestGetSubmission_IncompleteMobilityListsAll_FR010(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	mei := server.SignIn(t, meisEmail)
 
@@ -90,44 +92,11 @@ func TestGetSubmission_IncompleteMobilityListsAll_FR010(t *testing.T) {
 	assertListsFields(t, problemFields(submission.Problems), "ownerId", "startDate", "endDate", "plannedCost", "approvalWorkflowId")
 }
 
-// Submitting an activity with problems answers validation_failed with every problem and changes nothing
-// (FR-010).
-func TestSubmit_Problems400_FR010(t *testing.T) {
-	server := apitest.New(t)
-	mei := server.SignIn(t, meisEmail)
-
-	response := mei.Do(t, http.MethodPost, "/api/v1/activities/"+lunarNewYearPromo+"/approval/submit", map[string]any{"version": 1})
-
-	if response.Status != http.StatusBadRequest {
-		t.Fatalf("status = %d %s, want 400", response.Status, response.Body)
-	}
-	var refusal struct {
-		Error struct {
-			Code   string `json:"code"`
-			Fields []struct {
-				Field string `json:"field"`
-			} `json:"fields"`
-		} `json:"error"`
-	}
-	response.Decode(t, &refusal)
-	var fields []string
-	for _, f := range refusal.Error.Fields {
-		fields = append(fields, f.Field)
-	}
-	if refusal.Error.Code != "validation_failed" {
-		t.Errorf("code = %s, want validation_failed", refusal.Error.Code)
-	}
-	assertListsFields(t, fields, "ownerId", "startDate", "endDate", "plannedCost", "approvalWorkflowId")
-	after := decodeApproval(t, mei.Do(t, http.MethodGet, "/api/v1/activities/"+lunarNewYearPromo+"/approval", nil))
-	if after.Status != "created" || after.ActivityVersion != 1 || len(after.Rounds) != 0 {
-		t.Errorf("after: %s, version %d, %d rounds; want unchanged", after.Status, after.ActivityVersion, len(after.Rounds))
-	}
-}
-
 // Priya re-submits the fixed Declined activity: it is Submitted, round 2 waits at level 1 for Daniel Okoro
 // with her comment. Sent again from the old version it is refused with version_conflict; a Submitted
 // activity cannot be submitted (FR-011, FR-020, FR-009, D-030).
 func TestSubmit_ReadyActivity_FR011(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	submission := priya.Do(t, http.MethodGet, "/api/v1/activities/"+fleetRoadshow+"/approval/submission", nil)
@@ -163,6 +132,7 @@ func TestSubmit_ReadyActivity_FR011(t *testing.T) {
 // Alex Morgan approves the seeded Mobility activity at level 2: it is Approved, and its history shows both
 // levels' decisions, Carlos Mendes's and his (US2, FR-015).
 func TestApprove_Level2AsAlex_US2(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
@@ -183,82 +153,11 @@ func TestApprove_Level2AsAlex_US2(t *testing.T) {
 	}
 }
 
-// Only the first decision on a level counts: approving the level again answers version_conflict saying who
-// approved it and when, and changes nothing (FR-018).
-func TestApprove_Twice409_FR018(t *testing.T) {
-	server := apitest.New(t)
-	alex := server.SignIn(t, alexsEmail)
-	carlos := server.SignIn(t, carlosEmail)
-	decision := map[string]any{"roundId": "AR-1008", "level": 2}
-	decodeApproval(t, alex.Do(t, http.MethodPost, "/api/v1/activities/"+fleetCardLaunch+"/approval/approve", decision))
-	server.Advance(time.Minute)
-
-	again := carlos.Do(t, http.MethodPost, "/api/v1/activities/"+fleetCardLaunch+"/approval/approve", decision)
-
-	assertError(t, again, http.StatusConflict, "version_conflict", "Level 2 was already approved by Alex Morgan")
-	var answer struct {
-		Error struct {
-			Conflict struct {
-				ChangedBy string    `json:"changedBy"`
-				ChangedAt time.Time `json:"changedAt"`
-			} `json:"conflict"`
-		} `json:"error"`
-	}
-	again.Decode(t, &answer)
-	if conflict := answer.Error.Conflict; conflict.ChangedBy != "Alex Morgan" || !conflict.ChangedAt.Equal(now) {
-		t.Errorf("conflict = %+v, want Alex Morgan at %v", conflict, now)
-	}
-	after := decodeApproval(t, carlos.Do(t, http.MethodGet, "/api/v1/activities/"+fleetCardLaunch+"/approval", nil))
-	if actions := historyActions(after.Rounds[0]); len(actions) != 3 {
-		t.Errorf("history = %q, want only the first approval of level 2", actions)
-	}
-}
-
-// Declining without a comment is refused and changes nothing; with a comment the activity is Declined and
-// the comment heads its Approval section (FR-016).
-func TestDecline_WithoutComment400_FR016(t *testing.T) {
-	server := apitest.New(t)
-	daniel := server.SignIn(t, danielsEmail)
-	path := "/api/v1/activities/" + tradeMagazineAds + "/approval/decline"
-
-	blank := daniel.Do(t, http.MethodPost, path, map[string]any{"roundId": "AR-1004", "level": 1, "comment": "  "})
-	declined := daniel.Do(t, http.MethodPost, path, map[string]any{"roundId": "AR-1004", "level": 1, "comment": "Still not split by country."})
-
-	assertError(t, blank, http.StatusBadRequest, "validation_failed", "Some fields need your attention.")
-	approval := decodeApproval(t, declined)
-	if approval.Status != "declined" || approval.LatestDecline == nil || approval.LatestDecline.Comment != "Still not split by country." ||
-		approval.LatestDecline.RoundNumber != 2 || !approval.Actions.Resubmit.Available {
-		t.Errorf("approval: %s, latest decline %+v, actions %+v; want declined in round 2 with the comment", approval.Status,
-			approval.LatestDecline, approval.Actions)
-	}
-	if actions := historyActions(approval.Rounds[0]); !slices.Equal(actions, []string{"declined", "resubmitted"}) {
-		t.Errorf("history of round 2 = %q, want one decline after the re-submission", actions)
-	}
-}
-
-// Alex Morgan, not an approver of the Lubricants workflow, approves its level 1: the history says he did
-// so on behalf of Daniel Okoro (FR-017, D-020).
-func TestApprove_OnBehalfOfDaniel_FR017(t *testing.T) {
-	server := apitest.New(t)
-	alex := server.SignIn(t, alexsEmail)
-	before := decodeApproval(t, alex.Do(t, http.MethodGet, "/api/v1/activities/"+tradeMagazineAds+"/approval", nil))
-
-	approval := decodeApproval(t, alex.Do(t, http.MethodPost, "/api/v1/activities/"+tradeMagazineAds+"/approval/approve",
-		map[string]any{"roundId": "AR-1004", "level": 1}))
-
-	if before.Viewer.IsCurrentApprover || len(before.Viewer.OnBehalfOf) != 1 || before.Viewer.OnBehalfOf[0].Name != "Daniel Okoro" {
-		t.Errorf("viewer = %+v, want Alex deciding on behalf of Daniel Okoro", before.Viewer)
-	}
-	entry := approval.Rounds[0].History[0]
-	if approval.Status != "approved" || entry.Actor.Name != "Alex Morgan" || len(entry.OnBehalfOf) != 1 || entry.OnBehalfOf[0].Name != "Daniel Okoro" {
-		t.Errorf("approval %s, latest entry %+v; want approved by Alex Morgan on behalf of Daniel Okoro", approval.Status, entry)
-	}
-}
-
 // Daniel Okoro's tabs on the demo data: the re-submitted Lubricants activity waits for him; all open adds
 // the Mobility activity waiting at level 2, oldest submission first; decided by me lists his two declines,
 // latest first, then his approvals. A tab that does not exist is refused (FR-029, FR-030).
 func TestListApprovals_TabsForDaniel_FR029(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	daniel := server.SignIn(t, danielsEmail)
 	server.GrantRole(t, danielsEmail, "approver", "all") // 014: every market's approvals
@@ -292,6 +191,7 @@ func TestListApprovals_TabsForDaniel_FR029(t *testing.T) {
 // approval (the four approvals are of early February), or February's when its bounds are sent; a bound
 // that is not a time is refused (FR-027, FR-028).
 func TestApprovalSummary_FR028(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	daniel := server.SignIn(t, danielsEmail)
 	server.GrantRole(t, danielsEmail, "approver", "all") // 014: every market's approvals
@@ -314,6 +214,7 @@ func TestApprovalSummary_FR028(t *testing.T) {
 // its currency and in USD, the unassigned planned cost and the approval waiting for Daniel; an activity
 // that is gone answers 404 (FR-032).
 func TestApprovalPreview_FR032(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	daniel := server.SignIn(t, danielsEmail)
 

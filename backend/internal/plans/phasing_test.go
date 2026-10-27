@@ -37,6 +37,7 @@ func twelve(amount, march string) []string {
 // change is logged month by month in the plan currency ("Budget by month: Mar 2027 50,000.00 → 60,000.00
 // GBP"), with who changed it (FR-020, FR-023, US3-6).
 func TestSetPlanPhasing_SavesAndLogs_FR020_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	plan := f.create(t, priya, gbpInput("FY2027 Lubricants UK & Ireland"))
 
@@ -76,6 +77,7 @@ func TestSetPlanPhasing_SavesAndLogs_FR020_FR023(t *testing.T) {
 
 // Phasing never changes a plan's status: a Published plan stays Published (FR-023).
 func TestSetPlanPhasing_PublishedStaysPublished_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	plan := f.create(t, priya, gbpInput("FY2027 Published"))
 	published, err := f.service.Publish(t.Context(), priya, plan.ID)
@@ -93,6 +95,7 @@ func TestSetPlanPhasing_PublishedStaysPublished_FR023(t *testing.T) {
 // A save from an out-of-date version is refused naming who changed the plan; the rules of a save come at
 // once (FR-020, data-model §3.3).
 func TestSetPlanPhasing_VersionConflict(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	plan := f.create(t, priya, gbpInput("FY2027 Conflict"))
 	noBudget := f.create(t, priya, input("FY2026 No budget"))
@@ -114,6 +117,7 @@ func TestSetPlanPhasing_VersionConflict(t *testing.T) {
 
 // Removing the plan budget removes its phasing in the same save, and the log says so (FR-022, data-model §3.3).
 func TestPlanBudgetRemoved_ResetsPhasing_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	plan := f.create(t, priya, gbpInput("FY2027 Removed"))
 	if _, err := f.service.SetBudgetPhasing(t.Context(), priya, plan.ID, phasingOf("evenly", 1)); err != nil {
@@ -137,6 +141,7 @@ func TestPlanBudgetRemoved_ResetsPhasing_FR022(t *testing.T) {
 // A Custom phasing that does not add up blocks publishing the plan, listed with the plan's own fields
 // (FR-022, US3-3).
 func TestPublish_PhasingMismatchBlocks_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	plan := f.create(t, priya, gbpInput("FY2027 Mismatch"))
 	if _, err := f.service.SetBudgetPhasing(t.Context(), priya, plan.ID, phasingOf("custom", 1, "2027-01", "590000")); err != nil {
@@ -154,6 +159,7 @@ func TestPublish_PhasingMismatchBlocks_FR022(t *testing.T) {
 // The phasing problem is part of the plan's completeness; a changed budget keeps Custom months and flags them
 // (FR-022).
 func TestPlanCompleteness_PhasingProblem_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	plan := f.create(t, priya, gbpInput("FY2027 Complete"))
 	if _, err := f.service.SetBudgetPhasing(t.Context(), priya, plan.ID, phasingOf("custom", 1, "2027-06", "600000")); err != nil {

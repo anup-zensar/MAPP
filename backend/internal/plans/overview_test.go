@@ -14,6 +14,7 @@ import (
 // dollars whatever the reader's display currency, so that it can add plans up before converting once
 // (FR-012, FR-017, 009 D-010).
 func TestOverviews_PlanPageFiguresInUSD_FR012_FR017(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	in := input("FY2026 Lubricants Europe")
 	in.Budget = &money.Input{Amount: "1200000.00", Currency: "USD"}

@@ -14,6 +14,7 @@ import (
 // display status, unassigned planned cost, the fields still needed and the line items needing attention
 // (FR-019 – FR-024, 009 FR-011, FR-014).
 func TestOwnedBy_AsTheirPagesShowThem_FR019_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.lineItems.facts["A-1001"] = activities.LineItemFacts{
 		Count: 2, PlannedCostPlan: money.FromCents(12_120_000), // 121,200.00 USD: 1,200.00 more than the planned cost

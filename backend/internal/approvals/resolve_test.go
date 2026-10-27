@@ -58,6 +58,7 @@ func (f *fixture) resolveLevels(t *testing.T, facts ActivityFacts, submitter act
 // access rule is on — the owner and the submitter are left out with their reason; when nobody is left the
 // backup approver takes the level; a usable backup approver who is not an approver is kept for escalation.
 func TestResolve_Sources_FR001_FR011(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	facts := f.addActivity(t, "A-1001", "Launch film", priya.ID, lubricantsFlow)
 	f.setManager(t, priya, daniel)
@@ -118,6 +119,7 @@ func TestResolve_Sources_FR001_FR011(t *testing.T) {
 // approves it, or it waits with no approver for someone deciding on behalf, with 014's advice when the
 // person submitting was the only one left out as owner or submitter, otherwise the general advice.
 func TestResolve_NoApprover_017P8(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	own := f.addActivity(t, "A-1004", "Trade magazine ads", daniel.ID, lubricantsFlow)
 	priyas := f.addActivity(t, "A-1001", "Launch film", priya.ID, lubricantsFlow)
@@ -161,6 +163,7 @@ func TestResolve_NoApprover_017P8(t *testing.T) {
 // owner has no line manager; the role no longer exists; nobody holds the role for the plan. One problem per
 // level, on the approval workflow field, and nothing is resolved for that level.
 func TestResolve_Problems_FR012(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	facts := f.addActivity(t, "A-1001", "Launch film", priya.ID, lubricantsFlow)
 

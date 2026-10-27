@@ -8,6 +8,7 @@ import (
 // The two history kinds are top level, named for people, read and put back their records, and describe a
 // link change (FR-027, data model §7, D-254).
 func TestKinds_TopLevelAndDescribed_FR027(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	kinds := f.service.Kinds()
 	if len(kinds) != 2 {

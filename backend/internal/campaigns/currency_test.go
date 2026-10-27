@@ -27,6 +27,7 @@ func withCurrencyPlans(f *fixture) {
 
 // Campaign and initiative budgets are typed in the plan currency; another currency is refused (FR-011).
 func TestCampaignBudget_MustBePlanCurrency_FR011(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	withCurrencyPlans(f)
 
@@ -48,6 +49,7 @@ func TestCampaignBudget_MustBePlanCurrency_FR011(t *testing.T) {
 // Inside a plan the amounts are in the plan currency and, in display, in the reader's display currency, each
 // converted once from the plan currency (FR-013, D-261).
 func TestContainerDisplay_FromPlanCurrency_FR013(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	withCurrencyPlans(f)
 	campaign := f.createCampaign(t, priya, "P-1004", CampaignInput{Name: "Helix UK & Ireland", Budget: &money.Input{Amount: "400000", Currency: "GBP"}})
@@ -78,6 +80,7 @@ func TestContainerDisplay_FromPlanCurrency_FR013(t *testing.T) {
 // A plan with another plan currency is listed but not selectable for a move or a copy, and the move and the
 // copy refuse it (FR-017, US2-6).
 func TestDestinations_OtherCurrencyUnavailable_FR017(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	withCurrencyPlans(f)
 	campaign := f.createCampaign(t, priya, "P-1004", CampaignInput{Name: "Helix UK & Ireland", Budget: &money.Input{Amount: "400000", Currency: "GBP"}})

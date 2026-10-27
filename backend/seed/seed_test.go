@@ -12,12 +12,14 @@ import (
 	"mapp/internal/access"
 	"mapp/internal/activities"
 	"mapp/internal/approvals"
+	"mapp/internal/budgets"
 	"mapp/internal/campaigns"
 	"mapp/internal/history"
 	"mapp/internal/lineitems"
 	"mapp/internal/people"
 	"mapp/internal/plans"
 	"mapp/internal/platform/actor"
+	"mapp/internal/platform/apitest"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/money"
@@ -34,6 +36,7 @@ var loadedAt = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 // The seed loads the six demo people of docs/product/demo-users-and-data.md in the order of that table, all
 // active and created by MAPP at the time given (FR-028, data model §1).
 func TestLoad_SixDemoPeople_FR028(t *testing.T) {
+	t.Parallel()
 	db := loadedStore(t)
 
 	want := []people.Person{
@@ -62,7 +65,8 @@ func TestLoad_SixDemoPeople_FR028(t *testing.T) {
 // Every ID comes from the readable-ID counters, so the next record of each type continues after the seed
 // (FR-027, research R4, R22; the "next IDs" of the data models of 002–008). The deleted initiative of 011's
 // demo history took I-1009, A-1011 and L-1009, which are only in the recycle bin and never given out again.
-func TestLoad_IDsComeFromTheCounters_FR027(t *testing.T) {
+func TestLoad_IDsComeFromTheCounters_FR027_FR040(t *testing.T) {
+	t.Parallel()
 	db := loadedStore(t)
 
 	want := map[string]string{
@@ -75,8 +79,8 @@ func TestLoad_IDsComeFromTheCounters_FR027(t *testing.T) {
 		ids.PrefixExchangeRate: "XR-1125", ids.PrefixRateImport: "RI-1002",
 		ids.PrefixApprovalAction: "AH-1016", ids.PrefixNotification: "NT-1010",
 		ids.PrefixFinancialTransaction: "FT-1012", ids.PrefixFinancialImport: "FIM-1002",
-		ids.PrefixApprovalDelegation: "DLG-1002",
-		ids.PrefixRole:               "RL-1006", ids.PrefixRoleAssignment: "RA-1008",
+		ids.PrefixApprovalDelegation: "DLG-1002", budgets.PrefixGlobalBudget: "GB-1002", budgets.PrefixAllocation: "BA-1003",
+		ids.PrefixRole: "RL-1006", ids.PrefixRoleAssignment: "RA-1008",
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	err := db.Write(t.Context(), func(ctx context.Context) error {
@@ -99,7 +103,8 @@ func TestLoad_IDsComeFromTheCounters_FR027(t *testing.T) {
 // The demo data is loaded only into an empty store; a store with any data is refused and left as it was
 // (FR-028).
 func TestLoad_RefusesAStoreWithData_FR028(t *testing.T) {
-	db := openStore(t)
+	t.Parallel()
+	db := openStore(t, t.TempDir())
 	err := db.Write(t.Context(), func(ctx context.Context) error {
 		return store.Put(ctx, "sample_folders", "SF-1001", map[string]string{"id": "SF-1001"})
 	})
@@ -119,6 +124,7 @@ func TestLoad_RefusesAStoreWithData_FR028(t *testing.T) {
 
 // Loading twice is refused the second time, so the demo data is never doubled (FR-028).
 func TestLoad_Twice_FR028(t *testing.T) {
+	t.Parallel()
 	db := loadedStore(t)
 
 	err := seed.Load(t.Context(), stores.JSON(db), fixedClock)
@@ -135,6 +141,7 @@ func TestLoad_Twice_FR028(t *testing.T) {
 // the demo history's kinds, about a planning record, and no entry is about the records of the other steps'
 // Settings, people, teams or approval workflows.
 func TestLoad_OnlyTheHistoryStepWritesHistory_D202(t *testing.T) {
+	t.Parallel()
 	entries, _ := demoLog(t, loadedStore(t))
 	planning := []string{"plan", "campaign", "initiative", "activity", "lineItem"}
 	actions := []history.Action{history.ActionCreated, history.ActionStatusChanged, history.ActionChanged, history.ActionDeleted}
@@ -148,6 +155,7 @@ func TestLoad_OnlyTheHistoryStepWritesHistory_D202(t *testing.T) {
 
 // seed.Loaded, which the seed command prints, says exactly what is stored.
 func TestLoaded_SaysWhatIsLoaded_FR028(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	activeOptions := 0
 	for _, o := range d.options {
@@ -173,6 +181,7 @@ func TestLoaded_SaysWhatIsLoaded_FR028(t *testing.T) {
 // holds options of that attribute; a dependent value (Region, GL code) is linked to a chosen parent option
 // (002 data model §9, D-048).
 func TestLoad_AttributeValuesFitTheirAttributes_D048(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	check := func(record string, level settings.Level, values settings.AttributeValues) {
 		if values == nil {
@@ -376,23 +385,21 @@ func fixedClock() time.Time {
 	return loadedAt
 }
 
-func openStore(t *testing.T) *store.DB {
+func openStore(t *testing.T, dir string) *store.DB {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := store.Open(dir)
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)
 	}
 	return db
 }
 
-// loadedStore returns a new store with the demo data.
+// loadedStore returns a new store with a copy of the demo data that Load stored at loadedAt once per test binary.
 func loadedStore(t *testing.T) *store.DB {
 	t.Helper()
-	db := openStore(t)
-	if err := seed.Load(t.Context(), stores.JSON(db), fixedClock); err != nil {
-		t.Fatalf("Load: %v", err)
-	}
-	return db
+	dir := t.TempDir()
+	apitest.CopyDemoData(t, dir, false)
+	return openStore(t, dir)
 }
 
 // read runs fn in a Read of db and stops the test on its error.

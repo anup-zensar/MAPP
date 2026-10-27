@@ -5,6 +5,7 @@ import "testing"
 // A copy's log entry says what came with the copied record in the words of a delete: kinds in the order
 // they were registered, the singular for one record, kinds without records left out.
 func TestCountsText_CopyDetails(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t) // kinds parent, child and grandchild
 
 	tests := []struct {

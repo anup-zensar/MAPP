@@ -72,6 +72,7 @@ func (w want) check(t *testing.T, f Figures) {
 // Every record of data model §6.1 has its figures; every container's row in its parent's breakdown equals
 // its own card (FR-011, FR-012, SC-002, US2).
 func TestRecord_DemoFiguresAndRollUp_FR012(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	for _, w := range demoFigures {
 		v := f.record(t, priya, w.id)
@@ -90,8 +91,18 @@ func TestRecord_DemoFiguresAndRollUp_FR012(t *testing.T) {
 		}
 	}
 	activity := f.record(t, priya, "A-1002")
-	if len(activity.Latest) != 5 || activity.Latest[0].ID != "FT-1011" || activity.Latest[4].ID != "FT-1008" {
+	if len(activity.Latest) != 5 || activity.Latest[0].ID != "FT-1011" || activity.Latest[4].ID != "FT-1008" ||
+		activity.Latest[0].Link.State != StateLinked {
 		t.Errorf("latest = %v", rowIDs(activity.Latest))
+	}
+	if s := activity.Source; len(activity.Path) != 3 || activity.BreakdownLevel == nil || *activity.BreakdownLevel != LevelLineItem ||
+		activity.Breakdown[0].Record.ID != "L-1003" || s.FeedName == nil || *s.FeedName != "Demo data (simulated GSAP)" ||
+		s.AccrualMonth == nil || *s.AccrualMonth != "2026-09" {
+		t.Errorf("path %+v, breakdown %v %v, source %+v", activity.Path, activity.BreakdownLevel, activity.Breakdown, s)
+	}
+	if plan := f.record(t, priya, "P-1001"); plan.BreakdownLevel == nil || *plan.BreakdownLevel != LevelCampaign ||
+		plan.Breakdown[0].Record.Name != "Helix launch" || len(plan.Path) != 0 || f.record(t, priya, "L-1006").BreakdownLevel != nil {
+		t.Errorf("plan breakdown %v %+v, path %+v; want campaigns, Helix launch first, no path", plan.BreakdownLevel, plan.Breakdown, plan.Path)
 	}
 	if v := f.record(t, priya, "L-1003"); len(v.SwbsCodes) != 1 || v.SwbsCodes[0] != "DE03-M26-0003" {
 		t.Errorf("Venue hire SWBS codes = %v", v.SwbsCodes)
@@ -109,6 +120,7 @@ func rowIDs(rows []TransactionRow) []string {
 
 // A reader with the EUR display currency sees each figure converted once from its USD sum (FR-011, D-061).
 func TestRecord_DisplayCurrency_FR011(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	v := f.record(t, lena, "A-1003")
 	eur := func(text string) money.Money { return money.Money{Amount: amountOf(t, text), Currency: "EUR"} }
@@ -122,6 +134,7 @@ func TestRecord_DisplayCurrency_FR011(t *testing.T) {
 
 // An activity moved to another initiative takes its figures with it (FR-012).
 func TestRecord_MovedActivityTakesItsFigures_FR012(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	for i := range f.planning.nodes {
 		if f.planning.nodes[i].ID == "A-1003" {
@@ -141,6 +154,7 @@ func TestRecord_MovedActivityTakesItsFigures_FR012(t *testing.T) {
 
 // A record that is not live is not found, with the level's sentence.
 func TestRecord_NotFound_FR015(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	_, err := f.service.Record(t.Context(), priya, "C-9999")
 	if e := assertCode(t, err, http.StatusNotFound, errs.CodeNotFound); e.Message != "This campaign no longer exists — someone may have deleted it." {
@@ -151,6 +165,7 @@ func TestRecord_NotFound_FR015(t *testing.T) {
 // A deleted line item's transactions stay linked and leave every figure; restoring it brings them back
 // (FR-012, D-249).
 func TestRecord_LineItemInTheBinLeavesTheFigures_FR012(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	removed := f.planning.moveToBin("L-1006")
 
@@ -178,6 +193,7 @@ func TestRecord_LineItemInTheBinLeavesTheFigures_FR012(t *testing.T) {
 
 // Copies never copy transactions: a copied activity and its line items show 0.00 (FR-030).
 func TestRecord_CopiesHaveNoTransactions_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.planning.nodes = append(f.planning.nodes,
 		node(LevelActivity, "A-2001", "I-1001", "P-1001", "Social always-on (copy)", 9, "80000.00"),
@@ -198,6 +214,7 @@ func TestRecord_CopiesHaveNoTransactions_FR030(t *testing.T) {
 // A record without transactions shows 0.00 for every amount, its whole planned cost as not yet committed and
 // no latest transactions, so the card can say that none have come yet (FR-014).
 func TestRecord_NoTransactionsShowsZero_FR014(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	for id, planned := range map[string]string{"A-1001": "120000.00", "C-1002": "185000.00"} {
 		v := f.record(t, priya, id)
@@ -214,6 +231,7 @@ func TestRecord_NoTransactionsShowsZero_FR014(t *testing.T) {
 // Every level answers how many transactions are linked under it, the count the delete dialogs show; a line
 // item in the recycle bin no longer counts (FR-029).
 func TestRecord_TransactionCountForDeleteDialogs_FR029(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	want := map[string]int{
 		"P-1001": 10, "C-1001": 10, "C-1002": 0, "I-1001": 7, "I-1002": 3,
@@ -256,10 +274,11 @@ func (f *fixture) list(t *testing.T, a actor.Actor, q Query) TransactionPage {
 
 // The tab counts and totals of the seed, and every filter (FR-021, US3 scenario 1).
 func TestTransactions_FiltersCountsAndTotals_FR021(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	all := f.list(t, alex, Query{})
 	wantCounts := TypeCounts{All: 11, PurchaseOrder: 4, Invoice: 3, Payment: 2, Accrual: 2, NotLinked: 1}
-	if all.Counts != wantCounts || all.Total != 11 || all.Year != 2026 {
+	if all.Counts != wantCounts || all.Total != 11 || all.Year != 2026 || all.Items[0].ID != "FT-1011" {
 		t.Errorf("counts %+v, total %d, year %d", all.Counts, all.Total, all.Year)
 	}
 	wantTotals := Totals{Committed: usd(t, "47652.17"), Invoiced: usd(t, "33152.17"), Paid: usd(t, "30652.17"), Accrued: usd(t, "2500.00")}
@@ -267,7 +286,7 @@ func TestTransactions_FiltersCountsAndTotals_FR021(t *testing.T) {
 		t.Errorf("totals = %+v", all.Totals)
 	}
 	if len(all.Choices.Years) != 1 || all.Choices.Years[0] != 2026 || len(all.Choices.Plans) != 2 ||
-		all.Choices.Plans[0].Name != "FY2026 Lubricants Europe" {
+		all.Choices.Plans[0].Name != "FY2026 Lubricants Europe" || all.Choices.CurrentYear != 2026 {
 		t.Errorf("choices = %+v", all.Choices)
 	}
 
@@ -278,6 +297,7 @@ func TestTransactions_FiltersCountsAndTotals_FR021(t *testing.T) {
 		first string
 	}{
 		{"type", Query{Type: string(TypeInvoice)}, 3, "FT-1006"},
+		{"type by amount", Query{Type: string(TypePurchaseOrder), Sort: sortAmount, Desc: true}, 4, "FT-1001"},
 		{"linked", Query{Link: filterLinked}, 10, "FT-1011"},
 		{"not linked", Query{Link: filterNotLinked}, 1, "FT-1004"},
 		{"plan", Query{PlanID: "P-1001"}, 10, "FT-1011"},
@@ -290,6 +310,8 @@ func TestTransactions_FiltersCountsAndTotals_FR021(t *testing.T) {
 		{"search line item", Query{Search: "Venue Hire"}, 3, "FT-1008"},
 		{"search line item ID", Query{Search: "L-1004"}, 4, "FT-1011"},
 		{"search activity ID", Query{Search: "a-1003"}, 3, "FT-1009"},
+		{"search activity name", Query{Search: "social ALWAYS"}, 7, "FT-1011"},
+		{"search document number", Query{Search: "4500001003"}, 2, "FT-1007"},
 		{"sort document number", Query{Sort: sortDocumentNumber}, 11, "FT-1008"},
 		{"sort vendor", Query{Sort: sortVendor}, 11, "FT-1004"},
 		{"sort type", Query{Sort: sortType}, 11, "FT-1004"},
@@ -315,17 +337,22 @@ func TestTransactions_FiltersCountsAndTotals_FR021(t *testing.T) {
 		t.Errorf("the tab changed the counts or totals: %+v %+v", invoices.Counts, invoices.Totals)
 	}
 	notLinked := f.list(t, alex, Query{Link: filterNotLinked})
-	if notLinked.Totals.Committed != usd(t, "12000.00") || notLinked.Counts != wantCounts {
-		t.Errorf("not linked: totals %+v, counts %+v", notLinked.Totals, notLinked.Counts)
+	if notLinked.Totals.Committed != usd(t, "12000.00") || notLinked.Counts != wantCounts || notLinked.Items[0].Link.Reason == nil ||
+		*notLinked.Items[0].Link.Reason != "No line item for HX key HX1099 — check the tracking key in GSAP." {
+		t.Errorf("not linked: totals %+v, counts %+v, first %+v", notLinked.Totals, notLinked.Counts, notLinked.Items[0].Link)
 	}
 	record := f.list(t, alex, Query{RecordID: "L-1004"})
 	if record.RecordFilter == nil || record.RecordFilter.Name != "Speaker fees" || record.Counts.All != 4 || record.Counts.NotLinked != 0 {
 		t.Errorf("record filter %+v, counts %+v", record.RecordFilter, record.Counts)
 	}
+	if other := f.list(t, alex, Query{Year: 2027}); other.Counts.All != 0 || other.Totals.Committed != usd(t, "0.00") {
+		t.Errorf("2027: counts %+v, totals %+v", other.Counts, other.Totals)
+	}
 }
 
 // A record or plan filter that is not live is refused on its parameter (FR-021).
 func TestTransactions_UnknownRecordAndPlan_FR021(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	_, err := f.service.Transactions(t.Context(), alex, Query{Type: filterAll, Link: filterAll, Page: 1, PageSize: 50, RecordID: "L-9999"})
 	if e := assertCode(t, err, http.StatusBadRequest, errs.CodeValidationFailed); e.Fields[0].Field != "recordId" {
@@ -339,6 +366,7 @@ func TestTransactions_UnknownRecordAndPlan_FR021(t *testing.T) {
 
 // ParseQuery takes the defaults and reports every wrong parameter at once (FR-021, D-219).
 func TestParseQuery_DefaultsAndEveryProblem_FR021(t *testing.T) {
+	t.Parallel()
 	q, err := ParseQuery(map[string][]string{})
 	if err != nil || q != (Query{Type: filterAll, Link: filterAll, Sort: sortPostingDate, Desc: true, Page: 1, PageSize: 50}) {
 		t.Errorf("defaults = %+v, %v", q, err)
@@ -376,6 +404,7 @@ var threeRows = file("gsap-2026-10-19.csv", header,
 // A check says what the import does and saves nothing: no transaction, import, ID or log entry (FR-004,
 // SC-003, D-177).
 func TestCheck_SavesNothing_FR004(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	check, err := f.service.Check(t.Context(), alex, threeRows)
 	if err != nil {
@@ -398,11 +427,15 @@ func TestCheck_SavesNothing_FR004(t *testing.T) {
 	if got := f.stored(t, "FT-1012"); got.DocumentNumber != "4500001010" || got.LineItemID != "L-1007" {
 		t.Errorf("FT-1012 = %+v", got)
 	}
+	if source := f.record(t, alex, "A-1008").Source; source.FileName == nil || *source.FileName != "gsap-2026-10-19.csv" {
+		t.Errorf("Grand opening Shanghai's source = %+v, want the imported file", source)
+	}
 }
 
 // Rows = new + updated + unchanged + refused, and the import says the same as its check; importing the same
 // file twice changes nothing the second time (FR-006, SC-003).
 func TestImport_CountsAddUpAndTwiceChangesNothing_FR006(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	req := file("gsap.csv", header,
 		"PO,4500001001,10,,,2026-01-12,,15800.00,GBP,V-100101,Northlight Events GmbH,Venue hire Berlin,DE03-M26-0003,HX1003,",
@@ -447,6 +480,7 @@ func TestImport_CountsAddUpAndTwiceChangesNothing_FR006(t *testing.T) {
 // Refused rows are skipped and listed with their row; a key repeated in the file refuses the later row; the
 // rest are imported; lists stop at 200, the totals say how many there are (FR-005).
 func TestImport_RefusedRowsAreSkipped_FR005(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	result := f.importFile(t, alex, file("gsap.csv", header,
 		"PO,4500009001,10,,,2026-10-01,,100.00,USD,,,,,HX1007,",
@@ -481,6 +515,7 @@ func TestImport_RefusedRowsAreSkipped_FR005(t *testing.T) {
 // Purchase orders are applied first, so an invoice finds a PO of the same file and the PO gets the lower
 // ID (FR-007, data model §4.1).
 func TestImport_POsFirstAndInDeliveryReferences_FR007(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.importFile(t, alex, file("gsap.csv", header,
 		"INVOICE,5100009001,,4500009001,,2026-10-02,,100.00,USD,,,,,,",
@@ -498,6 +533,7 @@ func TestImport_POsFirstAndInDeliveryReferences_FR007(t *testing.T) {
 // Every import matches the stored not-linked transactions again and counts those it links; the log entry
 // says so (FR-007, FR-027, US4 scenario 8).
 func TestImport_RetryRelinksAndLogs_FR007(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	first := f.importFile(t, alex, file("invoice.csv", header, "INVOICE,5100009002,,4500009002,,2026-10-02,,100.00,USD,,,,,,"))
 	if first.NotLinked[0].Reason != "PO 4500009002 isn't linked to a line item yet." {
@@ -529,6 +565,7 @@ func TestImport_RetryRelinksAndLogs_FR007(t *testing.T) {
 
 // An import never changes a manual link, even when it updates the transaction (FR-007, FR-026).
 func TestImport_KeepsManualLinks_FR007(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	if _, err := f.service.Link(t.Context(), alex, "FT-1004", LinkRequest{LineItemID: "L-1007", Version: version(1)}); err != nil {
 		t.Fatalf("Link: %v", err)
@@ -546,6 +583,7 @@ func TestImport_KeepsManualLinks_FR007(t *testing.T) {
 
 // A whole-file problem saves nothing; unknown columns are named in the check (FR-004).
 func TestImport_WholeFileRefusalSavesNothing_FR004(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	_, err := f.service.Import(t.Context(), alex, ImportRequest{FileName: "gsap.csv", Content: "not base64!"})
 	if e := assertCode(t, err, http.StatusBadRequest, errs.CodeValidationFailed); e.Fields[0] != (errs.FieldError{Field: "content",
@@ -566,6 +604,7 @@ func TestImport_WholeFileRefusalSavesNothing_FR004(t *testing.T) {
 
 // The import history is newest first; GSAP data as of is the newest import (FR-008).
 func TestImports_NewestFirstAndDataAsOf_FR008(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	asOf, err := f.service.DataAsOf(t.Context())
 	if err != nil || asOf == nil || !asOf.Equal(start.Add(-24*time.Hour)) {
@@ -600,6 +639,7 @@ func (f fakeFeed) Read(context.Context, Delivery) ([]Incoming, []RowProblem, []s
 // Another feed replaces the simulated extract with no other change: the same checks, matching and figures
 // (FR-003, SC-006).
 func TestImport_AnotherFeed_FR003(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.service.UseFeed(fakeFeed{rows: []Incoming{{Row: 2, Fields: Fields{
 		Type: TypePurchaseOrder, DocumentNumber: "4500007001", PONumber: "4500007001", PostingDate: date.MustParse("2026-10-01"),
@@ -616,6 +656,7 @@ func TestImport_AnotherFeed_FR003(t *testing.T) {
 
 // The sample file has the header and three rows that import cleanly (FR-009).
 func TestTemplate_ImportsCleanly_FR009(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	body, err := f.service.Template(t.Context(), alex)
 	if err != nil {
@@ -632,6 +673,7 @@ func TestTemplate_ImportsCleanly_FR009(t *testing.T) {
 // The overview of the current year: Priya's team plan, everything, and the activities above planned cost
 // (FR-025, data model §6.1).
 func TestOverview_MyTeamsAndEverything_FR025(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	mine, err := f.service.Overview(t.Context(), priya, "myTeams")
 	if err != nil {
@@ -659,6 +701,7 @@ func TestOverview_MyTeamsAndEverything_FR025(t *testing.T) {
 // A manual link is logged with the line item before and after; unlinking matches again and is logged too
 // (FR-026, FR-027).
 func TestLinkAndUnlink_Logged_FR027(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	view, err := f.service.Link(t.Context(), alex, "FT-1004", LinkRequest{LineItemID: "L-1007", Version: version(1)})
 	if err != nil {
@@ -693,6 +736,7 @@ func TestLinkAndUnlink_Logged_FR027(t *testing.T) {
 // Linking refuses a line item in the recycle bin, an unknown one and a wrong ID form, with the field's
 // message (FR-026).
 func TestLink_RefusesLineItemsNotLive_FR026(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.planning.moveToBin("L-1005")
 	cases := map[string]string{
@@ -716,6 +760,7 @@ func TestLink_RefusesLineItemsNotLive_FR026(t *testing.T) {
 
 // Without finance.view every read is forbidden (FR-028).
 func TestAccess_NoViewRefusesEveryRead_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.access.noView = true
 	ctx := t.Context()
@@ -734,6 +779,7 @@ func TestAccess_NoViewRefusesEveryRead_FR028(t *testing.T) {
 // Without finance.import a person cannot check, import or get the sample file, and does not see the
 // transactions that are not linked: not in the lists, counts, totals or the overview (FR-028, D-301).
 func TestAccess_NoImportHidesNotLinked_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.access.noImport = true
 	ctx := t.Context()
@@ -758,6 +804,7 @@ func TestAccess_NoImportHidesNotLinked_FR028(t *testing.T) {
 
 // Without finance.link a person can neither link nor unlink, and the panel offers neither (FR-028).
 func TestAccess_NoLinkRefusesLinking_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.access.noLink = true
 	_, err := f.service.Link(t.Context(), priya, "FT-1004", LinkRequest{LineItemID: "L-1007", Version: version(1)})
@@ -804,6 +851,7 @@ func TestAccess_VisiblePlansScopeEverything_FR028_022_FR005(t *testing.T) { //no
 
 // FactsByLineItem gives All work the same figures as the cards (FR-023, SC-002).
 func TestFactsByLineItem_SameAsTheCards_SC002(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	facts, err := f.service.FactsByLineItem(t.Context())
 	if err != nil {

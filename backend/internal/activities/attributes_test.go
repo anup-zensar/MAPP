@@ -42,6 +42,7 @@ func fieldsOf(v activities.View) []string {
 // Values of a business-unit group that the plan's business unit hides are kept when a save leaves them
 // out, are not counted as needed, and count again once the group is shown (FR-015, D-108).
 func TestUpdate_HiddenGroupValuesKept_FR015(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	lubricantsValues := []string{brands, "SA-1023", "SA-1024", "SA-1025", "SA-1026"}
 	f.setBusinessUnit(t, "SO-1001") // Mobility only
@@ -77,6 +78,7 @@ func TestUpdate_HiddenGroupValuesKept_FR015(t *testing.T) {
 // A split not adding up to exactly 100.00 % saves, but blocks submitting; an even split completes it
 // (FR-017, R10).
 func TestUpdate_SplitNot100SavesButIsListed_FR017(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	view := f.mustEdit(t, "A-1001", func(u *activities.Update) {
@@ -99,6 +101,7 @@ func TestUpdate_SplitNot100SavesButIsListed_FR017(t *testing.T) {
 // Calculated goals always use the model's current values, so a changed model changes them; typed goals stay
 // as typed (FR-018).
 func TestView_GoalsUseCurrentModelValues_FR018(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	repo := settings.NewJSONRepository()
 	f.change(t, func(ctx context.Context) error {
@@ -124,6 +127,7 @@ func TestView_GoalsUseCurrentModelValues_FR018(t *testing.T) {
 // Turning "Set later stages myself" off drops the typed values: MQL and revenue are calculated again
 // (FR-018).
 func TestUpdate_TypedGoalsTurnedOff_FR018(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	view := f.mustEdit(t, "A-1009", func(u *activities.Update) { u.Goals.SetLaterStagesMyself = false })

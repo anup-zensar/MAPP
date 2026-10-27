@@ -32,6 +32,7 @@ func (f *fixture) createDelegation(t *testing.T, a actor.Actor, in DelegationInp
 // or later, with an optional note; every problem is reported at once, and a second delegation on the same
 // days is refused (017 FR-022, data-model §7). The delegation is logged.
 func TestCreateDelegation_Rules_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.access.cannotApprove[sara.ID] = true
 	f.deactivatePerson(t, mei)
@@ -83,6 +84,7 @@ func TestCreateDelegation_Rules_FR022(t *testing.T) {
 // planned by first day, then ended and cancelled, latest last day first; each with its state and whether
 // the person may change it (017 FR-024).
 func TestDelegation_States_FR024(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.access.managers = []string{alex.ID}
 	today := f.today()
@@ -125,6 +127,7 @@ func TestDelegation_States_FR024(t *testing.T) {
 // the delegating person, from the version they saw; ended and cancelled ones are kept read-only; changes
 // and the cancel are logged (017 FR-024, FR-035).
 func TestUpdateCancelDelegation_FR024(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	planned := f.createDelegation(t, daniel, DelegationInput{DelegateID: carlos.ID, StartDate: f.day(7), EndDate: f.day(9)})
 	current := f.createDelegation(t, daniel, DelegationInput{DelegateID: alex.ID, StartDate: f.day(0), EndDate: f.day(2)})
@@ -177,6 +180,7 @@ func TestUpdateCancelDelegation_FR024(t *testing.T) {
 // People who can change approval workflows manage everyone's delegations; others only their own (017
 // FR-022, D-296): creating one for someone else and listing everyone's are refused with 014's message.
 func TestDelegations_ForOthersNeedWorkflowsManage_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.access.managers = []string{alex.ID}
 	refusal := errs.Forbidden("Changing approval workflows isn't part of your role (Planner). Ask an administrator if you need it.")
@@ -209,6 +213,7 @@ func TestDelegations_ForOthersNeedWorkflowsManage_FR022(t *testing.T) {
 // the delegating person keeps every right. A planned delegation, an inactive delegate, a delegate who
 // cannot approve and a delegate's own delegate have no effect (017 FR-023).
 func TestDelegation_Effect_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.access.onBehalf = []string{alex.ID}
 	f.addActivity(t, "A-1001", "Launch film", priya.ID, lubricantsFlow)

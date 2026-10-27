@@ -15,6 +15,7 @@ import (
 // A new person is saved active with the next U- id; the log gets their "created" entry and a "changed"
 // entry for each of their teams (FR-001, FR-028, US1 scenario 1).
 func TestCreatePerson_SavedActiveAndLogged_FR001_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -48,6 +49,7 @@ func TestCreatePerson_SavedActiveAndLogged_FR001_FR028(t *testing.T) {
 
 // Every problem of a person form is reported at once (FR-002, SC-007), and nothing is saved.
 func TestCreatePerson_AllProblemsAtOnce_FR002_SC007(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	longEmail := strings.Repeat("j", 245) + "@shell.com" // 255 characters
@@ -90,6 +92,7 @@ func TestCreatePerson_AllProblemsAtOnce_FR002_SC007(t *testing.T) {
 // E-mails are stored without surrounding spaces and in lower case, the sign-in name feature 001 looks up
 // (FR-002, spec edge case); the name and job title are trimmed.
 func TestCreatePerson_EmailTrimmedAndLowerCase_FR002(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 
@@ -107,6 +110,7 @@ func TestCreatePerson_EmailTrimmedAndLowerCase_FR002(t *testing.T) {
 // An e-mail may belong to one person only, active or not, in any letter case; the message names who has it
 // and, for an inactive person, suggests reactivating them (FR-002, US1 scenario 2).
 func TestCreatePerson_DuplicateEmailNamesHolder_FR002(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -123,6 +127,7 @@ func TestCreatePerson_DuplicateEmailNamesHolder_FR002(t *testing.T) {
 
 // A person created with teams shows in those teams' members at once (FR-012).
 func TestCreatePerson_WithTeamsShowsOnBothSides_FR012(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	europe := f.addTeam(t, "Lubricants Europe", "blue", true)
@@ -148,6 +153,7 @@ func TestCreatePerson_WithTeamsShowsOnBothSides_FR012(t *testing.T) {
 
 // Only active teams can be added to a person, and only teams that exist (FR-011, D-070).
 func TestCreatePerson_InactiveOrUnknownTeamRefused_FR011(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	china := f.addTeam(t, "Mobility China", "violet", false)
@@ -165,6 +171,7 @@ func TestCreatePerson_InactiveOrUnknownTeamRefused_FR011(t *testing.T) {
 // A change is logged with every changed field, old and new values, and the teams joined get their own entry;
 // the next sign-in uses the new e-mail (FR-028, US1 scenario 4).
 func TestUpdatePerson_ChangesLoggedOldAndNew_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -197,6 +204,7 @@ func TestUpdatePerson_ChangesLoggedOldAndNew_FR028(t *testing.T) {
 // person keeps their teams, and the log lists only what changed. The impact check of such an update does not
 // treat the teams that were not sent as removed.
 func TestUpdatePerson_OnlySentFieldsChange_D210(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -225,6 +233,7 @@ func TestUpdatePerson_OnlySentFieldsChange_D210(t *testing.T) {
 // Every update sends the version it started from; without one, or below 1, the save is refused next to
 // the field "version", together with the other problems (FR-002, 001 FR-029).
 func TestUpdatePerson_MissingVersion_FR002(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -242,6 +251,7 @@ func TestUpdatePerson_MissingVersion_FR002(t *testing.T) {
 // A save from an out-of-date copy is refused, naming who changed the person and when; nothing is
 // overwritten (001 FR-029).
 func TestUpdatePerson_VersionConflict_FR029(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	daniel := f.addPerson(t, "Daniel Okoro", "", true)
@@ -264,6 +274,7 @@ func TestUpdatePerson_VersionConflict_FR029(t *testing.T) {
 // Saving the form without a change — the same e-mail in other letters, a repeated team — is not a change:
 // no new version, no log entry (FR-028).
 func TestUpdatePerson_NoChangeNoVersionNoLog_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -283,6 +294,7 @@ func TestUpdatePerson_NoChangeNoVersionNoLog_FR028(t *testing.T) {
 // A person keeps a team that was set inactive after they joined it; an inactive team they are not in
 // cannot be added (FR-014, D-070).
 func TestUpdatePerson_KeepsInactiveTeam_FR014(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -305,6 +317,7 @@ func TestUpdatePerson_KeepsInactiveTeam_FR014(t *testing.T) {
 // Deactivate keeps the person's memberships, logs "deactivated" with the status change, and removes them
 // from the people who can sign in (FR-005, FR-028, US1 scenario 5).
 func TestSetPersonStatus_DeactivateKeepsMembershipsAndLogs_FR005_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -327,6 +340,7 @@ func TestSetPersonStatus_DeactivateKeepsMembershipsAndLogs_FR005_FR028(t *testin
 
 // Nobody can deactivate themselves (FR-006); nothing changes.
 func TestSetPersonStatus_Yourself_NotAllowed_FR006(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	inactive := false
@@ -341,6 +355,7 @@ func TestSetPersonStatus_Yourself_NotAllowed_FR006(t *testing.T) {
 
 // Deactivating an inactive person changes nothing: no new version, no log entry (FR-005).
 func TestSetPersonStatus_AlreadyInactiveUnchanged_FR005(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	mei := f.addPerson(t, "Mei Lin", "Marketer", false)
@@ -356,6 +371,7 @@ func TestSetPersonStatus_AlreadyInactiveUnchanged_FR005(t *testing.T) {
 
 // Reactivate lets the person sign in and be chosen again, still in their teams (FR-007, US1 scenario 7).
 func TestSetPersonStatus_ReactivateMembershipsIntact_FR007(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	mei := f.addPerson(t, "Mei Lin", "Marketer", false)
@@ -376,6 +392,7 @@ func TestSetPersonStatus_ReactivateMembershipsIntact_FR007(t *testing.T) {
 // The status action needs both fields of its body, checks the version and answers not_found for an
 // unknown person.
 func TestSetPersonStatus_MissingActiveAndVersion(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -396,6 +413,7 @@ func TestSetPersonStatus_MissingActiveAndVersion(t *testing.T) {
 // The People list and every picker show everyone, active or not, with their teams; people are sorted by
 // name ignoring letter case, two people with the same name by e-mail; teams by name (FR-001, FR-012).
 func TestListPeople_EveryoneSortedWithTeams_FR001(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	sara := f.addPerson(t, "Sara Novak", "Local finance advisor", true)
 	f.addPerson(t, "Priya Raman", "Marketer", false)
@@ -449,6 +467,7 @@ func TestListPeople_EveryoneSortedWithTeams_FR001(t *testing.T) {
 // recycle bin left out), then the counts of later features in the order they were added, owners before
 // approvers; zero counts are left out, and the label is singular for 1 (FR-004, D-067).
 func TestGetPerson_UsageCountsFromHooks_FR004(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
 	daniel := f.addPerson(t, "Daniel Okoro", "", true)
@@ -502,6 +521,7 @@ func TestGetPerson_UsageCountsFromHooks_FR004(t *testing.T) {
 
 // People are never deleted (FR-008), so an unknown id is a wrong id: not_found with this package's message.
 func TestGetPerson_NotFound_FR008(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 

@@ -8,6 +8,7 @@ import (
 // The line items of many activities are copied at once, each activity's in the order of the pairs, so the
 // copies get the IDs one activity after the other gave them (028 FR-004).
 func TestCopyLineItemsOf_IDsActivityByActivity_028_FR004(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	early := f.create(t, priya, retailEvent, input("Stand build", "USD", "5.00"))
 	late := f.create(t, priya, launchFilm, input("Agency fee", "USD", "7.00"))

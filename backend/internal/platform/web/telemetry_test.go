@@ -21,6 +21,7 @@ const clientTraceID = "4bf92f3577b34da6a3ce929d0e0e4736"
 // Every request gets one server span named by its route and a duration measured with route and status; a
 // panic counts as a 500 in both; trace context sent by the client is not accepted.
 func TestEngine_TracesAndMeasuresEveryRoute_024_FR008_FR009(t *testing.T) {
+	t.Parallel()
 	spans := tracetest.NewInMemoryExporter()
 	reader := sdkmetric.NewManualReader()
 	engine, err := web.NewEngine(web.Options{

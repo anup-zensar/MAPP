@@ -12,9 +12,10 @@ import (
 // notification (the re-submitted Trade magazine ads), Priya Raman one unread and five read ones.
 
 // Priya re-submits the fixed Fleet roadshow: Daniel's bell has one more unread, "Approval needed — Priya
-// Raman re-submitted 'Fleet roadshow' (A-1005)". Daniel declines it: Priya is told with the start of his
-// comment. Nobody is told about their own action (US6, FR-033, FR-035, FR-036).
+// Raman re-submitted 'Fleet roadshow' (A-1005)". Daniel declines it, not with a blank comment: Priya is told
+// with the start of his comment. Nobody is told about their own action (US6, FR-033, FR-035, FR-036).
 func TestNotifications_SubmitThenDecline_US6(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, danielsEmail)
@@ -23,11 +24,13 @@ func TestNotifications_SubmitThenDecline_US6(t *testing.T) {
 	submitted := priya.Do(t, http.MethodPost, "/api/v1/activities/"+fleetRoadshow+"/approval/submit", map[string]any{"version": submission.ActivityVersion})
 	round := decodeApproval(t, submitted).Rounds[0]
 	danielsBell := notifications(t, daniel)
-	declined := daniel.Do(t, http.MethodPost, "/api/v1/activities/"+fleetRoadshow+"/approval/decline",
-		map[string]any{"roundId": round.ID, "level": 1, "comment": "Please move half of the cost to Q4."})
-	decodeApproval(t, declined)
+	path := "/api/v1/activities/" + fleetRoadshow + "/approval/decline"
+	blank := daniel.Do(t, http.MethodPost, path, map[string]any{"roundId": round.ID, "level": 1, "comment": "  "})
+	decodeApproval(t, daniel.Do(t, http.MethodPost, path,
+		map[string]any{"roundId": round.ID, "level": 1, "comment": "Please move half of the cost to Q4."}))
 	priyasBell := notifications(t, priya)
 
+	assertError(t, blank, http.StatusBadRequest, "validation_failed", "Some fields need your attention.")
 	first := danielsBell.Items[0]
 	if danielsBell.Unread != 2 || danielsBell.Total != 2 || first.Kind != approvals.NotifyApprovalNeeded || first.Title != "Approval needed" ||
 		first.Text != "Priya Raman re-submitted 'Fleet roadshow' (A-1005)" || first.Read || !first.Activity.Exists ||
@@ -46,8 +49,9 @@ func TestNotifications_SubmitThenDecline_US6(t *testing.T) {
 }
 
 // Opening a notification marks it read, and the count drops; Mark all as read marks the rest and keeps them
-// listed; a notification about a deleted activity says so (FR-034, edge case).
+// listed; an unknown one answers 404; a notification about a deleted activity says so (FR-034, edge case).
 func TestMarkReadAndAll_FR034(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, danielsEmail)
@@ -55,6 +59,7 @@ func TestMarkReadAndAll_FR034(t *testing.T) {
 	unread := before.Items[0] // the decline of Fleet roadshow, her newest
 
 	opened := priya.Do(t, http.MethodPost, "/api/v1/notifications/"+unread.ID+"/read", nil)
+	unknown := priya.Do(t, http.MethodPost, "/api/v1/notifications/NT-9999/read", nil)
 	afterOpening := notifications(t, priya)
 	deleteActivity(t, priya, tradeMagazineAds)
 	all := daniel.Do(t, http.MethodPost, "/api/v1/notifications/read-all", nil)
@@ -68,6 +73,7 @@ func TestMarkReadAndAll_FR034(t *testing.T) {
 	if before.Unread != 1 || unread.Read || !view.Read || view.ID != unread.ID || afterOpening.Unread != 0 || afterOpening.Total != before.Total {
 		t.Errorf("unread %d → %d of %d, opened %+v; want the one unread read, all kept", before.Unread, afterOpening.Unread, afterOpening.Total, view)
 	}
+	assertError(t, unknown, http.StatusNotFound, "not_found", "This notification no longer exists.")
 	if all.Status != http.StatusOK {
 		t.Fatalf("read-all = %d %s, want 200", all.Status, all.Body)
 	}
@@ -78,24 +84,6 @@ func TestMarkReadAndAll_FR034(t *testing.T) {
 	}
 	if item := danielsBell.Items[0]; item.Activity.ID != tradeMagazineAds || item.Activity.Exists || item.Activity.Name != "Trade magazine ads" {
 		t.Errorf("item = %+v, want Trade magazine ads flagged as deleted", item.Activity)
-	}
-}
-
-// A person can't mark another person's notification read: it is answered like one that does not exist,
-// and it stays unread (FR-034).
-func TestMarkRead_OtherPersons404_FR034(t *testing.T) {
-	server := apitest.New(t)
-	alex := server.SignIn(t, alexsEmail)
-	daniel := server.SignIn(t, danielsEmail)
-	danielsOwn := notifications(t, daniel).Items[0]
-
-	response := alex.Do(t, http.MethodPost, "/api/v1/notifications/"+danielsOwn.ID+"/read", nil)
-	unknown := daniel.Do(t, http.MethodPost, "/api/v1/notifications/NT-9999/read", nil)
-
-	assertError(t, response, http.StatusNotFound, "not_found", "This notification no longer exists.")
-	assertError(t, unknown, http.StatusNotFound, "not_found", "This notification no longer exists.")
-	if after := notifications(t, daniel); after.Unread != 1 || after.Items[0].Read {
-		t.Errorf("Daniel's bell = %d unread, first read %v; want it still unread", after.Unread, after.Items[0].Read)
 	}
 }
 

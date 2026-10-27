@@ -13,6 +13,7 @@ import (
 // for a Declined one, Approve, Decline and Recall while Submitted; an Approved one cannot be recalled and
 // says why (FR-009, FR-014, FR-021).
 func TestApproval_Actions_FR009_FR014_FR021(t *testing.T) {
+	t.Parallel()
 	available := ActionAvailability{Available: true}
 	tests := []struct {
 		status string
@@ -28,6 +29,7 @@ func TestApproval_Actions_FR009_FR014_FR021(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.status, func(t *testing.T) {
+			t.Parallel()
 			f := newFixture(t)
 			facts := f.addActivity(t, "A-1001", "Launch film", priya.ID, lubricantsFlow)
 			facts.Status = tt.status
@@ -50,6 +52,7 @@ func TestApproval_Actions_FR009_FR014_FR021(t *testing.T) {
 // newest first, with the round, level, approvers at the time, actor, "on behalf of" and comment (FR-024,
 // FR-025).
 func TestApproval_ChainAndHistory_FR024_FR025(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
 	f.addActivity(t, "A-1008", "Grand opening Shanghai", mei.ID, chinaFlow)
@@ -104,6 +107,7 @@ func TestApproval_ChainAndHistory_FR024_FR025(t *testing.T) {
 
 // The sentences of the changed values of a restart (data model §3).
 func TestChangeText_Sentences_FR022(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		change ChangeText
 		want   string
@@ -124,6 +128,7 @@ func TestChangeText_Sentences_FR022(t *testing.T) {
 // ("Not submitted yet"); the viewer is told whether they own the activity (FR-024, edge case), and the
 // owner is named, as the decline dialog needs (D-214); an activity without an owner has none.
 func TestApproval_NotSubmittedYet_FR024(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
 

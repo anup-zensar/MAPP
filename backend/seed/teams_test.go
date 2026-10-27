@@ -8,6 +8,7 @@ import (
 // The teams of 003 data model §7, T-1001 … T-1003, with their colours, descriptions and the eight
 // memberships TM-1001 … TM-1008 in order (FR-029).
 func TestLoad_TeamsAndMemberships_FR029(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	var teams []string
 	for _, team := range d.teams {

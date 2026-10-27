@@ -12,6 +12,7 @@ import (
 // month) and "Declined activities" (the 2026 grid, Activity status Declined), neither her default; Daniel
 // Okoro has none (FR-029, 010 plan "Demo data").
 func TestSeed_SavedViews_FR029(t *testing.T) {
+	t.Parallel()
 	db := loadedStore(t)
 	repo := allwork.NewJSONRepository()
 	read(t, db, func(ctx context.Context) error {

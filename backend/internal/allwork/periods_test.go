@@ -41,6 +41,7 @@ func budgetYear(plannedCost string) (*yearBuilder, string) {
 // May is 3,333.33, 3,333.33 and 3,333.34; All in first month, All in last month and a custom spread put
 // their amounts where 007 spread them (US4 scenario 1).
 func TestPeriods_EvenlyFirstLastCustom_FR023(t *testing.T) {
+	t.Parallel()
 	b, a := budgetYear("16000.00")
 	b.lineItem(a, "L-1001", "Evenly", "10000.00")
 	b.lineItem(a, "L-1002", "First", "1000.00")
@@ -76,6 +77,7 @@ func TestPeriods_EvenlyFirstLastCustom_FR023(t *testing.T) {
 // A positive unassigned balance is spread evenly over the activity's months, so the activity's Total is its
 // planned cost; an ongoing activity's balance is all in its start month (FR-023, US4 scenario 2).
 func TestPeriods_PositiveUnassignedSpreadEvenly_OngoingFirstMonth_FR023(t *testing.T) {
+	t.Parallel()
 	b, a := budgetYear("12000.00")
 	b.lineItem(a, "L-1001", "Booked", "9000.00")
 	i := b.node(a).ParentID
@@ -98,6 +100,7 @@ func TestPeriods_PositiveUnassignedSpreadEvenly_OngoingFirstMonth_FR023(t *testi
 // its line items; the activity's balance tells the web app by how much its line items exceed its planned
 // cost.
 func TestPeriods_NegativeBalanceNotSpread_FR023(t *testing.T) {
+	t.Parallel()
 	b, a := budgetYear("1000.00")
 	b.lineItem(a, "L-1001", "Too much", "1300.00")
 
@@ -117,6 +120,7 @@ func TestPeriods_NegativeBalanceNotSpread_FR023(t *testing.T) {
 // Other years holds Custom amounts outside the plan's year and No dates the amounts of an activity without
 // dates; each column is there only when some row has an amount in it (FR-022).
 func TestPeriods_OtherYearsAndNoDatesOnlyWhenUsed_FR022(t *testing.T) {
+	t.Parallel()
 	plain, a := budgetYear("1000.00")
 	plain.lineItem(a, "L-1001", "Spring", "1000.00")
 	if r := view(plain, Query{View: ViewBudget}); len(r.Periods) != 12 {
@@ -155,6 +159,7 @@ func TestPeriods_OtherYearsAndNoDatesOnlyWhenUsed_FR022(t *testing.T) {
 // Quarterly shows each quarter as the sum of its three months (FR-022, US4 scenario 3); since 016 a quarter's
 // key names its year ("Q1-2026", FR-035) and its label does so only over several years.
 func TestPeriods_QuarterIsSumOfMonths_FR022(t *testing.T) {
+	t.Parallel()
 	b, a := budgetYear("10000.00")
 	b.lineItem(a, "L-1001", "Evenly", "10000.00")
 
@@ -176,6 +181,7 @@ func TestPeriods_QuarterIsSumOfMonths_FR022(t *testing.T) {
 // totals, the grand total — equal to the Planned cost card when no activity's line items exceed its planned
 // cost — and the matching plans' budget (FR-024, US4 scenario 3).
 func TestPeriods_ContainersAndFooter_GrandTotalEqualsPlannedCostCard_FR024(t *testing.T) {
+	t.Parallel()
 	b := seedYear()
 	b.node("L-1007").MonthsUSD = []MonthAmount{{Month: "2026-04", USD: amountOf("1000.00")}} // its custom spread adds up
 	b.node("L-1008").PlannedCost = ptr(amountOf("39000.00"))                                 // and no line items exceed

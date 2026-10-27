@@ -56,6 +56,7 @@ func describeWaterfall(w waterfall) string {
 // INQ 250,000 with Lubricants 1.0 (2 %, 5 %, 10,000.00) gives MQL 5,000, 250 deals and revenue
 // 2,500,000.00 (FR-009, SC-006, US1 scenario 5).
 func TestWaterfall_FromINQ_FR009(t *testing.T) {
+	t.Parallel()
 	got := planWaterfall(StageINQ, "250000", model(t, "2.00", "5.00", "10000.00"))
 
 	assertWaterfall(t, got, wantWaterfall(t, ptr[int64](250_000), ptr[int64](5_000), ptr[int64](250), "2500000.00", GoalReasons{}))
@@ -63,6 +64,7 @@ func TestWaterfall_FromINQ_FR009(t *testing.T) {
 
 // A goal typed as MQL works INQ out backwards and deals and revenue forwards (FR-009).
 func TestWaterfall_FromMQL_FR009(t *testing.T) {
+	t.Parallel()
 	got := planWaterfall(StageMQL, "5000", model(t, "2.00", "5.00", "10000.00"))
 
 	assertWaterfall(t, got, wantWaterfall(t, ptr[int64](250_000), ptr[int64](5_000), ptr[int64](250), "2500000.00", GoalReasons{}))
@@ -71,6 +73,7 @@ func TestWaterfall_FromMQL_FR009(t *testing.T) {
 // A goal typed as revenue works every other stage out backwards: 2,500,000.00 → 250 deals → MQL 5,000 →
 // INQ 250,000 (FR-009, SC-006).
 func TestWaterfall_FromRevenue_FR009(t *testing.T) {
+	t.Parallel()
 	got := planWaterfall(StageRevenue, "2500000.00", model(t, "2.00", "5.00", "10000.00"))
 
 	assertWaterfall(t, got, wantWaterfall(t, ptr[int64](250_000), ptr[int64](5_000), ptr[int64](250), "2500000.00", GoalReasons{}))
@@ -78,6 +81,7 @@ func TestWaterfall_FromRevenue_FR009(t *testing.T) {
 
 // Every stage is rounded half up to a whole number: 2.5 → 3, 2.4999 → 2 (FR-009).
 func TestWaterfall_RoundsHalfUp_FR009(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name   string
 		stage  GoalStage
@@ -105,6 +109,7 @@ func TestWaterfall_RoundsHalfUp_FR009(t *testing.T) {
 // out from it, is empty with the reason (spec edge case). Without a goal amount every stage is empty with
 // no reason.
 func TestWaterfall_ZeroRateGivesReason_EdgeCase(t *testing.T) {
+	t.Parallel()
 	r1 := "The model's INQ→MQL rate is 0, so this can't be worked out."
 	r2 := "The model's MQL→deal rate is 0, so this can't be worked out."
 	deal := "The model's average deal size is 0, so this can't be worked out."
@@ -136,6 +141,7 @@ func TestWaterfall_ZeroRateGivesReason_EdgeCase(t *testing.T) {
 // Goals show how much of the goal the activities already plan, as a whole percent: INQ 150,000 of 250,000
 // → 60 %; without a goal, or with a goal of 0, there is no share (FR-016, US3 scenario 5).
 func TestPlannedShare_FR016(t *testing.T) {
+	t.Parallel()
 	m := model(t, "2.00", "5.00", "10000.00")
 	activities := GoalTotals{INQ: 150_000, MQL: 2_000, Revenue: money.USD(usd(t, "1000000.00"))}
 	tests := []struct {

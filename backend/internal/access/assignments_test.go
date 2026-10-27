@@ -14,6 +14,7 @@ import (
 // The People tab lists everyone, active people first and then by name, with their teams, roles and what
 // the roles allow together (FR-017).
 func TestListPeopleAccess_EveryoneWithRoles_FR017(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.directory.person(mei.ID).Ref.Active = false
 
@@ -46,6 +47,7 @@ func TestListPeopleAccess_EveryoneWithRoles_FR017(t *testing.T) {
 // "changed" entry "Roles: old → new", with roles sorted by name and scopes as screens show them (FR-017,
 // FR-037, D-233, US3 scenario 2).
 func TestSetPersonRoles_WholeSetLoggedOnThePerson_FR017_FR037(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	got, err := f.service.SetPersonRoles(t.Context(), alex, sara.ID, PersonRolesUpdate{Version: version(1), Roles: []AssignmentInput{
@@ -92,6 +94,7 @@ func TestSetPersonRoles_WholeSetLoggedOnThePerson_FR017_FR037(t *testing.T) {
 
 // Every problem of a roles list is reported at once, keyed by its position (FR-017, messages 12 and 16).
 func TestSetPersonRoles_Problems_FR017(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	_, err := f.service.SetPersonRoles(t.Context(), alex, sara.ID, PersonRolesUpdate{Roles: []AssignmentInput{
@@ -124,6 +127,7 @@ func TestSetPersonRoles_Problems_FR017(t *testing.T) {
 // MAPP always keeps an active administrator (FR-021, message 10): the only administrator can't lose
 // the role or be deactivated; with a second administrator, both are possible.
 func TestLastAdministrator_Guarded_FR021(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	only := "Alex Morgan is the only administrator. Give someone else the Administrator role first."
 
@@ -164,6 +168,7 @@ func (f fakeApprovals) ApproverIn(_ context.Context, personID string) (int, int,
 // and plural) and when administrators remove their own administration (message 19), saving nothing
 // (FR-022, US3 scenario 5).
 func TestCheckRolesImpact_Warnings_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.service.UseApprovalFacts(fakeApprovals{daniel.ID: {1, 2}, carlos.ID: {2, 1}})
 	noApproving := PersonRolesUpdate{Roles: []AssignmentInput{{RoleID: plannerID, Scope: ScopeInput{Type: authz.ScopeMyTeams}}}}
@@ -198,6 +203,7 @@ func TestCheckRolesImpact_Warnings_FR022(t *testing.T) {
 // A person added in Settings › People gets the role for new people with My teams, logged on them, and
 // keeps version 1; with "No role" they get nothing (FR-023).
 func TestAssignNewPerson_RoleForNewPeople_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	jane := person(janeActor, "Marketer", lubricants.ID)
 	f.directory.people = append(f.directory.people, jane)
@@ -227,6 +233,7 @@ func TestAssignNewPerson_RoleForNewPeople_FR023(t *testing.T) {
 // A deleted team leaves every Chosen teams scope; an assignment left without a team stays, grants nothing in
 // any plan and is flagged (data model §1.2, FR-004).
 func TestTeamDeleted_LeavesChosenScopes_FR004(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	if _, err := f.service.SetPersonRoles(t.Context(), alex, sara.ID, PersonRolesUpdate{Version: version(1), Roles: []AssignmentInput{
 		{RoleID: plannerID, Scope: ScopeInput{Type: authz.ScopeTeams, TeamIDs: []string{mobility.ID}}}}}); err != nil {
@@ -248,6 +255,7 @@ func TestTeamDeleted_LeavesChosenScopes_FR004(t *testing.T) {
 // Approval workflows ask who may approve (FR-028), global budgets and 015–017 who holds a permission, and
 // 017 the holders of a role for a plan and the roles that approve.
 func TestHooks_HoldersAndApprovers_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	can, _ := f.service.CanApprove(t.Context(), []string{daniel.ID, priya.ID, carlos.ID, alex.ID})

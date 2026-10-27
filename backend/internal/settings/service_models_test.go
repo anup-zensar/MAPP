@@ -34,6 +34,7 @@ func (f *fixture) createModel(t *testing.T, input ModelInput) ModelView {
 // A new model with valid values is listed as Active, with its allowed types by name, and logged (US1-1,
 // FR-009).
 func TestCreateModel_ListedActive_FR009(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	digital := f.addType(t, "Digital media", true)
@@ -66,6 +67,7 @@ func TestCreateModel_ListedActive_FR009(t *testing.T) {
 
 // Every problem of a new model is shown at once and nothing is saved (US1-5, FR-009, SC-003).
 func TestCreateModel_AllProblemsAtOnce_FR009(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	input := modelInput("", "")
 	input.InqToMqlRate = "0"
@@ -84,6 +86,7 @@ func TestCreateModel_AllProblemsAtOnce_FR009(t *testing.T) {
 
 // Each rate is above 0 % and at most 100 %, with at most two decimals (FR-009).
 func TestCreateModel_RateBounds_FR009(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	for _, rate := range []string{"0", "0.00", "100.01", "2.555", "abc", "", "-1", "1,5"} {
@@ -104,6 +107,7 @@ func TestCreateModel_RateBounds_FR009(t *testing.T) {
 // The average deal size is in USD, above 0 and at most 100,000,000.00, with at most two decimals (FR-009,
 // D-053).
 func TestCreateModel_DealSizeAboveZeroUSD_FR009(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	tests := []struct {
@@ -138,6 +142,7 @@ func TestCreateModel_DealSizeAboveZeroUSD_FR009(t *testing.T) {
 // A model's name has at most 80 characters and is unique ignoring letter case and surrounding spaces; the
 // message names the model it clashes with (FR-005, FR-009).
 func TestCreateModel_NameUniqueIgnoringCaseAndSpaces_FR005(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	f.createModel(t, modelInput("Lubricants 1.0", event.ID))
@@ -152,6 +157,7 @@ func TestCreateModel_NameUniqueIgnoringCaseAndSpaces_FR005(t *testing.T) {
 
 // A new model can allow active activity types only; a type that no longer exists is reported (FR-004).
 func TestCreateModel_InactiveTypeRefused_FR004(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	webinar := f.addType(t, "Webinar", false)
@@ -167,6 +173,7 @@ func TestCreateModel_InactiveTypeRefused_FR004(t *testing.T) {
 // A change of a model in use logs every old and new value in words, and says that the goals of its plans
 // were recalculated (US1-4, FR-006, FR-011).
 func TestUpdateModel_LogsEachOldAndNewValue_FR006_FR011(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	m := f.createModel(t, modelInput("Lubricants 1.0", event.ID))
@@ -203,6 +210,7 @@ func TestUpdateModel_LogsEachOldAndNewValue_FR006_FR011(t *testing.T) {
 // An inactive activity type the model already allows may stay; it cannot be added again once removed
 // (FR-004).
 func TestUpdateModel_KeepsInactiveTypeAlreadyAllowed_FR004(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	webinar := f.addType(t, "Webinar", true)
@@ -227,6 +235,7 @@ func TestUpdateModel_KeepsInactiveTypeAlreadyAllowed_FR004(t *testing.T) {
 // A save from an out-of-date copy is refused, naming who changed the model and when; a missing version is
 // reported with the other problems; a model that is gone answers not found (FR-007).
 func TestUpdateModel_VersionConflict_FR007(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	m := f.createModel(t, modelInput("Model", event.ID))
@@ -246,6 +255,7 @@ func TestUpdateModel_VersionConflict_FR007(t *testing.T) {
 
 // A save that changes nothing writes no new version and no log entry (FR-006).
 func TestUpdateModel_NoChangeNoLog_FR006(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	m := f.createModel(t, modelInput("Model", event.ID))
@@ -263,6 +273,7 @@ func TestUpdateModel_NoChangeNoLog_FR006(t *testing.T) {
 // Before new rates or deal size are saved, the plans and activities of a model in use are stated (FR-011,
 // US1-4); typed goals stay, as the message says.
 func TestModelImpact_RatesInUse_FR011(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	m := f.createModel(t, modelInput("Lubricants 1.0", event.ID))
@@ -287,6 +298,7 @@ func TestModelImpact_RatesInUse_FR011(t *testing.T) {
 
 // A model nothing uses has nothing to confirm; a change of its name alone neither (FR-011).
 func TestModelImpact_Unused_NoWarning_FR011(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	m := f.createModel(t, modelInput("Model", event.ID))
@@ -304,6 +316,7 @@ func TestModelImpact_Unused_NoWarning_FR011(t *testing.T) {
 // Removing an allowed activity type states how many activities in the model's plans use it; they keep it
 // (US1-6, FR-012, R7).
 func TestModelImpact_RemovedTypeInUse_FR012(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	digital := f.addType(t, "Digital media", true)
@@ -333,6 +346,7 @@ func TestModelImpact_RemovedTypeInUse_FR012(t *testing.T) {
 
 // A model's usage counts its plans in the recycle bin too, and lists the live ones (FR-003, US1-3).
 func TestModelUsage_CountsRecycleBin_FR003(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	m := f.createModel(t, modelInput("Lubricants 1.0", event.ID))
@@ -353,6 +367,7 @@ func TestModelUsage_CountsRecycleBin_FR003(t *testing.T) {
 // A model in use cannot be deleted — also when only a plan in the recycle bin uses it: the answer says
 // where it is used and to set it inactive instead (US1-7, FR-004, SC-004).
 func TestDeleteModel_InUseRefused_FR004(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	m := f.createModel(t, modelInput("Lubricants 1.0", event.ID))
@@ -371,6 +386,7 @@ func TestDeleteModel_InUseRefused_FR004(t *testing.T) {
 
 // An unused model moves to the recycle bin and Undo brings it back exactly (US1-7, FR-004).
 func TestDeleteModel_UnusedToBin_Undo_FR004(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	m := f.createModel(t, modelInput("Lubricants 1.0", event.ID))
@@ -396,6 +412,7 @@ func TestDeleteModel_UnusedToBin_Undo_FR004(t *testing.T) {
 // Set inactive and Reactivate are logged with their own verbs and need the current version; the same
 // status again changes nothing (FR-004, FR-006).
 func TestSetModelActive_LoggedAndReversible_FR004_FR006(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	m := f.createModel(t, modelInput("Lubricants 1.0", event.ID))
@@ -431,6 +448,7 @@ func TestSetModelActive_LoggedAndReversible_FR004_FR006(t *testing.T) {
 // When another model has taken the name meanwhile, Undo is refused and Restore renames the model (FR-004,
 // data model §11).
 func TestModelRestore_NameTaken_FR004(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	m := f.createModel(t, modelInput("Lubricants 1.0", event.ID))

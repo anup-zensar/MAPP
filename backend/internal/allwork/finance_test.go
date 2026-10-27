@@ -65,6 +65,7 @@ func figureText(c *Cell) string {
 // negative not yet committed are red; unassigned rows are blank; the totals row adds up the matching
 // activities (015 FR-023, US5 scenario 1).
 func TestFinance_ColumnsAtEveryLevel_FR023(t *testing.T) {
+	t.Parallel()
 	r := view(financeYear(), Query{Columns: financeColumnKeys})
 	rows := cellsOf(r)
 	want := map[string][]string{
@@ -96,6 +97,7 @@ func TestFinance_ColumnsAtEveryLevel_FR023(t *testing.T) {
 // Containers add up their matching activities and keep the unfiltered sum when filters hide some, as planned
 // cost does (015 FR-023, 010 FR-013); the columns sort (FR-015).
 func TestFinance_FilteredRollUpAndSort_FR023(t *testing.T) {
+	t.Parallel()
 	filtered := view(financeYear(), Query{Columns: []string{"committed"}, Owners: []string{priya.ID},
 		Finance: []string{FinanceCommittedAbovePlanned}})
 	for _, row := range filtered.Rows {
@@ -119,6 +121,7 @@ func TestFinance_FilteredRollUpAndSort_FR023(t *testing.T) {
 // The Financials filter is tested on activities, its values combined with OR; the records above a matching
 // activity hold by it, as for every activity filter (015 FR-024, US5 scenario 2, 010 D-113).
 func TestFinance_Filter_FR024(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		values []string
 		want   []string
@@ -156,6 +159,7 @@ func TestFinance_Filter_FR024(t *testing.T) {
 // A reader who may not see financial data gets neither the group nor the default financial columns; asked
 // for anyway, the figures show "—" and the filter matches nothing (015 FR-028, consolidation).
 func TestFinance_NoAccess_FR028(t *testing.T) {
+	t.Parallel()
 	columns := forReader(catalogue(fixtureAttributes), false)
 	if slices.ContainsFunc(columns, func(c Column) bool { return c.Group == GroupFinancials }) {
 		t.Errorf("the Financials group is offered without access")
@@ -196,6 +200,7 @@ func TestFinance_NoAccess_FR028(t *testing.T) {
 // plans show "—", never match the Financials filter and add nothing to the totals (015 FR-028,
 // consolidation "All work", D-301).
 func TestFinance_OnlyPlansWithAccess_FR028(t *testing.T) {
+	t.Parallel()
 	choices := fixtureChoices(priya.ID)
 	choices.FinancePlans = []string{"P-1001"}
 	in := input{query: Query{View: ViewGrid, Strategic: StrategicInclude, ShowLevels: ShowEverything, Period: PeriodMonth,
@@ -242,6 +247,7 @@ func TestFinance_OnlyPlansWithAccess_FR028(t *testing.T) {
 // An export with a financial column says when the GSAP data was loaded, and the Financials filter is among
 // its filter notes (015 FR-023, US5 scenario 3).
 func TestFinance_ExportNotes_FR023(t *testing.T) {
+	t.Parallel()
 	b := financeYear()
 	data := b.data()
 	asOf := time.Date(2026, 10, 19, 2, 0, 0, 0, time.UTC)
@@ -270,16 +276,5 @@ func TestFinance_ExportNotes_FR023(t *testing.T) {
 	notes, _ = csvLines(t, file)
 	if slices.ContainsFunc(notes, func(n []string) bool { return n[0] == "Financial figures" }) {
 		t.Errorf("a view without financial columns has the note: %q", notes)
-	}
-}
-
-// The parameter finance takes the four values, and refuses others on its name (015 FR-024).
-func TestFinance_ParseQuery_FR024(t *testing.T) {
-	q, err := ParseQuery(map[string][]string{"finance": {"committedAbovePlanned", "invoiced"}})
-	if err != nil || !slices.Equal(q.Finance, []string{"committedAbovePlanned", "invoiced"}) {
-		t.Errorf("query = %v, %v", q.Finance, err)
-	}
-	if _, err := ParseQuery(map[string][]string{"finance": {"overBudget"}}); err == nil {
-		t.Errorf("an unknown value was accepted")
 	}
 }

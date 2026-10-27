@@ -19,6 +19,7 @@ import (
 
 // The Person filter keeps the entries by the chosen people only, and Total counts them (011 FR-003).
 func TestQueryLog_FilterPerson_FR003(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	byPriya := f.logAs(t, priya, parentOne(ActionCreated, ""))
@@ -31,6 +32,7 @@ func TestQueryLog_FilterPerson_FR003(t *testing.T) {
 
 // The Record type filter keeps the entries about the chosen kinds only (011 FR-003).
 func TestQueryLog_FilterRecordType_FR003(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	parent := f.logAs(t, priya, parentOne(ActionCreated, ""))
@@ -44,6 +46,7 @@ func TestQueryLog_FilterRecordType_FR003(t *testing.T) {
 // The Action filter keeps the entries of the chosen actions. "Permanently deleted" also finds the emptied
 // recycle bins, which show the same chip (011 FR-003, data model §1).
 func TestQueryLog_FilterAction_FR003(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	created := f.logAs(t, priya, parentOne(ActionCreated, ""))
@@ -72,6 +75,7 @@ func TestQueryLog_FilterAction_FR003(t *testing.T) {
 // The date range keeps the entries from From, included, up to To, left out (011 FR-003): the browser sends
 // local midnights as moments (D-179).
 func TestQueryLog_FilterDateRange_FR003(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	dayBefore := f.logAs(t, priya, parentOne(ActionCreated, "")) // 12 Mar 09:00
@@ -102,6 +106,7 @@ func TestQueryLog_FilterDateRange_FR003(t *testing.T) {
 // The search finds a part of the record's name, of its ID or of the person's name, ignoring letter case
 // (011 FR-003).
 func TestQueryLog_Search_NameIDPerson_FR003(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	parent := f.logAs(t, priya, parentOne(ActionCreated, ""))
@@ -127,6 +132,7 @@ func TestQueryLog_Search_NameIDPerson_FR003(t *testing.T) {
 // Filters apply together and to the whole log, not to a page of it: Total counts every matching entry,
 // UnfilteredTotal the whole log ("Showing N of M entries", 011 FR-003).
 func TestQueryLog_CombinedFilters_TotalAndUnfiltered_FR003(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	var wanted []Entry
@@ -152,6 +158,7 @@ func TestQueryLog_CombinedFilters_TotalAndUnfiltered_FR003(t *testing.T) {
 // inside it now, records deleted from it (in the recycle bin or gone for good), with their entries' paths at
 // the time (011 FR-003, D-178).
 func TestQueryLog_PlanScope_IsOrWasInside_FR003(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	f.put(t, parentsTable, newRecord("P-2", "Parent two", ""))
@@ -174,6 +181,7 @@ func TestQueryLog_PlanScope_IsOrWasInside_FR003(t *testing.T) {
 // A record moved into the plan later belongs to it with all its entries, also those from before the move
 // and those of the records below it (011 FR-003, D-178).
 func TestQueryLog_MovedInRecordMatches_FR003(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	f.put(t, parentsTable, newRecord("P-2", "Parent two", ""))
@@ -197,6 +205,7 @@ func TestQueryLog_MovedInRecordMatches_FR003(t *testing.T) {
 // in from elsewhere with its entries from before the move; never its parent's or a sibling's (011 FR-012,
 // FR-013).
 func TestQueryLog_RecordWithItemsInside_FR012_FR013(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	f.logAs(t, priya, parentOne(ActionChanged, ""))                                     // its parent
@@ -231,6 +240,7 @@ func TestQueryLog_RecordWithItemsInside_FR012_FR013(t *testing.T) {
 // Entries come newest first by their sequence number, which also orders entries saved in the same
 // millisecond (011 FR-004).
 func TestQueryLog_NewestFirstBySeq_FR004(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	first := f.logAs(t, priya, parentOne(ActionCreated, ""))
@@ -243,6 +253,7 @@ func TestQueryLog_NewestFirstBySeq_FR004(t *testing.T) {
 // Load more asks for the entries older than the last one it has (beforeSeq): pages follow each other
 // without gaps or repeats, and the totals stay the same (011 FR-009).
 func TestQueryLog_BeforeSeqPaging_FR009(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	var all []Entry
@@ -278,6 +289,7 @@ func TestQueryLog_BeforeSeqPaging_FR009(t *testing.T) {
 // place even after a rename; in the recycle bin, also inside another record's entry, with that entry; gone
 // for good; or no record at all.
 func TestQueryLog_RecordNowStates_FR008(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	f.logAs(t, priya, parentOne(ActionCreated, ""))
@@ -325,6 +337,7 @@ func TestQueryLog_RecordNowStates_FR008(t *testing.T) {
 // name in the log when it is no longer stored, also when only the paths of other entries name it; none
 // when the log does not know it (011 FR-013).
 func TestQueryLog_RecordRef_FR013(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	f.logAs(t, priya, childOne(ActionCreated))
@@ -357,6 +370,7 @@ func TestQueryLog_RecordRef_FR013(t *testing.T) {
 // Every problem with a query is reported at once (011 FR-003): an action that is not a filter value, an
 // end that is not after the start, a negative beforeSeq and a limit outside 1 to 200.
 func TestQueryLog_Validation_AllProblemsAtOnce(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	from, to := start, start
 
@@ -381,6 +395,7 @@ func TestQueryLog_Validation_AllProblemsAtOnce(t *testing.T) {
 // zone (011 FR-002, D-179): changes since midnight, since Monday, the different people this week, and
 // deletes, permanent deletes and emptied recycle bins this week.
 func TestLogSummary_Counts_FR002(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	weekStart := time.Date(2026, 3, 9, 0, 0, 0, 0, time.UTC) // Monday: 12 Mar 2026 is a Thursday
@@ -410,6 +425,7 @@ func TestLogSummary_Counts_FR002(t *testing.T) {
 // The summary does not follow the filters: it always counts the whole log, every person, kind and action
 // (011 FR-002), so the cards stay the same while the list below them is filtered.
 func TestLogSummary_IgnoresFilters_FR002(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	f.logAs(t, priya, parentOne(ActionCreated, ""))
@@ -428,6 +444,7 @@ func TestLogSummary_IgnoresFilters_FR002(t *testing.T) {
 // with their latest label and count (not the emptied recycle bin), and the plans the log names, as a record
 // or at the top of a path, with their latest names — each sorted by name.
 func TestLogSummary_Facets_FR003(t *testing.T) {
+	t.Parallel()
 	f := newBareFixture(t)
 	plans := f.testKind("plan", "plans", "", "plans")
 	campaigns := f.testKind("campaign", "campaigns", "plan", "campaigns")
@@ -461,6 +478,7 @@ func TestLogSummary_Facets_FR003(t *testing.T) {
 // Both boundaries are required, and the week cannot start after today; both problems are reported at once
 // (011 FR-002).
 func TestLogSummary_Validation(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	reload := "Reload the page and try again."
 
@@ -473,8 +491,8 @@ func TestLogSummary_Validation(t *testing.T) {
 
 // With 50,000 entries the first page and each filter change answer in under 2 seconds (011 SC-006).
 func TestQueryLog_50000Entries_SC006(t *testing.T) {
-	if testing.Short() {
-		t.Skip("writes 50,000 entries")
+	if testing.Short() || race.Enabled {
+		t.Skip("a timing test: it runs without -short and without the race detector, in CI's Timing tests step")
 	}
 	f := newFixture(t)
 	f.addTree(t)
@@ -513,7 +531,7 @@ func TestQueryLog_50000Entries_SC006(t *testing.T) {
 			took = min(took, time.Since(began))
 		}
 		// The race detector slows the code several times over, so the 2 seconds are measured without it.
-		tooSlow := took > 2*time.Second && !race.Enabled
+		tooSlow := took > 2*time.Second
 		if tooSlow || len(page.Items) == 0 {
 			t.Errorf("query %+v took %v for %d entries, want under 2 seconds", q, took, len(page.Items))
 		}

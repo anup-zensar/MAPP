@@ -11,6 +11,7 @@ import (
 // Other features name owners, approvers and members with PersonRef, read when they answer, so a rename
 // shows everywhere; an id that is no person is left out instead of failing the whole answer.
 func TestPersonRefs_UnknownIdsLeftOut(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
 	mei := f.addPerson(t, "Mei Lin", "", false)
@@ -32,6 +33,7 @@ func TestPersonRefs_UnknownIdsLeftOut(t *testing.T) {
 // Plans and other features name teams with TeamRef, with the colour of their pill and whether they are
 // inactive (D-065, FR-014).
 func TestTeamRefs(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	europe := f.addTeam(t, "Lubricants Europe", "blue", true)
 	china := f.addTeam(t, "Mobility China", "violet", false)
@@ -53,6 +55,7 @@ func TestTeamRefs(t *testing.T) {
 // Feature 004 checks a plan's owner against the members of its teams: every member counts, active or not;
 // a team without members has an empty list, an unknown team none.
 func TestMemberIDs(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
 	daniel := f.addPerson(t, "Daniel Okoro", "", true)
@@ -74,6 +77,7 @@ func TestMemberIDs(t *testing.T) {
 // R1 (feature 004): an owner must belong to one of the plan's teams. An inactive team still counts,
 // because plans keep it and its members (FR-014).
 func TestIsMemberOfAny_InactiveTeamCounts_FR014(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
 	europe := f.addTeam(t, "Lubricants Europe", "blue", false, priya)
@@ -99,6 +103,7 @@ func TestIsMemberOfAny_InactiveTeamCounts_FR014(t *testing.T) {
 
 // "My teams" of other features is every team of the signed-in person, active or not (FR-026).
 func TestTeamIDsOf_FR026(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	sara := f.addPerson(t, "Sara Novak", "Local finance advisor", true)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
@@ -120,6 +125,7 @@ func TestTeamIDsOf_FR026(t *testing.T) {
 // (D-061). A display currency set inactive later stays in use (D-063); a code no longer known falls back to
 // US dollars; everyone who never chose one sees USD (FR-023).
 func TestDisplayRateOf_EURAndFallback_FR023(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		chosen     string // "" = no preferences saved
@@ -152,6 +158,7 @@ func TestDisplayRateOf_EURAndFallback_FR023(t *testing.T) {
 // Feature 002 says which currencies people show amounts in; a person with no saved choice, or a record
 // saved by feature 001 without one, shows USD.
 func TestPeopleByDisplayCurrency_EmptyIsUSD(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -173,6 +180,7 @@ func TestPeopleByDisplayCurrency_EmptyIsUSD(t *testing.T) {
 // Until feature 002 is wired, US dollars are the only currency (spec Assumptions), and the service uses
 // them without being told.
 func TestOnlyUSD(t *testing.T) {
+	t.Parallel()
 	got, err := OnlyUSD(t.Context())
 	if err != nil || !slices.Equal(got, []Currency{usd}) {
 		t.Errorf("OnlyUSD = %+v, %v; want %+v", got, err, []Currency{usd})

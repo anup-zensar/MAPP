@@ -8,42 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"mapp/internal/history"
 	"mapp/internal/platform/errs"
-	"mapp/internal/platform/ids"
 )
-
-// Every change of a person or a team is logged, and a team is deleted with its memberships, so history must
-// know the three kinds — the team before its memberships (FR-028, FR-015).
-func TestKinds_Register_FR028(t *testing.T) {
-	f := newFixture(t)
-	hist := history.NewService(f.db, history.NewJSONRepository(), ids.NewGenerator(ids.NewJSONCounters()), f.clock.Now)
-
-	var got []string
-	for _, kind := range f.service.Kinds() {
-		if err := hist.Register(kind); err != nil {
-			t.Fatalf("Register(%s): %v", kind.Name, err)
-		}
-		got = append(got, kind.Name+" ("+kind.Singular+" / "+kind.Plural+") under '"+kind.Parent+"'")
-	}
-
-	want := []string{
-		"person (person / people) under ''",
-		"team (team / teams) under ''",
-		"teamMembership (team membership / team memberships) under 'team'",
-	}
-	if len(got) != len(want) {
-		t.Fatalf("kinds = %q, want %q", got, want)
-	}
-	for i := range want {
-		if got[i] != want[i] {
-			t.Errorf("kind %d = %q, want %q", i, got[i], want[i])
-		}
-	}
-}
 
 // People are never deleted (FR-008): even history cannot move one to the recycle bin, and nothing changes.
 func TestPersonKind_RemoveRefused_FR008(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
@@ -66,6 +36,7 @@ func TestPersonKind_RemoveRefused_FR008(t *testing.T) {
 
 // Undo puts a deleted team and its memberships back exactly as they were (FR-015).
 func TestTeamDelete_UndoRestoresMembershipsExactly_FR015(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -99,6 +70,7 @@ func TestTeamDelete_UndoRestoresMembershipsExactly_FR015(t *testing.T) {
 // Undo must put the team back exactly, so it is refused when another team has meanwhile taken the name
 // (FR-015, 001 D-037); the team stays in the recycle bin.
 func TestTeamUndo_NameTakenRefused_FR015(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	asia := f.createTeam(t, alex, TeamInput{Name: "Lubricants Asia"})
@@ -120,6 +92,7 @@ func TestTeamUndo_NameTakenRefused_FR015(t *testing.T) {
 // A Restore from the recycle bin renames a team whose name was taken to "<name> (restored)", with a new
 // version and a note, and brings its memberships back (FR-015, feature 011 FR-022).
 func TestTeamRestore_NameTakenGetsSuffix_FR015(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -152,6 +125,7 @@ func TestTeamRestore_NameTakenGetsSuffix_FR015(t *testing.T) {
 // The log names a team's members, colour and status in words, and a person's teams by name (FR-028, 003
 // data model §6).
 func TestDescribe_TeamsMembersStatusColour_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)

@@ -15,6 +15,7 @@ import (
 // Mobility without a business unit (Publish shows what it needs), and a 2027 AOP plan of both business
 // units with a revenue goal (US2).
 func TestLoad_Plans_US2(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	smp := d.attributeID(t, settings.LevelPlan, "Strategic Marketing Plan (SMP)")
 	bu := d.attributeID(t, settings.LevelPlan, "Business unit")
@@ -63,6 +64,7 @@ func raw(value json.RawMessage) string {
 // 016's plan type and plan currency (data-model §8): P-1001 and P-1002 Operational, P-1003 Strategic, all USD and
 // not phased; P-1004 Cross-market, planned in GBP, its 600,000.00 GBP budget phased evenly.
 func TestLoad_PlanTypesAndCurrencies_016(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	var got []string
 	for _, p := range d.plans {

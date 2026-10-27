@@ -71,22 +71,23 @@ files ≤ 300 non-blank lines; new lines within the comment budget.
 - [X] T020 Gates: `npm run check`, `npm run test:coverage`, `npm run build`, `npm run test:e2e`;
   backend gofmt/goimports, `golangci-lint run --new-from-merge-base=origin/develop`, `go vet`,
   `go test -race ./...`
-- [ ] T021 Update `docs/sdd/feature-map.md` row 027; merge `origin/develop`; pull request into develop
+- [X] T021 Update `docs/sdd/feature-map.md` row 027; merge `origin/develop`; pull request into develop (#12, merged)
+- [X] T021a [US3] Read-only review of every remaining package; the phase-2 plan is research R10
 
 ---
 
-## Phase 2 (after feature 028 is merged)
+## Phase 2 (after feature 028 is merged; per-package plan in research R10)
 
-- [ ] T022 [US2] Stress tests: skip under the race detector (or move to 028's benchmarks) and run
+- [X] T022 [US2] Stress tests: skip under the race detector (or move to 028's benchmarks) and run
   them without `-race` in a CI step of their own (R7.1)
-- [ ] T023 [P] [US1] Review `internal/{access,activities,allwork,approvals,budgets,campaigns,
+- [X] T023 [P] [US1] Review `internal/{access,activities,allwork,approvals,budgets,campaigns,
   financials,history,home,lineitems,people,plans,rollup,settings}` and `seed`: handler tests that
   repeat service rules, restating and library tests (R7.4)
-- [ ] T024 [P] [US2] `t.Parallel` in those packages where tests share no state (R7.3)
-- [ ] T025 [P] [US2] `seed`: one seeded data folder per test binary (R7.5)
-- [ ] T026 [P] [US1] `internal/platform/{store,memo,money,date,authz,sheet,web,database}` review
+- [X] T024 [P] [US2] `t.Parallel` in those packages where tests share no state (R7.3)
+- [X] T025 [P] [US2] `seed`: one seeded data folder per test binary (R7.5)
+- [X] T026 [P] [US1] `internal/platform/{store,memo,money,date,authz,sheet,web,database}` review
   (R7.6); the JSON stand-in's cost goes with feature 025's fakes (R7.2)
-- [ ] T027 [US3] Re-measure and update research; coverage before and after
+- [X] T027 [US3] Re-measure and update research; coverage before and after
 
 ## Follow-ups (not 027)
 

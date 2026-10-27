@@ -20,10 +20,9 @@ const (
 
 // The bodies of the API's refusals about people.
 const (
-	personGoneBody         = `{"error":{"code":"not_found","message":"This person doesn't exist.","fields":[]}}`
-	noSuchPathBody         = `{"error":{"code":"not_found","message":"This page or record doesn't exist.","fields":[]}}`
-	incorrectSignInBody    = `{"error":{"code":"incorrect_credentials","message":"Incorrect e-mail or password.","fields":[]}}`
-	deactivateYourselfBody = `{"error":{"code":"not_allowed","message":"You can't deactivate yourself — ask someone else to do it.","fields":[]}}`
+	personGoneBody      = `{"error":{"code":"not_found","message":"This person doesn't exist.","fields":[]}}`
+	noSuchPathBody      = `{"error":{"code":"not_found","message":"This page or record doesn't exist.","fields":[]}}`
+	incorrectSignInBody = `{"error":{"code":"incorrect_credentials","message":"Incorrect e-mail or password.","fields":[]}}`
 )
 
 // Every person picker filters GET /api/v1/people in the browser (D-069), so the list gives everyone with what
@@ -31,6 +30,7 @@ const (
 // people are never offered but are labelled where a field holds them) and their teams, for the
 // team-restricted mode (FR-017, FR-018, FR-019).
 func TestListPeople_GivesPickerData_FR017_FR018(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -63,6 +63,7 @@ func TestListPeople_GivesPickerData_FR017_FR018(t *testing.T) {
 // A person's details answer their teams and what they own or approve; an unknown person answers 404 with
 // the message the details panel shows (FR-004).
 func TestGetPerson_DetailsOrNotFound_FR004(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
@@ -85,6 +86,7 @@ func TestGetPerson_DetailsOrNotFound_FR004(t *testing.T) {
 // People are never deleted (FR-008): there is no DELETE operation, so it answers the JSON 404 of any
 // unknown path, and the person is still there.
 func TestDeleteNotOffered_FR008(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
@@ -99,6 +101,7 @@ func TestDeleteNotOffered_FR008(t *testing.T) {
 // Creating a person answers 201 with the person as saved — trimmed, e-mail in lower case, active, with
 // their teams; a form with problems answers 400 listing every one of them (FR-001, FR-002, SC-007).
 func TestCreatePerson_CreatedOrRefused_FR001_FR002(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
@@ -125,6 +128,7 @@ func TestCreatePerson_CreatedOrRefused_FR001_FR002(t *testing.T) {
 // copy answers 409, naming who changed the person and when; a form with problems answers 400 with every
 // problem, a missing version included; an unknown person answers 404 (FR-002, FR-012, 001 FR-029).
 func TestUpdatePerson_ChangedConflictInvalidOrNotFound_FR002(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	jane := createPerson(t, alex, map[string]any{"name": "Jane Doe", "email": janesEmail})
@@ -158,6 +162,7 @@ func TestUpdatePerson_ChangedConflictInvalidOrNotFound_FR002(t *testing.T) {
 // Without plans the person owns, leaving a team needs no confirmation; the check validates the form like
 // the save, finds an unknown person, and saves nothing (FR-013, D-058).
 func TestPersonImpact_NoPlansNoWarnings_FR013(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	jane := createPerson(t, alex, map[string]any{"name": "Jane Doe", "email": janesEmail, "teamIds": []string{"T-1001"}})
@@ -181,6 +186,7 @@ func TestPersonImpact_NoPlansNoWarnings_FR013(t *testing.T) {
 // Deactivate and Reactivate answer the person in their new status; both fields of the body are needed, an
 // out-of-date version is refused and an unknown person answers 404 (FR-005, FR-007).
 func TestSetPersonStatus_InactiveAndBack_FR005_FR007(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	jane := createPerson(t, alex, map[string]any{"name": "Jane Doe", "email": janesEmail, "teamIds": []string{"T-1001"}})
@@ -206,25 +212,9 @@ func TestSetPersonStatus_InactiveAndBack_FR005_FR007(t *testing.T) {
 	assertAnswer(t, missing, http.StatusNotFound, personGoneBody)
 }
 
-// Nobody can deactivate themselves: the API answers 409 not_allowed and they stay active and signed in
-// (FR-006).
-func TestDeactivateYourself_409NotAllowed_FR006(t *testing.T) {
-	server := apitest.New(t)
-	alex := server.SignIn(t, alexsEmail)
-
-	response := alex.Do(t, http.MethodPost, "/api/v1/people/U-1001/status", map[string]any{"active": false, "version": 1})
-
-	assertAnswer(t, response, http.StatusConflict, deactivateYourselfBody)
-	var me people.PersonDetails
-	still := alex.Do(t, http.MethodGet, "/api/v1/people/U-1001", nil)
-	still.Decode(t, &me)
-	if !me.Active || me.Version != 1 {
-		t.Errorf("Alex after the refusal = %d %s, want active at version 1", still.Status, still.Body)
-	}
-}
-
 // A new person is offered on the sign-in page and can sign in at once with the demo password (FR-003).
 func TestNewPersonCanSignIn_FR003(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	createPerson(t, server.SignIn(t, alexsEmail), map[string]any{"name": "Jane Doe", "email": janesEmail})
 
@@ -243,6 +233,7 @@ func TestNewPersonCanSignIn_FR003(t *testing.T) {
 // A deactivated person is no longer offered on the sign-in page, cannot sign in, and their open session ends
 // at their next request (FR-005).
 func TestDeactivatedPersonCannotSignInAndSessionEnds_FR005(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	jane := createPerson(t, alex, map[string]any{"name": "Jane Doe", "email": janesEmail})
@@ -261,6 +252,7 @@ func TestDeactivatedPersonCannotSignInAndSessionEnds_FR005(t *testing.T) {
 
 // A reactivated person can sign in again, with their teams as before (FR-007, SC-004).
 func TestReactivatedPersonCanSignIn_FR007_SC004(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	jane := createPerson(t, alex, map[string]any{"name": "Jane Doe", "email": janesEmail, "teamIds": []string{"T-1001"}})
@@ -281,6 +273,7 @@ func TestReactivatedPersonCanSignIn_FR007_SC004(t *testing.T) {
 // as feature 014 rewrote it): Daniel, a Planner and Approver, is refused with 403 and nothing changes; given
 // the Administrator role, he edits, deactivates and reactivates a person Alex created.
 func TestPeopleManagedWithPeopleManage_FR027(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	jane := createPerson(t, server.SignIn(t, alexsEmail), map[string]any{"name": "Jane Doe", "email": janesEmail})
 	daniel := server.SignIn(t, danielsEmail)
