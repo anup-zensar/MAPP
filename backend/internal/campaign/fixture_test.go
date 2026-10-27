@@ -9,40 +9,38 @@ import (
 	"time"
 
 	"mapp/internal/history"
+	"mapp/internal/history/historytest"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/money"
-	"mapp/internal/platform/store"
 	"mapp/internal/settings"
 )
 
-// The people of these tests (Sam is inactive).
 var (
 	alex   = actor.Actor{ID: "U-1001", Name: "Alex Morgan"}
 	priya  = actor.Actor{ID: "U-1002", Name: "Priya Raman"}
 	daniel = actor.Actor{ID: "U-1003", Name: "Daniel Okoro"}
 	meiLin = actor.Actor{ID: "U-1004", Name: "Mei Lin"}
-	sam    = actor.Actor{ID: "U-1005", Name: "Sam Inactive"}
+	sam    = actor.Actor{ID: "U-1005", Name: "Sam Inactive"} // inactive
 )
 
-// start is the time on the clock when every test begins: 12 Mar 2026 09:00 UTC (today is 12 Mar 2026).
 var start = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 
-// The attribute ids of the fake Settings: a campaign's Cluster and Region (needed to publish) and an
-// initiative's FIT4 flag.
+// The fake Settings' attributes: a campaign's Cluster and Region (needed to publish), an initiative's FIT4.
 const (
 	clusterID = "SA-1003"
 	regionID  = "SA-1004"
 	fit4ID    = "SA-1011"
 )
 
-// fixture is a campaigns service on a real JSON store and a real history service, with fakes for the other
+// fixture is a campaigns service on in-memory stores and a real history service, with fakes for the other
 // features.
 type fixture struct {
 	service    *Service
-	db         *store.DB
+	db         *fake.DB
 	history    *history.Service
 	plans      *fakePlans
 	settings   *fakeSettings
@@ -50,14 +48,9 @@ type fixture struct {
 	now        time.Time
 }
 
-// newFixture builds the service with the plans P-1001 (2026, budget 1,200,000.00, Priya), P-1002 (2026,
-// budget 800,000.00, another model and business unit) and P-1003 (2027, no budget), and the people above.
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
+	db := fake.NewDB()
 	f := &fixture{
 		db: db,
 		plans: &fakePlans{plans: map[string]PlanFacts{
@@ -72,9 +65,9 @@ func newFixture(t *testing.T) *fixture {
 		activities: &fakeActivities{byInitiative: map[string][]ActivitySummary{}},
 		now:        start,
 	}
-	f.history = history.NewService(db, history.NewJSONStore(), ids.NewGenerator(ids.NewJSONCounters()), f.clock)
-	tools := history.Tools{Tx: db, IDs: ids.NewGenerator(ids.NewJSONCounters()), Log: f.history, Now: f.clock}
-	f.service = NewService(tools, NewJSONStore(), Deps{
+	f.history = history.NewService(db, historytest.NewStore(db), ids.NewGenerator(fake.NewCounters(db)), f.clock)
+	tools := history.Tools{Tx: db, IDs: ids.NewGenerator(fake.NewCounters(db)), Log: f.history, Now: f.clock}
+	f.service = NewService(tools, newFakeStore(db), Deps{
 		Plans: f.plans, People: fakePeople{}, Settings: f.settings, Activities: f.activities,
 	})
 	kinds := append([]history.Kind{f.plans.kind()}, f.service.Kinds()...)
@@ -87,13 +80,10 @@ func newFixture(t *testing.T) *fixture {
 	return f
 }
 
-// clock is the services' clock: the time the test has reached.
 func (f *fixture) clock() time.Time { return f.now }
 
-// advance moves the clock forward by d.
 func (f *fixture) advance(d time.Duration) { f.now = f.now.Add(d) }
 
-// createCampaign creates a campaign in planID or stops the test.
 func (f *fixture) createCampaign(t *testing.T, a actor.Actor, planID string, in CampaignInput) CampaignView {
 	t.Helper()
 	view, err := f.service.CreateCampaign(t.Context(), a, planID, in)
@@ -103,7 +93,6 @@ func (f *fixture) createCampaign(t *testing.T, a actor.Actor, planID string, in 
 	return view
 }
 
-// createInitiative creates an initiative in campaignID or stops the test.
 func (f *fixture) createInitiative(t *testing.T, a actor.Actor, campaignID string, in InitiativeInput) InitiativeView {
 	t.Helper()
 	view, err := f.service.CreateInitiative(t.Context(), a, campaignID, in)
@@ -113,7 +102,6 @@ func (f *fixture) createInitiative(t *testing.T, a actor.Actor, campaignID strin
 	return view
 }
 
-// list returns the campaign tree of planID or stops the test.
 func (f *fixture) list(t *testing.T, planID string) PlanCampaigns {
 	t.Helper()
 	tree, err := f.service.ListPlanCampaigns(t.Context(), priya, planID)
@@ -123,32 +111,18 @@ func (f *fixture) list(t *testing.T, planID string) PlanCampaigns {
 	return tree
 }
 
-// storedCampaign reads the campaign id as it is stored.
 func (f *fixture) storedCampaign(t *testing.T, id string) (Campaign, bool) {
 	t.Helper()
-	var c Campaign
-	var found bool
-	err := f.db.Read(t.Context(), func(ctx context.Context) error {
-		var err error
-		c, found, err = NewJSONStore().GetCampaign(ctx, id)
-		return err
-	})
+	c, found, err := newFakeStore(f.db).GetCampaign(t.Context(), id)
 	if err != nil {
 		t.Fatalf("GetCampaign: %v", err)
 	}
 	return c, found
 }
 
-// storedInitiative reads the initiative id as it is stored.
 func (f *fixture) storedInitiative(t *testing.T, id string) (Initiative, bool) {
 	t.Helper()
-	var i Initiative
-	var found bool
-	err := f.db.Read(t.Context(), func(ctx context.Context) error {
-		var err error
-		i, found, err = NewJSONStore().GetInitiative(ctx, id)
-		return err
-	})
+	i, found, err := newFakeStore(f.db).GetInitiative(t.Context(), id)
 	if err != nil {
 		t.Fatalf("GetInitiative: %v", err)
 	}
@@ -165,7 +139,6 @@ func (f *fixture) log(t *testing.T, recordType, id string) []history.Entry {
 	return entries
 }
 
-// assertError fails the test unless err is an *errs.Error equal to want.
 func assertError(t *testing.T, err error, want *errs.Error) {
 	t.Helper()
 	var got *errs.Error
@@ -177,7 +150,7 @@ func assertError(t *testing.T, err error, want *errs.Error) {
 	}
 }
 
-// problems returns the validation error of the field problems given as field, message pairs.
+// problems returns the validation error of field, message pairs.
 func problems(fieldsAndMessages ...string) *errs.Error {
 	var p errs.Problems
 	for i := 0; i+1 < len(fieldsAndMessages); i += 2 {
@@ -186,7 +159,6 @@ func problems(fieldsAndMessages ...string) *errs.Error {
 	return errs.Validation(p...)
 }
 
-// ptr returns a pointer to v.
 func ptr[T any](v T) *T { return &v }
 
 // usd returns the USD amount text as money; "" gives nil.
@@ -202,17 +174,14 @@ func usd(text string) *money.Money {
 	return &m
 }
 
-// input returns a USD money input.
 func input(amount string) *money.Input {
 	return &money.Input{Amount: amount, Currency: "USD"}
 }
 
-// moneyInput returns a money input in currency.
 func moneyInput(amount, currency string) money.Input {
 	return money.Input{Amount: amount, Currency: currency}
 }
 
-// day returns a pointer to the date "YYYY-MM-DD".
 func day(text string) *date.Date {
 	d := date.MustParse(text)
 	return &d
@@ -238,7 +207,6 @@ func updateOf(c CampaignView, version int) CampaignUpdate {
 	}
 }
 
-// initiativeUpdateOf returns the update that saves initiative i's form unchanged, from version.
 func initiativeUpdateOf(i InitiativeView, version int) InitiativeUpdate {
 	var budget *money.Input
 	if i.Budget != nil {
@@ -254,7 +222,7 @@ func initiativeUpdateOf(i InitiativeView, version int) InitiativeUpdate {
 func (f *fixture) putStored(t *testing.T, campaigns []Campaign, initiatives []Initiative) {
 	t.Helper()
 	err := f.db.Write(t.Context(), func(ctx context.Context) error {
-		repo := NewJSONStore()
+		repo := newFakeStore(f.db)
 		for _, c := range campaigns {
 			if err := repo.PutCampaign(ctx, c); err != nil {
 				return err
