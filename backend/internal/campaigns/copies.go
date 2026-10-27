@@ -2,9 +2,12 @@ package campaigns
 
 import (
 	"context"
+	"fmt"
 	"maps"
 
+	"mapp/internal/history"
 	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/record"
 	"mapp/internal/rollup"
@@ -103,4 +106,79 @@ func (s *Service) initiativeCopy(a actor.Actor, i Initiative, to copyPlace) Init
 	dup.BudgetPhasing = rollup.ShiftPhasing(i.BudgetPhasing, to.years)
 	dup.Meta = record.NewMeta(a, s.now())
 	return dup
+}
+
+// shiftDate returns the date d years later (29 February → 28 February), or nil for no date.
+func shiftDate(d *date.Date, years int) *date.Date {
+	if d == nil {
+		return nil
+	}
+	shifted := d.AddYears(years)
+	return &shifted
+}
+
+// clonePtr returns a pointer to a copy of what p points at, or nil.
+func clonePtr[T any](p *T) *T {
+	if p == nil {
+		return nil
+	}
+	v := *p
+	return &v
+}
+
+func (s *Service) saveCampaignCopy(ctx context.Context, a actor.Actor, source Campaign, to copyPlace) (Campaign, error) {
+	dup := []Campaign{s.campaignCopy(a, source, to)}
+	if err := s.addCampaignCopies(ctx, dup); err != nil {
+		return Campaign{}, err
+	}
+	counts, err := s.copyBelowCampaign(ctx, a, CopyPair{FromID: source.ID, ToID: dup[0].ID})
+	if err != nil {
+		return Campaign{}, err
+	}
+	err = s.logCopy(ctx, a, copyLog{kind: campaignKind, id: dup[0].ID, name: dup[0].Name,
+		sourceName: source.Name, sourceID: source.ID, counts: counts})
+	return dup[0], err
+}
+
+func (s *Service) saveInitiativeCopy(ctx context.Context, a actor.Actor, source Initiative, to copyPlace) (Initiative, error) {
+	dup := []Initiative{s.initiativeCopy(a, source, to)}
+	if err := s.addInitiativeCopies(ctx, dup); err != nil {
+		return Initiative{}, err
+	}
+	counts, err := s.copyActivities(ctx, a, CopyPair{FromID: source.ID, ToID: dup[0].ID})
+	if err != nil {
+		return Initiative{}, err
+	}
+	err = s.logCopy(ctx, a, copyLog{kind: initiativeKind, id: dup[0].ID, name: dup[0].Name,
+		sourceName: source.Name, sourceID: source.ID, counts: counts})
+	return dup[0], err
+}
+
+// copyActivities has feature 006 copy the activities of the initiative pair.FromID, with their line items,
+// into the initiative pair.ToID within the year, and returns what it copied, by history kind.
+func (s *Service) copyActivities(ctx context.Context, a actor.Actor, pair CopyPair) (map[string]int, error) {
+	copied, err := s.deps.Activities.CopyAll(ctx, a, pair.FromID, pair.ToID, 0)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]int{activityKindName: copied.Activities, lineItemKindName: copied.LineItems}, nil
+}
+
+// copyLog is the one "copied" entry of a campaign or initiative copy, on the new record id (D-097).
+type copyLog struct {
+	kind, id, name       string
+	sourceName, sourceID string
+	counts               map[string]int // what came along, by history kind
+}
+
+// logCopy writes entry: "Copied from '<source name>' (<source id>)", with what came along.
+func (s *Service) logCopy(ctx context.Context, a actor.Actor, entry copyLog) error {
+	details := fmt.Sprintf(copiedFromDetails, entry.sourceName, entry.sourceID)
+	if with := s.history.CountsText(entry.counts); with != "" {
+		details += ", " + with
+	}
+	_, err := s.history.Log(ctx, a, history.LogInput{
+		Kind: entry.kind, RecordID: entry.id, RecordName: entry.name, Action: history.ActionCopied, Details: details,
+	})
+	return err
 }

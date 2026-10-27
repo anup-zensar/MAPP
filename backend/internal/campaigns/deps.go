@@ -79,3 +79,32 @@ type Settings interface {
 	// the reader's display currency with them.
 	Rates(ctx context.Context) (money.Rates, error)
 }
+
+// inPlanCurrency reads plans with their plan currency set: USD for a plan known without one (016 data-model
+// §4.5), so every amount of the tree is labelled.
+type inPlanCurrency struct {
+	PlanSource
+}
+
+// Plan returns the plan id with its currency.
+func (p inPlanCurrency) Plan(ctx context.Context, id string) (PlanFacts, bool, error) {
+	plan, found, err := p.PlanSource.Plan(ctx, id)
+	return withCurrency(plan), found, err
+}
+
+// PlansOfYear returns the plans of year with their currencies.
+func (p inPlanCurrency) PlansOfYear(ctx context.Context, year int) ([]PlanFacts, error) {
+	plans, err := p.PlanSource.PlansOfYear(ctx, year)
+	for i := range plans {
+		plans[i] = withCurrency(plans[i])
+	}
+	return plans, err
+}
+
+// withCurrency returns plan with USD as its currency when it has none.
+func withCurrency(plan PlanFacts) PlanFacts {
+	if plan.Currency == "" {
+		plan.Currency = money.BaseCurrency
+	}
+	return plan
+}

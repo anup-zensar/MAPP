@@ -24,6 +24,8 @@ const (
 const (
 	campaignSingular   = "campaign"
 	initiativeSingular = "initiative"
+	campaignPlural     = "campaigns"
+	initiativePlural   = "initiatives"
 )
 
 // Messages of the plan's "History kinds" about bringing a record back.
@@ -41,7 +43,7 @@ func (s *Service) Kinds() []history.Kind {
 		{
 			Name:           campaignKind,
 			Singular:       campaignSingular,
-			Plural:         "campaigns",
+			Plural:         campaignPlural,
 			Parent:         planKind,
 			Snapshot:       s.campaignSnapshot,
 			ChildIDs:       s.campaignIDs,
@@ -57,7 +59,7 @@ func (s *Service) Kinds() []history.Kind {
 		{
 			Name:           initiativeKind,
 			Singular:       initiativeSingular,
-			Plural:         "initiatives",
+			Plural:         initiativePlural,
 			Parent:         campaignKind,
 			Snapshot:       s.initiativeSnapshot,
 			ChildIDs:       s.initiativeIDs,
