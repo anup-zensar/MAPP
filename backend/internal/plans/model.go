@@ -144,72 +144,6 @@ type OptionRef struct {
 	Active bool   `json:"active"`
 }
 
-// Completeness is the plan's own missing needed-to-publish fields and every record below that is not
-// complete (Completeness, D-199).
-type Completeness struct {
-	Missing    []settings.MissingField `json:"missing"`
-	ItemsBelow []AttentionItem         `json:"itemsBelow"`
-}
-
-// Contents counts what is inside the plan (PlanContents).
-type Contents struct {
-	Campaigns          int `json:"campaigns"`
-	Initiatives        int `json:"initiatives"`
-	Activities         int `json:"activities"`
-	ApprovedActivities int `json:"approvedActivities"` // Approved, In progress or Complete
-	LineItems          int `json:"lineItems"`
-}
-
-// Figures are the plan's calculated money and progress in one currency (PlanFigures): the reader's display
-// currency in figures, the plan currency in planFigures (016 FR-013).
-type Figures struct {
-	Currency           string           `json:"currency"` // the display currency of every amount below
-	Budget             *money.Money     `json:"budget"`
-	PlannedCost        *money.Money     `json:"plannedCost"` // null when nothing below has a planned cost
-	CampaignBudgets    money.Money      `json:"campaignBudgets"`
-	RemainingBudget    *money.Money     `json:"remainingBudget"`   // null without a plan budget
-	OverAllocatedBy    *money.Money     `json:"overAllocatedBy"`   // null unless campaign budgets exceed the plan budget
-	BudgetUsedPercent  *int             `json:"budgetUsedPercent"` // whole percent; null without a budget or with 0
-	OverBudget         bool             `json:"overBudget"`
-	Activities         int              `json:"activities"`
-	ActivitiesApproved int              `json:"activitiesApproved"`
-	ApprovalProgress   ApprovalProgress `json:"approvalProgress"`
-}
-
-// GoalReasons say why a goal stage could not be calculated although a goal amount is set; "" otherwise.
-type GoalReasons struct {
-	INQ     string `json:"inq,omitempty"`
-	MQL     string `json:"mql,omitempty"`
-	Deals   string `json:"deals,omitempty"`
-	Revenue string `json:"revenue,omitempty"`
-}
-
-// GoalFigures are the plan goal at every stage: the typed stage as typed, the others calculated
-// (GoalFigures).
-type GoalFigures struct {
-	INQ     *int64       `json:"inq"`
-	MQL     *int64       `json:"mql"`
-	Deals   *int64       `json:"deals"`
-	Revenue *money.Money `json:"revenue"` // in the display currency
-	Reasons GoalReasons  `json:"reasons"`
-}
-
-// GoalTotals are the sums of the goals of every activity of the plan (GoalTotals). In Facts the revenue
-// is in USD; in the API it is in the reader's display currency.
-type GoalTotals struct {
-	INQ     int64       `json:"inq"`
-	MQL     int64       `json:"mql"`
-	Revenue money.Money `json:"revenue"`
-}
-
-// Goals are the plan's goals and the activities' goals (PlanGoals).
-type Goals struct {
-	Stage          GoalStage   `json:"stage"`
-	Plan           GoalFigures `json:"plan"`
-	Activities     GoalTotals  `json:"activities"`
-	PlannedPercent *int        `json:"plannedPercent"` // null without a goal or with a goal of 0
-}
-
 // PlanView is a plan as the API returns it (Plan): stored amounts in the plan currency, calculated values
 // in the display currency (figures) and in the plan currency (planFigures, 016 FR-013).
 type PlanView struct {
@@ -243,54 +177,6 @@ type PlanView struct {
 	PlanFigures          Figures                  `json:"planFigures"`      // 016 FR-013: figures in the plan currency
 	CurrencyLock         *string                  `json:"currencyLock"`     // 016 FR-012: why the currency can't change; null when it can
 	record.Meta
-}
-
-// PlanSummary is a plan as the Plans list shows it (PlanSummary).
-type PlanSummary struct {
-	ID           string            `json:"id"`
-	Name         string            `json:"name"`
-	Year         int               `json:"year"`
-	Status       Status            `json:"status"`
-	AOP          bool              `json:"aop"`
-	Owner        *people.PersonRef `json:"owner"`
-	Teams        []people.TeamRef  `json:"teams"`
-	BusinessUnit []OptionRef       `json:"businessUnit"`
-	Figures      Figures           `json:"figures"`
-	Completeness Completeness      `json:"completeness"`
-	Access       *authz.PlanAccess `json:"access,omitempty"` // what the reader may do (014 FR-011)
-	// 016: the type and currency, and the budget and planned cost in the plan currency (FR-014, FR-032).
-	PlanType        PlanType     `json:"planType"`
-	Currency        string       `json:"currency"`
-	PlanBudget      *money.Money `json:"planBudget"`
-	PlanPlannedCost *money.Money `json:"planPlannedCost"`
-}
-
-// ListSummary is the summary cards of the Plans page (PlanListSummary).
-type ListSummary struct {
-	Plans       int          `json:"plans"`
-	Draft       int          `json:"draft"`
-	Published   int          `json:"published"`
-	PlannedCost *money.Money `json:"plannedCost"` // null when no plan has one
-	Budget      *money.Money `json:"budget"`      // null when no plan has one
-}
-
-// PlanList is the answer of GET /api/v1/plans (PlanList).
-type PlanList struct {
-	Items   []PlanSummary `json:"items"`
-	Total   int           `json:"total"` // every plan in the team scope
-	Summary ListSummary   `json:"summary"`
-	Years   []int         `json:"years"` // years with a plan in the scope, newest first
-}
-
-// ListFilter is the query of GET /api/v1/plans.
-type ListFilter struct {
-	Scope  string // ScopeAll or ScopeMyTeams
-	Status string // "" (every status), "draft" or "published"
-	Year   *int   // the alias of YearFrom = YearTo = Year (016 D-269)
-	Q      string // contained in the name or ID, ignoring case
-	// 016 FR-033: the years from–to (inclusive; nil = no bound) and the plan types (empty = every type).
-	YearFrom, YearTo *int
-	Types            []string
 }
 
 // Defaults are what a new plan starts with (PlanDefaults, GET /api/v1/plan-defaults).
