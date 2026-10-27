@@ -14,6 +14,7 @@ import (
 	"mapp/internal/plan"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
 	"mapp/internal/platform/record"
 )
 
@@ -36,31 +37,42 @@ type kindLabel struct {
 	name, singular string
 }
 
-// The words of the stored statuses, as the activity log shows them (004's plan statuses, 006's activity
-// statuses).
-var (
-	planStatusWords     = map[plan.Status]string{plan.StatusDraft: "Draft", plan.StatusPublished: "Published"}
-	activityStatusWords = map[activity.Status]string{
+// planStatusWords returns the words of the stored plan statuses, as the activity log shows them (004).
+func planStatusWords() map[plan.Status]string {
+	return map[plan.Status]string{plan.StatusDraft: "Draft", plan.StatusPublished: "Published"}
+}
+
+// activityStatusWords returns the words of the stored activity statuses, as the activity log shows them (006).
+func activityStatusWords() map[activity.Status]string {
+	return map[activity.Status]string{
 		activity.StatusCreated: "Created", activity.StatusSubmitted: "Submitted",
 		activity.StatusDeclined: "Declined", activity.StatusApproved: "Approved",
 	}
-)
+}
 
 // The deleted initiative of the demo story (011 plan "Demo data", step 5): "Trade shows" in Rimula fleet of
 // FY2026 Lubricants Europe, with its activity "Fleet expo stand" and that activity's line item "Stand
 // build". Priya Raman created them 12 days before the seed time and deleted the initiative 2 days before,
 // so they are only in the recycle bin.
+const (
+	binActivityName = "Fleet expo stand"
+	binLineItemName = "Stand build"
+)
+
 var (
 	binInitiative = demoInitiative{name: "Trade shows", owner: "Priya Raman", start: "2026-02-01", end: "2026-12-31",
 		budget: "20000.00", attributes: notFIT4}
 	binActivity = demoActivity{plan: lubricantsPlan, campaign: "Rimula fleet", initiative: "Trade shows",
-		name: "Fleet expo stand", status: activity.StatusCreated, activityType: "Event", owner: "Priya Raman",
+		name: binActivityName, status: activity.StatusCreated, activityType: typeEvent, owner: "Priya Raman",
 		start: "2026-06-01", end: "2026-06-30", plannedCost: "18000.00", workflow: lubricantsFlow,
 		attributes: lubricantsActivity("Germany", "DE03", "DE03000150", "Rimula", "FIT4-0049")}
-	binLineItem = demoLineItem{plan: lubricantsPlan, activity: "Fleet expo stand", name: "Stand build", currency: "USD",
-		plannedCost: "18000.00", method: lineitem.SpreadEvenly, spendType: "BTL – Event",
-		glCode: "7250040 – Events and sponsorship", budget: "2026 Lubricants Budget", item: "Europe – Events", requestSwbs: true}
 )
+
+func binLineItem() demoLineItem {
+	return demoLineItem{plan: lubricantsPlan, activity: binActivityName, name: binLineItemName, currency: money.BaseCurrency,
+		plannedCost: "18000.00", method: lineitem.SpreadEvenly, spendType: spendEvent,
+		glCode: glEventsSponsorship, budget: lubricantsBudget, item: itemEuropeEvents, requestSwbs: true}
+}
 
 // The times of the demo story, before the seed time.
 const (
@@ -219,13 +231,14 @@ func (h *demoHistory) addDeletedInitiative(ctx context.Context, priya actor.Acto
 	}
 	act.Meta = record.NewMeta(priya, created.Add(binCreatedSpread))
 
-	currency, found, err := h.stores.Settings.GetCurrency(ctx, binLineItem.currency)
+	item := binLineItem()
+	currency, found, err := h.stores.Settings.GetCurrency(ctx, item.currency)
 	if err != nil || !found {
-		return history.BinEntry{}, cmpErr(err, fmt.Errorf("seed: there is no currency %s", binLineItem.currency))
+		return history.BinEntry{}, cmpErr(err, fmt.Errorf("seed: there is no currency %s", item.currency))
 	}
-	lineItem, err := h.lineItemFields(binLineItem, act, currency.Rate)
+	lineItem, err := h.lineItemFields(item, act, currency.Rate)
 	if err != nil {
-		return history.BinEntry{}, fmt.Errorf("seed: line item %s: %w", binLineItem.name, err)
+		return history.BinEntry{}, fmt.Errorf("seed: line item %s: %w", item.name, err)
 	}
 	if lineItem.ID, err = h.next(ctx, ids.PrefixLineItem); err != nil {
 		return history.BinEntry{}, err
@@ -235,11 +248,11 @@ func (h *demoHistory) addDeletedInitiative(ctx context.Context, priya actor.Acto
 	path := []history.RecordRef{ref(planningKinds.plan, planID, lubricantsPlan), ref(planningKinds.campaign, campaignID, binActivity.campaign)}
 	initiativePath := append(slices.Clone(path), ref(planningKinds.initiative, initiative.ID, initiative.Name))
 	activityPath := append(slices.Clone(initiativePath), ref(planningKinds.activity, act.ID, act.Name))
-	h.add(initiative.Meta.CreatedAt, priya, history.ActionCreated, string(history.ActionCreated), planningKinds.initiative,
+	h.add(initiative.CreatedAt, priya, history.ActionCreated, string(history.ActionCreated), planningKinds.initiative,
 		initiative.ID, initiative.Name, path, nil, "", "")
-	h.add(act.Meta.CreatedAt, priya, history.ActionCreated, string(history.ActionCreated), planningKinds.activity,
+	h.add(act.CreatedAt, priya, history.ActionCreated, string(history.ActionCreated), planningKinds.activity,
 		act.ID, act.Name, initiativePath, nil, "", "")
-	h.add(lineItem.Meta.CreatedAt, priya, history.ActionCreated, string(history.ActionCreated), planningKinds.lineItem,
+	h.add(lineItem.CreatedAt, priya, history.ActionCreated, string(history.ActionCreated), planningKinds.lineItem,
 		lineItem.ID, lineItem.Name, activityPath, nil, "", "")
 
 	snapshots := make([]history.Snapshot, 0, 3)

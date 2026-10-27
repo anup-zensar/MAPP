@@ -34,23 +34,34 @@ type demoPlan struct {
 // Publish needs.
 var demoPlans = []demoPlan{
 	{name: "FY2026 Lubricants Europe", year: 2026, model: "Lubricants 1.0", team: "Lubricants Europe", owner: "Priya Raman",
-		budget: "1200000.00", status: plan.StatusPublished, businessUnits: []string{"Lubricants"},
-		goalStage: plan.StageINQ, goalAmount: "250000", financeBudget: "2026 Lubricants Budget",
+		budget: lubricantsEuropeBudget, status: plan.StatusPublished, businessUnits: []string{unitLubricants},
+		goalStage: plan.StageINQ, goalAmount: "250000", financeBudget: lubricantsBudget,
 		description: "Lubricants marketing in Europe for 2026."},
 	{name: "FY2026 Mobility China", year: 2026, model: "Mobility 1.0", team: "Mobility China", owner: "Mei Lin",
-		budget: "800000.00", status: plan.StatusDraft, goalStage: plan.StageINQ, goalAmount: "150000",
-		financeBudget: "2026 Mobility Budget"},
+		budget: mobilityChinaBudget, status: plan.StatusDraft, goalStage: plan.StageINQ, goalAmount: "150000",
+		financeBudget: mobilityBudget},
 	{name: "FY2027 Global Brand", year: 2027, model: "Lubricants 1.0", team: "Global Marketing Ops", owner: "Alex Morgan",
-		budget: "500000.00", status: plan.StatusDraft, businessUnits: []string{"Mobility", "Lubricants"}, smp: true, aop: true,
+		budget: globalBrandBudget, status: plan.StatusDraft, businessUnits: []string{unitMobility, unitLubricants}, smp: true, aop: true,
 		goalStage: plan.StageRevenue, goalAmount: "2000000.00", planType: plan.TypeStrategic},
 	{name: ukPlan, year: 2027, model: "Lubricants 1.0", team: "Lubricants Europe", owner: "Priya Raman",
-		budget: "600000.00", status: plan.StatusDraft, businessUnits: []string{"Lubricants"}, goalStage: plan.StageINQ,
+		budget: ukPlanBudget, status: plan.StatusDraft, businessUnits: []string{unitLubricants}, goalStage: plan.StageINQ,
 		description: "Lubricants marketing in the United Kingdom and Ireland for 2027, planned in pounds sterling.",
-		planType:    plan.TypeCrossMarket, currency: "GBP", phasing: rollup.MethodEvenly},
+		planType:    plan.TypeCrossMarket, currency: ukPlanCurrency, phasing: rollup.MethodEvenly},
 }
 
 // ukPlan is P-1004 of 016's demo data, planned in GBP.
-const ukPlan = "FY2027 Lubricants UK & Ireland"
+const (
+	ukPlan         = "FY2027 Lubricants UK & Ireland"
+	ukPlanCurrency = "GBP"
+)
+
+// The budgets of the demo plans, in their currencies.
+const (
+	lubricantsEuropeBudget = "1200000.00"
+	mobilityChinaBudget    = "800000.00"
+	globalBrandBudget      = "500000.00"
+	ukPlanBudget           = "600000.00"
+)
 
 // addPlans creates the three demo plans through the plans repository, looking up the model, team, owner,
 // finance budget and business unit by name.
