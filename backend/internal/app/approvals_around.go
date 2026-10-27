@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"slices"
 
 	"mapp/internal/activity"
@@ -10,6 +11,7 @@ import (
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/memo"
 	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 type place struct {
@@ -72,4 +74,48 @@ func (p *approvalsActivities) keptPlanCurrency(ctx context.Context, initiativeID
 
 func (p *approvalsActivities) currentRates(ctx context.Context) (money.Rates, error) {
 	return memo.Get(ctx, memo.Derived+":rates", p.rates)
+}
+
+// businessUnits returns the plan's business units (017 data-model §3): the options chosen in the plan's
+// values of the plan-level Business unit attribute (002, Attribute.Role businessUnit), with their labels
+// and active flags now; none without that attribute or value.
+func (p *approvalsActivities) businessUnits(ctx context.Context, values settings.AttributeValues) ([]approval.Choice, error) {
+	attributes, err := p.settings.ListAttributes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var ids []string
+	for _, a := range attributes {
+		if a.Role == settings.RoleBusinessUnit && a.Level == settings.LevelPlan {
+			ids = append(ids, optionIDs(values[a.ID])...)
+		}
+	}
+	return p.choicesOf(ctx, ids)
+}
+
+// optionIDs also reads a single id, as a value of one option may be stored.
+func optionIDs(raw json.RawMessage) []string {
+	var ids []string
+	if json.Unmarshal(raw, &ids) != nil {
+		var one string
+		if json.Unmarshal(raw, &one) == nil && one != "" {
+			ids = []string{one}
+		}
+	}
+	return ids
+}
+
+// choicesOf leaves out an option that is not stored.
+func (p *approvalsActivities) choicesOf(ctx context.Context, ids []string) ([]approval.Choice, error) {
+	units := []approval.Choice{}
+	for _, id := range ids {
+		option, found, err := p.settings.GetOption(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		if found {
+			units = append(units, approval.Choice{ID: option.ID, Label: option.Label, Active: option.Active})
+		}
+	}
+	return units, nil
 }

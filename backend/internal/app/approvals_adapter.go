@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -17,7 +16,6 @@ import (
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/money"
-	"mapp/internal/settings"
 	"mapp/internal/stores"
 )
 
@@ -118,24 +116,7 @@ func (p *approvalsActivities) ReadyCheck(ctx context.Context, a actor.Actor, id 
 	if err != nil {
 		return approval.ReadyCheck{}, err
 	}
-	problems := make([]approval.SubmitProblem, 0, check.ProblemCount)
-	missing := []approval.MissingFieldRef{}
-	for _, problem := range check.Activity {
-		problems = append(problems, approval.SubmitProblem{Field: problem.Field, Group: approval.GroupActivity, Message: problem.Message})
-		if problem.Code == activity.ProblemMissingField {
-			missing = append(missing, approval.MissingFieldRef{ID: problem.Field, Label: strings.TrimSuffix(problem.Message, neededToSubmit)})
-		}
-	}
-	for _, problem := range check.LineItems {
-		converted := approval.SubmitProblem{Field: problem.Field, Group: approval.GroupLineItem, Message: problem.Message}
-		if problem.LineItemID != nil {
-			converted.LineItemID = *problem.LineItemID
-			converted.Field = "lineItems." + *problem.LineItemID + "." + problem.Field
-		}
-		problems = append(problems, converted)
-	}
-
-	result := approval.ReadyCheck{Problems: problems, Missing: missing}
+	result := approval.ReadyCheck{Problems: submitProblems(check), Missing: missingToSubmit(check)}
 	act, found, err := p.activities.Get(ctx, id)
 	if err != nil || !found {
 		return result, err
@@ -148,6 +129,32 @@ func (p *approvalsActivities) ReadyCheck(ctx context.Context, a actor.Actor, id 
 		result.UnassignedPlannedCost = unassigned
 	}
 	return result, nil
+}
+
+func submitProblems(check activity.SubmitCheck) []approval.SubmitProblem {
+	problems := make([]approval.SubmitProblem, 0, check.ProblemCount)
+	for _, problem := range check.Activity {
+		problems = append(problems, approval.SubmitProblem{Field: problem.Field, Group: approval.GroupActivity, Message: problem.Message})
+	}
+	for _, problem := range check.LineItems {
+		converted := approval.SubmitProblem{Field: problem.Field, Group: approval.GroupLineItem, Message: problem.Message}
+		if problem.LineItemID != nil {
+			converted.LineItemID = *problem.LineItemID
+			converted.Field = "lineItems." + *problem.LineItemID + "." + problem.Field
+		}
+		problems = append(problems, converted)
+	}
+	return problems
+}
+
+func missingToSubmit(check activity.SubmitCheck) []approval.MissingFieldRef {
+	fields := []approval.MissingFieldRef{}
+	for _, problem := range check.Activity {
+		if problem.Code == activity.ProblemMissingField {
+			fields = append(fields, approval.MissingFieldRef{ID: problem.Field, Label: strings.TrimSuffix(problem.Message, neededToSubmit)})
+		}
+	}
+	return fields
 }
 
 // facts returns act as approvals needs it: with its plan, campaign and initiative, type name, display
@@ -232,43 +239,10 @@ func (p *approvalsActivities) path(ctx context.Context, initiativeID string) ([]
 		return nil, plan.Plan{}, fmt.Errorf("app: plan %s is not stored", campaign.PlanID)
 	}
 	return []errs.RecordRef{
-		{Type: "plan", ID: pl.ID, Name: pl.Name},
-		{Type: "campaign", ID: campaign.ID, Name: campaign.Name},
-		{Type: "initiative", ID: initiative.ID, Name: initiative.Name},
+		{Type: planKind, ID: pl.ID, Name: pl.Name},
+		{Type: campaignLevel, ID: campaign.ID, Name: campaign.Name},
+		{Type: initiativeLevel, ID: initiative.ID, Name: initiative.Name},
 	}, pl, nil
-}
-
-// businessUnits returns the plan's business units (017 data-model §3): the options chosen in the plan's
-// values of the plan-level Business unit attribute (002, Attribute.Role businessUnit), with their labels
-// and active flags now; none without that attribute or value.
-func (p *approvalsActivities) businessUnits(ctx context.Context, values settings.AttributeValues) ([]approval.Choice, error) {
-	attributes, err := p.settings.ListAttributes(ctx)
-	if err != nil {
-		return nil, err
-	}
-	units := []approval.Choice{}
-	for _, a := range attributes {
-		if a.Role != settings.RoleBusinessUnit || a.Level != settings.LevelPlan {
-			continue
-		}
-		var ids []string
-		if raw, found := values[a.ID]; found && json.Unmarshal(raw, &ids) != nil {
-			var one string
-			if json.Unmarshal(raw, &one) == nil && one != "" {
-				ids = []string{one}
-			}
-		}
-		for _, id := range ids {
-			option, found, err := p.settings.GetOption(ctx, id)
-			if err != nil {
-				return nil, err
-			}
-			if found {
-				units = append(units, approval.Choice{ID: option.ID, Label: option.Label, Active: option.Active})
-			}
-		}
-	}
-	return units, nil
 }
 
 // activityApprovalHooks implements activity.ApprovalHooks (feature 006) over the approvals service (008
@@ -284,7 +258,7 @@ var _ activity.ApprovalHooks = activityApprovalHooks{}
 
 // ApprovalRestarted ends the approval of after, which a re-approval change sent back from before's status
 // to Created.
-func (h activityApprovalHooks) ApprovalRestarted(ctx context.Context, a actor.Actor, before, after activity.Activity, changes []history.Change) error {
+func (h activityApprovalHooks) ApprovalRestarted(ctx context.Context, a actor.Actor, before, after activity.Activity, changes []history.Change) error { //nolint:revive // argument-limit 5: the signature of activity.ApprovalHooks
 	return h.svc.ApprovalRestarted(ctx, a, after.ID, string(before.Status), changes)
 }
 
