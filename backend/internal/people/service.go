@@ -38,10 +38,10 @@ type Service struct {
 }
 
 // NewService returns the people service. It keeps the records in repo, gives them readable IDs with
-// generator, logs their changes and deletes teams through hist, works in transactions of tx and reads the
-// time from now. Until UseCurrencies is called, US dollars are the only currency.
-func NewService(tx store.Transactor, repo Store, generator *ids.Generator, hist *history.Service, now clock.Clock) *Service {
-	return &Service{tx: tx, repo: repo, ids: generator, history: hist, now: now, currencies: OnlyUSD}
+// tools.IDs, logs their changes and deletes teams through tools.Log, works in transactions of tools.Tx and
+// reads the time from tools.Now. Until UseCurrencies is called, US dollars are the only currency.
+func NewService(tools history.Tools, repo Store) *Service {
+	return &Service{tx: tools.Tx, repo: repo, ids: tools.IDs, history: tools.Log, now: tools.Now, currencies: OnlyUSD}
 }
 
 // UsePlans tells people where the plans are (feature 004), for the plans a team is used by, the owner

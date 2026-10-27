@@ -81,7 +81,7 @@ func TestApprovalsAccess_RoleHolders_FR001(t *testing.T) {
 	db, now := seededStore(t)
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	historyService := history.NewService(db, history.NewJSONStore(), generator, now)
-	peopleService := people.NewService(db, people.NewJSONStore(), generator, historyService, now)
+	peopleService := people.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, people.NewJSONStore())
 	access := approvalsAccess{access: accessservice.NewService(db, accessservice.NewJSONStore(), generator, historyService,
 		accessDirectory{people: peopleService}, now)}
 	choices := approvalRuleChoices{settings: settings.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, settings.NewJSONStore())}

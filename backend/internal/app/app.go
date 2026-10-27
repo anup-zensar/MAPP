@@ -92,7 +92,7 @@ func (w *wiring) engine() (*gin.Engine, *telemetry.Telemetry, error) {
 func (w *wiring) organisation() *auth.Service {
 	s := w.set
 	w.history = history.NewService(s.Tx, s.History, w.generator, w.now)
-	w.people = people.NewService(s.Tx, s.People, w.generator, w.history, w.now)
+	w.people = people.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}, s.People)
 	authService := auth.NewService(s.Tx, s.Auth, s.People, w.cfg.DemoMode(), w.cfg.DemoPassword, w.now)
 	w.access = access.NewService(s.Tx, s.Access, w.generator, w.history, accessDirectory{people: w.people}, w.now)
 	w.people.UseAccess(peopleAccessHooks(w.access))

@@ -166,7 +166,7 @@ func (f *fixture) createTeam(t *testing.T, a Person, input TeamInput) TeamView {
 func (f *fixture) storedMemberships(t *testing.T) []Membership {
 	t.Helper()
 	var list []Membership
-	f.read(t, func(ctx context.Context, repo Store) (err error) {
+	f.read(t, func(ctx context.Context, repo JSONStore) (err error) {
 		list, err = repo.ListMemberships(ctx)
 		return err
 	})

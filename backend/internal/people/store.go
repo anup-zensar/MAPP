@@ -8,9 +8,6 @@ import "context"
 type Store interface {
 	// Get returns the person with id, and false when there is none.
 	Get(ctx context.Context, id string) (Person, bool, error)
-	// FindByEmail returns the person whose stored e-mail is email (people's e-mails are stored in lower
-	// case), and false when there is none.
-	FindByEmail(ctx context.Context, email string) (Person, bool, error)
 	// List returns every person, active or not, ordered by id.
 	List(ctx context.Context) ([]Person, error)
 	// Put saves p, replacing the person with the same id.
@@ -19,8 +16,6 @@ type Store interface {
 	GetPreferences(ctx context.Context, personID string) (Preferences, bool, error)
 	// PutPreferences saves the preferences of p.PersonID.
 	PutPreferences(ctx context.Context, p Preferences) error
-	// ListPreferences returns the saved preferences of everyone who changed one, ordered by person id.
-	ListPreferences(ctx context.Context) ([]Preferences, error)
 
 	// There is no DeletePerson: people are never deleted (003 FR-008).
 
