@@ -15,54 +15,41 @@ import (
 	"mapp/internal/platform/clock"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/ids"
-	"mapp/internal/platform/store"
 )
 
-// activityKind is feature 006's history kind of activities: approval actions are logged on the activity
-// (FR-026, plan "Activity-log entries").
 const activityKind = "activity"
 
-// maxCommentLength is the longest comment, reason or description, in characters (008-P16).
 const maxCommentLength = 2000
 
-// Service holds the rules of approval workflows, approval rounds and notifications.
 type Service struct {
-	tx         store.Transactor
-	repo       Store
-	people     People
-	activities Activities
-	ids        *ids.Generator
-	history    *history.Service
-	now        clock.Clock
-	// displayRates reads the reader's display currency (UseDisplayRates, D-213); nil shows USD.
-	displayRates DisplayRates
-	// access answers feature 014's questions (UseAccess); choices lists what rule conditions may name
-	// (UseRuleChoices). NewService starts with everyone allowed and no choices (017 plan, Ports).
-	access  Access
-	choices RuleChoices
-	// approvers says who may approve (UseApprovers, feature 014); nil: everyone.
-	approvers Approvers
+	tx           Transactor
+	repo         Store
+	people       People
+	activities   Activities
+	ids          *ids.Generator
+	history      *history.Service
+	now          clock.Clock
+	displayRates DisplayRates // nil shows USD
+	access       Access
+	choices      RuleChoices
+	approvers    Approvers // nil: everyone may approve
 }
 
-// NewService returns the approvals service. It keeps its records in repo, reads people from peopleRepo
-// and activities through activities, and changes records with tools.
+// NewService starts with everyone allowed and nothing for rule conditions to name, until UseAccess and UseRuleChoices.
 func NewService(tools history.Tools, repo Store, peopleRepo People, activities Activities) *Service {
 	return &Service{tx: tools.Tx, repo: repo, people: peopleRepo, activities: activities, ids: tools.IDs,
 		history: tools.Log, now: tools.Now, access: openAccess{}, choices: noChoices{}}
 }
 
-// UseAccess sets where approvals reads people's permissions, the access rule and the roles (feature 014).
 func (s *Service) UseAccess(access Access) {
 	s.access = access
 }
 
-// UseRuleChoices sets where approvals reads the activity types and business units of rule conditions.
 func (s *Service) UseRuleChoices(choices RuleChoices) {
 	s.choices = choices
 }
 
-// openAccess is the Access of a service without feature 014: everyone holds every permission, the access
-// rule is on and there are no roles (data-model §6: "everything allowed, rule on").
+// openAccess is a service without feature 014: everyone holds every permission, the access rule is on, no roles.
 type openAccess struct{}
 
 func (openAccess) CanApprove(_ context.Context, personIDs []string) (map[string]bool, error) {
@@ -85,14 +72,12 @@ func (openAccess) RoleHolders(context.Context, string, PlanFacts) ([]string, err
 	return []string{}, nil
 }
 
-// noChoices is the RuleChoices of a service without Settings: nothing to choose.
 type noChoices struct{}
 
 func (noChoices) ActivityTypes(context.Context) ([]Choice, error) { return []Choice{}, nil }
 
 func (noChoices) BusinessUnits(context.Context) ([]Choice, error) { return []Choice{}, nil }
 
-// activity returns the stored activity id, or not_found with the plan's message.
 func (s *Service) activity(ctx context.Context, id string) (ActivityFacts, error) {
 	facts, found, err := s.activities.Activity(ctx, id)
 	if err != nil {
@@ -104,13 +89,12 @@ func (s *Service) activity(ctx context.Context, id string) (ActivityFacts, error
 	return facts, nil
 }
 
-// directory is every person by id, read once per operation: names, initials and the live active flag.
+// directory is every person by id, read once per operation.
 type directory struct {
 	byID      map[string]people.Person
-	approving map[string]bool // who may approve (feature 014, FR-028); nil: access control is not wired
+	approving map[string]bool // nil: access control is not wired
 }
 
-// directory reads every person, and who of them may approve.
 func (s *Service) directory(ctx context.Context) (directory, error) {
 	list, err := s.people.List(ctx)
 	if err != nil {
@@ -128,8 +112,6 @@ func (s *Service) directory(ctx context.Context) (directory, error) {
 	return d, err
 }
 
-// person returns the person id as the API shows them, with their name now. An id nobody has is shown as
-// itself and inactive.
 func (d directory) person(id string) PersonView {
 	p, found := d.byID[id]
 	if !found {
@@ -138,15 +120,12 @@ func (d directory) person(id string) PersonView {
 	return PersonView{ID: p.ID, Name: p.Name, Initials: p.Initials(), Active: p.Active, CanApprove: d.canApprove(p.ID)}
 }
 
-// copied returns a person copied into a round or history entry (with their name at the time) as the API
-// shows them: that name, with the live active flag (FR-024 "(inactive)").
+// copied shows a person with the name copied at the time, and the live active flag.
 func (d directory) copied(a actor.Actor) PersonView {
 	return PersonView{ID: a.ID, Name: a.Name, Initials: people.Person{Name: a.Name}.Initials(), Active: d.byID[a.ID].Active,
 		CanApprove: d.canApprove(a.ID)}
 }
 
-// canApprove says whether the person id may approve (feature 014, FR-028); nil while access control is not
-// wired.
 func (d directory) canApprove(id string) *bool {
 	if d.approving == nil {
 		return nil
@@ -155,7 +134,6 @@ func (d directory) canApprove(id string) *bool {
 	return &can
 }
 
-// copiedAll returns copied for each of actors; never nil.
 func (d directory) copiedAll(actors []actor.Actor) []PersonView {
 	views := make([]PersonView, 0, len(actors))
 	for _, a := range actors {
@@ -164,7 +142,6 @@ func (d directory) copiedAll(actors []actor.Actor) []PersonView {
 	return views
 }
 
-// actors returns the people ids as actors with their names now, in order; never nil.
 func (d directory) actors(personIDs []string) []actor.Actor {
 	list := make([]actor.Actor, 0, len(personIDs))
 	for _, id := range personIDs {
@@ -174,7 +151,6 @@ func (d directory) actors(personIDs []string) []actor.Actor {
 	return list
 }
 
-// levelLabel is the label of the level at position n: its name, or "Level <n>" when it has none.
 func levelLabel(name string, n int) string {
 	if name == "" {
 		return fmt.Sprintf("Level %d", n)
@@ -182,7 +158,6 @@ func levelLabel(name string, n int) string {
 	return name
 }
 
-// names joins the names of actors with ", ".
 func names(actors []actor.Actor) string {
 	list := make([]string, 0, len(actors))
 	for _, a := range actors {
@@ -191,25 +166,21 @@ func names(actors []actor.Actor) string {
 	return strings.Join(list, ", ")
 }
 
-// includes reports whether personID is one of actors.
 func includes(actors []actor.Actor, personID string) bool {
 	return slices.ContainsFunc(actors, func(a actor.Actor) bool { return a.ID == personID })
 }
 
-// tooLong reports whether text has more than limit characters (characters, not bytes).
 func tooLong(text string, limit int) bool {
 	return utf8.RuneCountInString(text) > limit
 }
 
-// decidedConflict refuses a decision on a level or round that has moved on (FR-018, D-155):
-// version_conflict whose message says what happened and whose conflict says who and when.
+// decidedConflict refuses a decision on a level or round that has moved on, saying what happened, who and when.
 func decidedConflict(message, by string, at time.Time) *errs.Error {
 	conflict := errs.VersionConflict("", by, at)
 	conflict.Message = message
 	return conflict
 }
 
-// changeText is the sentence of one changed value of a restart (data model §3).
 func changeText(c ChangeText) string {
 	const notFilledIn = "Not filled in"
 	switch {
@@ -224,13 +195,11 @@ func changeText(c ChangeText) string {
 	}
 }
 
-// activityText names an activity in a notification: "'Launch film' (A-1042)".
 func activityText(facts ActivityFacts) string {
 	return fmt.Sprintf("'%s' (%s)", facts.Name, facts.ID)
 }
 
-// notifier writes the notifications of one approval action by a about an activity (data model §4): one
-// per person, whatever the number of sends, and never to a about their own action (FR-036).
+// notifier tells each person once per action, whatever the number of sends, and never the actor.
 type notifier struct {
 	service *Service
 	actor   actor.Actor
@@ -239,13 +208,11 @@ type notifier struct {
 	told    map[string]bool
 }
 
-// notifier starts the notifications of a's action on facts at the time at.
 func (s *Service) notifier(a actor.Actor, facts ActivityFacts, at time.Time) *notifier {
 	return &notifier{service: s, actor: a, facts: facts, at: at, told: map[string]bool{a.ID: true}}
 }
 
-// send writes one notification of kind for each recipient not told yet, inside the caller's Write. Empty
-// ids (an activity without owner) are skipped.
+// send skips an empty id: an activity without owner.
 func (n *notifier) send(ctx context.Context, recipientIDs []string, kind NotificationKind, title, text string) error {
 	for _, id := range recipientIDs {
 		if id == "" || n.told[id] {
@@ -267,8 +234,6 @@ func (n *notifier) send(ctx context.Context, recipientIDs []string, kind Notific
 	return nil
 }
 
-// quoted is the start of a comment as a notification quotes it: the first 80 characters, then "…" when
-// there is more (008-P16).
 func quoted(comment string) string {
 	runes := []rune(comment)
 	if len(runes) <= 80 {
@@ -277,7 +242,6 @@ func quoted(comment string) string {
 	return string(runes[:80]) + "…"
 }
 
-// idsOf returns the ids of actors, in order.
 func idsOf(actors []actor.Actor) []string {
 	list := make([]string, 0, len(actors))
 	for _, a := range actors {
@@ -286,14 +250,12 @@ func idsOf(actors []actor.Actor) []string {
 	return list
 }
 
-// statusLog is one approval action as the activity log records it on the activity (FR-026).
 type statusLog struct {
 	verb             string // "submitted", "approved level 1 of", …
-	oldStatus, newer string // the status change; both "" when the status stays
+	oldStatus, newer string // both "" when the status stays
 	comment, details string
 }
 
-// logOnActivity writes one statusChanged entry about facts, inside the caller's Write.
 func (s *Service) logOnActivity(ctx context.Context, a actor.Actor, facts ActivityFacts, entry statusLog) error {
 	changes := []history.Change{}
 	if entry.oldStatus != entry.newer {
