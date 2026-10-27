@@ -12,7 +12,7 @@ import (
 // Home's My teams / Everything switch is remembered per person: My teams by default, Everything once chosen,
 // back to My teams, which is stored as no value (so choosing it again saves nothing); any other value is
 // refused next to the field with the other problems, and nothing changes (009 FR-003, D-172).
-func TestUpdatePreferences_HomeScope_FR003(t *testing.T) {
+func TestUpdatePreferences_HomeScope_FR003(t *testing.T) { //nolint:gocyclo // 12: each choice of the switch and where it is stored, then the refused values
 	t.Parallel()
 	service, db := newTestService(t)
 	priya := newPerson("U-1002", "Priya Raman", true)
@@ -57,7 +57,7 @@ func TestUpdatePreferences_HomeScope_FR003(t *testing.T) {
 
 // TestUpdatePreferences_HistoryIncludeInside_FR012: the History section's include choice (feature 011) is
 // false by default, remembered for the person, saved only when it changes, and leaves the activity log alone.
-func TestUpdatePreferences_HistoryIncludeInside_FR012(t *testing.T) {
+func TestUpdatePreferences_HistoryIncludeInside_FR012(t *testing.T) { //nolint:gocyclo // 11: the default, then each choice and where it is remembered
 	t.Parallel()
 	service, db := newTestService(t)
 	priya := newPerson("U-1002", "Priya Raman", true)
@@ -92,7 +92,7 @@ func TestUpdatePreferences_HistoryIncludeInside_FR012(t *testing.T) {
 // Pinned plans are a display preference like the theme (018 FR-004, D-038, D-317): empty — never null —
 // until the person pins, kept per person in the order pinned (unknown ids included: a deleted plan's id is
 // harmless, 018 FR-007), shown by GET /api/v1/me from any browser, and never written to the activity log.
-func TestUpdatePreferences_PinnedPlans_RoundTrip_FR004(t *testing.T) {
+func TestUpdatePreferences_PinnedPlans_RoundTrip_FR004(t *testing.T) { //nolint:gocyclo // 12: pin then unpin, each seen in the answer, on GET /api/v1/me, by another person and in the log
 	t.Parallel()
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)

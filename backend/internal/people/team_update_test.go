@@ -116,7 +116,7 @@ func TestUpdateTeam_NoChangeNoVersionNoLog_FR028(t *testing.T) {
 
 // An update sends only the fields to change (D-203, D-210): a new colour alone keeps the name, the
 // description and every member, and the impact check of it warns about nobody.
-func TestUpdateTeam_OnlySentFieldsChange_D210(t *testing.T) {
+func TestUpdateTeam_OnlySentFieldsChange_D210(t *testing.T) { //nolint:gocyclo // 10: one update and its impact check, then the fields and the memberships in turn
 	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
