@@ -17,8 +17,6 @@ type Store interface {
 
 	// ListAssignments returns every role assignment, ordered by id.
 	ListAssignments(ctx context.Context) ([]Assignment, error)
-	// AssignmentsOfPerson returns the role assignments of the person personID, ordered by id.
-	AssignmentsOfPerson(ctx context.Context, personID string) ([]Assignment, error)
 	// PutAssignment saves a, replacing the assignment with the same id.
 	PutAssignment(ctx context.Context, a Assignment) error
 	// DeleteAssignment removes the assignment with id.

@@ -41,10 +41,11 @@ func newFixture(t *testing.T) *fixture {
 	}
 	clock := &testClock{now: start}
 	f := &fixture{
-		service: NewService(db, NewJSONStore(), people.NewJSONStore(), true, demoPassword, clock.Now),
-		db:      db,
-		dir:     dir,
-		clock:   clock,
+		service: NewService(db, NewJSONStore(), people.NewJSONStore(),
+			Options{DemoMode: true, DemoPassword: demoPassword, Now: clock.Now}),
+		db:    db,
+		dir:   dir,
+		clock: clock,
 	}
 	f.putPeople(t, priya, daniel, mei)
 	return f

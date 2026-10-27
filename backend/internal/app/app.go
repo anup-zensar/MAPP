@@ -93,8 +93,10 @@ func (w *wiring) organisation() *auth.Service {
 	s := w.set
 	w.history = history.NewService(s.Tx, s.History, w.generator, w.now)
 	w.people = people.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}, s.People)
-	authService := auth.NewService(s.Tx, s.Auth, s.People, w.cfg.DemoMode(), w.cfg.DemoPassword, w.now)
-	w.access = access.NewService(s.Tx, s.Access, w.generator, w.history, accessDirectory{people: w.people}, w.now)
+	authService := auth.NewService(s.Tx, s.Auth, s.People,
+		auth.Options{DemoMode: w.cfg.DemoMode(), DemoPassword: w.cfg.DemoPassword, Now: w.now})
+	w.access = access.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now},
+		s.Access, accessDirectory{people: w.people})
 	w.people.UseAccess(peopleAccessHooks(w.access))
 	return authService
 }
