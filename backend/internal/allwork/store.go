@@ -19,3 +19,8 @@ type Store interface {
 	// DeleteView removes the view with id; removing one that does not exist changes nothing.
 	DeleteView(ctx context.Context, id string) error
 }
+
+var (
+	_ Store = JSONStore{}
+	_ Store = (*PostgresStore)(nil)
+)

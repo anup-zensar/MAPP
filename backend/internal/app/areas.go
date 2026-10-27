@@ -204,7 +204,8 @@ func (w *wiring) views() {
 		history: w.history, financials: w.financials, financeAccess: financialAccess{tx: s.Tx, plans: s.Plans},
 	}
 	mount(w.signedIn, home.NewHandler(homeService),
-		allwork.NewHandler(allwork.NewService(s.Tx, s.AllWork, w.allWork, w.generator, w.now)))
+		allwork.NewHandler(allwork.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now},
+			s.AllWork, w.allWork)))
 }
 
 func (w *wiring) usesOfPeople() {
