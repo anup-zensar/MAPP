@@ -203,8 +203,10 @@ func (w *wiring) financialsArea() error {
 // are personal settings, not business records, so they have no history kinds (D-121).
 func (w *wiring) views() {
 	s := w.set
-	homeService := home.NewService(s.Tx, homeSources(w.people, s.Plans, w.plans, w.campaigns, w.activities,
-		w.approvals, w.history, w.settings.Rates))
+	homeService := home.NewService(s.Tx, homeReaders{
+		people: w.people, plansRepo: s.Plans, plans: w.plans, campaigns: w.campaigns, activities: w.activities,
+		approvals: w.approvals, history: w.history, rates: w.settings.Rates,
+	}.sources())
 	w.allWork = allWorkSource{
 		plans: w.plans, plansRepo: s.Plans, campaigns: w.campaigns, campaignsRepo: s.Campaigns,
 		activities: w.activities, activitiesRepo: s.Activities, lineItems: w.lineItems,

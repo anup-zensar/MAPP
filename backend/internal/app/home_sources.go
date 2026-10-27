@@ -17,22 +17,32 @@ import (
 	"mapp/internal/stores"
 )
 
-// homeSources builds the Sources of feature 009's Home over the services of features 003–008 and 011's
+// homeReaders are the services of features 003–008 and 011's activity log that feature 009's Home reads.
+type homeReaders struct {
+	people     *people.Service
+	plansRepo  stores.PlanStore
+	plans      *plans.Service
+	campaigns  *campaigns.Service
+	activities *activities.Service
+	approvals  *approvals.Service
+	history    *history.Service
+	rates      func(context.Context) (money.Rates, error)
+}
+
+// sources builds the Sources of feature 009's Home over the services of features 003–008 and 011's
 // activity log (009 plan "Inputs", D-171, D-196): what Home reads is what those features calculate for their
 // own pages, so every figure on Home equals the one there (FR-017). The names of those packages appear only
 // here. Every function joins the read transaction of the Home service.
-func homeSources(peopleService *people.Service, plansRepo stores.PlanStore, planService *plans.Service,
-	campaignsService *campaigns.Service, activitiesService *activities.Service, approvalsService *approvals.Service,
-	historyService *history.Service, rates func(context.Context) (money.Rates, error)) home.Sources {
+func (h homeReaders) sources() home.Sources {
 	return home.Sources{
 		RecentChanges: func(ctx context.Context, a actor.Actor, planIDs []string, limit int) (home.RecentChangesPage, error) {
-			return recentChanges(ctx, historyService, a, planIDs, limit)
+			return h.recentChanges(ctx, a, planIDs, limit)
 		},
 		MyTeams: func(ctx context.Context, a actor.Actor) ([]home.Team, error) {
-			return myTeams(ctx, peopleService, a)
+			return h.myTeams(ctx, a)
 		},
 		Plans: func(ctx context.Context, a actor.Actor) ([]home.Plan, error) {
-			overviews, err := planService.Overviews(ctx, a)
+			overviews, err := h.plans.Overviews(ctx, a)
 			if err != nil {
 				return nil, err
 			}
@@ -43,24 +53,24 @@ func homeSources(peopleService *people.Service, plansRepo stores.PlanStore, plan
 			return list, nil
 		},
 		Containers: func(ctx context.Context, a actor.Actor, ownerID string) ([]home.Container, error) {
-			current, err := rates(ctx)
+			current, err := h.rates(ctx)
 			if err != nil {
 				return nil, err
 			}
-			return ownedContainers(ctx, plansRepo, campaignsService, a, ownerID, current)
+			return h.ownedContainers(ctx, a, ownerID, current)
 		},
 		Activities: func(ctx context.Context, a actor.Actor, ownerID string) ([]home.Activity, error) {
-			current, err := rates(ctx)
+			current, err := h.rates(ctx)
 			if err != nil {
 				return nil, err
 			}
-			return ownedActivities(ctx, activitiesService, approvalsService, a, ownerID, current)
+			return h.ownedActivities(ctx, a, ownerID, current)
 		},
 		WaitingForMe: func(ctx context.Context, a actor.Actor) ([]home.Waiting, error) {
-			return waitingFor(ctx, approvalsService, a)
+			return h.waitingFor(ctx, a)
 		},
 		DisplayCurrency: func(ctx context.Context, a actor.Actor) (home.Currency, error) {
-			display, err := peopleService.DisplayRateOf(ctx, a.ID)
+			display, err := h.people.DisplayRateOf(ctx, a.ID)
 			if err != nil {
 				return home.Currency{}, err
 			}
@@ -74,12 +84,12 @@ func homeSources(peopleService *people.Service, plansRepo stores.PlanStore, plan
 }
 
 // myTeams returns the teams a belongs to, active or not (003).
-func myTeams(ctx context.Context, peopleService *people.Service, a actor.Actor) ([]home.Team, error) {
-	teamIDs, err := peopleService.TeamIDsOf(ctx, a.ID)
+func (h homeReaders) myTeams(ctx context.Context, a actor.Actor) ([]home.Team, error) {
+	teamIDs, err := h.people.TeamIDsOf(ctx, a.ID)
 	if err != nil {
 		return nil, err
 	}
-	refs, err := peopleService.TeamRefs(ctx, teamIDs)
+	refs, err := h.people.TeamRefs(ctx, teamIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -107,52 +117,57 @@ func homePlan(o plans.Overview) home.Plan {
 
 // ownedContainers returns the campaigns and initiatives ownerID owns, in every plan the person may see, as
 // the plan tree shows them (005): budgets, roll-ups and completeness worked out by the campaigns' own view builder (D-090).
-func ownedContainers(ctx context.Context, plansRepo stores.PlanStore, campaignsService *campaigns.Service, a actor.Actor,
-	ownerID string, rates money.Rates) ([]home.Container, error) {
+func (h homeReaders) ownedContainers(ctx context.Context, a actor.Actor, ownerID string, rates money.Rates) ([]home.Container, error) {
 	list := []home.Container{}
 	if ownerID == "" {
 		return list, nil
 	}
-	all, err := plansRepo.ListInScope(ctx, authz.ScopeOf(ctx)) // only plans the person may see (014 FR-007)
+	all, err := h.plansRepo.ListInScope(ctx, authz.ScopeOf(ctx)) // only plans the person may see (014 FR-007)
 	if err != nil {
 		return nil, err
 	}
-	owns := func(id *string) bool { return id != nil && *id == ownerID }
 	for _, p := range all {
-		tree, err := campaignsService.ListPlanCampaigns(ctx, a, p.ID)
+		tree, err := h.campaigns.ListPlanCampaigns(ctx, a, p.ID)
 		if err != nil {
 			return nil, err
 		}
 		planRef := errs.RecordRef{Type: "plan", ID: p.ID, Name: p.Name}
 		for _, c := range tree.Items {
-			campaignRef := errs.RecordRef{Type: "campaign", ID: c.ID, Name: c.Name}
-			if owns(c.OwnerID) {
-				list = append(list, home.Container{
-					Type: "campaign", ID: c.ID, Name: c.Name, Plan: planRef, Path: []errs.RecordRef{planRef},
-					Budget: usdOf(c.Budget, rates), PlannedCost: usdOf(c.BudgetAndCost.PlannedCost, rates),
-					RemainingBudget: usdOf(c.BudgetAndCost.RemainingForChildren, rates), Missing: c.Completeness.Missing,
-					ItemsBelow: c.Completeness.ItemsBelowNeedingAttention, UpdatedAt: c.UpdatedAt,
-				})
-			}
-			for _, i := range c.Initiatives {
-				if owns(i.OwnerID) {
-					list = append(list, home.Container{
-						Type: "initiative", ID: i.ID, Name: i.Name, Plan: planRef, Path: []errs.RecordRef{planRef, campaignRef},
-						Budget: usdOf(i.Budget, rates), PlannedCost: usdOf(i.BudgetAndCost.PlannedCost, rates), Missing: i.Completeness.Missing,
-						ItemsBelow: i.Completeness.ItemsBelowNeedingAttention, UpdatedAt: i.UpdatedAt,
-					})
-				}
-			}
+			list = append(list, ownedIn(c, planRef, ownerID, rates)...)
 		}
 	}
 	return list, nil
 }
 
+// ownedIn returns the campaign c and those of its initiatives that ownerID owns.
+func ownedIn(c campaigns.CampaignView, planRef errs.RecordRef, ownerID string, rates money.Rates) []home.Container {
+	var list []home.Container
+	owns := func(id *string) bool { return id != nil && *id == ownerID }
+	campaignRef := errs.RecordRef{Type: campaignLevel, ID: c.ID, Name: c.Name}
+	if owns(c.OwnerID) {
+		list = append(list, home.Container{
+			Type: campaignLevel, ID: c.ID, Name: c.Name, Plan: planRef, Path: []errs.RecordRef{planRef},
+			Budget: usdOf(c.Budget, rates), PlannedCost: usdOf(c.BudgetAndCost.PlannedCost, rates),
+			RemainingBudget: usdOf(c.BudgetAndCost.RemainingForChildren, rates), Missing: c.Completeness.Missing,
+			ItemsBelow: c.Completeness.ItemsBelowNeedingAttention, UpdatedAt: c.UpdatedAt,
+		})
+	}
+	for _, i := range c.Initiatives {
+		if owns(i.OwnerID) {
+			list = append(list, home.Container{
+				Type: initiativeLevel, ID: i.ID, Name: i.Name, Plan: planRef, Path: []errs.RecordRef{planRef, campaignRef},
+				Budget: usdOf(i.Budget, rates), PlannedCost: usdOf(i.BudgetAndCost.PlannedCost, rates), Missing: i.Completeness.Missing,
+				ItemsBelow: i.Completeness.ItemsBelowNeedingAttention, UpdatedAt: i.UpdatedAt,
+			})
+		}
+	}
+	return list
+}
+
 // ownedActivities returns the activities ownerID owns, in every plan, as their pages show them (006, 007),
 // each Declined one with the decline its Approval section shows (008).
-func ownedActivities(ctx context.Context, activitiesService *activities.Service, approvalsService *approvals.Service,
-	a actor.Actor, ownerID string, rates money.Rates) ([]home.Activity, error) {
-	owned, err := activitiesService.OwnedBy(ctx, a, ownerID)
+func (h homeReaders) ownedActivities(ctx context.Context, a actor.Actor, ownerID string, rates money.Rates) ([]home.Activity, error) {
+	owned, err := h.activities.OwnedBy(ctx, a, ownerID)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +180,7 @@ func ownedActivities(ctx context.Context, activitiesService *activities.Service,
 			Missing: o.Missing, LineItemsNeedingAttention: o.LineItemsNeedingAttention, UpdatedAt: o.UpdatedAt,
 		}
 		if o.Status == activities.StatusDeclined {
-			approval, err := approvalsService.Approval(ctx, a, o.ID)
+			approval, err := h.approvals.Approval(ctx, a, o.ID)
 			if err != nil {
 				return nil, err
 			}
@@ -179,8 +194,8 @@ func ownedActivities(ctx context.Context, activitiesService *activities.Service,
 }
 
 // waitingFor returns the Waiting for me tab of the Approvals page for a, oldest submission first (008).
-func waitingFor(ctx context.Context, approvalsService *approvals.Service, a actor.Actor) ([]home.Waiting, error) {
-	rows, err := approvalsService.Inbox(ctx, a, approvals.TabWaiting)
+func (h homeReaders) waitingFor(ctx context.Context, a actor.Actor) ([]home.Waiting, error) {
+	rows, err := h.approvals.Inbox(ctx, a, approvals.TabWaiting)
 	if err != nil {
 		return nil, err
 	}
@@ -219,9 +234,8 @@ var planningKinds = []string{"plan", "campaign", "initiative", "activity", "line
 
 // recentChanges returns the newest activity-log entries about the planning records of the plans planIDs
 // (nil: every plan), at most limit, as 011's activity log shows them (QueryLog), for Home's Recent changes.
-func recentChanges(ctx context.Context, historyService *history.Service, a actor.Actor, planIDs []string,
-	limit int) (home.RecentChangesPage, error) {
-	page, err := historyService.QueryLog(ctx, a, history.LogQuery{RecordTypes: planningKinds, PlanIDs: planIDs, Limit: limit})
+func (h homeReaders) recentChanges(ctx context.Context, a actor.Actor, planIDs []string, limit int) (home.RecentChangesPage, error) {
+	page, err := h.history.QueryLog(ctx, a, history.LogQuery{RecordTypes: planningKinds, PlanIDs: planIDs, Limit: limit})
 	if err != nil {
 		return home.RecentChangesPage{}, err
 	}
