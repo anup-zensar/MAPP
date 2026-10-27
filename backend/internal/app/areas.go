@@ -144,10 +144,11 @@ func (w *wiring) samplesArea() error {
 
 func (w *wiring) approvalsArea() error {
 	s := w.set
-	w.approvals = approvals.NewService(s.Tx, s.Approvals, s.People, &approvalsActivities{
+	tools := history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}
+	w.approvals = approvals.NewService(tools, s.Approvals, s.People, &approvalsActivities{
 		activities: s.Activities, lineItems: s.LineItems, campaigns: s.Campaigns, plans: s.Plans, settings: s.Settings,
 		rates: w.settings.Rates, check: w.activities.SubmitCheck, now: w.now,
-	}, w.generator, w.history, w.now)
+	})
 	if err := w.register(w.approvals.Kinds()); err != nil {
 		return err
 	}

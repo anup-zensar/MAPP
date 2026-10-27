@@ -60,3 +60,8 @@ type Store interface {
 type People interface {
 	List(ctx context.Context) ([]people.Person, error)
 }
+
+var (
+	_ Store = (*PostgresStore)(nil)
+	_ Store = JSONStore{}
+)

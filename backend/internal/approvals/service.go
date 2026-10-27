@@ -45,12 +45,10 @@ type Service struct {
 }
 
 // NewService returns the approvals service. It keeps its records in repo, reads people from peopleRepo
-// and activities through activities, gives out readable IDs with generator, logs through hist, works in
-// transactions of tx and reads the time from now.
-func NewService(tx store.Transactor, repo Store, peopleRepo People, activities Activities,
-	generator *ids.Generator, hist *history.Service, now clock.Clock) *Service {
-	return &Service{tx: tx, repo: repo, people: peopleRepo, activities: activities, ids: generator, history: hist, now: now,
-		access: openAccess{}, choices: noChoices{}}
+// and activities through activities, and changes records with tools.
+func NewService(tools history.Tools, repo Store, peopleRepo People, activities Activities) *Service {
+	return &Service{tx: tools.Tx, repo: repo, people: peopleRepo, activities: activities, ids: tools.IDs,
+		history: tools.Log, now: tools.Now, access: openAccess{}, choices: noChoices{}}
 }
 
 // UseAccess sets where approvals reads people's permissions, the access rule and the roles (feature 014).
