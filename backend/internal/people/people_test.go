@@ -11,8 +11,7 @@ import (
 	"mapp/internal/platform/record"
 )
 
-// A new person is saved active with the next U- id; the log gets their "created" entry and a "changed"
-// entry for each of their teams (FR-001, FR-028, US1 scenario 1).
+// The log gets a "created" entry, then a "changed" entry for each of the person's teams.
 func TestCreatePerson_SavedActiveAndLogged_FR001_FR028(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -46,7 +45,6 @@ func TestCreatePerson_SavedActiveAndLogged_FR001_FR028(t *testing.T) {
 	}
 }
 
-// Every problem of a person form is reported at once (FR-002, SC-007), and nothing is saved.
 func TestCreatePerson_AllProblemsAtOnce_FR002_SC007(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -88,8 +86,7 @@ func TestCreatePerson_AllProblemsAtOnce_FR002_SC007(t *testing.T) {
 	assertLog(t, f, nil)
 }
 
-// E-mails are stored without surrounding spaces and in lower case, the sign-in name feature 001 looks up
-// (FR-002, spec edge case); the name and job title are trimmed.
+// The e-mail is the sign-in name: stored trimmed and in lower case; the name and job title are trimmed.
 func TestCreatePerson_EmailTrimmedAndLowerCase_FR002(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -106,8 +103,7 @@ func TestCreatePerson_EmailTrimmedAndLowerCase_FR002(t *testing.T) {
 	}
 }
 
-// An e-mail may belong to one person only, active or not, in any letter case; the message names who has it
-// and, for an inactive person, suggests reactivating them (FR-002, US1 scenario 2).
+// The message names who has the e-mail and, for an inactive person, suggests reactivating them.
 func TestCreatePerson_DuplicateEmailNamesHolder_FR002(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -124,7 +120,6 @@ func TestCreatePerson_DuplicateEmailNamesHolder_FR002(t *testing.T) {
 		Message: "jane.doe@shell.com already belongs to Jane Doe (inactive) — reactivate them instead."}))
 }
 
-// A person created with teams shows in those teams' members at once (FR-012).
 func TestCreatePerson_WithTeamsShowsOnBothSides_FR012(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -150,7 +145,6 @@ func TestCreatePerson_WithTeamsShowsOnBothSides_FR012(t *testing.T) {
 	}
 }
 
-// Only active teams can be added to a person, and only teams that exist (FR-011, D-070).
 func TestCreatePerson_InactiveOrUnknownTeamRefused_FR011(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -167,8 +161,7 @@ func TestCreatePerson_InactiveOrUnknownTeamRefused_FR011(t *testing.T) {
 	))
 }
 
-// The People list and every picker show everyone, active or not, with their teams; people are sorted by
-// name ignoring letter case, two people with the same name by e-mail; teams by name (FR-001, FR-012).
+// People sort by name ignoring letter case, then by e-mail; their teams sort by name.
 func TestListPeople_EveryoneSortedWithTeams_FR001(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -220,9 +213,7 @@ func TestListPeople_EveryoneSortedWithTeams_FR001(t *testing.T) {
 	}
 }
 
-// A person's details count what they own and approve: the plans they own from feature 004 (plans in the
-// recycle bin left out), then the counts of later features in the order they were added, owners before
-// approvers; zero counts are left out, and the label is singular for 1 (FR-004, D-067).
+// Owned plans in the recycle bin are left out; then the hooks' counts in the order added, without zeros.
 func TestGetPerson_UsageCountsFromHooks_FR004(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -276,7 +267,7 @@ func TestGetPerson_UsageCountsFromHooks_FR004(t *testing.T) {
 	}
 }
 
-// People are never deleted (FR-008), so an unknown id is a wrong id: not_found with this package's message.
+// People are never deleted, so an unknown id is a wrong id: not_found with this package's message.
 func TestGetPerson_NotFound_FR008(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -287,10 +278,9 @@ func TestGetPerson_NotFound_FR008(t *testing.T) {
 	assertError(t, err, errs.NotFound("This person doesn't exist."))
 }
 
-// putPerson stores p through the repository, replacing the person with the same id.
 func (f *fixture) putPerson(t *testing.T, p Person) {
 	t.Helper()
-	err := f.db.Write(t.Context(), func(ctx context.Context) error { return NewJSONStore().Put(ctx, p) })
+	err := f.db.Write(t.Context(), func(ctx context.Context) error { return f.store.Put(ctx, p) })
 	if err != nil {
 		t.Fatalf("Put(%s): %v", p.ID, err)
 	}

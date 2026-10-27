@@ -12,57 +12,44 @@ import (
 	"mapp/internal/platform/clock"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/ids"
-	"mapp/internal/platform/store"
 )
 
-// themes are the values a person can choose for Preferences.Theme.
 var themes = []string{themeSystem, themeLight, themeDark}
 
-// planIDPattern is the form of a plan id in PinnedPlanIDs (018 FR-005). Whether the plan exists is not
-// checked: an unknown or deleted plan's id is harmless (018 FR-007).
+// planIDPattern checks only the form: an unknown or deleted plan's id is harmless.
 var planIDPattern = regexp.MustCompile(`^P-\d+$`)
 
-// Service holds the rules about people, teams, team memberships and preferences.
 type Service struct {
-	tx      store.Transactor
+	tx      Transactor
 	repo    Store
 	ids     *ids.Generator
 	history *history.Service
 	now     clock.Clock
 
-	// The hooks of later features (usage.go), set by internal/app before the API serves requests.
-	plans      PlanSource     // nil until feature 004: no plan uses a team or has an owner
-	usages     []PersonUsage  // in registration order
-	currencies CurrencySource // OnlyUSD until feature 002
-	access     AccessHooks    // feature 014 (access.go); unset: no roles
+	// Set by internal/app before the API serves requests; nil plans: no plan uses a team or has an owner.
+	plans      PlanSource
+	usages     []PersonUsage
+	currencies CurrencySource
+	access     AccessHooks
 }
 
-// NewService returns the people service. It keeps the records in repo, gives them readable IDs with
-// tools.IDs, logs their changes and deletes teams through tools.Log, works in transactions of tools.Tx and
-// reads the time from tools.Now. Until UseCurrencies is called, US dollars are the only currency.
+// NewService knows US dollars as the only currency until UseCurrencies is called.
 func NewService(tools history.Tools, repo Store) *Service {
 	return &Service{tx: tools.Tx, repo: repo, ids: tools.IDs, history: tools.Log, now: tools.Now, currencies: OnlyUSD}
 }
 
-// UsePlans tells people where the plans are (feature 004), for the plans a team is used by, the owner
-// warnings of membership changes and the plans a person owns (D-060).
 func (s *Service) UsePlans(src PlanSource) {
 	s.plans = src
 }
 
-// AddPersonUsage adds one count of what a person owns or approves (features 005, 006, 008), shown in the
-// person's details after the plans they own (FR-004).
 func (s *Service) AddPersonUsage(u PersonUsage) {
 	s.usages = append(s.usages, u)
 }
 
-// UseCurrencies tells people which currencies exist (feature 002), for display currencies and their rates.
 func (s *Service) UseCurrencies(src CurrencySource) {
 	s.currencies = src
 }
 
-// allPlans returns every plan of the PlanSource, stored and in the recycle bin, inside the caller's
-// transaction; none before feature 004 is wired.
 func (s *Service) allPlans(ctx context.Context) ([]PlanUse, error) {
 	if s.plans == nil {
 		return nil, nil
@@ -70,9 +57,7 @@ func (s *Service) allPlans(ctx context.Context) ([]PlanUse, error) {
 	return s.plans(ctx)
 }
 
-// ActivePeople returns the people who can sign in, sorted by name, as the sign-in page lists them
-// (FR-001). It takes no actor because the sign-in page needs it before anyone has signed in. The list is
-// empty, never nil, when no demo data was loaded (FR-028).
+// ActivePeople takes no actor: the sign-in page lists them before anyone has signed in.
 func (s *Service) ActivePeople(ctx context.Context) ([]DemoPerson, error) {
 	var everyone []Person
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -95,10 +80,7 @@ func (s *Service) ActivePeople(ctx context.Context) ([]DemoPerson, error) {
 	return active, nil
 }
 
-// UpdatePreferences changes the preferences of the signed-in person a (FR-011, FR-014; 003 FR-023 –
-// FR-025): only the fields that were sent change. It returns the preferences after the change. They are
-// saved with the person, so every browser they sign in from shows them (003 FR-025). Preferences are not
-// business records, so the change has no version and is not written to the activity log (D-038, D-062).
+// UpdatePreferences changes only the fields sent; preferences have no version and no log entry.
 func (s *Service) UpdatePreferences(ctx context.Context, a actor.Actor, update PreferencesUpdate) (PreferencesView, error) {
 	var view PreferencesView
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -121,7 +103,7 @@ func (s *Service) UpdatePreferences(ctx context.Context, a actor.Actor, update P
 			changed.DateFormat = *update.DateFormat
 		}
 		if update.HomeScope != nil {
-			// The default, My teams, is stored as no value, so choosing it again saves nothing (009 D-172).
+			// My teams, the default, is stored as no value, so choosing it again saves nothing.
 			changed.HomeScope = *update.HomeScope
 			if changed.HomeScope == HomeScopeMyTeams {
 				changed.HomeScope = ""
@@ -131,11 +113,10 @@ func (s *Service) UpdatePreferences(ctx context.Context, a actor.Actor, update P
 			changed.HistoryIncludeInside = *update.HistoryIncludeInside
 		}
 		if update.PinnedPlanIDs != nil {
-			// A repeated id pins the plan once: duplicates are dropped, keeping the order they were
-			// sent — the order the person pinned in (018 FR-005, D-317).
+			// A repeated id pins the plan once, keeping the order the person pinned in.
 			changed.PinnedPlanIDs = uniqueIDs(*update.PinnedPlanIDs)
 		}
-		var currencies []Currency // needed only to choose another display currency
+		var currencies []Currency
 		if changed.DisplayCurrency != current.DisplayCurrency {
 			if currencies, err = s.currencies(ctx); err != nil {
 				return err
@@ -160,9 +141,7 @@ func (s *Service) UpdatePreferences(ctx context.Context, a actor.Actor, update P
 	return view, nil
 }
 
-// DisplayCurrencies returns the currencies the signed-in person a can show amounts in, sorted by code (003
-// FR-023): every active currency of feature 002, and their current display currency when it has been set
-// inactive since they chose it: they keep it (D-063), but nobody can choose it again.
+// DisplayCurrencies includes the person's current one even when it was set inactive after they chose it.
 func (s *Service) DisplayCurrencies(ctx context.Context, a actor.Actor) ([]DisplayCurrencyOption, error) {
 	var options []DisplayCurrencyOption
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -189,8 +168,6 @@ func (s *Service) DisplayCurrencies(ctx context.Context, a actor.Actor) ([]Displ
 	return options, nil
 }
 
-// preferences returns the saved preferences of a person, or the defaults when they have saved none. A
-// record saved by feature 001 gets the default display currency and date format (003 data model §4).
 func (s *Service) preferences(ctx context.Context, personID string) (Preferences, error) {
 	prefs, found, err := s.repo.GetPreferences(ctx, personID)
 	if err != nil {
@@ -202,12 +179,7 @@ func (s *Service) preferences(ctx context.Context, personID string) (Preferences
 	return prefs.withDefaults(), nil
 }
 
-// validatePreferences checks the preferences changed, which were current before the change and were sent as
-// update, against the rules of data model §2 and 003 data model §4, and reports every problem at once. A
-// display currency other than the current one must be one of the active currencies among currencies: a
-// display currency set inactive after the person chose it is kept (spec edge case), but cannot be chosen
-// again (003 FR-023). The date format is one of DateFormats (003 FR-024). The home scope is checked as it was
-// sent: My teams or Everything (009 FR-003).
+// validatePreferences lets a person keep a display currency set inactive, but not choose it again.
 func validatePreferences(current, changed Preferences, update PreferencesUpdate, currencies []Currency) error {
 	var problems errs.Problems
 	if !slices.Contains(themes, changed.Theme) {
@@ -223,8 +195,6 @@ func validatePreferences(current, changed Preferences, update PreferencesUpdate,
 	if update.HomeScope != nil && *update.HomeScope != HomeScopeMyTeams && *update.HomeScope != HomeScopeEverything {
 		problems.Add("homeScope", chooseHomeScopeMessage)
 	}
-	// Pinned plans, checked after the dedupe (018 FR-005, FR-006): only plan ids, at most 100. Unknown
-	// ids are allowed — the Plans list simply doesn't show them (FR-007).
 	if update.PinnedPlanIDs != nil {
 		if slices.ContainsFunc(changed.PinnedPlanIDs, func(id string) bool { return !planIDPattern.MatchString(id) }) {
 			problems.Add("pinnedPlanIds", pinPlanIDsMessage)
@@ -236,26 +206,18 @@ func validatePreferences(current, changed Preferences, update PreferencesUpdate,
 	return problems.Err()
 }
 
-// The checks below are shared by the forms of people and teams. Each adds its problem to problems, so
-// that every problem of a request is reported at once (SC-007).
-
-// checkLength adds message for field when text, already trimmed, has more than limit characters
-// (characters, not bytes: "é" counts as one).
 func checkLength(problems *errs.Problems, field, text string, limit int, message string) {
 	if utf8.RuneCountInString(text) > limit {
 		problems.Add(field, message)
 	}
 }
 
-// checkVersionSent adds the version problem when an update or status action sent no version, or one below
-// 1: the version check cannot work without it (001 research R5).
 func checkVersionSent(problems *errs.Problems, version *int) {
 	if version == nil || *version < 1 {
 		problems.Add("version", reloadMessage)
 	}
 }
 
-// checkStatusUpdate reports the problems of the body of a status action, {active, version}: both are needed.
 func checkStatusUpdate(update StatusUpdate) error {
 	var problems errs.Problems
 	if update.Active == nil {
@@ -265,8 +227,6 @@ func checkStatusUpdate(update StatusUpdate) error {
 	return problems.Err()
 }
 
-// statusVerb is the log verb of a status action: "reactivated" when the record becomes active,
-// "deactivated" when it becomes inactive.
 func statusVerb(active bool) string {
 	if active {
 		return verbReactivated
@@ -274,8 +234,7 @@ func statusVerb(active bool) string {
 	return verbDeactivated
 }
 
-// uniqueIDs returns ids without repeats, in the order they were sent: a repeated id in a request is
-// ignored, never a second membership (003 data model §3). Never nil.
+// uniqueIDs keeps the order the ids were sent; never nil.
 func uniqueIDs(ids []string) []string {
 	list := []string{}
 	for _, id := range ids {
