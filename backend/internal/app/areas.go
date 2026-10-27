@@ -85,8 +85,13 @@ func (w *wiring) buildActivities() {
 		Plans: s.Plans, Hierarchy: s.Campaigns, Settings: w.settings, People: s.People,
 		Workflows: activityWorkflows{repo: s.Approvals},
 	})
-	w.lineItems = lineitems.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}, s.LineItems,
-		lineItemDeps(w.settings, s.Settings, w.activities, s.Activities, s.Campaigns, s.Plans, s.People, w.people))
+	w.lineItems = lineitems.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}, s.LineItems, lineitems.Deps{
+		Activities: lineItemActivities{
+			activities: s.Activities, campaigns: s.Campaigns, plans: s.Plans, settings: w.settings, service: w.activities,
+		},
+		Currencies: w.settings, FinanceBudgets: lineItemBudgets{repo: s.Settings},
+		Attributes: lineItemAttributes{settings: w.settings}, People: lineItemPeople{repo: s.People, service: w.people},
+	})
 	w.activities.UseLineItems(lineItemsForActivities{svc: w.lineItems})
 	w.activities.UseDisplayRates(w.people)
 }
@@ -198,8 +203,10 @@ func (w *wiring) financialsArea() error {
 // are personal settings, not business records, so they have no history kinds (D-121).
 func (w *wiring) views() {
 	s := w.set
-	homeService := home.NewService(s.Tx, homeSources(w.people, s.Plans, w.plans, w.campaigns, w.activities,
-		w.approvals, w.history, w.settings.Rates))
+	homeService := home.NewService(s.Tx, homeReaders{
+		people: w.people, plansRepo: s.Plans, plans: w.plans, campaigns: w.campaigns, activities: w.activities,
+		approvals: w.approvals, history: w.history, rates: w.settings.Rates,
+	}.sources())
 	w.allWork = allWorkSource{
 		plans: w.plans, plansRepo: s.Plans, campaigns: w.campaigns, campaignsRepo: s.Campaigns,
 		activities: w.activities, activitiesRepo: s.Activities, lineItems: w.lineItems,
