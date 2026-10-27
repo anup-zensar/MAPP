@@ -8,7 +8,7 @@ The JSON file store, kept since feature 023 only as the tests' stand-in, is repl
 in-memory fakes and deleted. A small shared package, `internal/platform/fake`, gives the fakes their
 transaction (`fake.DB`), their tables (`fake.Table[T]`) and the readable-ID counters (`fake.Counters`).
 Each business area gets a fake of its store in `internal/<area>/<area>test`; `internal/stores/storestest`
-gathers them into an in-memory `stores.Set`, which `apitest` loads with the demo data through `seed.Load`.
+gathers them into an in-memory `stores.Set`; `apitest.DemoDB` loads the demo data into it through `seed.Load`.
 Behaviour, SQL and the API contract don't change.
 
 ## Technical Context
@@ -86,7 +86,7 @@ Per area:
 
 ## The whole API in memory
 
-`internal/stores/storestest`: `New(db *fake.DB) stores.Set` builds every area's fake on one DB; `Demo`
+`internal/stores/storestest`: `New(db *fake.DB) stores.Set` builds every area's fake on one DB; `apitest.DemoDB`
 loads the demo data once per test binary with `seed.Load` and returns a copy (`fake.DB.Copy`) per call.
 `apitest.New` builds the API with `app.New(cfg, set, clock)` on it, so the access matrix and every contract
 check run as before.

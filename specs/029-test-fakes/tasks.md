@@ -37,7 +37,7 @@ comment budget for every touched file (FR-001, FR-002, FR-005, FR-007).
 
 ## Phase 4: User Story 2 — the whole API in memory (P1)
 
-- [x] T017 [US2] `internal/stores/storestest`: `New` and `Demo` (seed.Load once, a copy per call);
+- [x] T017 [US2] `internal/stores/storestest.New`; `apitest.DemoDB` (seed.Load once, a copy per call);
   `stores.Transactor` (FR-004, FR-005)
 - [x] T018 [US2] `apitest` on `storestest`; its options for shared data and an empty set (FR-004)
 - [x] T019 [US2] activity's demo-data fixture, `seed` tests, `internal/app` tests and `ids` tests on fakes
