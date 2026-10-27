@@ -32,9 +32,7 @@ func (s *Service) Decline(ctx context.Context, a actor.Actor, activityID string,
 	return s.decide(ctx, a, activityID, in, ActionDeclined)
 }
 
-// deciding is one decision inside decide's Write: what a decides, with which comment and when, on the current
-// level of the open round of the activity, with the round's history entries, the current delegations and
-// a's authority.
+// deciding is one decision inside decide's Write, with the round's entries, the delegations and a's authority.
 type deciding struct {
 	a       actor.Actor
 	kind    ActionKind
@@ -82,8 +80,6 @@ func (s *Service) decide(ctx context.Context, a actor.Actor, activityID string, 
 	return approval, nil
 }
 
-// decisionProblems are every problem of a decision request at once: the round and level it names, and its
-// comment, which a decline needs.
 func decisionProblems(in DecisionInput, decision ActionKind, comment string) error {
 	var problems errs.Problems
 	if in.RoundID == "" {
@@ -101,8 +97,7 @@ func decisionProblems(in DecisionInput, decision ActionKind, comment string) err
 	return problems.Err()
 }
 
-// roundToDecide returns the round in.RoundID of the activity if it is open at in.Level, or why a decision
-// on it comes too late.
+// roundToDecide returns the round in.RoundID if it is open at in.Level, or why a decision comes too late.
 func (s *Service) roundToDecide(ctx context.Context, facts ActivityFacts, in DecisionInput) (Round, error) {
 	round, err := s.roundOf(ctx, facts, in.RoundID)
 	if err != nil {
@@ -114,8 +109,7 @@ func (s *Service) roundToDecide(ctx context.Context, facts ActivityFacts, in Dec
 	return round, nil
 }
 
-// decidingOn reads whether a may decide the current level of round, and in which capacity: the round's
-// history entries, the current delegations and a's authority, or a's refusal.
+// decidingOn reads what a's decision on the current level of round needs, or a's refusal.
 func (s *Service) decidingOn(ctx context.Context, a actor.Actor, facts ActivityFacts, round Round) (deciding, error) {
 	all, err := s.repo.ActionsOf(ctx, facts.ID)
 	if err != nil {
@@ -144,8 +138,7 @@ func (s *Service) decidingOn(ctx context.Context, a actor.Actor, facts ActivityF
 	return deciding{a: a, facts: facts, round: round, entries: entries, dl: dl, au: au}, nil
 }
 
-// recordDecision stores dg's decision: its history entry, the round moved on or ended, the activity's new
-// status and its log entry. It returns the activity after the decision.
+// recordDecision stores dg's decision, the round after it and the activity's log, and returns the activity.
 func (s *Service) recordDecision(ctx context.Context, dg deciding) (ActivityFacts, error) {
 	entry, err := s.decisionEntry(ctx, dg)
 	if err != nil {
@@ -172,7 +165,6 @@ func (s *Service) recordDecision(ctx context.Context, dg deciding) (ActivityFact
 	return updated, nil
 }
 
-// decisionEntry stores the history entry of dg's decision on the current level, with its capacity.
 func (s *Service) decisionEntry(ctx context.Context, dg deciding) (Action, error) {
 	level := dg.round.Levels[dg.round.CurrentLevel-1]
 	entry, err := s.newAction(ctx, dg.round, dg.kind, level.Number, dg.a, dg.au.onBehalfOf, dg.now, dg.comment)
@@ -189,8 +181,7 @@ func (s *Service) decisionEntry(ctx context.Context, dg deciding) (Action, error
 	return entry, nil
 }
 
-// decisionOutcome moves dg's round on after its decision, or ends it, and tells who needs to know. It
-// returns the round and the activity-log entry of the decision.
+// decisionOutcome moves the round on or ends it and tells who needs to know, returning the round and log entry.
 func (s *Service) decisionOutcome(ctx context.Context, dg deciding) (Round, statusLog, error) {
 	round, facts, a, now := dg.round, dg.facts, dg.a, dg.now
 	level := round.Levels[round.CurrentLevel-1]
@@ -253,7 +244,6 @@ func (s *Service) movedOn(ctx context.Context, round Round, level int) error {
 	return decidedConflict(movedOnMessage(last), last.Actor.Name, last.At)
 }
 
-// movedOnMessage says what decided the level, or ended the round, in the entry last.
 func movedOnMessage(last Action) string {
 	switch last.Action { //nolint:exhaustive // any other entry gets the deletion's message, as before
 	case ActionApproved:

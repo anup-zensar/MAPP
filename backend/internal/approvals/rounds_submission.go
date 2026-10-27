@@ -72,8 +72,7 @@ func (s *Service) Submission(ctx context.Context, a actor.Actor, activityID stri
 	return submission, nil
 }
 
-// submissionWorkflow returns the workflow and its levels as the submit confirmation shows them: none without
-// a workflow.
+// submissionWorkflow returns the workflow and its levels as the confirmation shows them: none without one.
 func (s *Service) submissionWorkflow(ctx context.Context, workflow *Workflow) (*WorkflowRef, []LevelView, error) {
 	if workflow == nil {
 		return nil, []LevelView{}, nil
@@ -85,8 +84,7 @@ func (s *Service) submissionWorkflow(ctx context.Context, workflow *Workflow) (*
 	return workflowRef(*workflow), levelViews(workflow.Levels, rc), nil
 }
 
-// submissionOutcomes says what would happen to each level of res if a submitted now, and whether the
-// activity would be approved at once.
+// submissionOutcomes says what would happen to each level, and whether the activity would be approved at once.
 func submissionOutcomes(res resolution, d directory, a actor.Actor) ([]SubmissionLevel, bool) {
 	outcomes := []SubmissionLevel{}
 	for _, l := range res.levels {
@@ -156,7 +154,6 @@ func (s *Service) workflowOf(ctx context.Context, facts ActivityFacts) (*Workflo
 	return workflow, nil
 }
 
-// withWorkflowProblems returns problems with the workflow's problems added among them; never nil.
 func withWorkflowProblems(problems, added []SubmitProblem) []SubmitProblem {
 	if len(added) > 0 {
 		// The activity's own problems come first, then those of its line items: the workflow's go last of

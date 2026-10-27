@@ -44,8 +44,7 @@ func workflowView(w Workflow, u usages, rc ruleContext) WorkflowView {
 	}
 }
 
-// backupWarning warns that the backup approver b of the level n is inactive or cannot approve; "" when
-// there is nothing to say.
+// backupWarning warns that the backup approver b of level n is inactive or cannot approve; "" otherwise.
 func backupWarning(n int, b *PersonView, rc ruleContext) string {
 	switch {
 	case b == nil:

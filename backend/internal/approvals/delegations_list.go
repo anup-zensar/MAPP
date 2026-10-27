@@ -54,7 +54,6 @@ func (s *Service) ListDelegations(ctx context.Context, a actor.Actor, asked stri
 	return page, nil
 }
 
-// listScope is the scope the list asks for, mine when empty; false when it is neither mine nor all.
 func listScope(asked string) (string, bool) {
 	switch asked {
 	case "":
@@ -77,8 +76,7 @@ func (s *Service) manageOthers(ctx context.Context, a actor.Actor, scope string)
 	return manage.Allowed, nil
 }
 
-// visibleTo returns the delegations among all that the list of scope shows a: everyone's, or those where a
-// delegates or is the delegate.
+// visibleTo keeps everyone's delegations for scope all, otherwise those where a delegates or is the delegate.
 func visibleTo(all []Delegation, a actor.Actor, scope string) []Delegation {
 	return where(all, func(dl Delegation) bool {
 		return scope == ScopeAll || dl.PersonID == a.ID || dl.DelegateID == a.ID

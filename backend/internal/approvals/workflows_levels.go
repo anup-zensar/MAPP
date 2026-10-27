@@ -102,7 +102,6 @@ func conditionProblem(rc ruleContext, n int, c Condition, emptyMessage string) s
 	return ""
 }
 
-// hasNegativeAmount reports whether an amount of c is below zero.
 func (c Condition) hasNegativeAmount() bool {
 	return (c.PlannedCostAtLeast != nil && c.PlannedCostAtLeast.Sign() < 0) || (c.PlannedCostBelow != nil && c.PlannedCostBelow.Sign() < 0)
 }

@@ -221,8 +221,7 @@ func submittable(status string) bool {
 	return status == StatusCreated || status == StatusDeclined
 }
 
-// roundOf returns the round roundID of the activity: not_found when there is none or it is another
-// activity's.
+// roundOf returns the round roundID of the activity: not_found when there is none or it is another's.
 func (s *Service) roundOf(ctx context.Context, facts ActivityFacts, roundID string) (Round, error) {
 	round, found, err := s.repo.GetRound(ctx, roundID)
 	if err != nil {

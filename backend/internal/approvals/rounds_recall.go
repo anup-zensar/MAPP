@@ -70,7 +70,6 @@ func (s *Service) Recall(ctx context.Context, a actor.Actor, activityID string, 
 	return approval, nil
 }
 
-// recallProblems are every problem of a recall request at once: the round it names and the reason's length.
 func recallProblems(in RecallInput, reason string) error {
 	var problems errs.Problems
 	if in.RoundID == "" {
@@ -82,8 +81,7 @@ func recallProblems(in RecallInput, reason string) error {
 	return problems.Err()
 }
 
-// roundToRecall returns the open round roundID of the activity if the person acting may recall it, or why
-// not: the activity is Approved, the round ended, or 014 does not let them.
+// roundToRecall returns the open round roundID if the person acting may recall it, or why they may not.
 func (s *Service) roundToRecall(ctx context.Context, facts ActivityFacts, roundID string) (Round, error) {
 	if facts.Status == StatusApproved {
 		return Round{}, errs.BadRequest(approvedNoRecallMessage)

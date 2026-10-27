@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	endDateField = "endDate" // delegationLog's name of the last day
+	endDateField = "endDate"
 	statusLabel  = "Status"
 )
 
