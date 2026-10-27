@@ -9,16 +9,16 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"mapp/internal/access"
-	"mapp/internal/activities"
+	"mapp/internal/activity"
 	"mapp/internal/allwork"
-	"mapp/internal/approvals"
+	"mapp/internal/approval"
 	"mapp/internal/auth"
-	"mapp/internal/campaigns"
+	"mapp/internal/campaign"
 	"mapp/internal/financials"
 	"mapp/internal/history"
-	"mapp/internal/lineitems"
+	"mapp/internal/lineitem"
 	"mapp/internal/people"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/clock"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/telemetry"
@@ -46,11 +46,11 @@ type wiring struct {
 	people     *people.Service
 	access     *access.Service
 	settings   *settings.Service
-	plans      *plans.Service
-	campaigns  *campaigns.Service
-	activities *activities.Service
-	lineItems  *lineitems.Service
-	approvals  *approvals.Service
+	plans      *plan.Service
+	campaigns  *campaign.Service
+	activities *activity.Service
+	lineItems  *lineitem.Service
+	approvals  *approval.Service
 	financials *financials.Service
 	allWork    allWorkSource
 	finance    financialPlanning

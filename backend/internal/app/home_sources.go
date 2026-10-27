@@ -3,13 +3,13 @@ package app
 import (
 	"context"
 
-	"mapp/internal/activities"
-	"mapp/internal/approvals"
-	"mapp/internal/campaigns"
+	"mapp/internal/activity"
+	"mapp/internal/approval"
+	"mapp/internal/campaign"
 	"mapp/internal/history"
 	"mapp/internal/home"
 	"mapp/internal/people"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/errs"
@@ -21,10 +21,10 @@ import (
 type homeReaders struct {
 	people     *people.Service
 	plansRepo  stores.PlanStore
-	plans      *plans.Service
-	campaigns  *campaigns.Service
-	activities *activities.Service
-	approvals  *approvals.Service
+	plans      *plan.Service
+	campaigns  *campaign.Service
+	activities *activity.Service
+	approvals  *approval.Service
 	history    *history.Service
 	rates      func(context.Context) (money.Rates, error)
 }
@@ -101,7 +101,7 @@ func (h homeReaders) myTeams(ctx context.Context, a actor.Actor) ([]home.Team, e
 }
 
 // homePlan returns a plan of feature 004, its figures in US dollars, as Home reads it.
-func homePlan(o plans.Overview) home.Plan {
+func homePlan(o plan.Overview) home.Plan {
 	p := home.Plan{
 		ID: o.Plan.ID, Name: o.Plan.Name, Year: o.Plan.Year, StrategicAOP: o.Plan.AOP, Status: string(o.Plan.Status),
 		OwnerID: o.Plan.OwnerID, Teams: make([]home.Team, 0, len(o.Teams)), Budget: amountOf(o.Figures.Budget),
@@ -140,7 +140,7 @@ func (h homeReaders) ownedContainers(ctx context.Context, a actor.Actor, ownerID
 }
 
 // ownedIn returns the campaign c and those of its initiatives that ownerID owns.
-func ownedIn(c campaigns.CampaignView, planRef errs.RecordRef, ownerID string, rates money.Rates) []home.Container {
+func ownedIn(c campaign.CampaignView, planRef errs.RecordRef, ownerID string, rates money.Rates) []home.Container {
 	var list []home.Container
 	owns := func(id *string) bool { return id != nil && *id == ownerID }
 	campaignRef := errs.RecordRef{Type: campaignLevel, ID: c.ID, Name: c.Name}
@@ -179,12 +179,12 @@ func (h homeReaders) ownedActivities(ctx context.Context, a actor.Actor, ownerID
 			Ongoing: o.Ongoing, PlannedCost: usdOf(o.PlannedCost, rates), Unassigned: usdOf(o.UnassignedPlannedCost, rates),
 			Missing: o.Missing, LineItemsNeedingAttention: o.LineItemsNeedingAttention, UpdatedAt: o.UpdatedAt,
 		}
-		if o.Status == activities.StatusDeclined {
-			approval, err := h.approvals.Approval(ctx, a, o.ID)
+		if o.Status == activity.StatusDeclined {
+			appr, err := h.approvals.Approval(ctx, a, o.ID)
 			if err != nil {
 				return nil, err
 			}
-			if d := approval.LatestDecline; d != nil {
+			if d := appr.LatestDecline; d != nil {
 				act.Decline = &home.Decline{By: d.Actor, At: d.At, Comment: d.Comment}
 			}
 		}
@@ -195,7 +195,7 @@ func (h homeReaders) ownedActivities(ctx context.Context, a actor.Actor, ownerID
 
 // waitingFor returns the Waiting for me tab of the Approvals page for a, oldest submission first (008).
 func (h homeReaders) waitingFor(ctx context.Context, a actor.Actor) ([]home.Waiting, error) {
-	rows, err := h.approvals.Inbox(ctx, a, approvals.TabWaiting)
+	rows, err := h.approvals.Inbox(ctx, a, approval.TabWaiting)
 	if err != nil {
 		return nil, err
 	}

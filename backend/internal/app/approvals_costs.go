@@ -3,14 +3,14 @@ package app
 import (
 	"context"
 
-	"mapp/internal/activities"
+	"mapp/internal/activity"
 	"mapp/internal/platform/money"
 )
 
 // unassigned is the activity's planned cost (0.00 when empty) minus its line items' planned costs in the plan
 // currency at the current rates (domain model §4.3, 016 FR-015), converted to USD once — approvals works in
 // USD and shows the reader's display currency (D-213); nil when it has neither a planned cost nor a line item.
-func (p *approvalsActivities) unassigned(ctx context.Context, act activities.Activity) (*money.Money, error) {
+func (p *approvalsActivities) unassigned(ctx context.Context, act activity.Activity) (*money.Money, error) {
 	items, err := p.lineItems.ListByActivity(ctx, act.ID)
 	if err != nil {
 		return nil, err

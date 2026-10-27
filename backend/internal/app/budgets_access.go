@@ -5,23 +5,23 @@ import (
 	"slices"
 
 	"mapp/internal/access"
-	"mapp/internal/budgets"
+	"mapp/internal/budget"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/errs"
 )
 
-// budgetAccess is budgets.Access (014 plan Table C; FR-029, FR-030, FR-033) over the grants the request's
+// budgetAccess is budget.Access (014 plan Table C; FR-029, FR-030, FR-033) over the grants the request's
 // context carries and, for who may own a global budget, over the access service. An internal call (no grants)
 // may do everything.
 type budgetAccess struct {
 	access *access.Service
 }
 
-// The compiler checks here that budgetAccess implements budgets.Access.
-var _ budgets.Access = budgetAccess{}
+// The compiler checks here that budgetAccess implements budget.Access.
+var _ budget.Access = budgetAccess{}
 
 // budgetPlanFacts returns what an access decision needs to know of the plan.
-func budgetPlanFacts(plan budgets.PlanInfo) authz.PlanFacts {
+func budgetPlanFacts(plan budget.PlanInfo) authz.PlanFacts {
 	return authz.PlanFacts{ID: plan.ID, TeamIDs: plan.TeamIDs, OwnerID: plan.OwnerID, CreatedByID: plan.CreatedByID}
 }
 
@@ -46,7 +46,7 @@ func (budgetAccess) Manage(ctx context.Context) error {
 }
 
 // ManageIn needs globalBudgets.manage in the plan's scope.
-func (budgetAccess) ManageIn(ctx context.Context, plan budgets.PlanInfo) error {
+func (budgetAccess) ManageIn(ctx context.Context, plan budget.PlanInfo) error {
 	return authz.RequireIn(ctx, authz.GlobalBudgetsManage, budgetPlanFacts(plan))
 }
 
@@ -56,7 +56,7 @@ func (budgetAccess) SeeGlobalBudgets(ctx context.Context) bool {
 }
 
 // CanViewPlan reports whether the person sees the plan.
-func (budgetAccess) CanViewPlan(ctx context.Context, plan budgets.PlanInfo) bool {
+func (budgetAccess) CanViewPlan(ctx context.Context, plan budget.PlanInfo) bool {
 	return authz.CanView(ctx, budgetPlanFacts(plan))
 }
 

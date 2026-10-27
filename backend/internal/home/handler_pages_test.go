@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"testing"
 
-	"mapp/internal/activities"
-	"mapp/internal/approvals"
+	"mapp/internal/activity"
+	"mapp/internal/approval"
 	"mapp/internal/home"
 	"mapp/internal/platform/apitest"
 )
@@ -19,7 +19,7 @@ func TestHome_PersonalCardsEqualTheirPages_SC002_FR017(t *testing.T) { //nolint:
 	for _, email := range everyone {
 		client := server.SignIn(t, email)
 		waiting := get[home.WaitingPage](t, client, "/api/v1/home/waiting")
-		tab := get[approvals.RowPage](t, client, "/api/v1/approvals?tab=waiting", apitest.SkipValidation())
+		tab := get[approval.RowPage](t, client, "/api/v1/approvals?tab=waiting", apitest.SkipValidation())
 		if waiting.Total != tab.Total {
 			t.Errorf("%s: %d waiting, Approvals tab %d", email, waiting.Total, tab.Total)
 		}
@@ -34,7 +34,7 @@ func TestHome_PersonalCardsEqualTheirPages_SC002_FR017(t *testing.T) { //nolint:
 			if item.RecordType != "activity" {
 				continue
 			}
-			page := get[activities.View](t, client, "/api/v1/activities/"+item.ID, apitest.SkipValidation())
+			page := get[activity.View](t, client, "/api/v1/activities/"+item.ID, apitest.SkipValidation())
 			for _, reason := range item.Reasons {
 				switch reason.Kind {
 				case "missingFields":
@@ -66,7 +66,7 @@ func TestHome_MyActivitiesEqualTheirPages_SC002_FR017(t *testing.T) {
 		}
 		for _, g := range view.Groups {
 			for _, row := range g.Items {
-				page := get[activities.View](t, client, "/api/v1/activities/"+row.ID, apitest.SkipValidation())
+				page := get[activity.View](t, client, "/api/v1/activities/"+row.ID, apitest.SkipValidation())
 				// Home adds up plans in the display currency, so it shows the page's display amount (016 FR-014).
 				if row.Status != string(page.DisplayStatus) || !same(row.PlannedCost, page.Display.PlannedCost) ||
 					len(row.Missing) != page.Completeness.MissingFields || row.ItemsBelow != page.Completeness.LineItemsNeedingAttention {

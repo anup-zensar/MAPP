@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"mapp/internal/approvals"
+	"mapp/internal/approval"
 	"mapp/internal/home"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/apitest"
 )
 
@@ -65,11 +65,11 @@ func TestHome_EqualsPlanAndApprovalPages_SC002_FR017(t *testing.T) {
 	server := apitest.New(t)
 	for _, email := range everyone {
 		client := server.SignIn(t, email)
-		counts := get[approvals.Counts](t, client, "/api/v1/approvals/summary", apitest.SkipValidation())
+		counts := get[approval.Counts](t, client, "/api/v1/approvals/summary", apitest.SkipValidation())
 		rows := map[string]home.PlanPage{}
 		for scope, listScope := range listScopes {
 			summary := get[home.SummaryView](t, client, "/api/v1/home/summary?scope="+scope)
-			list := get[plans.PlanList](t, client, "/api/v1/plans?scope="+listScope, apitest.SkipValidation())
+			list := get[plan.PlanList](t, client, "/api/v1/plans?scope="+listScope, apitest.SkipValidation())
 
 			if summary.Plans != (home.PlanCounts{Count: list.Total, Published: list.Summary.Published, Draft: list.Summary.Draft}) {
 				t.Errorf("%s, %s: plans %+v, Plans list %d (%+v)", email, scope, summary.Plans, list.Total, list.Summary)
@@ -84,7 +84,7 @@ func TestHome_EqualsPlanAndApprovalPages_SC002_FR017(t *testing.T) {
 			}
 
 			rows[scope] = get[home.PlanPage](t, client, "/api/v1/home/plans?scope="+scope)
-			inOrder := slices.EqualFunc(rows[scope].Items, list.Items, func(r home.PlanRow, p plans.PlanSummary) bool { return r.ID == p.ID })
+			inOrder := slices.EqualFunc(rows[scope].Items, list.Items, func(r home.PlanRow, p plan.PlanSummary) bool { return r.ID == p.ID })
 			if got := rows[scope]; got.Total != list.Total || !inOrder {
 				t.Errorf("%s, %s: %d plan rows of %d, Plans list %d of %d, or in another order", email, scope, len(got.Items), got.Total, len(list.Items), list.Total)
 			}
@@ -95,7 +95,7 @@ func TestHome_EqualsPlanAndApprovalPages_SC002_FR017(t *testing.T) {
 			}
 		}
 		for _, row := range rows["everything"].Items {
-			page := get[plans.PlanView](t, client, "/api/v1/plans/"+row.ID, apitest.SkipValidation())
+			page := get[plan.PlanView](t, client, "/api/v1/plans/"+row.ID, apitest.SkipValidation())
 			fig := page.Figures
 			if row.Status != string(page.Status) || row.Year != page.Year || row.StrategicAOP != page.AOP ||
 				!same(row.Budget, fig.Budget) || !same(row.PlannedCost, fig.PlannedCost) ||

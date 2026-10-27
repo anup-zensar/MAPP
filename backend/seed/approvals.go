@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"mapp/internal/approvals"
+	"mapp/internal/approval"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/record"
@@ -64,7 +64,7 @@ var demoRounds = []demoRound{
 // demoNotification is one notification of 008 data model §8. Text has one %s for "'<activity>' (<ID>)".
 type demoNotification struct {
 	recipient, plan, activity string
-	kind                      approvals.NotificationKind
+	kind                      approval.NotificationKind
 	title, text               string
 	by                        string
 	ago                       time.Duration
@@ -73,7 +73,7 @@ type demoNotification struct {
 
 // approvedNotice tells Priya Raman, read, that Daniel Okoro approved one of her activities.
 func approvedNotice(activity string) demoNotification {
-	return demoNotification{recipient: "Priya Raman", plan: lubricantsPlan, activity: activity, kind: approvals.NotifyApproved,
+	return demoNotification{recipient: "Priya Raman", plan: lubricantsPlan, activity: activity, kind: approval.NotifyApproved,
 		title: "Activity approved", text: "Daniel Okoro approved %s", by: "Daniel Okoro", ago: 38 * day, read: true}
 }
 
@@ -90,17 +90,17 @@ func declinedText(by, comment string) string {
 var demoNotifications = []demoNotification{
 	approvedNotice("Social always-on"),
 	approvedNotice("Billboard winter wave"),
-	{recipient: "Priya Raman", plan: lubricantsPlan, activity: "Trade magazine ads", kind: approvals.NotifyDeclined,
+	{recipient: "Priya Raman", plan: lubricantsPlan, activity: "Trade magazine ads", kind: approval.NotifyDeclined,
 		title: "Activity declined", text: declinedText("Daniel Okoro", splitComment), by: "Daniel Okoro", ago: 8 * day, read: true},
-	{recipient: "Daniel Okoro", plan: lubricantsPlan, activity: "Trade magazine ads", kind: approvals.NotifyApprovalNeeded,
+	{recipient: "Daniel Okoro", plan: lubricantsPlan, activity: "Trade magazine ads", kind: approval.NotifyApprovalNeeded,
 		title: "Approval needed", text: "Priya Raman re-submitted %s", by: "Priya Raman", ago: 2 * day},
-	{recipient: "Priya Raman", plan: lubricantsPlan, activity: "Fleet roadshow", kind: approvals.NotifyDeclined,
+	{recipient: "Priya Raman", plan: lubricantsPlan, activity: "Fleet roadshow", kind: approval.NotifyDeclined,
 		title: "Activity declined", text: declinedText("Daniel Okoro", budgetComment), by: "Daniel Okoro", ago: 5 * day},
 	approvedNotice("Christmas trade gifting"),
 	approvedNotice("Partner co-marketing fund"),
-	{recipient: "Alex Morgan", plan: mobilityPlan, activity: "Fleet card launch", kind: approvals.NotifyApprovalNeeded,
+	{recipient: "Alex Morgan", plan: mobilityPlan, activity: "Fleet card launch", kind: approval.NotifyApprovalNeeded,
 		title: "Approval needed", text: "Carlos Mendes approved level 1 of %s — level 2 waits for you", by: "Carlos Mendes", ago: 2 * time.Hour},
-	{recipient: "Mei Lin", plan: mobilityPlan, activity: "Fleet card launch", kind: approvals.NotifyLevelApproved,
+	{recipient: "Mei Lin", plan: mobilityPlan, activity: "Fleet card launch", kind: approval.NotifyLevelApproved,
 		title: "Level 1 approved", text: "Carlos Mendes approved level 1 of 2 of %s", by: "Carlos Mendes", ago: 2 * time.Hour},
 }
 
@@ -140,9 +140,9 @@ func (d *demo) addApprovals(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		levels := make([]approvals.RoundLevel, 0, len(workflow.Levels))
+		levels := make([]approval.RoundLevel, 0, len(workflow.Levels))
 		for i, l := range workflow.Levels {
-			level := approvals.RoundLevel{Number: i + 1, Name: l.Name, Approvers: []actor.Actor{}}
+			level := approval.RoundLevel{Number: i + 1, Name: l.Name, Approvers: []actor.Actor{}}
 			for _, approverID := range l.ApproverIDs {
 				p, _, err := peopleRepo.Get(ctx, approverID)
 				if err != nil {
@@ -155,9 +155,9 @@ func (d *demo) addApprovals(ctx context.Context) error {
 
 		numbers[activityID]++
 		submittedAt := d.at.Add(-dr.submittedAgo)
-		round := approvals.Round{
+		round := approval.Round{
 			ActivityID: activityID, Number: numbers[activityID], WorkflowID: workflow.ID, WorkflowName: workflow.Name,
-			Levels: levels, CurrentLevel: 1, Outcome: approvals.OutcomeOpen, SubmittedAt: submittedAt, SubmittedBy: submitter,
+			Levels: levels, CurrentLevel: 1, Outcome: approval.OutcomeOpen, SubmittedAt: submittedAt, SubmittedBy: submitter,
 			Meta: record.NewMeta(submitter, submittedAt),
 		}
 		round.Levels[0].StartedAt = &submittedAt
@@ -167,9 +167,9 @@ func (d *demo) addApprovals(ctx context.Context) error {
 		if round.ID, err = d.next(ctx, ids.PrefixApprovalRound); err != nil {
 			return err
 		}
-		submitted := approvals.ActionSubmitted
+		submitted := approval.ActionSubmitted
 		if dr.resubmitted {
-			submitted = approvals.ActionResubmitted
+			submitted = approval.ActionResubmitted
 		}
 		if err := d.addAction(ctx, repo, round, roundAction{kind: submitted, by: submitter, at: submittedAt}); err != nil {
 			return err
@@ -180,18 +180,18 @@ func (d *demo) addApprovals(ctx context.Context) error {
 				return err
 			}
 			at := d.at.Add(-decision.ago)
-			action := approvals.ActionApproved
+			action := approval.ActionApproved
 			if decision.declined {
-				action = approvals.ActionDeclined
+				action = approval.ActionDeclined
 			}
 			if err := d.addAction(ctx, repo, round, roundAction{kind: action, by: by, at: at, comment: decision.comment}); err != nil {
 				return err
 			}
 			switch {
 			case decision.declined:
-				round.Outcome, round.EndedAt = approvals.OutcomeDeclined, &at
+				round.Outcome, round.EndedAt = approval.OutcomeDeclined, &at
 			case round.CurrentLevel == len(round.Levels):
-				round.Outcome, round.EndedAt = approvals.OutcomeApproved, &at
+				round.Outcome, round.EndedAt = approval.OutcomeApproved, &at
 			default:
 				round.CurrentLevel++
 				round.Levels[round.CurrentLevel-1].StartedAt = &at
@@ -210,23 +210,23 @@ func (d *demo) addApprovals(ctx context.Context) error {
 
 // roundAction is what one history entry of a round records: what was done, by whom, when and why.
 type roundAction struct {
-	kind    approvals.ActionKind
+	kind    approval.ActionKind
 	by      actor.Actor
 	at      time.Time
 	comment string
 }
 
 // addAction writes one history entry of round at its current level.
-func (d *demo) addAction(ctx context.Context, repo stores.ApprovalStore, round approvals.Round, action roundAction) error {
+func (d *demo) addAction(ctx context.Context, repo stores.ApprovalStore, round approval.Round, action roundAction) error {
 	id, err := d.next(ctx, ids.PrefixApprovalAction)
 	if err != nil {
 		return err
 	}
 	level := round.Levels[round.CurrentLevel-1]
-	return repo.PutAction(ctx, approvals.Action{
+	return repo.PutAction(ctx, approval.Action{
 		ID: id, RoundID: round.ID, RoundNumber: round.Number, ActivityID: round.ActivityID, Action: action.kind,
 		Level: level.Number, LevelName: level.Name, Approvers: level.Approvers, Actor: action.by, OnBehalfOf: []actor.Actor{},
-		At: action.at, Comment: action.comment, Changes: []approvals.ChangeText{},
+		At: action.at, Comment: action.comment, Changes: []approval.ChangeText{},
 	})
 }
 
@@ -246,7 +246,7 @@ func (d *demo) addNotifications(ctx context.Context, repo stores.ApprovalStore, 
 			return err
 		}
 		at := d.at.Add(-dn.ago)
-		notification := approvals.Notification{
+		notification := approval.Notification{
 			RecipientID: recipient, Kind: dn.kind, Title: dn.title,
 			Text:       fmt.Sprintf(dn.text, fmt.Sprintf("'%s' (%s)", dn.activity, activityID)),
 			ActivityID: activityID, ActivityName: dn.activity, Actor: by, At: at, Read: dn.read,

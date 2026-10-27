@@ -8,12 +8,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"mapp/internal/activities"
-	"mapp/internal/campaigns"
+	"mapp/internal/activity"
+	"mapp/internal/campaign"
 	"mapp/internal/financials"
-	"mapp/internal/lineitems"
+	"mapp/internal/lineitem"
 	"mapp/internal/people"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/database"
@@ -36,8 +36,8 @@ func pgStore(t *testing.T) (*database.DB, *financials.PostgresStore, []financial
 	db := dbtest.NewDB(t)
 	s := financials.NewPostgresStore(db)
 	directory, catalogue := people.NewPostgresStore(db), settings.NewPostgresStore(db)
-	planStore, containers := plans.NewPostgresStore(db), campaigns.NewPostgresStore(db)
-	activityStore, items := activities.NewPostgresStore(db), lineitems.NewPostgresStore(db)
+	planStore, containers := plan.NewPostgresStore(db), campaign.NewPostgresStore(db)
+	activityStore, items := activity.NewPostgresStore(db), lineitem.NewPostgresStore(db)
 	linked := pgTransaction("FT-1001", "L-1001")
 	linked.MatchedBy, linked.ManualLink = financials.MatchedByManual, &financials.ManualLink{By: actor.System, At: pgMeta.CreatedAt}
 	unlinked := pgTransaction("FT-1003", "")
@@ -55,16 +55,16 @@ func pgStore(t *testing.T) (*database.DB, *financials.PostgresStore, []financial
 		for _, n := range []string{"1", "2"} {
 			err = errors.Join(err,
 				directory.PutTeam(ctx, people.Team{ID: "T-100" + n, Name: "Team " + n, Colour: "blue", Meta: pgMeta}),
-				planStore.Put(ctx, plans.Plan{ID: "P-100" + n, Name: "Plan " + n, Year: 2026, ModelID: "MOD-1001",
-					TeamIDs: []string{"T-100" + n}, DefaultSpread: plans.SpreadEvenly, GoalStage: plans.StageINQ,
-					Status: plans.StatusDraft, Meta: pgMeta}),
-				containers.PutCampaign(ctx, campaigns.Campaign{ID: "C-100" + n, PlanID: "P-100" + n, Name: "Campaign", Meta: pgMeta}),
-				containers.PutInitiative(ctx, campaigns.Initiative{ID: "I-100" + n, CampaignID: "C-100" + n, Name: "Initiative",
+				planStore.Put(ctx, plan.Plan{ID: "P-100" + n, Name: "Plan " + n, Year: 2026, ModelID: "MOD-1001",
+					TeamIDs: []string{"T-100" + n}, DefaultSpread: plan.SpreadEvenly, GoalStage: plan.StageINQ,
+					Status: plan.StatusDraft, Meta: pgMeta}),
+				containers.PutCampaign(ctx, campaign.Campaign{ID: "C-100" + n, PlanID: "P-100" + n, Name: "Campaign", Meta: pgMeta}),
+				containers.PutInitiative(ctx, campaign.Initiative{ID: "I-100" + n, CampaignID: "C-100" + n, Name: "Initiative",
 					Meta: pgMeta}),
-				activityStore.Put(ctx, activities.Activity{ID: "A-100" + n, InitiativeID: "I-100" + n, Name: "Activity",
-					ActivityTypeID: "AT-1001", Status: activities.StatusCreated, Meta: pgMeta}),
-				items.Put(ctx, lineitems.LineItem{ID: "L-100" + n, ActivityID: "A-100" + n, Name: "Item", Currency: "USD",
-					Spread: lineitems.Spread{Method: lineitems.SpreadEvenly}, Meta: pgMeta}))
+				activityStore.Put(ctx, activity.Activity{ID: "A-100" + n, InitiativeID: "I-100" + n, Name: "Activity",
+					ActivityTypeID: "AT-1001", Status: activity.StatusCreated, Meta: pgMeta}),
+				items.Put(ctx, lineitem.LineItem{ID: "L-100" + n, ActivityID: "A-100" + n, Name: "Item", Currency: "USD",
+					Spread: lineitem.Spread{Method: lineitem.SpreadEvenly}, Meta: pgMeta}))
 		}
 		for _, transaction := range stored {
 			err = errors.Join(err, s.PutTransaction(ctx, transaction))

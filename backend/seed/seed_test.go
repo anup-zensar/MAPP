@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"mapp/internal/budgets"
+	"mapp/internal/budget"
 	"mapp/internal/history"
 	"mapp/internal/people"
 	"mapp/internal/platform/ids"
@@ -68,7 +68,7 @@ func TestLoad_IDsComeFromTheCounters_FR027_FR040(t *testing.T) {
 		ids.PrefixExchangeRate: "XR-1125", ids.PrefixRateImport: "RI-1002",
 		ids.PrefixApprovalAction: "AH-1016", ids.PrefixNotification: "NT-1010",
 		ids.PrefixFinancialTransaction: "FT-1012", ids.PrefixFinancialImport: "FIM-1002",
-		ids.PrefixApprovalDelegation: "DLG-1002", budgets.PrefixGlobalBudget: "GB-1002", budgets.PrefixAllocation: "BA-1003",
+		ids.PrefixApprovalDelegation: "DLG-1002", budget.PrefixGlobalBudget: "GB-1002", budget.PrefixAllocation: "BA-1003",
 		ids.PrefixRole: "RL-1006", ids.PrefixRoleAssignment: "RA-1008",
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())

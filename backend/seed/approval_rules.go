@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"mapp/internal/activities"
-	"mapp/internal/approvals"
+	"mapp/internal/activity"
+	"mapp/internal/approval"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/ids"
@@ -114,19 +114,19 @@ func (d *demo) addApprovalRules(ctx context.Context) error {
 		return err
 	}
 	none := []string{}
-	workflow := approvals.Workflow{
+	workflow := approval.Workflow{
 		ID: id, Name: standardFlow, Active: true, ReminderDays: days(3), EscalationDays: days(5), Meta: d.meta(),
 		Description: "Approved automatically below 10,000 USD, otherwise by the owner's line manager. The marketing administrator " +
 			"joins from 100,000 USD; Mobility activities also need a second check by two people.",
-		Levels: []approvals.Level{
-			{Name: "Line manager", ApproverType: approvals.SourceManager, ApproverIDs: none, Mode: approvals.ModeAny,
-				AutoApproveWhen:  &approvals.Condition{PlannedCostBelow: &below, BusinessUnitIDs: none, ActivityTypeIDs: none},
+		Levels: []approval.Level{
+			{Name: "Line manager", ApproverType: approval.SourceManager, ApproverIDs: none, Mode: approval.ModeAny,
+				AutoApproveWhen:  &approval.Condition{PlannedCostBelow: &below, BusinessUnitIDs: none, ActivityTypeIDs: none},
 				BackupApproverID: alex},
-			{Name: "Marketing administrator", ApproverType: approvals.SourcePeople, ApproverIDs: []string{alex}, Mode: approvals.ModeAny,
-				AppliesWhen:      &approvals.Condition{PlannedCostAtLeast: &atLeast, BusinessUnitIDs: none, ActivityTypeIDs: none},
+			{Name: "Marketing administrator", ApproverType: approval.SourcePeople, ApproverIDs: []string{alex}, Mode: approval.ModeAny,
+				AppliesWhen:      &approval.Condition{PlannedCostAtLeast: &atLeast, BusinessUnitIDs: none, ActivityTypeIDs: none},
 				BackupApproverID: carlos},
-			{Name: "Mobility second check", ApproverType: approvals.SourcePeople, ApproverIDs: []string{daniel, alex}, Mode: approvals.ModeAll,
-				AppliesWhen:      &approvals.Condition{BusinessUnitIDs: []string{mobility}, ActivityTypeIDs: none},
+			{Name: "Mobility second check", ApproverType: approval.SourcePeople, ApproverIDs: []string{daniel, alex}, Mode: approval.ModeAll,
+				AppliesWhen:      &approval.Condition{BusinessUnitIDs: []string{mobility}, ActivityTypeIDs: none},
 				BackupApproverID: carlos},
 		},
 	}
@@ -145,12 +145,12 @@ func days(n int) *int {
 // roundRules fills the fields feature 017 adds to a seeded round (017 data-model §13): the workflow's
 // timings, each level decided by its named approvers where any one approves with the workflow's backup
 // approver, and the values the rules use of the activity.
-func (d *demo) roundRules(ctx context.Context, round *approvals.Round, workflow approvals.Workflow, act activities.Activity, planID string) error {
+func (d *demo) roundRules(ctx context.Context, round *approval.Round, workflow approval.Workflow, act activity.Activity, planID string) error {
 	round.ReminderDays, round.EscalationDays = workflow.ReminderDays, workflow.EscalationDays
 	peopleRepo := d.stores.People
 	for i := range round.Levels {
 		l := &round.Levels[i]
-		l.ApproverType, l.Mode, l.Resolution, l.Excluded = approvals.SourcePeople, approvals.ModeAny, approvals.ResolutionDecide, []approvals.Excluded{}
+		l.ApproverType, l.Mode, l.Resolution, l.Excluded = approval.SourcePeople, approval.ModeAny, approval.ResolutionDecide, []approval.Excluded{}
 		backupID := workflow.Levels[i].BackupApproverID
 		if backupID == "" || named(l.Approvers, backupID) {
 			continue
@@ -182,35 +182,35 @@ func named(actors []actor.Actor, personID string) bool {
 
 // ruleFacts are the values of act the approval rules look at: its planned cost, its activity type and the
 // business units of its plan, planID.
-func (d *demo) ruleFacts(ctx context.Context, act activities.Activity, planID string) (approvals.RuleFacts, error) {
-	facts := approvals.RuleFacts{PlannedCost: act.PlannedCost, BusinessUnits: []approvals.FactOption{}}
+func (d *demo) ruleFacts(ctx context.Context, act activity.Activity, planID string) (approval.RuleFacts, error) {
+	facts := approval.RuleFacts{PlannedCost: act.PlannedCost, BusinessUnits: []approval.FactOption{}}
 	settingsRepo := d.stores.Settings
 	if act.ActivityTypeID != "" {
 		t, found, err := settingsRepo.GetActivityType(ctx, act.ActivityTypeID)
 		if err != nil {
-			return approvals.RuleFacts{}, err
+			return approval.RuleFacts{}, err
 		}
 		if found {
-			facts.ActivityType = &approvals.FactRef{ID: t.ID, Name: t.Name}
+			facts.ActivityType = &approval.FactRef{ID: t.ID, Name: t.Name}
 		}
 	}
 	plan, found, err := d.stores.Plans.Get(ctx, planID)
 	if err != nil || !found {
-		return approvals.RuleFacts{}, cmpErr(err, fmt.Errorf("seed: plan %s is not stored", planID))
+		return approval.RuleFacts{}, cmpErr(err, fmt.Errorf("seed: plan %s is not stored", planID))
 	}
 	var units []string
 	if raw, found := plan.Attributes[d.settings.Attributes["plan/Business unit"]]; found {
 		if err := json.Unmarshal(raw, &units); err != nil {
-			return approvals.RuleFacts{}, err
+			return approval.RuleFacts{}, err
 		}
 	}
 	for _, id := range units {
 		o, found, err := settingsRepo.GetOption(ctx, id)
 		if err != nil {
-			return approvals.RuleFacts{}, err
+			return approval.RuleFacts{}, err
 		}
 		if found {
-			facts.BusinessUnits = append(facts.BusinessUnits, approvals.FactOption{ID: o.ID, Label: o.Label})
+			facts.BusinessUnits = append(facts.BusinessUnits, approval.FactOption{ID: o.ID, Label: o.Label})
 		}
 	}
 	return facts, nil
@@ -234,7 +234,7 @@ func (d *demo) addDelegation(ctx context.Context) error {
 		return err
 	}
 	today := date.Today(d.at)
-	return d.stores.Approvals.PutDelegation(ctx, approvals.Delegation{
+	return d.stores.Approvals.PutDelegation(ctx, approval.Delegation{
 		ID: id, PersonID: daniel, DelegateID: carlos, StartDate: today.AddDays(7), EndDate: today.AddDays(11), Note: "Annual leave",
 		Meta: record.NewMeta(p.Actor(), d.at.Add(-day)),
 	})

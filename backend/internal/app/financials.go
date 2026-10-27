@@ -5,11 +5,11 @@ import (
 	"slices"
 
 	"mapp/internal/allwork"
-	"mapp/internal/campaigns"
+	"mapp/internal/campaign"
 	"mapp/internal/financials"
 	"mapp/internal/history"
 	"mapp/internal/people"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/money"
@@ -28,7 +28,7 @@ import (
 // transaction and never writes.
 type financialPlanning struct {
 	plans         stores.PlanStore
-	campaigns     *campaigns.Service
+	campaigns     *campaign.Service
 	campaignsRepo stores.CampaignStore
 	activities    stores.ActivityStore
 	lineItems     stores.LineItemStore
@@ -70,9 +70,9 @@ func (p financialPlanning) MyTeamPlanIDs(ctx context.Context, personID string) (
 		return nil, err
 	}
 	var mine []string
-	for _, plan := range all {
-		if slices.ContainsFunc(plan.TeamIDs, func(id string) bool { return slices.Contains(teams, id) }) {
-			mine = append(mine, plan.ID)
+	for _, p := range all {
+		if slices.ContainsFunc(p.TeamIDs, func(id string) bool { return slices.Contains(teams, id) }) {
+			mine = append(mine, p.ID)
 		}
 	}
 	return mine, nil
@@ -158,7 +158,7 @@ func (f financialAccess) VisiblePlanIDs(ctx context.Context, _ actor.Actor) ([]s
 			return err
 		}
 		for _, p := range list {
-			if finance.Covers(plans.AccessFacts(p)) {
+			if finance.Covers(plan.AccessFacts(p)) {
 				visible = append(visible, p.ID)
 			}
 		}
@@ -176,7 +176,7 @@ func (f financialAccess) planFacts(ctx context.Context, planID string) (authz.Pl
 	var found bool
 	err := f.tx.Read(ctx, func(ctx context.Context) error {
 		p, ok, err := f.plans.Get(ctx, planID)
-		facts, found = plans.AccessFacts(p), ok
+		facts, found = plan.AccessFacts(p), ok
 		return err
 	})
 	return facts, found, err

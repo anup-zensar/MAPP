@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"mapp/internal/allwork"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/date"
 )
@@ -15,5 +15,5 @@ func (s allWorkSource) PlanYear(ctx context.Context, planID string, year int, _ 
 	if err != nil || !found || p.Year != year {
 		return allwork.YearData{Nodes: []allwork.Node{}}, err
 	}
-	return s.nodesOf(ctx, []plans.Plan{p}, year, nil)
+	return s.nodesOf(ctx, []plan.Plan{p}, year, nil)
 }
