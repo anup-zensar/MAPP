@@ -17,7 +17,7 @@ import (
 // A campaign copy has every stored field of the original, the chosen name and its destination, with new
 // bookkeeping; its initiatives are copied with their names and fields, and their activities and line items
 // through feature 006, within the year (FR-027, R13, US6 scenario 5).
-func TestCopyCampaign_CopiesEverythingBelow_FR027(t *testing.T) {
+func TestCopyCampaign_CopiesEverythingBelow_FR027(t *testing.T) { //nolint:gocyclo // 13: one copy, then the campaign, an initiative and the activities checked in turn
 	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)
@@ -139,7 +139,7 @@ func TestCopyInitiative_DatesMustFit_FR026(t *testing.T) {
 
 // A copy writes one "copied" entry, on the new record only, naming the original and what came with it;
 // the records copied below it get none (D-097, FR-030).
-func TestCopy_OneCopiedEntryWithDetails_DecisionH(t *testing.T) {
+func TestCopy_OneCopiedEntryWithDetails_DecisionH(t *testing.T) { //nolint:gocyclo // 10: two copies, then the entries of each checked in turn
 	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)

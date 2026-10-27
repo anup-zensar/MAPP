@@ -1,6 +1,7 @@
 package campaigns
 
 import (
+	"fmt"
 	"reflect"
 	"slices"
 	"testing"
@@ -58,7 +59,7 @@ func TestListPlanCampaigns_Totals_FR022(t *testing.T) {
 	f.createCampaign(t, priya, "P-1002", CampaignInput{Name: "Elsewhere", Budget: input("1.00")})
 	var initiatives []InitiativeView
 	for _, c := range []CampaignView{helix, helix, rimula, rimula} {
-		initiatives = append(initiatives, f.createInitiative(t, priya, c.ID, InitiativeInput{Name: "Initiative " + string(rune('A'+len(initiatives)))}))
+		initiatives = append(initiatives, f.createInitiative(t, priya, c.ID, InitiativeInput{Name: fmt.Sprintf("Initiative %c", 'A'+len(initiatives))}))
 	}
 	for n, i := range []int{0, 0, 1, 1, 2, 3, 3} {
 		f.activities.add(ActivitySummary{ID: "A-" + string(rune('1'+n)), InitiativeID: initiatives[i].ID, PlannedCost: usd("1000.25")})

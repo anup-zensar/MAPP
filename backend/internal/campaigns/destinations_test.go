@@ -12,7 +12,7 @@ import (
 // An initiative moves only to another campaign of its plan: one that already has an initiative with its
 // name, or whose dates do not contain its dates, is listed but not available, with every reason and the fix;
 // a campaign without dates fits any dates (FR-023, US6 scenario 2). They come by start date, then name.
-func TestInitiativeDestinations_Move_UnavailableWithReasonAndFix_FR023(t *testing.T) {
+func TestInitiativeDestinations_Move_UnavailableWithReasonAndFix_FR023(t *testing.T) { //nolint:gocyclo // 10: one list, then its rows, rule and figures checked in turn
 	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)
