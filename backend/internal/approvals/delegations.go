@@ -1,13 +1,9 @@
 package approvals
 
 import (
-	"cmp"
 	"context"
-	"encoding/json"
 	"fmt"
-	"slices"
 	"strings"
-	"time"
 
 	"mapp/internal/history"
 	"mapp/internal/platform/actor"
@@ -32,76 +28,6 @@ const (
 	maxDelegationDays = 90
 	maxNoteLength     = 500
 )
-
-// The scopes of the delegation list (GET /api/v1/approval-delegations?scope=).
-const (
-	ScopeMine = "mine"
-	ScopeAll  = "all"
-)
-
-// ListDelegations returns the delegations a sees (017 FR-024): with scope mine (the default) those where a
-// is the delegating person or the delegate; with scope all everyone's, which needs workflows.manage (403
-// otherwise). Current and planned ones come first by first day, then ended and cancelled ones, latest last
-// day first. Each says whether a may change it; the page says whether a may manage other people's.
-func (s *Service) ListDelegations(ctx context.Context, a actor.Actor, scope string) (DelegationPage, error) {
-	if scope == "" {
-		scope = ScopeMine
-	}
-	if scope != ScopeMine && scope != ScopeAll {
-		return DelegationPage{}, errs.Validation(errs.FieldError{Field: "scope", Message: chooseScopeMessage})
-	}
-	var page DelegationPage
-	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		manage, err := s.access.Check(ctx, a.ID, PermissionManageWorkflows, nil)
-		if err != nil {
-			return err
-		}
-		if scope == ScopeAll && !manage.Allowed {
-			return errs.Forbidden(manage.Refusal)
-		}
-		all, err := s.repo.ListDelegations(ctx)
-		if err != nil {
-			return err
-		}
-		d, err := s.directory(ctx)
-		if err != nil {
-			return err
-		}
-		today := date.Today(s.now())
-		list := where(all, func(dl Delegation) bool {
-			return scope == ScopeAll || dl.PersonID == a.ID || dl.DelegateID == a.ID
-		})
-		slices.SortStableFunc(list, func(x, y Delegation) int { return compareDelegations(x, y, today) })
-		page = DelegationPage{Items: make([]DelegationView, 0, len(list)), Total: len(list), CanManageOthers: manage.Allowed}
-		for _, dl := range list {
-			page.Items = append(page.Items, delegationView(dl, d, a, manage.Allowed, today))
-		}
-		return nil
-	})
-	if err != nil {
-		return DelegationPage{}, err
-	}
-	return page, nil
-}
-
-// compareDelegations orders delegations as the panel lists them: current and planned first, by first day;
-// then ended and cancelled, latest last day first; then by id.
-func compareDelegations(x, y Delegation, today date.Date) int {
-	group := func(dl Delegation) int {
-		switch dl.state(today) {
-		case DelegationCurrent, DelegationPlanned:
-			return 0
-		}
-		return 1
-	}
-	if c := cmp.Compare(group(x), group(y)); c != 0 {
-		return c
-	}
-	if group(x) == 0 {
-		return cmp.Or(x.StartDate.Compare(y.StartDate), cmp.Compare(x.ID, y.ID))
-	}
-	return cmp.Or(y.EndDate.Compare(x.EndDate), cmp.Compare(x.ID, y.ID))
-}
 
 // delegationView returns dl as the API answers it to a; manage says whether a holds workflows.manage.
 func delegationView(dl Delegation, d directory, a actor.Actor, manage bool, today date.Date) DelegationView {
@@ -216,46 +142,6 @@ func (s *Service) UpdateDelegation(ctx context.Context, a actor.Actor, id string
 			}
 		}
 		view = delegationView(changed, d, a, manage, date.Today(s.now()))
-		return nil
-	})
-	if err != nil {
-		return DelegationView{}, err
-	}
-	return view, nil
-}
-
-// CancelDelegation cancels the delegation id at once (017 FR-024): the delegate loses the rights it gave;
-// decisions already made stay recorded. The rules are UpdateDelegation's. It is logged as cancelled.
-func (s *Service) CancelDelegation(ctx context.Context, a actor.Actor, id string, cancel DelegationCancel) (DelegationView, error) {
-	var view DelegationView
-	err := s.tx.Write(ctx, func(ctx context.Context) error {
-		stored, manage, err := s.changeableDelegation(ctx, a, id, cancel.Version)
-		if err != nil {
-			return err
-		}
-		d, err := s.directory(ctx)
-		if err != nil {
-			return err
-		}
-		now := s.now()
-		changed := stored
-		changed.CancelledAt, changed.CancelledBy = &now, &a
-		changes, err := history.Diff(stored.logView(), changed.logView())
-		if err != nil {
-			return err
-		}
-		changed.Touch(a, now)
-		if err := s.repo.PutDelegation(ctx, changed); err != nil {
-			return err
-		}
-		_, err = s.history.Log(ctx, a, history.LogInput{
-			Kind: delegationKind, RecordID: changed.ID, RecordName: delegationName(changed, d), Action: history.ActionStatusChanged,
-			Verb: "cancelled", Changes: changes,
-		})
-		if err != nil {
-			return err
-		}
-		view = delegationView(changed, d, a, manage, date.Today(now))
 		return nil
 	})
 	if err != nil {
@@ -399,97 +285,4 @@ func (s *Service) checkDelegation(ctx context.Context, a actor.Actor, d director
 		return Delegation{}, err
 	}
 	return dl, nil
-}
-
-// parseDay reads a date "YYYY-MM-DD"; false when it is empty or not a date.
-func parseDay(text string) (date.Date, bool) {
-	text = strings.TrimSpace(text)
-	if text == "" {
-		return date.Date{}, false
-	}
-	d, err := date.Parse(text)
-	return d, err == nil
-}
-
-// delegationName is a delegation's name in the log: "<person> → <delegate>" (data-model §7).
-func delegationName(dl Delegation, d directory) string {
-	return d.person(dl.PersonID).Name + " → " + d.person(dl.DelegateID).Name
-}
-
-// delegationLog is a delegation as the activity log compares it: what people read, without the bookkeeping.
-type delegationLog struct {
-	DelegateID  string     `json:"delegateId"`
-	StartDate   date.Date  `json:"startDate"`
-	EndDate     date.Date  `json:"endDate"`
-	Note        string     `json:"note"`
-	CancelledAt *time.Time `json:"cancelledAt"`
-}
-
-// logView returns dl as the activity log compares it.
-func (dl Delegation) logView() delegationLog {
-	return delegationLog{DelegateID: dl.DelegateID, StartDate: dl.StartDate, EndDate: dl.EndDate, Note: dl.Note, CancelledAt: dl.CancelledAt}
-}
-
-// delegationKindOf is the history kind of approval delegations: they are logged (017 FR-035) but never moved
-// to the recycle bin, so Remove is never called.
-func (s *Service) delegationKindOf() history.Kind {
-	return history.Kind{
-		Name: delegationKind, Singular: delegationSingular, Plural: "approval delegations",
-		Snapshot: func(ctx context.Context, id string) (history.Snapshot, bool, error) {
-			dl, found, err := s.repo.GetDelegation(ctx, id)
-			if err != nil || !found {
-				return history.Snapshot{}, false, err
-			}
-			d, err := s.directory(ctx)
-			if err != nil {
-				return history.Snapshot{}, false, err
-			}
-			data, err := json.Marshal(dl)
-			if err != nil {
-				return history.Snapshot{}, false, err
-			}
-			return history.Snapshot{ID: dl.ID, Name: delegationName(dl, d), Data: data}, true, nil
-		},
-		Remove: func(context.Context, string) error { return errs.NotAllowed(delegationEndedMessage) },
-		Put: func(ctx context.Context, snapshot history.Snapshot) error {
-			var dl Delegation
-			if err := json.Unmarshal(snapshot.Data, &dl); err != nil {
-				return err
-			}
-			return s.repo.PutDelegation(ctx, dl)
-		},
-		Describe: s.describeDelegation,
-	}
-}
-
-// describeDelegation gives the labels and texts of a delegation's changed fields in the activity log (data
-// model §7): the delegate's name, the dates as "01 Nov 2026", the note and the status.
-func (s *Service) describeDelegation(ctx context.Context, field string, value any) (string, string, error) {
-	switch field {
-	case "delegateId":
-		id, _ := value.(string)
-		d, err := s.directory(ctx)
-		if err != nil {
-			return "", "", err
-		}
-		return "Delegate", d.person(id).Name, nil
-	case "startDate", "endDate":
-		label := "From"
-		if field == "endDate" {
-			label = "To"
-		}
-		text, _ := value.(string)
-		if day, ok := parseDay(text); ok {
-			text = date.Format(day)
-		}
-		return label, text, nil
-	case "note":
-		return "Note", "", nil
-	case "cancelledAt":
-		if value == nil {
-			return "Status", "", nil
-		}
-		return "Status", cancelledStatusText, nil
-	}
-	return "", "", nil
 }
