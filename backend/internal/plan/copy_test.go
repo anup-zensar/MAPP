@@ -10,15 +10,12 @@ import (
 
 	"mapp/internal/history"
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/money"
 	"mapp/internal/platform/record"
-	"mapp/internal/platform/store"
 )
 
-// User story 6 — Copy a plan.
-
-// The copy dialog suggests "<name> (copy)", then "(copy 2)", "(copy 3)", … — the first name no plan has,
-// ignoring letter case (FR-026, R13).
+// The suggestion is the first name no plan has, ignoring letter case.
 func TestCopyName_Suffixes_FR026(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -37,8 +34,7 @@ func TestCopyName_Suffixes_FR026(t *testing.T) {
 	}
 }
 
-// A copy's name stays within 120 characters: the original part is shortened, without trailing spaces, so
-// the suffix fits (edge case). Characters, not bytes, are counted.
+// The original part is shortened, without trailing spaces, so the suffix fits; characters, not bytes, count.
 func TestCopyName_ShortenedTo120_EdgeCase(t *testing.T) {
 	t.Parallel()
 	long := strings.Repeat("é", 112) + " " + strings.Repeat("b", 7) // 120 characters, a space at 113
@@ -56,9 +52,7 @@ func TestCopyName_ShortenedTo120_EdgeCase(t *testing.T) {
 	}
 }
 
-// The dialog offers the plan's year and the next one, the latter only when it is a permitted plan year
-// (up to the current year + 5, D-084), and the counts of what the copy can take with it (FR-026, FR-028).
-// The copy itself refuses a year the dialog does not offer.
+// The next year is offered only up to the current year + 5; the copy refuses a year the dialog does not offer.
 func TestCopyOptions_NextYearAvailability_FR028(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -93,8 +87,7 @@ func TestCopyOptions_NextYearAvailability_FR028(t *testing.T) {
 	assertError(t, copyGone, errs.NotFound(planGoneMessage))
 }
 
-// The name of a copy is checked as on create — required, at most 120 characters, unique ignoring letter
-// case — and every problem, the year's included, is reported at once; nothing is saved (FR-026, FR-010).
+// The name is checked as on create; every problem, the year's included, is reported at once; nothing is saved.
 func TestCopy_Validation_FR026(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -113,9 +106,7 @@ func TestCopy_Validation_FR026(t *testing.T) {
 	}
 }
 
-// Without its contents, a copy is a Draft plan with a new ID, every field of the original and the copier as
-// its creator, also when the original is Published; the levels below copy nothing, and one "copied" entry
-// on the new plan names where it came from (FR-027, D-035, D-082).
+// Without its contents, a copy of a Published plan is a Draft with a new ID and the copier as its creator.
 func TestCopy_PlanOnly_FR027(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -158,9 +149,7 @@ func TestCopy_PlanOnly_FR027(t *testing.T) {
 	}
 }
 
-// With its contents, every level copies its records in turn, top-down: each is given the year shift and
-// the old → new IDs copied above it, the plan first; the log entry counts what came with the copy (FR-027,
-// D-195, D-082).
+// Each level, top-down, is given the year shift and the old → new IDs copied above it, the plan's first.
 func TestCopy_WithContents_FR027(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -207,14 +196,14 @@ func TestCopy_WithContents_FR027(t *testing.T) {
 	}
 }
 
-// A copy is made completely or not at all: when a level below fails, neither the plan nor anything a level
-// copied is saved, no log entry is written and no ID is used up (FR-027).
+// When a level fails, nothing is saved: no plan, no copied record, no log entry, no ID used up.
 func TestCopy_AllOrNothing_FR027(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
+	copies := fake.TableOf(f.db, "test_copies", func(c map[string]string) string { return c["id"] })
 	first := f.addLevel(t, "campaign", nil)
 	first.copy = func(ctx context.Context, _ *CopyJob) error {
-		return store.Put(ctx, "test_copies", "C-1003", map[string]string{"id": "C-1003"})
+		return copies.Put(ctx, map[string]string{"id": "C-1003"})
 	}
 	failure := errors.New("disk full")
 	f.addLevel(t, "initiative", nil).copy = func(context.Context, *CopyJob) error { return failure }
@@ -226,14 +215,8 @@ func TestCopy_AllOrNothing_FR027(t *testing.T) {
 	if !errors.Is(err, failure) {
 		t.Fatalf("Copy = %v, want the level's error", err)
 	}
-	var copies []map[string]string
-	err = f.db.Read(t.Context(), func(ctx context.Context) error {
-		var err error
-		copies, err = store.List[map[string]string](ctx, "test_copies")
-		return err
-	})
-	if err != nil || len(copies) != 0 {
-		t.Errorf("records the level copied = %v, %v; want none", copies, err)
+	if copied, err := copies.List(); err != nil || len(copied) != 0 {
+		t.Errorf("records the level copied = %v, %v; want none", copied, err)
 	}
 	if got := len(f.entries(t)); got != entries {
 		t.Errorf("log entries = %d, want %d", got, entries)
@@ -243,8 +226,7 @@ func TestCopy_AllOrNothing_FR027(t *testing.T) {
 	}
 }
 
-// A next-year copy is a plan of the next year whose default finance budget, which belongs to the plan's
-// year, is cleared — and a note says so; a plan without one gets no note (FR-028).
+// A next-year copy clears the default finance budget, which belongs to the plan's year, and notes it.
 func TestCopy_NextYear_FR028(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -271,8 +253,6 @@ func TestCopy_NextYear_FR028(t *testing.T) {
 	}
 }
 
-// copyOptions asks what the copy dialog offers for the plan id, as Daniel, and stops the test when that
-// fails.
 func (f *fixture) copyOptions(t *testing.T, id string) CopyOptions {
 	t.Helper()
 	options, err := f.service.CopyOptions(t.Context(), daniel, id)

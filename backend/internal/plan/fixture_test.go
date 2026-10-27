@@ -10,19 +10,19 @@ import (
 	"testing"
 
 	"mapp/internal/history"
+	"mapp/internal/history/historytest"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/money"
-	"mapp/internal/platform/store"
 	"mapp/internal/settings"
 )
 
-// fixture is the plans service on a temporary store, with its fakes and history.
 type fixture struct {
 	service   *Service
 	history   *history.Service
-	db        *store.DB
+	db        *fake.DB
 	clock     *testClock
 	settings  *fakeSettings
 	directory *fakeDirectory
@@ -30,15 +30,12 @@ type fixture struct {
 
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
+	db := fake.NewDB()
 	clock := &testClock{now: start}
-	generator := ids.NewGenerator(ids.NewJSONCounters())
-	hist := history.NewService(db, history.NewJSONStore(), generator, clock.Now)
+	generator := ids.NewGenerator(fake.NewCounters(db))
+	hist := history.NewService(db, historytest.NewStore(db), generator, clock.Now)
 	f := &fixture{history: hist, db: db, clock: clock, settings: newFakeSettings(), directory: newFakeDirectory()}
-	f.service = NewService(history.Tools{Tx: db, IDs: generator, Log: hist, Now: clock.Now}, NewJSONStore(), f.settings, f.directory)
+	f.service = NewService(history.Tools{Tx: db, IDs: generator, Log: hist, Now: clock.Now}, newFakeStore(db), f.settings, f.directory)
 	for _, kind := range f.service.Kinds() {
 		if err := hist.Register(kind); err != nil {
 			t.Fatalf("Register(%s): %v", kind.Name, err)
@@ -47,7 +44,6 @@ func newFixture(t *testing.T) *fixture {
 	return f
 }
 
-// addLevel registers a fake level with facts and returns it.
 func (f *fixture) addLevel(t *testing.T, name string, facts map[string]Facts) *fakeLevel {
 	t.Helper()
 	l := &fakeLevel{name: name, facts: facts}
@@ -57,8 +53,7 @@ func (f *fixture) addLevel(t *testing.T, name string, facts map[string]Facts) *f
 	return l
 }
 
-// input is a complete plan form: FY2026 Lubricants Test with Lubricants 1.0, Lubricants Europe and Priya
-// as owner, business unit Lubricants.
+// input is a complete plan form: Lubricants 1.0, Lubricants Europe, Priya as owner, business unit Lubricants.
 func input(name string) PlanInput {
 	return PlanInput{
 		Name: name, Year: ptr(2026), ModelID: ptr(lubricantsModel), TeamIDs: []string{teamLubricants},
@@ -67,7 +62,7 @@ func input(name string) PlanInput {
 	}
 }
 
-// updateOf is the form of the stored plan p, as the edit page sends it unchanged.
+// updateOf is the form of p as the edit page sends it unchanged.
 func updateOf(p Plan) PlanUpdate {
 	u := PlanUpdate{
 		Version: ptr(p.Version), Name: p.Name, ModelID: ptr(p.ModelID), TeamIDs: slices.Clone(p.TeamIDs), AOP: p.AOP,
@@ -89,7 +84,6 @@ func updateOf(p Plan) PlanUpdate {
 	return u
 }
 
-// create creates a plan as a and stops the test when that fails.
 func (f *fixture) create(t *testing.T, a actor.Actor, in PlanInput) PlanView {
 	t.Helper()
 	view, err := f.service.Create(t.Context(), a, in)
@@ -99,7 +93,6 @@ func (f *fixture) create(t *testing.T, a actor.Actor, in PlanInput) PlanView {
 	return view
 }
 
-// stored reads the plan id as stored.
 func (f *fixture) stored(t *testing.T, id string) Plan {
 	t.Helper()
 	var p Plan
@@ -114,7 +107,7 @@ func (f *fixture) stored(t *testing.T, id string) Plan {
 	return p
 }
 
-// entries returns the activity-log entries, newest first.
+// entries are newest first.
 func (f *fixture) entries(t *testing.T) []history.Entry {
 	t.Helper()
 	entries, _, err := f.history.ListLog(t.Context(), priya, history.LogFilter{Limit: 200})
@@ -124,12 +117,10 @@ func (f *fixture) entries(t *testing.T) []history.Entry {
 	return entries
 }
 
-// ptr returns a pointer to v.
 func ptr[T any](v T) *T {
 	return &v
 }
 
-// usd returns the USD amount of text, such as "1200000.00".
 func usd(t *testing.T, text string) money.Amount {
 	t.Helper()
 	amount, err := money.ParseAmount(text)
@@ -139,7 +130,6 @@ func usd(t *testing.T, text string) money.Amount {
 	return amount
 }
 
-// assertError checks that err is exactly want.
 func assertError(t *testing.T, err error, want *errs.Error) {
 	t.Helper()
 	var got *errs.Error
@@ -148,7 +138,7 @@ func assertError(t *testing.T, err error, want *errs.Error) {
 	}
 }
 
-// problems returns the validation error of the field problems, given as field and message pairs.
+// problems returns the validation error of field and message pairs.
 func problems(pairs ...string) *errs.Error {
 	var fields []errs.FieldError
 	for i := 0; i+1 < len(pairs); i += 2 {
