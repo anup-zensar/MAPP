@@ -435,7 +435,7 @@ func (s *Service) Split(ctx context.Context, a actor.Actor, id string, in SplitR
 			return err
 		}
 		if p.restart {
-			if err := s.logRestart(ctx, a, before, after, entry.Changes, splitRestartDetails); err != nil {
+			if err = s.logRestart(ctx, a, restartLog{before: before, after: after, changes: entry.Changes, details: splitRestartDetails}); err != nil {
 				return err
 			}
 		}

@@ -26,20 +26,8 @@ func (s *Service) Update(ctx context.Context, a actor.Actor, id string, update U
 		if err != nil {
 			return err
 		}
-		if update.Version != nil && *update.Version >= 1 {
-			if err := before.CheckVersion(*update.Version, noun); err != nil {
-				return err
-			}
-		}
-		var problems errs.Problems
-		after, err := s.checkFields(ctx, &problems, pc, update.fields(), &before)
+		after, err := s.checkUpdate(ctx, pc, before, update)
 		if err != nil {
-			return err
-		}
-		if update.Version == nil || *update.Version < 1 {
-			problems.Add("version", reloadMessage)
-		}
-		if err := problems.Err(); err != nil {
 			return err
 		}
 
@@ -55,29 +43,9 @@ func (s *Service) Update(ctx context.Context, a actor.Actor, id string, update U
 		if len(restartFields) > 0 && !update.RestartApproval {
 			return errs.Validation(errs.FieldError{Field: "restartApproval", Message: restartApprovalMessage})
 		}
-		if len(restartFields) > 0 {
-			after.Status = StatusCreated
-		}
-		after.Touch(a, s.now())
-		if err := s.repo.Put(ctx, after); err != nil {
-			return err
-		}
-		entry, err := s.history.Log(ctx, a, history.LogInput{
-			Kind: kindName, RecordID: after.ID, RecordName: after.Name, Action: history.ActionChanged, Changes: changes,
-		})
+		after, err = s.saveEdit(ctx, a, edit{before: before, after: after, changes: changes, restartFields: restartFields})
 		if err != nil {
 			return err
-		}
-		if datesChanged(before, after) {
-			if err := s.lineItems.DatesChanged(ctx, a, before, after); err != nil {
-				return err
-			}
-		}
-		if len(restartFields) > 0 {
-			details := fmt.Sprintf(approvalRestartedFormat, joinWords(restartFields))
-			if err := s.logRestart(ctx, a, before, after, entry.Changes, details); err != nil {
-				return err
-			}
 		}
 		view, err = s.viewOf(ctx, after, pc)
 		return err
@@ -86,6 +54,64 @@ func (s *Service) Update(ctx context.Context, a actor.Actor, id string, update U
 		return View{}, err
 	}
 	return s.shown(ctx, a, view)
+}
+
+// checkUpdate refuses an out-of-date version, then checks every field of update and the version together,
+// and returns the activity as it would be saved.
+func (s *Service) checkUpdate(ctx context.Context, pc planContext, before Activity, update Update) (Activity, error) {
+	if update.Version != nil && *update.Version >= 1 {
+		if err := before.CheckVersion(*update.Version, noun); err != nil {
+			return Activity{}, err
+		}
+	}
+	var problems errs.Problems
+	after, err := s.checkFields(ctx, &problems, pc, update.fields(), &before)
+	if err != nil {
+		return Activity{}, err
+	}
+	if update.Version == nil || *update.Version < 1 {
+		problems.Add("version", reloadMessage)
+	}
+	return after, problems.Err()
+}
+
+// edit is a save that changes an activity: the activity before and after it, its changes, and the changed
+// fields, in words, that restart its approval.
+type edit struct {
+	before, after Activity
+	changes       []history.Change
+	restartFields []string
+}
+
+// saveEdit saves and logs e, back in Created when it restarts the approval, tells the line items when the
+// dates changed, and returns the activity as saved.
+func (s *Service) saveEdit(ctx context.Context, a actor.Actor, e edit) (Activity, error) {
+	after := e.after
+	if len(e.restartFields) > 0 {
+		after.Status = StatusCreated
+	}
+	after.Touch(a, s.now())
+	if err := s.repo.Put(ctx, after); err != nil {
+		return Activity{}, err
+	}
+	entry, err := s.history.Log(ctx, a, history.LogInput{
+		Kind: kindName, RecordID: after.ID, RecordName: after.Name, Action: history.ActionChanged, Changes: e.changes,
+	})
+	if err != nil {
+		return Activity{}, err
+	}
+	if datesChanged(e.before, after) {
+		if err = s.lineItems.DatesChanged(ctx, a, e.before, after); err != nil {
+			return Activity{}, err
+		}
+	}
+	if len(e.restartFields) > 0 {
+		details := fmt.Sprintf(approvalRestartedFormat, joinWords(e.restartFields))
+		if err = s.logRestart(ctx, a, restartLog{before: e.before, after: after, changes: entry.Changes, details: details}); err != nil {
+			return Activity{}, err
+		}
+	}
+	return after, nil
 }
 
 // fields returns the editable fields of an update, as a create sends them.

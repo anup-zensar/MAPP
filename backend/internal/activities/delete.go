@@ -20,7 +20,7 @@ func (s *Service) Delete(ctx context.Context, a actor.Actor, id string) (history
 		if !found {
 			return errs.NotFound(activityGoneMessage)
 		}
-		if err := s.hooks.ActivityDeleting(ctx, a, activity); err != nil {
+		if err = s.hooks.ActivityDeleting(ctx, a, activity); err != nil {
 			return err
 		}
 		entry, err = s.history.MoveToBin(ctx, a, kindName, id)

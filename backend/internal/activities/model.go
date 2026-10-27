@@ -70,6 +70,15 @@ type Activity struct {
 	record.Meta
 }
 
+// The JSON names of the fields that the re-approval rule, the split and the activity log name.
+const (
+	fieldPlannedCost = "plannedCost"
+	fieldStartDate   = "startDate"
+	fieldEndDate     = "endDate"
+	fieldOngoing     = "ongoing"
+	fieldStatus      = "status"
+)
+
 // SplitLink is the other activity of a split, as the activity page shows it (SplitLink, 016 FR-031):
 // "Split from 'UK launch event' (A-1011)", with Deleted when that activity is in the recycle bin.
 type SplitLink struct {

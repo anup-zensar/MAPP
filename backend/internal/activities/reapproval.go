@@ -30,30 +30,37 @@ func (s *Service) RestartApproval(ctx context.Context, a actor.Actor, activityID
 		before := activity
 		activity.Status = StatusCreated
 		activity.Touch(a, s.now())
-		if err := s.repo.Put(ctx, activity); err != nil {
+		if err = s.repo.Put(ctx, activity); err != nil {
 			return err
 		}
 		changes := make([]history.Change, 0, len(reasons))
 		for _, reason := range reasons {
 			changes = append(changes, history.Change{Label: reason}) // no old or new text: the label says it all
 		}
-		return s.logRestart(ctx, a, before, activity, changes, strings.Join(reasons, " "))
+		return s.logRestart(ctx, a, restartLog{before: before, after: activity, changes: changes, details: strings.Join(reasons, " ")})
 	})
 }
 
-// logRestart writes the status entry of a restarted approval (Submitted or Approved → Created) with its
-// details, and tells feature 008 through the approval hooks, in the caller's Write. changes are the
-// changes that caused it, with their labels and texts.
-func (s *Service) logRestart(ctx context.Context, a actor.Actor, before, after Activity, changes []history.Change, details string) error {
+// restartLog is a restarted approval (Submitted or Approved → Created): the activity before and after it,
+// the changes that caused it, with their labels and texts, and the details of its status entry.
+type restartLog struct {
+	before, after Activity
+	changes       []history.Change
+	details       string
+}
+
+// logRestart writes the status entry of the restarted approval r and tells feature 008 through the
+// approval hooks, in the caller's Write.
+func (s *Service) logRestart(ctx context.Context, a actor.Actor, r restartLog) error {
 	_, err := s.history.Log(ctx, a, history.LogInput{
-		Kind: kindName, RecordID: after.ID, RecordName: after.Name, Action: history.ActionStatusChanged, Verb: restartVerb,
-		Changes: []history.Change{{Field: "status", Old: mustJSON(before.Status), New: mustJSON(after.Status)}},
-		Details: details,
+		Kind: kindName, RecordID: r.after.ID, RecordName: r.after.Name, Action: history.ActionStatusChanged, Verb: restartVerb,
+		Changes: []history.Change{{Field: fieldStatus, Old: mustJSON(r.before.Status), New: mustJSON(r.after.Status)}},
+		Details: r.details,
 	})
 	if err != nil {
 		return err
 	}
-	return s.hooks.ApprovalRestarted(ctx, a, before, after, changes)
+	return s.hooks.ApprovalRestarted(ctx, a, r.before, r.after, r.changes)
 }
 
 // inApproval reports whether a re-approval change of a would restart its approval: it is Submitted or
@@ -64,11 +71,13 @@ func inApproval(a Activity) bool {
 
 // reapprovalWords are the fields whose change restarts approval (domain model §2.5), in the order the
 // reason names them.
-var reapprovalWords = []struct{ field, words string }{
-	{"plannedCost", "the planned cost"},
-	{"startDate", "the start date"},
-	{"endDate", "the end date"},
-	{"ongoing", "ongoing (no end date)"},
+func reapprovalWords() []struct{ field, words string } {
+	return []struct{ field, words string }{
+		{fieldPlannedCost, "the planned cost"},
+		{fieldStartDate, "the start date"},
+		{fieldEndDate, "the end date"},
+		{fieldOngoing, "ongoing (no end date)"},
+	}
 }
 
 // reapprovalFields returns, in words, the changed fields that restart the approval of before; none when
@@ -78,7 +87,7 @@ func reapprovalFields(before Activity, changes []history.Change) []string {
 		return nil
 	}
 	var words []string
-	for _, w := range reapprovalWords {
+	for _, w := range reapprovalWords() {
 		if slices.ContainsFunc(changes, func(c history.Change) bool { return c.Field == w.field }) {
 			words = append(words, w.words)
 		}

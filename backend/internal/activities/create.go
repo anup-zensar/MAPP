@@ -28,14 +28,14 @@ func (s *Service) Create(ctx context.Context, a actor.Actor, initiativeID string
 		if err != nil {
 			return err
 		}
-		if err := problems.Err(); err != nil {
+		if err = problems.Err(); err != nil {
 			return err
 		}
 		if activity.ID, err = s.ids.Next(ctx, ids.PrefixActivity); err != nil {
 			return err
 		}
 		activity.Status, activity.Meta = StatusCreated, record.NewMeta(a, s.now())
-		if err := s.repo.Put(ctx, activity); err != nil {
+		if err = s.repo.Put(ctx, activity); err != nil {
 			return err
 		}
 		_, err = s.history.Log(ctx, a, history.LogInput{
