@@ -35,12 +35,12 @@ type Service struct {
 	displayRates DisplayRates
 }
 
-// NewService returns the campaigns service. It keeps the records in repo, gives them readable IDs with
-// generator, logs their changes and deletes them through hist, works in transactions of tx, reads the time
-// from now and what it needs from other features from deps.
-func NewService(tx store.Transactor, repo Store, generator *ids.Generator, hist *history.Service, now clock.Clock, deps Deps) *Service {
+// NewService returns the campaigns service. It keeps the records in repo, gives them readable IDs, logs their
+// changes, deletes them, works in transactions and reads the time with tools, and reads what it needs from other
+// features from deps.
+func NewService(tools history.Tools, repo Store, deps Deps) *Service {
 	deps.Plans = inPlanCurrency{deps.Plans}
-	return &Service{tx: tx, repo: repo, ids: generator, history: hist, now: now, deps: deps}
+	return &Service{tx: tools.Tx, repo: repo, ids: tools.IDs, history: tools.Log, now: tools.Now, deps: deps}
 }
 
 // inPlanCurrency reads plans with their plan currency set: USD for a plan known without one (016 data-model

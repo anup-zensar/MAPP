@@ -31,7 +31,7 @@ func TestCampaignLevels_AddFacts_For004(t *testing.T) {
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	historyService := history.NewService(db, history.NewJSONStore(), generator, now)
-	svc := campaigns.NewService(db, campaigns.NewJSONStore(), generator, historyService, now, campaigns.Deps{
+	svc := campaigns.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, campaigns.NewJSONStore(), campaigns.Deps{
 		Plans:      campaignPlans{repo: plans.NewJSONStore()},
 		People:     people.NewJSONStore(),
 		Settings:   settings.NewService(db, settings.NewJSONStore(), generator, historyService, now),
