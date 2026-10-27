@@ -53,5 +53,5 @@ Each task says which helper area did it (plan.md, "Helper areas"). `[x]` done, `
 ## Phase 6: Polish
 
 - [x] T026 Gates: format, vet, lint on new lines, sqlc, `go test -race`, `go test -short`, govulncheck
-- [ ] T027 End-to-end suite on PostgreSQL and `pnpm run api:check`
+- [x] T027 End-to-end suite on PostgreSQL (40 passed) and `pnpm run api:check`
 - [x] T028 Feature map row 025
