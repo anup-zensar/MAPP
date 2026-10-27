@@ -119,10 +119,11 @@ func (w *wiring) planLevels() []plans.Level {
 
 // budgetsArea comes after the planning kinds: an allocation is a child of its plan, which takes it along.
 func (w *wiring) budgetsArea() error {
-	budgetsService := budgets.NewService(w.set.Tx, w.set.Budgets, w.generator, w.history, budgets.Deps{
+	tools := history.Tools{Tx: w.set.Tx, IDs: w.generator, Log: w.history, Now: w.now}
+	budgetsService := budgets.NewService(tools, w.set.Budgets, budgets.Deps{
 		Plans:     budgetPlans{plans: w.plans, repo: w.set.Plans, rates: w.settings.Rates},
 		Directory: w.people, Rates: w.settings, Access: budgetAccess{access: w.access},
-	}, w.now)
+	})
 	if err := w.register(budgetsService.Kinds()); err != nil {
 		return err
 	}
@@ -181,10 +182,11 @@ func (w *wiring) financialsArea() error {
 		plans: s.Plans, campaigns: w.campaigns, campaignsRepo: s.Campaigns, activities: s.Activities,
 		lineItems: s.LineItems, settings: w.settings, people: w.people, history: w.history,
 	}
-	w.financials = financials.NewService(s.Tx, s.Financials, w.generator, w.history, financials.Deps{
+	tools := history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}
+	w.financials = financials.NewService(tools, s.Financials, financials.Deps{
 		Planning: w.finance, Rates: w.settings, Displays: financialDisplays{people: w.people},
 		Access: financialAccess{tx: s.Tx, plans: s.Plans},
-	}, w.now)
+	})
 	if err := w.register(w.financials.Kinds()); err != nil {
 		return err
 	}
