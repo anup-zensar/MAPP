@@ -76,14 +76,13 @@ type Service struct {
 	displayRates DisplayRates
 }
 
-// NewService returns the activities service. It keeps activities in repo, gives them readable IDs with
-// generator, logs their changes and deletes them through hist, works in transactions of tx, reads the time
-// from now and reads the plans, campaigns, initiatives, Settings, people and approval workflows of deps.
+// NewService returns the activities service. It keeps activities in repo, changes them with tools and
+// reads the plans, campaigns, initiatives, Settings, people and approval workflows of deps.
 // Until UseLineItems and UseApprovalHooks are called, activities have no line items and nothing reacts to
 // approval changes.
-func NewService(tx store.Transactor, repo Store, generator *ids.Generator, hist *history.Service, now clock.Clock, deps Deps) *Service {
+func NewService(tools history.Tools, repo Store, deps Deps) *Service {
 	return &Service{
-		tx: tx, repo: repo, ids: generator, history: hist, now: now,
+		tx: tools.Tx, repo: repo, ids: tools.IDs, history: tools.Log, now: tools.Now,
 		plans: deps.Plans, hierarchy: deps.Hierarchy, settings: deps.Settings, people: deps.People, workflows: deps.Workflows,
 		lineItems: noLineItems{}, hooks: noApprovalHooks{},
 	}

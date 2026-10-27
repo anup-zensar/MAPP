@@ -80,7 +80,7 @@ func newFixture(t *testing.T) *fixture {
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	hist := history.NewService(db, history.NewJSONStore(), generator, clock.Now)
 	campaignsRepo := campaigns.NewJSONStore()
-	service := activities.NewService(db, activities.NewJSONStore(), generator, hist, clock.Now, activities.Deps{
+	service := activities.NewService(history.Tools{Tx: db, IDs: generator, Log: hist, Now: clock.Now}, activities.NewJSONStore(), activities.Deps{
 		Plans: plans.NewJSONStore(), Hierarchy: campaignsRepo,
 		Settings: settings.NewService(db, settings.NewJSONStore(), generator, hist, clock.Now), People: people.NewJSONStore(),
 		Workflows: activities.NewSeededWorkflows(approvals.NewJSONStore()),

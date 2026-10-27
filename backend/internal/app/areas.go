@@ -9,6 +9,7 @@ import (
 	"mapp/internal/budgets"
 	"mapp/internal/campaigns"
 	"mapp/internal/financials"
+	"mapp/internal/history"
 	"mapp/internal/home"
 	"mapp/internal/lineitems"
 	"mapp/internal/plans"
@@ -79,7 +80,7 @@ func (w *wiring) planningArea() error {
 
 func (w *wiring) buildActivities() {
 	s := w.set
-	w.activities = activities.NewService(s.Tx, s.Activities, w.generator, w.history, w.now, activities.Deps{
+	w.activities = activities.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}, s.Activities, activities.Deps{
 		Plans: s.Plans, Hierarchy: s.Campaigns, Settings: w.settings, People: s.People,
 		Workflows: activityWorkflows{repo: s.Approvals},
 	})
