@@ -80,7 +80,7 @@ func filterableAttributes(attributes []Attribute) []FilterableAttribute {
 		}
 		f := FilterableAttribute{ID: a.ID, Label: a.Label, Level: a.Level, Type: a.Type, Values: []Option{}}
 		if a.Type == TypeYesNo {
-			f.Values = append(f.Values, Option{ID: AttrYes, Label: "Yes"}, Option{ID: AttrNo, Label: "No"})
+			f.Values = append(f.Values, Option{ID: AttrYes, Label: labelYes}, Option{ID: AttrNo, Label: labelNo})
 		}
 		for _, o := range a.Options {
 			if !o.Inactive {

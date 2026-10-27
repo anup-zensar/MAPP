@@ -29,7 +29,7 @@ func (d *demo) addFinancials(ctx context.Context) error {
 	for _, c := range currencies {
 		rates[c.Code] = c.Rate
 	}
-	_, err = financials.LoadDemo(ctx, d.stores.Financials, d.ids, stored, rates, d.at)
+	_, err = financials.LoadDemo(ctx, d.stores.Financials, d.ids, financials.DemoLoad{Items: stored, Rates: rates, At: d.at})
 	return err
 }
 

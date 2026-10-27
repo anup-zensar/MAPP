@@ -50,7 +50,7 @@ func TestImport_FiveThousandRows_SC004(t *testing.T) {
 	t.Logf("5,000-row import in %s", elapsed)
 }
 
-// memRepository is a Repository in memory: the stress test measures the service's own work, as 010's
+// memRepository is a Store in memory: the stress test measures the service's own work, as 010's
 // stress test does over an in-memory source, and not the decoding of the demo JSON store (a PostgreSQL
 // repository answers with SQL indexes instead, data model §1).
 type memRepository struct {

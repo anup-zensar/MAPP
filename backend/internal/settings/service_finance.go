@@ -3,7 +3,6 @@ package settings
 import (
 	"context"
 	"fmt"
-	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -38,72 +37,6 @@ const (
 	yearsBefore = 1
 	yearsAfter  = 5
 )
-
-// ListFinanceBudgets returns the finance budgets of year (the clock's UTC year when nil) that have at least
-// one item, by name, each with its items by name, its active item count and its usage; and the years that
-// can be chosen (FR-014, FR-015, US5-3). Every signed-in person may see them (FR-008).
-func (s *Service) ListFinanceBudgets(ctx context.Context, a actor.Actor, year *int) (FinanceBudgetPage, error) {
-	current := s.now().UTC().Year()
-	shown := current
-	if year != nil {
-		shown = *year
-	}
-	page := FinanceBudgetPage{Items: []FinanceBudgetView{}, Year: shown}
-	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		budgets, err := s.repo.ListFinanceBudgets(ctx)
-		if err != nil {
-			return err
-		}
-		items, err := s.repo.ListFinanceBudgetItems(ctx)
-		if err != nil {
-			return err
-		}
-		u, err := s.usage(ctx)
-		if err != nil {
-			return err
-		}
-		itemsOf := map[string][]FinanceBudgetItem{}
-		for _, i := range items {
-			itemsOf[i.BudgetID] = append(itemsOf[i.BudgetID], i)
-		}
-		years := map[int]bool{}
-		for y := current - yearsBefore; y <= current+yearsAfter; y++ {
-			years[y] = true
-		}
-		slices.SortStableFunc(budgets, func(x, y FinanceBudget) int { return compareNames(x.Name, y.Name) })
-		for _, b := range budgets {
-			if len(itemsOf[b.ID]) == 0 {
-				continue
-			}
-			years[b.Year] = true
-			if b.Year == shown {
-				page.Items = append(page.Items, budgetView(b, itemsOf[b.ID], u))
-			}
-		}
-		for y := range years {
-			page.Years = append(page.Years, y)
-		}
-		slices.Sort(page.Years)
-		return nil
-	})
-	page.Total = len(page.Items)
-	return page, err
-}
-
-// GetFinanceBudgetItem returns the finance budget item id with its year, budget name, usage and locks
-// (US5-4).
-func (s *Service) GetFinanceBudgetItem(ctx context.Context, a actor.Actor, id string) (FinanceBudgetItemView, error) {
-	var view FinanceBudgetItemView
-	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		item, err := s.storedItem(ctx, id)
-		if err != nil {
-			return err
-		}
-		view, err = s.itemViewOf(ctx, item)
-		return err
-	})
-	return view, err
-}
 
 // CreateFinanceBudgetItem creates an active finance budget item (FR-014, US5-3): a budget year from the
 // current year − 1 to + 5, a budget name and an item name of at most 120 characters each, the item name
@@ -275,73 +208,6 @@ func (s *Service) RenameFinanceBudget(ctx context.Context, a actor.Actor, id str
 	return view, err
 }
 
-// SetFinanceBudgetItemActive sets the finance budget item id inactive or reactivates it (FR-004): line
-// items cannot link to an inactive item; those linked keep it. The same status again changes nothing.
-func (s *Service) SetFinanceBudgetItemActive(ctx context.Context, a actor.Actor, id string, update StatusUpdate) (FinanceBudgetItemView, error) {
-	active, version, err := checkStatus(update)
-	if err != nil {
-		return FinanceBudgetItemView{}, err
-	}
-	var view FinanceBudgetItemView
-	err = s.tx.Write(ctx, func(ctx context.Context) error {
-		item, err := s.storedItem(ctx, id)
-		if err != nil {
-			return err
-		}
-		if err := item.CheckVersion(version, itemNoun); err != nil {
-			return err
-		}
-		if item.Active != active {
-			item.Active = active
-			item.Touch(a, s.now())
-			if err := s.repo.PutFinanceBudgetItem(ctx, item); err != nil {
-				return err
-			}
-			if err := s.logStatus(ctx, a, itemKind, item.ID, item.Name, active); err != nil {
-				return err
-			}
-		}
-		view, err = s.itemViewOf(ctx, item)
-		return err
-	})
-	return view, err
-}
-
-// DeleteFinanceBudgetItem moves the finance budget item id to the recycle bin, under its budget, so that it
-// can be undone (FR-004, US5-5). An item linked to line items — also those in the recycle bin — is refused
-// with in_use: set it inactive instead. Its budget stays (D-047).
-func (s *Service) DeleteFinanceBudgetItem(ctx context.Context, a actor.Actor, id string) (history.BinEntry, error) {
-	var entry history.BinEntry
-	err := s.tx.Write(ctx, func(ctx context.Context) error {
-		item, err := s.storedItem(ctx, id)
-		if err != nil {
-			return err
-		}
-		u, err := s.usage(ctx)
-		if err != nil {
-			return err
-		}
-		if usage := u.item(item.ID); usage.InUse {
-			return inUseError(item.Name, usage)
-		}
-		entry, err = s.history.MoveToBin(ctx, a, itemKind, item.ID)
-		return err
-	})
-	return entry, err
-}
-
-// storedItem reads the finance budget item id, or answers not found.
-func (s *Service) storedItem(ctx context.Context, id string) (FinanceBudgetItem, error) {
-	item, found, err := s.repo.GetFinanceBudgetItem(ctx, id)
-	if err != nil {
-		return FinanceBudgetItem{}, err
-	}
-	if !found {
-		return FinanceBudgetItem{}, errs.NotFound(itemGoneMessage)
-	}
-	return item, nil
-}
-
 // checkBudgetName trims a budget name and adds its problem to problems on field: empty, or longer than 120
 // characters. It returns the trimmed name, or "" when it has a problem.
 func checkBudgetName(problems *errs.Problems, field, name string) string {
@@ -411,84 +277,4 @@ func (s *Service) saveNewBudget(ctx context.Context, a actor.Actor, b FinanceBud
 		return FinanceBudget{}, err
 	}
 	return b, s.logCreated(ctx, a, budgetKind, b.ID, b.Name, "")
-}
-
-// budgetNamed returns the budget of year, other than exceptID, named name ignoring letter case and
-// surrounding spaces, and false when there is none.
-func (s *Service) budgetNamed(ctx context.Context, year int, name, exceptID string) (FinanceBudget, bool, error) {
-	budgets, err := s.repo.ListFinanceBudgets(ctx)
-	if err != nil {
-		return FinanceBudget{}, false, err
-	}
-	sameYear := filter(budgets, func(b FinanceBudget) bool { return b.Year == year })
-	b, found := findNamed(sameYear, name, exceptID, func(b FinanceBudget) (string, string) { return b.ID, b.Name })
-	return b, found, nil
-}
-
-// itemWithCode returns the item, other than exceptID, with the code code ignoring letter case in the year
-// of the budget budgetID, and false when there is none (FR-014).
-func (s *Service) itemWithCode(ctx context.Context, budgetID, code, exceptID string) (FinanceBudgetItem, bool, error) {
-	budget, found, err := s.repo.GetFinanceBudget(ctx, budgetID)
-	if err != nil || !found {
-		return FinanceBudgetItem{}, false, err
-	}
-	return s.itemWithCodeInYear(ctx, budget.Year, code, exceptID)
-}
-
-// itemWithCodeInYear returns the item, other than exceptID, with the code code ignoring letter case among
-// the items of the budgets of year, and false when there is none (FR-014).
-func (s *Service) itemWithCodeInYear(ctx context.Context, year int, code, exceptID string) (FinanceBudgetItem, bool, error) {
-	budgets, err := s.repo.ListFinanceBudgets(ctx)
-	if err != nil {
-		return FinanceBudgetItem{}, false, err
-	}
-	items, err := s.repo.ListFinanceBudgetItems(ctx)
-	if err != nil {
-		return FinanceBudgetItem{}, false, err
-	}
-	sameYear := map[string]bool{}
-	for _, b := range budgets {
-		sameYear[b.ID] = b.Year == year
-	}
-	for _, i := range items {
-		if i.ID != exceptID && sameYear[i.BudgetID] && i.Code != "" && sameName(i.Code, code) {
-			return i, true, nil
-		}
-	}
-	return FinanceBudgetItem{}, false, nil
-}
-
-// itemViewOf returns the item as the API answers it, reading its budget and the usage index.
-func (s *Service) itemViewOf(ctx context.Context, item FinanceBudgetItem) (FinanceBudgetItemView, error) {
-	budget, _, err := s.repo.GetFinanceBudget(ctx, item.BudgetID)
-	if err != nil {
-		return FinanceBudgetItemView{}, err
-	}
-	u, err := s.usage(ctx)
-	if err != nil {
-		return FinanceBudgetItemView{}, err
-	}
-	return itemView(item, budget, u), nil
-}
-
-// budgetView returns the budget b with its items as the API answers it.
-func budgetView(b FinanceBudget, items []FinanceBudgetItem, u *usageIndex) FinanceBudgetView {
-	view := FinanceBudgetView{ID: b.ID, Year: b.Year, Name: b.Name, Items: []FinanceBudgetItemView{}, Usage: u.budget(b.ID), Meta: b.Meta}
-	sorted := slices.Clone(items)
-	slices.SortStableFunc(sorted, func(x, y FinanceBudgetItem) int { return compareNames(x.Name, y.Name) })
-	for _, i := range sorted {
-		view.Items = append(view.Items, itemView(i, b, u))
-		if i.Active {
-			view.ActiveItemCount++
-		}
-	}
-	return view
-}
-
-// itemView returns the item i of the budget b as the API answers it. Its year never changes (data model §8).
-func itemView(i FinanceBudgetItem, b FinanceBudget, u *usageIndex) FinanceBudgetItemView {
-	return FinanceBudgetItemView{
-		ID: i.ID, BudgetID: i.BudgetID, BudgetName: b.Name, Year: b.Year, Name: i.Name, Code: i.Code, Active: i.Active,
-		Usage: u.item(i.ID), Locks: []Lock{{Field: "year", Reason: yearLockedMessage}}, Meta: i.Meta,
-	}
 }

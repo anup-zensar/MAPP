@@ -1,15 +1,10 @@
 package settings
 
 import (
-	"bytes"
-	"cmp"
 	"context"
 	"encoding/base64"
-	"encoding/csv"
 	"fmt"
-	"slices"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"mapp/internal/history"
@@ -24,74 +19,6 @@ import (
 // The GSAP rate import (016 FR-006 – FR-008, data-model §2.3, §2.4; D-259): review a rate file, then import
 // the rates to add and replace in one step. The rows come from a RateFeed; ApplyRateRows is the core a later
 // automatic feed calls with the same rules.
-
-// RateImportUpload is the body of the two import operations (contract RateImportUpload): the file in base64.
-type RateImportUpload struct {
-	FileName string `json:"fileName"`
-	Content  string `json:"content"`
-}
-
-// RateOutcome is what importing one row does (contract RateImportOutcome).
-type RateOutcome string
-
-// The outcomes of a row (data-model §2.4).
-const (
-	OutcomeAdd     RateOutcome = "add"     // a new rate
-	OutcomeReplace RateOutcome = "replace" // a different rate for the same currency and day
-	OutcomePresent RateOutcome = "present" // the same rate is stored already: skipped
-	OutcomeNotUsed RateOutcome = "notUsed" // another rate type, not quoted from USD, USD itself, or a currency not set up
-	OutcomeProblem RateOutcome = "problem" // an unreadable date or rate, or a row twice in the file
-)
-
-// RateImportRow is one reviewed row (contract RateImportRow).
-type RateImportRow struct {
-	Row          int         `json:"row"`
-	Outcome      RateOutcome `json:"outcome"`
-	Currency     *string     `json:"currency"`
-	Date         *date.Date  `json:"date"`
-	Rate         *money.Rate `json:"rate"`
-	PreviousRate *money.Rate `json:"previousRate"` // replace only
-	Message      *string     `json:"message"`      // why a row is not used or has a problem; old → new for replace
-}
-
-// RateImportCounts counts the rows of a review by outcome (contract RateImportCounts).
-type RateImportCounts struct {
-	Add     int `json:"add"`
-	Replace int `json:"replace"`
-	Present int `json:"present"`
-	NotUsed int `json:"notUsed"`
-	Problem int `json:"problem"`
-}
-
-// RateImportCheck is the review of a rate file (contract RateImportCheck): every row, in file order.
-type RateImportCheck struct {
-	FileName string           `json:"fileName"`
-	Feed     string           `json:"feed"`
-	Rows     []RateImportRow  `json:"rows"`
-	Counts   RateImportCounts `json:"counts"`
-}
-
-// RateImportView is a rate import as the API answers it (contract RateImport).
-type RateImportView struct {
-	ID         string      `json:"id"`
-	FileName   string      `json:"fileName"`
-	Feed       string      `json:"feed"`
-	FirstDate  *date.Date  `json:"firstDate"`
-	LastDate   *date.Date  `json:"lastDate"`
-	Added      int         `json:"added"`
-	Replaced   int         `json:"replaced"`
-	Unchanged  int         `json:"unchanged"`
-	NotUsed    int         `json:"notUsed"`
-	Problems   int         `json:"problems"`
-	ImportedAt time.Time   `json:"importedAt"`
-	ImportedBy actor.Actor `json:"importedBy"`
-}
-
-// RateImportPage is the latest imports, newest first (contract RateImportPage).
-type RateImportPage struct {
-	Items []RateImportView `json:"items"`
-	Total int              `json:"total"`
-}
 
 // Messages of a reviewed row and of an import (data-model §2.4, plan "User-visible messages").
 const (
@@ -112,20 +39,6 @@ const (
 	defaultRecentImports    = 10
 	maxRecentImports        = 50
 )
-
-// rateFeed is the feed the import reads files with: the simulated GSAP daily rate file unless app wires
-// another (FR-008).
-func (s *Service) rateFeed() RateFeed {
-	if s.feed == nil {
-		return GSAPRateFile{}
-	}
-	return s.feed
-}
-
-// UseRateFeed sets the feed rate files are read with (FR-008). internal/app wires GSAPRateFile.
-func (s *Service) UseRateFeed(feed RateFeed) {
-	s.feed = feed
-}
 
 // readUpload checks the upload and reads its rows with feed: a file name of 1–200 characters and content in
 // base64 the feed can read. Every problem is a validation error.
@@ -376,68 +289,4 @@ func parseRateDate(text string) (date.Date, error) {
 		text = text[:4] + "-" + text[4:6] + "-" + text[6:]
 	}
 	return date.Parse(text)
-}
-
-// rateImportView returns the import i as the API answers it.
-func rateImportView(i RateImport) RateImportView {
-	return RateImportView{
-		ID: i.ID, FileName: i.FileName, Feed: i.Feed, FirstDate: i.FirstDate, LastDate: i.LastDate, Added: i.Added,
-		Replaced: i.Replaced, Unchanged: i.Unchanged, NotUsed: i.NotUsed, Problems: i.Problems,
-		ImportedAt: i.CreatedAt, ImportedBy: i.CreatedBy,
-	}
-}
-
-// ListRateImports returns the latest limit imports, newest first (FR-007): 10 when limit is 0, at most 50.
-func (s *Service) ListRateImports(ctx context.Context, a actor.Actor, limit int) (RateImportPage, error) {
-	if limit <= 0 {
-		limit = defaultRecentImports
-	}
-	limit = min(limit, maxRecentImports)
-	page := RateImportPage{Items: []RateImportView{}}
-	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		imports, err := s.repo.ListRateImports(ctx)
-		if err != nil {
-			return err
-		}
-		slices.SortStableFunc(imports, func(x, y RateImport) int {
-			return cmp.Or(y.CreatedAt.Compare(x.CreatedAt), compareIDs(y.ID, x.ID))
-		})
-		for _, i := range imports[:min(limit, len(imports))] {
-			page.Items = append(page.Items, rateImportView(i))
-		}
-		page.Total = len(page.Items)
-		return nil
-	})
-	return page, err
-}
-
-// ImportSample returns a sample GSAP rate file (FR-006, data-model §2.4): one M row per active currency other
-// than USD, dated today, at its current rate × 1.005 rounded half up to six decimals, named
-// gsap_rates_<today>.csv.
-func (s *Service) ImportSample(ctx context.Context) (string, []byte, error) {
-	var buffer bytes.Buffer
-	day := s.today()
-	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		currencies, err := s.currenciesWithRates(ctx)
-		if err != nil {
-			return err
-		}
-		slices.SortStableFunc(currencies, compareCurrencies)
-		w := csv.NewWriter(&buffer)
-		if err := w.Write(gsapColumns); err != nil {
-			return err
-		}
-		for _, c := range currencies {
-			if !c.Active || c.Code == money.BaseCurrency || c.Rate.Micros() <= 0 {
-				continue
-			}
-			sample := money.RateFromMicros((c.Rate.Micros()*1005 + 500) / 1000)
-			if err := w.Write([]string{sampleRateType, money.BaseCurrency, c.Code, day.String(), sample.String()}); err != nil {
-				return err
-			}
-		}
-		w.Flush()
-		return w.Error()
-	})
-	return fmt.Sprintf(gsapSampleNamePattern, day.String()), buffer.Bytes(), err
 }

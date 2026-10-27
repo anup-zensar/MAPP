@@ -3,7 +3,6 @@ package settings
 import (
 	"context"
 	"fmt"
-	"slices"
 	"strings"
 
 	"mapp/internal/history"
@@ -58,7 +57,7 @@ func (s *Service) CreateOption(ctx context.Context, a actor.Actor, attributeID s
 			problems.Add("label", tooManyOptionsMessage)
 		}
 		if parent, dependent := f.byID[attribute.ParentAttributeID]; dependent {
-			o.ParentOptionIDs = f.checkLinks(&problems, "parentOptionIds", o.Label, parent, input.ParentOptionIDs, nil)
+			o.ParentOptionIDs = f.checkLinks(&problems, linkCheck{field: fieldParentOptions, label: o.Label, parent: parent, links: input.ParentOptionIDs})
 		}
 		if err := problems.Err(); err != nil {
 			return err
@@ -100,7 +99,9 @@ func (s *Service) UpdateOption(ctx context.Context, a actor.Actor, id string, up
 			changed.Label = f.checkOptionLabel(&problems, *update.Label, attribute, stored.ID)
 		}
 		if parent, dependent := f.byID[attribute.ParentAttributeID]; dependent && update.ParentOptionIDs != nil {
-			changed.ParentOptionIDs = f.checkLinks(&problems, "parentOptionIds", changed.Label, parent, *update.ParentOptionIDs, stored.ParentOptionIDs)
+			changed.ParentOptionIDs = f.checkLinks(&problems, linkCheck{
+				field: fieldParentOptions, label: changed.Label, parent: parent, links: *update.ParentOptionIDs, previous: stored.ParentOptionIDs,
+			})
 		}
 		if err := problems.Err(); err != nil {
 			return err
@@ -160,76 +161,6 @@ func (s *Service) SetOptionActive(ctx context.Context, a actor.Actor, id string,
 	return view, err
 }
 
-// MoveOption swaps the option id with its neighbour above or below in its attribute's list (FR-018), from
-// the version the person started at. At the ends it is refused on direction. Both options get one
-// "changed" entry (field position).
-func (s *Service) MoveOption(ctx context.Context, a actor.Actor, id string, in OptionMoveInput) (OptionView, error) {
-	var problems errs.Problems
-	if in.Direction != MoveUp && in.Direction != MoveDown {
-		problems.Add("direction", reloadMessage)
-	}
-	checkVersion(&problems, in.Version)
-	if err := problems.Err(); err != nil {
-		return OptionView{}, err
-	}
-	var view OptionView
-	err := s.tx.Write(ctx, func(ctx context.Context) error {
-		f, stored, attribute, err := s.optionToChange(ctx, id)
-		if err != nil {
-			return err
-		}
-		if err := stored.CheckVersion(*in.Version, optionNoun); err != nil {
-			return err
-		}
-		options := f.options[attribute.ID]
-		i := slices.IndexFunc(options, func(o Option) bool { return o.ID == id })
-		j := i - 1
-		if in.Direction == MoveDown {
-			j = i + 1
-		}
-		switch {
-		case j < 0:
-			return errs.Validation(errs.FieldError{Field: "direction", Message: fmt.Sprintf(firstOptionMessage, stored.Label)})
-		case j >= len(options):
-			return errs.Validation(errs.FieldError{Field: "direction", Message: fmt.Sprintf(lastOptionMessage, stored.Label)})
-		}
-		order := slices.Clone(options)
-		order[i], order[j] = order[j], order[i]
-		for _, changed := range repositionedOptions(options, order) {
-			change := history.Change{Field: "position", Old: jsonOf(f.optionByID[changed.ID].Position), New: jsonOf(changed.Position)}
-			changed.Touch(a, s.now())
-			if err := s.repo.PutOption(ctx, changed); err != nil {
-				return err
-			}
-			if err := s.logChanged(ctx, a, optionKind, changed.ID, changed.Label, []history.Change{change}, ""); err != nil {
-				return err
-			}
-			if changed.ID == id {
-				stored = changed
-			}
-		}
-		view, err = s.optionViewOf(ctx, f, stored, attribute)
-		return err
-	})
-	return view, err
-}
-
-// GetOption returns the option id as it is stored now, with its parent options, usage and locks (D-211):
-// the web app reads it after a version conflict. Every signed-in person may read it (FR-008), so a is not
-// used yet.
-func (s *Service) GetOption(ctx context.Context, a actor.Actor, id string) (OptionView, error) {
-	var view OptionView
-	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		f, stored, attribute, err := s.optionToChange(ctx, id)
-		if err != nil {
-			return err
-		}
-		view, err = s.optionViewOf(ctx, f, stored, attribute)
-		return err
-	})
-	return view, err
-}
-
 // DeleteOption moves the option id to the recycle bin, so that it can be undone (FR-004, FR-018). The last
 // option of a choice attribute is refused with in_use and the reason — which the option's delete lock
 // also gives (D-211) — and so is an option in use — values on records (also in the recycle bin), options
@@ -271,16 +202,6 @@ func (s *Service) optionToChange(ctx context.Context, id string) (formData, Opti
 	return f, o, f.byID[o.AttributeID], nil
 }
 
-// optionViewOf returns the option o of the attribute a as the API answers it, reading the usage index.
-// f must hold the parent attribute's options.
-func (s *Service) optionViewOf(ctx context.Context, f formData, o Option, a Attribute) (OptionView, error) {
-	u, err := s.usage(ctx)
-	if err != nil {
-		return OptionView{}, err
-	}
-	return f.optionView(o, a, u), nil
-}
-
 // checkOptionLabel trims label and adds its problems to problems: empty, longer than 120 characters, or the
 // label of another option of the attribute than exceptID, ignoring letter case (FR-018).
 func (f formData) checkOptionLabel(problems *errs.Problems, label string, attribute Attribute, exceptID string) string {
@@ -290,116 +211,4 @@ func (f formData) checkOptionLabel(problems *errs.Problems, label string, attrib
 		problems.Add("label", fmt.Sprintf(optionTakenMessage, other.Label, attribute.Label))
 	}
 	return label
-}
-
-// repositionedOptions gives the options of order — the options of one attribute, which are in display
-// order, in a new order — the positions that make that order, and returns those whose position changes: a
-// move swaps two positions, or, when both have the same position, numbers the list 1…n.
-func repositionedOptions(options, order []Option) []Option {
-	next := slices.Clone(order)
-	for k := range next {
-		next[k].Position = options[k].Position
-	}
-	if !slices.EqualFunc(optionOrder(next), next, func(x, y Option) bool { return x.ID == y.ID }) {
-		for k := range next {
-			next[k].Position = k + 1
-		}
-	}
-	positions := make(map[string]int, len(options))
-	for _, o := range options {
-		positions[o.ID] = o.Position
-	}
-	changed := []Option{}
-	for _, o := range next {
-		if positions[o.ID] != o.Position {
-			changed = append(changed, o)
-		}
-	}
-	return changed
-}
-
-// The statuses an option list can be filtered by; "" means all.
-const (
-	statusAll      = "all"
-	statusActive   = "active"
-	statusInactive = "inactive"
-)
-
-// ListOptions returns the options of the attribute attributeID in display order (FR-018, FR-020): those
-// whose label contains filter.Q ignoring letter case and surrounding spaces ("0220" finds "CN04000220",
-// SC-007), of the status asked, at most filter.Limit (1 to 500) after skipping filter.Offset; the page's
-// total counts every match. Each option has its parent options and its own usage (US2-3).
-func (s *Service) ListOptions(ctx context.Context, a actor.Actor, attributeID string, filter OptionFilter) (OptionPage, error) {
-	var problems errs.Problems
-	if filter.Limit < 1 || filter.Limit > maxOptionLimit {
-		problems.Add("limit", limitMessage)
-	}
-	if filter.Offset < 0 {
-		problems.Add("offset", offsetMessage)
-	}
-	if filter.Status != "" && filter.Status != statusAll && filter.Status != statusActive && filter.Status != statusInactive {
-		problems.Add("status", optionStatusMessage)
-	}
-	if err := problems.Err(); err != nil {
-		return OptionPage{}, err
-	}
-
-	page := OptionPage{Items: []OptionView{}}
-	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		f, err := s.loadForm(ctx, "")
-		if err != nil {
-			return err
-		}
-		attribute, found := f.byID[attributeID]
-		if !found {
-			return errs.NotFound(attributeGoneMessage)
-		}
-		u, err := s.usage(ctx)
-		if err != nil {
-			return err
-		}
-		search := strings.ToLower(strings.TrimSpace(filter.Q))
-		var matches []Option
-		for _, o := range f.options[attributeID] {
-			if (filter.Status == statusActive && !o.Active) || (filter.Status == statusInactive && o.Active) {
-				continue
-			}
-			if strings.Contains(strings.ToLower(o.Label), search) {
-				matches = append(matches, o)
-			}
-		}
-		page.Total = len(matches)
-		for _, o := range matches[min(filter.Offset, len(matches)):min(filter.Offset+filter.Limit, len(matches))] {
-			page.Items = append(page.Items, f.optionView(o, attribute, u))
-		}
-		return nil
-	})
-	return page, err
-}
-
-// optionView returns the option o of the attribute a as the API answers it.
-func (f formData) optionView(o Option, a Attribute, u *usageIndex) OptionView {
-	parents := []SettingRef{}
-	for _, id := range o.ParentOptionIDs {
-		p := f.optionByID[id]
-		parents = append(parents, SettingRef{ID: id, Name: p.Label, Active: p.Active})
-	}
-	return OptionView{
-		ID: o.ID, AttributeID: o.AttributeID, Label: o.Label, Position: o.Position, ParentOptions: parents,
-		Active: o.Active, Usage: u.option(o, a), Locks: f.optionLocks(o, a), Meta: o.Meta,
-	}
-}
-
-// optionLocks says what can't be done with the option o of the attribute a, and why (design system 6.6,
-// D-211): the last option of a choice attribute can't be deleted (FR-018), as DeleteOption answers. An
-// option that f does not hold yet (one just created) counts as one more option. Never nil.
-func (f formData) optionLocks(o Option, a Attribute) []Lock {
-	count := len(f.options[a.ID])
-	if _, held := f.optionByID[o.ID]; !held {
-		count++
-	}
-	if a.IsChoice() && count <= 1 {
-		return []Lock{{Field: "delete", Reason: fmt.Sprintf(lastOptionLockMessage, a.Label, o.Label)}}
-	}
-	return []Lock{}
 }

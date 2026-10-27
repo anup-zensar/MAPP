@@ -12,7 +12,7 @@ import (
 	"mapp/internal/platform/record"
 )
 
-// PostgresStore is the Repository on PostgreSQL: models and activity types here, the other records in the
+// PostgresStore is the Store on PostgreSQL: models and activity types here, the other records in the
 // store_postgres_*.go files. Lists a record owns are child tables and read back as empty lists, never nil.
 type PostgresStore struct {
 	db *database.DB

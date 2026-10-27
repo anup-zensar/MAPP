@@ -180,7 +180,9 @@ func newFixture(t *testing.T) *fixture {
 				items[n.ID] = true
 			}
 		}
-		_, err := LoadDemo(ctx, f.service.repo, f.service.ids, items, f.rates.rates, start.Add(-24*time.Hour))
+		_, err := LoadDemo(ctx, f.service.repo, f.service.ids, DemoLoad{
+			Items: items, Rates: f.rates.rates, At: start.Add(-24 * time.Hour),
+		})
 		return err
 	})
 	return f
@@ -199,10 +201,11 @@ func newEmptyFixture(t *testing.T) *fixture {
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	clock := func() time.Time { return f.now }
-	f.history = history.NewService(db, history.NewJSONRepository(), generator, clock)
-	f.service = NewService(db, NewJSONRepository(), generator, f.history, Deps{
+	f.history = history.NewService(db, history.NewJSONStore(), generator, clock)
+	tools := history.Tools{Tx: db, IDs: generator, Log: f.history, Now: clock}
+	f.service = NewService(tools, NewJSONStore(), Deps{
 		Planning: f.planning, Rates: f.rates, Displays: fakeDisplays{}, Access: f.access,
-	}, clock)
+	})
 	for _, k := range f.service.Kinds() {
 		if err := f.history.Register(k); err != nil {
 			t.Fatalf("Register: %v", err)

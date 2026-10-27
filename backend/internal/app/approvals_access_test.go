@@ -8,13 +8,13 @@ import (
 	"time"
 
 	accessservice "mapp/internal/access"
-	"mapp/internal/activities"
-	"mapp/internal/approvals"
-	"mapp/internal/campaigns"
+	"mapp/internal/activity"
+	"mapp/internal/approval"
+	"mapp/internal/campaign"
 	"mapp/internal/history"
-	"mapp/internal/lineitems"
+	"mapp/internal/lineitem"
 	"mapp/internal/people"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/store"
 	"mapp/internal/settings"
@@ -42,14 +42,15 @@ func TestAdapter_RuleFacts_FR010(t *testing.T) {
 	t.Parallel()
 	db, now := seededStore(t)
 	generator := ids.NewGenerator(ids.NewJSONCounters())
-	settingsService := settings.NewService(db, settings.NewJSONRepository(), generator,
-		history.NewService(db, history.NewJSONRepository(), generator, now), now)
+	settingsService := settings.NewService(history.Tools{
+		Tx: db, IDs: generator, Log: history.NewService(db, history.NewJSONStore(), generator, now), Now: now,
+	}, settings.NewJSONStore())
 	adapter := &approvalsActivities{
-		activities: activities.NewJSONRepository(), lineItems: lineitems.NewJSONRepository(), campaigns: campaigns.NewJSONRepository(),
-		plans: plans.NewJSONRepository(), settings: settings.NewJSONRepository(), rates: settingsService.Rates, now: now,
+		activities: activity.NewJSONStore(), lineItems: lineitem.NewJSONStore(), campaigns: campaign.NewJSONStore(),
+		plans: plan.NewJSONStore(), settings: settings.NewJSONStore(), rates: settingsService.Rates, now: now,
 	}
 
-	var fleet, launch approvals.ActivityFacts
+	var fleet, launch approval.ActivityFacts
 	err := db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
 		if fleet, _, err = adapter.Activity(ctx, "A-1009"); err != nil {
@@ -79,26 +80,27 @@ func TestApprovalsAccess_RoleHolders_FR001(t *testing.T) {
 	t.Parallel()
 	db, now := seededStore(t)
 	generator := ids.NewGenerator(ids.NewJSONCounters())
-	historyService := history.NewService(db, history.NewJSONRepository(), generator, now)
-	peopleService := people.NewService(db, people.NewJSONRepository(), generator, historyService, now)
-	access := approvalsAccess{access: accessservice.NewService(db, accessservice.NewJSONRepository(), generator, historyService,
-		accessDirectory{people: peopleService}, now)}
-	choices := approvalRuleChoices{settings: settings.NewService(db, settings.NewJSONRepository(), generator, historyService, now)}
+	historyService := history.NewService(db, history.NewJSONStore(), generator, now)
+	peopleService := people.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, people.NewJSONStore())
+	access := approvalsAccess{access: accessservice.NewService(
+		history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, accessservice.NewJSONStore(),
+		accessDirectory{people: peopleService})}
+	choices := approvalRuleChoices{settings: settings.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, settings.NewJSONStore())}
 
 	err := db.Read(t.Context(), func(ctx context.Context) error {
-		lubricants, found, err := plans.NewJSONRepository().Get(ctx, "P-1001")
+		lubricants, found, err := plan.NewJSONStore().Get(ctx, "P-1001")
 		if err != nil || !found {
 			t.Fatalf("plan P-1001: %v %v", found, err)
 		}
-		holders, err := access.RoleHolders(ctx, "RL-1004", approvals.PlanFacts{ID: lubricants.ID, TeamIDs: lubricants.TeamIDs})
+		holders, err := access.RoleHolders(ctx, "RL-1004", approval.PlanFacts{ID: lubricants.ID, TeamIDs: lubricants.TeamIDs})
 		if err != nil {
 			return err
 		}
-		elsewhere, err := access.RoleHolders(ctx, "RL-1004", approvals.PlanFacts{ID: "P-9999", TeamIDs: []string{"T-9999"}})
+		elsewhere, err := access.RoleHolders(ctx, "RL-1004", approval.PlanFacts{ID: "P-9999", TeamIDs: []string{"T-9999"}})
 		if err != nil {
 			return err
 		}
-		admins, err := access.RoleHolders(ctx, "RL-1001", approvals.PlanFacts{ID: "P-9999"})
+		admins, err := access.RoleHolders(ctx, "RL-1001", approval.PlanFacts{ID: "P-9999"})
 		if err != nil {
 			return err
 		}
@@ -114,11 +116,11 @@ func TestApprovalsAccess_RoleHolders_FR001(t *testing.T) {
 		if !reflect.DeepEqual(can, want) {
 			t.Errorf("CanApprove = %v, want %v", can, want)
 		}
-		behalf, err := access.Check(ctx, "U-1005", approvals.PermissionDecideOnBehalf, &approvals.PlanFacts{ID: "P-1001"})
+		behalf, err := access.Check(ctx, "U-1005", approval.PermissionDecideOnBehalf, &approval.PlanFacts{ID: "P-1001"})
 		if err != nil {
 			return err
 		}
-		manage, err := access.Check(ctx, "U-1003", approvals.PermissionManageWorkflows, nil)
+		manage, err := access.Check(ctx, "U-1003", approval.PermissionManageWorkflows, nil)
 		if err != nil {
 			return err
 		}

@@ -17,7 +17,7 @@ import (
 // so a check says exactly what the import does (SC-003) and the demo data goes through the import's rules.
 // It runs inside the caller's Write.
 type applier struct {
-	repo  Repository
+	repo  Store
 	ids   *ids.Generator
 	items LineItemStates // which line items are stored, live or in the recycle bin
 	rates money.Rates    // the currencies of Settings

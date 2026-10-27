@@ -1,7 +1,6 @@
 package seed
 
 import (
-	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,11 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"mapp/internal/activities"
-	"mapp/internal/approvals"
+	"mapp/internal/activity"
 	"mapp/internal/history"
-	"mapp/internal/lineitems"
-	"mapp/internal/plans"
+	"mapp/internal/lineitem"
+	"mapp/internal/plan"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/money"
@@ -39,31 +37,42 @@ type kindLabel struct {
 	name, singular string
 }
 
-// The words of the stored statuses, as the activity log shows them (004's plan statuses, 006's activity
-// statuses).
-var (
-	planStatusWords     = map[plans.Status]string{plans.StatusDraft: "Draft", plans.StatusPublished: "Published"}
-	activityStatusWords = map[activities.Status]string{
-		activities.StatusCreated: "Created", activities.StatusSubmitted: "Submitted",
-		activities.StatusDeclined: "Declined", activities.StatusApproved: "Approved",
+// planStatusWords returns the words of the stored plan statuses, as the activity log shows them (004).
+func planStatusWords() map[plan.Status]string {
+	return map[plan.Status]string{plan.StatusDraft: "Draft", plan.StatusPublished: "Published"}
+}
+
+// activityStatusWords returns the words of the stored activity statuses, as the activity log shows them (006).
+func activityStatusWords() map[activity.Status]string {
+	return map[activity.Status]string{
+		activity.StatusCreated: "Created", activity.StatusSubmitted: "Submitted",
+		activity.StatusDeclined: "Declined", activity.StatusApproved: "Approved",
 	}
-)
+}
 
 // The deleted initiative of the demo story (011 plan "Demo data", step 5): "Trade shows" in Rimula fleet of
 // FY2026 Lubricants Europe, with its activity "Fleet expo stand" and that activity's line item "Stand
 // build". Priya Raman created them 12 days before the seed time and deleted the initiative 2 days before,
 // so they are only in the recycle bin.
+const (
+	binActivityName = "Fleet expo stand"
+	binLineItemName = "Stand build"
+)
+
 var (
 	binInitiative = demoInitiative{name: "Trade shows", owner: "Priya Raman", start: "2026-02-01", end: "2026-12-31",
 		budget: "20000.00", attributes: notFIT4}
 	binActivity = demoActivity{plan: lubricantsPlan, campaign: "Rimula fleet", initiative: "Trade shows",
-		name: "Fleet expo stand", status: activities.StatusCreated, activityType: "Event", owner: "Priya Raman",
+		name: binActivityName, status: activity.StatusCreated, activityType: typeEvent, owner: "Priya Raman",
 		start: "2026-06-01", end: "2026-06-30", plannedCost: "18000.00", workflow: lubricantsFlow,
 		attributes: lubricantsActivity("Germany", "DE03", "DE03000150", "Rimula", "FIT4-0049")}
-	binLineItem = demoLineItem{plan: lubricantsPlan, activity: "Fleet expo stand", name: "Stand build", currency: "USD",
-		plannedCost: "18000.00", method: lineitems.SpreadEvenly, spendType: "BTL – Event",
-		glCode: "7250040 – Events and sponsorship", budget: "2026 Lubricants Budget", item: "Europe – Events", requestSwbs: true}
 )
+
+func binLineItem() demoLineItem {
+	return demoLineItem{plan: lubricantsPlan, activity: binActivityName, name: binLineItemName, currency: money.BaseCurrency,
+		plannedCost: "18000.00", method: lineitem.SpreadEvenly, spendType: spendEvent,
+		glCode: glEventsSponsorship, budget: lubricantsBudget, item: itemEuropeEvents, requestSwbs: true}
+}
 
 // The times of the demo story, before the seed time.
 const (
@@ -190,194 +199,6 @@ func deref(p *string) string {
 	return *p
 }
 
-// addCreated keeps one "created" entry per seeded planning record, by its owner, spread evenly between 14
-// and 10 days before the seed time in tree order, so parents come before their children (step 1).
-func (h *demoHistory) addCreated(context.Context) error {
-	first, last := h.at.Add(-createdFrom), h.at.Add(-createdUntil)
-	step := time.Duration(0)
-	if n := len(h.records); n > 1 {
-		step = last.Sub(first) / time.Duration(n-1)
-	}
-	for i, r := range h.records {
-		at := wholeMinuteFrom(first.Add(time.Duration(i) * step))
-		h.add(at, h.ownerOrAlex(r.ownerID), history.ActionCreated, string(history.ActionCreated), r.kind, r.id, r.name,
-			r.path, nil, "", "")
-	}
-	return nil
-}
-
-// wholeMinuteFrom returns t, or the next whole minute when t has seconds: a time on the minute that is never
-// earlier than t, so the first entry stays within the 14 days whatever the seed time's seconds are.
-func wholeMinuteFrom(t time.Time) time.Time {
-	if minute := t.Truncate(time.Minute); minute.Before(t) {
-		return minute.Add(time.Minute)
-	}
-	return t
-}
-
-// addPublished keeps one "published" entry for every Published plan, by its owner, 7 days before (step 2).
-func (h *demoHistory) addPublished(context.Context) error {
-	for _, r := range h.records {
-		if r.plan == nil || r.plan.Status != plans.StatusPublished {
-			continue
-		}
-		change, err := statusChange(plans.StatusDraft, plans.StatusPublished, planStatusWords)
-		if err != nil {
-			return err
-		}
-		h.add(h.at.Add(-publishedAgo), h.ownerOrAlex(r.ownerID), history.ActionStatusChanged, "published",
-			r.kind, r.id, r.name, r.path, []history.Change{change}, "", "")
-	}
-	return nil
-}
-
-// statusChange is the change of a record's "status" field from one stored status to another, with the
-// words people read.
-func statusChange[S ~string](from, to S, words map[S]string) (history.Change, error) {
-	oldValue, err := json.Marshal(from)
-	if err != nil {
-		return history.Change{}, err
-	}
-	newValue, err := json.Marshal(to)
-	if err != nil {
-		return history.Change{}, err
-	}
-	return history.Change{Field: "status", Label: "Status", Old: oldValue, New: newValue, OldText: words[from], NewText: words[to]}, nil
-}
-
-// addApprovalActions keeps one "statusChanged" entry for every approval action of 008's seed in the last 14
-// days, as 008 logs it on the activity: the verb ("submitted", "re-submitted", "approved", "approved level
-// 1 of", "declined"), the actor, the time, the comment, the round's details and the status change (step 3).
-// Rounds that ended before the log starts are left out; the activity's own approval history keeps them.
-func (h *demoHistory) addApprovalActions(ctx context.Context) error {
-	repo := h.stores.Approvals
-	rounds, err := repo.ListRounds(ctx)
-	if err != nil {
-		return err
-	}
-	actions, err := repo.ListActions(ctx)
-	if err != nil {
-		return err
-	}
-	roundByID := map[string]approvals.Round{}
-	for _, round := range rounds {
-		roundByID[round.ID] = round
-	}
-	activityByID := map[string]treeRecord{}
-	for _, r := range h.records {
-		if r.activity != nil {
-			activityByID[r.id] = r
-		}
-	}
-
-	// Every action in time order, so each one knows the status the activity had before it.
-	// The repository lists them by ID; a stable sort keeps that order for actions of the same moment.
-	slices.SortStableFunc(actions, func(x, y approvals.Action) int { return x.At.Compare(y.At) })
-	logStart := h.at.Add(-HistoryDays * day)
-	status := map[string]activities.Status{} // activity ID → its status after the actions so far
-	for _, action := range actions {
-		round, found := roundByID[action.RoundID]
-		activity, stored := activityByID[action.ActivityID]
-		if !found || !stored {
-			return fmt.Errorf("seed: approval action %s has no round or activity", action.ID)
-		}
-		before := cmp.Or(status[action.ActivityID], activities.StatusCreated)
-		after, verb, details := approvalStep(action, round, before)
-		status[action.ActivityID] = after
-		if action.At.Before(logStart) {
-			continue
-		}
-		changes := []history.Change{}
-		if after != before {
-			change, err := statusChange(before, after, activityStatusWords)
-			if err != nil {
-				return err
-			}
-			changes = append(changes, change)
-		}
-		h.add(action.At, action.Actor, history.ActionStatusChanged, verb, activity.kind, activity.id, activity.name,
-			activity.path, changes, action.Comment, details)
-	}
-	return nil
-}
-
-// approvalStep returns what one approval action did, as 008 logs it (approvals rounds.go): the activity's
-// status after it, the verb and the details.
-func approvalStep(action approvals.Action, round approvals.Round, before activities.Status) (activities.Status, string, string) {
-	approverNames := func(level int) string {
-		list := make([]string, 0, len(round.Levels[level-1].Approvers))
-		for _, a := range round.Levels[level-1].Approvers {
-			list = append(list, a.Name)
-		}
-		return strings.Join(list, ", ")
-	}
-	switch action.Action {
-	case approvals.ActionSubmitted, approvals.ActionResubmitted:
-		verb := "submitted"
-		if action.Action == approvals.ActionResubmitted {
-			verb = "re-submitted"
-		}
-		return activities.StatusSubmitted, verb,
-			fmt.Sprintf("Round %d · %s · waiting for level 1 (%s)", round.Number, round.WorkflowName, approverNames(1))
-	}
-	decided := fmt.Sprintf("Round %d · level %d of %d", round.Number, action.Level, len(round.Levels))
-	suffix := ""
-	if len(action.OnBehalfOf) > 0 {
-		names := make([]string, 0, len(action.OnBehalfOf))
-		for _, a := range action.OnBehalfOf {
-			names = append(names, a.Name)
-		}
-		suffix = "; on behalf of " + strings.Join(names, ", ")
-	}
-	switch {
-	case action.Action == approvals.ActionDeclined:
-		return activities.StatusDeclined, "declined", decided + suffix
-	case action.Level == len(round.Levels):
-		return activities.StatusApproved, "approved", decided + suffix
-	default:
-		next := action.Level + 1
-		return before, fmt.Sprintf("approved level %d of", action.Level),
-			fmt.Sprintf("%s · now waiting for level %d (%s)%s", decided, next, approverNames(next), suffix)
-	}
-}
-
-// addCostChange keeps one "changed" entry by Priya Raman 5 days before: the planned cost of her first
-// FY2026 Lubricants Europe activity with a planned cost went up by 5,000.00 USD to what is stored (step 4).
-func (h *demoHistory) addCostChange(context.Context) error {
-	var r resolver
-	priyaID := r.id(h.demo.people, "person", "Priya Raman")
-	planID := r.id(h.plans, "plan", lubricantsPlan)
-	if r.err != nil {
-		return r.err
-	}
-	i := slices.IndexFunc(h.records, func(rec treeRecord) bool {
-		return rec.activity != nil && rec.ownerID == priyaID && rec.activity.PlannedCost != nil && rec.path[0].ID == planID
-	})
-	if i < 0 {
-		return fmt.Errorf("seed: Priya Raman has no activity with a planned cost in %s", lubricantsPlan)
-	}
-	activity := h.records[i]
-	now := *activity.activity.PlannedCost
-	by, err := money.ParseAmount(costChangedBy)
-	if err != nil {
-		return err
-	}
-	before := money.Money{Amount: now.Amount.Sub(by), Currency: now.Currency}
-	oldValue, err := json.Marshal(before)
-	if err != nil {
-		return err
-	}
-	newValue, err := json.Marshal(now)
-	if err != nil {
-		return err
-	}
-	change := history.Change{Field: "plannedCost", Label: "Planned cost", Old: oldValue, New: newValue,
-		OldText: before.Format(), NewText: now.Format()}
-	h.add(h.at.Add(-costChangedAgo), h.people[priyaID], history.ActionChanged, string(history.ActionChanged),
-		activity.kind, activity.id, activity.name, activity.path, []history.Change{change}, "", "")
-	return nil
-}
-
 // addDeletedInitiative builds the deleted initiative "Trade shows" with its activity and line item, keeps
 // their "created" entries (12 days before) and the "deleted" entry (2 days before), and returns the
 // recycle-bin entry that holds them (step 5). The records get the next IDs, so those IDs are never given
@@ -401,22 +222,23 @@ func (h *demoHistory) addDeletedInitiative(ctx context.Context, priya actor.Acto
 	}
 	initiative.Meta = meta
 
-	activity, err := h.activityOf(binActivity, initiative.ID)
+	act, err := h.activityOf(binActivity, initiative.ID)
 	if err != nil {
 		return history.BinEntry{}, err
 	}
-	if activity.ID, err = h.next(ctx, ids.PrefixActivity); err != nil {
+	if act.ID, err = h.next(ctx, ids.PrefixActivity); err != nil {
 		return history.BinEntry{}, err
 	}
-	activity.Meta = record.NewMeta(priya, created.Add(binCreatedSpread))
+	act.Meta = record.NewMeta(priya, created.Add(binCreatedSpread))
 
-	currency, found, err := h.stores.Settings.GetCurrency(ctx, binLineItem.currency)
+	item := binLineItem()
+	currency, found, err := h.stores.Settings.GetCurrency(ctx, item.currency)
 	if err != nil || !found {
-		return history.BinEntry{}, cmpErr(err, fmt.Errorf("seed: there is no currency %s", binLineItem.currency))
+		return history.BinEntry{}, cmpErr(err, fmt.Errorf("seed: there is no currency %s", item.currency))
 	}
-	lineItem, err := h.lineItemFields(binLineItem, activity, currency.Rate)
+	lineItem, err := h.lineItemFields(item, act, currency.Rate)
 	if err != nil {
-		return history.BinEntry{}, fmt.Errorf("seed: line item %s: %w", binLineItem.name, err)
+		return history.BinEntry{}, fmt.Errorf("seed: line item %s: %w", item.name, err)
 	}
 	if lineItem.ID, err = h.next(ctx, ids.PrefixLineItem); err != nil {
 		return history.BinEntry{}, err
@@ -425,12 +247,12 @@ func (h *demoHistory) addDeletedInitiative(ctx context.Context, priya actor.Acto
 
 	path := []history.RecordRef{ref(planningKinds.plan, planID, lubricantsPlan), ref(planningKinds.campaign, campaignID, binActivity.campaign)}
 	initiativePath := append(slices.Clone(path), ref(planningKinds.initiative, initiative.ID, initiative.Name))
-	activityPath := append(slices.Clone(initiativePath), ref(planningKinds.activity, activity.ID, activity.Name))
-	h.add(initiative.Meta.CreatedAt, priya, history.ActionCreated, string(history.ActionCreated), planningKinds.initiative,
+	activityPath := append(slices.Clone(initiativePath), ref(planningKinds.activity, act.ID, act.Name))
+	h.add(initiative.CreatedAt, priya, history.ActionCreated, string(history.ActionCreated), planningKinds.initiative,
 		initiative.ID, initiative.Name, path, nil, "", "")
-	h.add(activity.Meta.CreatedAt, priya, history.ActionCreated, string(history.ActionCreated), planningKinds.activity,
-		activity.ID, activity.Name, initiativePath, nil, "", "")
-	h.add(lineItem.Meta.CreatedAt, priya, history.ActionCreated, string(history.ActionCreated), planningKinds.lineItem,
+	h.add(act.CreatedAt, priya, history.ActionCreated, string(history.ActionCreated), planningKinds.activity,
+		act.ID, act.Name, initiativePath, nil, "", "")
+	h.add(lineItem.CreatedAt, priya, history.ActionCreated, string(history.ActionCreated), planningKinds.lineItem,
 		lineItem.ID, lineItem.Name, activityPath, nil, "", "")
 
 	snapshots := make([]history.Snapshot, 0, 3)
@@ -440,8 +262,8 @@ func (h *demoHistory) addDeletedInitiative(ctx context.Context, priya actor.Acto
 		data               any
 	}{
 		{planningKinds.initiative, initiative.ID, initiative.Name, campaignID, initiative},
-		{planningKinds.activity, activity.ID, activity.Name, initiative.ID, activity},
-		{planningKinds.lineItem, lineItem.ID, lineItem.Name, activity.ID, lineItem},
+		{planningKinds.activity, act.ID, act.Name, initiative.ID, act},
+		{planningKinds.lineItem, lineItem.ID, lineItem.Name, act.ID, lineItem},
 	} {
 		data, err := json.Marshal(s.data)
 		if err != nil {

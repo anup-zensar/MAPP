@@ -5,10 +5,11 @@ import (
 	"slices"
 
 	"mapp/internal/access"
-	"mapp/internal/approvals"
+	"mapp/internal/approval"
 	"mapp/internal/people"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
+	"mapp/internal/stores"
 )
 
 // accessDirectory implements access.Directory (feature 014) over the people service (003): everyone with
@@ -63,7 +64,7 @@ func (d accessDirectory) TouchPerson(ctx context.Context, a actor.Actor, personI
 // accessApprovals implements access.ApprovalFacts over the approval workflows and rounds of feature 008,
 // for the roles impact check (FR-022).
 type accessApprovals struct {
-	repo approvals.Repository
+	repo stores.ApprovalStore
 }
 
 // ApproverIn counts the active approval workflows that name the person as an approver of any level, and
@@ -74,7 +75,7 @@ func (f accessApprovals) ApproverIn(ctx context.Context, personID string) (workf
 		return 0, 0, err
 	}
 	for _, w := range all {
-		if w.Active && slices.ContainsFunc(w.Levels, func(l approvals.Level) bool { return slices.Contains(l.ApproverIDs, personID) }) {
+		if w.Active && slices.ContainsFunc(w.Levels, func(l approval.Level) bool { return slices.Contains(l.ApproverIDs, personID) }) {
 			workflows++
 		}
 	}
@@ -83,7 +84,7 @@ func (f accessApprovals) ApproverIn(ctx context.Context, personID string) (workf
 		return 0, 0, err
 	}
 	for _, r := range rounds {
-		if r.Outcome != approvals.OutcomeOpen || r.CurrentLevel < 1 || r.CurrentLevel > len(r.Levels) {
+		if r.Outcome != approval.OutcomeOpen || r.CurrentLevel < 1 || r.CurrentLevel > len(r.Levels) {
 			continue
 		}
 		level := r.Levels[r.CurrentLevel-1]

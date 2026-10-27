@@ -4,19 +4,18 @@ import (
 	"context"
 	"slices"
 
-	"mapp/internal/activities"
 	"mapp/internal/allwork"
-	"mapp/internal/campaigns"
+	"mapp/internal/campaign"
 	"mapp/internal/financials"
 	"mapp/internal/history"
-	"mapp/internal/lineitems"
 	"mapp/internal/people"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/money"
 	"mapp/internal/platform/store"
 	"mapp/internal/settings"
+	"mapp/internal/stores"
 )
 
 // The wiring of feature 015, financial transactions (D-196, D-251): the ports of internal/financials over
@@ -28,11 +27,11 @@ import (
 // and 007's line items with their USD planned cost at the current rates. It reads inside the caller's
 // transaction and never writes.
 type financialPlanning struct {
-	plans         plans.Repository
-	campaigns     *campaigns.Service
-	campaignsRepo campaigns.Repository
-	activities    activities.Repository
-	lineItems     lineitems.Repository
+	plans         stores.PlanStore
+	campaigns     *campaign.Service
+	campaignsRepo stores.CampaignStore
+	activities    stores.ActivityStore
+	lineItems     stores.LineItemStore
 	settings      *settings.Service
 	people        *people.Service
 	history       *history.Service
@@ -71,9 +70,9 @@ func (p financialPlanning) MyTeamPlanIDs(ctx context.Context, personID string) (
 		return nil, err
 	}
 	var mine []string
-	for _, plan := range all {
-		if slices.ContainsFunc(plan.TeamIDs, func(id string) bool { return slices.Contains(teams, id) }) {
-			mine = append(mine, plan.ID)
+	for _, p := range all {
+		if slices.ContainsFunc(p.TeamIDs, func(id string) bool { return slices.Contains(teams, id) }) {
+			mine = append(mine, p.ID)
 		}
 	}
 	return mine, nil
@@ -98,7 +97,7 @@ func (d financialDisplays) Display(ctx context.Context, personID string) (money.
 // An internal call (no grants) may do everything.
 type financialAccess struct {
 	tx    store.Transactor
-	plans plans.Repository
+	plans stores.PlanStore
 }
 
 // SeeFinance needs finance.view in some scope.
@@ -159,7 +158,7 @@ func (f financialAccess) VisiblePlanIDs(ctx context.Context, _ actor.Actor) ([]s
 			return err
 		}
 		for _, p := range list {
-			if finance.Covers(plans.AccessFacts(p)) {
+			if finance.Covers(plan.AccessFacts(p)) {
 				visible = append(visible, p.ID)
 			}
 		}
@@ -177,7 +176,7 @@ func (f financialAccess) planFacts(ctx context.Context, planID string) (authz.Pl
 	var found bool
 	err := f.tx.Read(ctx, func(ctx context.Context) error {
 		p, ok, err := f.plans.Get(ctx, planID)
-		facts, found = plans.AccessFacts(p), ok
+		facts, found = plan.AccessFacts(p), ok
 		return err
 	})
 	return facts, found, err

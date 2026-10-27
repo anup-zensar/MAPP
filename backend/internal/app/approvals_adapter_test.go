@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"mapp/internal/activities"
-	"mapp/internal/approvals"
+	"mapp/internal/activity"
+	"mapp/internal/approval"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/record"
 	"mapp/internal/platform/store"
@@ -21,13 +21,13 @@ func TestAdapter_WorkflowFacts_FR007(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)
 	}
-	repo := approvals.NewJSONRepository()
+	repo := approval.NewJSONStore()
 	meta := record.NewMeta(actor.System, time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC))
 	err = db.Write(t.Context(), func(ctx context.Context) error {
-		for _, w := range []approvals.Workflow{
-			{ID: "WF-1001", Name: "Lubricants EU approval", Active: false, Levels: []approvals.Level{{ApproverIDs: []string{"U-1003"}}}, Meta: meta},
+		for _, w := range []approval.Workflow{
+			{ID: "WF-1001", Name: "Lubricants EU approval", Active: false, Levels: []approval.Level{{ApproverIDs: []string{"U-1003"}}}, Meta: meta},
 			{ID: "WF-1002", Name: "China BC approval workflow", Active: true,
-				Levels: []approvals.Level{{Name: "Region", ApproverIDs: []string{"U-1005"}}, {ApproverIDs: []string{"U-1001"}}}, Meta: meta},
+				Levels: []approval.Level{{Name: "Region", ApproverIDs: []string{"U-1005"}}, {ApproverIDs: []string{"U-1001"}}}, Meta: meta},
 		} {
 			if err := repo.PutWorkflow(ctx, w); err != nil {
 				return err
@@ -40,8 +40,8 @@ func TestAdapter_WorkflowFacts_FR007(t *testing.T) {
 	}
 	adapter := activityWorkflows{repo: repo}
 
-	var list []activities.WorkflowFacts
-	var one activities.WorkflowFacts
+	var list []activity.WorkflowFacts
+	var one activity.WorkflowFacts
 	var found, missing bool
 	err = db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
@@ -58,11 +58,11 @@ func TestAdapter_WorkflowFacts_FR007(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
-	want := []activities.WorkflowFacts{
-		{ID: "WF-1002", Name: "China BC approval workflow", Active: true, Levels: []activities.WorkflowLevelFacts{
+	want := []activity.WorkflowFacts{
+		{ID: "WF-1002", Name: "China BC approval workflow", Active: true, Levels: []activity.WorkflowLevelFacts{
 			{Name: "Region", ApproverIDs: []string{"U-1005"}}, {ApproverIDs: []string{"U-1001"}},
 		}},
-		{ID: "WF-1001", Name: "Lubricants EU approval", Active: false, Levels: []activities.WorkflowLevelFacts{{ApproverIDs: []string{"U-1003"}}}},
+		{ID: "WF-1001", Name: "Lubricants EU approval", Active: false, Levels: []activity.WorkflowLevelFacts{{ApproverIDs: []string{"U-1003"}}}},
 	}
 	if !reflect.DeepEqual(list, want) {
 		t.Errorf("list =\n%+v\nwant\n%+v", list, want)
@@ -81,23 +81,23 @@ func TestAdapter_ActivityDeletingKeepsRound_008P3(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)
 	}
-	repo := approvals.NewJSONRepository()
+	repo := approval.NewJSONStore()
 	at := time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 	priya := actor.Actor{ID: "U-1002", Name: "Priya Raman"}
-	open := approvals.Round{
+	open := approval.Round{
 		ID: "AR-1001", ActivityID: "A-1004", Number: 1, WorkflowID: "WF-1001", WorkflowName: "Lubricants EU approval",
-		Levels: []approvals.RoundLevel{{Number: 1, Approvers: []actor.Actor{{ID: "U-1003", Name: "Daniel Okoro"}},
-			ApproverType: approvals.SourcePeople, Mode: approvals.ModeAny, Resolution: approvals.ResolutionDecide, Excluded: []approvals.Excluded{}}},
-		CurrentLevel: 1, Outcome: approvals.OutcomeOpen, SubmittedAt: at, SubmittedBy: priya, Meta: record.NewMeta(priya, at),
+		Levels: []approval.RoundLevel{{Number: 1, Approvers: []actor.Actor{{ID: "U-1003", Name: "Daniel Okoro"}},
+			ApproverType: approval.SourcePeople, Mode: approval.ModeAny, Resolution: approval.ResolutionDecide, Excluded: []approval.Excluded{}}},
+		CurrentLevel: 1, Outcome: approval.OutcomeOpen, SubmittedAt: at, SubmittedBy: priya, Meta: record.NewMeta(priya, at),
 	}
 	hooks := activityApprovalHooks{} // the delete needs nothing of the approvals service
 
-	var after approvals.Round
+	var after approval.Round
 	err = db.Write(t.Context(), func(ctx context.Context) error {
-		if err := repo.PutRound(ctx, open); err != nil {
+		if err = repo.PutRound(ctx, open); err != nil {
 			return err
 		}
-		if err := hooks.ActivityDeleting(ctx, priya, activities.Activity{ID: "A-1004", Status: activities.StatusSubmitted}); err != nil {
+		if err = hooks.ActivityDeleting(ctx, priya, activity.Activity{ID: "A-1004", Status: activity.StatusSubmitted}); err != nil {
 			return err
 		}
 		after, _, err = repo.GetRound(ctx, open.ID)

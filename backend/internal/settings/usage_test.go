@@ -27,20 +27,20 @@ func TestUsage_SummaryAndRecycleBin_FR003(t *testing.T) {
 		testAttribute{level: LevelActivity, label: "Brands", typ: TypeMultipleChoiceSplit, condition: []string{"Lubricants"}, options: []string{"Helix"}},
 	)
 	cluster, europe := tf.attribute(LevelCampaign, "Cluster"), tf.option(LevelCampaign, "Cluster", "Europe")
-	item := f.addItem(t, 2026, "2026 Lubricants Budget", "Europe – Digital", "", true)
+	item := f.addItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", ""), true)
 	budget := item.BudgetID
 	f.refs = []Reference{
-		planRef("P-1002", "Mobility FY2026", lubricants.ID, false, nil),
-		planRef("P-1001", "Lubricants FY2026", lubricants.ID, false, nil),
-		planRef("P-1003", "Old plan", lubricants.ID, true, nil),
-		activityRef("A-1001", "P-1001", event.ID, false, nil),
-		activityRef("A-1002", "P-1001", event.ID, true, nil),
+		planRef("P-1002", "Mobility FY2026", lubricants.ID, nil),
+		planRef("P-1001", "Lubricants FY2026", lubricants.ID, nil),
+		inRecycleBin(planRef("P-1003", "Old plan", lubricants.ID, nil)),
+		activityRef("A-1001", "P-1001", event.ID, nil),
+		inRecycleBin(activityRef("A-1002", "P-1001", event.ID, nil)),
 		{Record: history.RecordRef{Type: "campaign", ID: "C-1001"}, Level: LevelCampaign, PlanID: "P-1001",
 			Attributes: values(cluster.ID, `["`+europe+`"]`)},
 		{Record: history.RecordRef{Type: "campaign", ID: "C-1002"}, Level: LevelCampaign, PlanID: "P-1001", InBin: true,
 			Attributes: values(cluster.ID, `["`+tf.option(LevelCampaign, "Cluster", "Asia")+`"]`)},
-		lineItemRef("L-1001", "P-1001", "A-1001", "EUR", "100.00", false),
-		lineItemRef("L-1002", "P-1001", "A-1001", "EUR", "100.00", true),
+		lineItemRef("L-1001", "A-1001", "EUR", "100.00"),
+		inRecycleBin(lineItemRef("L-1002", "A-1001", "EUR", "100.00")),
 		personRef("U-1002", "EUR"),
 		{Record: history.RecordRef{Type: "lineItem", ID: "L-1003"}, Level: LevelLineItem, FinanceBudgetItemID: item.ID},
 		{Record: history.RecordRef{Type: "plan", ID: "P-1004", Name: "Budget plan"}, Level: LevelPlan, PlanID: "P-1004", FinanceBudgetID: budget},
@@ -103,7 +103,7 @@ func TestUsage_SettingsInBinCount_EdgeCase(t *testing.T) {
 		testAttribute{level: LevelCampaign, label: "Region", typ: TypeMultipleChoice, parent: "Cluster",
 			options: []string{"UK"}, links: map[string][]string{"UK": {"Europe"}}},
 	)
-	f.write(t, func(ctx context.Context, _ Repository) error {
+	f.write(t, func(ctx context.Context, _ Store) error {
 		if _, err := f.history.MoveToBin(ctx, alex, modelKind, model.ID); err != nil {
 			return err
 		}

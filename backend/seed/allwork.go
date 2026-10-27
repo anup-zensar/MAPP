@@ -4,6 +4,7 @@ import (
 	"context"
 	"slices"
 
+	"mapp/internal/activity"
 	"mapp/internal/allwork"
 	"mapp/internal/platform/ids"
 )
@@ -25,7 +26,7 @@ func (d *demo) addSavedViews(ctx context.Context) error {
 	byMonth.View = allwork.ViewBudget
 	byMonth.Filters.Plans = []allwork.FilterValue{{ID: lubricants, Label: "FY2026 Lubricants Europe"}}
 	declined := standardViewState()
-	declined.Filters.ActivityStatuses = []string{"declined"}
+	declined.Filters.ActivityStatuses = []string{string(activity.StatusDeclined)}
 
 	repo := d.stores.AllWork
 	for _, v := range []struct {

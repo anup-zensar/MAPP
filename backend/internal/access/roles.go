@@ -2,11 +2,8 @@ package access
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"slices"
-	"strings"
-	"unicode/utf8"
 
 	"mapp/internal/history"
 	"mapp/internal/platform/actor"
@@ -14,12 +11,6 @@ import (
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/record"
-)
-
-// The longest role name and description, in characters (data model §1.1).
-const (
-	maxRoleNameLength    = 60
-	maxDescriptionLength = 300
 )
 
 // Permissions returns the fixed list of permissions grouped as the role page shows them (Table A).
@@ -114,19 +105,6 @@ func (s *Service) CreateRole(ctx context.Context, a actor.Actor, input RoleInput
 		return RoleView{}, err
 	}
 	return view, nil
-}
-
-// roleLog is a role as the activity log compares it (data model §3).
-type roleLog struct {
-	Name         string             `json:"name"`
-	Description  string             `json:"description"`
-	DefaultScope authz.ScopeType    `json:"defaultScope"`
-	Permissions  []authz.Permission `json:"permissions"`
-}
-
-// logView returns r as the activity log compares it.
-func (r Role) logView() roleLog {
-	return roleLog{Name: r.Name, Description: r.Description, DefaultScope: r.DefaultScope, Permissions: r.Permissions}
 }
 
 // UpdateRole changes the role id with the fields update sends and keeps the others (FR-018). The
@@ -278,93 +256,4 @@ func (w world) roleView(r Role) RoleView {
 		ID: r.ID, Name: r.Name, Description: r.Description, BuiltIn: r.BuiltIn, Permissions: r.permissions(),
 		DefaultScope: defaultScope, People: w.personRefs(w.holders(r.ID)), Locks: locks, Meta: r.Meta,
 	}
-}
-
-// checkRoleName returns name trimmed and adds its problem: required, at most 60 characters, and no other role
-// than exceptID has it, ignoring letter case (message 14).
-func checkRoleName(problems *errs.Problems, w world, name, exceptID string) string {
-	name = strings.TrimSpace(name)
-	switch {
-	case name == "":
-		problems.Add("name", msgEnterRoleName)
-	case utf8.RuneCountInString(name) > maxRoleNameLength:
-		problems.Add("name", msgUse60)
-	case nameTaken(sortedRoles(w.roles), name, exceptID):
-		problems.Add("name", fmt.Sprintf(msgRoleNameTaken, name))
-	}
-	return name
-}
-
-// checkDescription returns the description trimmed and adds its problem: at most 300 characters.
-func checkDescription(problems *errs.Problems, description string) string {
-	description = strings.TrimSpace(description)
-	if utf8.RuneCountInString(description) > maxDescriptionLength {
-		problems.Add("description", msgUse300)
-	}
-	return description
-}
-
-// checkPermissions returns the permissions without repeats in Table A order and adds their problems: at
-// least one (message 15), each a key of Table A.
-func checkPermissions(problems *errs.Problems, keys []authz.Permission) []authz.Permission {
-	for _, key := range keys {
-		if _, known := authz.Lookup(string(key)); !known {
-			problems.Add("permissions", fmt.Sprintf(msgUnknownPermission, key))
-		}
-	}
-	ordered := authz.InOrder(keys)
-	if len(ordered) == 0 && len(keys) == 0 {
-		problems.Add("permissions", msgChoosePermission)
-	}
-	return ordered
-}
-
-// checkDefaultScope adds the problem of a default scope that is neither All markets nor My teams.
-func checkDefaultScope(problems *errs.Problems, scope authz.ScopeType) authz.ScopeType {
-	if scope != authz.ScopeAll && scope != authz.ScopeMyTeams {
-		problems.Add("defaultScope", msgChooseDefaultScope)
-	}
-	return scope
-}
-
-// permissionCount is the details of a role's "created" entry: "with 9 permissions".
-func permissionCount(n int) string {
-	if n == 1 {
-		return "with 1 permission"
-	}
-	return fmt.Sprintf("with %d permissions", n)
-}
-
-// permissionsDelta is the details of a role's "changed" entry when its permissions change: "Added: …;
-// removed: …", each part only when there is something to say; "" when the permissions did not change.
-func permissionsDelta(before, after []authz.Permission) string {
-	var added, removed []authz.Permission
-	for _, p := range after {
-		if !slices.Contains(before, p) {
-			added = append(added, p)
-		}
-	}
-	for _, p := range before {
-		if !slices.Contains(after, p) {
-			removed = append(removed, p)
-		}
-	}
-	var parts []string
-	if len(added) > 0 {
-		parts = append(parts, "Added: "+labelsOf(authz.InOrder(added)))
-	}
-	if len(removed) > 0 {
-		part := "removed: " + labelsOf(authz.InOrder(removed))
-		if len(parts) == 0 {
-			part = "Removed: " + labelsOf(authz.InOrder(removed))
-		}
-		parts = append(parts, part)
-	}
-	return strings.Join(parts, "; ")
-}
-
-// encode returns v as JSON for a log change; v is a string or a bool, which always encode.
-func encode(v any) json.RawMessage {
-	data, _ := json.Marshal(v)
-	return data
 }

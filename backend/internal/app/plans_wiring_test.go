@@ -9,7 +9,7 @@ import (
 
 	"mapp/internal/history"
 	"mapp/internal/people"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/store"
 	"mapp/internal/settings"
@@ -18,7 +18,7 @@ import (
 )
 
 // Plans reads Settings and people and teams through 002's and 003's services, which app.New passes to
-// plans.NewService as its plans.Settings and plans.Directory. Here on the demo data: Lubricants 1.0 with
+// plan.NewService as its plan.Settings and plan.Directory. Here on the demo data: Lubricants 1.0 with
 // its rates and deal size, Priya's team, the Business unit options and US dollars as her display currency
 // (004 T030).
 func TestPlansDependencies_ReadTheDemoData(t *testing.T) {
@@ -32,9 +32,9 @@ func TestPlansDependencies_ReadTheDemoData(t *testing.T) {
 		t.Fatalf("seed.Load: %v", err)
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
-	historyService := history.NewService(db, history.NewJSONRepository(), generator, now)
-	var s plans.Settings = settings.NewService(db, settings.NewJSONRepository(), generator, historyService, now)
-	var d plans.Directory = people.NewService(db, people.NewJSONRepository(), generator, historyService, now)
+	historyService := history.NewService(db, history.NewJSONStore(), generator, now)
+	var s plan.Settings = settings.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, settings.NewJSONStore())
+	var d plan.Directory = people.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, people.NewJSONStore())
 
 	err = db.Read(t.Context(), func(ctx context.Context) error {
 		model, found, err := s.Model(ctx, "MOD-1001")

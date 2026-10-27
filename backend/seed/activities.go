@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"mapp/internal/activities"
-	"mapp/internal/approvals"
+	"mapp/internal/activity"
+	"mapp/internal/approval"
 	"mapp/internal/platform/ids"
 	"mapp/internal/settings"
 )
@@ -17,16 +17,16 @@ var demoWorkflows = []struct {
 	levels            [][]string
 }{
 	{"Lubricants EU approval", "Lubricants Europe activities. The marketing team leader approves.",
-		[][]string{{"Daniel Okoro"}}},
+		[][]string{{danielOkoro}}},
 	{"China BC approval workflow", "Mobility China activities: the business champion first, then the marketing administrator.",
-		[][]string{{"Carlos Mendes"}, {"Alex Morgan"}}},
+		[][]string{{carlosMendes}, {alexMorgan}}},
 }
 
 // demoActivity is one activity of 006 plan "Demo data". Dates are YYYY-MM-DD ("" none); an ongoing activity
 // has only a start date; amounts are USD texts ("" none); inq is 0 when not set.
 type demoActivity struct {
 	plan, campaign, initiative, name string
-	status                           activities.Status
+	status                           activity.Status
 	activityType, owner              string
 	start, end                       string
 	ongoing                          bool
@@ -64,7 +64,7 @@ func lubricantsActivity(country, companyCode, costCentre, brand, fit4ID string) 
 // 011's seed step (history.go) together with that initiative.
 var demoActivities = []demoActivity{
 	{plan: lubricantsPlan, campaign: "Helix launch", initiative: "Digital & social", name: "Launch film",
-		status: activities.StatusCreated, activityType: "Content production", owner: "Priya Raman",
+		status: activity.StatusCreated, activityType: typeContentProduction, owner: priyaRaman,
 		start: "2026-03-01", end: "2026-05-31", plannedCost: "120000.00", workflow: lubricantsFlow, inq: 250_000,
 		// Company code, Cost centre and PIR left empty on purpose: "3 fields needed".
 		attributes: func(v *values) {
@@ -76,34 +76,34 @@ var demoActivities = []demoActivity{
 				choices("Sector", "Automotive").choices("Sub-sector", "Passenger cars").choice("Product launch", "Yes – relaunch")
 		}},
 	{plan: lubricantsPlan, campaign: "Helix launch", initiative: "Digital & social", name: "Social always-on",
-		status: activities.StatusApproved, activityType: "Digital media", owner: "Priya Raman",
+		status: activity.StatusApproved, activityType: typeDigitalMedia, owner: priyaRaman,
 		start: "2026-01-01", end: "2026-06-30", plannedCost: "80000.00", workflow: lubricantsFlow, inq: 40_000,
 		attributes: lubricantsActivity("Germany", "DE03", "DE03000150", "Helix", "FIT4-0043")},
 	{plan: lubricantsPlan, campaign: "Helix launch", initiative: "Print & outdoor", name: "Billboard winter wave",
-		status: activities.StatusApproved, activityType: "Agency fees – Creative", owner: "Priya Raman",
+		status: activity.StatusApproved, activityType: typeAgencyFeesCreative, owner: priyaRaman,
 		start: "2026-01-05", end: "2026-02-28", plannedCost: "45000.00", workflow: lubricantsFlow,
 		attributes: lubricantsActivity("United Kingdom", "GB01", "GB01000105", "Helix", "FIT4-0044")},
 	{plan: lubricantsPlan, campaign: "Helix launch", initiative: "Print & outdoor", name: "Trade magazine ads",
-		status: activities.StatusSubmitted, activityType: "Content production", owner: "Priya Raman",
+		status: activity.StatusSubmitted, activityType: typeContentProduction, owner: priyaRaman,
 		start: "2026-04-01", end: "2026-09-30", plannedCost: "30000.00", workflow: lubricantsFlow, inq: 20_000,
 		attributes: lubricantsActivity("Netherlands", "NL02", "NL02000340", "Helix", "FIT4-0045")},
 	{plan: lubricantsPlan, campaign: "Rimula fleet", initiative: "Retail events", name: "Fleet roadshow",
-		status: activities.StatusDeclined, activityType: "Event", owner: "Priya Raman",
+		status: activity.StatusDeclined, activityType: typeEvent, owner: priyaRaman,
 		start: "2026-07-01", end: "2026-09-30", plannedCost: "60000.00", workflow: lubricantsFlow,
 		attributes: lubricantsActivity("Germany", "DE03", "DE03000150", "Rimula", "FIT4-0046")},
 	{plan: lubricantsPlan, campaign: "Rimula fleet", initiative: "Retail events", name: "Christmas trade gifting",
-		status: activities.StatusApproved, activityType: "Event", owner: "Priya Raman",
+		status: activity.StatusApproved, activityType: typeEvent, owner: priyaRaman,
 		start: "2026-11-01", end: "2026-12-15", plannedCost: "25000.00", workflow: lubricantsFlow,
 		attributes: lubricantsActivity("United Kingdom", "GB01", "GB01000118", "Rimula", "FIT4-0047")},
 	{plan: lubricantsPlan, campaign: "Rimula fleet", initiative: "Events", name: "Partner co-marketing fund",
-		status: activities.StatusApproved, activityType: "Sponsorship", owner: "Priya Raman",
+		status: activity.StatusApproved, activityType: typeSponsorship, owner: priyaRaman,
 		start: "2026-03-01", ongoing: true, plannedCost: "100000.00", workflow: lubricantsFlow,
 		attributes: func(v *values) {
 			lubricantsActivity("Netherlands", "NL02", "NL02000340", "Rimula", "FIT4-0048")(v)
 			v.split("Brands", "Rimula", "60.00", "Tellus", "40.00")
 		}},
 	{plan: mobilityPlan, campaign: "Retail growth", initiative: "Station promotions", name: "Grand opening Shanghai",
-		status: activities.StatusCreated, activityType: "Event", owner: "Mei Lin",
+		status: activity.StatusCreated, activityType: typeEvent, owner: meiLin,
 		start: "2026-04-01", end: "2026-06-30", plannedCost: "40000.00", workflow: mobilityFlow,
 		// The shares add up to 90.00 % and the cost centre is empty on purpose.
 		attributes: func(v *values) {
@@ -113,7 +113,7 @@ var demoActivities = []demoActivity{
 				choice("FIT4 initiative", "Not FIT4").text("FIT4 ID", "FIT4-0108")
 		}},
 	{plan: mobilityPlan, campaign: "Retail growth", initiative: "Fleet cards", name: "Fleet card launch",
-		status: activities.StatusSubmitted, activityType: "MOBILITY – Long-term contract", owner: "Mei Lin",
+		status: activity.StatusSubmitted, activityType: typeLongTermContract, owner: meiLin,
 		start: "2026-05-01", end: "2026-12-31", plannedCost: "150000.00", workflow: mobilityFlow,
 		inq: 60_000, typedMQL: 2_000, typedRevenue: "400000.00",
 		attributes: func(v *values) {
@@ -124,14 +124,14 @@ var demoActivities = []demoActivity{
 		}},
 	// Deliberately incomplete: owner, dates, planned cost, workflow and attributes empty.
 	{plan: mobilityPlan, campaign: "Retail growth", initiative: "Station promotions", name: "Lunar new year promo",
-		status: activities.StatusCreated, activityType: "Digital media"},
+		status: activity.StatusCreated, activityType: typeDigitalMedia},
 	// 016 (data-model §8): the GBP plan's activities, planned costs in GBP.
 	{plan: ukPlan, campaign: "Helix UK & Ireland", initiative: "UK", name: "UK launch event",
-		status: activities.StatusCreated, activityType: "Event", owner: "Priya Raman",
+		status: activity.StatusCreated, activityType: typeEvent, owner: priyaRaman,
 		start: "2027-03-01", end: "2027-05-31", plannedCost: "40000.00", workflow: lubricantsFlow,
 		attributes: lubricantsActivity("United Kingdom", "GB01", "GB01000105", "Helix", "FIT4-0049")},
 	{plan: ukPlan, campaign: "Helix UK & Ireland", initiative: "Ireland", name: "Dealer conference",
-		status: activities.StatusCreated, activityType: "Event", owner: "Priya Raman",
+		status: activity.StatusCreated, activityType: typeEvent, owner: priyaRaman,
 		start: "2027-09-01", end: "2027-09-30", plannedCost: "25000.00", workflow: lubricantsFlow,
 		attributes: lubricantsActivity("United Kingdom", "GB01", "GB01000118", "Helix", "FIT4-0050")},
 }
@@ -153,57 +153,57 @@ func (d *demo) addActivities(ctx context.Context) error {
 		if r.err != nil {
 			return r.err
 		}
-		activity, err := d.activityOf(a, initiativeID)
+		act, err := d.activityOf(a, initiativeID)
 		if err != nil {
 			return err
 		}
-		if activity.ID, err = d.next(ctx, ids.PrefixActivity); err != nil {
+		if act.ID, err = d.next(ctx, ids.PrefixActivity); err != nil {
 			return err
 		}
-		if err := repo.Put(ctx, activity); err != nil {
+		if err := repo.Put(ctx, act); err != nil {
 			return err
 		}
-		d.activities[a.plan+"/"+a.name] = activity.ID
+		d.activities[a.plan+"/"+a.name] = act.ID
 	}
 	return nil
 }
 
 // activityOf builds the stored activity a of the initiative initiativeID, without its ID, looking up its
 // activity type, owner and approval workflow by name. MAPP creates it at the seed time.
-func (d *demo) activityOf(a demoActivity, initiativeID string) (activities.Activity, error) {
+func (d *demo) activityOf(a demoActivity, initiativeID string) (activity.Activity, error) {
 	var r resolver
-	activity := activities.Activity{
+	act := activity.Activity{
 		InitiativeID: initiativeID, Name: a.name,
 		ActivityTypeID: r.id(d.settings.ActivityTypes, "activity type", a.activityType),
 		Ongoing:        a.ongoing, Status: a.status, Meta: d.meta(),
 	}
 	if a.owner != "" {
-		activity.OwnerID = r.id(d.people, "person", a.owner)
+		act.OwnerID = r.id(d.people, "person", a.owner)
 	}
 	if a.workflow != "" {
-		activity.ApprovalWorkflowID = r.id(d.workflows, "approval workflow", a.workflow)
+		act.ApprovalWorkflowID = r.id(d.workflows, "approval workflow", a.workflow)
 	}
 	if r.err != nil {
-		return activities.Activity{}, r.err
+		return activity.Activity{}, r.err
 	}
 	start, end, cost, attributes, err := d.planningFields(a.start, a.end, a.plannedCost, d.planCurrencies[a.plan], settings.LevelActivity, a.attributes)
 	if err != nil {
-		return activities.Activity{}, fmt.Errorf("seed: activity %s: %w", a.name, err)
+		return activity.Activity{}, fmt.Errorf("seed: activity %s: %w", a.name, err)
 	}
-	activity.StartDate, activity.EndDate, activity.PlannedCost, activity.Attributes = start, end, cost, attributes
+	act.StartDate, act.EndDate, act.PlannedCost, act.Attributes = start, end, cost, attributes
 	if a.inq > 0 {
 		inq := a.inq
-		activity.INQ = &inq
+		act.INQ = &inq
 	}
 	if a.typedRevenue != "" {
 		revenue, err := usd(a.typedRevenue)
 		if err != nil {
-			return activities.Activity{}, err
+			return activity.Activity{}, err
 		}
 		mql := a.typedMQL
-		activity.SetLaterStagesMyself, activity.MQL, activity.Revenue = true, &mql, &revenue
+		act.SetLaterStagesMyself, act.MQL, act.Revenue = true, &mql, &revenue
 	}
-	return activity, nil
+	return act, nil
 }
 
 // addWorkflows creates WF-1001 and WF-1002, active, in feature 008's shape.
@@ -212,9 +212,9 @@ func (d *demo) addWorkflows(ctx context.Context) error {
 	d.workflows = map[string]string{}
 	for _, w := range demoWorkflows {
 		var r resolver
-		levels := make([]approvals.Level, 0, len(w.levels))
+		levels := make([]approval.Level, 0, len(w.levels))
 		for _, approvers := range w.levels {
-			level := approvals.Level{ApproverIDs: []string{}}
+			level := approval.Level{ApproverIDs: []string{}}
 			for _, name := range approvers {
 				level.ApproverIDs = append(level.ApproverIDs, r.id(d.people, "person", name))
 			}
@@ -227,7 +227,7 @@ func (d *demo) addWorkflows(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		workflow := approvals.Workflow{ID: id, Name: w.name, Description: w.description, Active: true, Levels: levels, Meta: d.meta()}
+		workflow := approval.Workflow{ID: id, Name: w.name, Description: w.description, Active: true, Levels: levels, Meta: d.meta()}
 		if err := repo.PutWorkflow(ctx, workflow); err != nil {
 			return err
 		}

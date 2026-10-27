@@ -10,7 +10,7 @@ import (
 
 // directory is every person, team and team membership, read inside one transaction: what the views of
 // people and teams are built from. The joins (a person's teams, a team's members) are done here in memory,
-// which is quick at demo scale; PostgreSQL will add indexed queries behind the same Repository.
+// which is quick at demo scale; PostgreSQL will add indexed queries behind the same Store.
 type directory struct {
 	people      map[string]Person // by id
 	teams       map[string]Team   // by id

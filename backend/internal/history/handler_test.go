@@ -39,7 +39,7 @@ func TestListActivityLog_EntriesAsTheContractSays_FR022(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	createFolder(t, priya, "Ideas") // SF-1001
 	renameFolder(t, priya, "SF-1001", "Ideas 2")
-	addNote(t, priya, "SF-1001", "First idea") // SN-1001
+	addNote(t, priya, "First idea") // SN-1001
 
 	response := priya.Do(t, http.MethodGet, "/api/v1/activity-log?limit=2", nil)
 
@@ -103,9 +103,9 @@ func TestListActivityLog_Filters_Contract(t *testing.T) {
 	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, danielsEmail)
-	createFolder(t, priya, "Ideas")             // SF-1001, LOG-1001
-	addNote(t, daniel, "SF-1001", "First idea") // SN-1001, LOG-1002
-	createFolder(t, daniel, "Plans")            // SF-1002, LOG-1003
+	createFolder(t, priya, "Ideas")  // SF-1001, LOG-1001
+	addNote(t, daniel, "First idea") // SN-1001, LOG-1002
+	createFolder(t, daniel, "Plans") // SF-1002, LOG-1003
 	server.Advance(time.Hour)
 	renameFolder(t, priya, "SF-1002", "Plans 2") // LOG-1004
 	deleteNote(t, priya, "SN-1001")              // LOG-1005
@@ -190,12 +190,12 @@ func TestActivityLogSummary_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t, apitest.WithoutDemoHistory())
 	daniel := server.SignIn(t, danielsEmail)
-	createFolder(t, daniel, "Ideas")           // yesterday
-	addNote(t, daniel, "SF-1001", "Old idea")  // yesterday
-	server.Advance(24 * time.Hour)             // 13 Mar 2026 09:00, a Friday
-	priya := server.SignIn(t, priyasEmail)     // a session of today: yesterday's would have expired
-	addNote(t, priya, "SF-1001", "First idea") // today
-	deleteNote(t, priya, "SN-1002")            // today
+	createFolder(t, daniel, "Ideas")       // yesterday
+	addNote(t, daniel, "Old idea")         // yesterday
+	server.Advance(24 * time.Hour)         // 13 Mar 2026 09:00, a Friday
+	priya := server.SignIn(t, priyasEmail) // a session of today: yesterday's would have expired
+	addNote(t, priya, "First idea")        // today
+	deleteNote(t, priya, "SN-1002")        // today
 
 	response := priya.Do(t, http.MethodGet,
 		"/api/v1/activity-log/summary?todayStart=2026-03-13T00:00:00Z&weekStart=2026-03-09T00:00:00Z", nil)
@@ -231,223 +231,6 @@ func TestActivityLogSummary_MissingParams_400(t *testing.T) {
 	}
 }
 
-// Undo and Restore of an entry the recycle bin never had answer not found (FR-025).
-func TestUndoAndRestore_UnknownEntry_FR025(t *testing.T) {
-	t.Parallel()
-	server := apitest.New(t, apitest.WithoutDemoHistory())
-	priya := server.SignIn(t, priyasEmail)
-
-	for _, action := range []string{"undo", "restore"} {
-		response := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-9999/"+action, nil)
-
-		assertAnswer(t, response, http.StatusNotFound, unknownEntryBody)
-	}
-}
-
-// The bin's two entries of binWithParent, as GET /api/v1/recycle-bin answers them to Priya: the folder, which the
-// note's entry waits for, and the note, whose folder is in the bin (011 FR-015 – FR-017, FR-028), each with what
-// she may do with it — restore it, but not delete it permanently, which her Planner role does not include
-// (014 FR-011).
-const (
-	plannerBinAccess = `"access":{"restore":{"available":true,"reason":""},"deletePermanently":{"available":false,` +
-		`"reason":"Deleting permanently isn't part of your role (Planner). Ask an administrator if you need it."}}`
-	folderBinItem = `{"id":"BIN-1002","recordType":"sampleFolder","recordTypeLabel":"sample folder","recordId":"SF-1001",` +
-		`"recordName":"Ideas","path":[],"parent":null,"deletedAt":"2026-03-12T09:00:00Z",` +
-		`"deletedBy":{"id":"U-1002","name":"Priya Raman"},"contents":[{"recordType":"sampleNote","label":"sample note","count":1}],` +
-		`"recordTypePlural":"sample folders","restoreState":"restorable","missingParent":null,"parentEntryIds":[],` +
-		`"insideEntryIds":["BIN-1001"],"records":[` +
-		`{"recordType":"sampleFolder","recordTypeLabel":"sample folder","recordId":"SF-1001","recordName":"Ideas","parentId":""},` +
-		`{"recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1002","recordName":"Second idea","parentId":"SF-1001"}],` +
-		plannerBinAccess + `}`
-	noteBinItem = `{"id":"BIN-1001","recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1001",` +
-		`"recordName":"First idea","path":[{"type":"sampleFolder","id":"SF-1001","name":"Ideas"}],` +
-		`"parent":{"type":"sampleFolder","id":"SF-1001","name":"Ideas"},"deletedAt":"2026-03-12T09:00:00Z",` +
-		`"deletedBy":{"id":"U-1002","name":"Priya Raman"},"contents":[],"recordTypePlural":"sample notes",` +
-		`"restoreState":"parentInRecycleBin",` +
-		`"missingParent":{"type":"sampleFolder","typeLabel":"sample folder","id":"SF-1001","name":"Ideas"},` +
-		`"parentEntryIds":["BIN-1002"],"insideEntryIds":[],"records":[` +
-		`{"recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1001","recordName":"First idea","parentId":"SF-1001"}],` +
-		plannerBinAccess + `}`
-)
-
-// binWithParent fills the recycle bin as Priya: the note "First idea" (BIN-1001), then its folder "Ideas"
-// with the note "Second idea" (BIN-1002); then a new folder takes the name "Ideas" (SF-1002).
-func binWithParent(t *testing.T, priya *apitest.Client) {
-	t.Helper()
-	createFolder(t, priya, "Ideas")             // SF-1001
-	addNote(t, priya, "SF-1001", "First idea")  // SN-1001
-	addNote(t, priya, "SF-1001", "Second idea") // SN-1002
-	deleteNote(t, priya, "SN-1001")             // BIN-1001
-	deleteFolder(t, priya, "SF-1001")           // BIN-1002
-	createFolder(t, priya, "Ideas")             // SF-1002
-}
-
-// The recycle bin lists its entries newest first with their restore state, the entries to restore first,
-// the entries inside them and the records they hold, as the contract describes (011 FR-014 – FR-017,
-// FR-028).
-func TestListRecycleBin_Items_Contract(t *testing.T) {
-	t.Parallel()
-	server := apitest.New(t, apitest.WithoutDemoHistory())
-	priya := server.SignIn(t, priyasEmail)
-	binWithParent(t, priya)
-
-	response := priya.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil)
-
-	assertAnswer(t, response, http.StatusOK, `{"items":[`+folderBinItem+`,`+noteBinItem+`],"total":2}`)
-}
-
-// The restore preview of the note whose folder is in the bin: the folder comes back first, under a new
-// name because "Ideas" is taken, and the note returns into it (011 FR-018, FR-022, FR-023). Nothing is
-// saved: the bin and the log are unchanged. An entry the bin never had answers not found.
-func TestRestorePreview_Contract(t *testing.T) {
-	t.Parallel()
-	server := apitest.New(t, apitest.WithoutDemoHistory())
-	priya := server.SignIn(t, priyasEmail)
-	binWithParent(t, priya)
-	logBefore := getLog(t, priya, "")
-
-	response := priya.Do(t, http.MethodGet, "/api/v1/recycle-bin/BIN-1001/restore-preview", nil)
-	unknown := priya.Do(t, http.MethodGet, "/api/v1/recycle-bin/BIN-9999/restore-preview", nil)
-
-	assertAnswer(t, response, http.StatusOK, `{"entry":`+noteBinItem+`,`+
-		`"destination":[{"type":"sampleFolder","id":"SF-1001","name":"Ideas (restored)"}],`+
-		`"parentEntries":[`+folderBinItem+`],`+
-		`"changes":[{"recordType":"sampleFolder","recordTypeLabel":"sample folder","recordId":"SF-1001","recordName":"Ideas",`+
-		`"restored":true,"field":"name","label":"Name","oldText":"Ideas","newText":"Ideas (restored)"}],`+
-		`"notes":["Renamed to 'Ideas (restored)' because the name was taken."]}`)
-	assertAnswer(t, unknown, http.StatusNotFound, unknownEntryBody)
-	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil), http.StatusOK,
-		`{"items":[`+folderBinItem+`,`+noteBinItem+`],"total":2}`)
-	if logAfter := getLog(t, priya, ""); logAfter.UnfilteredTotal != logBefore.UnfilteredTotal {
-		t.Errorf("the log holds %d entries after the preview, want still %d", logAfter.UnfilteredTotal, logBefore.UnfilteredTotal)
-	}
-}
-
-// Restore with withParents=true brings back the folder's entry first, then the note's, in one step (011
-// FR-023); withParents must be true or false.
-func TestRestore_WithParents_Contract(t *testing.T) {
-	t.Parallel()
-	server := apitest.New(t, apitest.WithoutDemoHistory())
-	priya := server.SignIn(t, priyasEmail)
-	binWithParent(t, priya)
-
-	invalid := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-1001/restore?withParents=yes", nil, apitest.SkipRequestValidation())
-	response := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-1001/restore?withParents=true", nil)
-
-	assertAnswer(t, invalid, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
-		`"fields":[{"field":"withParents","message":"Reload the page and try again."}]}}`)
-	assertAnswer(t, response, http.StatusOK, `{"recordType":"sampleNote","recordTypeLabel":"sample note",`+
-		`"recordId":"SN-1001","recordName":"First idea","details":""}`)
-	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil), http.StatusOK, emptyBinBody)
-	page := getLog(t, priya, "?action=restored")
-	if got := []string{page.Items[1].RecordName, page.Items[0].RecordName}; page.Total != 2 || !slices.Equal(got, []string{"Ideas (restored)", "First idea"}) {
-		t.Errorf("restored entries = %d %v, want the folder, then the note", page.Total, got)
-	}
-}
-
-// Restore refuses with restore_parent_first while the parent is in the bin, and with
-// parent_deleted_permanently once it was deleted permanently, also with withParents=true; both name the
-// parent (011 FR-023, FR-024).
-func TestRestore_ParentCodes_409(t *testing.T) {
-	t.Parallel()
-	server := apitest.New(t, apitest.WithoutDemoHistory())
-	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: deleting permanently is an administrator's
-	priya := server.SignIn(t, priyasEmail)
-	binWithParent(t, priya)
-	parent := `"parent":{"type":"sampleFolder","id":"SF-1001","name":"Ideas"}`
-
-	first := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-1001/restore", nil)
-	if purge := priya.Do(t, http.MethodDelete, "/api/v1/recycle-bin/BIN-1002", nil); purge.Status != http.StatusOK {
-		t.Fatalf("deleting BIN-1002 permanently: %d %s", purge.Status, purge.Body)
-	}
-	gone := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-1001/restore?withParents=true", nil)
-
-	assertAnswer(t, first, http.StatusConflict, `{"error":{"code":"restore_parent_first","message":"Restore 'Ideas' first","fields":[],`+parent+`}}`)
-	assertAnswer(t, gone, http.StatusConflict, `{"error":{"code":"parent_deleted_permanently","message":"This sample note can't be restored `+
-		`because its sample folder 'Ideas' was permanently deleted.","fields":[],`+parent+`}}`)
-}
-
-// Delete permanently answers the record that was deleted for good, writes one "permanently deleted" entry
-// with the record's place and contents at the time of the delete, and leaves the entry waiting for it in
-// the bin, no longer restorable (011 FR-028, FR-030).
-func TestPurge_Contract(t *testing.T) {
-	t.Parallel()
-	server := apitest.New(t, apitest.WithoutDemoHistory())
-	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: deleting permanently is an administrator's
-	priya := server.SignIn(t, priyasEmail)
-	binWithParent(t, priya)
-
-	response := priya.Do(t, http.MethodDelete, "/api/v1/recycle-bin/BIN-1002", nil)
-
-	assertAnswer(t, response, http.StatusOK,
-		`{"recordType":"sampleFolder","recordTypeLabel":"sample folder","recordId":"SF-1001","recordName":"Ideas"}`)
-	var bin history.BinPage
-	priya.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil).Decode(t, &bin)
-	if bin.Total != 1 || bin.Items[0].ID != "BIN-1001" || bin.Items[0].RestoreState != history.ParentDeletedPermanently {
-		t.Errorf("recycle bin = %+v, want only BIN-1001, which can no longer be restored", bin)
-	}
-	page := getLog(t, priya, "?action=deletedPermanently")
-	if page.Total != 1 {
-		t.Fatalf("%d permanently deleted entries, want 1", page.Total)
-	}
-	got := page.Items[0]
-	if got.Action != history.ActionDeletedPermanently || got.Verb != "permanently deleted" || got.RecordID != "SF-1001" ||
-		got.Details != "with 1 sample note" || got.Actor.Name != "Priya Raman" || got.RecordNow.State != history.RecordDeletedPermanently {
-		t.Errorf("entry = %+v, want Priya permanently deleted SF-1001 with 1 sample note", got)
-	}
-}
-
-// Delete permanently of an entry the bin never had answers not found; of an entry that already left the
-// bin, the conflict already_resolved with how, by whom and when (011 FR-032).
-func TestPurge_404_409(t *testing.T) {
-	t.Parallel()
-	server := apitest.New(t, apitest.WithoutDemoHistory())
-	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: deleting permanently is an administrator's
-	priya := server.SignIn(t, priyasEmail)
-	createFolder(t, priya, "Ideas")   // SF-1001
-	deleteFolder(t, priya, "SF-1001") // BIN-1001
-	if response := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-1001/restore", nil); response.Status != http.StatusOK {
-		t.Fatalf("restoring BIN-1001: %d %s", response.Status, response.Body)
-	}
-
-	assertAnswer(t, priya.Do(t, http.MethodDelete, "/api/v1/recycle-bin/BIN-9999", nil), http.StatusNotFound, unknownEntryBody)
-	assertAnswer(t, priya.Do(t, http.MethodDelete, "/api/v1/recycle-bin/BIN-1001", nil), http.StatusConflict,
-		`{"error":{"code":"already_resolved","message":"'Ideas' is no longer in the recycle bin.","fields":[],`+
-			`"resolution":{"how":"restored","by":{"id":"U-1002","name":"Priya Raman"},"at":"2026-03-12T09:00:00Z"}}}`)
-}
-
-// Empty recycle bin deletes permanently the listed entries that are still in the bin, answers how many,
-// and writes one "emptied the recycle bin" entry that lists them; when nothing listed is left it answers 0
-// and writes nothing (011 FR-029, FR-030, FR-032).
-func TestEmptyRecycleBin_Contract(t *testing.T) {
-	t.Parallel()
-	server := apitest.New(t, apitest.WithoutDemoHistory())
-	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: deleting permanently is an administrator's
-	priya := server.SignIn(t, priyasEmail)
-	binWithParent(t, priya)
-	body := map[string][]string{"entryIds": {"BIN-1002", "BIN-1001"}}
-
-	response := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/empty", body)
-	again := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/empty", body)
-
-	assertAnswer(t, response, http.StatusOK, `{"count":2}`)
-	assertAnswer(t, again, http.StatusOK, `{"count":0}`)
-	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil), http.StatusOK, emptyBinBody)
-	page := getLog(t, priya, "?action=deletedPermanently")
-	if page.Total != 1 {
-		t.Fatalf("%d permanently deleted entries, want 1 for the emptied bin", page.Total)
-	}
-	got := page.Items[0]
-	items := []string{}
-	for _, item := range got.Items {
-		items = append(items, item.RecordID+" "+item.Details)
-	}
-	if got.Action != history.ActionEmptiedRecycleBin || got.Verb != "emptied the recycle bin" || got.Details != "2 items" ||
-		!slices.Equal(items, []string{"SF-1001 with 1 sample note", "SN-1001 "}) {
-		t.Errorf("entry = %+v with items %q, want the emptied bin with SF-1001 and SN-1001", got, items)
-	}
-}
-
 // Every history operation needs a signed-in person (FR-005).
 func TestHistoryOperations_WithoutSession_FR005(t *testing.T) {
 	t.Parallel()
@@ -467,87 +250,5 @@ func TestHistoryOperations_WithoutSession_FR005(t *testing.T) {
 		response := server.Do(t, call.method, call.path, nil, apitest.SkipRequestValidation())
 
 		assertAnswer(t, response, http.StatusUnauthorized, signInRequiredBody)
-	}
-}
-
-// The helpers below make changes through the developer sample records, the record type the API offers in
-// feature 001, so that the log and the recycle bin have entries.
-
-// createFolder creates a sample folder and stops the test when that fails.
-func createFolder(t *testing.T, c *apitest.Client, name string) {
-	t.Helper()
-	response := c.Do(t, http.MethodPost, "/api/v1/sample-folders", map[string]string{"name": name})
-	if response.Status != http.StatusCreated {
-		t.Fatalf("creating the sample folder %q: %d %s", name, response.Status, response.Body)
-	}
-}
-
-// renameFolder renames a sample folder still at version 1, and stops the test when that fails.
-func renameFolder(t *testing.T, c *apitest.Client, id, name string) {
-	t.Helper()
-	response := c.Do(t, http.MethodPatch, "/api/v1/sample-folders/"+id, map[string]any{"name": name, "version": 1})
-	if response.Status != http.StatusOK {
-		t.Fatalf("renaming the sample folder %s: %d %s", id, response.Status, response.Body)
-	}
-}
-
-// addNote adds a note to a sample folder and stops the test when that fails.
-func addNote(t *testing.T, c *apitest.Client, folderID, title string) {
-	t.Helper()
-	response := c.Do(t, http.MethodPost, "/api/v1/sample-folders/"+folderID+"/notes", map[string]string{"title": title})
-	if response.Status != http.StatusCreated {
-		t.Fatalf("adding the note %q: %d %s", title, response.Status, response.Body)
-	}
-}
-
-// deleteNote deletes a sample note, which moves it to the recycle bin, and stops the test when that fails.
-func deleteNote(t *testing.T, c *apitest.Client, id string) {
-	t.Helper()
-	if response := c.Do(t, http.MethodDelete, "/api/v1/sample-notes/"+id, nil); response.Status != http.StatusOK {
-		t.Fatalf("deleting the note %s: %d %s", id, response.Status, response.Body)
-	}
-}
-
-// deleteFolder deletes a sample folder with its notes and stops the test when that fails.
-func deleteFolder(t *testing.T, c *apitest.Client, id string) {
-	t.Helper()
-	if response := c.Do(t, http.MethodDelete, "/api/v1/sample-folders/"+id, nil); response.Status != http.StatusOK {
-		t.Fatalf("deleting the folder %s: %d %s", id, response.Status, response.Body)
-	}
-}
-
-// getLog answers GET /api/v1/activity-log with query, and stops the test when it is not 200.
-func getLog(t *testing.T, c *apitest.Client, query string) history.LogPage {
-	t.Helper()
-	response := c.Do(t, http.MethodGet, "/api/v1/activity-log"+query, nil)
-	if response.Status != http.StatusOK {
-		t.Fatalf("GET /api/v1/activity-log%s = %d %s", query, response.Status, response.Body)
-	}
-	var page history.LogPage
-	response.Decode(t, &page)
-	return page
-}
-
-func entryIDs(entries []history.EntryView) []string {
-	list := make([]string, 0, len(entries))
-	for _, e := range entries {
-		list = append(list, e.ID)
-	}
-	return list
-}
-
-// firstID returns the id of the first entry, or "nothing" when there is none, for failure messages.
-func firstID(entries []history.EntryView) string {
-	if len(entries) == 0 {
-		return "nothing"
-	}
-	return entries[0].ID
-}
-
-// assertAnswer checks the status and the exact body of an answer.
-func assertAnswer(t *testing.T, response *apitest.Response, status int, body string) {
-	t.Helper()
-	if response.Status != status || string(response.Body) != body {
-		t.Errorf("answer = %d %s\nwant %d %s", response.Status, response.Body, status, body)
 	}
 }

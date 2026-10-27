@@ -49,7 +49,7 @@ const (
 // one transaction and logs every change; the readers of readers.go and form.go serve later features.
 type Service struct {
 	tx      store.Transactor
-	repo    Repository
+	repo    Store
 	ids     *ids.Generator
 	history *history.Service
 	now     clock.Clock
@@ -57,11 +57,11 @@ type Service struct {
 	feed    RateFeed // how rate files are read (016 FR-008); nil reads the GSAP daily rate file
 }
 
-// NewService returns the Settings service. It keeps the records in repo, gives them IDs with generator,
-// logs their changes, deletes them and reads the recycle bin through hist, works in transactions of tx and
-// reads the time from now.
-func NewService(tx store.Transactor, repo Repository, generator *ids.Generator, hist *history.Service, now clock.Clock) *Service {
-	return &Service{tx: tx, repo: repo, ids: generator, history: hist, now: now}
+// NewService returns the Settings service. It keeps the records in repo, gives them IDs with tools.IDs,
+// logs their changes, deletes them and reads the recycle bin through tools.Log, works in transactions of
+// tools.Tx and reads the time from tools.Now.
+func NewService(tools history.Tools, repo Store) *Service {
+	return &Service{tx: tools.Tx, repo: repo, ids: tools.IDs, history: tools.Log, now: tools.Now}
 }
 
 // AddReferenceSource adds a source of the records outside Settings that use Settings records (D-042):

@@ -12,7 +12,7 @@ import (
 	"mapp/internal/platform/database/sqlcdb"
 )
 
-// PostgresStore is the Repository on PostgreSQL. A saved view's state is a json document: it is screen
+// PostgresStore is the Store on PostgreSQL. A saved view's state is a json document: it is screen
 // state, which no query looks inside.
 type PostgresStore struct {
 	db *database.DB

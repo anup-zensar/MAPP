@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/settings"
 )
 
@@ -50,7 +50,7 @@ func TestLoad_Plans_US2(t *testing.T) {
 		if p.Attributes == nil || p.TeamIDs == nil || p.Status == "" || p.Meta.Version != 1 {
 			t.Errorf("plan %s is not complete: %+v", p.ID, p)
 		}
-		if p.Status != plans.StatusDraft && p.Status != plans.StatusPublished {
+		if p.Status != plan.StatusDraft && p.Status != plan.StatusPublished {
 			t.Errorf("plan %s has status %q", p.ID, p.Status)
 		}
 	}

@@ -23,7 +23,7 @@ func (f *fixture) addRate(t *testing.T, code, day, rate string, source RateSourc
 		t.Fatalf("ParseRate(%q): %v", rate, err)
 	}
 	var x ExchangeRate
-	f.write(t, func(ctx context.Context, repo Repository) error {
+	f.write(t, func(ctx context.Context, repo Store) error {
 		x = ExchangeRate{ID: f.next(ctx, ids.PrefixExchangeRate), Currency: code, Date: date.MustParse(day), Rate: r, Source: source,
 			ImportID: importID, Meta: record.NewMeta(actor.System, start)}
 		return repo.PutRate(ctx, x)
@@ -72,7 +72,7 @@ func TestMigrateRates_CreatesOneRatePerCurrency(t *testing.T) {
 		t.Errorf("USD has rates %+v; it is always 1", usd)
 	}
 	var stored []Currency
-	f.write(t, func(ctx context.Context, repo Repository) error {
+	f.write(t, func(ctx context.Context, repo Store) error {
 		var err error
 		stored, err = repo.ListCurrencies(ctx)
 		return err
@@ -179,7 +179,7 @@ func TestCurrentRates_DateAndSource_FR009(t *testing.T) {
 	f.addCurrency(t, "USD", "1", true)
 	f.addCurrency(t, "GBP", "0.80", true)
 	f.addCurrency(t, "EUR", "0.90", true)
-	f.write(t, func(ctx context.Context, repo Repository) error {
+	f.write(t, func(ctx context.Context, repo Store) error {
 		return repo.PutRateImport(ctx, RateImport{ID: "RI-1001", FileName: "gsap_rates_2026-10-19.csv", Feed: gsapFeedName,
 			Meta: record.NewMeta(alex, start)})
 	})

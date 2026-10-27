@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"mapp/internal/campaigns"
+	"mapp/internal/campaign"
 	"mapp/internal/history"
 	"mapp/internal/people"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/store"
@@ -30,17 +30,17 @@ func TestCampaignLevels_AddFacts_For004(t *testing.T) {
 		t.Fatalf("seed.Load: %v", err)
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
-	historyService := history.NewService(db, history.NewJSONRepository(), generator, now)
-	svc := campaigns.NewService(db, campaigns.NewJSONRepository(), generator, historyService, now, campaigns.Deps{
-		Plans:      campaignPlans{repo: plans.NewJSONRepository()},
-		People:     people.NewJSONRepository(),
-		Settings:   settings.NewService(db, settings.NewJSONRepository(), generator, historyService, now),
-		Activities: campaigns.NoActivities{},
+	historyService := history.NewService(db, history.NewJSONStore(), generator, now)
+	svc := campaign.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, campaign.NewJSONStore(), campaign.Deps{
+		Plans:      campaignPlans{repo: plan.NewJSONStore()},
+		People:     people.NewJSONStore(),
+		Settings:   settings.NewService(history.Tools{Tx: db, IDs: generator, Log: historyService, Now: now}, settings.NewJSONStore()),
+		Activities: campaign.NoActivities{},
 	})
 	planIDs := []string{"P-1001", "P-1002", "P-1003"}
-	facts := map[string]*plans.Facts{}
+	facts := map[string]*plan.Facts{}
 	for _, id := range planIDs {
-		facts[id] = &plans.Facts{}
+		facts[id] = &plan.Facts{}
 	}
 
 	err = db.Read(t.Context(), func(ctx context.Context) error { // 004 calls the levels inside its transaction
@@ -73,7 +73,7 @@ func TestCampaignLevels_AddFacts_For004(t *testing.T) {
 	if len(facts["P-1001"].NeedsAttention) != 0 || len(facts["P-1003"].NeedsAttention) != 0 {
 		t.Errorf("complete plans need attention: %+v, %+v", facts["P-1001"].NeedsAttention, facts["P-1003"].NeedsAttention)
 	}
-	wantItems := []plans.AttentionItem{ // the seed's IDs follow data model §9's table order
+	wantItems := []plan.AttentionItem{ // the seed's IDs follow data model §9's table order
 		{Record: errs.RecordRef{Type: "campaign", ID: "C-1003", Name: "Retail growth"}, BlocksPublish: true},
 		{Record: errs.RecordRef{Type: "initiative", ID: "I-1006", Name: "Fleet cards"}, BlocksPublish: true},
 	}

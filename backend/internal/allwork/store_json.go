@@ -12,32 +12,32 @@ const (
 	viewsTable       = "saved_views"
 )
 
-// jsonRepository is the Repository of the JSON store.
-type jsonRepository struct{}
+// JSONStore is the Store of the JSON store.
+type JSONStore struct{}
 
-// NewJSONRepository returns the Repository of the JSON store.
-func NewJSONRepository() Repository {
-	return jsonRepository{}
+// NewJSONStore returns the Store of the JSON store.
+func NewJSONStore() JSONStore {
+	return JSONStore{}
 }
 
 // GetPreferences reads one person's preferences.
-func (jsonRepository) GetPreferences(ctx context.Context, personID string) (PreferencesRecord, bool, error) {
+func (JSONStore) GetPreferences(ctx context.Context, personID string) (PreferencesRecord, bool, error) {
 	return store.Get[PreferencesRecord](ctx, preferencesTable, personID)
 }
 
 // PutPreferences saves one person's preferences under their person ID.
-func (jsonRepository) PutPreferences(ctx context.Context, p PreferencesRecord) error {
+func (JSONStore) PutPreferences(ctx context.Context, p PreferencesRecord) error {
 	return store.Put(ctx, preferencesTable, p.PersonID, p)
 }
 
 // GetView reads one saved view.
-func (jsonRepository) GetView(ctx context.Context, id string) (StoredView, bool, error) {
+func (JSONStore) GetView(ctx context.Context, id string) (StoredView, bool, error) {
 	return store.Get[StoredView](ctx, viewsTable, id)
 }
 
 // ListViews reads every saved view to find one person's: quick for the views of a few people. PostgreSQL
 // would use an index on person_id.
-func (jsonRepository) ListViews(ctx context.Context, personID string) ([]StoredView, error) {
+func (JSONStore) ListViews(ctx context.Context, personID string) ([]StoredView, error) {
 	all, err := store.List[StoredView](ctx, viewsTable)
 	if err != nil {
 		return nil, err
@@ -52,11 +52,11 @@ func (jsonRepository) ListViews(ctx context.Context, personID string) ([]StoredV
 }
 
 // PutView saves a view under its id.
-func (jsonRepository) PutView(ctx context.Context, v StoredView) error {
+func (JSONStore) PutView(ctx context.Context, v StoredView) error {
 	return store.Put(ctx, viewsTable, v.ID, v)
 }
 
 // DeleteView removes one view.
-func (jsonRepository) DeleteView(ctx context.Context, id string) error {
+func (JSONStore) DeleteView(ctx context.Context, id string) error {
 	return store.Delete(ctx, viewsTable, id)
 }

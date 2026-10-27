@@ -10,7 +10,6 @@ import (
 
 	"mapp/internal/history"
 	"mapp/internal/platform/actor"
-	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/money"
 	"mapp/internal/platform/record"
@@ -135,39 +134,6 @@ func (s *Service) UpdateCurrency(ctx context.Context, a actor.Actor, code string
 	return view, err
 }
 
-// CurrencyImpact says, before a change of the currency code is saved, what it would affect (FR-030, US4-3,
-// D-044): a new rate recalculates the USD amounts of the live line items in the currency and of the plans
-// planned in it (016 FR-005). The body is checked as UpdateCurrency checks it, except the version; nothing is
-// saved.
-func (s *Service) CurrencyImpact(ctx context.Context, a actor.Actor, code string, update CurrencyUpdate) (ChangeImpact, error) {
-	impact := ChangeImpact{Warnings: []ImpactWarning{}}
-	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		stored, err := s.storedCurrency(ctx, code)
-		if err != nil {
-			return err
-		}
-		currencies, err := s.repo.ListCurrencies(ctx)
-		if err != nil {
-			return err
-		}
-		var problems errs.Problems
-		_, rate := applyCurrency(stored, update, currencies, stored.Code, &problems)
-		if err := problems.Err(); err != nil {
-			return err
-		}
-		if rate == nil || stored.Code == money.BaseCurrency {
-			return nil
-		}
-		current, err := s.currentRateOf(ctx, stored)
-		if err != nil {
-			return err
-		}
-		impact.Warnings, err = s.rateWarnings(ctx, stored.Code, current, *rate)
-		return err
-	})
-	return impact, err
-}
-
 // SetCurrencyActive sets the currency code inactive or reactivates it (FR-004): line items and people
 // cannot choose an inactive currency; those using it keep it, and amounts still convert. USD stays active
 // (FR-028). The same status again changes nothing.
@@ -277,131 +243,4 @@ func isCurrencyCode(code string) bool {
 		}
 	}
 	return true
-}
-
-// rateImpact is what a new rate of a currency changes (FR-030): the live line items in the currency, the
-// activities they belong to, and their planned cost in USD with the old and the new rate.
-type rateImpact struct {
-	lineItems, activities int
-	before, after         money.Amount
-}
-
-// rateImpactOf works out the rateImpact of changing the rate of the currency code from before to after:
-// live line items only — records in the recycle bin are converted when they come back (data model §10).
-// Each line item converts on its own, as features 003 and 007 convert it when they read it.
-func rateImpactOf(refs []Reference, code string, before, after money.Rate) rateImpact {
-	var r rateImpact
-	activities := map[string]bool{}
-	for _, ref := range refs {
-		if ref.InBin || ref.Level != LevelLineItem || ref.Currency != code {
-			continue
-		}
-		r.lineItems++
-		activities[ref.ActivityID] = true
-		if ref.PlannedCost != nil {
-			r.before = r.before.Add(money.ToUSD(*ref.PlannedCost, before))
-			r.after = r.after.Add(money.ToUSD(*ref.PlannedCost, after))
-		}
-	}
-	r.activities = len(activities)
-	return r
-}
-
-// ListCurrencies returns every currency, active and inactive, USD first and then by code, each with its
-// current rate both ways and where it came from, its usage and its locks (FR-028, US4-2; 016 FR-003). Every
-// signed-in person may see them (FR-008).
-func (s *Service) ListCurrencies(ctx context.Context, a actor.Actor) ([]CurrencyView, error) {
-	var views []CurrencyView
-	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		currencies, err := s.repo.ListCurrencies(ctx)
-		if err != nil {
-			return err
-		}
-		slices.SortStableFunc(currencies, compareCurrencies)
-		u, err := s.usage(ctx)
-		if err != nil {
-			return err
-		}
-		book, err := s.rateBook(ctx)
-		if err != nil {
-			return err
-		}
-		files, err := s.importFileNames(ctx)
-		if err != nil {
-			return err
-		}
-		views = make([]CurrencyView, 0, len(currencies))
-		for _, c := range currencies {
-			views = append(views, currencyView(c, u, book, s.today(), files))
-		}
-		return nil
-	})
-	return views, err
-}
-
-// GetCurrency returns the currency with the code, with its usage, its locks and who last changed its rate
-// (US4-2).
-func (s *Service) GetCurrency(ctx context.Context, a actor.Actor, code string) (CurrencyView, error) {
-	var view CurrencyView
-	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		c, err := s.storedCurrency(ctx, code)
-		if err != nil {
-			return err
-		}
-		view, err = s.currencyView(ctx, c)
-		return err
-	})
-	return view, err
-}
-
-// storedCurrency reads the currency code as stored, or answers not found.
-func (s *Service) storedCurrency(ctx context.Context, code string) (Currency, error) {
-	c, found, err := s.repo.GetCurrency(ctx, code)
-	if err != nil {
-		return Currency{}, err
-	}
-	if !found {
-		return Currency{}, errs.NotFound(currencyGoneMessage)
-	}
-	return c, nil
-}
-
-// currencyView returns the currency c as the API answers it, reading its usage and its rates.
-func (s *Service) currencyView(ctx context.Context, c Currency) (CurrencyView, error) {
-	u, err := s.usage(ctx)
-	if err != nil {
-		return CurrencyView{}, err
-	}
-	book, err := s.rateBook(ctx)
-	if err != nil {
-		return CurrencyView{}, err
-	}
-	files, err := s.importFileNames(ctx)
-	if err != nil {
-		return CurrencyView{}, err
-	}
-	return currencyView(c, u, book, s.today(), files), nil
-}
-
-// currencyView returns the stored currency c as the API answers it on day: its current rate also inverted
-// ("1 EUR = 1.086957 USD") with its date and source (016 FR-003), its usage and its locks — the code always,
-// and USD's rate, status and delete (FR-028).
-func currencyView(c Currency, u *usageIndex, book rateBook, day date.Date, files map[string]string) CurrencyView {
-	locks := []Lock{{Field: "code", Reason: codeLockedMessage}}
-	if c.Code == money.BaseCurrency {
-		for _, field := range []string{"rate", "active", "delete"} {
-			locks = append(locks, Lock{Field: field, Reason: usdLockedMessage})
-		}
-	}
-	current := withRate(c, book, day)
-	info := rateInfoOf(c, book, day, files)
-	rateDate, source := date.Today(current.RateChangedAt), RateManual // USD: since it exists, by hand
-	if info.RateDate != nil {
-		rateDate, source = *info.RateDate, *info.Source
-	}
-	return CurrencyView{
-		Code: c.Code, Name: c.Name, Symbol: c.Symbol, Rate: current.Rate, InverseRate: current.Rate.Inverse(),
-		RateChangedAt: current.RateChangedAt, RateChangedBy: current.RateChangedBy, RateDate: rateDate, RateSource: source,
-		RateImportFileName: info.ImportFileName, Active: c.Active, Usage: u.currency(c.Code), Locks: locks, Meta: c.Meta,
-	}
 }

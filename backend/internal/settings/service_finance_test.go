@@ -3,7 +3,6 @@ package settings
 import (
 	"encoding/json"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -71,38 +70,6 @@ func TestCreateItem_CreatesBudget_FR014(t *testing.T) {
 	if item.Action != history.ActionCreated || item.RecordType != "financeBudgetItem" || item.RecordName != "Europe – Retail" ||
 		!reflect.DeepEqual(item.Path, wantPath) {
 		t.Errorf("item entry = %+v", item)
-	}
-}
-
-// Every problem of an item is shown at once: the year (current − 1 to + 5), the budget name, the item name
-// (unique in its budget) and the code (unique in the year, ignoring case) (FR-014, SC-003).
-func TestCreateItem_Validation_FR014(t *testing.T) {
-	t.Parallel()
-	f := newTestService(t)
-	digital := f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", "LUB-EU-DIG"))
-	entries := len(f.logEntries(t))
-
-	_, first := f.service.CreateFinanceBudgetItem(t.Context(), alex, ItemInput{BudgetName: " ", Code: strings.Repeat("c", 41)})
-	_, second := f.service.CreateFinanceBudgetItem(t.Context(), alex, itemInput(2024, strings.Repeat("b", 121), strings.Repeat("n", 121), ""))
-	_, third := f.service.CreateFinanceBudgetItem(t.Context(), alex, itemInput(2026, "2026 lubricants budget", " europe – DIGITAL ", "lub-eu-dig"))
-	_, otherBudget := f.service.CreateFinanceBudgetItem(t.Context(), alex, itemInput(2026, "2026 Mobility Budget", "China", "LUB-EU-DIG"))
-	_, tooLate := f.service.CreateFinanceBudgetItem(t.Context(), alex, itemInput(2032, "2032 Budget", "China", ""))
-
-	assertError(t, first, problems("year", "Choose a year from 2025 to 2031.", "budgetName", "Enter a budget name.",
-		"name", "Enter a name.", "code", "Use 40 characters or fewer."))
-	assertError(t, second, problems("year", "Choose a year from 2025 to 2031.", "budgetName", "Use 120 characters or fewer.",
-		"name", "Use 120 characters or fewer."))
-	assertError(t, third, problems("name", "The budget '2026 Lubricants Budget' already has an item called 'Europe – Digital'.",
-		"code", "The code 'lub-eu-dig' is already used in 2026 by 'Europe – Digital'."))
-	assertError(t, otherBudget, problems("code", "The code 'LUB-EU-DIG' is already used in 2026 by 'Europe – Digital'."))
-	assertError(t, tooLate, problems("year", "Choose a year from 2025 to 2031."))
-	if len(f.logEntries(t)) != entries {
-		t.Errorf("refused creates were logged")
-	}
-
-	nextYear, err := f.service.CreateFinanceBudgetItem(t.Context(), alex, itemInput(2031, "2026 Lubricants Budget", "Europe – Digital", "LUB-EU-DIG"))
-	if err != nil || nextYear.BudgetID == digital.BudgetID || nextYear.Year != 2031 {
-		t.Errorf("the same names and code in another year = %+v, %v", nextYear, err)
 	}
 }
 
@@ -194,7 +161,7 @@ func TestRenameBudget_AllItemsFollow_FR015(t *testing.T) {
 	f := newTestService(t)
 	digital := f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", ""))
 	f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Events", ""))
-	plan := planRef("P-1001", "Lubricants FY2026", "MOD-1001", false, nil)
+	plan := planRef("P-1001", "Lubricants FY2026", "MOD-1001", nil)
 	plan.FinanceBudgetID = digital.BudgetID
 	f.refs = []Reference{plan}
 	f.clock.now = start.Add(time.Hour)
@@ -230,28 +197,6 @@ func TestRenameBudget_AllItemsFollow_FR015(t *testing.T) {
 	assertError(t, gone, errs.NotFound("This finance budget no longer exists — someone may have deleted it."))
 }
 
-// A budget name is unique within its year, ignoring letter case; the same name in another year is free
-// (FR-015).
-func TestRenameBudget_NameTakenInYear_FR015(t *testing.T) {
-	t.Parallel()
-	f := newTestService(t)
-	f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", ""))
-	mobility := f.createItem(t, itemInput(2026, "2026 Mobility Budget", "China – Retail", ""))
-	later := f.createItem(t, itemInput(2027, "2027 Budget", "China – Retail", ""))
-
-	_, taken := f.service.RenameFinanceBudget(t.Context(), alex, mobility.BudgetID, RenameInput{Name: " 2026 LUBRICANTS budget", Version: version(1)})
-	_, empty := f.service.RenameFinanceBudget(t.Context(), alex, mobility.BudgetID, RenameInput{Name: " ", Version: version(1)})
-	_, long := f.service.RenameFinanceBudget(t.Context(), alex, mobility.BudgetID, RenameInput{Name: strings.Repeat("é", 121), Version: version(1)})
-	free, err := f.service.RenameFinanceBudget(t.Context(), alex, later.BudgetID, RenameInput{Name: "2026 Lubricants Budget", Version: version(1)})
-
-	assertError(t, taken, problems("name", "2026 already has a budget called '2026 Lubricants Budget'."))
-	assertError(t, empty, problems("name", "Enter a budget name."))
-	assertError(t, long, problems("name", "Use 120 characters or fewer."))
-	if err != nil || free.Name != "2026 Lubricants Budget" || free.Year != 2027 {
-		t.Errorf("the name in another year = %+v, %v", free, err)
-	}
-}
-
 // The list shows one year — the current one unless another is chosen — with its budgets by name and their
 // items by name; a budget without items is not listed; the years offered run from the current year − 1 to
 // + 5, plus any other year with items (FR-015, US5-3).
@@ -262,7 +207,7 @@ func TestListBudgets_YearFilterAndGrouping_FR015(t *testing.T) {
 	f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Events", ""))
 	brand := f.createItem(t, itemInput(2026, "2026 lubricants budget", "europe – Brand", ""))
 	f.createItem(t, itemInput(2027, "2027 Lubricants Budget", "Europe – Events", ""))
-	f.addItem(t, 2020, "2020 Budget", "Old item", "", true)
+	f.addItem(t, itemInput(2020, "2020 Budget", "Old item", ""), true)
 	if _, err := f.service.SetFinanceBudgetItemActive(t.Context(), alex, brand.ID, StatusUpdate{Active: yes(false), Version: version(1)}); err != nil {
 		t.Fatalf("SetFinanceBudgetItemActive: %v", err)
 	}
@@ -301,55 +246,6 @@ func TestListBudgets_YearFilterAndGrouping_FR015(t *testing.T) {
 
 // ptr returns a pointer to n.
 func ptr(n int) *int { return &n }
-
-// An item counts the line items linked to it, those in the recycle bin too; its budget shows the plans
-// using it as their default finance budget (US5-4, FR-003).
-func TestItemUsage_LineItemsAndPlans_FR003(t *testing.T) {
-	t.Parallel()
-	f := newTestService(t)
-	item := f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", ""))
-	plan := planRef("P-1001", "Lubricants FY2026", "MOD-1001", false, nil)
-	plan.FinanceBudgetID = item.BudgetID
-	f.refs = []Reference{plan}
-	for i, id := range []string{"L-1001", "L-1002", "L-1003", "L-1004", "L-1005", "L-1006"} {
-		ref := lineItemRef(id, "P-1001", "A-1001", "USD", "100.00", i == 5)
-		ref.FinanceBudgetItemID = item.ID
-		f.refs = append(f.refs, ref)
-	}
-
-	view, err := f.service.GetFinanceBudgetItem(t.Context(), alex, item.ID)
-	page, _ := f.service.ListFinanceBudgets(t.Context(), alex, nil)
-
-	wantItem := Usage{InUse: true, Summary: "Linked to 6 line items (1 in the recycle bin)",
-		Parts:   []UsagePart{{Kind: "lineItem", Text: "Linked to 6 line items (1 in the recycle bin)", Count: 6, InRecycleBin: 1}},
-		Records: []history.RecordRef{}}
-	if err != nil || !reflect.DeepEqual(view.Usage, wantItem) {
-		t.Errorf("item usage = %+v, %v\nwant %+v", view.Usage, err, wantItem)
-	}
-	wantBudget := Usage{InUse: true, Summary: "Default finance budget of 1 plan",
-		Parts:   []UsagePart{{Kind: "plan", Text: "Default finance budget of 1 plan", Count: 1}},
-		Records: []history.RecordRef{{Type: "plan", ID: "P-1001", Name: "Lubricants FY2026"}}}
-	if !reflect.DeepEqual(page.Items[0].Usage, wantBudget) {
-		t.Errorf("budget usage = %+v\nwant %+v", page.Items[0].Usage, wantBudget)
-	}
-}
-
-// An item in use — linked to line items, also in the recycle bin — cannot be deleted: the answer says
-// where it is used and to set it inactive instead (FR-004, SC-004).
-func TestDeleteItem_InUseRefused_FR004(t *testing.T) {
-	t.Parallel()
-	f := newTestService(t)
-	item := f.createItem(t, itemInput(2026, "2026 Lubricants Budget", "Europe – Digital", ""))
-	ref := lineItemRef("L-1001", "P-1001", "A-1001", "USD", "100.00", true)
-	ref.FinanceBudgetItemID = item.ID
-	f.refs = []Reference{ref}
-
-	_, used := f.service.DeleteFinanceBudgetItem(t.Context(), alex, item.ID)
-	_, gone := f.service.DeleteFinanceBudgetItem(t.Context(), alex, "FBI-9999")
-
-	assertError(t, used, errs.InUse("'Europe – Digital' is in use (linked to 1 line item (1 in the recycle bin)) — set it inactive instead."))
-	assertError(t, gone, errs.NotFound("This finance budget item no longer exists — someone may have deleted it."))
-}
 
 // An unused item can be set inactive and reactivated, each logged; deleted, it moves to the recycle bin
 // under its budget and Undo brings it back exactly (US5-5, FR-004, FR-006).

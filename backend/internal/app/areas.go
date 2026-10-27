@@ -3,16 +3,17 @@ package app
 import (
 	"context"
 
-	"mapp/internal/activities"
+	"mapp/internal/activity"
 	"mapp/internal/allwork"
-	"mapp/internal/approvals"
-	"mapp/internal/budgets"
-	"mapp/internal/campaigns"
+	"mapp/internal/approval"
+	"mapp/internal/budget"
+	"mapp/internal/campaign"
 	"mapp/internal/financials"
+	"mapp/internal/history"
 	"mapp/internal/home"
-	"mapp/internal/lineitems"
-	"mapp/internal/plans"
-	"mapp/internal/samples"
+	"mapp/internal/lineitem"
+	"mapp/internal/plan"
+	"mapp/internal/sample"
 	"mapp/internal/settings"
 )
 
@@ -34,7 +35,7 @@ func (w *wiring) areas() error {
 }
 
 func (w *wiring) settingsArea() error {
-	w.settings = settings.NewService(w.set.Tx, w.set.Settings, w.generator, w.history, w.now)
+	w.settings = settings.NewService(history.Tools{Tx: w.set.Tx, IDs: w.generator, Log: w.history, Now: w.now}, w.set.Settings)
 	if err := w.register(w.settings.Kinds()); err != nil {
 		return err
 	}
@@ -56,11 +57,12 @@ func (w *wiring) rates() error {
 }
 
 func (w *wiring) plansArea() error {
-	w.plans = plans.NewService(w.set.Tx, w.set.Plans, w.generator, w.history, w.settings, w.people, w.now)
+	tools := history.Tools{Tx: w.set.Tx, IDs: w.generator, Log: w.history, Now: w.now}
+	w.plans = plan.NewService(tools, w.set.Plans, w.settings, w.people)
 	if err := w.register(w.plans.Kinds()); err != nil {
 		return err
 	}
-	mount(w.signedIn, plans.NewHandler(w.plans))
+	mount(w.signedIn, plan.NewHandler(w.plans))
 	w.history.UseAccess(historyAccess{plans: w.set.Plans, history: w.history})
 	return nil
 }
@@ -72,25 +74,30 @@ func (w *wiring) planningArea() error {
 	if err := w.planningKinds(); err != nil {
 		return err
 	}
-	mount(w.signedIn, campaigns.NewHandler(w.campaigns), activities.NewHandler(w.activities),
-		lineitems.NewHandler(w.lineItems))
+	mount(w.signedIn, campaign.NewHandler(w.campaigns), activity.NewHandler(w.activities),
+		lineitem.NewHandler(w.lineItems))
 	return nil
 }
 
 func (w *wiring) buildActivities() {
 	s := w.set
-	w.activities = activities.NewService(s.Tx, s.Activities, w.generator, w.history, w.now, activities.Deps{
+	w.activities = activity.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}, s.Activities, activity.Deps{
 		Plans: s.Plans, Hierarchy: s.Campaigns, Settings: w.settings, People: s.People,
 		Workflows: activityWorkflows{repo: s.Approvals},
 	})
-	w.lineItems = lineitems.NewService(s.Tx, s.LineItems, w.generator, w.history,
-		lineItemDeps(w.settings, s.Settings, w.activities, s.Activities, s.Campaigns, s.Plans, s.People, w.people), w.now)
+	w.lineItems = lineitem.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}, s.LineItems, lineitem.Deps{
+		Activities: lineItemActivities{
+			activities: s.Activities, campaigns: s.Campaigns, plans: s.Plans, settings: w.settings, service: w.activities,
+		},
+		Currencies: w.settings, FinanceBudgets: lineItemBudgets{repo: s.Settings},
+		Attributes: lineItemAttributes{settings: w.settings}, People: lineItemPeople{repo: s.People, service: w.people},
+	})
 	w.activities.UseLineItems(lineItemsForActivities{svc: w.lineItems})
 	w.activities.UseDisplayRates(w.people)
 }
 
 func (w *wiring) buildCampaigns() {
-	w.campaigns = campaigns.NewService(w.set.Tx, w.set.Campaigns, w.generator, w.history, w.now, campaigns.Deps{
+	w.campaigns = campaign.NewService(history.Tools{Tx: w.set.Tx, IDs: w.generator, Log: w.history, Now: w.now}, w.set.Campaigns, campaign.Deps{
 		Plans: campaignPlans{repo: w.set.Plans}, People: w.set.People, Settings: w.settings,
 		Activities: activitiesForCampaigns{svc: w.activities},
 	})
@@ -110,22 +117,23 @@ func (w *wiring) planningKinds() error {
 	return nil
 }
 
-func (w *wiring) planLevels() []plans.Level {
+func (w *wiring) planLevels() []plan.Level {
 	return append(campaignLevels(w.campaigns), activityLevel(w.activities, w.set.Activities, w.set.Campaigns),
 		lineItemLevel(w.lineItems, w.set.Activities, w.set.Campaigns))
 }
 
 // budgetsArea comes after the planning kinds: an allocation is a child of its plan, which takes it along.
 func (w *wiring) budgetsArea() error {
-	budgetsService := budgets.NewService(w.set.Tx, w.set.Budgets, w.generator, w.history, budgets.Deps{
+	tools := history.Tools{Tx: w.set.Tx, IDs: w.generator, Log: w.history, Now: w.now}
+	budgetsService := budget.NewService(tools, w.set.Budgets, budget.Deps{
 		Plans:     budgetPlans{plans: w.plans, repo: w.set.Plans, rates: w.settings.Rates},
 		Directory: w.people, Rates: w.settings, Access: budgetAccess{access: w.access},
-	}, w.now)
+	})
 	if err := w.register(budgetsService.Kinds()); err != nil {
 		return err
 	}
 	w.plans.UseAllocations(planAllocations{budgets: budgetsService})
-	mount(w.signedIn, budgets.NewHandler(budgetsService))
+	mount(w.signedIn, budget.NewHandler(budgetsService))
 	return nil
 }
 
@@ -133,26 +141,28 @@ func (w *wiring) samplesArea() error {
 	if !w.cfg.DemoMode() {
 		return nil
 	}
-	samplesService := samples.NewService(w.set.Tx, w.set.Samples, w.generator, w.history, w.now)
+	tools := history.Tools{Tx: w.set.Tx, IDs: w.generator, Log: w.history, Now: w.now}
+	samplesService := sample.NewService(tools, w.set.Samples)
 	if err := w.register(samplesService.Kinds()); err != nil {
 		return err
 	}
-	mount(w.signedIn, samples.NewHandler(samplesService))
+	mount(w.signedIn, sample.NewHandler(samplesService))
 	return nil
 }
 
 func (w *wiring) approvalsArea() error {
 	s := w.set
-	w.approvals = approvals.NewService(s.Tx, s.Approvals, s.People, &approvalsActivities{
+	tools := history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}
+	w.approvals = approval.NewService(tools, s.Approvals, s.People, &approvalsActivities{
 		activities: s.Activities, lineItems: s.LineItems, campaigns: s.Campaigns, plans: s.Plans, settings: s.Settings,
 		rates: w.settings.Rates, check: w.activities.SubmitCheck, now: w.now,
-	}, w.generator, w.history, w.now)
+	})
 	if err := w.register(w.approvals.Kinds()); err != nil {
 		return err
 	}
 	w.connectApprovals()
 	w.accessTargets()
-	mount(w.signedIn, approvals.NewHandler(w.approvals))
+	mount(w.signedIn, approval.NewHandler(w.approvals))
 	return nil
 }
 
@@ -177,10 +187,11 @@ func (w *wiring) financialsArea() error {
 		plans: s.Plans, campaigns: w.campaigns, campaignsRepo: s.Campaigns, activities: s.Activities,
 		lineItems: s.LineItems, settings: w.settings, people: w.people, history: w.history,
 	}
-	w.financials = financials.NewService(s.Tx, s.Financials, w.generator, w.history, financials.Deps{
+	tools := history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}
+	w.financials = financials.NewService(tools, s.Financials, financials.Deps{
 		Planning: w.finance, Rates: w.settings, Displays: financialDisplays{people: w.people},
 		Access: financialAccess{tx: s.Tx, plans: s.Plans},
-	}, w.now)
+	})
 	if err := w.register(w.financials.Kinds()); err != nil {
 		return err
 	}
@@ -192,8 +203,10 @@ func (w *wiring) financialsArea() error {
 // are personal settings, not business records, so they have no history kinds (D-121).
 func (w *wiring) views() {
 	s := w.set
-	homeService := home.NewService(s.Tx, homeSources(w.people, s.Plans, w.plans, w.campaigns, w.activities,
-		w.approvals, w.history, w.settings.Rates))
+	homeService := home.NewService(s.Tx, homeReaders{
+		people: w.people, plansRepo: s.Plans, plans: w.plans, campaigns: w.campaigns, activities: w.activities,
+		approvals: w.approvals, history: w.history, rates: w.settings.Rates,
+	}.sources())
 	w.allWork = allWorkSource{
 		plans: w.plans, plansRepo: s.Plans, campaigns: w.campaigns, campaignsRepo: s.Campaigns,
 		activities: w.activities, activitiesRepo: s.Activities, lineItems: w.lineItems,
@@ -202,7 +215,8 @@ func (w *wiring) views() {
 		history: w.history, financials: w.financials, financeAccess: financialAccess{tx: s.Tx, plans: s.Plans},
 	}
 	mount(w.signedIn, home.NewHandler(homeService),
-		allwork.NewHandler(allwork.NewService(s.Tx, s.AllWork, w.allWork, w.generator, w.now)))
+		allwork.NewHandler(allwork.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now},
+			s.AllWork, w.allWork)))
 }
 
 func (w *wiring) usesOfPeople() {

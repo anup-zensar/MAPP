@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 
 	"mapp/internal/history"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/memo"
+	"mapp/internal/stores"
 )
 
 // historyAccess implements history.Access (feature 014, D-238, D-304): who sees which activity-log and
@@ -25,7 +26,7 @@ import (
 //   - Restoring needs to see the entry and the level's delete permission in the plan, or the permission that
 //     manages an administration record. The developer sample records stay open to everyone.
 type historyAccess struct {
-	plans   plans.Repository
+	plans   stores.PlanStore
 	history *history.Service
 }
 
@@ -78,8 +79,8 @@ func (h historyAccess) CanRestore(ctx context.Context, e history.BinEntry) error
 		return errs.NotFound(authz.NotFoundMessage(e.RecordTypeLabel))
 	}
 	if p, planning := deletedWith[e.RecordType]; planning {
-		plan, _ := h.planOf(ctx, e.RecordType, e.RecordID, e.Path, e.Snapshots)
-		return authz.RequireIn(ctx, p, plan)
+		pl, _ := h.planOf(ctx, e.RecordType, e.RecordID, e.Path, e.Snapshots)
+		return authz.RequireIn(ctx, p, pl)
 	}
 	if p, managed := managedBy[e.RecordType]; managed {
 		return authz.Require(ctx, p)
@@ -106,12 +107,12 @@ func (h historyAccess) canSee(ctx context.Context, kind, id string, path []histo
 	if _, planning := deletedWith[kind]; !planning {
 		return g.Has(authz.ActivityLogViewAll)
 	}
-	plan, found := h.planOf(ctx, kind, id, path, snapshots)
+	p, found := h.planOf(ctx, kind, id, path, snapshots)
 	if !found { // deleted permanently: All markets only
 		all, _ := g.Teams(authz.PlansView)
 		return all
 	}
-	return g.CanViewPlan(plan)
+	return g.CanViewPlan(p)
 }
 
 // planOf returns the access facts of the plan an entry is about: the plan itself or the first record of the
@@ -156,7 +157,7 @@ func (h historyAccess) knownPlans(ctx context.Context) (knownPlans, error) {
 			return knownPlans{}, err
 		}
 		for _, p := range all {
-			known.stored[p.ID] = plans.AccessFacts(p)
+			known.stored[p.ID] = plan.AccessFacts(p)
 		}
 		inBin, err := h.history.SnapshotsInBin(ctx, "plan")
 		if err != nil {
@@ -173,9 +174,9 @@ func (h historyAccess) knownPlans(ctx context.Context) (knownPlans, error) {
 
 // planSnapshotFacts returns the access facts of a plan as the recycle bin keeps it.
 func planSnapshotFacts(s history.Snapshot) (authz.PlanFacts, bool) {
-	var p plans.Plan
+	var p plan.Plan
 	if err := json.Unmarshal(s.Data, &p); err != nil {
 		return authz.PlanFacts{}, false
 	}
-	return plans.AccessFacts(p), true
+	return plan.AccessFacts(p), true
 }

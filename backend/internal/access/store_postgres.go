@@ -19,7 +19,7 @@ import (
 // keptArea is what the transaction memo keeps of access: roles, assignments and rules.
 const keptArea = "access"
 
-// PostgresStore is the Repository on PostgreSQL. A role's permissions are a text[] column (values of a
+// PostgresStore is the Store on PostgreSQL. A role's permissions are a text[] column (values of a
 // fixed list); an assignment's chosen teams are a child table, so each team must exist.
 type PostgresStore struct {
 	db *database.DB

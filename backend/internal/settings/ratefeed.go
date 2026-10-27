@@ -138,3 +138,17 @@ func blank(record []string) bool {
 	}
 	return true
 }
+
+// rateFeed is the feed the import reads files with: the simulated GSAP daily rate file unless app wires
+// another (FR-008).
+func (s *Service) rateFeed() RateFeed {
+	if s.feed == nil {
+		return GSAPRateFile{}
+	}
+	return s.feed
+}
+
+// UseRateFeed sets the feed rate files are read with (FR-008). internal/app wires GSAPRateFile.
+func (s *Service) UseRateFeed(feed RateFeed) {
+	s.feed = feed
+}

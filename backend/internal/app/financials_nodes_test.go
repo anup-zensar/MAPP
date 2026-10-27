@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"mapp/internal/activities"
+	"mapp/internal/activity"
 	"mapp/internal/financials"
 	"mapp/internal/platform/actor"
 )
@@ -75,7 +75,7 @@ func TestFinancialPlanning_PlanOfAndPlanNodes_028_FR002(t *testing.T) {
 	}
 }
 
-func pageOrders(ctx context.Context, adapter financialPlanning, activityService *activities.Service, orders map[string]int) error {
+func pageOrders(ctx context.Context, adapter financialPlanning, activityService *activity.Service, orders map[string]int) error {
 	all, err := adapter.plans.List(ctx)
 	if err != nil {
 		return err

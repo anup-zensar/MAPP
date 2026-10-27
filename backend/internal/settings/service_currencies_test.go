@@ -26,12 +26,12 @@ func jpy() CurrencyInput {
 func euroLineItems() []Reference {
 	refs := []Reference{}
 	for i := range 13 {
-		refs = append(refs, lineItemRef(fmt.Sprintf("L-10%02d", i), "P-1001", fmt.Sprintf("A-100%d", i%5), "EUR", "874.00", false))
+		refs = append(refs, lineItemRef(fmt.Sprintf("L-10%02d", i), fmt.Sprintf("A-100%d", i%5), "EUR", "874.00"))
 	}
 	return append(refs,
-		lineItemRef("L-1013", "P-1001", "A-1005", "EUR", "36638.00", false),
-		lineItemRef("L-1014", "P-1001", "A-1006", "EUR", "1000.00", true),
-		lineItemRef("L-1015", "P-1001", "A-1007", "GBP", "1000.00", false),
+		lineItemRef("L-1013", "A-1005", "EUR", "36638.00"),
+		inRecycleBin(lineItemRef("L-1014", "A-1006", "EUR", "1000.00")),
+		lineItemRef("L-1015", "A-1007", "GBP", "1000.00"),
 	)
 }
 
@@ -224,7 +224,7 @@ func TestDeleteCurrency_InUseRefused_FR004(t *testing.T) {
 	f := newTestService(t)
 	f.addCurrency(t, "EUR", "0.92", true)
 	f.addCurrency(t, "GBP", "0.79", true)
-	f.refs = []Reference{lineItemRef("L-1001", "P-1001", "A-1001", "EUR", "10.00", false), personRef("U-1001", "GBP")}
+	f.refs = []Reference{lineItemRef("L-1001", "A-1001", "EUR", "10.00"), personRef("U-1001", "GBP")}
 
 	_, lineItem := f.service.DeleteCurrency(t.Context(), alex, "EUR")
 	_, person := f.service.DeleteCurrency(t.Context(), alex, "GBP")

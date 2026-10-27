@@ -134,7 +134,7 @@ func TestDisplayCurrencies_SettingsAndPeople_FR003_D061(t *testing.T) {
 		t.Fatalf("seed.Load: %v", err)
 	}
 	err = db.Write(t.Context(), func(ctx context.Context) error {
-		return people.NewJSONRepository().PutPreferences(ctx, people.Preferences{PersonID: "U-1004", Theme: "system", DisplayCurrency: "EUR"})
+		return people.NewJSONStore().PutPreferences(ctx, people.Preferences{PersonID: "U-1004", Theme: "system", DisplayCurrency: "EUR"})
 	})
 	if err != nil {
 		t.Fatalf("saving Mei Lin's display currency: %v", err)

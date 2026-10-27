@@ -3,12 +3,12 @@ package app
 import (
 	"context"
 
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 )
 
 // readTrees reads the campaigns, initiatives, activities and line items of every plan of a view, one level at
 // a time, so that the stores keep them for the transaction and each plan's tree reads none of them again.
-func (s allWorkSource) readTrees(ctx context.Context, list []plans.Plan) error {
+func (s allWorkSource) readTrees(ctx context.Context, list []plan.Plan) error {
 	planIDs := make([]string, 0, len(list))
 	for _, p := range list {
 		planIDs = append(planIDs, p.ID)

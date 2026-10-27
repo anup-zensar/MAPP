@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"mapp/internal/history"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/ids"
@@ -27,7 +28,8 @@ func newTestService(t *testing.T, src Source) (*Service, string) {
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)
 	}
-	return NewService(db, NewJSONRepository(), src, ids.NewGenerator(ids.NewJSONCounters()), func() time.Time { return fixtureNow }), dir
+	tools := history.Tools{Tx: db, IDs: ids.NewGenerator(ids.NewJSONCounters()), Now: func() time.Time { return fixtureNow }}
+	return NewService(tools, NewJSONStore(), src), dir
 }
 
 // Without a year the view shows the current year (FR-004); the answer names the year, today, the display

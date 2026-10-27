@@ -131,8 +131,10 @@ backend/
 └── go.sum
 ```
 
-Today's packages (plural names, `internal/platform/store` with the JSON stores, `net/http`
-handlers) move to this layout feature by feature (constitution, Governance → Alignment).
+Feature 025 brought the packages to this layout: singular names for record areas, a small `Store` per
+service, files within 300 lines. What remains of the old one is the JSON file store
+(`internal/platform/store`, each area's `store_json.go`, `stores.JSON`), the stand-in of service, handler
+and contract tests until they move to fakes (constitution, Governance → Alignment).
 Architecture decision records live at the repository root in `docs/architecture/adr/`, because
 they span backend and frontend (Principle III).
 

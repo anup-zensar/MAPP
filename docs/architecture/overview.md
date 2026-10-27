@@ -36,7 +36,7 @@ fit together. Exact library versions are fixed in feature 001's `plan.md` and `r
 |---|---|---|
 | **Handler** | Read the HTTP request, call the service, write JSON. No business rules. | `POST /api/v1/plans` |
 | **Service** | All business rules: validation, calculations, status changes, activity log. Receives the actor. | `plans.Service.Create(ctx, actor, input)` |
-| **Repository** | Read and write records. An interface plus one implementation per storage. | `plans.Repository` → `plans.PostgresStore` |
+| **Store** | Read and write records. The service declares the `Store` it needs (`store.go`); the PostgreSQL store satisfies it. | `plan.Store` → `plan.PostgresStore` |
 
 - Shared platform code (small and boring, `internal/platform/`): JSON helpers and the error format, the
   actor, readable IDs, record bookkeeping (version, created/updated), clock (so tests can fix "today"),

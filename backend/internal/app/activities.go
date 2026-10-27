@@ -6,52 +6,53 @@ import (
 	"slices"
 	"strings"
 
-	"mapp/internal/activities"
-	"mapp/internal/campaigns"
-	"mapp/internal/plans"
+	"mapp/internal/activity"
+	"mapp/internal/campaign"
+	"mapp/internal/plan"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
+	"mapp/internal/stores"
 )
 
 // The adapters below hand the activities service (feature 006) to the features above it (D-196): to
-// campaigns (005) as its campaigns.Activities, and to plans (004) as the "activity" level of its registry.
+// campaigns (005) as its campaign.Activities, and to plans (004) as the "activity" level of its registry.
 
-// activitiesForCampaigns is campaigns.Activities over the activities service.
+// activitiesForCampaigns is campaign.Activities over the activities service.
 type activitiesForCampaigns struct {
-	svc *activities.Service
+	svc *activity.Service
 }
 
 // Summaries returns the roll-up summary of every activity under the initiatives.
-func (x activitiesForCampaigns) Summaries(ctx context.Context, initiativeIDs []string) ([]campaigns.ActivitySummary, error) {
+func (x activitiesForCampaigns) Summaries(ctx context.Context, initiativeIDs []string) ([]campaign.ActivitySummary, error) {
 	return x.svc.Summaries(ctx, initiativeIDs)
 }
 
 // CopyAll copies every activity of an initiative, with its line items, into another initiative: the
 // copies of a campaign or an initiative (005 FR-027).
-func (x activitiesForCampaigns) CopyAll(ctx context.Context, a actor.Actor, fromInitiativeID, toInitiativeID string, yearShift int) (campaigns.ActivityCopyCounts, error) {
-	counts, err := x.svc.CopyAll(ctx, a, fromInitiativeID, toInitiativeID, yearShift)
-	return campaigns.ActivityCopyCounts{Activities: counts.Activities, LineItems: counts.LineItems}, err
+func (x activitiesForCampaigns) CopyAll(ctx context.Context, a actor.Actor, pair campaign.CopyPair, yearShift int) (campaign.ActivityCopyCounts, error) {
+	counts, err := x.svc.CopyAll(ctx, a, pair.FromID, pair.ToID, yearShift)
+	return campaign.ActivityCopyCounts{Activities: counts.Activities, LineItems: counts.LineItems}, err
 }
 
 // CopyMany copies the activities of many initiatives at once: a campaign copy.
-func (x activitiesForCampaigns) CopyMany(ctx context.Context, a actor.Actor, pairs []campaigns.CopyPair, yearShift int) (campaigns.ActivityCopyCounts, error) {
-	converted := make([]activities.CopyPair, 0, len(pairs))
+func (x activitiesForCampaigns) CopyMany(ctx context.Context, a actor.Actor, pairs []campaign.CopyPair, yearShift int) (campaign.ActivityCopyCounts, error) {
+	converted := make([]activity.CopyPair, 0, len(pairs))
 	for _, p := range pairs {
-		converted = append(converted, activities.CopyPair{FromID: p.FromID, ToID: p.ToID})
+		converted = append(converted, activity.CopyPair{FromID: p.FromID, ToID: p.ToID})
 	}
 	counts, err := x.svc.CopyMany(ctx, a, converted, yearShift)
-	return campaigns.ActivityCopyCounts{Activities: counts.Activities, LineItems: counts.LineItems}, err
+	return campaign.ActivityCopyCounts{Activities: counts.Activities, LineItems: counts.LineItems}, err
 }
 
 // activityLevel is the activity level of feature 004's registry: the activities' figures and the
 // activities that need attention (AddPlanFacts), their copies in a plan copy (the activities of every
 // copied initiative; their line items are the next level's), and the activities a new model would not
 // allow (004 FR-019).
-func activityLevel(svc *activities.Service, activitiesRepo activities.Repository, campaignsRepo campaigns.Repository) plans.Level {
-	return plans.Level{
+func activityLevel(svc *activity.Service, activitiesRepo stores.ActivityStore, campaignsRepo stores.CampaignStore) plan.Level {
+	return plan.Level{
 		Name:     "activity",
 		AddFacts: svc.AddPlanFacts,
-		Copy: func(ctx context.Context, job *plans.CopyJob) error {
+		Copy: func(ctx context.Context, job *plan.CopyJob) error {
 			newIDs, err := svc.CopyForInitiatives(ctx, job.Actor, job.NewIDs, job.Years)
 			if err != nil {
 				return err
@@ -70,7 +71,7 @@ func activityLevel(svc *activities.Service, activitiesRepo activities.Repository
 // allowedTypeIDs (006 TypesNotAllowed, for 004 FR-019), ordered by path: campaign, initiative and activity
 // names, ignoring letter case. An activity without a type is not listed: it has no type to disallow.
 func activitiesWithTypeNotAllowed(ctx context.Context, planID string, allowedTypeIDs []string,
-	activitiesRepo activities.Repository, campaignsRepo campaigns.Repository) ([]errs.RecordRef, error) {
+	activitiesRepo stores.ActivityStore, campaignsRepo stores.CampaignStore) ([]errs.RecordRef, error) {
 	campaignList, err := campaignsRepo.CampaignsOfPlan(ctx, planID)
 	if err != nil {
 		return nil, err

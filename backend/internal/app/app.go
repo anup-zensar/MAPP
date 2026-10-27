@@ -9,16 +9,16 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"mapp/internal/access"
-	"mapp/internal/activities"
+	"mapp/internal/activity"
 	"mapp/internal/allwork"
-	"mapp/internal/approvals"
+	"mapp/internal/approval"
 	"mapp/internal/auth"
-	"mapp/internal/campaigns"
+	"mapp/internal/campaign"
 	"mapp/internal/financials"
 	"mapp/internal/history"
-	"mapp/internal/lineitems"
+	"mapp/internal/lineitem"
 	"mapp/internal/people"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/clock"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/telemetry"
@@ -46,11 +46,11 @@ type wiring struct {
 	people     *people.Service
 	access     *access.Service
 	settings   *settings.Service
-	plans      *plans.Service
-	campaigns  *campaigns.Service
-	activities *activities.Service
-	lineItems  *lineitems.Service
-	approvals  *approvals.Service
+	plans      *plan.Service
+	campaigns  *campaign.Service
+	activities *activity.Service
+	lineItems  *lineitem.Service
+	approvals  *approval.Service
 	financials *financials.Service
 	allWork    allWorkSource
 	finance    financialPlanning
@@ -92,9 +92,11 @@ func (w *wiring) engine() (*gin.Engine, *telemetry.Telemetry, error) {
 func (w *wiring) organisation() *auth.Service {
 	s := w.set
 	w.history = history.NewService(s.Tx, s.History, w.generator, w.now)
-	w.people = people.NewService(s.Tx, s.People, w.generator, w.history, w.now)
-	authService := auth.NewService(s.Tx, s.Auth, s.People, w.cfg.DemoMode(), w.cfg.DemoPassword, w.now)
-	w.access = access.NewService(s.Tx, s.Access, w.generator, w.history, accessDirectory{people: w.people}, w.now)
+	w.people = people.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}, s.People)
+	authService := auth.NewService(s.Tx, s.Auth, s.People,
+		auth.Options{DemoMode: w.cfg.DemoMode(), DemoPassword: w.cfg.DemoPassword, Now: w.now})
+	w.access = access.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now},
+		s.Access, accessDirectory{people: w.people})
 	w.people.UseAccess(peopleAccessHooks(w.access))
 	return authService
 }

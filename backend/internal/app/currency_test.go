@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"mapp/internal/activities"
+	"mapp/internal/activity"
 	"mapp/internal/allwork"
-	"mapp/internal/approvals"
-	"mapp/internal/campaigns"
+	"mapp/internal/approval"
+	"mapp/internal/campaign"
 	"mapp/internal/history"
-	"mapp/internal/lineitems"
-	"mapp/internal/plans"
+	"mapp/internal/lineitem"
+	"mapp/internal/plan"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/money"
@@ -40,17 +40,17 @@ func TestAllWorkSource_ConvertsPlanCurrency_FR014(t *testing.T) {
 		byID[n.ID] = n
 	}
 
-	plan, launch, agency := byID["P-1004"], byID["A-1011"], byID["L-1010"]
-	if plan.Budget == nil || plan.Budget.String() != "759493.67" || plan.BudgetPlan == nil || plan.BudgetPlan.Format() != "600,000.00 GBP" ||
-		plan.PlanCurrency != "GBP" || plan.PlanType != "crossMarket" || plan.PlanYear != 2027 || plan.PhasingMethod != "evenly" {
-		t.Errorf("P-1004 = budget %v (%v), %s %s %d %s", plan.Budget, plan.BudgetPlan, plan.PlanCurrency, plan.PlanType, plan.PlanYear, plan.PhasingMethod)
+	p, launch, agency := byID["P-1004"], byID["A-1011"], byID["L-1010"]
+	if p.Budget == nil || p.Budget.String() != "759493.67" || p.BudgetPlan == nil || p.BudgetPlan.Format() != "600,000.00 GBP" ||
+		p.PlanCurrency != "GBP" || p.PlanType != "crossMarket" || p.PlanYear != 2027 || p.PhasingMethod != "evenly" {
+		t.Errorf("P-1004 = budget %v (%v), %s %s %d %s", p.Budget, p.BudgetPlan, p.PlanCurrency, p.PlanType, p.PlanYear, p.PhasingMethod)
 	}
-	if len(plan.PhasedBudgetUSD) != 12 || plan.PhasedBudgetUSD[0].Month != "2027-01" || plan.PhasedBudgetUSD[0].USD.String() != "63291.14" ||
-		plan.PhasedBudgetUSD[11].USD.String() != "63291.13" {
-		t.Errorf("phased budget in USD = %+v, want 63,291.14 a month and the rest in December", plan.PhasedBudgetUSD)
+	if len(p.PhasedBudgetUSD) != 12 || p.PhasedBudgetUSD[0].Month != "2027-01" || p.PhasedBudgetUSD[0].USD.String() != "63291.14" ||
+		p.PhasedBudgetUSD[11].USD.String() != "63291.13" {
+		t.Errorf("phased budget in USD = %+v, want 63,291.14 a month and the rest in December", p.PhasedBudgetUSD)
 	}
 	var phasedSum money.Amount
-	for _, m := range plan.PhasedBudgetUSD {
+	for _, m := range p.PhasedBudgetUSD {
 		phasedSum = phasedSum.Add(m.USD)
 	}
 	if phasedSum.String() != "759493.67" {
@@ -64,10 +64,10 @@ func TestAllWorkSource_ConvertsPlanCurrency_FR014(t *testing.T) {
 		agency.PlannedCostPlan.Format() != "19,750.00 GBP" || agency.LocalPlannedCost.Format() != "23,000.00 EUR" {
 		t.Errorf("L-1010 = %v USD, %v, %v", agency.PlannedCost, agency.PlannedCostPlan, agency.LocalPlannedCost)
 	}
-	campaign := byID[launchCampaignID(data)]
-	if campaign.Budget == nil || campaign.Budget.String() != "506329.11" || campaign.BudgetPlan.Format() != "400,000.00 GBP" ||
-		campaign.PhasingMethod != "custom" || len(campaign.PhasedBudgetUSD) != 12 || !campaign.PhasedBudgetUSD[0].USD.IsZero() {
-		t.Errorf("Helix UK & Ireland = %v (%v), %s, %+v", campaign.Budget, campaign.BudgetPlan, campaign.PhasingMethod, campaign.PhasedBudgetUSD)
+	c := byID[launchCampaignID(data)]
+	if c.Budget == nil || c.Budget.String() != "506329.11" || c.BudgetPlan.Format() != "400,000.00 GBP" ||
+		c.PhasingMethod != "custom" || len(c.PhasedBudgetUSD) != 12 || !c.PhasedBudgetUSD[0].USD.IsZero() {
+		t.Errorf("Helix UK & Ireland = %v (%v), %s, %+v", c.Budget, c.BudgetPlan, c.PhasingMethod, c.PhasedBudgetUSD)
 	}
 }
 
@@ -92,14 +92,15 @@ func TestApprovals_DisplayFromPlanCurrency(t *testing.T) {
 		t.Fatalf("seed.Load: %v", err)
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
-	settingsService := settings.NewService(db, settings.NewJSONRepository(), generator,
-		history.NewService(db, history.NewJSONRepository(), generator, now), now)
+	settingsService := settings.NewService(history.Tools{
+		Tx: db, IDs: generator, Log: history.NewService(db, history.NewJSONStore(), generator, now), Now: now,
+	}, settings.NewJSONStore())
 	adapter := &approvalsActivities{
-		activities: activities.NewJSONRepository(), lineItems: lineitems.NewJSONRepository(), campaigns: campaigns.NewJSONRepository(),
-		plans: plans.NewJSONRepository(), settings: settings.NewJSONRepository(), rates: settingsService.Rates, now: now,
+		activities: activity.NewJSONStore(), lineItems: lineitem.NewJSONStore(), campaigns: campaign.NewJSONStore(),
+		plans: plan.NewJSONStore(), settings: settings.NewJSONStore(), rates: settingsService.Rates, now: now,
 	}
 
-	var launch, usdActivity approvals.ActivityFacts
+	var launch, usdActivity approval.ActivityFacts
 	err = db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
 		if launch, _, err = adapter.Activity(ctx, "A-1011"); err != nil {

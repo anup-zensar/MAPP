@@ -6,13 +6,10 @@ import (
 	"strings"
 
 	"mapp/internal/access"
-	"mapp/internal/activities"
-	"mapp/internal/approvals"
-	"mapp/internal/campaigns"
-	"mapp/internal/lineitems"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/store"
+	"mapp/internal/stores"
 )
 
 // planningTargets finds the planning records of features 004–007 that operations name by path, for the
@@ -21,11 +18,11 @@ import (
 // (data model §2.2). It reads the stored records directly, so a check costs a few lookups.
 type planningTargets struct {
 	db         store.Transactor
-	plans      plans.Repository
-	campaigns  campaigns.Repository
-	activities activities.Repository
-	lineItems  lineitems.Repository
-	approvals  approvals.Repository
+	plans      stores.PlanStore
+	campaigns  stores.CampaignStore
+	activities stores.ActivityStore
+	lineItems  stores.LineItemStore
+	approvals  stores.ApprovalStore
 }
 
 // finders returns the finder of each path parameter: the five planning records, and recordId, which All
@@ -61,7 +58,7 @@ func (t planningTargets) plan(ctx context.Context, id string) (access.Target, bo
 	if err != nil || !found {
 		return access.Target{}, false, err
 	}
-	return access.Target{RecordType: access.RecordPlan, Plan: plans.AccessFacts(p)}, true, nil
+	return access.Target{RecordType: access.RecordPlan, Plan: plan.AccessFacts(p)}, true, nil
 }
 
 // campaign finds the campaign id with its plan.
@@ -136,7 +133,7 @@ func (t planningTargets) record(ctx context.Context, id string) (access.Target, 
 
 // namedApprovers returns the ids of the people named to approve the activity in any level of any of its
 // approval rounds (008's copy of the levels at submission), without repeats.
-func namedApprovers(ctx context.Context, repo approvals.Repository, activityID string) ([]string, error) {
+func namedApprovers(ctx context.Context, repo stores.ApprovalStore, activityID string) ([]string, error) {
 	rounds, err := repo.RoundsOf(ctx, activityID)
 	if err != nil {
 		return nil, err
