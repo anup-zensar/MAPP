@@ -8,16 +8,13 @@ import (
 	"mapp/internal/access"
 	"mapp/internal/plan"
 	"mapp/internal/platform/authz"
-	"mapp/internal/platform/store"
 	"mapp/internal/stores"
 )
 
-// planningTargets finds the planning records of features 004–007 that operations name by path, for the
-// access middleware (feature 014, plan "Authorization model"): each record with its plan's access facts and,
-// for an activity and what is under it, its owner and the people named to approve it in any approval round
-// (data model §2.2). It reads the stored records directly, so a check costs a few lookups.
+// planningTargets finds, for the access middleware, the record an operation names by path with its plan's
+// access facts and, for an activity and what is under it, its owner and the people named to approve it.
 type planningTargets struct {
-	db         store.Transactor
+	db         stores.Transactor
 	plans      stores.PlanStore
 	campaigns  stores.CampaignStore
 	activities stores.ActivityStore
@@ -25,8 +22,7 @@ type planningTargets struct {
 	approvals  stores.ApprovalStore
 }
 
-// finders returns the finder of each path parameter: the five planning records, and recordId, which All
-// work (010) and the financials of a record (015) use for any of them.
+// finders also finds recordId, All work's and the financials' id of any of the five planning records.
 func (t planningTargets) finders() map[string]access.TargetFinder {
 	return map[string]access.TargetFinder{
 		"planId":       t.inRead(t.plan),
@@ -38,7 +34,6 @@ func (t planningTargets) finders() map[string]access.TargetFinder {
 	}
 }
 
-// inRead runs a finder inside a read transaction.
 func (t planningTargets) inRead(find access.TargetFinder) access.TargetFinder {
 	return func(ctx context.Context, id string) (access.Target, bool, error) {
 		var target access.Target
@@ -52,7 +47,6 @@ func (t planningTargets) inRead(find access.TargetFinder) access.TargetFinder {
 	}
 }
 
-// plan finds the plan id.
 func (t planningTargets) plan(ctx context.Context, id string) (access.Target, bool, error) {
 	p, found, err := t.plans.Get(ctx, id)
 	if err != nil || !found {
@@ -61,7 +55,6 @@ func (t planningTargets) plan(ctx context.Context, id string) (access.Target, bo
 	return access.Target{RecordType: access.RecordPlan, Plan: plan.AccessFacts(p)}, true, nil
 }
 
-// campaign finds the campaign id with its plan.
 func (t planningTargets) campaign(ctx context.Context, id string) (access.Target, bool, error) {
 	c, found, err := t.campaigns.GetCampaign(ctx, id)
 	if err != nil || !found {
@@ -72,7 +65,6 @@ func (t planningTargets) campaign(ctx context.Context, id string) (access.Target
 	return target, found, err
 }
 
-// initiative finds the initiative id with its plan.
 func (t planningTargets) initiative(ctx context.Context, id string) (access.Target, bool, error) {
 	i, found, err := t.campaigns.GetInitiative(ctx, id)
 	if err != nil || !found {
@@ -83,7 +75,6 @@ func (t planningTargets) initiative(ctx context.Context, id string) (access.Targ
 	return target, found, err
 }
 
-// activity finds the activity id with its plan, its owner and its named approvers.
 func (t planningTargets) activity(ctx context.Context, id string) (access.Target, bool, error) {
 	a, found, err := t.activities.Get(ctx, id)
 	if err != nil || !found {
@@ -102,7 +93,7 @@ func (t planningTargets) activity(ctx context.Context, id string) (access.Target
 	return target, true, nil
 }
 
-// lineItem finds the line item id with its activity's facts: whoever sees the activity sees its line items.
+// lineItem gives a line item its activity's facts: whoever sees the activity sees its line items.
 func (t planningTargets) lineItem(ctx context.Context, id string) (access.Target, bool, error) {
 	li, found, err := t.lineItems.Get(ctx, id)
 	if err != nil || !found {
@@ -113,7 +104,7 @@ func (t planningTargets) lineItem(ctx context.Context, id string) (access.Target
 	return target, found, err
 }
 
-// record finds any planning record by the prefix of its readable id (All work's record location, 010).
+// record finds any planning record by the prefix of its readable id.
 func (t planningTargets) record(ctx context.Context, id string) (access.Target, bool, error) {
 	prefix, _, _ := strings.Cut(id, "-")
 	switch prefix {
@@ -131,8 +122,7 @@ func (t planningTargets) record(ctx context.Context, id string) (access.Target, 
 	return access.Target{}, false, nil
 }
 
-// namedApprovers returns the ids of the people named to approve the activity in any level of any of its
-// approval rounds (008's copy of the levels at submission), without repeats.
+// namedApprovers returns, without repeats, everyone named at any level of any of the activity's rounds.
 func namedApprovers(ctx context.Context, repo stores.ApprovalStore, activityID string) ([]string, error) {
 	rounds, err := repo.RoundsOf(ctx, activityID)
 	if err != nil {

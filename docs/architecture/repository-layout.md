@@ -39,7 +39,7 @@ MAPP/
 │   │   │   ├── web/             JSON in/out, errors to HTTP, middleware
 │   │   │   ├── database/        PostgreSQL: pool, migrations, queries, sqlcdb, dbtest     (023)
 │   │   │   ├── memo/            values kept for the rest of a read-only transaction       (023)
-│   │   │   ├── store/           the Transactor interface; the JSON file store, tests only until 025
+│   │   │   ├── fake/            test fakes' transactions, tables and ID counters (tests only)  (029)
 │   │   │   ├── ids/             readable IDs (P-1001 …)
 │   │   │   ├── record/          version and created/updated bookkeeping
 │   │   │   └── apitest/         contract-test helper (tests only)
@@ -53,10 +53,10 @@ MAPP/
 │   │   ├── activity/            activities                                                   (006)
 │   │   ├── lineitem/            line items and spreads                                       (007)
 │   │   ├── approval/            approval workflows, approvals, notifications                 (008)
-│   │   ├── stores/              every area's store and the Transactor: Postgres, or JSON for tests (023)
+│   │   ├── stores/              every area's store and the Transactor; storestest: in memory  (023, 029)
 │   │   └── views/               cross-plan queries for All work                              (010)
-│   │       each business package:  model.go · store.go · store_postgres.go · store_json.go ·
-│   │                               service.go · handler.go, a large one a file per use case,
+│   │       each business package:  model.go · store.go · store_postgres.go · service.go ·
+│   │                               handler.go, <area>test/ (its fake), a file per use case,
 │   │                               each within 300 non-blank lines, tests beside them      (025)
 └── frontend/                    React + TypeScript web app
     ├── src/                     constitution F2 (feature 026)

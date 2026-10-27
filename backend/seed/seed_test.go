@@ -12,18 +12,17 @@ import (
 	"mapp/internal/budget"
 	"mapp/internal/history"
 	"mapp/internal/people"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/ids"
-	"mapp/internal/platform/store"
+	"mapp/internal/sample"
 	"mapp/internal/settings"
-	"mapp/internal/stores"
+	"mapp/internal/stores/storestest"
 	"mapp/seed"
 )
 
-// loadedAt is the time the tests pass to Load.
 var loadedAt = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 
-// The seed loads the six demo people of docs/product/demo-users-and-data.md in the order of that table, all
-// active and created by MAPP at the time given (FR-028, data model §1).
+// The six demo people of docs/product/demo-users-and-data.md, in its table's order, active, created by MAPP.
 func TestLoad_SixDemoPeople_FR028(t *testing.T) {
 	t.Parallel()
 	db := loadedStore(t)
@@ -36,7 +35,6 @@ func TestLoad_SixDemoPeople_FR028(t *testing.T) {
 		demoPerson("U-1005", "Carlos Mendes", "carlos.mendes@shell.com", "Business champion"),
 		demoPerson("U-1006", "Sara Novak", "sara.novak@shell.com", "Local finance advisor"),
 	}
-	// 017 FR-037: their line managers (017 data-model §13).
 	for i, manager := range []string{"", "U-1003", "U-1001", "U-1005", "U-1001", "U-1003"} {
 		want[i].ManagerID = manager
 	}
@@ -51,9 +49,7 @@ func TestLoad_SixDemoPeople_FR028(t *testing.T) {
 	}
 }
 
-// Every ID comes from the readable-ID counters, so the next record of each type continues after the seed
-// (FR-027, research R4, R22; the "next IDs" of the data models of 002–008). The deleted initiative of 011's
-// demo history took I-1009, A-1011 and L-1009, which are only in the recycle bin and never given out again.
+// The next record of each type continues after the seed; the deleted initiative's IDs are never given out again.
 func TestLoad_IDsComeFromTheCounters_FR027_FR040(t *testing.T) {
 	t.Parallel()
 	db := loadedStore(t)
@@ -71,7 +67,7 @@ func TestLoad_IDsComeFromTheCounters_FR027_FR040(t *testing.T) {
 		ids.PrefixApprovalDelegation: "DLG-1002", budget.PrefixGlobalBudget: "GB-1002", budget.PrefixAllocation: "BA-1003",
 		ids.PrefixRole: "RL-1006", ids.PrefixRoleAssignment: "RA-1008",
 	}
-	generator := ids.NewGenerator(ids.NewJSONCounters())
+	generator := ids.NewGenerator(fake.NewCounters(db))
 	err := db.Write(t.Context(), func(ctx context.Context) error {
 		for prefix, wantID := range want {
 			next, err := generator.Next(ctx, prefix)
@@ -89,19 +85,23 @@ func TestLoad_IDsComeFromTheCounters_FR027_FR040(t *testing.T) {
 	}
 }
 
-// The demo data is loaded only into an empty store; a store with any data is refused and left as it was
-// (FR-028).
+// A store that has given out an ID holds data: it is refused and left as it was.
 func TestLoad_RefusesAStoreWithData_FR028(t *testing.T) {
 	t.Parallel()
-	db := openStore(t, t.TempDir())
+	db := fake.NewDB()
+	set := storestest.New(db)
 	err := db.Write(t.Context(), func(ctx context.Context) error {
-		return store.Put(ctx, "sample_folders", "SF-1001", map[string]string{"id": "SF-1001"})
+		id, err := ids.NewGenerator(set.Counters).Next(ctx, ids.PrefixSampleFolder)
+		if err != nil {
+			return err
+		}
+		return set.Samples.PutFolder(ctx, sample.Folder{ID: id})
 	})
 	if err != nil {
 		t.Fatalf("Write: %v", err)
 	}
 
-	err = seed.Load(t.Context(), stores.JSON(db), fixedClock)
+	err = seed.Load(t.Context(), set, fixedClock)
 
 	if !errors.Is(err, seed.ErrNotEmpty) {
 		t.Errorf("Load = %v, want ErrNotEmpty", err)
@@ -111,12 +111,11 @@ func TestLoad_RefusesAStoreWithData_FR028(t *testing.T) {
 	}
 }
 
-// Loading twice is refused the second time, so the demo data is never doubled (FR-028).
 func TestLoad_Twice_FR028(t *testing.T) {
 	t.Parallel()
 	db := loadedStore(t)
 
-	err := seed.Load(t.Context(), stores.JSON(db), fixedClock)
+	err := seed.Load(t.Context(), storestest.New(db), fixedClock)
 
 	if !errors.Is(err, seed.ErrNotEmpty) {
 		t.Errorf("second Load = %v, want ErrNotEmpty", err)
@@ -126,9 +125,7 @@ func TestLoad_Twice_FR028(t *testing.T) {
 	}
 }
 
-// Only feature 011's step writes history (D-202, D-188): every activity-log entry of the seed is one of
-// the demo history's kinds, about a planning record, and no entry is about the records of the other steps'
-// Settings, people, teams or approval workflows.
+// Every log entry is one of the demo history's, about a planning record: none about Settings, people or teams.
 func TestLoad_OnlyTheHistoryStepWritesHistory_D202(t *testing.T) {
 	t.Parallel()
 	entries, _ := demoLog(t, loadedStore(t))
@@ -166,9 +163,7 @@ func TestLoaded_SaysWhatIsLoaded_FR028(t *testing.T) {
 	}
 }
 
-// Every Shell attribute value of every planning record belongs to an attribute of the record's level and
-// holds options of that attribute; a dependent value (Region, GL code) is linked to a chosen parent option
-// (002 data model §9, D-048).
+// A dependent attribute value (Region, GL code) must be linked to a chosen option of its parent attribute.
 func TestLoad_AttributeValuesFitTheirAttributes_D048(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
@@ -215,8 +210,7 @@ func TestLoad_AttributeValuesFitTheirAttributes_D048(t *testing.T) {
 	}
 }
 
-// optionIDs returns the option ids of a choice value: one for single choice, the list for multiple choice,
-// the options of the shares for a % split; none for other types or no value.
+// optionIDs returns the option ids of a choice value, those of the shares for a % split; none for other types.
 func optionIDs(t *testing.T, attribute settings.Attribute, raw json.RawMessage) []string {
 	t.Helper()
 	if raw == nil {

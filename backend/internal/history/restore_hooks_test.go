@@ -10,12 +10,9 @@ import (
 	"time"
 
 	"mapp/internal/platform/errs"
-	"mapp/internal/platform/store"
 )
 
-// Restore applies each kind's restore rules through PrepareRestore, which learns who restores, when and
-// whether it is an Undo. The changes it makes are saved and listed in the "restored" log entry, and its
-// notes end the entry's details and are the answer's details (FR-025, research R8).
+// PrepareRestore learns who restores, when and whether it is an Undo; its changes and notes are logged.
 func TestRestore_AppliesPrepareRestore_FR025(t *testing.T) { //nolint:gocyclo // 10: the restore rule written out here, then each thing it changed
 	t.Parallel()
 	f := newBareFixture(t)
@@ -79,8 +76,7 @@ func TestRestore_AppliesPrepareRestore_FR025(t *testing.T) { //nolint:gocyclo //
 	}
 }
 
-// When a kind's PrepareRestore refuses, nothing comes back, even the records already put back in the same
-// restore, and the entry stays in the bin (spec edge case: an Undo of a name that is now taken).
+// A refusing PrepareRestore brings nothing back, not even the records already put back in the same restore.
 func TestUndo_RefusedByPrepareRestoreChangesNothing_FR026(t *testing.T) {
 	t.Parallel()
 	f := newBareFixture(t)
@@ -113,9 +109,7 @@ func TestUndo_RefusedByPrepareRestoreChangesNothing_FR026(t *testing.T) {
 	}
 }
 
-// The restore rules learn when the records were deleted and by whom, from the recycle-bin entry, in an Undo
-// and in a Restore alike: feature 008 ends an approval round that was open at the delete with that time and
-// person (008 FR-023, 008-P3).
+// The restore rules learn who deleted the records and when, in an Undo and a Restore alike.
 func TestRestore_ContextHasDeleteTimeAndPerson_FR023(t *testing.T) {
 	t.Parallel()
 	f := newBareFixture(t)
@@ -142,7 +136,7 @@ func TestRestore_ContextHasDeleteTimeAndPerson_FR023(t *testing.T) {
 	f.undo(t, daniel, undone.ID)
 	f.clock.Advance(time.Hour)
 	secondDelete := f.clock.Now()
-	restored := f.moveToBin(t, "parent", "P-1") // by Priya
+	restored := f.moveToBin(t, "parent", "P-1")
 	f.clock.Advance(24 * time.Hour)
 	f.restore(t, daniel, restored.ID)
 
@@ -155,9 +149,7 @@ func TestRestore_ContextHasDeleteTimeAndPerson_FR023(t *testing.T) {
 	}
 }
 
-// AfterRestore runs once per Undo or Restore, only for the kind of the record the person deleted, after
-// every record is back, with that record as it was put back: deleting a child runs only the child's hook,
-// deleting the parent only the parent's (007 FR-033, D-147).
+// AfterRestore runs once, for the deleted record's kind only, after every record of the entry is back.
 func TestAfterRestore_RunsOnceForDeletedRecord_FR033(t *testing.T) {
 	t.Parallel()
 	f := newBareFixture(t)
@@ -165,9 +157,8 @@ func TestAfterRestore_RunsOnceForDeletedRecord_FR033(t *testing.T) {
 	var calls []string
 	for i := range kinds {
 		name := kinds[i].Name
-		kinds[i].AfterRestore = func(ctx context.Context, rc RestoreContext, top Snapshot) ([]string, error) {
-			// Everything of the entry is stored again when the hook runs.
-			_, grandchildBack, err := store.Get[testRecord](ctx, grandchildrenTable, "G-1")
+		kinds[i].AfterRestore = func(_ context.Context, rc RestoreContext, top Snapshot) ([]string, error) {
+			_, grandchildBack, err := f.records(grandchildrenTable).Get("G-1")
 			if err != nil {
 				return nil, err
 			}
@@ -190,8 +181,7 @@ func TestAfterRestore_RunsOnceForDeletedRecord_FR033(t *testing.T) {
 	}
 }
 
-// The notes of AfterRestore follow those of PrepareRestore in the "restored" entry's details and in the
-// answer's details; the hook sees the record as PrepareRestore left it (007 FR-033).
+// AfterRestore's notes follow PrepareRestore's, and the hook sees the record as PrepareRestore left it.
 func TestAfterRestore_Notes(t *testing.T) {
 	t.Parallel()
 	f := newBareFixture(t)
@@ -224,8 +214,7 @@ func TestAfterRestore_Notes(t *testing.T) {
 	}
 }
 
-// When AfterRestore refuses, nothing changes: the records stay in the bin, the changes the hook made to
-// other records are undone with the rest of the Write, and nothing is logged (007 FR-033).
+// A refusing AfterRestore changes nothing: even its changes to other records in the Write are undone.
 func TestAfterRestore_ErrorChangesNothing(t *testing.T) {
 	t.Parallel()
 	f := newBareFixture(t)
@@ -234,7 +223,7 @@ func TestAfterRestore_ErrorChangesNothing(t *testing.T) {
 	kinds[1].AfterRestore = func(ctx context.Context, rc RestoreContext, _ Snapshot) ([]string, error) {
 		other := newRecord("P-2", "Parent two", "")
 		other.Touch(rc.Actor, rc.Now) // a change to a record outside the entry, in the same Write
-		if err := store.Put(ctx, parentsTable, other.ID, other); err != nil {
+		if err := f.records(parentsTable).Put(ctx, other); err != nil {
 			return nil, err
 		}
 		return nil, refusal

@@ -20,7 +20,7 @@ var (
 	errMalformedURL = errors.New("parse database url: malformed url or parameters")
 )
 
-// DB is the pool of one PostgreSQL database; services use it as their store.Transactor.
+// DB is the pool of one PostgreSQL database; services use it as their Transactor.
 type DB struct {
 	pool *pgxpool.Pool
 }
@@ -58,9 +58,8 @@ func (d *DB) Ping(ctx context.Context) error {
 	return d.pool.Ping(ctx)
 }
 
-// Write runs fn in one transaction once the Writes before it have ended (one at a time, as on the JSON store),
-// and returns fn's error unchanged. Inside a Write it joins it (fn passes ctx on); inside a Read, ErrReadOnly.
-// Stores keep what they read in it (memo) until they change it.
+// Write runs fn in one transaction once the Writes before it have ended, and returns fn's error unchanged.
+// Inside a Write it joins it; inside a Read, ErrReadOnly. Stores keep what they read in it (memo) until they change it.
 func (d *DB) Write(ctx context.Context, fn func(ctx context.Context) error) error {
 	if current, ok := ctx.Value(txKey{}).(transaction); ok {
 		if current.readOnly {

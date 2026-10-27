@@ -10,8 +10,8 @@ import (
 	"mapp/internal/app"
 	"mapp/internal/auth"
 	"mapp/internal/platform/apitest"
-	"mapp/internal/platform/store"
-	"mapp/internal/stores"
+	"mapp/internal/platform/fake"
+	"mapp/internal/stores/storestest"
 )
 
 const (
@@ -67,14 +67,14 @@ func TestDemoMode_RoutesOnlyInLocalAndDevelopment_FR009(t *testing.T) {
 // No way to sign in exists in production until Shell single sign-on arrives.
 func TestDemoModeOff_ExistingSessionRefused_FR009(t *testing.T) {
 	t.Parallel()
-	dir := t.TempDir()
-	local := apitest.New(t, apitest.WithDataDir(dir))
+	db := apitest.DemoDB(t, false)
+	local := apitest.New(t, apitest.WithDB(db))
 	signIn := local.Do(t, http.MethodPost, "/api/v1/auth/sign-in", priyaSignsIn)
 	cookie := signIn.Cookie(auth.CookieName)
 	if signIn.Status != http.StatusOK || cookie == nil {
 		t.Fatalf("sign-in = %d %s, want 200 with a session cookie", signIn.Status, signIn.Body)
 	}
-	production := apitest.New(t, apitest.WithEnv("production"), apitest.WithDataDir(dir))
+	production := apitest.New(t, apitest.WithEnv("production"), apitest.WithDB(db))
 
 	response := production.Do(t, http.MethodGet, "/api/v1/me", nil, apitest.WithCookie(cookie))
 
@@ -199,17 +199,13 @@ func TestSettingsKindsRegistered_FR006(t *testing.T) {
 
 func newApp(t *testing.T, env string) *app.App {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
 	cfg, err := app.LoadConfig(environment(map[string]string{"APP_ENV": env}))
 	if err != nil {
 		t.Fatalf("LoadConfig: %v", err)
 	}
 	fixedClock := func() time.Time { return time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC) }
 
-	built, err := app.New(cfg, stores.JSON(db), fixedClock)
+	built, err := app.New(cfg, storestest.New(fake.NewDB()), fixedClock)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}

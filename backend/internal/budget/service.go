@@ -13,12 +13,10 @@ import (
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/record"
-	"mapp/internal/platform/store"
 )
 
-// Service holds the rules of global budgets and their allocations (feature 014, FR-029 – FR-036).
 type Service struct {
-	tx        store.Transactor
+	tx        Transactor
 	repo      Store
 	ids       *ids.Generator
 	history   *history.Service
@@ -29,10 +27,7 @@ type Service struct {
 	now       clock.Clock
 }
 
-// NewService returns the global budgets service. It keeps global budgets and allocations in repo, gives them
-// readable IDs, logs their changes and deletes them, works in transactions and reads the time with tools,
-// and reads plans, people and rates and asks the access rules through deps.
-// Without deps.Access every action is allowed (internal calls, the seed, tests).
+// NewService allows every action without deps.Access (internal calls, the seed, tests).
 func NewService(tools history.Tools, repo Store, deps Deps) *Service {
 	access := deps.Access
 	if access == nil {
@@ -44,9 +39,8 @@ func NewService(tools history.Tools, repo Store, deps Deps) *Service {
 	}
 }
 
-// List returns the global budgets of year (every year when year is nil), by name, with their four totals,
-// the years that have one, newest first, and whether the person may create one (FR-036). The totals count
-// every allocation, also those to plans the person cannot see (FR-032).
+// List returns the global budgets of year (every year when nil) by name; their totals count every allocation,
+// also those to plans the person cannot see.
 func (s *Service) List(ctx context.Context, a actor.Actor, year *int) (Page, error) {
 	page := Page{Items: []Summary{}, Years: []int{}}
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -97,13 +91,11 @@ func (s *Service) List(ctx context.Context, a actor.Actor, year *int) (Page, err
 	return page, nil
 }
 
-// byName orders global budgets by name ignoring letter case, then by id.
 func byName(x, y GlobalBudget) int {
 	return cmp.Or(strings.Compare(strings.ToLower(x.Name), strings.ToLower(y.Name)), strings.Compare(x.ID, y.ID))
 }
 
-// Get returns the global budget id with its figures, the allocations to plans the person can see, the
-// others added up as Other markets, and the visible plans of its year without an allocation (FR-032, FR-033).
+// Get adds up the allocations to plans the person cannot see as Other markets.
 func (s *Service) Get(ctx context.Context, a actor.Actor, id string) (GlobalBudgetView, error) {
 	var view GlobalBudgetView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -120,9 +112,7 @@ func (s *Service) Get(ctx context.Context, a actor.Actor, id string) (GlobalBudg
 	return view, nil
 }
 
-// Create creates a global budget from the whole form in one Write (FR-029): it needs globalBudgets.manage
-// for All markets; every problem is reported at once and nothing is saved while there is one; otherwise it
-// gets a new permanent ID and a "created" log entry.
+// Create needs globalBudgets.manage for All markets; it reports every problem at once and then saves nothing.
 func (s *Service) Create(ctx context.Context, a actor.Actor, in GlobalBudgetInput) (GlobalBudgetView, error) {
 	if err := s.access.ManageAll(ctx); err != nil {
 		return GlobalBudgetView{}, err
@@ -168,12 +158,8 @@ func (s *Service) Create(ctx context.Context, a actor.Actor, in GlobalBudgetInpu
 	return view, nil
 }
 
-// Update saves the changed fields of the global budget id from the version the person started from (FR-029,
-// D-203): name, amount, owner and description; the year never changes. It needs globalBudgets.manage for All
-// markets. Every problem is reported at once, a missing version among them; a save from an out-of-date
-// version is refused naming who changed it. An owner the budget already has may stay although they lost the
-// role. A save that changes nothing creates no version and no log entry; otherwise one "changed" entry lists
-// every changed field.
+// Update saves the fields sent, never the year. An owner the budget already has may stay although they lost the
+// role; a save that changes nothing creates no version and no log entry.
 func (s *Service) Update(ctx context.Context, a actor.Actor, id string, update GlobalBudgetUpdate) (GlobalBudgetView, error) {
 	var view GlobalBudgetView
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -240,9 +226,7 @@ func (s *Service) Update(ctx context.Context, a actor.Actor, id string, update G
 	return view, nil
 }
 
-// Delete moves the global budget id to the recycle bin, in one Write, so it can be undone (FR-035). It needs
-// globalBudgets.manage for All markets, and is refused with 409 in_use while the global budget has
-// allocations (message 30).
+// Delete is refused with in_use while the global budget has allocations.
 func (s *Service) Delete(ctx context.Context, a actor.Actor, id string) (history.BinEntry, error) {
 	var entry history.BinEntry
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -269,7 +253,7 @@ func (s *Service) Delete(ctx context.Context, a actor.Actor, id string) (history
 	return entry, nil
 }
 
-// stored reads the global budget id inside the caller's transaction; one that does not exist is not_found.
+// stored answers not_found for a global budget that is not stored.
 func (s *Service) stored(ctx context.Context, id string) (GlobalBudget, error) {
 	b, found, err := s.repo.GetBudget(ctx, id)
 	if err != nil {
@@ -281,9 +265,7 @@ func (s *Service) stored(ctx context.Context, id string) (GlobalBudget, error) {
 	return b, nil
 }
 
-// availabilityOf turns the answer of an access check into an Availability: available when it allowed the
-// action, otherwise not available with the refusal's message as the reason. An error that is not a refusal
-// is a failure, returned as it is.
+// availabilityOf turns an access refusal into the reason an action is not available; any other error fails.
 func availabilityOf(err error) (Availability, error) {
 	if err == nil {
 		return available, nil

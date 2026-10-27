@@ -4,35 +4,26 @@ import (
 	"context"
 	"strings"
 	"testing"
-	"time"
 
 	"mapp/internal/allwork"
 	"mapp/internal/platform/date"
-	"mapp/internal/platform/store"
-	"mapp/internal/stores"
-	"mapp/seed"
+	"mapp/internal/platform/fake"
+	"mapp/internal/stores/storestest"
 )
 
 // everyColumn names the columns whose values the source reads only when a view shows them.
 var everyColumn = []string{"completeness", "plan.goalMql", "plan.goalRevenue", "inq", "mql", "revenue"}
 
-func newSeededApp(t testing.TB) (*App, *store.DB) {
-	t.Helper()
-	db, err := store.Open(t.TempDir())
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
-	now := func() time.Time { return time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC) }
-	if err = seed.Load(t.Context(), stores.JSON(db), now); err != nil {
-		t.Fatalf("seed.Load: %v", err)
-	}
+func newSeededApp(tb testing.TB) (*App, *fake.DB) {
+	tb.Helper()
+	db, now := seededStore(tb)
 	cfg, err := LoadConfig(func(string) string { return "" })
 	if err != nil {
-		t.Fatalf("LoadConfig: %v", err)
+		tb.Fatalf("LoadConfig: %v", err)
 	}
-	built, err := New(cfg, stores.JSON(db), now)
+	built, err := New(cfg, storestest.New(db), now)
 	if err != nil {
-		t.Fatalf("New: %v", err)
+		tb.Fatalf("New: %v", err)
 	}
 	return built, db
 }

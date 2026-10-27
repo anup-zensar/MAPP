@@ -6,18 +6,18 @@ import (
 	"testing"
 	"time"
 
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/ids"
-	"mapp/internal/stores"
+	"mapp/internal/stores/storestest"
 	"mapp/seed"
 )
 
-// Whatever the seed time's seconds, every entry stays within the 14 days before it and in time order: the
-// seed command runs at the computer's time, not on a whole minute (011 plan "Demo data").
+// The seed command runs at the computer's time, not on a whole minute: seconds must not push an entry out.
 func TestSeed_History_SeedTimeWithSeconds_011(t *testing.T) {
 	t.Parallel()
 	at := time.Date(2026, 10, 20, 7, 41, 38, 512_000_000, time.UTC)
-	db := openStore(t, t.TempDir())
-	if err := seed.Load(t.Context(), stores.JSON(db), func() time.Time { return at }); err != nil {
+	db := fake.NewDB()
+	if err := seed.Load(t.Context(), storestest.New(db), func() time.Time { return at }); err != nil {
 		t.Fatalf("Load: %v", err)
 	}
 	entries, _ := demoLog(t, db)
@@ -31,19 +31,18 @@ func TestSeed_History_SeedTimeWithSeconds_011(t *testing.T) {
 	}
 }
 
-// Tests of the log's and the bin's rules can load the demo data without its history: the log and the bin
-// start empty and the deleted initiative takes no IDs (seed.WithoutHistory).
+// Without its history the log and the bin start empty and the deleted initiative takes no IDs.
 func TestLoad_WithoutHistory_011(t *testing.T) {
 	t.Parallel()
-	db := openStore(t, t.TempDir())
-	if err := seed.Load(t.Context(), stores.JSON(db), fixedClock, seed.WithoutHistory()); err != nil {
+	db := fake.NewDB()
+	if err := seed.Load(t.Context(), storestest.New(db), fixedClock, seed.WithoutHistory()); err != nil {
 		t.Fatalf("Load: %v", err)
 	}
 	entries, bin := demoLog(t, db)
 	if len(entries) != 0 || len(bin) != 0 {
 		t.Errorf("%d log entries and %d recycle-bin entries, want none", len(entries), len(bin))
 	}
-	generator := ids.NewGenerator(ids.NewJSONCounters())
+	generator := ids.NewGenerator(fake.NewCounters(db))
 	err := db.Write(t.Context(), func(ctx context.Context) error {
 		for prefix, want := range map[string]string{ids.PrefixInitiative: "I-1011", ids.PrefixActivity: "A-1013",
 			ids.PrefixLineItem: "L-1011", ids.PrefixLogEntry: "LOG-1001", ids.PrefixBinEntry: "BIN-1001"} {

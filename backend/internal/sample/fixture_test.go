@@ -1,7 +1,6 @@
 package sample
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -10,10 +9,11 @@ import (
 	"time"
 
 	"mapp/internal/history"
+	"mapp/internal/history/historytest"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/ids"
-	"mapp/internal/platform/store"
 )
 
 var (
@@ -27,20 +27,17 @@ var start = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 type fixture struct {
 	service *Service
 	history *history.Service
-	db      *store.DB
+	db      *fake.DB
 	clock   *testClock
 }
 
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
+	db := fake.NewDB()
 	clock := &testClock{now: start}
-	generator := ids.NewGenerator(ids.NewJSONCounters())
-	hist := history.NewService(db, history.NewJSONStore(), generator, clock.Now)
-	service := NewService(history.Tools{Tx: db, IDs: generator, Log: hist, Now: clock.Now}, NewJSONStore())
+	generator := ids.NewGenerator(fake.NewCounters(db))
+	hist := history.NewService(db, historytest.NewStore(db), generator, clock.Now)
+	service := NewService(history.Tools{Tx: db, IDs: generator, Log: hist, Now: clock.Now}, newFakeStore(db))
 	for _, kind := range service.Kinds() {
 		if err := hist.Register(kind); err != nil {
 			t.Fatalf("Register(%s): %v", kind.Name, err)
@@ -96,13 +93,7 @@ func (f *fixture) folders(t *testing.T) []FolderView {
 
 func (f *fixture) storedFolder(t *testing.T, id string) Folder {
 	t.Helper()
-	var folder Folder
-	var found bool
-	err := f.db.Read(t.Context(), func(ctx context.Context) error {
-		var err error
-		folder, found, err = NewJSONStore().GetFolder(ctx, id)
-		return err
-	})
+	folder, found, err := newFakeStore(f.db).GetFolder(t.Context(), id)
 	if err != nil || !found {
 		t.Fatalf("GetFolder(%s) = found %v, %v", id, found, err)
 	}
@@ -111,12 +102,7 @@ func (f *fixture) storedFolder(t *testing.T, id string) Folder {
 
 func (f *fixture) entries(t *testing.T) []history.Entry {
 	t.Helper()
-	var entries []history.Entry
-	err := f.db.Read(t.Context(), func(ctx context.Context) error {
-		var err error
-		entries, err = history.NewJSONStore().Entries(ctx)
-		return err
-	})
+	entries, err := historytest.NewStore(f.db).Entries(t.Context())
 	if err != nil {
 		t.Fatalf("Read: %v", err)
 	}
@@ -125,13 +111,7 @@ func (f *fixture) entries(t *testing.T) []history.Entry {
 
 func (f *fixture) binEntry(t *testing.T, id string) history.BinEntry {
 	t.Helper()
-	var entry history.BinEntry
-	var found bool
-	err := f.db.Read(t.Context(), func(ctx context.Context) error {
-		var err error
-		entry, found, err = history.NewJSONStore().GetBinEntry(ctx, id)
-		return err
-	})
+	entry, found, err := historytest.NewStore(f.db).GetBinEntry(t.Context(), id)
 	if err != nil || !found {
 		t.Fatalf("GetBinEntry(%s) = found %v, %v", id, found, err)
 	}

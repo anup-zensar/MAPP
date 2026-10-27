@@ -2,11 +2,7 @@ package approval
 
 import "fmt"
 
-// Data stored before feature 017 reads with the defaults of data-model §10 (017-P19): no migration, and
-// every existing workflow and round behaves exactly as before. The JSON repository normalises what it reads.
-
-// normalisedLevels returns levels with the defaults of a level stored before 017: named people, any one
-// approves, approvers never nil.
+// normalisedLevels gives a level saved before feature 017 its defaults, so it behaves as before, unmigrated.
 func normalisedLevels(levels []Level) []Level {
 	for i, l := range levels {
 		if l.ApproverType == "" {
@@ -23,14 +19,6 @@ func normalisedLevels(levels []Level) []Level {
 	return levels
 }
 
-// normalised returns w with its levels normalised.
-func (w Workflow) normalised() Workflow {
-	w.Levels = normalisedLevels(w.Levels)
-	return w
-}
-
-// normalised returns r with the defaults of a round stored before 017: each level of named people, any one
-// approves, decided by its approvers, nobody left out.
 func (r Round) normalised() Round {
 	for i, l := range r.Levels {
 		if l.ApproverType == "" {
@@ -53,7 +41,6 @@ func (r Round) normalised() Round {
 	return r
 }
 
-// daysText writes a number of days as the texts do: "1 day", "3 days".
 func daysText(n int) string {
 	if n == 1 {
 		return "1 day"

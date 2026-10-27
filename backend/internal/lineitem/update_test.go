@@ -1,7 +1,6 @@
 package lineitem
 
 import (
-	"context"
 	"encoding/json"
 	"reflect"
 	"slices"
@@ -15,7 +14,7 @@ import (
 	"mapp/internal/settings"
 )
 
-// formOf returns the whole form of a stored line item, as the edit page sends it, with its version.
+// formOf is the whole form of a stored line item, as the edit page sends it, with its version.
 func formOf(v View) Update {
 	months := []SpreadMonthInput{}
 	if v.Spread.Method == SpreadCustom {
@@ -40,7 +39,6 @@ func formOf(v View) Update {
 	return u
 }
 
-// update saves u on the line item id and stops the test when that fails.
 func (f *fixture) update(t *testing.T, a actor.Actor, id string, u Update) View {
 	t.Helper()
 	view, err := f.service.Update(t.Context(), a, id, u)
@@ -53,14 +51,12 @@ func (f *fixture) update(t *testing.T, a actor.Actor, id string, u Update) View 
 // put stores li as it is, for situations a form cannot create (values that became inactive since).
 func (f *fixture) put(t *testing.T, li LineItem) {
 	t.Helper()
-	err := f.db.Write(t.Context(), func(ctx context.Context) error { return NewJSONStore().Put(ctx, li) })
-	if err != nil {
+	if err := newFakeStore(f.db).Put(t.Context(), li); err != nil {
 		t.Fatalf("Put: %v", err)
 	}
 }
 
-// A save needs the version it started from: a missing one is reported with every other problem, an
-// out-of-date one is refused naming who changed the line item (FR-027, D-030).
+// A missing version is reported with every other problem; an out-of-date one is refused naming who saved.
 func TestUpdate_Version_FR027(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -86,7 +82,7 @@ func TestUpdate_Version_FR027(t *testing.T) {
 	assertError(t, conflict, errs.VersionConflict("line item", "Daniel Okoro", start))
 }
 
-// A save that changes nothing creates no version and no log entry (FR-027).
+// A save that changes nothing creates no version and no log entry.
 func TestUpdate_NoChangeNoLog_FR027(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -102,8 +98,7 @@ func TestUpdate_NoChangeNoLog_FR027(t *testing.T) {
 	}
 }
 
-// A save with changes gets a new version and one "changed" entry listing every changed field with its old
-// and new value as people read them; each Shell attribute is a change of its own (FR-027, data model §7.3).
+// One "changed" entry lists every changed field as people read it; each Shell attribute is a change of its own.
 func TestUpdate_LogsOldAndNew_FR027(t *testing.T) { //nolint:gocyclo // 10: one save, then its bookkeeping and every change of its entry
 	t.Parallel()
 	f := newTestService(t)
@@ -137,8 +132,7 @@ func TestUpdate_LogsOldAndNew_FR027(t *testing.T) { //nolint:gocyclo // 10: one 
 	}
 }
 
-// A currency, owner or finance budget item that became inactive stays on the line item through any save and
-// still converts at its last rate; only a new choice must be active (FR-011, FR-016).
+// An inactive currency, owner or finance budget item stays through any save; only a new choice must be active.
 func TestUpdate_KeepsInactiveValues_FR011_FR016(t *testing.T) { //nolint:gocyclo // 10: the kept values read, saved again, then refused as a new choice
 	t.Parallel()
 	f := newTestService(t)
@@ -176,8 +170,7 @@ func TestUpdate_KeepsInactiveValues_FR011_FR016(t *testing.T) { //nolint:gocyclo
 	))
 }
 
-// Changing the planned cost or the currency of a line item of a Submitted or Approved activity needs the
-// person's confirmation and sends the activity back to Created with the change (FR-031, US4 scenario 3).
+// A new planned cost or currency under a Submitted or Approved activity needs confirmation and restarts approval.
 func TestUpdate_CostOrCurrencyRestart_FR031(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -214,9 +207,7 @@ func TestUpdate_CostOrCurrencyRestart_FR031(t *testing.T) {
 	}
 }
 
-// Every other change — name, owner, description, spread, Shell attributes, contracted amount, SWBS request,
-// finance budget link — saves without a confirmation and never changes the activity's status (FR-032,
-// SC-007, US4 scenario 2).
+// Every other change saves without a confirmation and never changes the activity's status.
 func TestUpdate_OtherEditsKeepStatus_FR032_SC007(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)

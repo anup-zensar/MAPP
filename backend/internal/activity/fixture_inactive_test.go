@@ -4,15 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"mapp/internal/approval"
-	"mapp/internal/people"
-	"mapp/internal/settings"
+	"mapp/internal/approval/approvaltest"
+	"mapp/internal/people/peopletest"
+	"mapp/internal/settings/settingstest"
 )
 
-// deactivateType makes the activity type id inactive.
 func (f *fixture) deactivateType(t *testing.T, id string) {
 	t.Helper()
-	repo := settings.NewJSONStore()
+	repo := settingstest.NewStore(f.db)
 	f.change(t, func(ctx context.Context) error {
 		activityType, _, err := repo.GetActivityType(ctx, id)
 		if err != nil {
@@ -26,7 +25,7 @@ func (f *fixture) deactivateType(t *testing.T, id string) {
 // deactivateOption makes the Shell attribute option id inactive.
 func (f *fixture) deactivateOption(t *testing.T, id string) {
 	t.Helper()
-	repo := settings.NewJSONStore()
+	repo := settingstest.NewStore(f.db)
 	f.change(t, func(ctx context.Context) error {
 		option, _, err := repo.GetOption(ctx, id)
 		if err != nil {
@@ -37,10 +36,9 @@ func (f *fixture) deactivateOption(t *testing.T, id string) {
 	})
 }
 
-// deactivateWorkflow makes the approval workflow id inactive.
 func (f *fixture) deactivateWorkflow(t *testing.T, id string) {
 	t.Helper()
-	repo := approval.NewJSONStore()
+	repo := approvaltest.NewStore(f.db)
 	f.change(t, func(ctx context.Context) error {
 		workflow, _, err := repo.GetWorkflow(ctx, id)
 		if err != nil {
@@ -51,10 +49,9 @@ func (f *fixture) deactivateWorkflow(t *testing.T, id string) {
 	})
 }
 
-// deactivatePerson makes the person id inactive.
 func (f *fixture) deactivatePerson(t *testing.T, id string) {
 	t.Helper()
-	repo := people.NewJSONStore()
+	repo := peopletest.NewStore(f.db)
 	f.change(t, func(ctx context.Context) error {
 		person, _, err := repo.Get(ctx, id)
 		if err != nil {

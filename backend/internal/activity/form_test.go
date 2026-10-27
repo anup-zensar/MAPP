@@ -8,14 +8,14 @@ import (
 	"mapp/internal/activity"
 	"mapp/internal/platform/errs"
 	"mapp/internal/settings"
+	"mapp/internal/settings/settingstest"
 )
 
-// The new-activity form offers only the active activity types the plan's model allows, each with its
-// default planned cost, sorted by name (FR-007).
+// The form offers only the active types the plan's model allows, each with its default planned cost, by name.
 func TestNewForm_OnlyActiveAllowedTypes_FR007(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	f.deactivateType(t, "AT-1005") // Sponsorship
+	f.deactivateType(t, "AT-1005")
 
 	form, err := f.service.NewForm(t.Context(), priya, digitalAndSocial)
 
@@ -39,8 +39,7 @@ func TestNewForm_OnlyActiveAllowedTypes_FR007(t *testing.T) {
 	}
 }
 
-// A new activity starts with the initiative's owner (when active) and dates, and with the approval workflow
-// when exactly one is active (FR-008, FR-009, FR-012).
+// A new activity starts with the initiative's active owner and dates, and the workflow when only one is active.
 func TestNewForm_Defaults_FR008_FR009_FR012(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -52,7 +51,7 @@ func TestNewForm_Defaults_FR008_FR009_FR012(t *testing.T) {
 	assertDigitalAndSocialContext(t, form.Context)
 
 	f.deactivateWorkflow(t, chinaFlow)
-	f.deactivateWorkflow(t, "WF-1003") // 017's Standard marketing approval (017 FR-037)
+	f.deactivateWorkflow(t, "WF-1003")
 	f.deactivatePerson(t, priya.ID)
 	form, err = f.service.NewForm(t.Context(), priya, digitalAndSocial)
 	if err != nil {
@@ -67,8 +66,6 @@ func TestNewForm_Defaults_FR008_FR009_FR012(t *testing.T) {
 	}
 }
 
-// assertInitiativeDefaults checks the defaults of a new activity of Digital & social while its owner and three
-// workflows are active: the owner, the initiative's dates and no workflow.
 func assertInitiativeDefaults(t *testing.T, d *activity.Defaults) {
 	t.Helper()
 	if d == nil || d.Owner == nil || d.Owner.Name != "Priya Raman" || d.StartDate.String() != "2026-01-01" ||
@@ -77,8 +74,6 @@ func assertInitiativeDefaults(t *testing.T, d *activity.Defaults) {
 	}
 }
 
-// assertDigitalAndSocialContext checks the plan context of the form of Digital & social: its owner, the
-// latest end date, the model, the business unit and the campaign.
 func assertDigitalAndSocialContext(t *testing.T, c activity.FormContext) {
 	t.Helper()
 	if c.Initiative.Owner == nil || c.LatestEndDate.String() != "2036-12-31" ||
@@ -92,7 +87,7 @@ func assertDigitalAndSocialContext(t *testing.T, c activity.FormContext) {
 func TestNewForm_ModelWithoutTypes_EdgeCase(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	repo := settings.NewJSONStore()
+	repo := settingstest.NewStore(f.db)
 	f.change(t, func(ctx context.Context) error {
 		model, _, err := repo.GetModel(ctx, "MOD-1001")
 		if err != nil {
@@ -109,8 +104,7 @@ func TestNewForm_ModelWithoutTypes_EdgeCase(t *testing.T) {
 	}
 }
 
-// The form lists the active activity-level Shell attributes in display order, and the names already used
-// in the initiative (FR-014, FR-006); a gone initiative is not found.
+// The form lists the activity attributes in display order and the initiative's names; a gone initiative is not found.
 func TestNewForm_AttributesAndNames_FR014(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

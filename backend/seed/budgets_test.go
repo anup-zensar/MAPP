@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"mapp/internal/budget"
+	"mapp/internal/budget/budgettest"
 )
 
 // The demo global budget of 014 (FR-040, plan "Demo data"): GB-1001 "FY2026 Global marketing budget", 2026,
@@ -21,7 +22,7 @@ func TestLoad_GlobalBudget_FR040(t *testing.T) {
 	var stored []budget.GlobalBudget
 	var allocations []budget.Allocation
 	read(t, db, func(ctx context.Context) error {
-		repo := budget.NewJSONStore()
+		repo := budgettest.NewStore(db)
 		var errB, errA error
 		stored, errB = repo.ListBudgets(ctx)
 		allocations, errA = repo.ListAllocations(ctx)

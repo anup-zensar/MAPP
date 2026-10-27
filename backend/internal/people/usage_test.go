@@ -8,8 +8,7 @@ import (
 	"testing"
 )
 
-// Other features name owners, approvers and members with PersonRef, read when they answer, so a rename
-// shows everywhere; an id that is no person is left out instead of failing the whole answer.
+// An id that is no person is left out instead of failing the whole answer.
 func TestPersonRefs_UnknownIdsLeftOut(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -30,8 +29,6 @@ func TestPersonRefs_UnknownIdsLeftOut(t *testing.T) {
 	}
 }
 
-// Plans and other features name teams with TeamRef, with the colour of their pill and whether they are
-// inactive (D-065, FR-014).
 func TestTeamRefs(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -52,8 +49,7 @@ func TestTeamRefs(t *testing.T) {
 	}
 }
 
-// Feature 004 checks a plan's owner against the members of its teams: every member counts, active or not;
-// a team without members has an empty list, an unknown team none.
+// Every member counts, active or not; a team without members has an empty list, an unknown team none.
 func TestMemberIDs(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -74,8 +70,7 @@ func TestMemberIDs(t *testing.T) {
 	}
 }
 
-// R1 (feature 004): an owner must belong to one of the plan's teams. An inactive team still counts,
-// because plans keep it and its members (FR-014).
+// An inactive team still counts, because plans keep it and its members.
 func TestIsMemberOfAny_InactiveTeamCounts_FR014(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -101,7 +96,7 @@ func TestIsMemberOfAny_InactiveTeamCounts_FR014(t *testing.T) {
 	}
 }
 
-// "My teams" of other features is every team of the signed-in person, active or not (FR-026).
+// "My teams" of other features is every team of the signed-in person, active or not.
 func TestTeamIDsOf_FR026(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -121,9 +116,7 @@ func TestTeamIDsOf_FR026(t *testing.T) {
 	}
 }
 
-// The APIs of 004–012 convert USD amounts with the person's display currency and its current rate
-// (D-061). A display currency set inactive later stays in use (D-063); a code no longer known falls back to
-// US dollars; everyone who never chose one sees USD (FR-023).
+// A display currency set inactive stays in use; an unknown code, or no choice, falls back to USD.
 func TestDisplayRateOf_EURAndFallback_FR023(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -155,8 +148,7 @@ func TestDisplayRateOf_EURAndFallback_FR023(t *testing.T) {
 	}
 }
 
-// Feature 002 says which currencies people show amounts in; a person with no saved choice, or a record
-// saved by feature 001 without one, shows USD.
+// No saved choice, or a record saved before display currencies existed, shows USD.
 func TestPeopleByDisplayCurrency_EmptyIsUSD(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -164,7 +156,7 @@ func TestPeopleByDisplayCurrency_EmptyIsUSD(t *testing.T) {
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
 	daniel := f.addPerson(t, "Daniel Okoro", "", true)
 	f.savePreferences(t, Preferences{PersonID: priya.ID, Theme: "dark", DisplayCurrency: "EUR"})
-	f.savePreferences(t, Preferences{PersonID: daniel.ID, Theme: "dark"}) // feature 001's record
+	f.savePreferences(t, Preferences{PersonID: daniel.ID, Theme: "dark"}) // saved before display currencies existed
 
 	got, err := f.service.PeopleByDisplayCurrency(t.Context())
 	if err != nil {
@@ -177,8 +169,6 @@ func TestPeopleByDisplayCurrency_EmptyIsUSD(t *testing.T) {
 	}
 }
 
-// Until feature 002 is wired, US dollars are the only currency (spec Assumptions), and the service uses
-// them without being told.
 func TestOnlyUSD(t *testing.T) {
 	t.Parallel()
 	got, err := OnlyUSD(t.Context())
@@ -194,14 +184,12 @@ func TestOnlyUSD(t *testing.T) {
 	}
 }
 
-// usd is the US dollar as OnlyUSD gives it.
 var usd = Currency{Code: "USD", Name: "US dollar", Rate: "1", Active: true}
 
-// savePreferences stores prefs through the repository.
 func (f *fixture) savePreferences(t *testing.T, prefs Preferences) {
 	t.Helper()
 	err := f.db.Write(t.Context(), func(ctx context.Context) error {
-		return NewJSONStore().PutPreferences(ctx, prefs)
+		return f.store.PutPreferences(ctx, prefs)
 	})
 	if err != nil {
 		t.Fatalf("PutPreferences: %v", err)

@@ -17,20 +17,3 @@ func (s *PostgresStore) MarkNotificationsRead(ctx context.Context, ids []string,
 	}
 	return nil
 }
-
-func (r JSONStore) MarkNotificationsRead(ctx context.Context, ids []string, at time.Time) error {
-	for _, id := range ids {
-		n, found, err := r.GetNotification(ctx, id)
-		if err != nil {
-			return err
-		}
-		if !found {
-			continue
-		}
-		n.Read, n.ReadAt = true, &at
-		if err := r.PutNotification(ctx, n); err != nil {
-			return err
-		}
-	}
-	return nil
-}

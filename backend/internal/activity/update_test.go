@@ -8,15 +8,12 @@ import (
 	"time"
 
 	"mapp/internal/activity"
-	"mapp/internal/campaign"
+	"mapp/internal/campaign/campaigntest"
 	"mapp/internal/history"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
 )
 
-// User story 4 — edit an activity, including one that is submitted or approved.
-
-// changeTexts lists the changes of an entry as "<label>: <old> → <new>".
 func changeTexts(e history.Entry) []string {
 	var texts []string
 	for _, c := range e.Changes {
@@ -25,8 +22,7 @@ func changeTexts(e history.Entry) []string {
 	return texts
 }
 
-// A save writes one "changed" entry listing every changed field with readable old and new values, one
-// change per Shell attribute (FR-026, data model §5); the version goes up.
+// A save writes one "changed" entry with readable old and new values, one change per Shell attribute.
 func TestUpdate_LogsEveryChange_FR026(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -59,8 +55,7 @@ func TestUpdate_LogsEveryChange_FR026(t *testing.T) {
 	}
 }
 
-// The other fields read well in the log too: dates, money, numbers, yes/no, workflow and status (FR-026,
-// data model §5).
+// Dates, money, numbers, yes/no, workflow and status read well in the log too.
 func TestDescribe_ReadableChanges_FR026(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -87,7 +82,6 @@ func TestDescribe_ReadableChanges_FR026(t *testing.T) {
 	}
 }
 
-// A save that changes nothing is not a change: no new version and no log entry (FR-026).
 func TestUpdate_NoChangeNoLog_FR026(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -99,8 +93,7 @@ func TestUpdate_NoChangeNoLog_FR026(t *testing.T) {
 	}
 }
 
-// A save from an out-of-date version is refused, naming who changed the activity and when; nothing is
-// saved (FR-026, 001 FR-029).
+// A save from an out-of-date version is refused, naming who changed the activity and when.
 func TestUpdate_VersionConflict_FR026(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -117,8 +110,7 @@ func TestUpdate_VersionConflict_FR026(t *testing.T) {
 	}
 }
 
-// Without a version (or with one below 1) the save is refused next to the field "version", together with
-// every other problem (FR-026).
+// Without a version, or with one below 1, the save is refused under "version" with every other problem.
 func TestUpdate_MissingVersion_FR026(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -130,8 +122,7 @@ func TestUpdate_MissingVersion_FR026(t *testing.T) {
 	assertError(t, err, problems("name", "Enter a name.", "version", "Reload the page and try again."))
 }
 
-// On a Submitted activity, a change of planned cost, start date, end date or ongoing is refused unless the
-// person confirmed that it needs approval again; nothing is saved (FR-027, D-106).
+// On a Submitted activity, a change of cost, dates or ongoing is refused until the person confirms re-approval.
 func TestUpdate_ReapprovalNeedsConfirmation_FR027(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -153,8 +144,7 @@ func TestUpdate_ReapprovalNeedsConfirmation_FR027(t *testing.T) {
 	}
 }
 
-// Confirmed, the change is saved and the activity returns to Created: one "changed" entry for the fields,
-// one status entry with the reason, and features 007 and 008 are told (FR-027, D-196).
+// Confirmed, the change saves with a "changed" and a status entry, and line items and approvals are told.
 func TestUpdate_ConfirmedReapprovalReturnsToCreated_FR027(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -168,7 +158,7 @@ func TestUpdate_ConfirmedReapprovalReturnsToCreated_FR027(t *testing.T) {
 	if view.Status != activity.StatusCreated || view.DisplayStatus != activity.DisplayCreated || view.Version != 2 {
 		t.Errorf("status %s (%s), version %d; want Created at version 2", view.Status, view.DisplayStatus, view.Version)
 	}
-	entries := f.entries(t) // newest first
+	entries := f.entries(t)
 	if len(entries) != 2 || entries[1].Action != history.ActionChanged || entries[0].Action != history.ActionStatusChanged {
 		t.Fatalf("entries = %+v, want changed, then statusChanged", entries)
 	}
@@ -186,8 +176,7 @@ func TestUpdate_ConfirmedReapprovalReturnsToCreated_FR027(t *testing.T) {
 	}
 }
 
-// Other edits — names, description, owner, attributes, goals — keep a Submitted or Approved activity's
-// status, and a Declined activity stays Declined (FR-028).
+// Other edits keep a Submitted or Approved activity's status, and a Declined one stays Declined.
 func TestUpdate_OtherEditsKeepStatus_FR028(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -209,7 +198,6 @@ func TestUpdate_OtherEditsKeepStatus_FR028(t *testing.T) {
 	}
 }
 
-// Once saved, ongoing can't be undone (FR-010, R6).
 func TestUpdate_OngoingCannotBeUndone_FR010(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -221,7 +209,7 @@ func TestUpdate_OngoingCannotBeUndone_FR010(t *testing.T) {
 	assertError(t, err, problems("ongoing", "Ongoing can't be undone — to plan with an end date, create a new activity."))
 }
 
-// The approval workflow can change only while the activity is Created or Declined (FR-012).
+// The approval workflow can change only while the activity is Created or Declined.
 func TestUpdate_WorkflowLockedWhenSubmittedOrApproved_FR012(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -234,8 +222,7 @@ func TestUpdate_WorkflowLockedWhenSubmittedOrApproved_FR012(t *testing.T) {
 	}
 }
 
-// While a round is open — the activity is Submitted — the workflow field says how to change it: recall the
-// activity first (008 FR-013); nothing is saved.
+// While the activity is Submitted, the workflow field says to recall it first; nothing is saved.
 func TestWorkflowFieldLockReason_FR013(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -251,8 +238,7 @@ func TestWorkflowFieldLockReason_FR013(t *testing.T) {
 	}
 }
 
-// Inactive values already chosen — type, owner, workflow, attribute option — are kept by other edits;
-// choosing an inactive one anew is refused (FR-013).
+// Inactive values already chosen are kept by other edits; choosing an inactive one anew is refused.
 func TestUpdate_InactiveValuesKeptWhenUnchanged_FR013(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -266,7 +252,7 @@ func TestUpdate_InactiveValuesKeptWhenUnchanged_FR013(t *testing.T) {
 	if !view.ActivityType.Allowed || view.ActivityType.Active || view.Owner.Active || view.ApprovalWorkflow.Active {
 		t.Errorf("kept values: type %+v, owner %+v, workflow %+v", view.ActivityType, view.Owner, view.ApprovalWorkflow)
 	}
-	_, err := f.edit(t, priya, "A-1008", func(u *activity.Update) { // Mei Lin's, in Mobility China
+	_, err := f.edit(t, priya, "A-1008", func(u *activity.Update) {
 		u.ActivityTypeID, u.OwnerID = contentType, text(priya.ID)
 		u.Attributes[countrySplit] = split("SO-1034", "100.00")
 	})
@@ -276,12 +262,11 @@ func TestUpdate_InactiveValuesKeptWhenUnchanged_FR013(t *testing.T) {
 		"attributes.SA-1013", "'Germany' is inactive — choose another option."))
 }
 
-// When the initiative's dates move so that the activity falls outside them, other edits still save and the
-// check lists the dates; a date change is checked against the new dates (edge case).
+// When the initiative's dates move, other edits still save; a date change is checked against the new dates.
 func TestUpdate_UnchangedDatesNotChecked_EdgeCase(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	repo := campaign.NewJSONStore()
+	repo := campaigntest.NewStore(f.db)
 	f.change(t, func(ctx context.Context) error {
 		initiative, _, err := repo.GetInitiative(ctx, digitalAndSocial)
 		if err != nil {
@@ -303,8 +288,7 @@ func TestUpdate_UnchangedDatesNotChecked_EdgeCase(t *testing.T) {
 	assertError(t, err, problems("startDate", "Dates must be inside the initiative's dates (01 Apr 2026 – 30 Jun 2026)."))
 }
 
-// The edit form offers the activity's own type and workflow even when inactive, flagged, leaves its own
-// name out of the names in use, and has no defaults (FR-013, FR-026).
+// The edit form offers the activity's own inactive type and workflow, flagged, and leaves its own name out.
 func TestEditForm_IncludesCurrentInactiveValues_FR013(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

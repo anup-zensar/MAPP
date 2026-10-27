@@ -8,13 +8,12 @@ import (
 	"time"
 
 	"mapp/internal/history"
-	"mapp/internal/people"
+	"mapp/internal/people/peopletest"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/record"
 )
 
-// levelInputs returns one unnamed level per list of approvers, in order.
 func levelInputs(approvers ...[]string) []LevelInput {
 	levels := []LevelInput{}
 	for _, ids := range approvers {
@@ -23,18 +22,15 @@ func levelInputs(approvers ...[]string) []LevelInput {
 	return levels
 }
 
-// levelInputsPtr is levelInputs for an update.
 func levelInputsPtr(approvers ...[]string) *[]LevelInput {
 	levels := levelInputs(approvers...)
 	return &levels
 }
 
-// textPtr returns a pointer to s, for the fields of an update.
 func textPtr(s string) *string {
 	return &s
 }
 
-// createWorkflow creates a workflow as a and stops the test when that fails.
 func (f *fixture) createWorkflow(t *testing.T, a actor.Actor, name string, approvers ...[]string) WorkflowView {
 	t.Helper()
 	view, err := f.service.CreateWorkflow(t.Context(), a, WorkflowInput{Name: name, Levels: levelInputs(approvers...)})
@@ -44,7 +40,6 @@ func (f *fixture) createWorkflow(t *testing.T, a actor.Actor, name string, appro
 	return view
 }
 
-// storedWorkflow returns the stored workflow id, and false when there is none.
 func (f *fixture) storedWorkflow(t *testing.T, id string) (Workflow, bool) {
 	t.Helper()
 	var w Workflow
@@ -56,20 +51,19 @@ func (f *fixture) storedWorkflow(t *testing.T, id string) (Workflow, bool) {
 	return w, found
 }
 
-// deactivatePerson makes the person p inactive, as feature 003 does.
 func (f *fixture) deactivatePerson(t *testing.T, p actor.Actor) {
 	t.Helper()
+	repo := peopletest.NewStore(f.db)
 	f.write(t, func(ctx context.Context) error {
-		person, _, err := people.NewJSONStore().Get(ctx, p.ID)
+		person, _, err := repo.Get(ctx, p.ID)
 		if err != nil {
 			return err
 		}
 		person.Active = false
-		return people.NewJSONStore().Put(ctx, person)
+		return repo.Put(ctx, person)
 	})
 }
 
-// workflowViews returns ListWorkflows as a, and stops the test when it fails.
 func (f *fixture) workflowViews(t *testing.T, a actor.Actor) []WorkflowView {
 	t.Helper()
 	views, err := f.service.ListWorkflows(t.Context(), a)
@@ -79,8 +73,7 @@ func (f *fixture) workflowViews(t *testing.T, a actor.Actor) []WorkflowView {
 	return views
 }
 
-// A new workflow is active, with an id WF-…, its texts without surrounding spaces and its levels in the
-// order given; an unnamed level is labelled "Level <n>". It is logged as created (FR-002, FR-026).
+// A new workflow is active, its texts trimmed, its levels in order; an unnamed level is labelled "Level <n>".
 func TestCreateWorkflow_SavesOrderedLevels_FR002(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -122,8 +115,7 @@ func TestCreateWorkflow_SavesOrderedLevels_FR002(t *testing.T) {
 	assertLog(t, f, "WF-1003", []string{"Alex Morgan created approval workflow 'Mobility India approval'"})
 }
 
-// The name is required, at most 120 characters, and unique among all workflows, inactive ones too,
-// ignoring letter case and surrounding spaces (FR-002).
+// The name is unique among all workflows, inactive ones too, ignoring letter case and surrounding spaces.
 func TestCreateWorkflow_NameRules_FR002(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -147,9 +139,7 @@ func TestCreateWorkflow_NameRules_FR002(t *testing.T) {
 	}
 }
 
-// Every problem of a workflow is reported at once, each on the field that fixes it: no name, a too-long
-// description, a level without approvers, a too-long level name, a person listed twice, an inactive person
-// added and a person who does not exist; a workflow without levels is refused too. Nothing is saved (FR-003).
+// Every problem is reported at once, each on the field that fixes it, and nothing is saved.
 func TestCreateWorkflow_AllProblemsAtOnce_FR003(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -179,9 +169,7 @@ func TestCreateWorkflow_AllProblemsAtOnce_FR003(t *testing.T) {
 	}
 }
 
-// Set inactive and Set active change the status from the version the person saw and are logged as
-// deactivated and reactivated; the same status again changes nothing; an open round of an inactive
-// workflow goes on (FR-007, FR-026).
+// The same status again changes nothing; an open round of an inactive workflow goes on.
 func TestSetWorkflowActive_FR007(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -223,7 +211,7 @@ func TestSetWorkflowActive_FR007(t *testing.T) {
 	}
 }
 
-// A workflow no activity uses moves to the recycle bin and can be undone (FR-008).
+// A workflow no activity uses moves to the recycle bin and can be undone.
 func TestDeleteWorkflow_Unused_FR008(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -250,8 +238,7 @@ func TestDeleteWorkflow_Unused_FR008(t *testing.T) {
 	}
 }
 
-// A workflow that a stored activity uses — in its Approval workflow field or through a round — cannot be
-// deleted: the refusal says how many use it and suggests setting it inactive (FR-008).
+// A workflow used by an activity's field or a round cannot be deleted; the refusal says how many use it.
 func TestDeleteWorkflow_InUseRefused_FR008(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

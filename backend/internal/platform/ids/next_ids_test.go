@@ -6,13 +6,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/ids"
 )
 
-// Many IDs taken at once are the IDs one call each would give, and the next ID follows them (028 FR-004).
+// Many IDs taken at once are the IDs one call each would give, and the next ID follows them.
 func TestNextIDs_SameAsOneByOne_028_FR004(t *testing.T) {
-	db := openStore(t, t.TempDir())
-	generator := ids.NewGenerator(ids.NewJSONCounters())
+	db := fake.NewDB()
+	generator := ids.NewGenerator(fake.NewCounters(db))
 
 	var first string
 	var batch, none []string

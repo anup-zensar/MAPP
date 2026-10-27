@@ -9,40 +9,33 @@ import (
 	"mapp/internal/platform/clock"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/money"
-	"mapp/internal/platform/store"
 )
 
-// planGoneMessage answers a plan that does not exist (any more).
 const planGoneMessage = "This plan no longer exists — someone may have deleted it."
 
-// fallbackColour is the colour of a team that no longer resolves: a neutral one of the palette.
+// fallbackColour is a neutral colour of the palette, for a team that no longer resolves.
 const fallbackColour = "slate"
 
-// Service holds the rules of plans (feature 004): every check, calculation and change of a plan.
 type Service struct {
-	tx        store.Transactor
+	tx        Transactor
 	repo      Store
 	ids       *ids.Generator
 	history   *history.Service
 	settings  Settings
 	directory Directory
 	now       clock.Clock
-	levels    []Level // the levels below the plan, top-down (RegisterLevel)
+	levels    []Level // below the plan, top-down
 
-	allocations Allocations // 014's global-budget allocations (UseAllocations); nil: no plan is allocated
+	allocations Allocations // nil: no plan is allocated
 }
 
-// NewService returns the plans service. It keeps plans in repo and reads Settings and people and teams
-// through settings and directory. It knows no level below the plan until RegisterLevel adds one.
 func NewService(tools history.Tools, repo Store, settings Settings, directory Directory) *Service {
 	return &Service{
 		tx: tools.Tx, repo: repo, ids: tools.IDs, history: tools.Log, settings: settings, directory: directory, now: tools.Now,
 	}
 }
 
-// Defaults returns what a new plan starts with for a (FR-006): the current year and the years a plan may
-// have, a's active teams by name, a as owner when they have one (R1), the only active model, No for AOP
-// and BCPIR, Evenly and INQ.
+// Defaults names a as owner only when they have an active team, and the model only when exactly one is active.
 func (s *Service) Defaults(ctx context.Context, a actor.Actor) (Defaults, error) {
 	first, last := s.years()
 	defaults := Defaults{

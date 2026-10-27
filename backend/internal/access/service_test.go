@@ -7,11 +7,9 @@ import (
 	"testing"
 
 	"mapp/internal/platform/authz"
-	"mapp/internal/platform/store"
 )
 
-// A person may do what any of their roles allows (FR-002): Daniel is a Planner and an Approver, both for his
-// teams; Sara, a Viewer, may only see and export.
+// Daniel is a Planner and an Approver for his teams; Sara, a Viewer, may only see and export.
 func TestGrantsFor_UnionOfRoles_FR002(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -37,8 +35,7 @@ func TestGrantsFor_UnionOfRoles_FR002(t *testing.T) {
 	}
 }
 
-// Scopes (FR-004, FR-005): All markets applies everywhere, My teams follows the person's teams at the moment
-// of the action, Chosen teams only the teams chosen; the Administrator role holds every permission.
+// My teams follows the person's teams at the moment of the action; Chosen teams covers only the teams chosen.
 func TestGrantsFor_Scopes_FR004_FR005(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -69,7 +66,6 @@ func TestGrantsFor_Scopes_FR004_FR005(t *testing.T) {
 	}
 }
 
-// A role or rule change applies to the person's next request, without signing in again (FR-020).
 func TestGrantsFor_ChangesApplyAtOnce_FR020(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -91,7 +87,6 @@ func TestGrantsFor_ChangesApplyAtOnce_FR020(t *testing.T) {
 	}
 }
 
-// A person without a role holds nothing, and is told so (FR-001, message 1).
 func TestGrantsFor_NoRole_FR001(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -109,8 +104,7 @@ func TestGrantsFor_NoRole_FR001(t *testing.T) {
 	}
 }
 
-// GET /api/v1/me's access (FR-024): the roles with scopes, the merged permissions in Table A order (for All
-// markets, or the teams sorted by name), the administrators and the segregation-of-duties rule.
+// The access of GET /api/v1/me: permissions in Table A order, for All markets or the teams sorted by name.
 func TestSummary_RolesPermissionsAdministrators_FR024(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -139,7 +133,6 @@ func TestSummary_RolesPermissionsAdministrators_FR024(t *testing.T) {
 	}
 }
 
-// Only active administrators are named to ask (FR-024): an inactive one is left out.
 func TestSummary_ActiveAdministratorsOnly_FR024(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -157,21 +150,21 @@ func TestSummary_ActiveAdministratorsOnly_FR024(t *testing.T) {
 	}
 }
 
-// newEmptyStoreService returns an access service on a data folder without roles or access rules.
 func newEmptyStoreService(t *testing.T) *Service {
 	t.Helper()
 	f := newFixture(t)
 	f.write(t, func(ctx context.Context) error {
-		roles, err := NewJSONStore().ListRoles(ctx)
+		repo := newFakeStore(f.db)
+		roles, err := repo.ListRoles(ctx)
 		if err != nil {
 			return err
 		}
 		for _, r := range roles {
-			if err := store.Delete(ctx, rolesTable, r.ID); err != nil {
+			if err = repo.DeleteRole(ctx, r.ID); err != nil {
 				return err
 			}
 		}
-		return store.Delete(ctx, rulesTable, rulesID)
+		return repo.rules.Delete(ctx, rulesID)
 	})
 	return f.service
 }

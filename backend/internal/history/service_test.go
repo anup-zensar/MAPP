@@ -8,11 +8,11 @@ import (
 
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/ids"
 )
 
-// Undo puts back exactly what was deleted: the same IDs, data and versions (FR-026, domain model R14). The
-// entry leaves the bin with who undid it and when, keeps no snapshots, and one "restored" entry is logged.
+// Undo puts back exactly what was deleted, same IDs, data and versions, and resolves the entry.
 func TestUndo_RestoresExactly_FR026(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -51,8 +51,7 @@ func TestUndo_RestoresExactly_FR026(t *testing.T) {
 	}})
 }
 
-// The server accepts Undo for 2 minutes after the delete (FR-026, D-037): at exactly 2 minutes it works; a
-// millisecond later it is refused with undo_expired and nothing changes. Restore has no time limit.
+// Undo works up to exactly 2 minutes after the delete and is refused a millisecond later; Restore has no limit.
 func TestUndo_ExpiresAfterTwoMinutes_FR026(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -85,9 +84,7 @@ func TestUndo_ExpiresAfterTwoMinutes_FR026(t *testing.T) {
 	}
 }
 
-// A record whose parent is no longer stored cannot come back on its own: Restore and Undo are refused,
-// naming the parent to restore first, and nothing changes. Once the parent is back, the record follows
-// (FR-025).
+// A record whose parent is no longer stored comes back only after the parent.
 func TestRestore_ParentMissing_FR025(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -127,8 +124,7 @@ func TestRestore_ParentMissing_FR025(t *testing.T) {
 	}
 }
 
-// An entry that has already left the bin cannot be undone or restored again: the refusal says how, by whom
-// and when, so the person understands what happened (FR-025, 011 FR-032). Nothing changes.
+// An entry that already left the bin is refused, saying how, by whom and when.
 func TestUndo_AlreadyResolved_FR025(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -163,15 +159,14 @@ func TestUndo_AlreadyResolved_FR025(t *testing.T) {
 	}
 }
 
-// An entry can come back only where all its kinds are registered: in an environment without the developer
-// sample records, their entries answer not_found. So does an id the bin never had (FR-025).
+// An entry comes back only where all its kinds are registered; elsewhere, as for an unknown id, not_found.
 func TestUndo_KindNotRegistered_FR025(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 	f.addTree(t)
 	deleted := f.moveToBin(t, "parent", "P-1")
-	noKinds := NewService(f.db, NewJSONStore(), ids.NewGenerator(ids.NewJSONCounters()), f.clock.Now)
-	parentsOnly := NewService(f.db, NewJSONStore(), ids.NewGenerator(ids.NewJSONCounters()), f.clock.Now)
+	noKinds := NewService(f.db, newFakeStore(f.db), ids.NewGenerator(fake.NewCounters(f.db)), f.clock.Now)
+	parentsOnly := NewService(f.db, newFakeStore(f.db), ids.NewGenerator(fake.NewCounters(f.db)), f.clock.Now)
 	if err := parentsOnly.Register(f.standardKinds()[0]); err != nil {
 		t.Fatalf("Register: %v", err)
 	}
@@ -202,8 +197,7 @@ func TestUndo_KindNotRegistered_FR025(t *testing.T) {
 	}
 }
 
-// The recycle bin lists what is still in it, newest first; entries that were undone or restored are left
-// out (data model §6).
+// The bin lists what is still in it, newest first.
 func TestListBin_UnresolvedNewestFirst(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

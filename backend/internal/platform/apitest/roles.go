@@ -16,22 +16,12 @@ import (
 	"mapp/internal/stores"
 )
 
-// GrantRole gives the person with e-mail email the built-in role builtIn ("administrator", "globalPlanner",
-// "planner", "approver" or "viewer") with scope ("all", "myTeams", or "teams" with the names of the chosen
-// teams), on top of the roles they hold; a role they already hold gets the new scope. It writes the role
-// assignment straight into the data folder — no request, no activity-log entry, no new version of the
-// person — so a test that is not about access control gives its persona the role its steps need (feature
-// 014 plan "Tests", D-228):
-//
-//	server.GrantRole(t, "priya.raman@shell.com", "administrator", "all")
-//	server.GrantRole(t, "sara.novak@shell.com", "planner", "teams", "Mobility China")
-//
-// The role applies to the person's next request. It stops the test when the person, the role or a team is
-// unknown.
+// GrantRole stores the role assignment directly, with no request and no log entry, so a test that is not
+// about access gives its persona the role its steps need: GrantRole(t, email, "planner", "teams", "Mobility China").
 func (s *Server) GrantRole(t testing.TB, email, builtIn, scope string, teamNames ...string) {
 	t.Helper()
-	err := s.db.Write(t.Context(), func(ctx context.Context) error {
-		peopleRepo, accessRepo := people.NewJSONStore(), access.NewJSONStore()
+	err := s.set.Tx.Write(t.Context(), func(ctx context.Context) error {
+		peopleRepo, accessRepo := s.set.People, s.set.Access
 		everyone, err := peopleRepo.List(ctx)
 		if err != nil {
 			return err
@@ -63,7 +53,7 @@ func (s *Server) GrantRole(t testing.TB, email, builtIn, scope string, teamNames
 			assignment = mine[k]
 			assignment.Touch(actor.System, s.now)
 		} else {
-			id, err := ids.NewGenerator(ids.NewJSONCounters()).Next(ctx, ids.PrefixRoleAssignment)
+			id, err := ids.NewGenerator(s.set.Counters).Next(ctx, ids.PrefixRoleAssignment)
 			if err != nil {
 				return err
 			}
@@ -78,7 +68,6 @@ func (s *Server) GrantRole(t testing.TB, email, builtIn, scope string, teamNames
 	}
 }
 
-// teamIDsOf returns the ids of the teams called names, in that order; never nil.
 func teamIDsOf(ctx context.Context, repo stores.PeopleStore, names []string) ([]string, error) {
 	teams, err := repo.ListTeams(ctx)
 	if err != nil {

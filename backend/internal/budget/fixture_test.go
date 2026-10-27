@@ -1,22 +1,21 @@
 package budget
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"testing"
 
 	"mapp/internal/history"
+	"mapp/internal/history/historytest"
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/money"
-	"mapp/internal/platform/store"
 )
 
-// fixture is the service under test with its store, fakes and history.
 type fixture struct {
 	service *Service
-	db      *store.DB
+	db      *fake.DB
 	clock   *testClock
 	plans   *fakePlans
 	access  *fakeAccess
@@ -25,16 +24,13 @@ type fixture struct {
 
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
+	db := fake.NewDB()
 	clock := &testClock{now: start}
-	generator := ids.NewGenerator(ids.NewJSONCounters())
-	hist := history.NewService(db, history.NewJSONStore(), generator, clock.Now)
+	generator := ids.NewGenerator(fake.NewCounters(db))
+	hist := history.NewService(db, historytest.NewStore(db), generator, clock.Now)
 	f := &fixture{db: db, clock: clock, plans: newFakePlans(t), access: &fakeAccess{}, history: hist}
 	tools := history.Tools{Tx: db, IDs: generator, Log: hist, Now: clock.Now}
-	f.service = NewService(tools, NewJSONStore(), Deps{
+	f.service = NewService(tools, newFakeStore(db), Deps{
 		Plans: f.plans, Directory: fakeDirectory{}, Rates: fakeRates{t: t}, Access: f.access,
 	})
 	for _, kind := range append([]history.Kind{f.plans.planKind()}, f.service.Kinds()...) {
@@ -50,8 +46,6 @@ func (f *fixture) as(a *fakeAccess) {
 	*f.access = *a
 }
 
-// budgetInput is the whole form of a new global budget: FY2026 Global marketing budget, 2,500,000.00 USD,
-// owned by Carlos.
 func budgetInput() GlobalBudgetInput {
 	return GlobalBudgetInput{
 		Name: "FY2026 Global marketing budget", Year: ptr(2026), Amount: &money.Input{Amount: "2500000.00", Currency: "USD"},
@@ -59,7 +53,6 @@ func budgetInput() GlobalBudgetInput {
 	}
 }
 
-// create creates a global budget and stops the test when that fails.
 func (f *fixture) create(t *testing.T, in GlobalBudgetInput) GlobalBudgetView {
 	t.Helper()
 	view, err := f.service.Create(t.Context(), carlos, in)
@@ -69,8 +62,7 @@ func (f *fixture) create(t *testing.T, in GlobalBudgetInput) GlobalBudgetView {
 	return view
 }
 
-// allocate allocates amount (USD) of the global budget id to planID from the plan's current version and
-// stops the test when that fails.
+// allocate gives amount of the global budget id to planID, from the plan's current version.
 func (f *fixture) allocate(t *testing.T, id, planID, amount string) GlobalBudgetView {
 	t.Helper()
 	view, err := f.service.Allocate(t.Context(), carlos, id, AllocationInput{
@@ -83,8 +75,7 @@ func (f *fixture) allocate(t *testing.T, id, planID, amount string) GlobalBudget
 	return view
 }
 
-// demo is the demo global budget with its two allocations: 1,200,000.00 to Lubricants Europe and
-// 800,000.00 to Mobility China (FR-040).
+// demo is the demo global budget: 1,200,000.00 to Lubricants Europe and 800,000.00 to Mobility China.
 func (f *fixture) demo(t *testing.T) GlobalBudgetView {
 	t.Helper()
 	b := f.create(t, budgetInput())
@@ -92,31 +83,18 @@ func (f *fixture) demo(t *testing.T) GlobalBudgetView {
 	return f.allocate(t, b.ID, planChina, "800000.00")
 }
 
-// stored reads the global budget id from the store.
 func (f *fixture) stored(t *testing.T, id string) (GlobalBudget, bool) {
 	t.Helper()
-	var b GlobalBudget
-	var found bool
-	err := f.db.Read(t.Context(), func(ctx context.Context) error {
-		var err error
-		b, found, err = NewJSONStore().GetBudget(ctx, id)
-		return err
-	})
+	b, found, err := newFakeStore(f.db).GetBudget(t.Context(), id)
 	if err != nil {
 		t.Fatalf("GetBudget: %v", err)
 	}
 	return b, found
 }
 
-// allocations reads every stored allocation.
 func (f *fixture) allocations(t *testing.T) []Allocation {
 	t.Helper()
-	var all []Allocation
-	err := f.db.Read(t.Context(), func(ctx context.Context) error {
-		var err error
-		all, err = NewJSONStore().ListAllocations(ctx)
-		return err
-	})
+	all, err := newFakeStore(f.db).ListAllocations(t.Context())
 	if err != nil {
 		t.Fatalf("ListAllocations: %v", err)
 	}
@@ -133,7 +111,7 @@ func (f *fixture) entries(t *testing.T, id string) []history.Entry {
 	return entries
 }
 
-// assertError checks that err is the API error want: same status, code, message, fields and conflict.
+// assertError compares the status and the whole API error: code, message, fields and conflict.
 func assertError(t *testing.T, err error, want *errs.Error) {
 	t.Helper()
 	var got *errs.Error
@@ -147,7 +125,6 @@ func assertError(t *testing.T, err error, want *errs.Error) {
 	}
 }
 
-// amount parses a money amount and stops the test when it is not one.
 func amount(t *testing.T, text string) *money.Amount {
 	t.Helper()
 	a, err := money.ParseAmount(text)
