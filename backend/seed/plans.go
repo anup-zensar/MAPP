@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/money"
 	"mapp/internal/rollup"
@@ -16,15 +16,15 @@ import (
 type demoPlan struct {
 	name, model, team, owner, budget string
 	year                             int
-	status                           plans.Status
+	status                           plan.Status
 	businessUnits                    []string // Business unit option labels
 	smp                              bool     // Strategic Marketing Plan (SMP): yes
 	aop                              bool
-	goalStage                        plans.GoalStage
+	goalStage                        plan.GoalStage
 	goalAmount                       string
 	financeBudget                    string // the default finance budget's name; "" for none
 	description                      string
-	planType                         plans.PlanType       // 016: "" is Operational
+	planType                         plan.PlanType        // 016: "" is Operational
 	currency                         string               // 016: the plan currency; "" is USD
 	phasing                          rollup.PhasingMethod // 016: the budget's phasing; "" is not phased
 }
@@ -34,19 +34,19 @@ type demoPlan struct {
 // Publish needs.
 var demoPlans = []demoPlan{
 	{name: "FY2026 Lubricants Europe", year: 2026, model: "Lubricants 1.0", team: "Lubricants Europe", owner: "Priya Raman",
-		budget: "1200000.00", status: plans.StatusPublished, businessUnits: []string{"Lubricants"},
-		goalStage: plans.StageINQ, goalAmount: "250000", financeBudget: "2026 Lubricants Budget",
+		budget: "1200000.00", status: plan.StatusPublished, businessUnits: []string{"Lubricants"},
+		goalStage: plan.StageINQ, goalAmount: "250000", financeBudget: "2026 Lubricants Budget",
 		description: "Lubricants marketing in Europe for 2026."},
 	{name: "FY2026 Mobility China", year: 2026, model: "Mobility 1.0", team: "Mobility China", owner: "Mei Lin",
-		budget: "800000.00", status: plans.StatusDraft, goalStage: plans.StageINQ, goalAmount: "150000",
+		budget: "800000.00", status: plan.StatusDraft, goalStage: plan.StageINQ, goalAmount: "150000",
 		financeBudget: "2026 Mobility Budget"},
 	{name: "FY2027 Global Brand", year: 2027, model: "Lubricants 1.0", team: "Global Marketing Ops", owner: "Alex Morgan",
-		budget: "500000.00", status: plans.StatusDraft, businessUnits: []string{"Mobility", "Lubricants"}, smp: true, aop: true,
-		goalStage: plans.StageRevenue, goalAmount: "2000000.00", planType: plans.TypeStrategic},
+		budget: "500000.00", status: plan.StatusDraft, businessUnits: []string{"Mobility", "Lubricants"}, smp: true, aop: true,
+		goalStage: plan.StageRevenue, goalAmount: "2000000.00", planType: plan.TypeStrategic},
 	{name: ukPlan, year: 2027, model: "Lubricants 1.0", team: "Lubricants Europe", owner: "Priya Raman",
-		budget: "600000.00", status: plans.StatusDraft, businessUnits: []string{"Lubricants"}, goalStage: plans.StageINQ,
+		budget: "600000.00", status: plan.StatusDraft, businessUnits: []string{"Lubricants"}, goalStage: plan.StageINQ,
 		description: "Lubricants marketing in the United Kingdom and Ireland for 2027, planned in pounds sterling.",
-		planType:    plans.TypeCrossMarket, currency: "GBP", phasing: rollup.MethodEvenly},
+		planType:    plan.TypeCrossMarket, currency: "GBP", phasing: rollup.MethodEvenly},
 }
 
 // ukPlan is P-1004 of 016's demo data, planned in GBP.
@@ -70,16 +70,16 @@ func (d *demo) addPlans(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		plan := plans.Plan{
+		pl := plan.Plan{
 			Name: p.name, Year: p.year, ModelID: r.id(d.settings.Models, "model", p.model),
 			TeamIDs: []string{r.id(d.teams, "team", p.team)}, OwnerID: r.id(d.people, "person", p.owner),
-			AOP: p.aop, Description: p.description, DefaultSpread: plans.SpreadEvenly, GoalStage: p.goalStage,
+			AOP: p.aop, Description: p.description, DefaultSpread: plan.SpreadEvenly, GoalStage: p.goalStage,
 			GoalAmount: p.goalAmount, Attributes: attributes, Status: p.status, Meta: d.meta(),
-			Currency: cmp.Or(p.currency, money.BaseCurrency), PlanType: cmp.Or(p.planType, plans.TypeOperational),
+			Currency: cmp.Or(p.currency, money.BaseCurrency), PlanType: cmp.Or(p.planType, plan.TypeOperational),
 			BudgetPhasing: rollup.Phasing{Method: cmp.Or(p.phasing, rollup.MethodNone), Months: []rollup.PhasingMonth{}},
 		}
 		if p.financeBudget != "" {
-			plan.DefaultFinanceBudgetID = r.id(d.settings.Budgets, "finance budget", fmt.Sprintf("%d/%s", p.year, p.financeBudget))
+			pl.DefaultFinanceBudgetID = r.id(d.settings.Budgets, "finance budget", fmt.Sprintf("%d/%s", p.year, p.financeBudget))
 		}
 		if r.err != nil {
 			return r.err
@@ -88,15 +88,15 @@ func (d *demo) addPlans(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("seed: budget of %s: %w", p.name, err)
 		}
-		plan.Budget = &budget
-		if plan.ID, err = d.next(ctx, ids.PrefixPlan); err != nil {
+		pl.Budget = &budget
+		if pl.ID, err = d.next(ctx, ids.PrefixPlan); err != nil {
 			return err
 		}
-		if err := repo.Put(ctx, plan); err != nil {
+		if err := repo.Put(ctx, pl); err != nil {
 			return err
 		}
-		d.plans[p.name] = plan.ID
-		d.planCurrencies[p.name] = plan.Currency
+		d.plans[p.name] = pl.ID
+		d.planCurrencies[p.name] = pl.Currency
 	}
 	return nil
 }

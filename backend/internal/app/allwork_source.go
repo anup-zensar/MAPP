@@ -6,14 +6,14 @@ import (
 	"strconv"
 	"strings"
 
-	"mapp/internal/activities"
+	"mapp/internal/activity"
 	"mapp/internal/allwork"
-	"mapp/internal/campaigns"
+	"mapp/internal/campaign"
 	"mapp/internal/financials"
 	"mapp/internal/history"
-	"mapp/internal/lineitems"
+	"mapp/internal/lineitem"
 	"mapp/internal/people"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/date"
@@ -32,17 +32,17 @@ import (
 
 // allWorkSource is allwork.Source over the planning features.
 type allWorkSource struct {
-	plans          *plans.Service
+	plans          *plan.Service
 	plansRepo      stores.PlanStore
-	campaigns      *campaigns.Service
+	campaigns      *campaign.Service
 	campaignsRepo  stores.CampaignStore
-	activities     *activities.Service
+	activities     *activity.Service
 	activitiesRepo stores.ActivityStore
-	lineItems      *lineitems.Service
+	lineItems      *lineitem.Service
 	lineItemsRepo  stores.LineItemStore
 	settings       *settings.Service
-	budgetItems    lineitems.FinanceBudgets // 002's finance budget items, as line items read them
-	workflows      activities.Workflows     // 008's approval workflows, as activities read them
+	budgetItems    lineitem.FinanceBudgets // 002's finance budget items, as line items read them
+	workflows      activity.Workflows      // 008's approval workflows, as activities read them
 	people         *people.Service
 	peopleRepo     stores.PeopleStore
 	history        *history.Service
@@ -75,13 +75,13 @@ func (s allWorkSource) Year(ctx context.Context, year int, today date.Date, colu
 
 // nodesOf returns the nodes of the plans yearPlans of year and of everything below them, without the GSAP
 // figures.
-func (s allWorkSource) nodesOf(ctx context.Context, yearPlans []plans.Plan, year int, columns []string) (allwork.YearData, error) {
+func (s allWorkSource) nodesOf(ctx context.Context, yearPlans []plan.Plan, year int, columns []string) (allwork.YearData, error) {
 	data := allwork.YearData{Nodes: []allwork.Node{}}
 	if len(yearPlans) == 0 {
 		return data, nil
 	}
 	var err error
-	y := yearReader{s: s, owners: map[string]*allwork.Owner{}, columns: columns, plans: map[string]plans.Plan{}}
+	y := yearReader{s: s, owners: map[string]*allwork.Owner{}, columns: columns, plans: map[string]plan.Plan{}}
 	if err := y.loadAttributes(ctx); err != nil {
 		return allwork.YearData{}, err
 	}
@@ -102,7 +102,7 @@ func (s allWorkSource) nodesOf(ctx context.Context, yearPlans []plans.Plan, year
 }
 
 // addPlans adds the plans with their own missing fields and everything below them.
-func (y *yearReader) addPlans(ctx context.Context, yearPlans []plans.Plan, missing map[string]int) error {
+func (y *yearReader) addPlans(ctx context.Context, yearPlans []plan.Plan, missing map[string]int) error {
 	if err := y.s.readTrees(ctx, yearPlans); err != nil {
 		return err
 	}
@@ -120,7 +120,7 @@ func (y *yearReader) addPlans(ctx context.Context, yearPlans []plans.Plan, missi
 // planMissing returns the number of each plan's own needed-to-publish fields still empty, from 004's Plans
 // list: one call for every plan of the year.
 func (s allWorkSource) planMissing(ctx context.Context, year int) (map[string]int, error) {
-	list, err := s.plans.List(ctx, actor.System, plans.ListFilter{Scope: plans.ScopeAll, Year: &year})
+	list, err := s.plans.List(ctx, actor.System, plan.ListFilter{Scope: plan.ScopeAll, Year: &year})
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (s allWorkSource) planMissing(ctx context.Context, year int) (map[string]in
 
 // addPlan adds the plan p with its own missing fields, its campaigns and initiatives as 005's plan tree
 // orders them, and its activities as 006's plan-tree rows order them.
-func (y *yearReader) addPlan(ctx context.Context, p plans.Plan, missing int) error {
+func (y *yearReader) addPlan(ctx context.Context, p plan.Plan, missing int) error {
 	owner, err := y.owner(ctx, p.OwnerID)
 	if err != nil {
 		return err
@@ -197,7 +197,7 @@ func (y *yearReader) addPlan(ctx context.Context, p plans.Plan, missing int) err
 		if a.PlannedCost != nil {
 			planned = &a.PlannedCost.Amount
 		}
-		months, _ := lineitems.ActivityMonths(lineitems.ActivityFacts{StartDate: a.StartDate, EndDate: a.EndDate, Ongoing: a.Ongoing})
+		months, _ := lineitem.ActivityMonths(lineitem.ActivityFacts{StartDate: a.StartDate, EndDate: a.EndDate, Ongoing: a.Ongoing})
 		y.activities[a.ID] = len(y.nodes)
 		y.nodes = append(y.nodes, allwork.Node{
 			Level: allwork.LevelActivity, ID: a.ID, ParentID: a.InitiativeID, PlanID: p.ID, Order: order, Name: a.Name,
@@ -219,13 +219,13 @@ var (
 	spreadWords = map[string]string{
 		"evenly": "Evenly", "firstMonth": "All in first month", "lastMonth": "All in last month", "custom": "Custom",
 	}
-	goalStageWords = map[plans.GoalStage]string{plans.StageINQ: "INQ", plans.StageMQL: "MQL", plans.StageRevenue: "Revenue"}
+	goalStageWords = map[plan.GoalStage]string{plan.StageINQ: "INQ", plan.StageMQL: "MQL", plan.StageRevenue: "Revenue"}
 )
 
 // planFields returns the plan-level columns of p (allwork data model §6.2): its stored fields with the names
 // of its model, teams (by name, as 004 shows them) and default finance budget, and — only when the view shows
 // them — the plan goals 004 works out from the model.
-func (y *yearReader) planFields(ctx context.Context, p plans.Plan) (map[string]allwork.Value, error) {
+func (y *yearReader) planFields(ctx context.Context, p plan.Plan) (map[string]allwork.Value, error) {
 	year := int64(p.Year)
 	fields := map[string]allwork.Value{
 		"plan.year":          {Number: &year},
@@ -272,7 +272,7 @@ func (y *yearReader) planFields(ctx context.Context, p plans.Plan) (map[string]a
 		}
 	}
 	if p.GoalAmount != "" {
-		if p.GoalStage == plans.StageRevenue {
+		if p.GoalStage == plan.StageRevenue {
 			if amount, err := money.ParseAmount(p.GoalAmount); err == nil {
 				fields["plan.goalAmount"] = allwork.Value{USD: &amount}
 			}
@@ -285,7 +285,7 @@ func (y *yearReader) planFields(ctx context.Context, p plans.Plan) (map[string]a
 }
 
 // plansOfYear returns the plans of year the person acting may see (014 FR-007, SC-004).
-func plansOfYear(ctx context.Context, repo stores.PlanStore, year int) ([]plans.Plan, error) {
+func plansOfYear(ctx context.Context, repo stores.PlanStore, year int) ([]plan.Plan, error) {
 	all, err := repo.ListInScope(ctx, authz.ScopeOf(ctx))
-	return slices.DeleteFunc(all, func(p plans.Plan) bool { return p.Year != year }), err
+	return slices.DeleteFunc(all, func(p plan.Plan) bool { return p.Year != year }), err
 }

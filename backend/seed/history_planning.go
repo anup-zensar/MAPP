@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"mapp/internal/history"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/money"
 )
 
@@ -40,10 +40,10 @@ func wholeMinuteFrom(t time.Time) time.Time {
 // addPublished keeps one "published" entry for every Published plan, by its owner, 7 days before (step 2).
 func (h *demoHistory) addPublished(context.Context) error {
 	for _, r := range h.records {
-		if r.plan == nil || r.plan.Status != plans.StatusPublished {
+		if r.plan == nil || r.plan.Status != plan.StatusPublished {
 			continue
 		}
-		change, err := statusChange(plans.StatusDraft, plans.StatusPublished, planStatusWords)
+		change, err := statusChange(plan.StatusDraft, plan.StatusPublished, planStatusWords)
 		if err != nil {
 			return err
 		}

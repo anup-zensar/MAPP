@@ -4,11 +4,11 @@ import (
 	"context"
 	"slices"
 
-	"mapp/internal/activities"
-	"mapp/internal/campaigns"
+	"mapp/internal/activity"
+	"mapp/internal/campaign"
 	"mapp/internal/history"
-	"mapp/internal/lineitems"
-	"mapp/internal/plans"
+	"mapp/internal/lineitem"
+	"mapp/internal/plan"
 )
 
 // treeRecord is one stored planning record with its path; plan or activity is set for those kinds.
@@ -17,8 +17,8 @@ type treeRecord struct {
 	id, name string
 	ownerID  string
 	path     []history.RecordRef
-	plan     *plans.Plan
-	activity *activities.Activity
+	plan     *plan.Plan
+	activity *activity.Activity
 }
 
 // loadTree lists every stored planning record in tree order — each plan, then each of its campaigns with
@@ -41,10 +41,10 @@ func (d *demo) loadTree(ctx context.Context) ([]treeRecord, error) {
 }
 
 type planningTree struct {
-	campaigns   []campaigns.Campaign
-	initiatives []campaigns.Initiative
-	activities  []activities.Activity
-	lineItems   []lineitems.LineItem
+	campaigns   []campaign.Campaign
+	initiatives []campaign.Initiative
+	activities  []activity.Activity
+	lineItems   []lineitem.LineItem
 	records     []treeRecord
 }
 

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"mapp/internal/activities"
-	"mapp/internal/campaigns"
-	"mapp/internal/plans"
+	"mapp/internal/activity"
+	"mapp/internal/campaign"
+	"mapp/internal/plan"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/money"
 	"mapp/internal/settings"
@@ -96,8 +96,8 @@ func TestLoad_ActivitiesFitTheirPlan_R3_R7(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
 	for _, a := range d.activities {
-		initiative, campaign, plan := d.pathOf(t, a)
-		model := settingsModel(t, d, plan.ModelID)
+		initiative, c, p := d.pathOf(t, a)
+		model := settingsModel(t, d, p.ModelID)
 		if !model.Allows(a.ActivityTypeID) {
 			t.Errorf("%s: type %s is not allowed by %s", a.Name, a.ActivityTypeID, model.Name)
 		}
@@ -109,7 +109,7 @@ func TestLoad_ActivitiesFitTheirPlan_R3_R7(t *testing.T) {
 			outside = outside || a.EndDate.After(*initiative.EndDate)
 		}
 		if outside {
-			t.Errorf("%s is outside %s › %s (%s)", a.Name, campaign.Name, initiative.Name, dates(initiative.StartDate, initiative.EndDate))
+			t.Errorf("%s is outside %s › %s (%s)", a.Name, c.Name, initiative.Name, dates(initiative.StartDate, initiative.EndDate))
 		}
 	}
 }
@@ -128,9 +128,9 @@ func TestLoad_ActivityAttributes_FR014(t *testing.T) {
 			"Growth ambition", "PIR", "FIT4 initiative", "FIT4 ID"},
 	}
 	for _, a := range d.activities {
-		_, _, plan := d.pathOf(t, a)
+		_, _, p := d.pathOf(t, a)
 		var businessUnit []string
-		if value := plan.Attributes[d.attributeID(t, settings.LevelPlan, "Business unit")]; value != nil {
+		if value := p.Attributes[d.attributeID(t, settings.LevelPlan, "Business unit")]; value != nil {
 			_ = json.Unmarshal(value, &businessUnit)
 		}
 		var missing []string
@@ -166,23 +166,23 @@ func TestLoad_ActivityAttributes_FR014(t *testing.T) {
 }
 
 // pathOf returns the initiative, campaign and plan of an activity.
-func (d demoData) pathOf(t *testing.T, a activities.Activity) (campaigns.Initiative, campaigns.Campaign, plans.Plan) {
+func (d demoData) pathOf(t *testing.T, a activity.Activity) (campaign.Initiative, campaign.Campaign, plan.Plan) {
 	t.Helper()
-	i := slices.IndexFunc(d.initiatives, func(i campaigns.Initiative) bool { return i.ID == a.InitiativeID })
+	i := slices.IndexFunc(d.initiatives, func(i campaign.Initiative) bool { return i.ID == a.InitiativeID })
 	if i < 0 {
 		t.Fatalf("%s: no initiative %s", a.Name, a.InitiativeID)
 	}
 	initiative := d.initiatives[i]
-	c := slices.IndexFunc(d.campaigns, func(c campaigns.Campaign) bool { return c.ID == initiative.CampaignID })
+	c := slices.IndexFunc(d.campaigns, func(c campaign.Campaign) bool { return c.ID == initiative.CampaignID })
 	if c < 0 {
 		t.Fatalf("%s: no campaign %s", a.Name, initiative.CampaignID)
 	}
-	campaign := d.campaigns[c]
-	p := slices.IndexFunc(d.plans, func(p plans.Plan) bool { return p.ID == campaign.PlanID })
+	camp := d.campaigns[c]
+	p := slices.IndexFunc(d.plans, func(p plan.Plan) bool { return p.ID == camp.PlanID })
 	if p < 0 {
-		t.Fatalf("%s: no plan %s", a.Name, campaign.PlanID)
+		t.Fatalf("%s: no plan %s", a.Name, camp.PlanID)
 	}
-	return initiative, campaign, d.plans[p]
+	return initiative, camp, d.plans[p]
 }
 
 // settingsModel returns the stored model with id.

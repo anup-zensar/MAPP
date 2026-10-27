@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"mapp/internal/activities"
-	"mapp/internal/approvals"
+	"mapp/internal/activity"
+	"mapp/internal/approval"
 	"mapp/internal/platform/date"
 )
 
@@ -19,14 +19,14 @@ import (
 func TestLoad_ApprovalRounds_FR037(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
-	statusOf := map[string]activities.Status{}
+	statusOf := map[string]activity.Status{}
 	nameOf := map[string]string{}
 	for _, a := range d.activities {
 		statusOf[a.ID], nameOf[a.ID] = a.Status, a.Name
 	}
 
 	var got []string
-	last := map[string]approvals.Round{} // activity → its last round
+	last := map[string]approval.Round{} // activity → its last round
 	for _, r := range d.rounds {
 		ended := "open"
 		if r.EndedAt != nil {
@@ -52,13 +52,13 @@ func TestLoad_ApprovalRounds_FR037(t *testing.T) {
 		t.Errorf("rounds =\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
 	}
 
-	outcomeOf := map[activities.Status]approvals.Outcome{
-		activities.StatusApproved: approvals.OutcomeApproved, activities.StatusDeclined: approvals.OutcomeDeclined,
-		activities.StatusSubmitted: approvals.OutcomeOpen,
+	outcomeOf := map[activity.Status]approval.Outcome{
+		activity.StatusApproved: approval.OutcomeApproved, activity.StatusDeclined: approval.OutcomeDeclined,
+		activity.StatusSubmitted: approval.OutcomeOpen,
 	}
 	for id, status := range statusOf {
 		round, has := last[id]
-		if status == activities.StatusCreated {
+		if status == activity.StatusCreated {
 			if has {
 				t.Errorf("%s is Created but has round %s", nameOf[id], round.ID)
 			}
@@ -194,7 +194,7 @@ func TestSeed_ApprovalRules_FR037(t *testing.T) {
 	}
 
 	for _, r := range d.rounds {
-		if r.Facts == nil || r.ReminderDays == nil || r.Levels[0].StartedAt == nil || r.Levels[0].Resolution != approvals.ResolutionDecide ||
+		if r.Facts == nil || r.ReminderDays == nil || r.Levels[0].StartedAt == nil || r.Levels[0].Resolution != approval.ResolutionDecide ||
 			r.Levels[0].Backup == nil {
 			t.Errorf("round %s = %+v, want facts, timings, a start and a backup", r.ID, r)
 		}

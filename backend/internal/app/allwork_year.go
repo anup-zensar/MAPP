@@ -6,7 +6,7 @@ import (
 
 	"mapp/internal/allwork"
 	"mapp/internal/people"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/money"
 	"mapp/internal/rollup"
 	"mapp/internal/settings"
@@ -24,7 +24,7 @@ type yearReader struct {
 	activities    map[string]int    // activity id → index of its node
 	stored        map[string]string // activity id → its stored status (for the SWBS request status)
 	rates         money.Rates       // the current rates (016)
-	plans         map[string]plans.Plan
+	plans         map[string]plan.Plan
 }
 
 // planRate returns the current rate of the plan currency of the plan planID (016 FR-014); 1 for USD.

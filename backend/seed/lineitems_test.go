@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"mapp/internal/activities"
-	"mapp/internal/lineitems"
+	"mapp/internal/activity"
+	"mapp/internal/lineitem"
 	"mapp/internal/platform/money"
 	"mapp/internal/settings"
 )
@@ -19,7 +19,7 @@ func TestLoad_LineItems_FR009(t *testing.T) {
 	d := loadDemo(t)
 	spendType := d.attributeID(t, settings.LevelLineItem, "Spend type")
 	glCode := d.attributeID(t, settings.LevelLineItem, "GL code")
-	activityByID := map[string]activities.Activity{}
+	activityByID := map[string]activity.Activity{}
 	for _, a := range d.activities {
 		activityByID[a.ID] = a
 	}
@@ -95,7 +95,7 @@ func TestLoad_UnassignedPlannedCost_US1(t *testing.T) {
 		}
 	}
 	for _, l := range d.lineItems {
-		if l.Spread.Method != lineitems.SpreadCustom && len(l.Spread.Months) != 0 {
+		if l.Spread.Method != lineitem.SpreadCustom && len(l.Spread.Months) != 0 {
 			t.Errorf("%s keeps months although it is spread %s", l.Name, l.Spread.Method)
 		}
 	}

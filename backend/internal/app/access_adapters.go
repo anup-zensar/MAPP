@@ -5,7 +5,7 @@ import (
 	"slices"
 
 	"mapp/internal/access"
-	"mapp/internal/approvals"
+	"mapp/internal/approval"
 	"mapp/internal/people"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
@@ -75,7 +75,7 @@ func (f accessApprovals) ApproverIn(ctx context.Context, personID string) (workf
 		return 0, 0, err
 	}
 	for _, w := range all {
-		if w.Active && slices.ContainsFunc(w.Levels, func(l approvals.Level) bool { return slices.Contains(l.ApproverIDs, personID) }) {
+		if w.Active && slices.ContainsFunc(w.Levels, func(l approval.Level) bool { return slices.Contains(l.ApproverIDs, personID) }) {
 			workflows++
 		}
 	}
@@ -84,7 +84,7 @@ func (f accessApprovals) ApproverIn(ctx context.Context, personID string) (workf
 		return 0, 0, err
 	}
 	for _, r := range rounds {
-		if r.Outcome != approvals.OutcomeOpen || r.CurrentLevel < 1 || r.CurrentLevel > len(r.Levels) {
+		if r.Outcome != approval.OutcomeOpen || r.CurrentLevel < 1 || r.CurrentLevel > len(r.Levels) {
 			continue
 		}
 		level := r.Levels[r.CurrentLevel-1]

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"mapp/internal/approvals"
+	"mapp/internal/approval"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/money"
 	"mapp/internal/settings"
@@ -12,7 +12,7 @@ import (
 
 // LineItems returns the activity's line items with their planned cost in their own currency and in USD at
 // the current rate, and the readable labels of their finance coding (FR-032).
-func (p *approvalsActivities) LineItems(ctx context.Context, _ actor.Actor, activityID string) ([]approvals.PreviewLineItem, error) {
+func (p *approvalsActivities) LineItems(ctx context.Context, _ actor.Actor, activityID string) ([]approval.PreviewLineItem, error) {
 	items, err := p.lineItems.ListByActivity(ctx, activityID)
 	if err != nil {
 		return nil, err
@@ -25,9 +25,9 @@ func (p *approvalsActivities) LineItems(ctx context.Context, _ actor.Actor, acti
 	if err != nil {
 		return nil, err
 	}
-	list := make([]approvals.PreviewLineItem, 0, len(items))
+	list := make([]approval.PreviewLineItem, 0, len(items))
 	for _, li := range items {
-		view := approvals.PreviewLineItem{
+		view := approval.PreviewLineItem{
 			ID: li.ID, Name: li.Name, PlannedCost: money.Money{Amount: li.PlannedCost, Currency: li.Currency},
 			SpendType: labels.of(li.Attributes, "Spend type"), GLCode: labels.of(li.Attributes, "GL code"),
 		}

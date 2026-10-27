@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"mapp/internal/budgets"
+	"mapp/internal/budget"
 	"mapp/internal/platform/money"
 )
 
@@ -37,11 +37,11 @@ func (d *demo) addGlobalBudgets(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("seed: amount of %s: %w", demoGlobalBudget, err)
 	}
-	b := budgets.GlobalBudget{
+	b := budget.GlobalBudget{
 		Name: demoGlobalBudget, Year: demoGlobalBudgetYear, Amount: amount, OwnerID: ownerID,
 		Description: demoGlobalBudgetDescription, Meta: d.meta(),
 	}
-	if b.ID, err = d.next(ctx, budgets.PrefixGlobalBudget); err != nil {
+	if b.ID, err = d.next(ctx, budget.PrefixGlobalBudget); err != nil {
 		return err
 	}
 	if err := repo.PutBudget(ctx, b); err != nil {
@@ -56,8 +56,8 @@ func (d *demo) addGlobalBudgets(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		allocation := budgets.Allocation{GlobalBudgetID: b.ID, PlanID: planID, Amount: amount, Meta: d.meta()}
-		if allocation.ID, err = d.next(ctx, budgets.PrefixAllocation); err != nil {
+		allocation := budget.Allocation{GlobalBudgetID: b.ID, PlanID: planID, Amount: amount, Meta: d.meta()}
+		if allocation.ID, err = d.next(ctx, budget.PrefixAllocation); err != nil {
 			return err
 		}
 		if err := repo.PutAllocation(ctx, allocation); err != nil {

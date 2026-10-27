@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"mapp/internal/access"
-	"mapp/internal/activities"
-	"mapp/internal/approvals"
-	"mapp/internal/campaigns"
+	"mapp/internal/activity"
+	"mapp/internal/approval"
+	"mapp/internal/campaign"
 	"mapp/internal/history"
-	"mapp/internal/lineitems"
+	"mapp/internal/lineitem"
 	"mapp/internal/people"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/apitest"
 	"mapp/internal/platform/date"
@@ -38,19 +38,19 @@ type demoData struct {
 	items         []settings.FinanceBudgetItem
 	attributes    []settings.Attribute
 	options       []settings.Option
-	plans         []plans.Plan
-	campaigns     []campaigns.Campaign
-	initiatives   []campaigns.Initiative
-	activities    []activities.Activity
-	lineItems     []lineitems.LineItem
-	workflows     []approvals.Workflow
-	rounds        []approvals.Round
+	plans         []plan.Plan
+	campaigns     []campaign.Campaign
+	initiatives   []campaign.Initiative
+	activities    []activity.Activity
+	lineItems     []lineitem.LineItem
+	workflows     []approval.Workflow
+	rounds        []approval.Round
 	roles         []access.Role
 	assignments   []access.Assignment
 	accessRules   access.Rules
-	actions       []approvals.Action
-	notifications map[string][]approvals.Notification // by recipient id
-	delegations   []approvals.Delegation
+	actions       []approval.Action
+	notifications map[string][]approval.Notification // by recipient id
+	delegations   []approval.Delegation
 
 	attributeByID map[string]settings.Attribute
 	optionByID    map[string]settings.Option
@@ -62,8 +62,8 @@ func loadDemo(t *testing.T) demoData {
 	db := loadedStore(t)
 	var d demoData
 	read(t, db, func(ctx context.Context) error {
-		peopleRepo, settingsRepo, approvalsRepo := people.NewJSONStore(), settings.NewJSONStore(), approvals.NewJSONStore()
-		campaignsRepo := campaigns.NewJSONStore()
+		peopleRepo, settingsRepo, approvalsRepo := people.NewJSONStore(), settings.NewJSONStore(), approval.NewJSONStore()
+		campaignsRepo := campaign.NewJSONStore()
 		var errs []error
 		collect := func(err error) { errs = append(errs, err) }
 		var err error
@@ -91,15 +91,15 @@ func loadDemo(t *testing.T) demoData {
 		collect(err)
 		d.options, err = settingsRepo.ListOptions(ctx)
 		collect(err)
-		d.plans, err = plans.NewJSONStore().List(ctx)
+		d.plans, err = plan.NewJSONStore().List(ctx)
 		collect(err)
 		d.campaigns, err = campaignsRepo.ListCampaigns(ctx)
 		collect(err)
 		d.initiatives, err = campaignsRepo.ListInitiatives(ctx)
 		collect(err)
-		d.activities, err = activities.NewJSONStore().List(ctx)
+		d.activities, err = activity.NewJSONStore().List(ctx)
 		collect(err)
-		d.lineItems, err = lineitems.NewJSONStore().List(ctx)
+		d.lineItems, err = lineitem.NewJSONStore().List(ctx)
 		collect(err)
 		d.workflows, err = approvalsRepo.ListWorkflows(ctx)
 		collect(err)
@@ -116,7 +116,7 @@ func loadDemo(t *testing.T) demoData {
 		collect(err)
 		d.delegations, err = approvalsRepo.ListDelegations(ctx)
 		collect(err)
-		d.notifications = map[string][]approvals.Notification{}
+		d.notifications = map[string][]approval.Notification{}
 		for _, p := range d.people {
 			d.notifications[p.ID], err = approvalsRepo.NotificationsOf(ctx, p.ID)
 			collect(err)

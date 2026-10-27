@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"mapp/internal/campaigns"
+	"mapp/internal/campaign"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/money"
 	"mapp/internal/settings"
@@ -90,7 +90,7 @@ func TestLoad_BudgetsFlowDown_FR010(t *testing.T) {
 func TestLoad_CampaignRules_R3_R4(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
-	byID := map[string]campaigns.Campaign{}
+	byID := map[string]campaign.Campaign{}
 	for _, c := range d.campaigns {
 		byID[c.ID] = c
 	}

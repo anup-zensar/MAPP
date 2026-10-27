@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"mapp/internal/access"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/store"
 	"mapp/internal/stores"
@@ -58,7 +58,7 @@ func (t planningTargets) plan(ctx context.Context, id string) (access.Target, bo
 	if err != nil || !found {
 		return access.Target{}, false, err
 	}
-	return access.Target{RecordType: access.RecordPlan, Plan: plans.AccessFacts(p)}, true, nil
+	return access.Target{RecordType: access.RecordPlan, Plan: plan.AccessFacts(p)}, true, nil
 }
 
 // campaign finds the campaign id with its plan.

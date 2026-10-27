@@ -4,7 +4,7 @@ import (
 	"cmp"
 	"context"
 
-	"mapp/internal/campaigns"
+	"mapp/internal/campaign"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/money"
@@ -105,11 +105,11 @@ func (d *demo) addCampaigns(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		campaign := campaigns.Campaign{
+		camp := campaign.Campaign{
 			ID: id, PlanID: planID, Name: c.name, OwnerID: &ownerID, StartDate: start, EndDate: end,
 			Budget: budget, Attributes: attributes, BudgetPhasing: phasing, Meta: d.meta(),
 		}
-		if err := repo.PutCampaign(ctx, campaign); err != nil {
+		if err := repo.PutCampaign(ctx, camp); err != nil {
 			return err
 		}
 		d.campaigns[c.plan+"/"+c.name] = id
@@ -133,16 +133,16 @@ func (d *demo) addCampaigns(ctx context.Context) error {
 
 // initiativeOf builds the stored initiative i of the campaign campaignID, without its ID, looking up its
 // owner by name. MAPP creates it at the seed time.
-func (d *demo) initiativeOf(i demoInitiative, campaignID, currency string) (campaigns.Initiative, error) {
+func (d *demo) initiativeOf(i demoInitiative, campaignID, currency string) (campaign.Initiative, error) {
 	ownerID, err := find(d.people, "person", i.owner)
 	if err != nil {
-		return campaigns.Initiative{}, err
+		return campaign.Initiative{}, err
 	}
 	start, end, budget, attributes, err := d.planningFields(i.start, i.end, i.budget, currency, settings.LevelInitiative, i.attributes)
 	if err != nil {
-		return campaigns.Initiative{}, err
+		return campaign.Initiative{}, err
 	}
-	return campaigns.Initiative{
+	return campaign.Initiative{
 		CampaignID: campaignID, Name: i.name, OwnerID: &ownerID, StartDate: start, EndDate: end,
 		Budget: budget, Attributes: attributes, BudgetPhasing: rollup.NotPhased, Meta: d.meta(),
 	}, nil

@@ -6,10 +6,10 @@ import (
 	"maps"
 	"slices"
 
-	"mapp/internal/activities"
+	"mapp/internal/activity"
 	"mapp/internal/allwork"
-	"mapp/internal/campaigns"
-	"mapp/internal/lineitems"
+	"mapp/internal/campaign"
+	"mapp/internal/lineitem"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/money"
 	"mapp/internal/platform/record"
@@ -26,9 +26,9 @@ type container struct {
 	ownerID              *string
 	start, end           *date.Date
 	budget               *money.Money
-	progress             campaigns.ApprovalSummary
+	progress             campaign.ApprovalSummary
 	timing               *string
-	completeness         campaigns.RecordCompleteness
+	completeness         campaign.RecordCompleteness
 	meta                 record.Meta
 	attributes           settings.AttributeValues
 	phasing              rollup.PhasingView // 016: the budget by month, in the plan currency
@@ -100,7 +100,7 @@ func (y *yearReader) addActivityDetails(ctx context.Context) error {
 	return y.addActivityGoals(ctx)
 }
 
-func (y *yearReader) addStoredActivity(ctx context.Context, n *allwork.Node, a activities.Activity) error {
+func (y *yearReader) addStoredActivity(ctx context.Context, n *allwork.Node, a activity.Activity) error {
 	n.ExternalName, n.Description, n.CreatedAt, n.UpdatedAt = a.ExternalName, a.Description, a.CreatedAt, a.UpdatedAt
 	y.stored[a.ID] = string(a.Status)
 	n.Fields["activity.externalName"] = allwork.Value{Text: a.ExternalName}
@@ -184,13 +184,13 @@ func (y *yearReader) lineItemsMissing(ctx context.Context, activityIDs []string)
 }
 
 // lineItemNode returns the node of the line item li, whose activity's node is already added.
-func (y *yearReader) lineItemNode(ctx context.Context, li lineitems.LineItem, rates money.Rates) (allwork.Node, error) {
-	activity := y.nodes[y.activities[li.ActivityID]]
-	f := lineitems.ActivityFacts{
-		ID: activity.ID, StartDate: activity.StartDate, EndDate: activity.EndDate, Ongoing: activity.Ongoing,
+func (y *yearReader) lineItemNode(ctx context.Context, li lineitem.LineItem, rates money.Rates) (allwork.Node, error) {
+	act := y.nodes[y.activities[li.ActivityID]]
+	f := lineitem.ActivityFacts{
+		ID: act.ID, StartDate: act.StartDate, EndDate: act.EndDate, Ongoing: act.Ongoing,
 		Status: y.stored[li.ActivityID],
 	}
-	planID := activity.PlanID
+	planID := act.PlanID
 	rate, known := rates[li.Currency]
 	if !known { // Settings never deletes a currency in use (domain model §6)
 		return allwork.Node{}, fmt.Errorf("app: line item %s has the unknown currency %q", li.ID, li.Currency)
@@ -199,14 +199,14 @@ func (y *yearReader) lineItemNode(ctx context.Context, li lineitems.LineItem, ra
 	if err != nil {
 		return allwork.Node{}, err
 	}
-	plannedUSD := lineitems.PlannedCostUSD(li, rate)
+	plannedUSD := lineitem.PlannedCostUSD(li, rate)
 	planRate := y.planRate(planID)
 	plannedPlan := money.Convert(li.PlannedCost, rate, planRate) // 016 FR-015
 	node := allwork.Node{
 		Level: allwork.LevelLineItem, ID: li.ID, ParentID: li.ActivityID, PlanID: planID, Name: li.Name,
 		Description: li.Description, Owner: owner, PlannedCost: &plannedUSD,
 		LocalPlannedCost: &money.Money{Amount: li.PlannedCost, Currency: li.Currency},
-		Swbs:             string(lineitems.SwbsStatusOf(li, f)), CreatedAt: li.CreatedAt, UpdatedAt: li.UpdatedAt,
+		Swbs:             string(lineitem.SwbsStatusOf(li, f)), CreatedAt: li.CreatedAt, UpdatedAt: li.UpdatedAt,
 		MonthsUSD: []allwork.MonthAmount{}, MonthsPlan: []allwork.PlanMonth{}, PlannedCostPlan: y.inPlan(planID, &plannedPlan),
 		Fields: map[string]allwork.Value{
 			"lineItem.description":      {Text: li.Description},
@@ -222,21 +222,21 @@ func (y *yearReader) lineItemNode(ctx context.Context, li lineitems.LineItem, ra
 	y.addAttributes(node.Fields, settings.LevelLineItem, li.Attributes)
 	node.Attrs = y.attrValues(settings.LevelLineItem, li.Attributes)
 	y.planFacts(&node)
-	months, spread := lineitems.SpreadMonths(li, f)
+	months, spread := lineitem.SpreadMonths(li, f)
 	if !spread {
 		node.UnspreadUSD, node.UnspreadPlan = plannedUSD, plannedPlan
 		return node, nil
 	}
-	for i, amount := range lineitems.USDMonths(months, rate) {
+	for i, amount := range lineitem.USDMonths(months, rate) {
 		node.MonthsUSD = append(node.MonthsUSD, allwork.MonthAmount{Month: months[i].Month, USD: amount})
 	}
-	for i, amount := range lineitems.ConvertMonths(months, rate, planRate) {
+	for i, amount := range lineitem.ConvertMonths(months, rate, planRate) {
 		node.MonthsPlan = append(node.MonthsPlan, allwork.PlanMonth{Month: months[i].Month, Amount: amount})
 	}
 	return node, nil
 }
 
-func (y *yearReader) addFinanceFields(ctx context.Context, fields map[string]allwork.Value, li lineitems.LineItem) error {
+func (y *yearReader) addFinanceFields(ctx context.Context, fields map[string]allwork.Value, li lineitem.LineItem) error {
 	if li.ContractedAmount != nil {
 		fields["lineItem.contractedAmount"] = allwork.Value{Money: &money.Money{Amount: *li.ContractedAmount, Currency: li.Currency}}
 	}

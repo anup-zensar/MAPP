@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"mapp/internal/activities"
-	"mapp/internal/campaigns"
+	"mapp/internal/activity"
+	"mapp/internal/campaign"
 	"mapp/internal/history"
-	"mapp/internal/lineitems"
+	"mapp/internal/lineitem"
 	"mapp/internal/platform/apitest"
 	"mapp/seed"
 )
@@ -75,15 +75,15 @@ func TestSeed_HistoryAndRecycleBin_011(t *testing.T) {
 		t.Errorf("snapshots = %q, want %q", snapshots, wantSnapshots)
 	}
 	read(t, db, func(ctx context.Context) error {
-		_, initiativeStored, err := campaigns.NewJSONStore().GetInitiative(ctx, "I-1011")
+		_, initiativeStored, err := campaign.NewJSONStore().GetInitiative(ctx, "I-1011")
 		if err != nil {
 			return err
 		}
-		_, activityStored, err := activities.NewJSONStore().Get(ctx, "A-1013")
+		_, activityStored, err := activity.NewJSONStore().Get(ctx, "A-1013")
 		if err != nil {
 			return err
 		}
-		_, lineItemStored, err := lineitems.NewJSONStore().Get(ctx, "L-1011")
+		_, lineItemStored, err := lineitem.NewJSONStore().Get(ctx, "L-1011")
 		if err != nil {
 			return err
 		}

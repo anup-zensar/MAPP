@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"mapp/internal/activities"
-	"mapp/internal/campaigns"
+	"mapp/internal/activity"
+	"mapp/internal/campaign"
 	"mapp/internal/platform/date"
 	"mapp/internal/stores"
 )
@@ -57,7 +57,7 @@ func (v *volume) tree(planID string) Tree {
 	return t
 }
 
-func initiativeHolding(a activities.Activity, initiatives []campaigns.Initiative) string {
+func initiativeHolding(a activity.Activity, initiatives []campaign.Initiative) string {
 	for _, i := range initiatives {
 		if i.ID != a.InitiativeID && holds(i.StartDate, i.EndDate, a.StartDate, a.EndDate) {
 			return i.ID
@@ -66,7 +66,7 @@ func initiativeHolding(a activities.Activity, initiatives []campaigns.Initiative
 	return ""
 }
 
-func (v *volume) initiativeAndOtherCampaign(_ context.Context, initiatives []campaigns.Initiative, list []campaigns.Campaign) (string, string) {
+func (v *volume) initiativeAndOtherCampaign(_ context.Context, initiatives []campaign.Initiative, list []campaign.Campaign) (string, string) {
 	for _, i := range initiatives {
 		for _, c := range list {
 			if c.ID != i.CampaignID && holds(c.StartDate, c.EndDate, i.StartDate, i.EndDate) && !named(initiatives, c.ID, i.Name) {
@@ -77,8 +77,8 @@ func (v *volume) initiativeAndOtherCampaign(_ context.Context, initiatives []cam
 	return "", ""
 }
 
-func named(initiatives []campaigns.Initiative, campaignID, name string) bool {
-	return slices.ContainsFunc(initiatives, func(i campaigns.Initiative) bool {
+func named(initiatives []campaign.Initiative, campaignID, name string) bool {
+	return slices.ContainsFunc(initiatives, func(i campaign.Initiative) bool {
 		return i.CampaignID == campaignID && strings.EqualFold(i.Name, name)
 	})
 }

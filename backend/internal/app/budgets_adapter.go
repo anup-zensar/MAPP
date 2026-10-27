@@ -4,8 +4,8 @@ import (
 	"context"
 	"slices"
 
-	"mapp/internal/budgets"
-	"mapp/internal/plans"
+	"mapp/internal/budget"
+	"mapp/internal/plan"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/money"
 	"mapp/internal/stores"
@@ -14,29 +14,29 @@ import (
 // The adapters between global budgets (014, package budgets) and plans (004): budgets reads plans and sets a
 // plan's budget through budgetPlans; plans learns which plans are allocated through planAllocations.
 
-// budgetPlans is budgets.Plans over the plans service and repository.
+// budgetPlans is budget.Plans over the plans service and repository.
 type budgetPlans struct {
-	plans *plans.Service
+	plans *plan.Service
 	repo  stores.PlanStore
 	rates func(context.Context) (money.Rates, error) // the current rates (016), for planned costs in USD
 }
 
 // Plan returns the plan id as budgets needs it.
-func (b budgetPlans) Plan(ctx context.Context, id string) (budgets.PlanInfo, bool, error) {
+func (b budgetPlans) Plan(ctx context.Context, id string) (budget.PlanInfo, bool, error) {
 	p, found, err := b.repo.Get(ctx, id)
 	if err != nil || !found {
-		return budgets.PlanInfo{}, false, err
+		return budget.PlanInfo{}, false, err
 	}
 	return planInfoOf(p), true, nil
 }
 
 // PlansOfYear returns the plans of year as budgets needs them.
-func (b budgetPlans) PlansOfYear(ctx context.Context, year int) ([]budgets.PlanInfo, error) {
+func (b budgetPlans) PlansOfYear(ctx context.Context, year int) ([]budget.PlanInfo, error) {
 	ofYear, err := b.repo.PlansOfYear(ctx, year)
 	if err != nil {
 		return nil, err
 	}
-	infos := make([]budgets.PlanInfo, 0, len(ofYear))
+	infos := make([]budget.PlanInfo, 0, len(ofYear))
 	for _, p := range ofYear {
 		infos = append(infos, planInfoOf(p))
 	}
@@ -91,26 +91,26 @@ func (b budgetPlans) AllocationRemoved(ctx context.Context, a actor.Actor, planI
 }
 
 // planInfoOf returns what budgets needs to know of the stored plan p, in the plan currency (016).
-func planInfoOf(p plans.Plan) budgets.PlanInfo {
-	return budgets.PlanInfo{
+func planInfoOf(p plan.Plan) budget.PlanInfo {
+	return budget.PlanInfo{
 		ID: p.ID, Name: p.Name, Year: p.Year, Status: string(p.Status), Version: p.Version,
 		TeamIDs: slices.Clone(p.TeamIDs), OwnerID: p.OwnerID, CreatedByID: p.CreatedBy.ID,
 		Currency: p.Normalised().Currency, Budget: p.Budget,
 	}
 }
 
-// planAllocations is plans.Allocations over the budgets service.
+// planAllocations is plan.Allocations over the budgets service.
 type planAllocations struct {
-	budgets *budgets.Service
+	budgets *budget.Service
 }
 
 // AllocationOf returns the allocation that sets the budget of the plan planID, and false when it has none.
-func (p planAllocations) AllocationOf(ctx context.Context, planID string) (plans.Allocation, bool, error) {
+func (p planAllocations) AllocationOf(ctx context.Context, planID string) (plan.Allocation, bool, error) {
 	found, allocated, err := p.budgets.AllocationOf(ctx, planID)
 	if err != nil || !allocated {
-		return plans.Allocation{}, false, err
+		return plan.Allocation{}, false, err
 	}
-	return plans.Allocation{
+	return plan.Allocation{
 		ID: found.Allocation.ID, GlobalBudgetID: found.GlobalBudget.ID, GlobalBudgetName: found.GlobalBudget.Name,
 		OwnerID: found.GlobalBudget.OwnerID, Amount: found.Allocation.Amount, CanOpen: found.CanOpen,
 	}, true, nil

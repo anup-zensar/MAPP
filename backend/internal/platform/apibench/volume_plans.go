@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"slices"
 
-	"mapp/internal/activities"
-	"mapp/internal/campaigns"
-	"mapp/internal/lineitems"
+	"mapp/internal/activity"
+	"mapp/internal/campaign"
+	"mapp/internal/lineitem"
 	"mapp/internal/people"
 )
 
@@ -120,8 +120,8 @@ func (v *volume) moveToGlobalTeam(planID string) {
 	})
 }
 
-func (v *volume) fullest(list []activities.Activity) activities.Activity {
-	var fullest activities.Activity
+func (v *volume) fullest(list []activity.Activity) activity.Activity {
+	var fullest activity.Activity
 	most := -1
 	for _, a := range list {
 		items, err := v.set.LineItems.ListByActivity(v.ctx, a.ID)
@@ -145,13 +145,13 @@ func (v *volume) planNamed(name string) string {
 	return ""
 }
 
-func (v *volume) campaignsOf(planID string) []campaigns.Campaign {
+func (v *volume) campaignsOf(planID string) []campaign.Campaign {
 	list, err := v.set.Campaigns.CampaignsOfPlan(v.ctx, planID)
 	v.must(err)
 	return list
 }
 
-func (v *volume) initiativesOf(planID string) []campaigns.Initiative {
+func (v *volume) initiativesOf(planID string) []campaign.Initiative {
 	var campaignIDs []string
 	for _, c := range v.campaignsOf(planID) {
 		campaignIDs = append(campaignIDs, c.ID)
@@ -161,7 +161,7 @@ func (v *volume) initiativesOf(planID string) []campaigns.Initiative {
 	return list
 }
 
-func (v *volume) activitiesOf(planID string) []activities.Activity {
+func (v *volume) activitiesOf(planID string) []activity.Activity {
 	var initiativeIDs []string
 	for _, i := range v.initiativesOf(planID) {
 		initiativeIDs = append(initiativeIDs, i.ID)
@@ -171,7 +171,7 @@ func (v *volume) activitiesOf(planID string) []activities.Activity {
 	return list
 }
 
-func (v *volume) lineItemsOf(planID string) []lineitems.LineItem {
+func (v *volume) lineItemsOf(planID string) []lineitem.LineItem {
 	var activityIDs []string
 	for _, a := range v.activitiesOf(planID) {
 		activityIDs = append(activityIDs, a.ID)

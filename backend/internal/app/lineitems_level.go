@@ -5,8 +5,8 @@ import (
 	"maps"
 	"slices"
 
-	"mapp/internal/lineitems"
-	"mapp/internal/plans"
+	"mapp/internal/lineitem"
+	"mapp/internal/plan"
 	"mapp/internal/platform/errs"
 	"mapp/internal/stores"
 )
@@ -17,10 +17,10 @@ const lineItemKind = "lineItem"
 // lineItemLevel is the line-item level of feature 004's registry: how many line items each plan has and
 // those still incomplete, below the plan's activities, and their copies in a plan copy (the line items of
 // every activity the activity level copied, each copied once).
-func lineItemLevel(svc *lineitems.Service, activitiesRepo stores.ActivityStore, campaignsRepo stores.CampaignStore) plans.Level {
-	return plans.Level{
+func lineItemLevel(svc *lineitem.Service, activitiesRepo stores.ActivityStore, campaignsRepo stores.CampaignStore) plan.Level {
+	return plan.Level{
 		Name: lineItemKind,
-		AddFacts: func(ctx context.Context, planIDs []string, facts map[string]*plans.Facts) error {
+		AddFacts: func(ctx context.Context, planIDs []string, facts map[string]*plan.Facts) error {
 			for _, planID := range planIDs {
 				activityIDs, err := activitiesOfPlan(ctx, planID, activitiesRepo, campaignsRepo)
 				if err != nil {
@@ -30,7 +30,7 @@ func lineItemLevel(svc *lineitems.Service, activitiesRepo stores.ActivityStore, 
 				if err != nil {
 					return err
 				}
-				var attention []plans.AttentionItem
+				var attention []plan.AttentionItem
 				for _, id := range activityIDs { // in the activities' order
 					s, found := summaries[id]
 					if !found {
@@ -38,7 +38,7 @@ func lineItemLevel(svc *lineitems.Service, activitiesRepo stores.ActivityStore, 
 					}
 					facts[planID].LineItems += s.Count
 					for _, item := range s.Incomplete {
-						attention = append(attention, plans.AttentionItem{
+						attention = append(attention, plan.AttentionItem{
 							Record:  errs.RecordRef{Type: lineItemKind, ID: item.LineItemID, Name: item.LineItemName},
 							Missing: item.Missing,
 						})
@@ -48,7 +48,7 @@ func lineItemLevel(svc *lineitems.Service, activitiesRepo stores.ActivityStore, 
 			}
 			return nil
 		},
-		Copy: func(ctx context.Context, job *plans.CopyJob) error {
+		Copy: func(ctx context.Context, job *plan.CopyJob) error {
 			newIDs, err := svc.CopyForActivities(ctx, job.Actor, job.NewIDs, job.Years)
 			if err != nil {
 				return err

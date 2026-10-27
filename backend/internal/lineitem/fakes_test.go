@@ -1,0 +1,271 @@
+package lineitem
+
+import (
+	"context"
+	"encoding/json"
+	"slices"
+
+	"mapp/internal/history"
+	"mapp/internal/people"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
+)
+
+// fakeActivities are the activities of these tests; RestartApproval sets Created and records the call.
+type fakeActivities struct {
+	facts    map[string]ActivityFacts
+	restarts []restartCall
+}
+
+// restartCall is one call of RestartApproval.
+type restartCall struct {
+	activityID string
+	reasons    []string
+}
+
+// newFakeActivities returns the activities of these tests.
+func newFakeActivities() *fakeActivities {
+	planned := func(s string) *money.Amount { a := amount(s); return &a }
+	path := []errs.RecordRef{
+		{Type: "plan", ID: "P-1001", Name: "FY2026 Lubricants Europe"},
+		{Type: "campaign", ID: "C-1001", Name: "Helix launch"},
+		{Type: "initiative", ID: "I-1001", Name: "Digital & social"},
+	}
+	lubricants := func(f ActivityFacts) ActivityFacts {
+		f.Path, f.PlanYear, f.DefaultSpread, f.DefaultFinanceBudget = path, 2026, SpreadEvenly, "2026 Lubricants Budget"
+		return f
+	}
+	return &fakeActivities{facts: map[string]ActivityFacts{
+		launchFilm: lubricants(ActivityFacts{ID: launchFilm, Name: "Launch film", OwnerID: priya.ID, Status: "created",
+			StartDate: day("2026-03-01"), EndDate: day("2026-05-31"), PlannedCost: planned("120000.00")}),
+		socialOnAir: lubricants(ActivityFacts{ID: socialOnAir, Name: "Social always-on", OwnerID: priya.ID, Status: "approved",
+			StartDate: day("2026-01-01"), EndDate: day("2026-06-30"), PlannedCost: planned("80000.00")}),
+		tradeAds: lubricants(ActivityFacts{ID: tradeAds, Name: "Trade magazine ads", OwnerID: priya.ID, Status: "submitted",
+			StartDate: day("2026-04-01"), EndDate: day("2026-09-30"), PlannedCost: planned("30000.00")}),
+		partnerFund: lubricants(ActivityFacts{ID: partnerFund, Name: "Partner co-marketing fund", OwnerID: priya.ID,
+			Status: "approved", StartDate: day("2026-03-01"), Ongoing: true, PlannedCost: planned("100000.00")}),
+		lunarPromo: lubricants(ActivityFacts{ID: lunarPromo, Name: "Lunar new year promo", Status: "created"}),
+		retailEvent: {ID: retailEvent, Name: "Retail event", OwnerID: daniel.ID, Status: "created", Path: path,
+			StartDate: day("2026-06-01"), EndDate: day("2026-06-30"), PlannedCost: planned("5000.00"),
+			PlanYear: 2026, DefaultSpread: SpreadLastMonth, DefaultFinanceBudget: "2026 Retail Budget"},
+	}}
+}
+
+// Facts returns the facts of the activity id.
+func (f *fakeActivities) Facts(_ context.Context, id string) (ActivityFacts, bool, error) {
+	facts, found := f.facts[id]
+	return facts, found, nil
+}
+
+func (f *fakeActivities) FactsOf(ctx context.Context, activityIDs []string) (map[string]ActivityFacts, error) {
+	found := map[string]ActivityFacts{}
+	for _, id := range activityIDs {
+		if facts, stored, _ := f.Facts(ctx, id); stored {
+			found[id] = facts
+		}
+	}
+	return found, nil
+}
+
+// RestartApproval records the call and sets the activity to Created.
+func (f *fakeActivities) RestartApproval(_ context.Context, _ actor.Actor, id string, reasons []string) error {
+	f.restarts = append(f.restarts, restartCall{activityID: id, reasons: reasons})
+	facts := f.facts[id]
+	facts.Status = "created"
+	f.facts[id] = facts
+	return nil
+}
+
+// kind is a history kind "activity" over the fake activities, top level, as 006's would be.
+func (f *fakeActivities) kind() history.Kind {
+	return history.Kind{
+		Name: activityKind, Singular: "activity", Plural: "activities",
+		Snapshot: func(_ context.Context, id string) (history.Snapshot, bool, error) {
+			facts, found := f.facts[id]
+			if !found {
+				return history.Snapshot{}, false, nil
+			}
+			data, err := json.Marshal(facts)
+			return history.Snapshot{ID: id, Name: facts.Name, Data: data}, true, err
+		},
+		Remove: func(_ context.Context, id string) error {
+			delete(f.facts, id)
+			return nil
+		},
+		Put: func(_ context.Context, s history.Snapshot) error {
+			var facts ActivityFacts
+			if err := json.Unmarshal(s.Data, &facts); err != nil {
+				return err
+			}
+			f.facts[s.ID] = facts
+			return nil
+		},
+	}
+}
+
+// fakeCurrencies are the seeded currencies: USD 1, EUR 0.92, GBP 0.79, CNY 7.10, INR 83.50 (inactive).
+type fakeCurrencies struct {
+	byCode map[string]settings.Currency
+}
+
+// newFakeCurrencies returns the currencies of these tests.
+func newFakeCurrencies() *fakeCurrencies {
+	c := &fakeCurrencies{byCode: map[string]settings.Currency{}}
+	for _, x := range []struct {
+		code, name, symbol, rate string
+		active                   bool
+	}{
+		{"USD", "US dollar", "$", "1", true}, {"EUR", "Euro", "€", "0.92", true}, {"GBP", "Pound sterling", "£", "0.79", true},
+		{"CNY", "Chinese yuan", "¥", "7.10", true}, {"INR", "Indian rupee", "₹", "83.50", false},
+	} {
+		rate, err := money.ParseRate(x.rate)
+		if err != nil {
+			panic(err)
+		}
+		c.byCode[x.code] = settings.Currency{Code: x.code, Name: x.name, Symbol: x.symbol, Rate: rate, Active: x.active}
+	}
+	return c
+}
+
+// setRate changes the rate of code, as an administrator does in Settings.
+func (c *fakeCurrencies) setRate(code, rate string) {
+	parsed, err := money.ParseRate(rate)
+	if err != nil {
+		panic(err)
+	}
+	currency := c.byCode[code]
+	currency.Rate = parsed
+	c.byCode[code] = currency
+}
+
+// Currency returns the currency with code.
+func (c *fakeCurrencies) Currency(_ context.Context, code string) (settings.Currency, bool, error) {
+	currency, found := c.byCode[code]
+	return currency, found, nil
+}
+
+// Currencies returns every currency, by code.
+func (c *fakeCurrencies) Currencies(_ context.Context) ([]settings.Currency, error) {
+	list := []settings.Currency{}
+	for _, code := range []string{"CNY", "EUR", "GBP", "INR", "USD"} {
+		list = append(list, c.byCode[code])
+	}
+	return list, nil
+}
+
+// Rates returns every currency's rate (016).
+func (c *fakeCurrencies) Rates(_ context.Context) (money.Rates, error) {
+	rates := money.Rates{}
+	for code, currency := range c.byCode {
+		rates[code] = currency.Rate
+	}
+	return rates, nil
+}
+
+// CurrentRates returns every currency's rate, dated 19 Oct 2026 and imported from GSAP but USD (016 FR-009).
+func (c *fakeCurrencies) CurrentRates(_ context.Context) ([]settings.RateInfo, error) {
+	infos := []settings.RateInfo{}
+	day, source := date.MustParse("2026-10-19"), settings.RateGSAPImport
+	for _, code := range []string{"USD", "CNY", "EUR", "GBP", "INR"} {
+		info := settings.RateInfo{Currency: code, Rate: c.byCode[code].Rate}
+		if code != "USD" {
+			info.RateDate, info.Source = &day, &source
+		}
+		infos = append(infos, info)
+	}
+	return infos, nil
+}
+
+// budgetItems are the finance budget items of these tests; 2027 has none.
+var budgetItems = []BudgetItem{
+	{ID: europeDigital, Year: 2026, BudgetName: "2026 Lubricants Budget", Name: "Europe – Digital", Code: "LUB-EU-DIG", Active: true},
+	{ID: europeEvents, Year: 2026, BudgetName: "2026 Lubricants Budget", Name: "Europe – Events", Code: "LUB-EU-EVT", Active: true},
+	{ID: europeBrand, Year: 2026, BudgetName: "2026 Lubricants Budget", Name: "Europe – Brand", Code: "LUB-EU-BRD", Active: true},
+	{ID: europeLegacy, Year: 2026, BudgetName: "2026 Lubricants Budget", Name: "Europe – Legacy", Code: "LUB-EU-LEG", Active: false},
+	{ID: onlyItem, Year: 2026, BudgetName: "2026 Retail Budget", Name: "Retail – All", Code: "RET-ALL", Active: true},
+	{ID: lastYearItem, Year: 2025, BudgetName: "2025 Lubricants Budget", Name: "Europe – Digital", Code: "LUB-EU-DIG", Active: true},
+}
+
+// fakeBudgets are the finance budget items of these tests.
+type fakeBudgets struct{}
+
+// Item returns the item with id.
+func (fakeBudgets) Item(_ context.Context, id string) (BudgetItem, bool, error) {
+	i := slices.IndexFunc(budgetItems, func(item BudgetItem) bool { return item.ID == id })
+	if i < 0 {
+		return BudgetItem{}, false, nil
+	}
+	return budgetItems[i], true, nil
+}
+
+// Items returns every item.
+func (fakeBudgets) Items(context.Context) ([]BudgetItem, error) {
+	return slices.Clone(budgetItems), nil
+}
+
+// fakeAttributes stand for feature 002's attribute rules: Spend type and GL code are needed to submit; the
+// GL code "SO-1299" never fits the spend type; problems adds any other problems.
+type fakeAttributes struct {
+	problems []errs.FieldError
+}
+
+// glCodeMismatch is 002's message for a GL code that doesn't fit the spend type (R11).
+const glCodeMismatch = "'7250080 – Advertising digital' doesn't belong to the chosen spend type — choose another GL code."
+
+// Check returns the values without empty ones, and the problems.
+func (x *fakeAttributes) Check(_ context.Context, in settings.AttributeInput) (settings.AttributeResult, error) {
+	result := settings.AttributeResult{Problems: slices.Clone(x.problems), Values: settings.AttributeValues{}}
+	for id, value := range in.Values {
+		if string(value) == `"SO-1299"` {
+			result.Problems = append(result.Problems, errs.FieldError{Field: "attributes." + id, Message: glCodeMismatch})
+		}
+		if len(value) > 0 && string(value) != "null" && string(value) != `""` {
+			result.Values[id] = value
+		}
+	}
+	return result, nil
+}
+
+// Missing lists Spend type and GL code when they have no value.
+func (x *fakeAttributes) Missing(_ context.Context, values settings.AttributeValues, _ []string) ([]settings.MissingField, error) {
+	missing := []settings.MissingField{}
+	for _, attr := range []struct{ id, label string }{{spendType, "Spend type"}, {glCode, "GL code"}} {
+		if _, filled := values[attr.id]; !filled {
+			missing = append(missing, settings.MissingField{Field: "attributes." + attr.id, Label: attr.label})
+		}
+	}
+	return missing, nil
+}
+
+// Describe gives the attribute's label and the option's id in words.
+func (x *fakeAttributes) Describe(_ context.Context, field string, value any) (string, string, error) {
+	labels := map[string]string{"attributes." + spendType: "Spend type", "attributes." + glCode: "GL code"}
+	options := map[any]string{"SO-1101": "Digital – Platform development", "SO-1201": "7250080 – Advertising digital",
+		"SO-1202": "7250040 – Events and sponsorship"}
+	return labels[field], options[value], nil
+}
+
+// fakePeople are the people of these tests; Sam Former is inactive.
+type fakePeople struct{}
+
+// Person returns the person with id.
+func (fakePeople) Person(_ context.Context, id string) (people.PersonRef, bool, error) {
+	all := map[string]people.PersonRef{
+		priya.ID:  {ID: priya.ID, Name: priya.Name, Initials: "PR", JobTitle: "Marketer", Active: true},
+		daniel.ID: {ID: daniel.ID, Name: daniel.Name, Initials: "DO", JobTitle: "Marketing team leader", Active: true},
+		"U-1009":  {ID: "U-1009", Name: "Sam Former", Initials: "SF", JobTitle: "Marketer", Active: false},
+	}
+	person, found := all[id]
+	return person, found, nil
+}
+
+// DisplayRateOf returns Lena's display currency, EUR at 0.92; everyone else shows USD.
+func (fakePeople) DisplayRateOf(_ context.Context, personID string) (people.DisplayRate, error) {
+	if personID == lena.ID {
+		return people.DisplayRate{Code: "EUR", Rate: "0.92"}, nil
+	}
+	return people.DisplayRate{Code: "USD", Rate: "1"}, nil
+}

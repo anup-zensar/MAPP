@@ -7,13 +7,13 @@ import (
 	"maps"
 	"slices"
 
-	"mapp/internal/activities"
-	"mapp/internal/approvals"
-	"mapp/internal/campaigns"
+	"mapp/internal/activity"
+	"mapp/internal/approval"
+	"mapp/internal/campaign"
 	"mapp/internal/history"
-	"mapp/internal/lineitems"
+	"mapp/internal/lineitem"
 	"mapp/internal/people"
-	"mapp/internal/plans"
+	"mapp/internal/plan"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/settings"
@@ -124,40 +124,40 @@ func snapshotReference(s history.Snapshot, planID string) (settings.Reference, b
 	}
 	switch s.Kind {
 	case "campaign":
-		var c campaigns.Campaign
+		var c campaign.Campaign
 		err := decode(&c)
 		return campaignReference(c, true), err == nil, err
 	case "initiative":
-		var i campaigns.Initiative
+		var i campaign.Initiative
 		err := decode(&i)
 		return initiativeReference(i, planID, true), err == nil, err
 	case "activity":
-		var a activities.Activity
+		var a activity.Activity
 		err := decode(&a)
 		return activityReference(a, planID, true), err == nil, err
 	case "lineItem":
-		var li lineitems.LineItem
+		var li lineitem.LineItem
 		err := decode(&li)
 		return lineItemReference(li, planID, true), err == nil, err
 	}
 	return settings.Reference{}, false, nil
 }
 
-func campaignReference(c campaigns.Campaign, inBin bool) settings.Reference {
+func campaignReference(c campaign.Campaign, inBin bool) settings.Reference {
 	return settings.Reference{
 		Record: history.RecordRef{Type: "campaign", ID: c.ID, Name: c.Name}, InBin: inBin,
 		Level: settings.LevelCampaign, PlanID: c.PlanID, Attributes: c.Attributes,
 	}
 }
 
-func initiativeReference(i campaigns.Initiative, planID string, inBin bool) settings.Reference {
+func initiativeReference(i campaign.Initiative, planID string, inBin bool) settings.Reference {
 	return settings.Reference{
 		Record: history.RecordRef{Type: "initiative", ID: i.ID, Name: i.Name}, InBin: inBin,
 		Level: settings.LevelInitiative, PlanID: planID, Attributes: i.Attributes,
 	}
 }
 
-func activityReference(a activities.Activity, planID string, inBin bool) settings.Reference {
+func activityReference(a activity.Activity, planID string, inBin bool) settings.Reference {
 	return settings.Reference{
 		Record: history.RecordRef{Type: "activity", ID: a.ID, Name: a.Name}, InBin: inBin,
 		Level: settings.LevelActivity, PlanID: planID, ActivityID: a.ID, Attributes: a.Attributes,
@@ -165,7 +165,7 @@ func activityReference(a activities.Activity, planID string, inBin bool) setting
 	}
 }
 
-func lineItemReference(li lineitems.LineItem, planID string, inBin bool) settings.Reference {
+func lineItemReference(li lineitem.LineItem, planID string, inBin bool) settings.Reference {
 	planned := li.PlannedCost
 	return settings.Reference{
 		Record: history.RecordRef{Type: "lineItem", ID: li.ID, Name: li.Name}, InBin: inBin,
@@ -177,7 +177,7 @@ func lineItemReference(li lineitems.LineItem, planID string, inBin bool) setting
 // planReferences is Settings' ReferenceSource of plans (004): every plan, stored and in the recycle bin,
 // with its model, default finance budget, Shell attribute values, and its plan currency with its budget in it
 // (016: "Plan currency of n plans", FR-010; the rate impact, FR-005).
-func planReferences(svc *plans.Service) settings.ReferenceSource {
+func planReferences(svc *plan.Service) settings.ReferenceSource {
 	return func(ctx context.Context) ([]settings.Reference, error) {
 		list, err := svc.References(ctx, actor.System)
 		if err != nil {
@@ -214,7 +214,7 @@ func personReferences(svc *people.Service) settings.ReferenceSource {
 
 // planUses is people's PlanSource (004): every plan, stored and in the recycle bin, with its owner and
 // teams.
-func planUses(svc *plans.Service) people.PlanSource {
+func planUses(svc *plan.Service) people.PlanSource {
 	return func(ctx context.Context) ([]people.PlanUse, error) {
 		list, err := svc.References(ctx, actor.System)
 		if err != nil {
@@ -245,8 +245,8 @@ func personUsages(campaignsRepo stores.CampaignStore, activitiesRepo stores.Acti
 		{Role: "approver", RecordType: "approvalWorkflow", Singular: "approval workflow", Plural: "approval workflows",
 			Count: func(ctx context.Context, personID string) (int, error) {
 				list, err := approvalsRepo.ListWorkflows(ctx)
-				return countWhere(list, err, func(w approvals.Workflow) bool {
-					return slices.ContainsFunc(w.Levels, func(l approvals.Level) bool { return slices.Contains(l.ApproverIDs, personID) })
+				return countWhere(list, err, func(w approval.Workflow) bool {
+					return slices.ContainsFunc(w.Levels, func(l approval.Level) bool { return slices.Contains(l.ApproverIDs, personID) })
 				})
 			}},
 	}

@@ -3,17 +3,17 @@ package app
 import (
 	"context"
 
-	"mapp/internal/activities"
+	"mapp/internal/activity"
 	"mapp/internal/allwork"
-	"mapp/internal/approvals"
-	"mapp/internal/budgets"
-	"mapp/internal/campaigns"
+	"mapp/internal/approval"
+	"mapp/internal/budget"
+	"mapp/internal/campaign"
 	"mapp/internal/financials"
 	"mapp/internal/history"
 	"mapp/internal/home"
-	"mapp/internal/lineitems"
-	"mapp/internal/plans"
-	"mapp/internal/samples"
+	"mapp/internal/lineitem"
+	"mapp/internal/plan"
+	"mapp/internal/sample"
 	"mapp/internal/settings"
 )
 
@@ -58,11 +58,11 @@ func (w *wiring) rates() error {
 
 func (w *wiring) plansArea() error {
 	tools := history.Tools{Tx: w.set.Tx, IDs: w.generator, Log: w.history, Now: w.now}
-	w.plans = plans.NewService(tools, w.set.Plans, w.settings, w.people)
+	w.plans = plan.NewService(tools, w.set.Plans, w.settings, w.people)
 	if err := w.register(w.plans.Kinds()); err != nil {
 		return err
 	}
-	mount(w.signedIn, plans.NewHandler(w.plans))
+	mount(w.signedIn, plan.NewHandler(w.plans))
 	w.history.UseAccess(historyAccess{plans: w.set.Plans, history: w.history})
 	return nil
 }
@@ -74,18 +74,18 @@ func (w *wiring) planningArea() error {
 	if err := w.planningKinds(); err != nil {
 		return err
 	}
-	mount(w.signedIn, campaigns.NewHandler(w.campaigns), activities.NewHandler(w.activities),
-		lineitems.NewHandler(w.lineItems))
+	mount(w.signedIn, campaign.NewHandler(w.campaigns), activity.NewHandler(w.activities),
+		lineitem.NewHandler(w.lineItems))
 	return nil
 }
 
 func (w *wiring) buildActivities() {
 	s := w.set
-	w.activities = activities.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}, s.Activities, activities.Deps{
+	w.activities = activity.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}, s.Activities, activity.Deps{
 		Plans: s.Plans, Hierarchy: s.Campaigns, Settings: w.settings, People: s.People,
 		Workflows: activityWorkflows{repo: s.Approvals},
 	})
-	w.lineItems = lineitems.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}, s.LineItems, lineitems.Deps{
+	w.lineItems = lineitem.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}, s.LineItems, lineitem.Deps{
 		Activities: lineItemActivities{
 			activities: s.Activities, campaigns: s.Campaigns, plans: s.Plans, settings: w.settings, service: w.activities,
 		},
@@ -97,7 +97,7 @@ func (w *wiring) buildActivities() {
 }
 
 func (w *wiring) buildCampaigns() {
-	w.campaigns = campaigns.NewService(history.Tools{Tx: w.set.Tx, IDs: w.generator, Log: w.history, Now: w.now}, w.set.Campaigns, campaigns.Deps{
+	w.campaigns = campaign.NewService(history.Tools{Tx: w.set.Tx, IDs: w.generator, Log: w.history, Now: w.now}, w.set.Campaigns, campaign.Deps{
 		Plans: campaignPlans{repo: w.set.Plans}, People: w.set.People, Settings: w.settings,
 		Activities: activitiesForCampaigns{svc: w.activities},
 	})
@@ -117,7 +117,7 @@ func (w *wiring) planningKinds() error {
 	return nil
 }
 
-func (w *wiring) planLevels() []plans.Level {
+func (w *wiring) planLevels() []plan.Level {
 	return append(campaignLevels(w.campaigns), activityLevel(w.activities, w.set.Activities, w.set.Campaigns),
 		lineItemLevel(w.lineItems, w.set.Activities, w.set.Campaigns))
 }
@@ -125,7 +125,7 @@ func (w *wiring) planLevels() []plans.Level {
 // budgetsArea comes after the planning kinds: an allocation is a child of its plan, which takes it along.
 func (w *wiring) budgetsArea() error {
 	tools := history.Tools{Tx: w.set.Tx, IDs: w.generator, Log: w.history, Now: w.now}
-	budgetsService := budgets.NewService(tools, w.set.Budgets, budgets.Deps{
+	budgetsService := budget.NewService(tools, w.set.Budgets, budget.Deps{
 		Plans:     budgetPlans{plans: w.plans, repo: w.set.Plans, rates: w.settings.Rates},
 		Directory: w.people, Rates: w.settings, Access: budgetAccess{access: w.access},
 	})
@@ -133,7 +133,7 @@ func (w *wiring) budgetsArea() error {
 		return err
 	}
 	w.plans.UseAllocations(planAllocations{budgets: budgetsService})
-	mount(w.signedIn, budgets.NewHandler(budgetsService))
+	mount(w.signedIn, budget.NewHandler(budgetsService))
 	return nil
 }
 
@@ -142,18 +142,18 @@ func (w *wiring) samplesArea() error {
 		return nil
 	}
 	tools := history.Tools{Tx: w.set.Tx, IDs: w.generator, Log: w.history, Now: w.now}
-	samplesService := samples.NewService(tools, w.set.Samples)
+	samplesService := sample.NewService(tools, w.set.Samples)
 	if err := w.register(samplesService.Kinds()); err != nil {
 		return err
 	}
-	mount(w.signedIn, samples.NewHandler(samplesService))
+	mount(w.signedIn, sample.NewHandler(samplesService))
 	return nil
 }
 
 func (w *wiring) approvalsArea() error {
 	s := w.set
 	tools := history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}
-	w.approvals = approvals.NewService(tools, s.Approvals, s.People, &approvalsActivities{
+	w.approvals = approval.NewService(tools, s.Approvals, s.People, &approvalsActivities{
 		activities: s.Activities, lineItems: s.LineItems, campaigns: s.Campaigns, plans: s.Plans, settings: s.Settings,
 		rates: w.settings.Rates, check: w.activities.SubmitCheck, now: w.now,
 	})
@@ -162,7 +162,7 @@ func (w *wiring) approvalsArea() error {
 	}
 	w.connectApprovals()
 	w.accessTargets()
-	mount(w.signedIn, approvals.NewHandler(w.approvals))
+	mount(w.signedIn, approval.NewHandler(w.approvals))
 	return nil
 }
 
