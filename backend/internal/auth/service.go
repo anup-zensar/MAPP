@@ -14,12 +14,10 @@ import (
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/clock"
 	"mapp/internal/platform/errs"
-	"mapp/internal/platform/store"
 )
 
-// Service holds the rules of demo sign-in and sessions (research R6).
 type Service struct {
-	tx           store.Transactor
+	tx           Transactor
 	repo         Store
 	people       People
 	demoMode     bool
@@ -27,39 +25,29 @@ type Service struct {
 	now          clock.Clock
 }
 
-// Options are how sign-in is set up.
 type Options struct {
-	DemoMode     bool   // demo sign-in is on only in the local and development environments (FR-009)
-	DemoPassword string // the password all demo people share
+	DemoMode     bool
+	DemoPassword string
 	Now          clock.Clock
 }
 
-// NewService returns the sign-in service. It keeps sessions in repo, finds people in peopleRepo and works
-// in transactions of tx.
-func NewService(tx store.Transactor, repo Store, peopleRepo People, opts Options) *Service {
+func NewService(tx Transactor, repo Store, peopleRepo People, opts Options) *Service {
 	return &Service{
 		tx: tx, repo: repo, people: peopleRepo, demoMode: opts.DemoMode, demoPassword: opts.DemoPassword,
 		now: opts.Now,
 	}
 }
 
-// DemoMode reports whether demo sign-in is on (FR-009).
 func (s *Service) DemoMode() bool {
 	return s.demoMode
 }
 
-// DemoPassword returns the password all demo people share. The sign-in page shows it openly, because all
-// demo data is fictitious (FR-002, D-004).
+// DemoPassword is shown openly on the sign-in page: all demo data is fictitious.
 func (s *Service) DemoPassword() string {
 	return s.demoPassword
 }
 
-// SignIn signs a demo person in (FR-003) and returns the token of the new session, for the browser's
-// cookie, and the person. The e-mail must belong to an active person, ignoring letter case and surrounding
-// spaces, and the password must be the demo password exactly. It takes no actor: it is what creates one.
-//
-// oldToken is the token of the session this browser had, or "": that session ends, and so does every
-// expired session of anyone, so old sessions do not pile up.
+// SignIn ends oldToken's session and every expired one of anyone, so old sessions do not pile up.
 func (s *Service) SignIn(ctx context.Context, email, password, oldToken string) (string, people.Person, error) {
 	email = strings.ToLower(strings.TrimSpace(email)) // e-mails are stored in lower case
 	var problems errs.Problems
@@ -70,7 +58,7 @@ func (s *Service) SignIn(ctx context.Context, email, password, oldToken string) 
 		problems.Add("password", "Enter the password")
 	}
 	if err := problems.Err(); err != nil {
-		return "", people.Person{}, err // every empty field at once (FR-004)
+		return "", people.Person{}, err
 	}
 
 	token := newToken()
@@ -93,15 +81,13 @@ func (s *Service) SignIn(ctx context.Context, email, password, oldToken string) 
 	return token, person, nil
 }
 
-// checkCredentials returns the active person with email when password is the demo password. Otherwise it
-// returns the same error whatever was wrong, so the answer never tells which e-mails exist (FR-004).
+// checkCredentials returns one error whatever was wrong, so the answer never tells which e-mails exist.
 func (s *Service) checkCredentials(ctx context.Context, email, password string) (people.Person, error) {
 	person, found, err := s.people.FindByEmail(ctx, email)
 	if err != nil {
 		return people.Person{}, err
 	}
-	// Compared in constant time, as passwords always should be: the time taken never hints at how much of
-	// the password was right.
+	// Constant time: the time taken never hints at how much of the password was right.
 	passwordRight := subtle.ConstantTimeCompare([]byte(password), []byte(s.demoPassword)) == 1
 	if !found || !person.Active || !passwordRight {
 		return people.Person{}, errs.IncorrectCredentials()
@@ -109,8 +95,6 @@ func (s *Service) checkCredentials(ctx context.Context, email, password string) 
 	return person, nil
 }
 
-// removeOldSessions deletes the session of oldToken, when there is one, and every session that has expired
-// by now.
 func (s *Service) removeOldSessions(ctx context.Context, oldToken string, now time.Time) error {
 	if oldToken != "" {
 		if err := s.repo.Delete(ctx, hashToken(oldToken)); err != nil {
@@ -131,8 +115,6 @@ func (s *Service) removeOldSessions(ctx context.Context, oldToken string, now ti
 	return nil
 }
 
-// SignOut ends the session of token (FR-006). It does nothing when token is "" or its session no longer
-// exists.
 func (s *Service) SignOut(ctx context.Context, token string) error {
 	if token == "" {
 		return nil
@@ -142,21 +124,14 @@ func (s *Service) SignOut(ctx context.Context, token string) error {
 	})
 }
 
-// Authenticate returns the person signed in with token, as the actor of the request (FR-007). It refuses
-// with sign_in_required when there is no such session or its person no longer exists or is inactive, and
-// with session_expired after more than 12 hours and 1 minute without a request (FR-006); a refused session
-// is deleted. A session in use gets its lastUsedAt moved forward, at most once a minute.
-//
-// All of it happens in one Write, so a session that is signed out at the same moment is never brought back
-// by the update of lastUsedAt.
+// Authenticate deletes a refused session, all in one Write: a session signed out meanwhile never comes back.
 func (s *Service) Authenticate(ctx context.Context, token string) (actor.Actor, error) {
 	if token == "" {
-		return actor.Actor{}, errs.SignInRequired() // no cookie: nothing to look up
+		return actor.Actor{}, errs.SignInRequired()
 	}
 
 	var a actor.Actor
-	// refusal says why the session cannot be used. It is returned after the Write, not from inside it,
-	// because an error returned from inside would undo the deletion of the refused session.
+	// refusal is returned after the Write: an error from inside it would undo the deletion of the session.
 	var refusal error
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
 		session, found, err := s.repo.Get(ctx, hashToken(token))
@@ -201,14 +176,13 @@ func (s *Service) Authenticate(ctx context.Context, token string) (actor.Actor, 
 	return a, nil
 }
 
-// newToken returns a new session token: 32 random bytes, written as base64url so they fit in a cookie.
+// newToken writes 32 random bytes as base64url, so they fit in a cookie.
 func newToken() string {
 	random := make([]byte, 32)
 	rand.Read(random) // never fails: Go stops the program when the system cannot give random bytes
 	return base64.RawURLEncoding.EncodeToString(random)
 }
 
-// hashToken returns the id under which the session of token is stored: the hex SHA-256 of the token.
 func hashToken(token string) string {
 	hash := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(hash[:])

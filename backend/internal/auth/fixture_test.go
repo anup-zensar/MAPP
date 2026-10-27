@@ -8,10 +8,11 @@ import (
 	"time"
 
 	"mapp/internal/people"
+	"mapp/internal/people/peopletest"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/fake"
 	"mapp/internal/platform/record"
-	"mapp/internal/platform/store"
 )
 
 var (
@@ -24,27 +25,21 @@ const demoPassword = "mapp"
 
 var start = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 
-// fixture is one test's service on a data folder of its own holding Priya, Daniel and Mei.
+// fixture is one test's service on a database of its own holding Priya, Daniel and Mei.
 type fixture struct {
 	service *Service
-	db      *store.DB
-	dir     string
+	db      *fake.DB
 	clock   *testClock
 }
 
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
-	dir := t.TempDir()
-	db, err := store.Open(dir)
-	if err != nil {
-		t.Fatalf("store.Open: %v", err)
-	}
+	db := fake.NewDB()
 	clock := &testClock{now: start}
 	f := &fixture{
-		service: NewService(db, NewJSONStore(), people.NewJSONStore(),
+		service: NewService(db, newFakeStore(db), peopletest.NewStore(db),
 			Options{DemoMode: true, DemoPassword: demoPassword, Now: clock.Now}),
 		db:    db,
-		dir:   dir,
 		clock: clock,
 	}
 	f.putPeople(t, priya, daniel, mei)
@@ -75,7 +70,7 @@ func (f *fixture) deactivate(t *testing.T, p people.Person) {
 
 func (f *fixture) putPeople(t *testing.T, list ...people.Person) {
 	t.Helper()
-	repo := people.NewJSONStore()
+	repo := peopletest.NewStore(f.db)
 	err := f.db.Write(t.Context(), func(ctx context.Context) error {
 		for _, p := range list {
 			if err := repo.Put(ctx, p); err != nil {
@@ -92,7 +87,7 @@ func (f *fixture) putPeople(t *testing.T, list ...people.Person) {
 func (f *fixture) putSession(t *testing.T, s Session) {
 	t.Helper()
 	err := f.db.Write(t.Context(), func(ctx context.Context) error {
-		return NewJSONStore().Put(ctx, s)
+		return newFakeStore(f.db).Put(ctx, s)
 	})
 	if err != nil {
 		t.Fatalf("Write: %v", err)
@@ -104,7 +99,7 @@ func (f *fixture) sessions(t *testing.T) []Session {
 	var list []Session
 	err := f.db.Read(t.Context(), func(ctx context.Context) error {
 		var err error
-		list, err = NewJSONStore().List(ctx)
+		list, err = newFakeStore(f.db).List(ctx)
 		return err
 	})
 	if err != nil {
