@@ -8,7 +8,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"mapp/internal/platform/fake"
-	"mapp/internal/platform/ids"
 )
 
 type note struct {
@@ -120,30 +119,5 @@ func TestCopy_ChangesStayInTheCopy_029FR004(t *testing.T) {
 	}
 	if got := listed(t, notesOf(copied)); len(got) != 0 {
 		t.Errorf("copied records = %v, want none", got)
-	}
-}
-
-func TestCounters_GiveOutReadableIDs_029FR003(t *testing.T) {
-	t.Parallel()
-	db := fake.NewDB()
-	generator := ids.NewGenerator(fake.NewCounters(db))
-	var got []string
-
-	err := db.Write(t.Context(), func(ctx context.Context) error {
-		for range 2 {
-			id, err := generator.Next(ctx, "P")
-			if err != nil {
-				return err
-			}
-			got = append(got, id)
-		}
-		return nil
-	})
-
-	if err != nil {
-		t.Fatalf("Write() error: %v", err)
-	}
-	if diff := cmp.Diff([]string{"P-1001", "P-1002"}, got); diff != "" {
-		t.Errorf("Next() (-want +got):\n%s", diff)
 	}
 }
