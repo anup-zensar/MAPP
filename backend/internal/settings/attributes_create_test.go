@@ -18,10 +18,7 @@ func TestCreateAttribute_ListedLastInSection_FR019(t *testing.T) {
 
 	created := f.createAttribute(t, mediaChannel())
 
-	if created.ID != "SA-1006" || created.Position != 4 || created.Marking != MarkingNeededToSubmit || created.OptionCount != 4 ||
-		created.ActiveOptionCount != 4 || !created.Active || created.Section != "Shell attributes" {
-		t.Errorf("created = %+v", created)
-	}
+	assertMediaChannelLast(t, created)
 	if got := f.activityLabels(t); !slices.Equal(got, []string{"Cluster", "Region", "Channel", "Media channel", "Brands"}) {
 		t.Errorf("activity attributes = %q", got)
 	}
@@ -36,9 +33,25 @@ func TestCreateAttribute_ListedLastInSection_FR019(t *testing.T) {
 	if last := shell[len(shell)-1]; last.Label != "Media channel" || last.Marking != MarkingNeededToSubmit || len(last.Options) != 4 {
 		t.Errorf("last on the form = %+v", last)
 	}
-	entries := f.logEntries(t)
-	if len(entries) != 1 || entries[0].Action != history.ActionCreated || entries[0].RecordType != "shellAttribute" ||
-		entries[0].RecordName != "Media channel" || entries[0].Details != "with 4 options" {
+	assertOneCreated(t, f.logEntries(t), history.Entry{RecordType: "shellAttribute", RecordName: "Media channel", Details: "with 4 options"})
+}
+
+// assertMediaChannelLast checks the attribute mediaChannel() created: active, needed to submit, with its four
+// options active, last in its section.
+func assertMediaChannelLast(t *testing.T, created ShellAttributeView) {
+	t.Helper()
+	if created.ID != "SA-1006" || created.Position != 4 || created.Marking != MarkingNeededToSubmit || created.OptionCount != 4 ||
+		created.ActiveOptionCount != 4 || !created.Active || created.Section != "Shell attributes" {
+		t.Errorf("created = %+v", created)
+	}
+}
+
+// assertOneCreated checks that the log holds one entry: the "created" entry of want's record, with want's
+// details.
+func assertOneCreated(t *testing.T, entries []history.Entry, want history.Entry) {
+	t.Helper()
+	if len(entries) != 1 || entries[0].Action != history.ActionCreated || entries[0].RecordType != want.RecordType ||
+		entries[0].RecordName != want.RecordName || entries[0].Details != want.Details {
 		t.Errorf("log = %+v", entries)
 	}
 }
@@ -182,8 +195,8 @@ func TestCreateAttribute_SplitOnlyActivityAndLineItem_FR017(t *testing.T) {
 func TestCreateAttribute_DependentNeedsEarlierChoiceParent_FR022(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
-	tf := shellForm(t, f)
-	tf = f.addAttributes(t, testAttribute{level: LevelActivity, label: "Notes", typ: TypeText})
+	shellForm(t, f)
+	tf := f.addAttributes(t, testAttribute{level: LevelActivity, label: "Notes", typ: TypeText})
 	china := tf.option(LevelActivity, "Cluster", "Retail – China")
 	area := func(parent string) ShellAttributeInput {
 		return ShellAttributeInput{Label: "Area", Level: "activity", Type: "singleChoice", Marking: "optional", ParentAttributeID: parent,

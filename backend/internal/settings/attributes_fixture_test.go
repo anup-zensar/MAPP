@@ -57,39 +57,14 @@ func (f *fixture) addAttributes(t *testing.T, list ...testAttribute) testForm {
 		if err != nil {
 			return err
 		}
-		positions := map[Level]int{}
-		for _, a := range existing {
-			positions[a.Level] = max(positions[a.Level], a.Position)
-			tf.attributes[string(a.Level)+"/"+a.Label] = a
-		}
 		options, err := repo.ListOptions(ctx)
 		if err != nil {
 			return err
 		}
-		for _, o := range options {
-			for _, a := range existing {
-				if a.ID == o.AttributeID {
-					tf.options[string(a.Level)+"/"+a.Label+"/"+o.Label] = o
-				}
-			}
-		}
+		positions := tf.addStored(existing, options)
 		for _, ta := range list {
 			positions[ta.level]++
-			a := Attribute{
-				ID: f.next(ctx, ids.PrefixShellAttribute), Label: ta.label, HelpText: ta.help, Level: ta.level, Type: ta.typ,
-				Marking: cmp.Or(ta.marking, MarkingOptional), Section: cmp.Or(ta.section, DefaultSection),
-				Position: positions[ta.level], Condition: []string{}, Role: ta.role, Active: !ta.inactive,
-				Meta: record.NewMeta(actor.System, start),
-			}
-			if ta.level == LevelPlan && ta.label == "Business unit" {
-				a.Role = RoleBusinessUnit
-			}
-			if ta.parent != "" {
-				a.ParentAttributeID = tf.attribute(ta.level, ta.parent).ID
-			}
-			for _, unit := range ta.condition {
-				a.Condition = append(a.Condition, tf.option(LevelPlan, "Business unit", unit))
-			}
+			a := tf.newAttribute(ta, f.next(ctx, ids.PrefixShellAttribute), positions[ta.level])
 			if err := repo.PutAttribute(ctx, a); err != nil {
 				return err
 			}
@@ -111,6 +86,43 @@ func (f *fixture) addAttributes(t *testing.T, list ...testAttribute) testForm {
 		return nil
 	})
 	return tf
+}
+
+// addStored adds the stored attributes and options to tf, and returns the last position of each level.
+func (tf testForm) addStored(existing []Attribute, options []Option) map[Level]int {
+	positions := map[Level]int{}
+	for _, a := range existing {
+		positions[a.Level] = max(positions[a.Level], a.Position)
+		tf.attributes[string(a.Level)+"/"+a.Label] = a
+	}
+	for _, o := range options {
+		for _, a := range existing {
+			if a.ID == o.AttributeID {
+				tf.options[string(a.Level)+"/"+a.Label+"/"+o.Label] = o
+			}
+		}
+	}
+	return positions
+}
+
+// newAttribute is the attribute ta with the id and position given, its parent and condition read from tf.
+func (tf testForm) newAttribute(ta testAttribute, id string, position int) Attribute {
+	a := Attribute{
+		ID: id, Label: ta.label, HelpText: ta.help, Level: ta.level, Type: ta.typ,
+		Marking: cmp.Or(ta.marking, MarkingOptional), Section: cmp.Or(ta.section, DefaultSection),
+		Position: position, Condition: []string{}, Role: ta.role, Active: !ta.inactive,
+		Meta: record.NewMeta(actor.System, start),
+	}
+	if ta.level == LevelPlan && ta.label == "Business unit" {
+		a.Role = RoleBusinessUnit
+	}
+	if ta.parent != "" {
+		a.ParentAttributeID = tf.attribute(ta.level, ta.parent).ID
+	}
+	for _, unit := range ta.condition {
+		a.Condition = append(a.Condition, tf.option(LevelPlan, "Business unit", unit))
+	}
+	return a
 }
 
 // shellForm stores the attributes most attribute tests start from: the plan's Business unit (Lubricants,

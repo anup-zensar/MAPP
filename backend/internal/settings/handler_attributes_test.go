@@ -140,11 +140,7 @@ func TestShellAttributesAPI_Create_FR016(t *testing.T) {
 	if len(after) != len(before)+1 {
 		t.Fatalf("%d activity attributes after, %d before", len(after), len(before))
 	}
-	for i, a := range after {
-		if a.ID == created.ID && (i+1 < len(after) && after[i+1].Section == "Shell attributes" || a.Section != "Shell attributes") {
-			t.Errorf("Media channel is not last in its section: %+v", after)
-		}
-	}
+	assertLastOfShellAttributes(t, after, created.ID)
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(
 		`{"field":"marking","message":"At activity level the marking is Optional or Needed to submit."},`+
 			`{"field":"label","message":"The Activity form already has a Shell attribute called 'Channel / audience'."},`+
@@ -279,4 +275,14 @@ func TestShellAttributesAPI_Delete_FR004(t *testing.T) {
 	assertAnswer(t, unit, http.StatusConflict, `{"error":{"code":"in_use","message":"Business unit can't be deleted, set inactive, moved or given `+
 		`another type, because other attributes are shown or hidden by it.","fields":[]}}`)
 	assertAnswer(t, gone, http.StatusNotFound, attributeGoneBody)
+}
+
+// assertLastOfShellAttributes checks that the attribute id comes last in the section "Shell attributes" of list.
+func assertLastOfShellAttributes(t *testing.T, list []listedAttribute, id string) {
+	t.Helper()
+	for i, a := range list {
+		if a.ID == id && (i+1 < len(list) && list[i+1].Section == "Shell attributes" || a.Section != "Shell attributes") {
+			t.Errorf("Media channel is not last in its section: %+v", list)
+		}
+	}
 }

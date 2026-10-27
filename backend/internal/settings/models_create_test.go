@@ -31,7 +31,7 @@ func TestCreateModel_ListedActive_FR009(t *testing.T) {
 		t.Errorf("created = %+v\nwant      %+v", created, want)
 	}
 	listed, err := f.service.ListModels(t.Context(), alex)
-	if err != nil || len(listed) != 1 || !reflect.DeepEqual(listed[0], want) {
+	if err != nil || !reflect.DeepEqual(listed, []ModelView{want}) {
 		t.Errorf("ListModels = %+v, %v", listed, err)
 	}
 	stored, _, _ := f.service.Model(t.Context(), created.ID)
@@ -105,6 +105,7 @@ func TestCreateModel_DealSizeAboveZeroUSD_FR009(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			input := modelInput("Model", event.ID)
 			input.AverageDealSize = tt.size
 			_, err := f.service.CreateModel(t.Context(), alex, input)

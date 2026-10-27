@@ -15,15 +15,6 @@ func TestFinanceAPI_ListYear_FR015(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
-	type budgetPage struct {
-		Items []struct {
-			Name            string
-			ActiveItemCount int
-			Items           []struct{ Name string }
-		}
-		Total, Year int
-		Years       []int
-	}
 	var current, next budgetPage
 	var item struct {
 		BudgetName string
@@ -37,11 +28,7 @@ func TestFinanceAPI_ListYear_FR015(t *testing.T) {
 	notANumber := alex.Do(t, http.MethodGet, "/api/v1/finance-budgets?year=next", nil, apitest.SkipRequestValidation())
 	gone := alex.Do(t, http.MethodGet, "/api/v1/finance-budget-items/FBI-9999", nil)
 
-	if current.Year != 2026 || current.Total != 2 || current.Items[0].Name != "2026 Lubricants Budget" ||
-		current.Items[0].ActiveItemCount != 3 || current.Items[0].Items[0].Name != "Europe – Brand" ||
-		!slices.Equal(current.Years, []int{2025, 2026, 2027, 2028, 2029, 2030, 2031}) {
-		t.Errorf("2026 = %+v", current)
-	}
+	assertBudgets2026(t, current)
 	if next.Year != 2027 || next.Total != 0 || next.Items == nil {
 		t.Errorf("2027 = %+v", next)
 	}
@@ -52,6 +39,28 @@ func TestFinanceAPI_ListYear_FR015(t *testing.T) {
 		t.Errorf("year=next = %d %s", notANumber.Status, notANumber.Body)
 	}
 	assertAnswer(t, gone, http.StatusNotFound, itemGoneBody)
+}
+
+// budgetPage is the part of a finance budget list these tests read.
+type budgetPage struct {
+	Items []struct {
+		Name            string
+		ActiveItemCount int
+		Items           []struct{ Name string }
+	}
+	Total, Year int
+	Years       []int
+}
+
+// assertBudgets2026 checks the demo's budgets of 2026: two, the Lubricants budget first with its three
+// active items, and the years 2025 to 2031.
+func assertBudgets2026(t *testing.T, current budgetPage) {
+	t.Helper()
+	if current.Year != 2026 || current.Total != 2 || current.Items[0].Name != "2026 Lubricants Budget" ||
+		current.Items[0].ActiveItemCount != 3 || current.Items[0].Items[0].Name != "Europe – Brand" ||
+		!slices.Equal(current.Years, []int{2025, 2026, 2027, 2028, 2029, 2030, 2031}) {
+		t.Errorf("2026 = %+v", current)
+	}
 }
 
 // Bodies of the finance tests.
