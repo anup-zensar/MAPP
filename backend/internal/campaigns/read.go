@@ -111,3 +111,23 @@ func (s *Service) treeOf(ctx context.Context, planID, notFound string) (PlanCamp
 	}
 	return s.planCampaigns(ctx, plan)
 }
+
+// campaignAndPlan reads the campaign id and its plan inside the caller's transaction; a campaign that is
+// gone, or whose plan is gone, is not found.
+func (s *Service) campaignAndPlan(ctx context.Context, id string) (Campaign, PlanFacts, error) {
+	c, found, err := s.repo.GetCampaign(ctx, id)
+	if err != nil {
+		return Campaign{}, PlanFacts{}, err
+	}
+	if !found {
+		return Campaign{}, PlanFacts{}, errs.NotFound(campaignGoneMessage)
+	}
+	plan, found, err := s.deps.Plans.Plan(ctx, c.PlanID)
+	if err != nil {
+		return Campaign{}, PlanFacts{}, err
+	}
+	if !found {
+		return Campaign{}, PlanFacts{}, errs.NotFound(campaignGoneMessage)
+	}
+	return c, plan, nil
+}

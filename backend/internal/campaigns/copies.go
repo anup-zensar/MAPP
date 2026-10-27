@@ -5,6 +5,7 @@ import (
 	"maps"
 
 	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/record"
 	"mapp/internal/rollup"
@@ -103,4 +104,22 @@ func (s *Service) initiativeCopy(a actor.Actor, i Initiative, to copyPlace) Init
 	dup.BudgetPhasing = rollup.ShiftPhasing(i.BudgetPhasing, to.years)
 	dup.Meta = record.NewMeta(a, s.now())
 	return dup
+}
+
+// shiftDate returns the date d years later (29 February → 28 February), or nil for no date.
+func shiftDate(d *date.Date, years int) *date.Date {
+	if d == nil {
+		return nil
+	}
+	shifted := d.AddYears(years)
+	return &shifted
+}
+
+// clonePtr returns a pointer to a copy of what p points at, or nil.
+func clonePtr[T any](p *T) *T {
+	if p == nil {
+		return nil
+	}
+	v := *p
+	return &v
 }
