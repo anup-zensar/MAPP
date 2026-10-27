@@ -9,8 +9,6 @@ import "context"
 type Store interface {
 	// GetCampaign returns the campaign with id, and false when there is none.
 	GetCampaign(ctx context.Context, id string) (Campaign, bool, error)
-	// ListCampaigns returns every campaign of every plan.
-	ListCampaigns(ctx context.Context) ([]Campaign, error)
 	// CampaignsOfPlan returns the campaigns of the plan planID.
 	CampaignsOfPlan(ctx context.Context, planID string) ([]Campaign, error)
 	// CampaignsOfPlans returns the campaigns of every plan in planIDs (plan lists and roll-ups).
@@ -25,8 +23,6 @@ type Store interface {
 	InitiativesByIDs(ctx context.Context, ids []string) ([]Initiative, error)
 	// GetInitiative returns the initiative with id, and false when there is none.
 	GetInitiative(ctx context.Context, id string) (Initiative, bool, error)
-	// ListInitiatives returns every initiative of every campaign.
-	ListInitiatives(ctx context.Context) ([]Initiative, error)
 	// InitiativesOfCampaign returns the initiatives of the campaign campaignID.
 	InitiativesOfCampaign(ctx context.Context, campaignID string) ([]Initiative, error)
 	// InitiativesOfCampaigns returns the initiatives of every campaign in campaignIDs.
@@ -41,7 +37,9 @@ type Store interface {
 	// DeleteCampaigns and DeleteInitiatives remove the records with ids all at once.
 	DeleteCampaigns(ctx context.Context, ids []string) error
 	DeleteInitiatives(ctx context.Context, ids []string) error
-	// CountCampaignsOwnedBy and CountInitiativesOwnedBy count the stored records the person owns.
-	CountCampaignsOwnedBy(ctx context.Context, personID string) (int, error)
-	CountInitiativesOwnedBy(ctx context.Context, personID string) (int, error)
 }
+
+var (
+	_ Store = (*PostgresStore)(nil)
+	_ Store = JSONStore{}
+)

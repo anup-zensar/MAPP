@@ -77,7 +77,8 @@ func newFixture(t *testing.T) *fixture {
 		now:        start,
 	}
 	f.history = history.NewService(db, history.NewJSONStore(), ids.NewGenerator(ids.NewJSONCounters()), f.clock)
-	f.service = NewService(db, NewJSONStore(), ids.NewGenerator(ids.NewJSONCounters()), f.history, f.clock, Deps{
+	tools := history.Tools{Tx: db, IDs: ids.NewGenerator(ids.NewJSONCounters()), Log: f.history, Now: f.clock}
+	f.service = NewService(tools, NewJSONStore(), Deps{
 		Plans: f.plans, People: fakePeople{}, Settings: f.settings, Activities: f.activities,
 	})
 	kinds := append([]history.Kind{f.plans.kind()}, f.service.Kinds()...)

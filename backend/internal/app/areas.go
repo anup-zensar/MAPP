@@ -92,7 +92,7 @@ func (w *wiring) buildActivities() {
 }
 
 func (w *wiring) buildCampaigns() {
-	w.campaigns = campaigns.NewService(w.set.Tx, w.set.Campaigns, w.generator, w.history, w.now, campaigns.Deps{
+	w.campaigns = campaigns.NewService(history.Tools{Tx: w.set.Tx, IDs: w.generator, Log: w.history, Now: w.now}, w.set.Campaigns, campaigns.Deps{
 		Plans: campaignPlans{repo: w.set.Plans}, People: w.set.People, Settings: w.settings,
 		Activities: activitiesForCampaigns{svc: w.activities},
 	})
