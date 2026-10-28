@@ -1,17 +1,21 @@
 <!--
 Sync Impact Report
-- Version change: 4.2.0 → 4.3.0 (MINOR: the package manager changes; no principle removed)
-- Modified principles: VII Security and Privacy by Design — release age enforced by pnpm's
-  minimumReleaseAge instead of npm's min-release-age
-- Modified sections: Frontend Standards (technology table, repository layout), quality gates 7–13
-  and 16 (commands), Amendment History
+- Version change: 4.3.0 → 4.4.0 (MINOR: scope materially expanded; no principle removed or
+  redefined)
+- Modified principles: II Shell Business, Plain Language — "GSAP owns the money" now names the
+  simulated GSAP that answers SWBS requests and creates GSAP PRs and POs until live GSAP; IV Two
+  Parts — the "Now" adapters include that simulated GSAP
+- Modified sections: Current Phase & Scope (purchase requests on MAPP's side and approval of any
+  record type come in; e-mail, supporting documents, invoice approval, the Finance budgets module
+  and accrual calculation stay out), the Shell integrations row of the scope table, Amendment
+  History
 - Added sections: none
 - Removed sections: none
-- Files changed with this amendment: frontend/package.json, frontend/pnpm-lock.yaml,
-  frontend/pnpm-workspace.yaml (replaces .npmrc and package-lock.json), CI, frontend/Dockerfile,
-  frontend/playwright.config.ts, READMEs, agent guidance, GO_STANDARDS, quality-gates, ADR-0010,
-  ADR-0012, ADR-0015
-- Templates: no change needed (plan-template.md reads its gates from this file)
+- Impact on existing code: none becomes non-compliant; features 030–034 (feature map) deliver the
+  new scope; D-255 (line items store no SWBS code) and D-243 (no purchase requests) are superseded
+  by D-321 and D-320
+- Templates: no change needed (plan-template.md reads its gates from this file); the PowerShell
+  template resolver could not run on this machine, so the amendment edits the current file in place
 - Follow-up TODOs:
   - TODO(DARK_TOKENS): dark-theme values for Disabled Text, Link Hover and an error-text red
 -->
@@ -71,10 +75,14 @@ cheapest place to fix a defect. Traceability lets a maintainer find why any beha
   option lists, currencies and exchange rates, finance budget items and roles are managed on
   Settings screens, never hard-coded.
 - **MAPP owns plans; GSAP owns the money.** MAPP never creates SWBS codes, purchase
-  orders or invoices, and shows GSAP's financial transactions read-only. Live GSAP integration is
-  out of scope for the current phase: GSAP data (daily exchange rates; purchase-order lines,
-  invoices, payments and accruals) is loaded through **simulated feeds** behind adapter interfaces
-  (Principle IV, ADR-0009).
+  orders or invoices itself, and shows GSAP's financial transactions read-only. Live GSAP
+  integration is out of scope for the current phase (GSAP integrations are frozen until about
+  March 2027): GSAP data (daily exchange rates; purchase-order lines, invoices, payments and
+  accruals) is loaded through **simulated feeds** behind adapter interfaces (Principle IV,
+  ADR-0009), and a **simulated GSAP** stands in for GSAP in both directions — it receives MAPP's
+  SWBS requests and returns SWBS codes, and it creates the GSAP PR number and the purchase order
+  for a purchase request routed to the requisitioner — through the adapter interfaces a live feed
+  will implement (ADR-0016). Everything the simulated GSAP produces is labelled as simulated.
 
 **Rationale:** users already know Shell's words and process; they must not have to learn Hive9's
 screens.
@@ -128,9 +136,10 @@ recovered from code alone, so they are written down where maintainers look.
   PostgreSQL. One engine everywhere means no storage migration later. The data model is relational
   (B5).
 - **Shell's systems are reached only through adapter interfaces** owned by the package that needs
-  them (for example the transaction feed and the rate feed). **Now:** simulated adapters — a
-  file-import endpoint (check, then import) and demo seed data. **Later:** the real feed implements
-  the same interface, with no change to services or the web app (ADR-0009).
+  them (for example the transaction feed and the rate feed). **Now:** simulated adapters —
+  file-import endpoints (check, then import), a simulated GSAP that answers SWBS requests and
+  creates GSAP PRs and POs, and demo seed data. **Later:** the real feed implements the same
+  interface, with no change to services or the web app (ADR-0009, ADR-0016).
 
 **Rationale:** a small, predictable structure is easy for new developers and AI agents to follow,
 and keeps the moves to Azure and Shell's live systems cheap.
@@ -463,11 +472,18 @@ both be non-negotiable without conflict.
   recycle bin — and the features that close the MVP gaps of Shell's requirements: roles, access
   and global budgets (014), read-only financial transactions from a simulated GSAP feed (015),
   exchange-rate history with a simulated GSAP daily-rate import, plan currency and planning
-  extensions (016), and approval rules (017). The feature list and build order are in
-  `docs/sdd/feature-map.md`.
-- **Out of scope for now:** the Finance budgets module, purchase requests, accrual calculation,
-  Measure reporting, live GSAP integration, real sign-in (Microsoft Entra ID single sign-on),
-  e-mail, AI features. Specs may mention these only as future integration points.
+  extensions (016), and approval rules (017). Since 4.4.0 also: SWBS codes requested from and
+  returned by the simulated GSAP (030); approval of any record type the approval engine serves —
+  activities, purchase requests and modified purchase requests (031); **purchase requests on
+  MAPP's side** — raised from line items, with lines and budget reservation, approval and
+  modification approval, routing to the requisitioner inside MAPP with a downloadable PR form, and
+  close-out, following Shell's process (032); the GSAP PR number and purchase order created by the
+  simulated GSAP and shown on the purchase request (033); and planning rules aligned with Shell's
+  process (034). The feature list and build order are in `docs/sdd/feature-map.md`.
+- **Out of scope for now:** the Finance budgets module, accrual calculation, invoice approval,
+  supporting documents on purchase requests, Measure reporting, live GSAP integration, real
+  sign-in (Microsoft Entra ID single sign-on), e-mail (purchase requests are routed inside MAPP),
+  AI features. Specs may mention these only as future integration points.
 - **Running locally:** the application runs on a developer laptop: the Go API, a local PostgreSQL
   database, and the web app's development server. Servers listen on `127.0.0.1` only. **Docker is
   optional:** a developer installs PostgreSQL natively or starts it with the repository's
@@ -484,7 +500,7 @@ both be non-negotiable without conflict.
 | API | Go with Gin, REST + JSON, OpenAPI 3.1 contract (B1, B6) | Same |
 | Storage | PostgreSQL behind store interfaces (B5): installed natively or through the optional `compose.yaml` | Azure Database for PostgreSQL, same major version |
 | Sign-in and access | Demo sign-in with seeded users; roles, permissions and team scopes kept in MAPP (ADR-0008) | Microsoft Entra ID single sign-on; roles may come from Entra app roles or groups |
-| Shell integrations | Simulated GSAP feeds behind adapters (ADR-0009) | Live GSAP feeds implementing the same adapters |
+| Shell integrations | Simulated GSAP feeds and a simulated GSAP for SWBS codes, GSAP PRs and POs, behind adapters (ADR-0009, ADR-0016) | Live GSAP feeds implementing the same adapters |
 | Visual design | Shell palette (Principle X), Jost and Arial, MAPP's own mark | Shell's typeface and pecten once Shell supplies them and consents |
 | Containers | Optional: `compose.yaml` runs PostgreSQL, or builds and runs the whole app locally for reviewers (ADR-0012), with Docker or Podman | Production images, registry and scanning, chosen by ADR before hosting |
 | Hosting | Local laptop | Azure Container Apps behind Azure Front Door (see `docs/reference/README.md`) |
@@ -1129,5 +1145,6 @@ amended to match.
 | 4.1.0 | 2026-10-26 | Current Phase & Scope: `compose.yaml` may also build and run the whole application locally for reviewers such as business analysts, published on `127.0.0.1` only and pushed nowhere; Docker and Podman stay optional for developers (ADR-0012) | Product owner instruction of 2026-10-26 |
 | 4.2.0 | 2026-10-26 | VIII, Governance: the comment budget is aligned file by file — a change that touches a file brings the whole file's comments within the budget, except in features 025, 027 and 028; feature 021 (a dedicated comment pass) is dropped | Product owner instruction of 2026-10-26 |
 | 4.3.0 | 2026-10-27 | F1 and VII: pnpm replaces npm as the web app's package manager (pinned through Corepack, `pnpm-lock.yaml`, `pnpm install --frozen-lockfile`); the 24-hour release age is pnpm's `minimumReleaseAge`, and dependency install scripts run only when allowed (ADR-0015) | Product owner instruction of 2026-10-27 |
+| 4.4.0 | 2026-10-27 | II and IV: a simulated GSAP receives MAPP's SWBS requests and returns SWBS codes, and creates the GSAP PR number and purchase order for a routed purchase request, behind the adapters a live feed will implement. Current Phase & Scope: purchase requests on MAPP's side, approval of any record type the engine serves, and planning rules aligned with Shell's process come in (features 030–034); e-mail, supporting documents, invoice approval, the Finance budgets module and accrual calculation stay out | D-320–D-326; ADR-0016; product owner instruction of 2026-10-27 |
 
-**Version**: 4.3.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-27
+**Version**: 4.4.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-27
