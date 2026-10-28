@@ -19,6 +19,7 @@ All demo users share the password **`mapp`**, shown on the sign-in page (decisio
 | Mei Lin | mei.lin@shell.com | Marketer | Mobility China | Builds the Mobility plan |
 | Carlos Mendes | carlos.mendes@shell.com | Business champion | Mobility China, Global Marketing Ops | Approves Mobility activities (level 1) |
 | Sara Novak | sara.novak@shell.com | Local finance advisor | Lubricants Europe, Mobility China | Reviews finance coding |
+| Lea Santos | lea.santos@shell.com | Requisitioner | Global Marketing Ops | Role *Requisitioner* (All markets): the Purchase requests page, PR forms and the simulated GSAP (feature 032) |
 
 ## Settings seed
 
@@ -32,7 +33,7 @@ All demo users share the password **`mapp`**, shown on the sign-in page (decisio
 | Line managers | Priya Raman and Sara Novak → Daniel Okoro · Mei Lin → Carlos Mendes · Daniel Okoro and Carlos Mendes → Alex Morgan · Alex Morgan has none |
 | Approval workflows | **Lubricants EU approval** (WF-1001) — level 1: Daniel Okoro, backup Alex Morgan; remind after 1 day, escalate after 2 (short, so a demo shows both on the first run) · **China BC approval workflow** (WF-1002) — level 1: Carlos Mendes, backup Alex Morgan; level 2: Alex Morgan, backup Carlos Mendes; remind after 3 days, escalate after 5 · **Standard marketing approval** (WF-1003, used by no seeded activity) — level 1: the owner's line manager, approved automatically below 10,000 USD, backup Alex Morgan; level 2: Alex Morgan, only needed from 100,000 USD, backup Carlos Mendes; level 3 "Mobility second check": Daniel Okoro and Alex Morgan, all must approve, only for the Mobility business unit, backup Carlos Mendes; remind after 3 days, escalate after 5 |
 | Approval delegations | **DLG-1001** — Daniel Okoro → Carlos Mendes from today + 7 days to today + 11 days, note "Annual leave" (planned, so it changes nothing in today's lists) |
-| Shell attributes | The full set in the field catalogue with 3–8 sample options each (e.g. Cluster: Lubricants – Europe, Retail – China, Fleet – China; Region per cluster; Company code: GB01, NL02, CN04; Spend type → GL code pairs such as "Digital – Platform development → 7250080 – Advertising digital") |
+| Shell attributes | The full set in the field catalogue, with 3–8 sample options each (e.g. Cluster: Lubricants – Europe, Retail – China, Fleet – China; Region per cluster; Company code: GB01, NL02, CN04), except Shell's own lists for the zero-based cost hierarchy (10), spend type (25), GL code (13), spend category (19) and contracted spend (5), e.g. spend type "ATL - Digital" with GL code "7250080 - Advertising - Digital" (D-325) |
 
 ## Planning seed (the demo story)
 
@@ -49,3 +50,11 @@ Approval rules (feature 017) in the demo: the open round of **Trade magazine ads
 days, so it is overdue on the Approvals monitoring and the first **Run reminders and escalations** escalates
 it to Alex Morgan; **Fleet card launch** (WF-1002) waits at level 2. Submitting a Lubricants activity below
 10,000 USD with WF-1003 shows an activity approved automatically.
+
+Purchase requests (features 032 and 033) in the demo: Purchase Support is on and lines may join an approved
+purchase request with modification approval. Two workflows approve them — **Purchase request approval (MoA)**
+(WF-1004) and **Purchase request change approval (MoA)** (WF-1005), one level each that goes to the purchase
+request's MoA approver, backup Alex Morgan, reminder after 3 days and escalation after 5. **PR-1001** "PR for
+Agency fee (Ireland)" waits as Created on the UK plan's line item L-1010 for 23,000.00 EUR, delivery
+30 Apr 2027, owner Priya Raman, MoA approver Daniel Okoro, vendor Brightside Media BV, Email group
+G_GB_RETAIL. The Email group options include **DE_LUBES**, the recipient the walkthroughs route to.
