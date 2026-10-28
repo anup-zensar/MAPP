@@ -55,6 +55,7 @@ import {
   ShellAttributePage,
   ShellAttributesPage,
   SignInPage,
+  SpaPage,
   TeamsPage,
   TransactionPanel,
 } from './pages';
@@ -141,6 +142,7 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
     ],
   },
   { path: '/plans/:planId/edit', element: <PlanEditPage />, ...titled('Edit plan') },
+  { path: '/plans/:planId/spa', element: <SpaPage />, ...titled('SP&A view') },
   // 006 Activities, and the short address that finds an activity's plan (D-194)
   {
     path: '/plans/:planId/initiatives/:initiativeId/activities/new',
@@ -226,10 +228,8 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
     element: <PurchaseRequestSettingsPage />,
     ...titled('Purchase requests'),
   },
-  // 011 Activity log and Recycle bin (under MORE in the sidebar)
   { path: '/activity-log', element: <ActivityLogPage />, ...titled('Activity log') },
   { path: '/recycle-bin', element: <RecycleBinPage />, ...titled('Recycle bin') },
-  // 016 Settings › Import GSAP rates and Field help
   {
     path: '/settings/currencies/import',
     element: <ImportRatesPage />,
