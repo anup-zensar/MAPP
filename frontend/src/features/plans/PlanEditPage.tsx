@@ -2,7 +2,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router';
 import { ApiError, conflictMessage } from '@/api/errors';
+import { allows } from '@/session/gate-action';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { NoAccess } from '@/ui/NoAccess/NoAccess';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { useToast } from '@/ui/Toast/useToast';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
@@ -22,11 +24,8 @@ import type { PlanFormValues } from './schemas';
 const CONFLICT_NEXT_STEP =
   'Your changes are still here. Save again to replace their changes, or Cancel to see theirs.';
 
-/**
- * Edit plan (US4, FR-018 – FR-023), at /plans/:planId/edit (?focus=<field> focuses a field): the
- * plan form with the year locked. A new model or business unit is confirmed first; a save after
- * someone else's is refused, naming them, with the typed values kept.
- */
+// The plan form with the year locked; ?focus=<field> focuses a field. A new model or business unit
+// is confirmed first; a save after someone else's is refused with the typed values kept.
 export function PlanEditPage() {
   const { planId = '' } = useParams();
   const plan = usePlan(planId);
@@ -34,6 +33,10 @@ export function PlanEditPage() {
 
   if (plan.isError && plan.error instanceof ApiError && plan.error.kind === 'notFound') {
     return <PlanNotFound />;
+  }
+  const edit = plan.data?.access?.edit;
+  if (!allows(edit)) {
+    return <NoAccess message={edit?.reason || undefined} />;
   }
 
   return (
@@ -57,7 +60,6 @@ export function PlanEditPage() {
   );
 }
 
-/** The form, with the plan as it was when the page opened (the edit-form rule). */
 function EditForm({ plan: loaded }: { plan: Plan }) {
   const [plan] = useState(loaded);
   const initial = valuesFromPlan(plan);
@@ -122,7 +124,6 @@ function EditForm({ plan: loaded }: { plan: Plan }) {
     }
   }
 
-  /** A failure that is not about one field: a conflict, or the API's message. */
   async function showFailure(apiError: ApiError) {
     if (apiError.kind === 'validation') {
       setFailure(null);

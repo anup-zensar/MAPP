@@ -5,32 +5,27 @@ import { TeamPill } from '@/ui/TeamPill/TeamPill';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import type { TeamRef } from '@/ui/TeamPill/TeamPill';
+import { ViewOnlyArea } from '@/ui/ViewOnlyNote/view-only-area';
 import { AmountPair } from './AmountPair';
 import { PinButton } from './PinButton';
 import { PlanCompleteness, PlanStatusChip } from './PlanFacts';
 import type { PlanSummary } from './api';
+import { changesNothingIn } from './plan-access';
 import styles from './PlanTable.module.css';
 import { PlanTypeTag } from './PlanTypeTag';
 
 export interface PlanTableProps {
   plans: PlanSummary[];
   actionsFor: (plan: PlanSummary) => ActionsMenuItem[];
-  /** Whether this person pinned the plan (018 FR-003): its star is filled and stays visible. */
   isPinned: (plan: PlanSummary) => boolean;
-  /** Pins or unpins one plan for this person (018 FR-001). */
   onPinToggle: (plan: PlanSummary) => void;
 }
 
 /** Teams shown before "+n" in a table cell (design system §5.4: more than 2 show "+n"). */
 const TEAMS_SHOWN = 2;
 
-/**
- * The Plans list as a table (FR-002) on the data table standard (design system §5.4): the pin star
- * first (018); the name with its ID, year and type; at most two status chips; the owner and teams
- * on one line; money right-aligned under its header in the plan currency, the display currency
- * beside when it differs (016 FR-014); no cell repeats its column's label (UI audit P-02). On
- * narrow screens the table scrolls sideways inside its card, never the page.
- */
+// The Plans list as a table (design system §5.4); on narrow screens it scrolls sideways inside its
+// card, never the page.
 export function PlanTable({ plans, actionsFor, isPinned, onPinToggle }: PlanTableProps) {
   return (
     <div className={styles.scroll}>
@@ -136,7 +131,9 @@ export function PlanTable({ plans, actionsFor, isPinned, onPinToggle }: PlanTabl
                   )}
                 </td>
                 <td className={styles.actions}>
-                  <ActionsMenu label={plan.name} items={actionsFor(plan)} />
+                  <ViewOnlyArea active={changesNothingIn(plan.access)}>
+                    <ActionsMenu label={plan.name} items={actionsFor(plan)} />
+                  </ViewOnlyArea>
                 </td>
               </tr>
             );

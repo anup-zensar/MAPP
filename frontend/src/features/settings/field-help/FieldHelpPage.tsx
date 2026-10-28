@@ -215,9 +215,11 @@ function HelpRow({ entry, onEdit, onReset }: HelpRowProps) {
   return (
     <tr>
       <th scope="row" className={styles.fieldCell}>
-        <button type="button" className={settingsStyles.nameButton} onClick={onEdit}>
-          {entry.label}
-        </button>
+        <CanChange otherwise={entry.label}>
+          <button type="button" className={settingsStyles.nameButton} onClick={onEdit}>
+            {entry.label}
+          </button>
+        </CanChange>
       </th>
       <td className={styles.textCell}>
         {entry.text === '' ? (

@@ -12,7 +12,7 @@ import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import type { ActivityApproval, ShowSubmitProblems } from '@/features/approvals';
 import { DecisionButton, DecisionDialog, SubmitButton } from '@/features/approvals';
 import { FieldHelpTip } from '@/features/settings';
-import { allows, gateItem } from '@/session/gate-action';
+import { allows, gateItem, moreItemFor } from '@/session/gate-action';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
 import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
@@ -30,6 +30,10 @@ export interface ActivityHeaderProps {
 }
 
 /** What the owner sees in More when the rules let them approve their own activity (FR·A-01). */
+function submitLabel(status: Activity['status']): string {
+  return status === 'created' ? 'Submit for approval' : 'Re-submit for approval';
+}
+
 const OWN_APPROVAL_HINT =
   'You own this activity — approving it yourself skips an independent check.';
 
@@ -89,6 +93,14 @@ export function ActivityHeader({
       ...moreActions,
     ];
   } else if (activity.status === 'created' || activity.status === 'declined') {
+    more = [
+      ...moreItemFor({ label: 'Edit', onSelect: () => void navigate(editHref) }, access?.edit),
+      ...moreItemFor(
+        { label: submitLabel(activity.status), onSelect: onOpenReady },
+        access?.submit,
+      ),
+      ...moreActions,
+    ];
     actions = (
       <>
         {allows(access?.submit) && (

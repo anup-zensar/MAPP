@@ -193,26 +193,42 @@ built with 012.
 
 ## Phase 5: Frontend by user story
 
-- [ ] T043 [US1] Record pages of 004–007 and 011 render `NoAccess` on a 403 page load; Home shows the no-role state
+- [x] T043 [US1] Record pages of 004–007 and 011 render `NoAccess` on a 403 page load; Home shows the no-role state
   (text 36) when `access.roles` is empty; tests (FR-008, Edge cases).
-- [ ] T044 [P] [US2] `frontend/src/features/plans/`: New plan (`plans.create`, no-team hint 22), `PlanCard` menu from
+- [x] T044 [P] [US2] `frontend/src/features/plans/`: New plan (`plans.create`, no-team hint 22), `PlanCard` menu from
   `PlanSummary.access`, plan header and tree toolbar from `Plan.access`/`PlanCampaigns.access`, `ViewOnlyNote`,
   `PlanForm` team options limited to the permission's teams with other teams fixed; tests (FR-011, FR-013).
-- [ ] T045 [P] [US2] `frontend/src/features/campaigns/`: row menus, Add buttons, record pages from `access`; tests
+- [x] T045 [P] [US2] `frontend/src/features/campaigns/`: row menus, Add buttons, record pages from `access`; tests
   (FR-011, FR-014).
-- [ ] T046 [P] [US2] `frontend/src/features/activities/`: rows from `ActivitySummaryPage.access`, page actions from
+- [x] T046 [P] [US2] `frontend/src/features/activities/`: rows from `ActivitySummaryPage.access`, page actions from
   `Activity.access`, "From finance" only with `seeFinance`; tests (FR-011, FR-015).
-- [ ] T047 [P] [US2] `frontend/src/features/line-items/`: section and page actions from `access`,
+- [x] T047 [P] [US2] `frontend/src/features/line-items/`: section and page actions from `access`,
   `FromFinanceSection` only with `seeFinance`; tests (FR-011, FR-015).
-- [ ] T048 [P] [US2] `frontend/src/features/settings/` pages: `ViewOnlyNote area="settings"` and hidden change actions
+- [x] T048 [P] [US2] `frontend/src/features/settings/` pages: `ViewOnlyNote area="settings"` and hidden change actions
   without `settings.manage` (currencies: `exchangeRates.manage`); tests US2 scenario 5 (FR-011, FR-012).
-- [ ] T049 [P] [US2] `frontend/src/features/people/` and `features/approval-workflows/`: same with `people.manage` and
+- [x] T049 [P] [US2] `frontend/src/features/people/` and `features/approval-workflows/`: same with `people.manage` and
   `workflows.manage`; tests (FR-011).
-- [ ] T050 [P] [US2] `frontend/src/features/all-work/`: Export disabled with its reason without `data.export`; tests
+- [x] T050 [P] [US2] `frontend/src/features/all-work/`: Export disabled with its reason without `data.export`; tests
   (FR-016).
-- [ ] T051 [P] [US2] `frontend/src/features/recycle-bin/` and `features/activity-log/`: Restore and Delete
+- [x] T051 [P] [US2] `frontend/src/features/recycle-bin/` and `features/activity-log/`: Restore and Delete
   permanently from `RecycleBinListItem.access`, Empty only with `recycleBin.purge`, record-type filter gains Role,
   Access rules, Global budget, Budget allocation; tests (FR-007, FR-011).
+  *Built (D-352), with feature 022's rule that a record outside the person's access answers 404 (so a 403 page load
+  now comes only from a form the person may not use):* `ui/ViewOnlyNote/view-only-area.tsx` (menus leave out what the
+  person may not do where they may change nothing), `session/gate-action.ts` `moreItemFor` (a header action listed in
+  More, disabled with its reason), `session/refusal-text.ts`; plans: `plan-access.ts`, `NewPlanButton.tsx` (message 22),
+  `useOfferedTeams.ts` + `ui/TeamPicker` `offered` (FR-013), `PlanPage`, `PlanCard`, `PlanTable`, `PlanCreatePage`,
+  `PlanEditPage`; campaigns: `RefusedPanel.tsx`, `NewCampaignPanel`, `NewInitiativePanel`, `RecordPanel`,
+  `RecordDetails`; activities: `activity-access.ts`, `plan-facts-api.ts` (fix: a Viewer's Details no longer need the
+  edit form), `ActivityPage`, `ActivityHeader`, `ActivityFormPage`; line items: `line-item-access.ts`, `LineItemPage`,
+  `LineItemPageStates`; Settings: `RateHistorySection` and Field help gated, `app/route-helpers.tsx` `gated` on the
+  change-only routes; All work: `ExportMenu` `refusal`. "From finance" no longer exists (015 replaced it with Financials,
+  which shows its own no-access note); the log's and the bin's record types come from the API, so Role, Access rules,
+  Global budget and Budget allocation appear with their entries. Tests: `PlanPage.access.test.tsx`,
+  `PlansPage.access.test.tsx`, `CampaignPanel.access.test.tsx`, `ActivityPage.access.test.tsx`,
+  `LineItemPage.access.test.tsx`, `features/settings/view-only.test.tsx`, `app/view-only.admin-lists.test.tsx`, cases in
+  `ActionsMenu.test.tsx`, `gate-action.test.ts`, `TeamPicker.test.tsx`, `ExportMenu.test.tsx`, `refusal-text.test.ts`,
+  `BinRow.test.tsx`, `RecycleBinPage.test.tsx`; Home's no-role state was built and tested before (`HomePage.test.tsx`).
 - [x] T052 [US3] `frontend/src/features/access/`: `accessApi.ts`, `AccessPage` (tabs), People tab, `PersonRolesPanel`
   (scope choice, live summary, impact warnings, save), `settingsSections.ts`; tests US3 scenarios 1–2, 4–5 (FR-017,
   FR-021, FR-022).

@@ -13,6 +13,7 @@ import type { SectionProps } from './plan-form-sections';
 import { YEAR_LOCKED } from './plan-text';
 import { PlanFormCard } from './PlanFormCard';
 import { ReadOnlyField } from './ReadOnlyField';
+import { useOfferedTeams } from './useOfferedTeams';
 
 type Model = components['schemas']['Model'];
 
@@ -41,6 +42,7 @@ export function PlanBasicsSection({
   onYearChange,
 }: PlanBasicsSectionProps) {
   const { help } = useFieldHelp();
+  const offeredTeams = useOfferedTeams(mode);
   const modelOptions = models.map((model) => ({
     id: model.id,
     label: model.name,
@@ -144,6 +146,7 @@ export function PlanBasicsSection({
             marking="Needed to publish"
             tip={help('plan.teams')}
             hint={hint('teamIds', 'Default: your teams', !!defaults?.teamIds.length)}
+            offered={offeredTeams}
             {...field}
           />
         )}

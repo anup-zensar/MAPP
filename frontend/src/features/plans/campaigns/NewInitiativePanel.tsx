@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { useAttributeForm } from '@/features/settings';
+import { allows } from '@/session/gate-action';
 import { useToast } from '@/ui/Toast/useToast';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
@@ -15,6 +16,7 @@ import type { Campaign } from './api';
 import { bodyOf, defaultAttributes, fieldId, RECORD_FIELDS } from './form-values';
 import { PanelFailure, PanelLoading, RecordFormPanel, StatePanel } from './PanelFrame';
 import { RecordForm } from './RecordForm';
+import { RefusedPanel } from './RefusedPanel';
 import { recordFormSchema } from './schemas';
 import type { RecordFormValues } from './schemas';
 import { createdToast, insideCampaign, NEW_INITIATIVE, openName, VIEW } from './texts';
@@ -50,8 +52,11 @@ export function NewInitiativePanel() {
       </StatePanel>
     );
   }
+  const addInitiative = parent.data.access?.addChild;
+  if (!allows(addInitiative)) {
+    return <RefusedPanel title={NEW_INITIATIVE} closeTo={closeTo} availability={addInitiative} />;
+  }
   return (
-    // A new address (Save and add another) starts a fresh form.
     <NewInitiativeForm
       key={location.key}
       planId={planId}

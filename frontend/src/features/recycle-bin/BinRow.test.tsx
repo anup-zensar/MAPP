@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { binItem, lineItemEntry } from '@/testing/fixtures/recycle-bin';
+import { refused } from '@/testing/fixtures/viewer';
 import { BinRow } from './BinRow';
 import type { BinRowProps } from './BinRow';
 
@@ -99,5 +100,22 @@ describe('BinRow', () => {
 
     expect(screen.getByText(line)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: "Restore line item 'Print ads'" })).toBeVisible();
+  });
+
+  it('keeps Restore and Delete permanently in the menu, disabled with the reasons, when the roles do not allow them (014 FR-011)', async () => {
+    const restore = refused('Restoring plans and their contents', 'Planner');
+    const purge = refused('Deleting permanently', 'Planner');
+    const { user } = renderRow({
+      item: binItem({ access: { restore, deletePermanently: purge } }),
+    });
+
+    expect(screen.queryByRole('button', { name: /^Restore/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^Actions for/ }));
+    expect(screen.getByRole('menuitem', { name: 'Restore' })).toHaveAccessibleDescription(
+      restore.reason,
+    );
+    expect(
+      screen.getByRole('menuitem', { name: 'Delete permanently' }),
+    ).toHaveAccessibleDescription(purge.reason);
   });
 });

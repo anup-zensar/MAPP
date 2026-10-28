@@ -154,4 +154,21 @@ describe('ExportMenu (US7)', () => {
     expect(within(messages).getByText('Choose a year from 2000 to 2100.')).toBeInTheDocument();
     expect(saved).toEqual([]);
   });
+
+  it('shows both formats disabled with the reason to someone who may not export (014 FR-016)', async () => {
+    const reason =
+      "Exporting isn't part of your role (Editor). Ask an administrator if you need it.";
+    const api = mockApi([]);
+    const { user } = renderWithProviders(
+      <ExportMenu state={standard2026()} result={gridResult()} refusal={reason} />,
+      { user: testUser() },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+    const item = await screen.findByRole('menuitem', { name: 'Spreadsheet (.xlsx)' });
+    expect(item).toHaveAttribute('aria-disabled', 'true');
+    expect(item).toHaveAccessibleDescription(reason);
+    await user.click(item);
+    expect(api.requests).toEqual([]);
+  });
 });

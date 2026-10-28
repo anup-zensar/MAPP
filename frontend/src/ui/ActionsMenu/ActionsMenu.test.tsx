@@ -5,6 +5,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { ConfirmDialog } from '../ConfirmDialog/ConfirmDialog';
+import { ViewOnlyArea } from '../ViewOnlyNote/view-only-area';
 import { ActionsMenu } from './ActionsMenu';
 
 function TooltipProvider({ children }: { children: ReactNode }) {
@@ -164,5 +165,26 @@ describe('ActionsMenu', () => {
       "Deleting plans isn't part of your role (Planner). Ask an administrator if you need it.",
     );
     expect(onDelete).not.toHaveBeenCalled();
+  });
+
+  it('leaves out the disabled actions where the person may change nothing (014 FR-011)', async () => {
+    const user = userEvent.setup();
+    render(
+      <ViewOnlyArea active>
+        <ActionsMenu
+          label="Launch film"
+          items={[
+            { label: 'View', onSelect: vi.fn() },
+            { label: 'Edit', disabled: true, hint: 'Not your role.', onSelect: vi.fn() },
+            { label: 'Delete', disabled: true, hint: 'Not your role.', onSelect: vi.fn() },
+          ]}
+        />
+      </ViewOnlyArea>,
+      { wrapper: TooltipProvider },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Launch film' }));
+
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['View']);
   });
 });

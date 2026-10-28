@@ -6,11 +6,12 @@ import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { Tabs } from '@/ui/Tabs/Tabs';
 import { ViewOnlyNote } from '@/ui/ViewOnlyNote/ViewOnlyNote';
+import { ViewOnlyArea } from '@/ui/ViewOnlyNote/view-only-area';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import type { TabItem } from '@/ui/Tabs/Tabs';
 import { HistorySection, showHistory } from '@/features/activity-log';
 import { usePageTitle } from '@/ui/usePageTitle';
-import { allows } from '@/session/gate-action';
+import { allows, moreItemFor } from '@/session/gate-action';
 import { BudgetByMonthCard } from './phasing/BudgetByMonthCard';
 import { useCampaignTreeContent } from './campaigns/useCampaignTreeContent';
 import { PlanDetails } from './PlanDetails';
@@ -21,6 +22,7 @@ import { PlanNotFound } from './PlanNotFound';
 import styles from './PlanPage.module.css';
 import { usePlan } from './api';
 import type { Plan } from './api';
+import { changesNothingIn } from './plan-access';
 import { planCurrencyOf } from './plan-currency';
 import { PlanSummaryCards } from './PlanSummaryCards';
 import { RecordFinancials } from './RecordFinancials';
@@ -49,6 +51,7 @@ export function PlanPage() {
   const focusHistory = useRef(false);
   usePageTitle(panel ? null : (plan.data?.name ?? 'Plan'));
   const actions = usePlanActions({ onDeleted: () => void navigate('/plans') });
+  const viewOnly = changesNothingIn(plan.data?.access);
 
   useEffect(() => {
     if (tab === 'history' && focusHistory.current) {
@@ -127,28 +130,31 @@ export function PlanPage() {
       return <ErrorState error={plan.error} onRetry={() => void plan.refetch()} />;
     }
     const data = plan.data;
+    const status: ActionsMenuItem =
+      data.status === 'draft'
+        ? { label: 'Publish', onSelect: () => void actions.publish(data) }
+        : { label: 'Unpublish', onSelect: () => actions.unpublish(data) };
     const moreItems: ActionsMenuItem[] = [
+      ...moreItemFor(
+        {
+          label: 'Edit',
+          onSelect: () => void navigate(`/plans/${encodeURIComponent(data.id)}/edit`),
+        },
+        data.access?.edit,
+      ),
+      ...moreItemFor(status, data.access?.publish),
       ...actions.copyItem(data),
-      // Opens the History tab and focuses its heading.
       { label: 'View history', onSelect: viewHistory },
       ...actions.deleteItem(data),
     ];
-    // A person who may change nothing in the plan sees one View only note instead.
-    const viewOnly =
-      data.access !== undefined &&
-      !allows(data.access.edit) &&
-      !allows(data.access.content.editCampaigns) &&
-      !allows(data.access.content.editActivities);
     return (
       <>
         <PlanHeader
           plan={data}
           moreItems={moreItems}
           statusAction={
-            !allows(data.access?.publish) ? undefined : data.status === 'draft' ? (
-              <Button onClick={() => void actions.publish(data)}>Publish</Button>
-            ) : (
-              <Button onClick={() => actions.unpublish(data)}>Unpublish</Button>
+            allows(data.access?.publish) && (
+              <Button onClick={status.onSelect}>{status.label}</Button>
             )
           }
         />
@@ -174,12 +180,14 @@ export function PlanPage() {
   }
 
   return (
-    <div className={styles.page}>
-      {content()}
-      {actions.dialogs}
-      {campaigns.dialogs}
-      {panel}
-    </div>
+    <ViewOnlyArea active={viewOnly}>
+      <div className={styles.page}>
+        {content()}
+        {actions.dialogs}
+        {campaigns.dialogs}
+        {panel}
+      </div>
+    </ViewOnlyArea>
   );
 }
 

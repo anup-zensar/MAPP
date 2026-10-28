@@ -15,6 +15,7 @@ import { useAccess } from '@/session/access';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { DEFAULT_FILTERS, readFilters, remember, toSearchParams } from './list-preferences';
 import type { PlanListFilters } from './list-preferences';
+import { NewPlanButton } from './NewPlanButton';
 import { PlanCard } from './PlanCard';
 import { PlansFilters } from './PlansFilters';
 import styles from './PlansPage.module.css';
@@ -26,16 +27,12 @@ import { PlanTable } from './PlanTable';
 import { MY_TEAMS_HINT } from './plan-text';
 import { usePlanActions } from './usePlanActions';
 
-/** How long the search waits after the last key before it asks the API (plan "Plans list"). */
 const SEARCH_DELAY_MS = 250;
 
-/** The most plans one person can pin (018 FR-006, D-317) — the API refuses more. */
+// The API refuses more (D-317).
 const MAX_PINNED_PLANS = 100;
 
-/**
- * Pinned plans first, each group keeping the list's current order (018 FR-002). A pinned id whose
- * plan the list doesn't show is simply not there (018 FR-007).
- */
+// Each group keeps the list's own order; a pinned plan the list doesn't show is simply not there.
 function pinnedFirst(plans: PlanSummary[], pinnedIds: string[]): PlanSummary[] {
   const pinned = new Set(pinnedIds);
   return [
@@ -44,11 +41,7 @@ function pinnedFirst(plans: PlanSummary[], pinnedIds: string[]): PlanSummary[] {
   ];
 }
 
-/**
- * Plans (US2, FR-001 – FR-004; 016 FR-033): every plan as cards or a table, with summary cards,
- * status, years, plan type and team filters, search on name or ID, removable filter chips and the result count. Filters
- * live in the address and are remembered per person.
- */
+// Every plan as cards or a table; the filters live in the address and are remembered per person.
 export function PlansPage() {
   usePageTitle('Plans');
   const user = useCurrentUser();
@@ -76,12 +69,7 @@ export function PlansPage() {
     setServed016(true);
   }
 
-  /**
-   * Pins or unpins one plan (018 FR-001, FR-004): the full new list goes to the session, which
-   * updates the signed-in person in the query cache at once and PATCHes /api/v1/me/preferences in
-   * the background — the same way the theme is saved. A new pin goes last: the stored order only
-   * says what is pinned; the list's own sort orders the pinned group (D-317).
-   */
+  // Saved in the background like the theme; the stored order only says what is pinned (D-317).
   function togglePin(plan: PlanSummary) {
     const pinnedIds = user.preferences.pinnedPlanIds;
     if (pinnedIds.includes(plan.id)) {
@@ -97,7 +85,6 @@ export function PlansPage() {
 
   const isPinned = (plan: PlanSummary) => user.preferences.pinnedPlanIds.includes(plan.id);
 
-  /** Changes some filters: in the address (replacing it) and in what is remembered. */
   function change(next: Partial<PlanListFilters>) {
     setSearch(
       (current) => {
@@ -109,7 +96,6 @@ export function PlansPage() {
     );
   }
 
-  // The search is sent 250 ms after typing stops.
   const searchTimer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(searchTimer.current), []);
 
@@ -142,10 +128,8 @@ export function PlansPage() {
   const summary = data?.summary;
   const planYears = data?.years ?? [];
   const showsTable = filters.layout === 'table';
-  // Pinned plans first in both layouts, each group in the list's own order (018 FR-002).
   const items = data ? pinnedFirst(data.items, user.preferences.pinnedPlanIds) : [];
 
-  /** The list's state when it has no plans to show: loading, failure, empty, filtered out. */
   function listState() {
     if (plans.isError && !data) {
       return <ErrorState error={plans.error} onRetry={() => void plans.refetch()} />;
@@ -189,19 +173,11 @@ export function PlansPage() {
       <PageHeader
         title="Plans"
         description="Every yearly marketing plan, its status, its budget and what's still missing."
-        actions={
-          // 014 FR-011: New plan only for a person who may create plans.
-          canCreate && (
-            <LinkButton to="/plans/new" variant="primary" icon={<Plus />}>
-              New plan
-            </LinkButton>
-          )
-        }
+        actions={<NewPlanButton />}
       />
       <div className={styles.page}>
         <PlanListSummary summary={summary} />
 
-        {/* The list toolbar inside the list's card, across its full width (design system §2.4 A). */}
         <section className={styles.listCard} aria-label="Plan list">
           <div className={styles.toolbar}>
             <div className={styles.search}>
@@ -294,7 +270,6 @@ export function PlansPage() {
   );
 }
 
-/** Grey lines while the plans load. */
 function ListSkeleton() {
   return (
     <div className={styles.skeletonList} aria-label="Loading plans">

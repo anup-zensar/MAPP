@@ -4,30 +4,25 @@ import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
 import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
 import { TeamPills } from '@/ui/TeamPill/TeamPill';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
+import { ViewOnlyArea } from '@/ui/ViewOnlyNote/view-only-area';
 import { AmountPair } from './AmountPair';
 import { PinButton } from './PinButton';
 import styles from './PlanCard.module.css';
 import { BusinessUnitText, PlanCompleteness, PlanStatusChip } from './PlanFacts';
 import type { PlanSummary } from './api';
+import { changesNothingIn } from './plan-access';
 import { activitiesApprovedText } from './plan-text';
 import { PlanTypeTag } from './PlanTypeTag';
 
 export interface PlanCardProps {
   plan: PlanSummary;
   actions: ActionsMenuItem[];
-  /** Whether this person pinned the plan (018 FR-003): the star is filled and stays visible. */
   pinned: boolean;
-  /** Pins or unpins the plan for this person (018 FR-001). */
   onPinToggle: () => void;
 }
 
-/**
- * One plan on the Plans list (FR-002): its name (opening the plan page, never the form), ID, year,
- * type (016) and AOP; the status and one completeness chip; owner, teams and business unit; the
- * planned cost against the budget in the plan currency (016 FR-014); the activities approved; the
- * pin star (018) and the ⋯ Actions menu. Its seven rows share the grid rows of the cards beside
- * it, so owner, budget bar and footer line up across a row of cards (UI audit P-03).
- */
+// One plan on the Plans list. Its seven rows share the grid rows of the cards beside it, so owner,
+// budget bar and footer line up across a row of cards (UI audit P-03).
 export function PlanCard({ plan, actions, pinned, onPinToggle }: PlanCardProps) {
   const { figures } = plan;
   const used = figures.budgetUsedPercent;
@@ -48,7 +43,9 @@ export function PlanCard({ plan, actions, pinned, onPinToggle }: PlanCardProps) 
         </div>
         <div className={styles.topActions}>
           <PinButton planName={plan.name} pinned={pinned} onToggle={onPinToggle} />
-          <ActionsMenu label={plan.name} items={actions} />
+          <ViewOnlyArea active={changesNothingIn(plan.access)}>
+            <ActionsMenu label={plan.name} items={actions} />
+          </ViewOnlyArea>
         </div>
       </div>
       <div className={styles.chips}>

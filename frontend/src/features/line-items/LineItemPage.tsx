@@ -9,10 +9,13 @@ import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
 import { HistorySection, showHistory } from '@/features/activity-log';
 import { LineItemPurchaseRequests } from '@/features/purchase-requests';
 import { FieldHelpTip } from '@/features/settings';
-import { allows, gateItem } from '@/session/gate-action';
+import { allows, gateItem, moreItemFor } from '@/session/gate-action';
+import { ViewOnlyNote } from '@/ui/ViewOnlyNote/ViewOnlyNote';
+import { ViewOnlyArea } from '@/ui/ViewOnlyNote/view-only-area';
 import { fieldHref, recordHref } from '@/ui/record-links';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { LineItemFinancials } from './FinancialsSection';
+import { changesNothingIn } from './line-item-access';
 import styles from './LineItemPage.module.css';
 import { activityBreadcrumb, activityLineItemsHref } from './line-item-links';
 import { LineItemDetailsCard } from './LineItemDetailsCard';
@@ -53,9 +56,10 @@ export function LineItemPage() {
 
   const { lineItem, activity, balance, access } = details.data;
   const href = recordHref('lineItem', lineItem.id);
+  const viewOnly = changesNothingIn(access);
 
   return (
-    <>
+    <ViewOnlyArea active={viewOnly}>
       <PageHeader
         breadcrumb={[...activityBreadcrumb(activity), { label: lineItem.name }]}
         title={lineItem.name}
@@ -81,6 +85,10 @@ export function LineItemPage() {
             <ActionsMenu
               label={lineItem.name}
               items={[
+                ...moreItemFor(
+                  { label: EDIT, onSelect: () => void navigate(`${href}/edit`) },
+                  access?.edit,
+                ),
                 ...gateItem(
                   { label: DUPLICATE, onSelect: () => actions.duplicate(lineItem, activity) },
                   access?.duplicate,
@@ -97,7 +105,6 @@ export function LineItemPage() {
                 ),
               ]}
             />
-            {/* 014 FR-011: Edit only for a person who may edit the line item. */}
             {allows(access?.edit) && (
               <LinkButton to={`${href}/edit`} variant="primary" icon={<Pencil />}>
                 {EDIT}
@@ -107,6 +114,7 @@ export function LineItemPage() {
         }
       />
       <div className={styles.page}>
+        {viewOnly && <ViewOnlyNote area="record" />}
         <LineItemFigures lineItem={lineItem} balance={balance} />
         <div className={styles.columns}>
           <LineItemDetailsCard lineItem={lineItem} />
@@ -124,6 +132,6 @@ export function LineItemPage() {
         />
       </div>
       {actions.dialogs}
-    </>
+    </ViewOnlyArea>
   );
 }

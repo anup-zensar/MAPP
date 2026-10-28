@@ -3,19 +3,20 @@ import { ApiError } from '@/api/errors';
 import { LinkButton } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { forbiddenMessage } from '@/session/access';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { NoAccess } from '@/ui/NoAccess/NoAccess';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { ACTIVITY_GONE, GO_TO_BIN, GO_TO_PLANS } from './line-item-text';
 
-/** While the line item is not known: the breadcrumb row is kept, so the title never moves. */
+// The breadcrumb row is kept while loading, so the title never moves.
 function Header({ title }: { title: string }) {
   return (
     <PageHeader breadcrumb={[{ label: 'Plans', to: '/plans' }, { label: title }]} title={title} />
   );
 }
 
-/** The page's header while it loads, or when what it shows is gone. */
 export function LineItemLoading({ title }: { title: string }) {
   return (
     <>
@@ -27,10 +28,8 @@ export function LineItemLoading({ title }: { title: string }) {
   );
 }
 
-/**
- * A load that failed: the line item or its activity is gone (D-154) — the API's message with Go to
- * the recycle bin or Go to Plans — or another failure with Try again.
- */
+// Gone (D-154): the API's message with Go to the recycle bin or Go to Plans; refused by the
+// person's roles: the no-access page; anything else: Try again.
 export function LineItemLoadFailed({
   title,
   error,
@@ -40,6 +39,10 @@ export function LineItemLoadFailed({
   error: unknown;
   onRetry: () => void;
 }) {
+  const refused = forbiddenMessage(error);
+  if (refused) {
+    return <NoAccess message={refused} />;
+  }
   const gone = error instanceof ApiError && error.kind === 'notFound';
   return (
     <>

@@ -8,6 +8,7 @@ import { useToast } from '@/ui/Toast/useToast';
 import type { TabItem } from '@/ui/Tabs/Tabs';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useAccess } from '@/session/access';
+import { refusalText } from '@/session/refusal-text';
 import { useAllWork, useAllWorkOptions, useAllWorkPreferences, usePreferencesSaver } from './api';
 import styles from './AllWorkPage.module.css';
 import { ALL_WORK_DESCRIPTION, VIEW_LABELS } from './all-work-text';
@@ -45,7 +46,8 @@ const TABS: TabItem<ViewType>[] = [
 // Every plan of the years as a read-only Grid, Calendar, Budget & cost or Breakdown, under one state
 // that survives moving around the app. Nothing is changed here; a row opens its record.
 export function AllWorkPage() {
-  const { has } = useAccess();
+  const access = useAccess();
+  const { has } = access;
   usePageTitle('All work');
   const session = useAllWorkSession();
   const { state, entry, setState } = session;
@@ -204,7 +206,13 @@ export function AllWorkPage() {
               onSaved={(saved) => session.setAppliedView(saved.id)}
               onStandard={session.applyStandard}
             />
-            {shown && has('data.export') && <ExportMenu state={shown} result={result} />}
+            {shown && (
+              <ExportMenu
+                state={shown}
+                result={result}
+                refusal={has('data.export') ? undefined : refusalText('Exporting', access)}
+              />
+            )}
           </>
         }
       />

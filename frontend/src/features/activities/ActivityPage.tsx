@@ -9,7 +9,11 @@ import { ActivityFinancials, LineItemsSection, Notice } from '@/features/line-it
 import { ActivityPurchaseRequests } from '@/features/purchase-requests';
 import { useAttributeForm } from '@/features/settings';
 import { usePageTitle } from '@/ui/usePageTitle';
-import { useActivity, useEditActivityForm } from './api';
+import { allows } from '@/session/gate-action';
+import { ViewOnlyNote } from '@/ui/ViewOnlyNote/ViewOnlyNote';
+import { ViewOnlyArea } from '@/ui/ViewOnlyNote/view-only-area';
+import { changesNothingIn } from './activity-access';
+import { useActivity } from './api';
 import type { Activity } from './api';
 import { ActivityFigures } from './ActivityFigures';
 import { ActivityHeader } from './ActivityHeader';
@@ -17,6 +21,7 @@ import { LoadFailed, PageSkeleton } from './ActivityLoadStates';
 import styles from './ActivityPage.module.css';
 import { ActivityAttributes, ActivityDetails, ActivityGoals } from './ActivitySections';
 import { ActivityStatusNotice } from './ActivityStatusNotice';
+import { useActivityPlanFacts } from './plan-facts-api';
 import { SplitLinks } from './SplitLinks';
 import { ACTIVITY_TABS } from './activity-tabs';
 import { tabOf, tabSearch } from './schemas';
@@ -87,8 +92,10 @@ function ActivityView({ activity, openReadyFirst }: ActivityViewProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const tab = tabOf(location.search, location.hash);
+  const access = activity.access;
+  const viewOnly = changesNothingIn(access);
   // The plan's business units and model, which the activity itself does not carry.
-  const context = useEditActivityForm(activity.id);
+  const facts = useActivityPlanFacts(activity.id, activity.plan.id, allows(access?.edit));
   const attributeForm = useAttributeForm('activity');
   // Who may decide and the latest decline (feature 008); shared with the Approval tab.
   const approval = useActivityApproval(activity.id);
@@ -100,7 +107,8 @@ function ActivityView({ activity, openReadyFirst }: ActivityViewProps) {
   const pendingFocus = useRef<'ready' | 'history' | null>(openReadyFirst ? 'ready' : null);
   const [focusRequests, setFocusRequests] = useState(0);
   // Ready to submit only while the activity can still be submitted (functional review P-10).
-  const canSubmit = activity.status === 'created' || activity.status === 'declined';
+  const canSubmit =
+    allows(access?.submit) && (activity.status === 'created' || activity.status === 'declined');
 
   useEffect(() => {
     if (pendingFocus.current === 'ready' && tab === 'overview' && panel.current) {
@@ -154,7 +162,7 @@ function ActivityView({ activity, openReadyFirst }: ActivityViewProps) {
   const more = useActivityActions(activity, viewHistory);
 
   return (
-    <>
+    <ViewOnlyArea active={viewOnly}>
       <ActivityHeader
         activity={activity}
         approval={approval.data}
@@ -163,6 +171,7 @@ function ActivityView({ activity, openReadyFirst }: ActivityViewProps) {
         onShowProblems={showSubmitProblems}
       />
       <div className={styles.page}>
+        {viewOnly && <ViewOnlyNote area="record" />}
         {submitProblems !== null && (
           <Notice tone="danger" role="alert">
             <p>
@@ -207,14 +216,14 @@ function ActivityView({ activity, openReadyFirst }: ActivityViewProps) {
               <ActivityAttributes
                 activity={activity}
                 form={attributeForm.data}
-                businessUnits={context.data?.context.businessUnits.map((unit) => unit.id)}
-                error={attributeForm.error ?? context.error}
+                businessUnits={facts.businessUnits}
+                error={attributeForm.error ?? facts.error}
                 onRetry={() => {
                   void attributeForm.refetch();
-                  void context.refetch();
+                  facts.refetch();
                 }}
               />
-              <ActivityGoals activity={activity} model={context.data?.context.model} />
+              <ActivityGoals activity={activity} model={facts.model} />
             </div>
           )}
           {tab === 'approval' && (
@@ -235,6 +244,6 @@ function ActivityView({ activity, openReadyFirst }: ActivityViewProps) {
         </Tabs>
       </div>
       {more.dialogs}
-    </>
+    </ViewOnlyArea>
   );
 }

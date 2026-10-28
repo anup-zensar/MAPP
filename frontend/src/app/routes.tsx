@@ -1,8 +1,6 @@
 import { Outlet } from 'react-router';
 import type { RouteObject } from 'react-router';
 import { ComingSoonPage } from '@/features/placeholders';
-import type { PageHandle } from '@/session/page-handle';
-import { RequirePermission } from '@/session/RequirePermission';
 import { RequireSignIn } from '@/session/RequireSignIn';
 import { AppLayout } from './AppLayout';
 import { DevOnly } from './DevOnly';
@@ -59,11 +57,8 @@ import {
   TransactionPanel,
 } from './pages';
 import { RootLayout } from './RootLayout';
+import { gated, titled } from './route-helpers';
 import { RouteErrorPage } from './RouteErrorPage';
-
-function titled(title: string): { handle: PageHandle } {
-  return { handle: { title } };
-}
 
 /** Every page of the Plan module (features 002–016; docs/sdd/plan-module-build.md §5). */
 const PLAN_MODULE_ROUTES: RouteObject[] = [
@@ -82,7 +77,7 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
   },
   {
     path: '/settings/shell-attributes/new',
-    element: <ShellAttributeEditorPage mode="create" />,
+    element: gated('settings.manage', <ShellAttributeEditorPage mode="create" />),
     ...titled('New Shell attribute'),
   },
   {
@@ -92,7 +87,7 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
   },
   {
     path: '/settings/shell-attributes/:attributeId/edit',
-    element: <ShellAttributeEditorPage mode="edit" />,
+    element: gated('settings.manage', <ShellAttributeEditorPage mode="edit" />),
     ...titled('Edit Shell attribute'),
   },
   { path: '/settings/currencies', element: <CurrenciesPage />, ...titled('Currencies') },
@@ -199,11 +194,7 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
   // 032 Purchase requests; the list only for people holding purchaseRequests.list
   {
     path: '/purchase-requests',
-    element: (
-      <RequirePermission permission="purchaseRequests.list">
-        <PurchaseRequestsPage />
-      </RequirePermission>
-    ),
+    element: gated('purchaseRequests.list', <PurchaseRequestsPage />),
     ...titled('Purchase requests'),
   },
   {
@@ -232,7 +223,7 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
   // 016 Settings › Import GSAP rates and Field help
   {
     path: '/settings/currencies/import',
-    element: <ImportRatesPage />,
+    element: gated('exchangeRates.manage', <ImportRatesPage />),
     ...titled('Import GSAP rates'),
   },
   { path: '/settings/field-help', element: <FieldHelpSettingsPage />, ...titled('Field help') },
@@ -248,7 +239,7 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
     },
   ].map((route) => ({
     ...route,
-    element: <RequirePermission permission="access.manage">{route.element}</RequirePermission>,
+    element: gated('access.manage', route.element),
   })),
 ];
 

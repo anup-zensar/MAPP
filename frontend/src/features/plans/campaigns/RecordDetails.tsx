@@ -11,7 +11,7 @@ import { SidePanel } from '@/ui/SidePanel/SidePanel';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import { HistorySection, panelHistoryId, showHistory } from '@/features/activity-log';
-import { allows, gateItem } from '@/session/gate-action';
+import { allows, gateItem, moreItemFor } from '@/session/gate-action';
 import { localDate } from '@/format/intl';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
@@ -81,6 +81,10 @@ export function RecordDetails({
   const initiative = isCampaign ? null : record;
 
   const items: ActionsMenuItem[] = [
+    ...moreItemFor(
+      { label: EDIT, onSelect: () => void navigate(`${href}/edit`) },
+      record.access?.edit,
+    ),
     ...(isCampaign
       ? gateItem(
           {
