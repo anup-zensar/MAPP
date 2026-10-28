@@ -1,0 +1,86 @@
+openapi: 3.1.0
+info:
+  title: MAPP API — feature 033 fragment (GSAP PR number and purchase order from a simulated GSAP)
+  version: 0.1.0
+  license:
+    name: Proprietary - internal use only
+  description: |
+    FRAGMENT to merge into backend/api/openapi.yaml after feature 032's fragment. It reuses components by $ref:
+    responses BadRequest, Unauthorized, Forbidden, NotFound, Conflict, Error; schemas PurchaseRequest,
+    ActionAvailability (032, 014); parameter PurchaseRequestId (032).
+
+    The operation stands for GSAP's own work (ADR-0016): the requisitioner builds the GSAP PR with the HX key
+    and GSAP turns it into a PO; GSAP's answer comes back now, labelled "Simulated GSAP". It needs
+    finance.import ("Import GSAP extracts") and a PR the person can see (404 otherwise).
+
+    Merge rules:
+      1. Add the path below (tag "Purchase requests") and the schema SimulatedGsapOrderRequest.
+      2. Schema PurchaseRequestAccess: add the property gsapOrder ($ref ActionAvailability) and list it in
+         required. Description: "Create GSAP PR and PO (simulated): hidden (available false, reason empty)
+         without finance.import; otherwise available, or the reason it is not (033 FR-001)."
+      3. Schema PurchaseRequestLine: add the property gsapPending (type boolean) and list it in required.
+         Description: "The line has no PO line yet, or its amount or currency differs from its PO value:
+         the next run of the simulated GSAP sends it (033 FR-003, FR-007)."
+      4. Schema FinancialImport, property source: add the enum value simulatedGsap. Description of the
+         value: "booked by the simulated GSAP for a purchase request (033); fileName is the PR's ID".
+      5. Add the operation to notYetServed until served, and its rule `need(authz.FinanceImport)` to
+         backend/internal/access/routes_purchase_requests.go.
+paths:
+  /api/v1/simulated-gsap/purchase-requests/{purchaseRequestId}/purchase-order:
+    parameters:
+      - $ref: "#/components/parameters/PurchaseRequestId"
+    post:
+      tags: [Purchase requests]
+      operationId: createSimulatedGsapPurchaseOrder
+      summary: The simulated GSAP creates the GSAP PR and the purchase order of an approved, routed PR (033)
+      description: |
+        For a PR that is Approved with no change In review, was routed to the requisitioner and is waiting for
+        GSAP, the simulated GSAP gives it a GSAP PR number (SIM-0010001001 …, once) and a purchase order
+        (SIM-4500001001 …, once) with one PO line per PR line (10, 20, …; status Released; dated today; value =
+        the line's amount). Lines whose PO line already matches are not sent; changed lines update their PO
+        line (top-up); new lines get new PO lines. The PO lines are booked as GSAP purchase-order transactions
+        in one import (source simulatedGsap, feed "Simulated GSAP purchase order", file name the PR's ID),
+        linked to their line items by the HX key. Everything is saved together or not at all.
+
+        Refusals: 404 not_found (no such PR or outside the person's access); 403 forbidden (no
+        finance.import); 409 version_conflict (the PR changed since it was opened); 409 not_allowed with
+        "The simulated GSAP processes approved purchase requests that were routed to the requisitioner.",
+        "Wait until the change of this purchase request is approved or declined.", "The simulated GSAP already
+        created the PO for this purchase request. Run it again after an approved change of its amounts or
+        lines." or "Purchase requests are switched off for your organisation."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SimulatedGsapOrderRequest"
+      responses:
+        "200":
+          description: The purchase request with GSAP's answer.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequest"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+components:
+  schemas:
+    SimulatedGsapOrderRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version:
+          type: integer
+          minimum: 1
+          description: The purchase request's version the person saw.
