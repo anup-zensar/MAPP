@@ -9,6 +9,7 @@ import (
 	"mapp/internal/approval"
 	"mapp/internal/auth"
 	"mapp/internal/budget"
+	"mapp/internal/bulk"
 	"mapp/internal/campaign"
 	"mapp/internal/financials"
 	"mapp/internal/history"
@@ -49,7 +50,7 @@ func postgresPlanning(db *database.DB) Planning {
 	return Planning{
 		Plans: plan.NewPostgresStore(db), Campaigns: campaign.NewPostgresStore(db),
 		Activities: activity.NewPostgresStore(db), LineItems: lineitem.NewPostgresStore(db),
-		Approvals: approval.NewPostgresStore(db), AllWork: allwork.NewPostgresStore(db),
+		Approvals: approval.NewPostgresStore(db), AllWork: allwork.NewPostgresStore(db), Bulk: bulk.NewPostgresStore(db),
 	}
 }
 

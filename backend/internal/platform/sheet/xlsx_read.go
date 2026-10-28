@@ -42,10 +42,8 @@ type xlsxFile struct {
 	date1904 bool
 }
 
-// ReadXLSX reads every sheet of an .xlsx file, in the workbook's order, as text: numbers as written,
-// date cells as YYYY-MM-DD, booleans as TRUE or FALSE, formulas by their saved result. A sheet with more
-// than maxRows rows holding text is refused with ErrTooManyRows; anything that is not a workbook with
-// ErrUnreadable.
+// ReadXLSX reads every sheet as text: numbers as written, date cells as YYYY-MM-DD, booleans as TRUE or
+// FALSE, formulas by their saved result; ErrTooManyRows past maxRows rows with text, else ErrUnreadable.
 func ReadXLSX(data []byte, maxRows int) ([]Table, error) {
 	z, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
@@ -97,7 +95,6 @@ func (f *xlsxFile) readShared() error {
 	return nil
 }
 
-// sheetTargets returns the part name of every sheet relationship, by its id.
 func (f *xlsxFile) sheetTargets() (map[string]string, error) {
 	var rels relationshipsPart
 	if err := f.decode("xl/_rels/workbook.xml.rels", &rels, true); err != nil {

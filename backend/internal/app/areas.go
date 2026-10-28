@@ -22,7 +22,7 @@ import (
 func (w *wiring) areas() error {
 	steps := []func() error{
 		w.settingsArea, w.plansArea, w.planningArea, w.budgetsArea, w.samplesArea, w.approvalsArea, w.financialsArea,
-		w.swbsArea, w.purchaseRequestsArea,
+		w.swbsArea, w.purchaseRequestsArea, w.bulkArea,
 	}
 	for _, step := range steps {
 		if err := step(); err != nil {

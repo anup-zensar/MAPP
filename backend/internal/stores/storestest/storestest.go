@@ -11,6 +11,7 @@ import (
 	"mapp/internal/approval/approvaltest"
 	"mapp/internal/auth/authtest"
 	"mapp/internal/budget/budgettest"
+	"mapp/internal/bulk/bulktest"
 	"mapp/internal/campaign/campaigntest"
 	"mapp/internal/financials/financialstest"
 	"mapp/internal/history/historytest"
@@ -46,6 +47,7 @@ func planning(db *fake.DB) stores.Planning {
 	return stores.Planning{
 		Plans: plantest.NewStore(db), Campaigns: campaigntest.NewStore(db), Activities: activitytest.NewStore(db),
 		LineItems: lineitemtest.NewStore(db), Approvals: approvaltest.NewStore(db), AllWork: allworktest.NewStore(db),
+		Bulk: bulktest.NewStore(db),
 	}
 }
 
