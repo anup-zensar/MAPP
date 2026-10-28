@@ -14,7 +14,6 @@ test('Settings: an activity type, a finance budget item, a dependent option in t
   test.slow();
   await signInAs(page, ALEX);
 
-  // Activity types (US5).
   await page.goto('/settings');
   await page.getByRole('link', { name: 'Activity types', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Activity types', level: 1 })).toBeVisible();
@@ -36,7 +35,6 @@ test('Settings: an activity type, a finance budget item, a dependent option in t
   await expect(typeRow).not.toContainText('Used by');
   await expect(typeRow).toContainText('Active');
 
-  // Finance budget items (US5): a new item in a new budget of this year.
   await page.goto('/settings');
   await page.getByRole('link', { name: 'Finance budget items', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Finance budget items', level: 1 })).toBeVisible();
@@ -62,8 +60,7 @@ test('Settings: an activity type, a finance budget item, a dependent option in t
   await expect(itemRow).toContainText(code);
   await expect(itemRow).toContainText('Not used yet');
 
-  // A dependent option (US3): Region gets an option for the cluster Retail – India, and the preview
-  // fills it in as that cluster's only region.
+  // A dependent option: Region gets one for Retail – India, which the preview fills in as its only one.
   await page.goto('/settings/shell-attributes?level=campaign');
   await page.getByRole('link', { name: 'Region', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Region', level: 1 })).toBeVisible();
@@ -113,7 +110,7 @@ test('Settings: an activity type, a finance budget item, a dependent option in t
   ).setFiles({
     name: 'spend categories.csv',
     mimeType: 'text/csv',
-    buffer: Buffer.from(`Option\n${first}\nInternal\n${second}\n${first}\n`),
+    buffer: Buffer.from(`Option\n${first}\nTradeshow\n${second}\n${first}\n`),
   });
   await expect(importing.getByText('2 options to add').first()).toBeVisible();
   await expect(importing.getByText('1 already present (skipped)').first()).toBeVisible();
