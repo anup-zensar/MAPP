@@ -150,7 +150,7 @@ func TestDisplayCurrencies_SettingsAndPeople_FR003_D061(t *testing.T) {
 	}
 
 	want := map[string]string{
-		"/api/v1/currencies/USD": "Used by 5 line items (1 in the recycle bin) · Display currency of 5 people · Plan currency of 3 plans",
+		"/api/v1/currencies/USD": "Used by 5 line items (1 in the recycle bin) · Display currency of 6 people · Plan currency of 3 plans",
 		"/api/v1/currencies/EUR": "Used by 3 line items · Display currency of 1 person",
 	}
 	if !reflect.DeepEqual(got, want) {

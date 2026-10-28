@@ -84,14 +84,13 @@ func TestLoad_ApprovalWorkflows_D103(t *testing.T) {
 		}
 	}
 	want := []string{"WF-1001 Lubricants EU approval true U-1003", "WF-1002 China BC approval workflow true U-1005 → U-1001",
-		"WF-1003 Standard marketing approval true Line manager → Marketing administratorU-1001 → Mobility second checkU-1003,U-1001"}
+		"WF-1003 Standard marketing approval true Line manager → Marketing administratorU-1001 → Mobility second checkU-1003,U-1001",
+		"WF-1004 Purchase request approval (MoA) true MoA approver", "WF-1005 Purchase request change approval (MoA) true MoA approver"}
 	if !slices.Equal(got, want) {
 		t.Errorf("workflows = %q, want %q", got, want)
 	}
 }
 
-// Each activity's type is allowed by its plan's model (R7), and its dates lie inside its initiative's dates
-// when the initiative has both — for an ongoing activity, its start (R3).
 func TestLoad_ActivitiesFitTheirPlan_R3_R7(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
@@ -165,7 +164,6 @@ func TestLoad_ActivityAttributes_FR014(t *testing.T) {
 	}
 }
 
-// pathOf returns the initiative, campaign and plan of an activity.
 func (d demoData) pathOf(t *testing.T, a activity.Activity) (campaign.Initiative, campaign.Campaign, plan.Plan) {
 	t.Helper()
 	i := slices.IndexFunc(d.initiatives, func(i campaign.Initiative) bool { return i.ID == a.InitiativeID })
@@ -185,7 +183,6 @@ func (d demoData) pathOf(t *testing.T, a activity.Activity) (campaign.Initiative
 	return initiative, camp, d.plans[p]
 }
 
-// settingsModel returns the stored model with id.
 func settingsModel(t *testing.T, d demoData, id string) settings.Model {
 	t.Helper()
 	i := slices.IndexFunc(d.models, func(m settings.Model) bool { return m.ID == id })

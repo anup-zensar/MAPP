@@ -29,36 +29,39 @@ import (
 	"mapp/internal/platform/fake"
 	"mapp/internal/platform/money"
 	"mapp/internal/platform/record"
+	"mapp/internal/purchaserequest"
+	"mapp/internal/purchaserequest/purchaserequesttest"
 	"mapp/internal/settings"
 	"mapp/internal/settings/settingstest"
 )
 
 type demoData struct {
-	people        []people.Person
-	teams         []people.Team
-	memberships   []people.Membership
-	currencies    []settings.Currency
-	rates         []settings.ExchangeRate
-	rateImports   []settings.RateImport
-	activityTypes []settings.ActivityType
-	models        []settings.Model
-	budgets       []settings.FinanceBudget
-	items         []settings.FinanceBudgetItem
-	attributes    []settings.Attribute
-	options       []settings.Option
-	plans         []plan.Plan
-	campaigns     []campaign.Campaign
-	initiatives   []campaign.Initiative
-	activities    []activity.Activity
-	lineItems     []lineitem.LineItem
-	workflows     []approval.Workflow
-	rounds        []approval.Round
-	roles         []access.Role
-	assignments   []access.Assignment
-	accessRules   access.Rules
-	actions       []approval.Action
-	notifications map[string][]approval.Notification // by recipient id
-	delegations   []approval.Delegation
+	people           []people.Person
+	teams            []people.Team
+	memberships      []people.Membership
+	currencies       []settings.Currency
+	rates            []settings.ExchangeRate
+	rateImports      []settings.RateImport
+	activityTypes    []settings.ActivityType
+	models           []settings.Model
+	budgets          []settings.FinanceBudget
+	items            []settings.FinanceBudgetItem
+	attributes       []settings.Attribute
+	options          []settings.Option
+	plans            []plan.Plan
+	campaigns        []campaign.Campaign
+	initiatives      []campaign.Initiative
+	activities       []activity.Activity
+	lineItems        []lineitem.LineItem
+	workflows        []approval.Workflow
+	rounds           []approval.Round
+	roles            []access.Role
+	assignments      []access.Assignment
+	accessRules      access.Rules
+	actions          []approval.Action
+	notifications    map[string][]approval.Notification // by recipient id
+	delegations      []approval.Delegation
+	purchaseRequests []purchaserequest.PurchaseRequest
 
 	attributeByID map[string]settings.Attribute
 	optionByID    map[string]settings.Option
@@ -110,6 +113,8 @@ func loadDemo(t *testing.T) demoData {
 		d.lineItems, err = lineitemtest.NewStore(db).List(ctx)
 		collect(err)
 		d.workflows, err = approvalsRepo.ListWorkflows(ctx)
+		collect(err)
+		d.purchaseRequests, err = purchaserequesttest.NewStore(db).All(ctx)
 		collect(err)
 		d.rounds, err = approvalsRepo.ListRounds(ctx)
 		collect(err)

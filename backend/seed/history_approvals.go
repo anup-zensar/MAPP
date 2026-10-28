@@ -12,10 +12,8 @@ import (
 	"mapp/internal/history"
 )
 
-// addApprovalActions keeps one "statusChanged" entry for every approval action of 008's seed in the last 14
-// days, as 008 logs it on the activity: the verb ("submitted", "re-submitted", "approved", "approved level
-// 1 of", "declined"), the actor, the time, the comment, the round's details and the status change (step 3).
-// Rounds that ended before the log starts are left out; the activity's own approval history keeps them.
+// addApprovalActions logs every approval action of the last 14 days as 008 logs it on the activity (step 3);
+// older ones stay only in the activity's own approval history.
 func (h *demoHistory) addApprovalActions(ctx context.Context) error {
 	repo := h.stores.Approvals
 	rounds, err := repo.ListRounds(ctx)
@@ -28,20 +26,19 @@ func (h *demoHistory) addApprovalActions(ctx context.Context) error {
 	}
 	roundByID, activityByID := h.approvalLookups(rounds)
 
-	// Every action in time order, so each one knows the status the activity had before it.
-	// The repository lists them by ID; a stable sort keeps that order for actions of the same moment.
+	// A stable sort keeps the id order of actions of the same moment, so each knows the status before it.
 	slices.SortStableFunc(actions, func(x, y approval.Action) int { return x.At.Compare(y.At) })
 	logStart := h.at.Add(-HistoryDays * day)
-	status := map[string]activity.Status{} // activity ID → its status after the actions so far
+	status := map[string]activity.Status{}
 	for _, action := range actions {
 		round, found := roundByID[action.RoundID]
-		act, stored := activityByID[action.ActivityID]
+		act, stored := activityByID[action.SubjectID]
 		if !found || !stored {
 			return fmt.Errorf("seed: approval action %s has no round or activity", action.ID)
 		}
-		before := cmp.Or(status[action.ActivityID], activity.StatusCreated)
+		before := cmp.Or(status[action.SubjectID], activity.StatusCreated)
 		after, verb, details := approvalStep(action, round, before)
-		status[action.ActivityID] = after
+		status[action.SubjectID] = after
 		if action.At.Before(logStart) {
 			continue
 		}
@@ -59,7 +56,6 @@ func (h *demoHistory) addApprovalActions(ctx context.Context) error {
 	return nil
 }
 
-// approvalLookups returns the rounds and the stored activities by ID.
 func (h *demoHistory) approvalLookups(rounds []approval.Round) (map[string]approval.Round, map[string]treeRecord) {
 	roundByID := map[string]approval.Round{}
 	for _, round := range rounds {
@@ -74,8 +70,7 @@ func (h *demoHistory) approvalLookups(rounds []approval.Round) (map[string]appro
 	return roundByID, activityByID
 }
 
-// approvalStep returns what one approval action did, as 008 logs it (approvals rounds.go): the activity's
-// status after it, the verb and the details.
+// approvalStep returns the activity's status after one approval action, the verb and the details.
 func approvalStep(action approval.Action, round approval.Round, before activity.Status) (activity.Status, string, string) {
 	approverNames := func(level int) string {
 		list := make([]string, 0, len(round.Levels[level-1].Approvers))

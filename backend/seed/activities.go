@@ -10,8 +10,7 @@ import (
 	"mapp/internal/settings"
 )
 
-// demoWorkflows are the two approval workflows, WF-1001 and WF-1002, which feature 006 seeds in feature
-// 008's table shape (D-103, D-201; 008 data model §8). Each level lists its approvers by name.
+// demoWorkflows are WF-1001 and WF-1002 in feature 008's shape (D-103, D-201); each level lists its approvers by name.
 var demoWorkflows = []struct {
 	name, description string
 	levels            [][]string
@@ -22,8 +21,7 @@ var demoWorkflows = []struct {
 		[][]string{{carlosMendes}, {alexMorgan}}},
 }
 
-// demoActivity is one activity of 006 plan "Demo data". Dates are YYYY-MM-DD ("" none); an ongoing activity
-// has only a start date; amounts are USD texts ("" none); inq is 0 when not set.
+// demoActivity holds dates as YYYY-MM-DD and amounts as texts, "" for none; an ongoing one has only a start date.
 type demoActivity struct {
 	plan, campaign, initiative, name string
 	status                           activity.Status
@@ -38,7 +36,6 @@ type demoActivity struct {
 	attributes                       func(v *values)
 }
 
-// Plans and campaigns of the demo activities.
 const (
 	lubricantsPlan = "FY2026 Lubricants Europe"
 	mobilityPlan   = "FY2026 Mobility China"
@@ -46,8 +43,7 @@ const (
 	mobilityFlow   = "China BC approval workflow"
 )
 
-// lubricantsActivity fills every needed-to-submit attribute of an activity of the Lubricants plan, the
-// Lubricants group included, with one country and one brand at 100.00 %.
+// lubricantsActivity fills every attribute needed to submit, with one country and one brand at 100.00 %.
 func lubricantsActivity(country, companyCode, costCentre, brand, fit4ID string) func(v *values) {
 	return func(v *values) {
 		v.choices("Channel / audience", "External").split("Country / OU", country, "100.00").
@@ -59,9 +55,8 @@ func lubricantsActivity(country, companyCode, costCentre, brand, fit4ID string) 
 	}
 }
 
-// demoActivities are A-1001 … A-1012, in ID order (A-1011 and A-1012 are the GBP plan's of 016). A-1013
-// "Fleet expo stand", which is in the recycle bin with its initiative "Trade shows", is written by feature
-// 011's seed step (history.go) together with that initiative.
+// demoActivities are A-1001 … A-1012 in ID order, A-1011 and A-1012 the GBP plan's; history.go writes A-1013, which is
+// in the recycle bin with its initiative.
 var demoActivities = []demoActivity{
 	{plan: lubricantsPlan, campaign: "Helix launch", initiative: "Digital & social", name: "Launch film",
 		status: activity.StatusCreated, activityType: typeContentProduction, owner: priyaRaman,
@@ -71,7 +66,7 @@ var demoActivities = []demoActivity{
 			v.choices("Channel / audience", "External", "Partners").
 				split("Country / OU", "Germany", "50.00", "United Kingdom", "30.00", "Netherlands", "20.00").
 				choices("Global campaign", "Helix Ultra global platform").choices("Growth ambition", "LUBRICANTS – Premium growth").
-				choice("FIT4 initiative", "FIT4 – Growth").text("FIT4 ID", "FIT4-0042").choices("Zero-based cost hierarchy", "Production").
+				choice("FIT4 initiative", "FIT4 – Growth").text("FIT4 ID", "FIT4-0042").choices("Zero-based cost hierarchy", "LUBES - Growth drivers").
 				split("Brands", "Helix", "100.00").choices("Global key accounts", "Account A – Automotive OEM").
 				choices("Sector", "Automotive").choices("Sub-sector", "Passenger cars").choice("Product launch", "Yes – relaunch")
 		}},
@@ -125,7 +120,7 @@ var demoActivities = []demoActivity{
 	// Deliberately incomplete: owner, dates, planned cost, workflow and attributes empty.
 	{plan: mobilityPlan, campaign: "Retail growth", initiative: "Station promotions", name: "Lunar new year promo",
 		status: activity.StatusCreated, activityType: typeDigitalMedia},
-	// 016 (data-model §8): the GBP plan's activities, planned costs in GBP.
+	// The GBP plan's activities, planned costs in GBP.
 	{plan: ukPlan, campaign: "Helix UK & Ireland", initiative: "UK", name: "UK launch event",
 		status: activity.StatusCreated, activityType: typeEvent, owner: priyaRaman,
 		start: "2027-03-01", end: "2027-05-31", plannedCost: "40000.00", workflow: lubricantsFlow,
@@ -136,8 +131,6 @@ var demoActivities = []demoActivity{
 		attributes: lubricantsActivity("United Kingdom", "GB01", "GB01000118", "Helix", "FIT4-0050")},
 }
 
-// addActivities creates the two approval workflows through the approvals repository, then the demo
-// activities through the activities repository.
 func (d *demo) addActivities(ctx context.Context) error {
 	if err := d.addWorkflows(ctx); err != nil {
 		return err
@@ -168,8 +161,6 @@ func (d *demo) addActivities(ctx context.Context) error {
 	return nil
 }
 
-// activityOf builds the stored activity a of the initiative initiativeID, without its ID, looking up its
-// activity type, owner and approval workflow by name. MAPP creates it at the seed time.
 func (d *demo) activityOf(a demoActivity, initiativeID string) (activity.Activity, error) {
 	var r resolver
 	act := activity.Activity{
@@ -206,7 +197,6 @@ func (d *demo) activityOf(a demoActivity, initiativeID string) (activity.Activit
 	return act, nil
 }
 
-// addWorkflows creates WF-1001 and WF-1002, active, in feature 008's shape.
 func (d *demo) addWorkflows(ctx context.Context) error {
 	repo := d.stores.Approvals
 	d.workflows = map[string]string{}

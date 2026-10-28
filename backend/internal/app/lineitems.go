@@ -9,27 +9,20 @@ import (
 	"mapp/internal/lineitem"
 	"mapp/internal/people"
 	"mapp/internal/plan"
-	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
 	"mapp/internal/settings"
 	"mapp/internal/stores"
 )
 
-// The wiring of feature 007, line items (D-196): the adapters that implement the dependency interfaces of
-// package lineitems over the other features, and the ones that hand line items to activities (006) and to
-// the plans' level registry (004). They run inside the caller's transaction.
+// The adapters below implement package lineitem's dependencies over the other areas (D-196), inside the caller's transaction.
 
-// lineItemActivities implements lineitem.Activities over the activities (006), campaigns (005) and plans
-// (004) repositories and Settings (002); RestartApproval is 006's.
 type lineItemActivities struct {
 	activities stores.ActivityStore
 	campaigns  stores.CampaignStore
 	plans      stores.PlanStore
 	settings   *settings.Service
-	service    *activity.Service
 }
 
-// Facts returns the activity id with its initiative, campaign and plan, and false when it is not stored.
 func (x lineItemActivities) Facts(ctx context.Context, id string) (lineitem.ActivityFacts, bool, error) {
 	act, found, err := x.activities.Get(ctx, id)
 	if err != nil || !found {
@@ -46,7 +39,7 @@ func (x lineItemActivities) Facts(ctx context.Context, id string) (lineitem.Acti
 		PlanYear:      p.Year,
 		DefaultSpread: lineitem.SpreadMethod(p.DefaultSpread),
 		Access:        plan.AccessFacts(p),
-		PlanCurrency:  p.Currency, // 016 FR-015
+		PlanCurrency:  p.Currency,
 	}
 	if act.PlannedCost != nil {
 		planned := act.PlannedCost.Amount
@@ -117,7 +110,6 @@ func (x lineItemActivities) FactsOf(ctx context.Context, ids []string) (map[stri
 	return facts, nil
 }
 
-// readParents reads the initiatives, campaigns and plans of the activities list, one level at a time.
 func (x lineItemActivities) readParents(ctx context.Context, list []activity.Activity) error {
 	initiativeIDs := make([]string, 0, len(list))
 	for _, act := range list {
@@ -143,13 +135,6 @@ func (x lineItemActivities) readParents(ctx context.Context, list []activity.Act
 	return err
 }
 
-// RestartApproval sends a Submitted or Approved activity back to Created with the reasons (006's rule,
-// which also tells approvals to end the open round).
-func (x lineItemActivities) RestartApproval(ctx context.Context, a actor.Actor, id string, reasons []string) error {
-	return x.service.RestartApproval(ctx, a, id, reasons)
-}
-
-// missing returns err, or, when there is none, an error saying that a record the data needs is not stored.
 func missing(err error, kind, id string) error {
 	if err != nil {
 		return err
@@ -163,7 +148,6 @@ type lineItemBudgets struct {
 	repo stores.SettingsStore
 }
 
-// Item returns the finance budget item id with its budget's year and name.
 func (x lineItemBudgets) Item(ctx context.Context, id string) (lineitem.BudgetItem, bool, error) {
 	item, found, err := x.repo.GetFinanceBudgetItem(ctx, id)
 	if err != nil || !found {
@@ -176,7 +160,6 @@ func (x lineItemBudgets) Item(ctx context.Context, id string) (lineitem.BudgetIt
 	return budgetItem(budget, item), true, nil
 }
 
-// Items returns every finance budget item with its budget's year and name.
 func (x lineItemBudgets) Items(ctx context.Context) ([]lineitem.BudgetItem, error) {
 	budgets, err := x.repo.ListFinanceBudgets(ctx)
 	if err != nil {
@@ -195,20 +178,17 @@ func (x lineItemBudgets) Items(ctx context.Context) ([]lineitem.BudgetItem, erro
 	return list, nil
 }
 
-// budgetItem returns item of budget as line items need it.
 func budgetItem(budget settings.FinanceBudget, item settings.FinanceBudgetItem) lineitem.BudgetItem {
 	return lineitem.BudgetItem{
 		ID: item.ID, Year: budget.Year, BudgetName: budget.Name, Name: item.Name, Code: item.Code, Active: item.Active,
 	}
 }
 
-// lineItemPeople implements lineitem.People over the people repository and service (003).
 type lineItemPeople struct {
 	repo    stores.PeopleStore
 	service *people.Service
 }
 
-// DisplayRateOf returns the display currency of the person personID with its rate (003 FR-023).
 func (x lineItemPeople) DisplayRateOf(ctx context.Context, personID string) (people.DisplayRate, error) {
 	return x.service.DisplayRateOf(ctx, personID)
 }
@@ -222,24 +202,18 @@ func (x lineItemPeople) Person(ctx context.Context, id string) (people.PersonRef
 	return person.Ref(), true, nil
 }
 
-// lineItemAttributes implements lineitem.Attributes with Settings' attribute rules (002) at level
-// lineItem.
 type lineItemAttributes struct {
 	settings *settings.Service
 }
 
-// Check checks the line-item attribute values of a save (002's CheckAttributes).
 func (x lineItemAttributes) Check(ctx context.Context, in settings.AttributeInput) (settings.AttributeResult, error) {
 	return x.settings.CheckAttributes(ctx, settings.LevelLineItem, in)
 }
 
-// Missing lists the needed line-item attributes still empty (002's MissingAttributes).
 func (x lineItemAttributes) Missing(ctx context.Context, values settings.AttributeValues, businessUnit []string) ([]settings.MissingField, error) {
 	return x.settings.MissingAttributes(ctx, settings.LevelLineItem, values, businessUnit)
 }
 
-// Describe gives the label and the text of an attribute value for the activity log (002's
-// DescribeAttribute).
 func (x lineItemAttributes) Describe(ctx context.Context, field string, value any) (string, string, error) {
 	return x.settings.DescribeAttribute(ctx, field, value)
 }

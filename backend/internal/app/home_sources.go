@@ -17,7 +17,6 @@ import (
 	"mapp/internal/stores"
 )
 
-// homeReaders are the services of features 003–008 and 011's activity log that feature 009's Home reads.
 type homeReaders struct {
 	people     *people.Service
 	plansRepo  stores.PlanStore
@@ -31,7 +30,7 @@ type homeReaders struct {
 
 // sources builds the Sources of feature 009's Home over the services of features 003–008 and 011's
 // activity log (009 plan "Inputs", D-171, D-196): what Home reads is what those features calculate for their
-// own pages, so every figure on Home equals the one there (FR-017). The names of those packages appear only
+// own pages, so every figure on Home equals the one there. The names of those packages appear only
 // here. Every function joins the read transaction of the Home service.
 func (h homeReaders) sources() home.Sources {
 	return home.Sources{
@@ -83,7 +82,6 @@ func (h homeReaders) sources() home.Sources {
 	}
 }
 
-// myTeams returns the teams a belongs to, active or not (003).
 func (h homeReaders) myTeams(ctx context.Context, a actor.Actor) ([]home.Team, error) {
 	teamIDs, err := h.people.TeamIDsOf(ctx, a.ID)
 	if err != nil {
@@ -100,7 +98,6 @@ func (h homeReaders) myTeams(ctx context.Context, a actor.Actor) ([]home.Team, e
 	return teams, nil
 }
 
-// homePlan returns a plan of feature 004, its figures in US dollars, as Home reads it.
 func homePlan(o plan.Overview) home.Plan {
 	p := home.Plan{
 		ID: o.Plan.ID, Name: o.Plan.Name, Year: o.Plan.Year, StrategicAOP: o.Plan.AOP, Status: string(o.Plan.Status),
@@ -115,14 +112,13 @@ func homePlan(o plan.Overview) home.Plan {
 	return p
 }
 
-// ownedContainers returns the campaigns and initiatives ownerID owns, in every plan the person may see, as
-// the plan tree shows them (005): budgets, roll-ups and completeness worked out by the campaigns' own view builder (D-090).
+// ownedContainers works out budgets, roll-ups and completeness with the campaigns' own view builder (D-090).
 func (h homeReaders) ownedContainers(ctx context.Context, a actor.Actor, ownerID string, rates money.Rates) ([]home.Container, error) {
 	list := []home.Container{}
 	if ownerID == "" {
 		return list, nil
 	}
-	all, err := h.plansRepo.ListInScope(ctx, authz.ScopeOf(ctx)) // only plans the person may see (014 FR-007)
+	all, err := h.plansRepo.ListInScope(ctx, authz.ScopeOf(ctx)) // only plans the person may see
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +135,6 @@ func (h homeReaders) ownedContainers(ctx context.Context, a actor.Actor, ownerID
 	return list, nil
 }
 
-// ownedIn returns the campaign c and those of its initiatives that ownerID owns.
 func ownedIn(c campaign.CampaignView, planRef errs.RecordRef, ownerID string, rates money.Rates) []home.Container {
 	var list []home.Container
 	owns := func(id *string) bool { return id != nil && *id == ownerID }
@@ -164,8 +159,7 @@ func ownedIn(c campaign.CampaignView, planRef errs.RecordRef, ownerID string, ra
 	return list
 }
 
-// ownedActivities returns the activities ownerID owns, in every plan, as their pages show them (006, 007),
-// each Declined one with the decline its Approval section shows (008).
+// ownedActivities shows each Declined activity with the decline its Approval section shows (008).
 func (h homeReaders) ownedActivities(ctx context.Context, a actor.Actor, ownerID string, rates money.Rates) ([]home.Activity, error) {
 	owned, err := h.activities.OwnedBy(ctx, a, ownerID)
 	if err != nil {
@@ -193,7 +187,7 @@ func (h homeReaders) ownedActivities(ctx context.Context, a actor.Actor, ownerID
 	return list, nil
 }
 
-// waitingFor returns the Waiting for me tab of the Approvals page for a, oldest submission first (008).
+// waitingFor lists the activities of a's Waiting for me: Home links its rows to activities (031 research R13).
 func (h homeReaders) waitingFor(ctx context.Context, a actor.Actor) ([]home.Waiting, error) {
 	rows, err := h.approvals.Inbox(ctx, a, approval.TabWaiting)
 	if err != nil {
@@ -201,11 +195,14 @@ func (h homeReaders) waitingFor(ctx context.Context, a actor.Actor) ([]home.Wait
 	}
 	list := make([]home.Waiting, 0, len(rows))
 	for _, row := range rows {
+		if row.Activity == nil {
+			continue
+		}
 		w := home.Waiting{
 			ActivityID: row.Activity.ID, ActivityName: row.Activity.Name, PlannedCost: amountOf(row.PlannedCost),
 			Level: row.Round.CurrentLevel, Levels: row.Round.LevelCount, WaitingSince: row.SubmittedAt,
 		}
-		if row.WaitingSince != nil { // set for every open round
+		if row.WaitingSince != nil {
 			w.WaitingSince = *row.WaitingSince
 		}
 		if len(row.Path) > 0 {
@@ -228,12 +225,8 @@ func amountOf(m *money.Money) *money.Amount {
 	return &amount
 }
 
-// planningKinds are the history kinds of the planning records, top-down: what Home's Recent changes shows
-// (009 FR-015).
 var planningKinds = []string{"plan", "campaign", "initiative", "activity", "lineItem"}
 
-// recentChanges returns the newest activity-log entries about the planning records of the plans planIDs
-// (nil: every plan), at most limit, as 011's activity log shows them (QueryLog), for Home's Recent changes.
 func (h homeReaders) recentChanges(ctx context.Context, a actor.Actor, planIDs []string, limit int) (home.RecentChangesPage, error) {
 	page, err := h.history.QueryLog(ctx, a, history.LogQuery{RecordTypes: planningKinds, PlanIDs: planIDs, Limit: limit})
 	if err != nil {
@@ -246,7 +239,7 @@ func (h homeReaders) recentChanges(ctx context.Context, a actor.Actor, planIDs [
 	return home.RecentChangesPage{Items: items, Total: page.Total}, nil
 }
 
-// usdOf returns m, an amount of a plan currency, in US dollars at the current rates (016 FR-014): Home adds
+// usdOf returns m, an amount of a plan currency, in US dollars at the current rates: Home adds
 // up records of several plans. nil when there is none; a currency without a rate is read as it is.
 func usdOf(m *money.Money, rates money.Rates) *money.Amount {
 	if m == nil {

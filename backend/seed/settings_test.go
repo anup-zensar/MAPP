@@ -10,14 +10,13 @@ import (
 	"mapp/internal/settings"
 )
 
-// The Settings seed of 002 data model §13: 5 currencies with their rates, 6 activity types with their
-// default planned costs, 2 models with their rates and allowed types (in the order of the type list), 2
-// finance budgets of 2026 with 3 items each, 35 Shell attributes with 110 options (FR-032).
+// The Settings seed: 5 currencies with rates, 6 activity types with default planned costs, 2 models with rates and
+// allowed types (in type-list order), 2026's 2 finance budgets of 3 items each, 35 Shell attributes with 162 options.
 func TestLoad_Settings_FR032(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
 
-	// The current rate of each currency is its latest dated rate on or before the seed day (016 FR-002).
+	// The current rate of each currency is its latest dated rate on or before the seed day.
 	current := map[string]settings.ExchangeRate{}
 	for _, r := range d.rates {
 		if latest, found := current[r.Currency]; r.Date.Compare(date.Today(loadedAt)) <= 0 && (!found || r.Date.After(latest.Date)) {
@@ -93,18 +92,20 @@ func TestLoad_Settings_FR032(t *testing.T) {
 		t.Errorf("finance budget items = %q, want %q", items, wantItems)
 	}
 
-	if len(d.attributes) != 35 || len(d.options) != 110 {
-		t.Errorf("%d Shell attributes and %d options, want 35 and 110", len(d.attributes), len(d.options))
+	if len(d.attributes) != 56 || len(d.options) != 185 {
+		t.Errorf("%d Shell attributes and %d options, want 56 and 185 (032 FR-006)", len(d.attributes), len(d.options))
 	}
 }
 
-// The Shell attributes follow the rules of 002 data model §4: Business unit (SA-1001) is the plan's
-// business-unit attribute; markings fit their level; splits only at activity and line-item level; each
-// level's positions run 1…n; the sections and conditions are those of the seed table (FR-016 – FR-023).
+// Business unit (SA-1001) is the plan's business-unit attribute; markings fit their level; splits only at activity and
+// line-item level; each level's positions run 1…n; sections and conditions are those of the seed table.
 func TestLoad_ShellAttributes_FR017_FR023(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
 	businessUnit := d.attributes[0]
+	purchaseRoles := []string{settings.RoleCompanyCode, settings.RoleCostCentre, settings.RoleGLCode, settings.RolePRType,
+		settings.RoleShortText, settings.RoleVendor, settings.RoleVendorCode, settings.RoleVendorEmail, settings.RoleEmailGroup,
+		settings.RolePRRecipients} // 032 FR-006
 	if businessUnit.ID != "SA-1001" || businessUnit.Label != "Business unit" || businessUnit.Role != settings.RoleBusinessUnit ||
 		businessUnit.Level != settings.LevelPlan || businessUnit.Marking != settings.MarkingNeededToPublish {
 		t.Errorf("Business unit = %+v", businessUnit)
@@ -136,7 +137,7 @@ func TestLoad_ShellAttributes_FR017_FR023(t *testing.T) {
 			a.Type == settings.TypeMultipleChoiceSplit && publishLevel:
 			t.Errorf("%s/%s: type %s and marking %s do not fit its level", a.Level, a.Label, a.Type, a.Marking)
 		}
-		if a.Role != "" && a.ID != businessUnit.ID {
+		if a.Role != "" && a.ID != businessUnit.ID && !slices.Contains(purchaseRoles, a.Role) {
 			t.Errorf("%s has role %q", a.Label, a.Role)
 		}
 		for _, optionID := range a.Condition {
@@ -168,8 +169,8 @@ func TestLoad_ShellAttributes_FR017_FR023(t *testing.T) {
 	}
 }
 
-// Dependent options are linked to their parent's options: every Region to a Cluster (Retail – India has
-// none, D-034), every GL code to one or more spend types, BTL – Event to exactly one GL code (FR-022).
+// Every Region is linked to a Cluster (Retail – India has none, D-034). GL code depends on nothing: no source gives
+// Shell's spend type → GL code mapping (D-325).
 func TestLoad_DependentOptions_FR022(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
@@ -196,23 +197,17 @@ func TestLoad_DependentOptions_FR022(t *testing.T) {
 	if d.attributeByID[region.ParentAttributeID].Label != "Cluster" {
 		t.Errorf("Region depends on %s, want Cluster", region.ParentAttributeID)
 	}
-	glCode := d.attributeByID[d.attributeID(t, settings.LevelLineItem, "GL code")]
-	if d.attributeByID[glCode.ParentAttributeID].Label != "Spend type" {
-		t.Errorf("GL code depends on %s, want Spend type", glCode.ParentAttributeID)
+	if glCode := d.attributeByID[d.attributeID(t, settings.LevelLineItem, "GL code")]; glCode.ParentAttributeID != "" {
+		t.Errorf("GL code depends on %s, want nothing", glCode.ParentAttributeID)
 	}
 	want := map[string][]string{
-		"Region: LUBES – DACH":                      {"Lubricants – Europe"},
-		"Region: FLEET – SOUTH CHINA":               {"Fleet – China"},
-		"GL code: 7250080 – Advertising digital":    {"Digital – Platform development", "Digital – Paid media", "Agency – Creative"},
-		"GL code: 7250040 – Events and sponsorship": {"BTL – Event"},
-		"GL code: 7250090 – Digital platforms":      {"Digital – Platform development"},
-		"Region: LUBES – SOUTH EAST ASIA":           {"Lubricants – Asia Pacific"},
-		"GL code: 7250010 – Advertising TV":         {"ATL – TV"},
-		"Region: RETAIL – CHINA":                    {"Retail – China"},
-		"GL code: 7250060 – Agency fees":            {"Agency – Creative"},
-		"Region: LUBES – UK & IRELAND":              {"Lubricants – Europe"},
-		"Region: LUBES – BENELUX":                   {"Lubricants – Europe"},
-		"Region: FLEET – NORTH CHINA":               {"Fleet – China"},
+		"Region: LUBES – DACH":            {"Lubricants – Europe"},
+		"Region: FLEET – SOUTH CHINA":     {"Fleet – China"},
+		"Region: LUBES – SOUTH EAST ASIA": {"Lubricants – Asia Pacific"},
+		"Region: RETAIL – CHINA":          {"Retail – China"},
+		"Region: LUBES – UK & IRELAND":    {"Lubricants – Europe"},
+		"Region: LUBES – BENELUX":         {"Lubricants – Europe"},
+		"Region: FLEET – NORTH CHINA":     {"Fleet – China"},
 	}
 	if len(links) != len(want) {
 		t.Errorf("%d linked options, want %d: %q", len(links), len(want), links)

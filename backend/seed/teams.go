@@ -8,18 +8,16 @@ import (
 )
 
 // demoTeams are the teams of 003 data model §7, T-1001 … T-1003, with their members in membership order
-// (TM-1001 … TM-1008).
+// (TM-1001 … TM-1009; Lea Santos joins in 032).
 var demoTeams = []struct {
 	name, colour, description string
 	members                   []string
 }{
 	{"Lubricants Europe", "blue", "Marketing for lubricants across Europe.", []string{"Priya Raman", "Daniel Okoro", "Sara Novak"}},
 	{"Mobility China", "violet", "Mobility and retail marketing in China.", []string{"Mei Lin", "Carlos Mendes", "Sara Novak"}},
-	{"Global Marketing Ops", "teal", "Marketing operations and Settings for every business.", []string{"Alex Morgan", "Carlos Mendes"}},
+	{globalMarketingOps, "teal", "Marketing operations and Settings for every business.", []string{alexMorgan, carlosMendes, leaSantos}},
 }
 
-// addTeams creates the three demo teams and their eight memberships through the people repository. No
-// preferences are seeded: everyone starts with USD and DD MMM YYYY.
 func (d *demo) addTeams(ctx context.Context) error {
 	repo := d.stores.People
 	d.teams = map[string]string{}

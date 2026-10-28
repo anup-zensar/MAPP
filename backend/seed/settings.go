@@ -7,18 +7,17 @@ import (
 	"mapp/internal/stores"
 )
 
-// SettingsSeed holds the IDs of the Settings records the seed created, by name (002 plan "Demo data"), for
-// the planning steps that refer to them.
+// SettingsSeed maps names to the seeded IDs; Attributes, Options, Budgets and Items keys join level or year and names with "/".
 type SettingsSeed struct {
-	Models        map[string]string // model name → ID
-	ActivityTypes map[string]string // activity type name → ID
-	Attributes    map[string]string // "<level>/<label>" → ID, such as "campaign/Cluster"
-	Options       map[string]string // "<level>/<attribute>/<option>" → ID, such as "campaign/Region/LUBES – DACH"
-	Budgets       map[string]string // "<year>/<budget name>" → ID
-	Items         map[string]string // "<year>/<budget name>/<item name>" → ID
+	Models        map[string]string
+	ActivityTypes map[string]string
+	Attributes    map[string]string
+	Options       map[string]string
+	Budgets       map[string]string
+	Items         map[string]string
 }
 
-// The Settings seed of 002 data model §13. Option lists are fictitious samples (Q-003).
+// Option lists are fictitious samples (Q-003), except Shell's own lists in shell_lists.go (D-325).
 
 var demoCurrencies = []struct{ code, name, symbol, rate string }{
 	{"USD", "US dollar", "$", "1"},
@@ -47,7 +46,6 @@ var demoModels = []struct {
 		[]string{"Agency fees – Creative", "Event", "Digital media", "Content production", "Sponsorship", "MOBILITY – Long-term contract"}},
 }
 
-// demoBudgetYear is the year of the seeded finance budgets: the year of the FY2026 plans.
 const demoBudgetYear = 2026
 
 var demoBudgets = []struct {
@@ -58,14 +56,13 @@ var demoBudgets = []struct {
 	{"2026 Mobility Budget", [][2]string{{"China – Retail", "MOB-CN-RET"}, {"China – Fleet", "MOB-CN-FLT"}, {"Delhi", "MOB-IN-DEL"}}},
 }
 
-// demoAttribute is one seeded Shell attribute. Parent is the label of the attribute it depends on (same
-// level, earlier); Condition lists Business unit option labels.
+// demoAttribute's parent is the label of an earlier attribute of its level; condition lists Business unit labels.
 type demoAttribute struct {
 	level     settings.Level
 	label     string
 	typ       settings.AttributeType
 	marking   settings.Marking
-	section   string // "" means settings.DefaultSection
+	section   string
 	help      string
 	parent    string
 	condition []string
@@ -73,13 +70,11 @@ type demoAttribute struct {
 	options   []demoOption
 }
 
-// demoOption is one option of a seeded attribute, with the labels of the parent options it is linked to.
 type demoOption struct {
 	label   string
 	parents []string
 }
 
-// opts lists options without links.
 func opts(labels ...string) []demoOption {
 	list := make([]demoOption, 0, len(labels))
 	for _, l := range labels {
@@ -88,7 +83,6 @@ func opts(labels ...string) []demoOption {
 	return list
 }
 
-// The sections and conditions of the business-unit groups.
 const (
 	lubricantsSection = "Lubricants attributes"
 	mobilitySection   = "Mobility attributes"
@@ -100,7 +94,7 @@ var (
 	mobility   = []string{"Mobility"}
 )
 
-// demoAttributes are the 35 Shell attributes, SA-1001 … in this order; positions 1…n per level.
+// demoAttributes are SA-1001 … in this order, which sets their positions 1…n per level.
 var demoAttributes = []demoAttribute{
 	{level: settings.LevelPlan, label: "Business unit", typ: settings.TypeMultipleChoice, marking: settings.MarkingNeededToPublish,
 		help: "Lubricants or Mobility. Decides which extra Shell attributes the plan's activities show.",
@@ -137,10 +131,10 @@ var demoAttributes = []demoAttribute{
 		help:    "Split the activity's cost over countries; the shares must add up to 100 %.",
 		options: opts("China", "India", "United Kingdom", "Netherlands", "Germany", "Singapore")},
 	{level: settings.LevelActivity, label: "Company code", help: "The Shell company that pays for the activity.", typ: settings.TypeSingleChoice, marking: settings.MarkingNeededToSubmit,
-		options: opts("GB01", "NL02", "CN04", "IN05", "DE03", "SG06")},
+		options: opts("GB01", "NL02", "CN04", "IN05", "DE03", "SG06"), role: settings.RoleCompanyCode},
 	{level: settings.LevelActivity, label: "Cost centre", typ: settings.TypeSingleChoice, marking: settings.MarkingNeededToSubmit,
 		help:    "Type part of the code to find it.",
-		options: opts("CN04000220", "CN04000231", "GB01000105", "GB01000118", "NL02000340", "IN05000412", "DE03000150", "SG06000077")},
+		options: opts("CN04000220", "CN04000231", "GB01000105", "GB01000118", "NL02000340", "IN05000412", "DE03000150", "SG06000077"), role: settings.RoleCostCentre},
 	{level: settings.LevelActivity, label: "Global campaign", help: "The global campaigns the activity supports.", typ: settings.TypeMultipleChoice, marking: settings.MarkingNeededToSubmit,
 		options: opts("Go Well integrated campaign", "Helix Ultra global platform", "Shell Recharge launch")},
 	{level: settings.LevelActivity, label: "Growth ambition", help: "The growth ambitions this activity contributes to.", typ: settings.TypeMultipleChoice, marking: settings.MarkingNeededToSubmit,
@@ -150,8 +144,8 @@ var demoAttributes = []demoAttribute{
 	{level: settings.LevelActivity, label: "FIT4 initiative", help: "Whether the activity belongs to FIT4, and to which part.", typ: settings.TypeSingleChoice, marking: settings.MarkingNeededToSubmit,
 		options: opts("FIT4 – Cost", "FIT4 – Growth", "Not FIT4")},
 	{level: settings.LevelActivity, label: "FIT4 ID", help: "The FIT4 reference of the activity, when it has one.", typ: settings.TypeText, marking: settings.MarkingNeededToSubmit},
-	{level: settings.LevelActivity, label: "Zero-based cost hierarchy", help: "The zero-based budgeting cost groups the activity's spend falls into.", typ: settings.TypeMultipleChoice, marking: settings.MarkingOptional,
-		options: opts("Media", "Agency", "Events", "Production")},
+	{level: settings.LevelActivity, label: "Zero-based cost hierarchy", help: "The zero-based budgeting categories the activity's spend falls into (LUBES or RETAIL).", typ: settings.TypeMultipleChoice, marking: settings.MarkingOptional,
+		options: shellZeroBasedCostHierarchy()},
 	{level: settings.LevelActivity, label: "Brands", help: "Split the activity's cost over the brands it promotes; the shares must add up to 100 %.", typ: settings.TypeMultipleChoiceSplit, marking: settings.MarkingNeededToSubmit,
 		section: lubricantsSection, condition: lubricants, options: opts("Helix", "Rimula", "Spirax", "Tellus")},
 	{level: settings.LevelActivity, label: "Global key accounts", help: "The global key accounts the activity targets.", typ: settings.TypeMultipleChoice, marking: settings.MarkingNeededToSubmit,
@@ -174,27 +168,17 @@ var demoAttributes = []demoAttribute{
 	{level: settings.LevelActivity, label: "Innovation", help: "Describe what is new about the activity, if anything.", typ: settings.TypeLongText, marking: settings.MarkingOptional,
 		section: mobilitySection, condition: mobility},
 
-	{level: settings.LevelLineItem, label: "Spend type", help: "What kind of spend the line item is. GL codes are chosen within it.", typ: settings.TypeSingleChoice, marking: settings.MarkingNeededToSubmit,
-		section: financeSection,
-		options: opts("Digital – Platform development", "Digital – Paid media", "BTL – Event", "ATL – TV", "Agency – Creative")},
-	{level: settings.LevelLineItem, label: "GL code", typ: settings.TypeSingleChoice, marking: settings.MarkingNeededToSubmit,
-		section: financeSection, help: "Choose a spend type first — each GL code belongs to one or more spend types.",
-		parent: "Spend type", options: []demoOption{
-			{"7250080 – Advertising digital", []string{"Digital – Platform development", "Digital – Paid media", "Agency – Creative"}},
-			{"7250010 – Advertising TV", []string{"ATL – TV"}},
-			{"7250040 – Events and sponsorship", []string{"BTL – Event"}},
-			{"7250060 – Agency fees", []string{"Agency – Creative"}},
-			{"7250090 – Digital platforms", []string{"Digital – Platform development"}},
-		}},
-	{level: settings.LevelLineItem, label: "Spend category", help: "Who the spend is for: one B2B customer, the mass market or internal.", typ: settings.TypeSingleChoice, marking: settings.MarkingOptional,
-		section: financeSection, options: opts("B2B customer specific", "B2C mass market", "Internal")},
-	{level: settings.LevelLineItem, label: "Contracted spend", help: "Whether the spend is under a contract, and for how long.", typ: settings.TypeSingleChoice, marking: settings.MarkingOptional,
-		section: financeSection, options: opts("Yes – long term", "Yes – short term", "No")},
+	{level: settings.LevelLineItem, label: "Spend type", help: "What kind of spend the line item is, from Shell's list of ATL, BTL and other spend types.", typ: settings.TypeSingleChoice, marking: settings.MarkingNeededToSubmit,
+		section: financeSection, options: shellSpendTypes()},
+	{level: settings.LevelLineItem, label: "GL code", help: "The general-ledger account the spend posts to: one of Shell's 13 marketing GL codes.", typ: settings.TypeSingleChoice, marking: settings.MarkingNeededToSubmit,
+		section: financeSection, options: shellGLCodes(), role: settings.RoleGLCode},
+	{level: settings.LevelLineItem, label: "Spend category", help: "Who or what the spend is for, from Shell's list of spend categories.", typ: settings.TypeSingleChoice, marking: settings.MarkingOptional,
+		section: financeSection, options: shellSpendCategories()},
+	{level: settings.LevelLineItem, label: "Contracted spend", help: "Whether the spend is under contract: long term (LT), short term (ST), both, no, or not applicable.", typ: settings.TypeSingleChoice, marking: settings.MarkingOptional,
+		section: financeSection, options: shellContractedSpend()},
 }
 
-// addSettings creates the Settings of 002 data model §13 through the settings repository, in this order
-// (so the IDs are stable): currencies, activity types, models, finance budgets with their items, Shell
-// attributes with their options. It keeps their IDs by name in d.settings.
+// addSettings creates the Settings in a fixed order, so their IDs are stable, and keeps the IDs by name in d.settings.
 func (d *demo) addSettings(ctx context.Context) error {
 	repo := d.stores.Settings
 	d.settings = SettingsSeed{
@@ -211,12 +195,11 @@ func (d *demo) addSettings(ctx context.Context) error {
 	return nil
 }
 
-// The simulated GSAP rate history of 016 data-model §8: one import, RI-1001, of 31 daily rates per currency.
+// The simulated GSAP rate history: one import, RI-1001, of 31 daily rates per currency.
 const (
 	seedRateFile = "gsap_rates_seed.csv"
-	seedRateDays = 30 // the days of rates before the seed day
+	seedRateDays = 30
 )
 
-// seedRateSwing is how the rates of the days before the seed day differ from the seeded rate, in thousandths,
-// cycling from the oldest day: −0.6 %, −0.3 %, 0, +0.3 %, +0.6 %.
+// seedRateSwing is how far each earlier day's rate is from the seeded one, in thousandths, cycling from the oldest day.
 var seedRateSwing = []int64{-6, -3, 0, 3, 6}

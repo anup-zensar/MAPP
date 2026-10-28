@@ -15,7 +15,7 @@ import (
 )
 
 // Feature 006 sees the stored approval workflows — inactive ones too, with their active flag and levels —
-// sorted by name, so the activity form offers only the active ones and labels the others (FR-007).
+// sorted by name, so the activity form offers only the active ones and labels the others.
 func TestAdapter_WorkflowFacts_FR007(t *testing.T) {
 	t.Parallel()
 	db := fake.NewDB()
@@ -72,7 +72,7 @@ func TestAdapter_WorkflowFacts_FR007(t *testing.T) {
 
 // Deleting a Submitted activity leaves its open round stored exactly as it was, so that an Undo brings the
 // activity back Submitted with the same round (008-P3, D-031); the round only ends when a restore brings
-// the activity back Created (FR-023).
+// the activity back Created.
 func TestAdapter_ActivityDeletingKeepsRound_008P3(t *testing.T) {
 	t.Parallel()
 	db := fake.NewDB()
@@ -80,7 +80,7 @@ func TestAdapter_ActivityDeletingKeepsRound_008P3(t *testing.T) {
 	at := time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 	priya := actor.Actor{ID: "U-1002", Name: "Priya Raman"}
 	open := approval.Round{
-		ID: "AR-1001", ActivityID: "A-1004", Number: 1, WorkflowID: "WF-1001", WorkflowName: "Lubricants EU approval",
+		ID: "AR-1001", SubjectKind: approval.KindActivity, SubjectID: "A-1004", Number: 1, WorkflowID: "WF-1001", WorkflowName: "Lubricants EU approval",
 		Levels: []approval.RoundLevel{{Number: 1, Approvers: []actor.Actor{{ID: "U-1003", Name: "Daniel Okoro"}},
 			ApproverType: approval.SourcePeople, Mode: approval.ModeAny, Resolution: approval.ResolutionDecide, Excluded: []approval.Excluded{}}},
 		CurrentLevel: 1, Outcome: approval.OutcomeOpen, SubmittedAt: at, SubmittedBy: priya, Meta: record.NewMeta(priya, at),
