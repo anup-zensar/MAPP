@@ -13,6 +13,7 @@ import (
 	"mapp/internal/allwork"
 	"mapp/internal/approval"
 	"mapp/internal/auth"
+	"mapp/internal/budget"
 	"mapp/internal/campaign"
 	"mapp/internal/financials"
 	"mapp/internal/history"
@@ -23,6 +24,7 @@ import (
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/telemetry"
 	"mapp/internal/platform/web"
+	"mapp/internal/purchaserequest"
 	"mapp/internal/settings"
 	"mapp/internal/stores"
 )
@@ -52,6 +54,8 @@ type wiring struct {
 	lineItems  *lineitem.Service
 	approvals  *approval.Service
 	financials *financials.Service
+	budgets    *budget.Service
+	prs        *purchaserequest.Service
 	allWork    allWorkSource
 	finance    financialPlanning
 }

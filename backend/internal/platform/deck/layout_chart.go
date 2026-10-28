@@ -11,6 +11,7 @@ const (
 	labelHeight  = 16
 	labelSize    = 8
 	nothingDrawn = "No amounts to draw"
+	maxBar       = 48
 )
 
 func (s *sheet) chart(c Chart, at area) {
@@ -51,16 +52,16 @@ func (s *sheet) legend(series []Series, at area) {
 	}
 }
 
-// bars draws the bars of category i in its group: a quarter of the group is space, the rest is shared by the series.
+// bars draws the bars of category i centred in its group: at most three quarters of it, and no bar wider than maxBar.
 func (s *sheet) bars(series []Series, i int, top int64, group area) {
-	gap := max(group.w/4, 2)
-	width := max((group.w-gap)/len(series), 1)
+	width := min(max((group.w-max(group.w/4, 2))/len(series), 1), maxBar)
+	left := group.x + (group.w-width*len(series))/2
 	for j, one := range series {
 		if i >= len(one.Values) || one.Values[i] <= 0 {
 			continue
 		}
 		height := scaled(one.Values[i], top, group.h)
-		s.boxes = append(s.boxes, box{X: group.x + gap/2 + j*width, Y: group.y + group.h - height, W: width, H: height,
+		s.boxes = append(s.boxes, box{X: left + j*width, Y: group.y + group.h - height, W: width, H: height,
 			Fill: one.Colour})
 	}
 }

@@ -20,7 +20,7 @@ currency (`money.Display`).
 |---|---|---|
 | `kind` | `executive` or `regional` | |
 | `filters` | the query as applied (defaults filled in) | FR-006 |
-| `choices` | years (with plans in scope, plus the current year, newest first), teams (id, name, active, mine), currencies (code, name) | FR-006 |
+| `choices` | years (with plans in scope, plus the current and the chosen year, newest first), teams (id, name, active, mine), currencies (code, name) | FR-006 |
 | `team` | the Regional dashboard's team, or null | FR-020 |
 | `planCount`, `plansWithoutBudget` | plans in view; those without a budget | FR-008 |
 | `finance` | `visible` (the person may see financial data in at least one plan in view), `planCount` (plans whose financial figures count) | FR-003 |

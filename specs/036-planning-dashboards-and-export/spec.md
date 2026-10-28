@@ -262,7 +262,7 @@ global budgets panels — the same figures as on screen. **Export › PDF** give
 **Filters**
 
 - **FR-006**: Both dashboards MUST offer **Year** (the plan year; default the current year; the choices are the
-  years with plans the person may see, plus the current year), **Plan type** (All, Operational, Strategic,
+  years with plans the person may see, plus the current and the chosen year), **Plan type** (All, Operational, Strategic,
   Cross-market) and **Currency** (the active currencies; default the person's display currency). The Regional
   dashboard also offers **Market** (every team; default the person's first team by name, else the first team).
 - **FR-007**: The filters MUST live in the page address, so Back, a bookmark and a shared link show the same

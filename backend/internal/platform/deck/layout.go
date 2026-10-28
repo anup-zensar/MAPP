@@ -4,32 +4,35 @@ import "strconv"
 
 // Every position is in points from the top left of a 16:9 page, PowerPoint's widescreen size.
 const (
-	pageWidth    = 960
-	pageHeight   = 540
-	margin       = 40
-	contentWidth = pageWidth - 2*margin
-	titleTop     = 26
-	titleHeight  = 34
-	titleSize    = 24
-	subtitleTop  = 62
-	textHeight   = 18
-	subtitleSize = 12
-	contentTop   = 96
-	cardHeight   = 64
-	cardGap      = 12
-	cardPad      = 12
-	valueSize    = 18
-	maxCards     = 6
-	rowHeight    = 20
-	tableSize    = 9
-	cellPad      = 6
-	footerTop    = 512
-	footerSize   = 8
-	noteHeight   = 14
-	noteSize     = 9
-	sectionGap   = 16
-	chartShare   = 55
-	continued    = " (continued)"
+	pageWidth     = 960
+	pageHeight    = 540
+	margin        = 40
+	contentWidth  = pageWidth - 2*margin
+	titleTop      = 26
+	titleHeight   = 34
+	titleSize     = 24
+	subtitleTop   = 62
+	textHeight    = 18
+	subtitleSize  = 12
+	contentTop    = 96
+	cardHeight    = 64
+	cardGap       = 12
+	cardPad       = 12
+	valueSize     = 18
+	maxCards      = 6
+	maxCardsInRow = 4
+	rowHeight     = 20
+	tableSize     = 9
+	cellPad       = 6
+	footerTop     = 512
+	footerSize    = 8
+	noteHeight    = 14
+	noteSize      = 9
+	sectionGap    = 16
+	chartShare    = 55
+	stackedShare  = 45
+	maxBeside     = 4
+	continued     = " (continued)"
 )
 
 type box struct {
@@ -83,24 +86,38 @@ func layoutPage(p Page) []sheet {
 	first := header(p.Title, p.Subtitle)
 	top := contentTop
 	if len(p.Cards) > 0 {
-		first.cards(p.Cards, top)
-		top += cardHeight + sectionGap
+		top += first.cards(p.Cards, top) + sectionGap
 	}
 	bottom := footerTop - sectionGap - len(p.Notes)*noteHeight
 	first.notes(p.Notes, bottom+sectionGap/2)
 	free := area{x: margin, y: top, w: contentWidth, h: bottom - top}
 	if p.Chart != nil {
-		chartArea := free
-		if p.Table != nil {
-			chartArea.w = contentWidth * chartShare / 100
-			free.x, free.w = margin+chartArea.w+sectionGap, contentWidth-chartArea.w-sectionGap
-		}
+		var chartArea area
+		chartArea, free = splitForChart(free, p.Table)
 		first.chart(*p.Chart, chartArea)
 	}
 	if p.Table == nil {
 		return []sheet{first}
 	}
 	return tablePages(first, p, free)
+}
+
+// splitForChart gives a chart the whole free area without a table, the left of it beside a narrow table, and the
+// top of it above a wide one; it returns the chart's area and what is left for the table.
+func splitForChart(free area, table *Table) (chart, rest area) {
+	switch {
+	case table == nil:
+		return free, area{}
+	case len(table.Columns) <= maxBeside:
+		chart, rest = free, free
+		chart.w = contentWidth * chartShare / 100
+		rest.x, rest.w = margin+chart.w+sectionGap, contentWidth-chart.w-sectionGap
+		return chart, rest
+	}
+	chart, rest = free, free
+	chart.h = free.h * stackedShare / 100
+	rest.y, rest.h = free.y+chart.h+sectionGap, free.h-chart.h-sectionGap
+	return chart, rest
 }
 
 // tablePages draws the table's rows on first, then on as many continuation pages as they need.
@@ -145,23 +162,30 @@ func (s *sheet) notes(lines []string, top int) {
 	}
 }
 
-func (s *sheet) cards(cards []Card, top int) {
+// cards draws up to six cards, in two rows when there are more than four, and returns the height they take.
+func (s *sheet) cards(cards []Card, top int) int {
 	n := min(len(cards), maxCards)
-	width := (contentWidth - (n-1)*cardGap) / n
+	perRow := n
+	if n > maxCardsInRow {
+		perRow = (n + 1) / 2
+	}
+	width := (contentWidth - (perRow-1)*cardGap) / perRow
 	inner := width - 2*cardPad
 	for i, c := range cards[:n] {
-		x := margin + i*(width+cardGap)
+		x, y := margin+(i%perRow)*(width+cardGap), top+(i/perRow)*(cardHeight+cardGap)
 		valueColour := Ink
 		if c.Problem {
 			valueColour = Danger
 		}
-		s.boxes = append(s.boxes, box{X: x, Y: top, W: width, H: cardHeight, Fill: White, Line: Hairline})
+		s.boxes = append(s.boxes, box{X: x, Y: y, W: width, H: cardHeight, Fill: White, Line: Hairline})
 		s.texts = append(s.texts,
-			text{X: x + cardPad, Y: top + 6, W: inner, H: 14, Size: noteSize, Colour: Subtle, Value: fit(c.Label, inner, noteSize, false)},
-			text{X: x + cardPad, Y: top + 21, W: inner, H: 24, Size: valueSize, Bold: true, Colour: valueColour,
+			text{X: x + cardPad, Y: y + 6, W: inner, H: 14, Size: noteSize, Colour: Subtle, Value: fit(c.Label, inner, noteSize, false)},
+			text{X: x + cardPad, Y: y + 21, W: inner, H: 24, Size: valueSize, Bold: true, Colour: valueColour,
 				Value: fit(c.Value, inner, valueSize, true)},
-			text{X: x + cardPad, Y: top + 46, W: inner, H: 12, Size: footerSize, Colour: Subtle, Value: fit(c.Note, inner, footerSize, false)})
+			text{X: x + cardPad, Y: y + 46, W: inner, H: 12, Size: footerSize, Colour: Subtle, Value: fit(c.Note, inner, footerSize, false)})
 	}
+	rows := (n + perRow - 1) / perRow
+	return rows*cardHeight + (rows-1)*cardGap
 }
 
 func (s *sheet) grid(columns []Column, rows []Row, at area) {

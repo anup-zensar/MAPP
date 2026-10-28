@@ -3,7 +3,6 @@ package approval
 import (
 	"cmp"
 	"context"
-	"fmt"
 	"slices"
 	"strings"
 	"time"
@@ -139,12 +138,7 @@ func (b *board) monitoring(from, until time.Time) Monitoring {
 		}
 	}
 	m.Cards.DecidedThisMonth = int(decided)
-	if decided > 0 {
-		denominator := decided * 86400
-		tenths := (20*seconds + denominator) / (2 * denominator)
-		average := fmt.Sprintf("%d.%d", tenths/10, tenths%10)
-		m.Cards.AverageDecisionDays = &average
-	}
+	m.Cards.AverageDecisionDays = AverageDecisionDays(decided, seconds)
 	return m
 }
 

@@ -105,6 +105,8 @@ tags:
     description: "Splitting one activity into two (feature 016)"
   - name: Approval delegations
     description: "Delegation of approval authority for a date range (feature 017)"
+  - name: Dashboards
+    description: "Executive and regional planning dashboards and the export of plans and dashboards to PowerPoint and PDF (feature 036)"
 paths:
   /healthz:
     get:
@@ -7455,6 +7457,131 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
+  /api/v1/dashboards/executive:
+    get:
+      tags:
+        - Dashboards
+      operationId: getExecutiveDashboard
+      summary: The Executive dashboard of every market the person may see (feature 036, FR-001 – FR-019)
+      description: |
+        Every figure covers only the plans of the year the person may see; committed and actual cover only the
+        plans whose financial data they may see; global budgets appear only to holders of globalBudgets.view.
+        Amounts are in the chosen currency (default the person's display currency).
+      parameters:
+        - $ref: "#/components/parameters/DashboardYear"
+        - $ref: "#/components/parameters/DashboardPlanType"
+        - $ref: "#/components/parameters/DashboardCurrency"
+      responses:
+        "200":
+          description: The dashboard.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanningDashboard"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/dashboards/regional:
+    get:
+      tags:
+        - Dashboards
+      operationId: getRegionalDashboard
+      summary: The Regional dashboard of one market (team), with a plan's campaigns (feature 036, FR-020 – FR-022)
+      parameters:
+        - $ref: "#/components/parameters/DashboardYear"
+        - $ref: "#/components/parameters/DashboardPlanType"
+        - $ref: "#/components/parameters/DashboardCurrency"
+        - $ref: "#/components/parameters/DashboardTeam"
+        - $ref: "#/components/parameters/DashboardPlan"
+      responses:
+        "200":
+          description: The dashboard of the market.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanningDashboard"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/dashboards/executive/export:
+    get:
+      tags:
+        - Dashboards
+      operationId: exportExecutiveDashboard
+      summary: The Executive dashboard as a PowerPoint or PDF file (feature 036, FR-024)
+      parameters:
+        - $ref: "#/components/parameters/ExportFormat"
+        - $ref: "#/components/parameters/DashboardYear"
+        - $ref: "#/components/parameters/DashboardPlanType"
+        - $ref: "#/components/parameters/DashboardCurrency"
+      responses:
+        "200":
+          $ref: "#/components/responses/OfficeFile"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/dashboards/regional/export:
+    get:
+      tags:
+        - Dashboards
+      operationId: exportRegionalDashboard
+      summary: The Regional dashboard as a PowerPoint or PDF file (feature 036, FR-024)
+      parameters:
+        - $ref: "#/components/parameters/ExportFormat"
+        - $ref: "#/components/parameters/DashboardYear"
+        - $ref: "#/components/parameters/DashboardPlanType"
+        - $ref: "#/components/parameters/DashboardCurrency"
+        - $ref: "#/components/parameters/DashboardTeam"
+        - $ref: "#/components/parameters/DashboardPlan"
+      responses:
+        "200":
+          $ref: "#/components/responses/OfficeFile"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/plans/{planId}/export:
+    get:
+      tags:
+        - Dashboards
+      operationId: exportPlan
+      summary: A plan as a PowerPoint or PDF file — summary, campaigns, budget against planned and actual, activities (feature 036, FR-023)
+      parameters:
+        - $ref: "#/components/parameters/PlanId"
+        - $ref: "#/components/parameters/ExportFormat"
+        - $ref: "#/components/parameters/DashboardCurrency"
+      responses:
+        "200":
+          $ref: "#/components/responses/OfficeFile"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
 components:
   securitySchemes:
     sessionCookie:
@@ -8201,6 +8328,48 @@ components:
       schema:
         type: string
       example: DLG-1001
+    DashboardYear:
+      name: year
+      in: query
+      description: The plan year; default the current year (feature 036).
+      schema:
+        type: integer
+        minimum: 2000
+        maximum: 2100
+    DashboardPlanType:
+      name: planType
+      in: query
+      description: Only plans of this type; all types when absent.
+      schema:
+        $ref: "#/components/schemas/PlanType"
+    DashboardCurrency:
+      name: currency
+      in: query
+      description: An active currency of Settings to show amounts in; default the person's display currency.
+      schema:
+        type: string
+        pattern: ^[A-Z]{3}$
+    DashboardTeam:
+      name: teamId
+      in: query
+      description: The market (team) of the Regional dashboard; default the person's first team by name, else the first team.
+      schema:
+        type: string
+        maxLength: 40
+    DashboardPlan:
+      name: planId
+      in: query
+      description: A plan of the dashboard whose campaigns to show; ignored when the plan is not on the dashboard.
+      schema:
+        type: string
+        maxLength: 40
+    ExportFormat:
+      name: format
+      in: query
+      required: true
+      schema:
+        type: string
+        enum: [pptx, pdf]
   responses:
     BadRequest:
       description: >-
@@ -8249,6 +8418,22 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+    OfficeFile:
+      description: The file, named in Content-Disposition, e.g. "SP&A One – FY2026 Lubricants Europe – 28 Oct 2026.pptx" (feature 036).
+      headers:
+        Content-Disposition:
+          description: attachment with filename (ASCII) and filename* (UTF-8).
+          schema:
+            type: string
+      content:
+        application/vnd.openxmlformats-officedocument.presentationml.presentation:
+          schema:
+            type: string
+            format: binary
+        application/pdf:
+          schema:
+            type: string
+            format: binary
   schemas:
     # Features 032 and 033 Purchase requests and the simulated GSAP purchase order
     PurchaseRequestStatus:
@@ -21906,3 +22091,401 @@ components:
           description: Levels due for escalation that no backup approver could take.
           items:
             $ref: "#/components/schemas/EscalationEvent"
+    PlanningDashboard:
+      type: object
+      additionalProperties: false
+      description: >-
+        An Executive or Regional dashboard (feature 036). Every amount is in filters.currency; null means "—"
+        (nothing to add up, no budget, or financial data the person may not see).
+      required: [kind, filters, choices, team, planCount, plansWithoutBudget, finance, financeAsOf, totals, markets,
+        plans, overBudget, leftToPlan, planCampaigns, months, approvals, purchaseRequests, completeness, globalBudgets,
+        canExport]
+      properties:
+        kind:
+          type: string
+          enum: [executive, regional]
+        filters:
+          $ref: "#/components/schemas/DashboardFilters"
+        choices:
+          $ref: "#/components/schemas/DashboardChoices"
+        team:
+          description: The market of the Regional dashboard; null on the Executive dashboard.
+          oneOf:
+            - $ref: "#/components/schemas/TeamRef"
+            - type: "null"
+        planCount:
+          type: integer
+        plansWithoutBudget:
+          type: integer
+        finance:
+          $ref: "#/components/schemas/DashboardFinance"
+        financeAsOf:
+          description: When GSAP data was last received; null when none ever was.
+          type: [string, "null"]
+          format: date-time
+        totals:
+          $ref: "#/components/schemas/DashboardFigures"
+        markets:
+          description: Each team with plans on the dashboard (Executive only; empty on the Regional dashboard).
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardMarketRow"
+        plans:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardPlanRow"
+        overBudget:
+          description: Up to five campaigns with planned cost above budget, largest overspend first.
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardCampaignRow"
+        leftToPlan:
+          description: Up to five campaigns with budget above planned cost, most left to plan first.
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardCampaignRow"
+        planCampaigns:
+          oneOf:
+            - $ref: "#/components/schemas/DashboardPlanCampaigns"
+            - type: "null"
+        months:
+          $ref: "#/components/schemas/DashboardMonths"
+        approvals:
+          $ref: "#/components/schemas/DashboardApprovals"
+        purchaseRequests:
+          $ref: "#/components/schemas/DashboardPurchaseRequests"
+        completeness:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardCompleteness"
+        globalBudgets:
+          description: The year's global budgets; null when the person may not see global budgets.
+          oneOf:
+            - type: array
+              items:
+                $ref: "#/components/schemas/DashboardGlobalBudget"
+            - type: "null"
+        canExport:
+          type: boolean
+    DashboardFilters:
+      type: object
+      additionalProperties: false
+      required: [year, planType, currency, teamId, planId]
+      properties:
+        year:
+          type: integer
+        planType:
+          oneOf:
+            - $ref: "#/components/schemas/PlanType"
+            - type: "null"
+        currency:
+          type: string
+          pattern: ^[A-Z]{3}$
+        teamId:
+          type: [string, "null"]
+        planId:
+          type: [string, "null"]
+    DashboardChoices:
+      type: object
+      additionalProperties: false
+      required: [years, teams, currencies]
+      properties:
+        years:
+          description: The years with plans the person may see, and the current year, newest first.
+          type: array
+          items:
+            type: integer
+        teams:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardTeamChoice"
+        currencies:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardCurrencyChoice"
+    DashboardTeamChoice:
+      type: object
+      additionalProperties: false
+      required: [id, name, active, mine]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        active:
+          type: boolean
+        mine:
+          type: boolean
+    DashboardCurrencyChoice:
+      type: object
+      additionalProperties: false
+      required: [code, name]
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+    DashboardFinance:
+      type: object
+      additionalProperties: false
+      required: [visible, planCount]
+      properties:
+        visible:
+          description: The person may see financial data in at least one plan on the dashboard.
+          type: boolean
+        planCount:
+          description: The plans whose committed and actual figures are counted.
+          type: integer
+    DashboardFigures:
+      type: object
+      additionalProperties: false
+      required: [budget, plannedCost, committed, actual, budgetUsedPercent, budgetSpentPercent, leftToPlan,
+        unspentBudget, overBudget]
+      properties:
+        budget:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        plannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        committed:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        actual:
+          description: Paid, Shell's actuals (015).
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        budgetUsedPercent:
+          description: Planned cost ÷ budget, a whole percent.
+          type: [integer, "null"]
+        budgetSpentPercent:
+          description: Actual ÷ budget, a whole percent.
+          type: [integer, "null"]
+        leftToPlan:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        unspentBudget:
+          description: Budget − actual.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        overBudget:
+          type: boolean
+    DashboardMarketRow:
+      type: object
+      additionalProperties: false
+      required: [team, planCount, figures]
+      properties:
+        team:
+          $ref: "#/components/schemas/TeamRef"
+        planCount:
+          type: integer
+        figures:
+          $ref: "#/components/schemas/DashboardFigures"
+    DashboardPlanRef:
+      type: object
+      additionalProperties: false
+      required: [id, name, status, planType]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        status:
+          $ref: "#/components/schemas/PlanStatus"
+        planType:
+          $ref: "#/components/schemas/PlanType"
+    DashboardPlanRow:
+      type: object
+      additionalProperties: false
+      required: [plan, teams, figures, financeShown]
+      properties:
+        plan:
+          $ref: "#/components/schemas/DashboardPlanRef"
+        teams:
+          type: array
+          items:
+            $ref: "#/components/schemas/TeamRef"
+        figures:
+          $ref: "#/components/schemas/DashboardFigures"
+        financeShown:
+          type: boolean
+    DashboardCampaignRow:
+      type: object
+      additionalProperties: false
+      required: [campaign, plan, figures, difference]
+      properties:
+        campaign:
+          $ref: "#/components/schemas/DashboardRecordRef"
+        plan:
+          $ref: "#/components/schemas/DashboardRecordRef"
+        figures:
+          $ref: "#/components/schemas/DashboardFigures"
+        difference:
+          description: Over budget, planned − budget; in Left to plan, budget − planned; null in a plan's campaigns.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+    DashboardRecordRef:
+      type: object
+      additionalProperties: false
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    DashboardPlanCampaigns:
+      type: object
+      additionalProperties: false
+      required: [plan, items]
+      properties:
+        plan:
+          $ref: "#/components/schemas/DashboardRecordRef"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardCampaignRow"
+    DashboardMonths:
+      type: object
+      additionalProperties: false
+      required: [items, noDates, otherYears, paidOutsideYear]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardMonth"
+        noDates:
+          description: Planned cost not yet spread (activities without dates); null when none.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        otherYears:
+          description: Planned cost spread into months of other years; null when none.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        paidOutsideYear:
+          description: Payments posted outside the year; null when none or when financial data is hidden.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+    DashboardMonth:
+      type: object
+      additionalProperties: false
+      required: [month, planned, actual, plannedToDate, actualToDate]
+      properties:
+        month:
+          type: string
+          pattern: ^[0-9]{4}-[0-9]{2}$
+        planned:
+          $ref: "#/components/schemas/Money"
+        actual:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        plannedToDate:
+          $ref: "#/components/schemas/Money"
+        actualToDate:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+    DashboardApprovals:
+      type: object
+      additionalProperties: false
+      required: [waiting, oldestWaitingSince, approved, declined, autoApproved, averageDecisionDays, activitiesByStatus]
+      properties:
+        waiting:
+          type: integer
+        oldestWaitingSince:
+          type: [string, "null"]
+          format: date-time
+        approved:
+          type: integer
+        declined:
+          type: integer
+        autoApproved:
+          type: integer
+        averageDecisionDays:
+          description: Days from submission to decision, one decimal ("2.5"); null when nothing was decided.
+          type: [string, "null"]
+        activitiesByStatus:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardStatusCount"
+    DashboardStatusCount:
+      type: object
+      additionalProperties: false
+      required: [status, count]
+      properties:
+        status:
+          $ref: "#/components/schemas/ActivityDisplayStatus"
+        count:
+          type: integer
+    DashboardPurchaseRequests:
+      type: object
+      additionalProperties: false
+      required: [available, byStatus, count, amount, waitingForGsap]
+      properties:
+        available:
+          description: Purchase Support is switched on.
+          type: boolean
+        byStatus:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardPurchaseRequestStatus"
+        count:
+          type: integer
+        amount:
+          $ref: "#/components/schemas/Money"
+        waitingForGsap:
+          type: integer
+    DashboardPurchaseRequestStatus:
+      type: object
+      additionalProperties: false
+      required: [status, count, amount]
+      properties:
+        status:
+          $ref: "#/components/schemas/PurchaseRequestStatus"
+        count:
+          type: integer
+        amount:
+          $ref: "#/components/schemas/Money"
+    DashboardCompleteness:
+      type: object
+      additionalProperties: false
+      required: [level, total, complete, percent]
+      properties:
+        level:
+          type: string
+          enum: [plan, campaign, initiative, activity, lineItem]
+        total:
+          type: integer
+        complete:
+          type: integer
+        percent:
+          type: [integer, "null"]
+    DashboardGlobalBudget:
+      type: object
+      additionalProperties: false
+      required: [id, name, amount, allocated, unallocated, plannedCost, overAllocated]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        amount:
+          $ref: "#/components/schemas/Money"
+        allocated:
+          $ref: "#/components/schemas/Money"
+        unallocated:
+          $ref: "#/components/schemas/Money"
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        overAllocated:
+          type: boolean
