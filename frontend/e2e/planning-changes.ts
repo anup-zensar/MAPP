@@ -9,10 +9,7 @@ interface ApprovalRound {
   currentLevel: number;
 }
 
-/**
- * Signs in as `email` and approves or declines the activity's current level through the API (the screen
- * journeys of deciding are in core-flow-approval.spec.ts).
- */
+/** Signs in as `email` and approves or declines the activity's current level. */
 export async function decideAs(
   page: Page,
   email: string,
@@ -34,10 +31,7 @@ export async function decideAs(
   });
 }
 
-/**
- * As Mei Lin: submits the activity (made with the China BC approval workflow) and has Carlos Mendes and
- * Alex Morgan approve both levels. Ends signed in as Alex Morgan.
- */
+/** As Mei Lin: submits the China BC activity; Carlos Mendes and Alex Morgan approve. Ends as Alex. */
 export async function approveThroughApi(page: Page, records: PlanningRecords): Promise<void> {
   await callApi(page, 'POST', `/api/v1/activities/${records.activityId}/approval/submit`, {
     version: records.activityVersion,
@@ -67,10 +61,7 @@ interface ActivityAnswer {
   version: number;
 }
 
-/**
- * As the signed-in person: saves the activity with a new planned cost in USD (such as '25000.00') and
- * everything else as it is, as the edit form would (006 updateActivity).
- */
+/** As the signed-in person: saves the activity with a new USD planned cost, as the edit form would. */
 export async function changeActivityPlannedCost(
   page: Page,
   activityId: string,
@@ -101,7 +92,6 @@ export async function changeActivityPlannedCost(
   });
 }
 
-/** A line item's fields that a test sets; everything else stays empty (007 FR-009). */
 function lineItemFields(name: string, plannedCost: string) {
   return {
     name,
@@ -133,7 +123,6 @@ export async function createLineItem(
   );
 }
 
-/** As the signed-in person: saves the line item with a new planned cost and everything else empty. */
 export async function changeLineItemPlannedCost(
   page: Page,
   lineItem: Named & { version: number },
@@ -143,4 +132,19 @@ export async function changeLineItemPlannedCost(
     ...lineItemFields(lineItem.name, plannedCost),
     version: lineItem.version,
   });
+}
+
+/** Signs in as `email` and cancels that person's delegations in force today (017). */
+export async function cancelCurrentDelegations(page: Page, email: string): Promise<void> {
+  await signInAs(page, email);
+  const list = await callApi<{ items: { id: string; state: string; version: number }[] }>(
+    page,
+    'GET',
+    '/api/v1/approval-delegations',
+  );
+  for (const delegation of list.items.filter((item) => item.state === 'current')) {
+    await callApi(page, 'POST', `/api/v1/approval-delegations/${delegation.id}/cancel`, {
+      version: delegation.version,
+    });
+  }
 }

@@ -166,6 +166,7 @@ test('T080 SC-006: keyboard only — sign in, every sidebar item, collapse and e
 
   const nav = page.getByRole('navigation', { name: 'Main' });
   const links = nav.getByRole('link');
+  await expect(links.first()).toBeVisible();
   const count = await links.count();
   expect(count).toBeGreaterThan(5);
   for (let index = 0; index < count; index++) {

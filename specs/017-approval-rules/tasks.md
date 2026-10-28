@@ -11,7 +11,7 @@ description: "Task list for feature 017 — Approval rules (amends 008, 014 and 
 > hard-codes the demo roles; role changes made in Settings › Roles and access do not yet change who can approve);
 > T036 (line manager on the People screen; line managers come from the demo data); T046 (`npm run check`: three
 > tests in `src/app/RequireSignIn.test.tsx` and `src/app/SessionProvider.test.tsx` fail at the merge);
-> T047–T049 (end-to-end journeys); T050.
+> T050.
 
 **Input**: [plan.md](plan.md), [spec.md](spec.md), [data-model.md](data-model.md),
 [contracts/openapi.yaml](contracts/openapi.yaml). **Prerequisites**: feature 008 built; **feature 014
@@ -170,9 +170,25 @@ plan wins and the difference is reported.
 
 ## Phase 4: End-to-end
 
-- [ ] T047 `frontend/e2e/approval-rules.spec.ts` journeys 1–5 of plan *Tests* (journey 5 in its own `test.describe` with a fresh seed); planning helpers from `frontend/e2e/planning.ts`
-- [ ] T048 Journey 6: axe on the workflow form with conditions and errors, Monitoring, the delegation panel and form; keyboard-only delegation
-- [ ] T049 Run `core-flow.spec.ts`, `module-rest.spec.ts`, `smoke.spec.ts` and 014's e2e file; fix fallout only where 017 changed behaviour (e.g. the third seeded workflow in the Approval workflow select), and report anything else
+- [x] T047 `frontend/e2e/approval-rules.spec.ts` journeys 1–5 of plan *Tests* (journey 5 in its own `test.describe` with a fresh seed); planning helpers from `frontend/e2e/planning.ts`
+- [x] T048 Journey 6: axe on the workflow form with conditions and errors, Monitoring, the delegation panel and form; keyboard-only delegation
+- [x] T049 Run `core-flow.spec.ts`, `module-rest.spec.ts`, `smoke.spec.ts` and 014's e2e file; fix fallout only where 017 changed behaviour (e.g. the third seeded workflow in the Approval workflow select), and report anything else
+  - Done 2026-10-29. Journeys 1–4 are in `frontend/e2e/approval-rules.spec.ts`, journeys 5 and 6 in
+    `frontend/e2e/approval-monitoring.spec.ts`; every journey uses activities of its own except journey 5, which
+    needs the seed's overdue round of Trade magazine ads (it cannot be backdated through the API): it runs the
+    escalation and checks the backup's capacity in the dialog, then cancels, because 030's journey
+    (`simulated-gsap-swbs.spec.ts`) has Daniel Okoro approve that round later in the run. The seed is reloaded once
+    per run, not per `describe`. Not tested here, being built in parallel: the line manager on the People screen
+    (T036) and roles from Settings (T001, T008); the approved-automatically case is in `brd-gaps.spec.ts`.
+  - Two bugs found and fixed, each with a component test first: the decision dialog of a level where all must
+    approve told the last waiting approver "Still waiting for <themself> after this approval" (an approver's
+    capacity `approver` was treated like a backup's; `DecisionDialog.rules.test.tsx`), and the approval history
+    read "Only when only when …" for a level not needed (the API's rule text already starts with "only when";
+    `ApprovalHistory.test.tsx`).
+  - T049: no 017 fallout in the existing files (`module-rest.spec.ts` no longer exists; 014's journeys are in
+    `brd-gaps.spec.ts`). `home.spec.ts` assumed the seeded plan is among Priya's 10 newest plans and that Daniel
+    owns no activity; with the new journeys' plans it reads the newest of her team's plans, and journey 3 moves
+    Daniel's own activity to the recycle bin at its end.
 
 ---
 

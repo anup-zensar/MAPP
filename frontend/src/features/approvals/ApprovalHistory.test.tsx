@@ -107,7 +107,7 @@ describe('ApprovalHistory rules entries (feature 017, US7)', () => {
           levelLabel: 'Level 3',
           approvers: [],
           actor: SYSTEM,
-          rule: 'planned cost is at least $100,000.00',
+          rule: 'only when planned cost is at least $100,000.00',
           comment: '',
         },
         {
@@ -141,6 +141,7 @@ describe('ApprovalHistory rules entries (feature 017, US7)', () => {
     expect(items[3]).toHaveTextContent('Alex Morgan as backup approver');
     expect(items[4]).toHaveTextContent('Not needed · Level 3');
     expect(items[4]).toHaveTextContent('Only when planned cost is at least $100,000.00');
+    expect(items[4]).not.toHaveTextContent(/only when only when/i);
     expect(items[5]).toHaveTextContent('Approved automatically · Level 1');
     expect(items[5]).toHaveTextContent('Activity type is Event');
   });

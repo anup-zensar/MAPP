@@ -141,8 +141,14 @@ test('008 US3 (T055 journey 2): Daniel approves and declines from his inbox, old
   // Daniel is not told of his own decisions.
   await bell(page).click();
   const danielPanel = page.getByRole('dialog', { name: 'Notifications' });
+  await expect(danielPanel.getByRole('button').first()).toBeVisible();
   await expect(
-    danielPanel.getByRole('button', { name: /^Activity (approved|declined)/ }),
+    danielPanel.getByRole('button', { name: new RegExp(escapeRegExp(label)) }),
+  ).toHaveCount(2);
+  await expect(
+    danielPanel.getByRole('button', {
+      name: new RegExp(`^Activity (approved|declined) .*${escapeRegExp(label)}`),
+    }),
   ).toHaveCount(0);
 
   await signInAs(page, PRIYA);

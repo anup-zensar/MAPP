@@ -12,10 +12,7 @@ interface FormAttribute {
   options: { id: string; label: string }[];
 }
 
-/**
- * Every needed-to-submit activity attribute of a Lubricants plan, filled with a demo option: the
- * shared ones and the Lubricants group (Brands, Global key accounts, Sector, Sub-sector, Product launch).
- */
+/** Every needed-to-submit activity attribute of a Lubricants plan, filled with a demo option. */
 async function lubricantsAttributes(page: Page): Promise<Record<string, unknown>> {
   const form = await callApi<{ sections: { attributes: FormAttribute[] }[] }>(
     page,
@@ -64,21 +61,22 @@ export interface LubricantsActivity extends Named {
 }
 
 /**
- * As Priya Raman: a Lubricants plan of next year (team Lubricants Europe) with one campaign and one
- * initiative, and a Created activity of `amount` USD with every needed field filled and the workflow
- * "Standard marketing approval" (017 seed: level 1 Priya's line manager Daniel Okoro, approved
- * automatically below $10,000.00; levels 2 and 3 not needed for this activity).
+ * As the signed-in person: a Lubricants plan of next year (team Lubricants Europe) with one campaign
+ * and one initiative, and a Created activity of `amount` USD with every needed field filled, owned by
+ * Priya Raman with the Standard marketing approval (017 seed) unless `options` say otherwise.
  */
 export async function lubricantsActivity(
   page: Page,
   label: string,
   amount: string,
+  options: { owner?: string; workflow?: string } = {},
 ): Promise<LubricantsActivity> {
+  const workflowName = options.workflow ?? STANDARD_WORKFLOW;
   const year = new Date().getUTCFullYear() + 1;
   const [modelId, teamId, ownerId, planForm] = await Promise.all([
     idOf(page, '/api/v1/models', 'Lubricants 1.0'),
     idOf(page, '/api/v1/teams', 'Lubricants Europe'),
-    idOf(page, '/api/v1/people', 'Priya Raman'),
+    idOf(page, '/api/v1/people', options.owner ?? 'Priya Raman'),
     callApi<{
       businessUnitAttributeId: string;
       businessUnitOptions: { id: string; label: string }[];
@@ -130,9 +128,9 @@ export async function lubricantsActivity(
     `/api/v1/initiatives/${initiative.id}/activity-form`,
   );
   const type = form.activityTypes.find((t) => t.name === 'Content production');
-  const workflow = form.approvalWorkflows.find((w) => w.name === STANDARD_WORKFLOW);
+  const workflow = form.approvalWorkflows.find((w) => w.name === workflowName);
   if (!type || !workflow) {
-    throw new Error(`The activity form offers no 'Content production' or '${STANDARD_WORKFLOW}'`);
+    throw new Error(`The activity form offers no 'Content production' or '${workflowName}'`);
   }
   const activity = await callApi<Named & { version: number }>(
     page,
