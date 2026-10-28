@@ -21,7 +21,9 @@ yes/no · single choice · multiple choice · multiple choice with % split · pe
 *Shell attribute* means the field is a **custom attribute** configured in Settings (feature 002), not a
 fixed field: its label, options, marking and business-unit condition can be changed by an administrator
 without a release. The seed configuration below reproduces Shell's as-is form (28 Sep 2026). Option
-values in the seed data are **fictitious samples** until Shell provides the real lists.
+values in the seed data are **fictitious samples** until Shell provides the real lists, except the lists
+Shell's Hive9 tenant shows live (functional analysis E3.0.2): the zero-based cost hierarchy, spend type, GL
+code, spend category and contracted spend carry Shell's own values (D-325).
 
 ---
 
@@ -30,7 +32,7 @@ values in the seed data are **fictitious samples** until Shell provides the real
 | # | Label | Shell / Hive9 name | Type | Mark | Default / options | Notes |
 |---|---|---|---|---|---|---|
 | 1 | Plan name | Name | text (≤ 120) | R | — | Unique across MAPP |
-| 2 | Year | Year | single choice | R | Current year; options current year − 1 … + 5 | Locked after first save |
+| 2 | Year | Year | single choice | R | Current year; options current year … + 10, no past year (D-326) | Locked after first save; a plan keeps its year after it has passed |
 | 3 | Model | Model | reference (Model) | R | Only active models | Drives activity types and goals |
 | 4 | Teams | Team | reference (Teams, many) | P | The signed-in user's teams | |
 | 5 | Owner | Owner | person | P | The signed-in user if eligible | Must belong to one of the plan's teams (R1) |
@@ -120,7 +122,7 @@ Dropped Shell fields: **ShellAllPlans** (greyed out and unused in Shell's form �
 | 18 | PIR | PIR | single choice (Yes / No) | S | Post-investment review needed |
 | 19 | FIT4 initiative | Fit4 Initiative | single choice | S | |
 | 20 | FIT4 ID | Fit4 ID | text | S | |
-| 21 | Zero-based cost hierarchy | (Zero based) Cost Hierarchy | multiple choice | — | |
+| 21 | Zero-based cost hierarchy | (Zero based) Cost Hierarchy | multiple choice | — | Shell's 10 values: LUBES - Growth drivers, … , RETAIL - Tactical Investments (D-325) |
 
 ### 4.3 Shell attributes — shown when the plan's business unit includes Lubricants
 
@@ -156,7 +158,7 @@ Dropped Shell fields: **ShellAllPlans** (greyed out and unused in Shell's form �
 |---|---|---|---|
 | 35 | Total actuals | Activity – Total Actuals | later |
 | 36 | Total invoiced | Total Invoiced Amount | later |
-| 37 | Total purchase requests | Total Purchase Request Amount | later |
+| 37 | Total purchase requests | Total Purchase Request Amount | calc — the activity's Purchase requests section (feature 032) |
 
 ## 5. Line item
 
@@ -169,16 +171,19 @@ Dropped Shell fields: **ShellAllPlans** (greyed out and unused in Shell's form �
 | 5 | Planned cost | Planned Cost in Local Currency | money (local) | R | Current unassigned balance | |
 | 6 | Planned cost in USD | Planned Cost in Preferred Currency | money | calc | — | Domain model §4.3 |
 | 7 | Spread over time | (allocation C/E/F/L) | single choice + month amounts | — | Plan's default spread | Domain model §4.4 |
-| 8 | Spend type | Spend Type | Shell attribute, single choice | S | — | e.g. "Digital – Platform development", "BTL – Event" |
-| 9 | GL code | GL Code | Shell attribute, single choice, depends on spend type | S | Auto-filled when only one fits | 13 marketing GL codes, e.g. "7250080 – Advertising digital" (R11) |
-| 10 | Spend category | Spend Category | Shell attribute, single choice | — | — | e.g. "B2B customer specific" |
-| 11 | Contracted spend | Contracted Spend | Shell attribute, single choice | — | — | e.g. "Yes – long term", "Yes – short term", "No" |
+| 8 | Spend type | Spend Type | Shell attribute, single choice | S | — | Shell's spend types, e.g. "ATL - Digital", "BTL - Event": the 25 the functional analysis names (of 57); the rest are added in Settings (D-325) |
+| 9 | GL code | GL Code | Shell attribute, single choice | S | — | Shell's 13 marketing GL codes, e.g. "7250080 - Advertising - Digital"; independent of spend type until Settings links them (R11, D-325) |
+| 10 | Spend category | Spend Category | Shell attribute, single choice | — | — | Shell's 19 values, e.g. "B2B Customer Specific", "Not Applicable" (D-325) |
+| 11 | Contracted spend | Contracted Spend | Shell attribute, single choice | — | — | Not Applicable · No · Yes - Both · Yes - LT · Yes - ST (D-325) |
 | 12 | Contracted amount | Contracted Amount | money (local) | — | — | |
-| 13 | Request SWBS code from GSAP | Create SWBS Code | yes/no | — | Yes | Status per domain model §2.4 |
+| 13 | Request SWBS code from GSAP | Create SWBS Code | yes/no | — | Yes | Status per domain model §2.4; locked on once the code is received (030 FR-004) |
 | 14 | Finance budget year | Link to Finance Budget › Budget Year | single choice | S | Plan year | |
 | 15 | Finance budget item | Linked Budget Item | reference (finance budget items of that year) | S | Items of the plan's default finance budget listed first; pre-selected when it has one active item | R12 |
-| 16 | SWBS code | SWBS Code | text | later | — | "Filled by GSAP later" |
-| 17 | Total actuals, % of actual cost, Actuals at monthly rate, Total invoiced, Total purchase requests | (same) | money / percent | later | — | Domain model §4.6 |
+| 16 | SWBS code | SWBS Code | text, read-only | calc | — | Returned by GSAP — by the simulated GSAP until live integration (`SIM-<company code>-<nnnn>`, feature 030); "Filled by the simulated GSAP once the activity is approved and the request is sent" until then; kept for good once received; never copied |
+| 16a | SWBS requested / received | — | timestamps, read-only | calc | — | When the request was sent and the code received (the run's time while simulated) |
+| 16b | HX key | HX + line-item ID | text, read-only | calc | — | "HX" + the digits of the ID (L-1006 → HX1006), "Generated from the line-item number", with Copy; GSAP matches PR, PO and invoice data on it (feature 030, 015) |
+| 17 | Total actuals, % of actual cost, Actuals at monthly rate, Total invoiced | (same) | money / percent | later | — | Domain model §4.6 |
+| 17a | Total purchase requests, Available to request | Total Purchase Request Amount | money, read-only | calc | — | The line item's Purchase requests section (feature 032, domain model §2.4a) |
 
 Not in this phase: the **Purchase requests & purchase orders** section of the Shell line-item form
 (Finance module) and **Related primary activities** (future, see feature map).
@@ -188,3 +193,17 @@ Not in this phase: the **Purchase requests & purchase orders** section of the Sh
 Fields of Settings records (models, activity types, attributes, currencies, finance budget items,
 approval workflows, people and teams) are specified in features 002, 003 and 008 and summarised in
 domain model §6.
+
+## 7. Purchase request (feature 032)
+
+Built-in fields: name ("PR for <line item>" by default), description, owner, MoA approver, approval workflow,
+modification workflow; per line: line item, currency, amount, delivery date, overall limit, description;
+read-only: ID, status, company code and cost centres (from the line items), HX keys, GSAP PR number and date,
+and per line the SWBS code, Sent date, PO number, PO line, status, date and value.
+
+Shell attributes at the levels *Purchase request* and *PR line* (Settings, D-325), in the demo:
+
+| Level | Attributes (S = needed to submit) | MAPP reads |
+|---|---|---|
+| Purchase request | Material or service (S) · PR type (S) · Short text (S) · Requestor user ID · Behalf of requestor · Invoice approver name (S) · Vendor (S) · Vendor code · Vendor contact name · Vendor email address · Vendor address · Contract holder · Outline agreement · CP lead · Email group · PR recipients · OA vendor (China specific) · Sub category (China specific) | Vendor (grouping), Vendor code, Vendor email, Short text, PR type, Email group and PR recipients (routing) |
+| PR line | Material group · Remarks / comments · Material / service code | — |

@@ -75,7 +75,7 @@ too):
 
 ```
 Created ──Submit──► Submitted ──Approve (last level)──► Approved ──(start date reached)──► In progress ──(end date passed)──► Complete
-   ▲                 ▲    │  │                              │
+   ▲                 ▲ ↺  │  │                              │
    │        Re-submit│    │  └──Recall (owner)──► Created   │
    │                 │    ▼                                 │
    │              Declined ◄── Decline (comment required)   │
@@ -86,8 +86,17 @@ Created / Declined ──Submit, when no level needs a decision──► Approve
 ```
 
 - **Re-submit** sends a Declined activity straight back to Submitted and starts a new approval round at
-  level 1. **Recall** lets the owner withdraw a Submitted activity back to Created. The approval rules
-  (levels, approvers, notifications) are specified in feature 008 and extended by feature 017.
+  level 1. A **Submitted** activity can be re-submitted too (↺, feature 031): in one step its open round
+  ends as *Replaced by a new submission* at the level it waited at (decisions already made stay in its
+  history) and a new round starts with the workflow the activity has now; the dialog says which round
+  ends before anything changes, and a problem leaves everything as it was. **Recall** lets the owner
+  withdraw a Submitted activity back to Created. The approval rules (levels, approvers, notifications)
+  are specified in feature 008 and extended by features 017 and 031.
+- **Any record type** (feature 031): approval rounds, their history and notifications belong to one
+  record of one type — **Activity**, **Purchase request** or **Modified purchase request** (feature 032
+  connects the purchase requests). The rounds of a record share one numbering and at most one is open.
+  "Nobody approves an activity they own or submitted" holds for activities only; on a purchase request
+  such a decision is allowed and recorded as a self-approval.
 - **Approval rules** (feature 017) are evaluated **once, at submission**, on the activity's planned cost
   (USD), its activity type and the plan's business units; the outcome is frozen in the approval round.
   Each level is then *not needed* (its "only needed when" condition does not match), *approved
@@ -117,18 +126,49 @@ Line items have **no approval of their own**: they are approved as part of their
 | Status | Values | Rule |
 |---|---|---|
 | **Completeness** | All filled in · *n* fields needed | All "needed to submit" fields filled. |
-| **SWBS request** | Not requested · Waiting for activity approval · Ready to send to GSAP | *Not requested* when "Request SWBS code" is off. *Waiting…* while the activity is not approved. *Ready…* once the activity is approved. (Sending to GSAP and receiving the code are future features; the code field shows "Filled by GSAP later".) |
+| **SWBS request** | Not requested · Waiting for activity approval · Ready to send to GSAP · SWBS code received | *SWBS code received* once GSAP returned the line item's code — it wins over everything else and stays when the activity leaves approval, the line item is edited, moved, deleted and restored; "Request SWBS code" can then no longer be switched off. Otherwise *Not requested* when "Request SWBS code" is off, *Ready…* once the activity is approved (also while In progress or Complete), *Waiting…* before. Until live GSAP integration, a **simulated GSAP** answers: a person with "Import GSAP extracts" sends the ready line items from the Financials page or one line item from its page, and each receives `SIM-<company code>-<nnnn>` at once, numbered per company code (feature 030, ADR-0016). Copies never take the code. |
+
+### 2.4a Purchase request (feature 032)
+
+A purchase request asks to buy from one vendor. It belongs to one plan and has one or more **PR lines**,
+each on a different line item of that plan, all under one company code; a line has its own currency,
+amount, delivery date and overall limit.
+
+| Status | Values | Rule |
+|---|---|---|
+| **Status** | Created · Submitted · In review · Approved · Declined · Closed | *Submitted* when sent for approval, *In review* once a level approves, *Approved* after the last level; a declined round makes it *Declined*, a recall *Created*. A change to an Approved purchase request is a **modification**: *In review* with the approved version kept, restored if the change is declined. *Closed* by the person closing it; each line becomes the smaller of its amount and what was invoiced. |
+| **Completeness** | All filled in · *n* fields needed | As every record (§2.6), over the purchase request's Shell attributes and its lines. |
+
+- **Reservation.** A line reserves its amount on its line item as soon as it is saved, in every status;
+  it may not exceed the line item's *available to request* (other currencies at today's rate). Closing
+  releases what was not invoiced; deleting a Created or Declined purchase request releases it all.
+- **Submit gates.** Each line item's activity is Approved and has its SWBS code, and every needed field is
+  filled; the approval follows the purchase request's workflows (031), and its owner may approve it.
+- **Routing.** Approval routes it (Original or Modification); Resend and Close route it again. Each line's
+  Sent date is set at its first routing and never changes.
+- **Protection.** A line item, activity, initiative or campaign a purchase request draws on cannot be
+  deleted, the campaign cannot move to another plan, and the line item's planned cost cannot fall below
+  what is requested.
+- **GSAP data** (feature 033). Until live integration the simulated GSAP fills the GSAP PR number and, per
+  line, the PO number, PO line, status *Released*, date and value, and books each PO line as a
+  purchase-order transaction linked by HX key, which the line item counts as Committed. After an approved
+  change it sends only the changed and added lines, keeping its numbers (top-up).
 
 ### 2.5 Changes that need re-approval
 
 When an activity is **Submitted** or **Approved**, these changes send it back to **Created** after the
 user confirms ("This activity will need approval again"):
 
-- its planned cost, start date or end date;
-- adding, deleting or changing the planned cost or currency of one of its line items.
+- its planned cost, start date, end date or ongoing flag (a split changes its planned cost too).
 
-Other edits (description, owner, attributes, line item coding) are allowed without re-approval and are
-recorded in the activity log (decision D-013).
+Line items never send their activity back for approval: adding, duplicating, deleting, restoring or
+changing a line item — its planned cost and currency included — keeps the activity's status, because
+Shell adds and adjusts line items after the activity is approved, then requests the SWBS code and raises
+the purchase request (decision D-322, feature 034; supersedes the line-item part of D-013). A negative
+unassigned balance (§4.3) still shows its warning and still blocks submitting and re-submitting (D-016).
+
+Other edits (description, owner, attributes) are allowed without re-approval. Every change is recorded in
+the activity log (decision D-013).
 
 A change of exchange rate in Settings never sends an activity back for approval, even though it changes
 the USD value of its line items (and may make its unassigned balance negative).
@@ -258,7 +298,11 @@ revenue 2,500,000 USD.
 Shell's forms show several read-only fields fed by finance and GSAP (actuals, invoiced amount, purchase
 request amount, SWBS code, actuals at monthly rate, % of actual cost). In this phase they are shown in a
 collapsed **"From finance (coming later)"** section with "—" and the explanation "Filled when the
-Finance module and GSAP are connected". They are never typed by users.
+Finance module and GSAP are connected". They are never typed by users. The SWBS code is the exception
+since feature 030: the line item stores the code the simulated GSAP returned and shows it on its SWBS
+request card with its dates, its source and the HX key (§2.4). The purchase-request totals of a line item
+and an activity are live since feature 032 (§2.4a), and the simulated GSAP's purchase orders count as
+Committed since feature 033.
 
 ---
 
@@ -276,7 +320,7 @@ Finance module and GSAP are connected". They are never typed by users.
 | R8 | A campaign's **Region** options depend on its **Cluster**; when a cluster has one region it is filled in automatically. | PM step 2 |
 | R9 | Attribute groups tied to a business unit (Lubricants, Mobility/Retail) appear only when the plan's business unit includes it; hidden groups keep their values. | PM step 4, FA B10 |
 | R10 | Multi-select attributes with a percentage split (Country/OU, Brands) must total exactly 100.00 % before submitting; selections start with an even split (remainder on the last value). | PM step 4 |
-| R11 | A line item's GL code options depend on its spend type. | Workshop |
+| R11 | A line item's GL code options depend on its spend type only when an administrator links them in Settings; Shell's seed has no such links, because no source gives the mapping (D-325). | Workshop; FA E3.0.2 |
 | R12 | A line item must link to one **finance budget item** of the chosen budget year before submitting. The year defaults to the plan's year; the items of the plan's **default finance budget** are listed first, and the item is pre-selected only when that budget has a single active item. | PM step 5 |
 | R13 | Copying a record copies everything below it; copies start as Draft (plan) / Created (activity) and never copy approvals, comments, activity-log history or GSAP values. Copy names get " (copy)", then " (copy 2)", … | FA B8 |
 | R14 | **Undo** right after a delete (within its display time) restores everything exactly as it was, statuses and open approval rounds included. **Restoring later from the recycle bin page** requires the parent to exist (restore the parent first, or choose "Restore both"), keeps the readable IDs, and resets statuses: restored plans come back as Draft, restored activities as Created (their approval history is kept, open approval rounds are not resumed). | FA B8, D-031 |
@@ -292,7 +336,7 @@ Finance module and GSAP are connected". They are never typed by users.
 | **Custom attribute** | Label, level (plan · campaign · initiative · activity · line item), type (single choice · multiple choice · multiple choice with % split · yes/no · text · long text · number), options, marking (optional / needed to publish / needed to submit), business-unit condition, parent attribute for dependent options, display order, active | Every level's form |
 | **Currency** | Code (ISO), name, symbol, rate = units per 1 USD (USD fixed at 1), active | Line items, display currency |
 | **Finance budget item** | Budget year, budget name (e.g. "2026 Lubricants Budget"), item name, code, active. A stand-in list until the Finance module exists. | Line item link, plan default finance budget |
-| **Approval workflow** | Name, ordered levels, active; remind after (1–60 days) and escalate after (1–90 days, more than remind after), both optional. Each level: who approves (named people · the activity owner's line manager · the holders of a role that approves, for the plan), any one or all must approve, optional "only needed when" and "approve automatically when" conditions (planned cost at least / below in USD, business unit is one of, activity type is one of; the parts combine with AND), and a backup approver (required on every level when escalation is on) | Activity |
+| **Approval workflow** | Name, what it approves (object type: activity · purchase request · modified purchase request, chosen at creation and fixed once used), ordered levels, active; remind after (1–60 days) and escalate after (1–90 days, more than remind after), both optional. Each level: who approves (named people · the record owner · the owner's line manager · the holders of a role that approves, for the plan · the person named on the record, for purchase requests the MoA approver), any one or all must approve (one approver for the owner, the line manager and the named person), optional "only needed when" and "approve automatically when" conditions (planned cost — for purchase requests the amount — at least / below in USD; for activities also business unit is one of, activity type is one of; the parts combine with AND), and a backup approver (required on every level when escalation is on) | Activity, purchase request (feature 032) |
 | **Person** | Name, e-mail, job title, teams, line manager (optional; never oneself, no loops) | Owners, approvers, "line manager" approval levels, demo sign-in |
 | **Team** | Name, members, colour (assigned automatically from the chart palette, changeable) | Plan teams, owner choice, "My teams" filter, coloured team pills |
 
@@ -308,7 +352,7 @@ for new choices, existing values kept and labelled "(inactive)").
 | **Activity log entry** | Who did what to which record, when, with the changed fields (before → after). Written for every create, edit, status change, move, copy, delete and restore. Read-only. |
 | **Recycle bin entry** | A deleted record and everything that was under it, who deleted it and when; restorable. |
 | **Comment** | Free-text note on an activity (also used for decline reasons). |
-| **Notification** | In-app message to a person, e.g. "Activity A-1042 is waiting for your approval", also for activities approved automatically, approval reminders and escalations. |
+| **Notification** | In-app message to a person about one record of one type, e.g. "Activity A-1042 is waiting for your approval" or "Purchase request approved", also for records approved automatically, approval reminders and escalations. |
 | **Approval delegation** | A person's approvals handed to a delegate (who can approve) for a date range of at most 90 days, with an optional note; planned, current, ended or cancelled; never deleted. While current, the delegate approves the person's waiting levels "as delegate of" them. |
 | **Saved view** | A user's named combination of filters, columns and view type on the planning views. |
 

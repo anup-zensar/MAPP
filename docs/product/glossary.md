@@ -71,8 +71,17 @@ application use these definitions. Hive9 names are given in brackets where users
 | **Company code** | The Shell legal entity in SAP, e.g. GB01. |
 | **Cost centre** | The SAP cost centre that pays, e.g. CN04000220. |
 | **Spend type / GL code** | What kind of spend a line item is, and the general-ledger account it posts to. |
-| **SWBS code** | An accounting code that only GSAP creates for a line item; needed before purchasing. MAPP only records the request in this phase. |
+| **SWBS code** | An accounting code that only GSAP creates for a line item; needed before purchasing. The line item stores the code GSAP returns; until live integration it comes from the simulated GSAP. |
+| **HX key** | "HX" followed by the line item's number (L-1006 → HX1006): the tracking number requisitioners type into GSAP, on which GSAP's PR, PO and invoice data is matched back to the line item. |
+| **Simulated GSAP** | The stand-in for GSAP until live integration (ADR-0016): it answers SWBS requests with `SIM-…` codes and, later, creates GSAP PR numbers and purchase orders. Everything it produces is labelled "Simulated GSAP". |
 | **GSAP** | Shell's SAP finance system — the system of record for money. |
+| **Purchase request (PR)** | A request to buy from one vendor, raised in MAPP on line items of one plan (feature 032). Each **PR line** draws on one line item. Statuses: Created · Submitted · In review · Approved · Declined · Closed. |
+| **Available to request** | What a line item can still be asked for: its planned cost less the amounts of the purchase requests drawing on it, in the line item's currency at today's rate. |
+| **MoA approver** | The person a purchase request names to approve it under Shell's Manual of Authorities; the seeded purchase-request workflows send it to this person. MAPP does not check MoA limits. |
+| **Requisitioner** | The person who keys an approved purchase request into GSAP. The demo role *Requisitioner* opens the Purchase requests page and runs the simulated GSAP. |
+| **Routing / Requisitioner queue** | Sending an approved purchase request — Original, Modification, Resend or Close — to the recipients of its Email group and PR recipients, or to the Requisitioner queue when it names none. **Waiting for GSAP** lists the routed purchase requests GSAP has not answered. |
+| **PR form** | The spreadsheet or CSV file a routing produces: one row per PR line with what GSAP needs. Its file name holds the purchase request's ID. |
+| **GSAP PR number / PO line** | GSAP's number for a purchase request and the purchase-order line each PR line became. Until live integration the simulated GSAP gives `SIM-0010…` and `SIM-4500…` numbers with PO lines 10, 20, … (feature 033). |
 | **PIR** | Post-investment review — whether the activity's results will be reviewed. |
 | **FIT4** | A Shell programme flag and ID attached to initiatives and activities. |
 

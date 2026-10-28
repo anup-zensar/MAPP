@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Version** | 2.1 · 26 October 2026 |
+| **Version** | 2.2 · 28 October 2026 |
 | **Status** | Binding for every screen of the web app. Code that disagrees with this document is a defect. |
 | **Replaces** | Version 1 (Apple-inspired look: Apple blue `#0071e3`, blue-to-purple gradient, system font stack, pill shapes) |
 | **Decided by** | Product owner, 20 October 2026: Shell yellow primary button with dark text, at most one per page or dialog (D-310); light-grey canvas with white cards (D-311); Jost headings and Arial body, no Shell logo (D-312); WCAG 2.2 AA (D-313); red only for danger and errors (D-314) — decision log D-310–D-314 |
@@ -216,6 +216,28 @@ Every page is one of these five templates.
 | Leaving with unsaved changes | "Discard changes?" with **Keep editing** (focused) and **Discard changes**. |
 | Approver's flow | Approvals → preview panel → **Approve** (primary) and **Decline** side by side → next item. |
 | Menus with children | The first item goes to the parent itself ("Go to: Settings"). |
+
+### 2.6 Purchase requests (features 032, 033)
+
+| Screen | Template and rules |
+|---|---|
+| **Purchase requests** (`/purchase-requests`, sidebar after Financials, only with "See the Purchase requests page") | List page (A) without a primary button: purchase requests are raised from a line item; **New purchase request** is secondary and asks for the line item first. Toolbar: search ("Search ID, name, vendor, HX key, GSAP PR or PO number"), segmented **All · Waiting for GSAP** (the requisitioner's queue), Filters (Status, PR type, Vendor, Owner, Created from/to, each type and vendor with "Not completed"), removable chips, the count, sort and pages of 50 — all in the address, so Back keeps them. The table is grouped by vendor (a heading row with the number of PRs and the totals the API counts); each PR row opens its lines (line item, HX key, amount in its own currency, delivery and Sent dates, PO number, line and status, invoiced). Empty: "No purchase requests yet — purchase requests are raised from a line item's Purchase requests section."; no match: "Nothing matches these filters" with **Clear filters**; Purchase Support off: "Purchase requests are switched off for your organisation." |
+| **Purchase request** (`/purchase-requests/<id>`) | Record page (B): level tag PURCHASE REQUEST, status chip (Created · Submitted · In review · Declined · Approved · Closed; "· Change in review" while an approved PR's change waits), completeness chip listing what stops submitting (each item opens the field, the activity or the line item), ID, owner. **Edit** is the one primary; Submit for approval / Re-submit, Download PR form and **Create GSAP PR and PO (simulated)** are secondary; More holds Resend PR form, Close purchase request, View history and Delete purchase request (last, red). The server's notice sits under the header ("Awaiting approval — saving changes will restart approval."). Cards: Details · GSAP data · Lines · Approved version (only while a change is in review) · Approval · Routing history · History. |
+| **New / Edit purchase request** | Form page (C): sections *Purchase request* (name, description, owner, MoA approver, the two workflows of the right type, the Shell attributes of level Purchase request) and *Lines* (one card per line: line item and HX key read-only, SWBS code read-only, currency, amount, delivery date, overall limit, description, PR line attributes; **Add line** opens the line-item picker, **Remove line** asks first). The footer's primary button says what happens: **Save** (Created, Declined), **Save and re-submit** (Submitted, In review), **Submit changes** (Approved). Every problem at once; a version conflict keeps the entries and offers **Reload**. |
+| **Line-item picker** | Dialog with search over name, ID and HX key; each line item shows its activity and Available to request; line items that can't be added stay listed with the reason ("Already on this purchase request", "Nothing left to request", "One purchase request cannot charge two company codes (GB01 and NL02).") and can't be chosen. |
+| **Line item › Purchase requests**, **Activity › Purchase requests** | A section after Financials (line item) or Line items (activity): Total requested and Available to request (negative as "Requested above planned cost by …"), the PRs; **New purchase request** (secondary) when the person may raise one, else its reason. |
+| **Settings › Purchase requests** | A small form: Purchase Support (on/off) and Lines on approved purchase requests (Not allowed · Allowed with modification approval · Allowed without approval); read-only with the reason without "Change Settings". |
+| **Approvals** | A purchase request row opens its preview panel (summary, lines, total, chain, latest history) with **Approve** (primary) and **Decline**, and **Open purchase request**. |
+
+Words: "Purchase request" (never "PR form" as a title; the PR form is the downloadable file), "PR line",
+"HX key" (always with "Generated from the line-item ID"), "Requisitioner", "Waiting for GSAP". Every GSAP
+field (GSAP PR number and date, PO number, line, status, date and value, invoiced) is read-only with "Filled
+by GSAP"; while the simulated GSAP fills them the source reads **Simulated GSAP** (033). Confirmations name
+the record and the money: "Delete purchase request 'PR for Stand build'? Its 2 lines will be removed and the
+money reserved on line items L-1006 and L-1011 will be released. You can restore it from the recycle bin.";
+"Remove the line for line item L-1006 (3,200.00 EUR) from this purchase request? The 3,200.00 EUR reserved on
+the line item will be released."; Close lists each line's current, invoiced and released amount before it
+asks; "The simulated GSAP will create a GSAP PR and a purchase order with 1 line (10,000.00 USD) for PR-1002."
 
 ---
 
@@ -503,6 +525,9 @@ A 4 px bar beside the name in trees and the level tag's border. The level is alw
 | Initiative | `#008192` Shell teal | 4.61 · 4.23 | `#3FB6C5` | 6.57 |
 | Activity | `#A3195B` magenta | 7.38 · 6.76 | `#E06A9F` | 5.08 |
 | Line item | `#6E6E6E` grey | 5.10 · 4.68 | `#8E99A4` | 5.46 |
+
+Purchase requests and PR lines (032) are not planning levels; their tags (PURCHASE REQUEST, PR LINE) use the
+line item's grey, so no new colour is introduced.
 
 Levels never use yellow (yellow means "act here" or "you are here"), nor the green of "positive" or the
 amber of "waiting". Level marks are outlined tags and bars; status marks are filled tinted chips, so the two
@@ -1160,3 +1185,4 @@ or one component (see the recommendations report for the questions to Shell).
 | 1 | 18 Oct 2026 | Apple-inspired design language (D-005), feature 001 tokens (research R17) |
 | 2 | 20 Oct 2026 | Shell visual language per the product-owner decisions of 20 Oct 2026 (D-310–D-314): Shell tokens light and dark with contrast values, Jost + Arial type scale, spacing, radius, elevation, control heights, breakpoints and widths; top bar and white sidebar with the yellow bar; one page header and five page templates; specs for every shared component; WCAG 2.2 AA; consistency checklist. §6–§8 and §10 kept, with §6.3 (one primary by role), §6.7 (set inactive) and §7 (rail, progress) added. |
 | 2.1 | 26 Oct 2026 | Feature 020, Shell palette (constitution X): Primary Yellow `#FFC600` (hover `#FFCB14`, press `#EBB600`), Secondary Red `#DD1D21` and every theme colour exactly, light and dark; `--raised`, link states and Disabled tokens added; `--brand-yellow-tint` and `--danger-bg-hover` retired, red and yellow never tinted or shaded; where Text Subtle, links and red text may sit, with Text Strong elsewhere; Text Strong focus ring; problem chips a red fill; the navy and dark-blue roles moved to palette tokens (§3.1, §3.10, §3.11, §4.1, §4.3, §5, §9, §12). |
+| 2.2 | 28 Oct 2026 | Features 032 and 033: the purchase-request screens, their words and confirmations (§2.6); level tags PURCHASE REQUEST and PR LINE in the line items' grey (§4.2). |
