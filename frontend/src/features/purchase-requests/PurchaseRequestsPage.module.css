@@ -1,0 +1,34 @@
+/* The table card: the toolbar across its width, a hairline, then the table edge to edge. */
+.panel {
+  min-width: 0;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.body {
+  padding: var(--card-padding);
+}
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--card-padding);
+  border-top: 1px solid var(--hairline);
+}
+
+.range {
+  margin-right: var(--space-2);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.after {
+  width: 16px;
+  height: 16px;
+}

@@ -1,0 +1,127 @@
+/* The Purchase requests cards of the line-item and activity pages: white cards like Financials. */
+.card {
+  min-width: 0;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  scroll-margin-top: 80px;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--space-16);
+  padding: var(--space-3) var(--card-padding);
+  border-bottom: 1px solid var(--row-divider);
+}
+
+.title {
+  color: var(--ink);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-heading);
+  line-height: var(--leading-lg);
+}
+
+.action {
+  margin-left: auto;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--card-padding);
+}
+
+.figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-8);
+  margin: 0;
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.figureLabel {
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
+}
+
+.figureValue {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-lg);
+}
+
+.above {
+  color: var(--danger-text);
+  font-size: var(--text-sm);
+}
+
+.note {
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.scroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.table th,
+.table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--row-divider);
+  font-weight: var(--weight-regular);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table thead th {
+  background: var(--gray-bg);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
+  white-space: nowrap;
+}
+
+.table tbody tr:last-child th,
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.numeric {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.table .numeric {
+  text-align: right;
+}
+
+.secondary {
+  display: block;
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+}

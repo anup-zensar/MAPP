@@ -1,0 +1,119 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--overlay);
+  animation: fade-in var(--dur) var(--ease-out);
+}
+
+.dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  padding: var(--card-padding);
+  overflow-y: auto;
+  border-radius: var(--radius-dialog);
+  background: var(--raised);
+  box-shadow: var(--shadow-lg);
+  transform: translate(-50%, -50%);
+  animation: fade-in var(--dur) var(--ease-out);
+}
+
+.dialog:focus {
+  outline: none;
+}
+
+/* Dark Raised is 3.9:1 for Text Subtle, so secondary text there is Text Strong (constitution X). */
+:global(:root[data-theme='dark']) .dialog {
+  --ink-2: var(--ink);
+}
+
+.title {
+  color: var(--ink);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-heading);
+  line-height: var(--leading-xl);
+}
+
+.description {
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.results {
+  min-height: 96px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.option,
+.unavailable {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--row-divider);
+}
+
+.option:last-child,
+.unavailable:last-child {
+  border-bottom: 0;
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.name {
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+}
+
+.meta,
+.empty {
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+
+.reason {
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.failed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}

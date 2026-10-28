@@ -1,0 +1,46 @@
+/* Design system §5.4 DescriptionList: 12 px between rows, a 200 px label column from 600 px. */
+.list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+  min-width: 0;
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  overflow-wrap: break-word;
+}
+
+.numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 600px) {
+  .row {
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+}
