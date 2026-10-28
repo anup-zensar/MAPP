@@ -29,7 +29,7 @@ application use these definitions. Hive9 names are given in brackets where users
 | **Display currency** | The currency you choose to see amounts in; it does not change stored values. |
 | **Finance budget item** | A row of a finance budget (e.g. "2026 Lubricants Budget › Europe – Digital") that a line item is linked to. Managed by Finance; a simple list in Settings for now. |
 | **Finance budget** | Finance's budget for a year (e.g. "2026 Lubricants Budget"), made up of finance budget items. Only the list of items exists in this phase. |
-| **Actuals** | What was really spent, reported by finance. Coming in a later phase. |
+| **Actuals** | What was really spent: the payments GSAP has released (feature 015's **Paid**). The SP&A view calls it **Actual spend** (feature 013). |
 
 ## Goals
 
@@ -63,8 +63,8 @@ application use these definitions. Hive9 names are given in brackets where users
 |---|---|
 | **AOP** | Annual operating plan. A plan marked "Strategic / AOP" is a high-level strategic plan, shown with an AOP tag. |
 | **SMP** | Strategic Marketing Plan — a Shell flag on Mobility plans. |
-| **BCPIR** | Business Case & Post-Investment Review — a flag on a plan; its full use is defined in feature 013. |
-| **SP&A** | Shell's spend view of marketing plans (feature 013). The expansion "Sales, Promotion & Advertising" is an assumption still to be confirmed with Shell (Q-001). |
+| **BCPIR** | Business Case & Post-Investment Review — a yes/no on a plan ("BCPIR plan"); a BCPIR plan carries a BCPIR marker and can be filtered on the Plans list and in All work (feature 013, D-334). The BCPIR return view waits for performance data. |
+| **SP&A** | Sales, Promotion & Advertising: the **SP&A view** of a plan or campaign shows planned cost against committed and actual spend, by period, by dimension and by activity, with the budget and the purchase requests (feature 013, Shell spec 006). |
 | **Business unit** | Lubricants or Mobility. Decides which extra Shell attributes an activity shows. |
 | **Cluster / Region** | Where a campaign runs, e.g. cluster "Retail – China", region "RETAIL – CHINA". |
 | **Country / OU** | Countries or operating units an activity covers, with a percentage share each. |

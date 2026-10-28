@@ -12,7 +12,7 @@
 
 | Route | Page | Entry points |
 |---|---|---|
-| `/plans/:planId/spa?campaign=C-…&dimension=…&period=month` | `SpaPage` (`features/spa`) | plan page header ("SP&A view"), each campaign panel ("SP&A view" with the campaign scope) |
+| `/plans/:planId/spa?campaign=C-…&dimension=…&period=month` | `SpaPage` (`features/spa`) | plan page header ("SP&A view"); a campaign's view through the page's Scope picker |
 
 URL state (Zod, `features/spa/schemas.ts`): `campaign` (a campaign ID or absent), `dimension` (a key or absent),
 `period` (`quarter` default, `month`). Changing any of them pushes a history entry, so Back returns to the

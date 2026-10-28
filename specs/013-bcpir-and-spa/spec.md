@@ -235,7 +235,8 @@ open a purchase request and raise a new one from an activity row.
   transactions (015, 033) and the purchase requests (032). Nothing is estimated; where data is missing the
   view MUST show "—" with the reason.
 - **FR-007**: Every headline figure, period and dimension row MUST be traceable: selecting it MUST list the
-  contributing activities with their amounts, which sum to the figure.
+  contributing activities with their amounts, which sum to the figure (in a display currency other than USD each
+  amount is converted once, so a list may differ from its figure by a cent, as everywhere in the app, D-061).
 - **FR-008**: Money MUST be shown in the person's display currency with its code; each figure is worked out
   in USD and converted once (D-010, D-220).
 - **FR-009**: The view MUST show when GSAP data was last received ("Finance data as of …"), or "No finance

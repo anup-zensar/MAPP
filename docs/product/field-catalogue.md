@@ -41,7 +41,7 @@ code, spend category and contracted spend carry Shell's own values (D-325).
 | 8 | Plan budget | Budget › Plan budget | money (USD) | — | — | Top of "budget flows down" |
 | 9 | Default finance budget | Default Finance Budget | reference (finance budget, plan year) | — | — | Default for line-item links |
 | 10 | Default line-item spread | Default Line-Item Allocation | single choice | — | Evenly | Evenly · All in first month · All in last month · Custom |
-| 11 | BCPIR plan | BCPIR Plan? | yes/no | — | No | Meaning confirmed in feature 013 |
+| 11 | BCPIR plan | BCPIR Plan? | yes/no | — | No | Marks a BCPIR plan: marker and filter on the Plans list and in All work (013, D-334) |
 | 12 | Business unit | Business Unit (Mobility/Lubricants) | Shell attribute, multiple choice | P | — | Mobility · Lubricants. Controls which attribute groups appear below (R9) |
 | 13 | Strategic Marketing Plan (SMP) | Strategic Marketing Plan? | Shell attribute, yes/no | — | No | Shown only when business unit includes Mobility |
 | 14 | Goal stage | Waterfall Goal | single choice | P | INQ | INQ · MQL · Revenue |

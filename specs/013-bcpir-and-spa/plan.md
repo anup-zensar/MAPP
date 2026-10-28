@@ -18,8 +18,8 @@ purchase requests the person sees on the scope's line items from `purchasereques
 periods, dimension rows, activity table, budget and procurement panels, traceability lists — in USD and
 converted once to the display currency. The BCPIR marker and filter are small additions to the Plans list
 (004), All work (010: marker, filter, Breakdown grouping) and the plan page. The web app gets a
-`features/spa` folder with the SP&A page at `/plans/:planId/spa`, linked from the plan page and from each
-campaign panel.
+`features/spa` folder with the SP&A page at `/plans/:planId/spa`, linked from the plan page's header, with a
+Scope picker for each campaign.
 
 ## Technical Context
 
@@ -89,8 +89,8 @@ additions in their existing style.
 | Finance access: figures null with reason (FR-012) | `TestView/013 FR-012 no finance.view …` |
 | Plans list BCPIR filter and marker (FR-002, FR-003) | `TestList/013 FR-003 …` in `backend/internal/plan/list_test.go` |
 | All work BCPIR filter, marker and grouping (FR-002, FR-003) | `TestBCPIR/013 FR-003 …` in `backend/internal/allwork/bcpir_test.go` |
-| Transactions by posting month (financials) | `TestFactsByLineItemMonth/013 FR-010 …` |
-| PR lines drawn on line items, view scope (purchaserequest) | `TestDrawnOnLineItems/013 FR-021 …` |
+| Transactions by posting month (financials) | `TestFactsByLineItemMonth_FR010_…` |
+| PR lines drawn on line items, view scope (purchaserequest) | `TestGetSpaView_FR021_…` (contract test on the demo data's PR-1001) |
 
 ## Project Structure
 
