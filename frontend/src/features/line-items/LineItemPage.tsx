@@ -8,6 +8,7 @@ import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
 import { HistorySection, showHistory } from '@/features/activity-log';
 import { LineItemPurchaseRequests } from '@/features/purchase-requests';
+import { FieldHelpTip } from '@/features/settings';
 import { allows, gateItem } from '@/session/gate-action';
 import { fieldHref, recordHref } from '@/ui/record-links';
 import { usePageTitle } from '@/ui/usePageTitle';
@@ -65,6 +66,7 @@ export function LineItemPage() {
               missing={lineItem.missing.map((field) => ({ id: field.field, label: field.label }))}
               onSelectField={(field) => void navigate(fieldHref('lineItem', lineItem.id, field))}
             />
+            <FieldHelpTip helpKey="common.completeness" label="Completeness" />
             <SwbsChip status={lineItem.swbsStatus} />
             <span className={styles.fact}>{lineItem.id}</span>
             {lineItem.owner ? (

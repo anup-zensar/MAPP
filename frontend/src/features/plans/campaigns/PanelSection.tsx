@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import type { ReactNode } from 'react';
+import { FieldHelpTip } from '@/features/settings';
 import styles from './PanelSection.module.css';
 
 export interface PanelSectionProps {
@@ -24,19 +25,21 @@ export function PanelSection({ title, children, id }: PanelSectionProps) {
 
 export interface FactProps {
   label: ReactNode;
+  helpKey?: string;
   children: ReactNode;
 }
 
-/** A definition list of Facts. */
 export function Facts({ children }: { children: ReactNode }) {
   return <dl className={styles.facts}>{children}</dl>;
 }
 
-/** One label and value of Facts. */
-export function Fact({ label, children }: FactProps) {
+export function Fact({ label, helpKey, children }: FactProps) {
   return (
     <div className={styles.fact}>
-      <dt className={styles.label}>{label}</dt>
+      <dt className={styles.label}>
+        {label}
+        {helpKey && typeof label === 'string' && <FieldHelpTip helpKey={helpKey} label={label} />}
+      </dt>
       <dd className={styles.value}>{children}</dd>
     </div>
   );

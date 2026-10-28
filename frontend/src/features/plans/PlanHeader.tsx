@@ -1,5 +1,6 @@
 import { TriangleAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { FieldHelpTip } from '@/features/settings';
 import { LinkButton } from '@/ui/Button/Button';
 import { LevelTag } from '@/ui/LevelTag/LevelTag';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
@@ -16,20 +17,13 @@ import { PlanTypeTag } from './PlanTypeTag';
 
 export interface PlanHeaderProps {
   plan: Plan;
-  /** Publish on a Draft plan, Unpublish on a Published one (feature 004, US5): a secondary button. */
   statusAction?: ReactNode;
-  /** The ⋯ More menu: Copy, View history, Delete. */
   moreItems: ActionsMenuItem[];
   /** Facts added by later features, after the plan type and currency. */
   extraFacts?: ReactNode;
 }
 
-/**
- * The plan's header (FR-011, design system §2.3, §6.3) on the one page header of the app: the
- * breadcrumb, the plan's name, ⋯ More · Publish or Unpublish · **Edit** (the one primary, last),
- * and the meta row — level tag, status, one completeness chip, ID, owner, dates, teams and
- * business unit. Who created and last changed the plan is at the end of the Details tab.
- */
+/** The plan's page header: name, ⋯ More · Publish or Unpublish · Edit, and the facts row. */
 export function PlanHeader({ plan, statusAction, moreItems, extraFacts }: PlanHeaderProps) {
   const { dateRange } = useFormatters();
   const owner = plan.owner;
@@ -54,9 +48,11 @@ export function PlanHeader({ plan, statusAction, moreItems, extraFacts }: PlanHe
         <div className={styles.meta} aria-label="Plan facts" role="group">
           <LevelTag level="plan" />
           <PlanStatusChip status={plan.status} />
+          <FieldHelpTip helpKey="plan.status" label="Status" />
           {/* #completeness: where Home's "Show fields" leads (feature 009). */}
           <span id="completeness" className={styles.anchor}>
             <PlanCompleteness planId={plan.id} completeness={plan.completeness} />
+            <FieldHelpTip helpKey="common.completeness" label="Completeness" />
           </span>
           <span className={styles.fact}>{plan.id}</span>
           <span className={styles.fact}>
@@ -69,7 +65,6 @@ export function PlanHeader({ plan, statusAction, moreItems, extraFacts }: PlanHe
             )}
           </span>
           <span className={styles.fact}>{yearDates(plan.year, dateRange)}</span>
-          {/* 016 FR-032, FR-013: the plan type, and the plan currency when it is not USD. */}
           <PlanTypeTag plan={plan} />
           {plan.currency && plan.currency !== 'USD' && (
             <span className={styles.fact}>Planned in {plan.currency}</span>

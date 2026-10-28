@@ -1,4 +1,4 @@
-import { useCurrencies } from '@/features/settings';
+import { useCurrencies, useFieldHelp } from '@/features/settings';
 import type { useFinanceBudgets } from '@/features/settings';
 import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
@@ -30,10 +30,7 @@ export interface PlanBudgetSectionProps extends SectionProps {
   onFinanceBudgetChange: () => void;
 }
 
-/**
- * Budget: the plan currency and budget (016), the default finance budget and spread, and BCPIR.
- * With 014 an allocated plan's budget is read-only with its reason.
- */
+/** Budget: plan currency and budget (read-only when allocated), finance defaults and BCPIR. */
 export function PlanBudgetSection({
   control,
   values,
@@ -46,6 +43,7 @@ export function PlanBudgetSection({
   budgetNote,
   onFinanceBudgetChange,
 }: PlanBudgetSectionProps) {
+  const { help } = useFieldHelp();
   const budgets = financeBudgets.data?.items ?? [];
   const budgetOptions = [
     { id: NO_DEFAULT, label: 'No default', active: true },
@@ -59,7 +57,6 @@ export function PlanBudgetSection({
     financeBudgets.isSuccess && budgets.length === 0
       ? `No finance budgets for ${values.year} yet — an administrator adds them in Settings.`
       : null;
-  // 014: an allocated plan's budget is set by its global budget and can't be typed here.
   const allocation = plan?.allocation ?? null;
   const allocationLock = allocation
     ? allocationLockText(allocation, plan?.access?.editBudget.reason)
@@ -74,6 +71,7 @@ export function PlanBudgetSection({
           render={(field) => (
             <CurrencyField
               initial={initial.currency}
+              tip={help('plan.currency')}
               hint={hint('currency', 'Default: USD')}
               lock={plan?.currencyLock ?? undefined}
               {...field}
@@ -85,6 +83,7 @@ export function PlanBudgetSection({
       {allocationLock ? (
         <ReadOnlyField
           label="Plan budget"
+          tip={help('plan.budget')}
           value={values.budget ? `${values.budget} ${values.currency}` : '—'}
         >
           {allocationLock}
@@ -96,6 +95,7 @@ export function PlanBudgetSection({
           render={(field) => (
             <MoneyField
               label="Plan budget"
+              tip={help('plan.budget')}
               currency={values.currency}
               note={budgetFieldNote(values, initial, plan) ?? undefined}
               {...field}
@@ -109,6 +109,7 @@ export function PlanBudgetSection({
         render={(field) => (
           <ChoiceField
             label="Default finance budget"
+            tip={help('plan.defaultFinanceBudget')}
             options={budgetOptions}
             note={
               [
@@ -136,6 +137,7 @@ export function PlanBudgetSection({
         render={(field) => (
           <ChoiceField
             label="Default line-item spread"
+            tip={help('plan.defaultSpread')}
             hint={hint('defaultSpread', 'Default: Evenly')}
             options={SPREAD_METHODS.map((id) => ({ id, label: SPREAD_LABELS[id], active: true }))}
             note={
@@ -157,6 +159,7 @@ export function PlanBudgetSection({
           <CheckboxField
             label="BCPIR plan"
             name={name}
+            tip={help('plan.bcpir')}
             hint={hint('bcpir', 'Default: No')}
             checked={value}
             onChange={onChange}
@@ -170,14 +173,13 @@ export function PlanBudgetSection({
 interface CurrencyFieldProps extends FieldBinding<string> {
   initial: string;
   hint?: string;
+  tip?: string;
   lock?: string;
 }
 
-/**
- * The plan currency (016 FR-011, FR-012): the active currencies, the plan's own kept even when it
- * was set inactive since; locked with the API's reason once amounts are kept in it.
- */
-function CurrencyField({ name, value, initial, hint, lock, error, onChange }: CurrencyFieldProps) {
+/** The active currencies and the plan's own; locked with the API's reason once amounts use it. */
+function CurrencyField(props: CurrencyFieldProps) {
+  const { name, value, initial, hint, tip, lock, error, onChange } = props;
   const currencies = useCurrencies();
   const options = (currencies.data?.items ?? [])
     .filter((currency) => currency.active || currency.code === initial)
@@ -195,6 +197,7 @@ function CurrencyField({ name, value, initial, hint, lock, error, onChange }: Cu
       name={name}
       marking="Required"
       hint={hint}
+      tip={tip}
       options={options}
       value={value}
       onChange={onChange}
@@ -205,10 +208,7 @@ function CurrencyField({ name, value, initial, hint, lock, error, onChange }: Cu
   );
 }
 
-/**
- * The note under the budget (016): what the saved budget is in the reader's display currency, and
- * that clearing a phased budget removes its Budget by month (FR-022).
- */
+/** The budget in the reader's currency, or that clearing a phased budget removes its phasing. */
 function budgetFieldNote(
   values: PlanFormValues,
   initial: PlanFormValues,

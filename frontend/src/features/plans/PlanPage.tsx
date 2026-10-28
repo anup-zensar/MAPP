@@ -16,6 +16,7 @@ import { useCampaignTreeContent } from './campaigns/useCampaignTreeContent';
 import { PlanDetails } from './PlanDetails';
 import { PlanGoals } from './PlanGoals';
 import { PlanHeader } from './PlanHeader';
+import { PlannedCostByCard } from './PlannedCostByCard';
 import { PlanNotFound } from './PlanNotFound';
 import styles from './PlanPage.module.css';
 import { usePlan } from './api';
@@ -34,13 +35,8 @@ const TABS: TabItem<PlanTab>[] = [
   { value: 'history', label: 'History' },
 ];
 
-/**
- * A plan's page (US3, FR-011 – FR-017), the layout route of /plans/:planId, on the record template
- * (design system §2.4 B): the header, four summary cards, 015's Financials and 016's Budget by
- * month (D-305), then the tabs **Plan tree · Details · History** with the chosen one in the address. Feature 005 fills the tree through
- * `useCampaignTreeContent` and shows its side panels in the `<Outlet />` (child routes); the
- * browser tab names the plan unless a panel on top names itself.
- */
+// The layout route of /plans/:planId: header, summary cards, Financials, Budget by month and Planned
+// cost by, then the tabs Plan tree · Details · History. Campaign side panels show in the outlet.
 export function PlanPage() {
   const { planId = '' } = useParams();
   const navigate = useNavigate();
@@ -133,11 +129,11 @@ export function PlanPage() {
     const data = plan.data;
     const moreItems: ActionsMenuItem[] = [
       ...actions.copyItem(data),
-      // Opens the History tab and focuses its heading (feature 011, FR-011).
+      // Opens the History tab and focuses its heading.
       { label: 'View history', onSelect: viewHistory },
       ...actions.deleteItem(data),
     ];
-    // 014 FR-011: a person who may change nothing in the plan sees one View only note instead.
+    // A person who may change nothing in the plan sees one View only note instead.
     const viewOnly =
       data.access !== undefined &&
       !allows(data.access.edit) &&
@@ -159,7 +155,7 @@ export function PlanPage() {
         <div className={styles.body}>
           {viewOnly && <ViewOnlyNote area="plan" />}
           <PlanSummaryCards plan={data} />
-          {/* D-305: 015's Financials, then 016's Budget by month, both open, above the tabs. */}
+          {/* D-305: Financials, Budget by month and Planned cost by, open, above the tabs. */}
           <RecordFinancials recordId={data.id} planId={data.id} variant="page" />
           <BudgetByMonthCard
             level="plan"
@@ -168,6 +164,7 @@ export function PlanPage() {
             year={data.year}
             currency={planCurrencyOf(data)}
           />
+          <PlannedCostByCard plan={data} />
           <Tabs label="Plan" tabs={TABS} value={tab} onChange={chooseTab}>
             {tabContent(data)}
           </Tabs>
@@ -186,7 +183,6 @@ export function PlanPage() {
   );
 }
 
-/** The page's shape while the plan loads: header, summary cards and tree. */
 function PlanPageSkeleton() {
   return (
     <div className={styles.body} aria-busy="true" aria-label="Loading the plan">

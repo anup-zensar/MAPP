@@ -1,6 +1,7 @@
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
 import { DecimalField } from '@/ui/DecimalField/DecimalField';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import { useFieldHelp } from '@/features/settings';
 import type { WaterfallModel } from '@/features/settings';
 import styles from './PlanForm.module.css';
 import { goalRows } from './goal-waterfall';
@@ -28,11 +29,7 @@ export interface GoalFieldsProps {
   stageHint?: string;
 }
 
-/**
- * The Goals section of the plan form (FR-009): the stage, the goal amount (a whole number for INQ
- * and MQL, USD for Revenue), and the other stages worked out live from the model, each labelled
- * "Calculated" with its formula.
- */
+/** The goal stage and amount, and the other stages worked out live from the model. */
 export function GoalFields({
   stage,
   amount,
@@ -44,6 +41,7 @@ export function GoalFields({
   stageHint,
 }: GoalFieldsProps) {
   const rows = goalRows(stage, amount, model).filter((row) => row.calculated);
+  const { help } = useFieldHelp();
 
   return (
     <>
@@ -51,6 +49,7 @@ export function GoalFields({
         label="Goal stage"
         name="goalStage"
         marking="Needed to publish"
+        tip={help('plan.goalStage')}
         hint={stageHint}
         options={GOAL_STAGES.map((id) => ({
           id,
@@ -65,6 +64,7 @@ export function GoalFields({
         <MoneyField
           label={goalAmountLabel(stage)}
           name="goalAmount"
+          tip={help('plan.goalAmount')}
           currency="USD"
           value={amount}
           onChange={onAmountChange}
@@ -74,6 +74,7 @@ export function GoalFields({
         <DecimalField
           label={goalAmountLabel(stage)}
           name="goalAmount"
+          tip={help('plan.goalAmount')}
           decimals={0}
           value={amount}
           onChange={onAmountChange}

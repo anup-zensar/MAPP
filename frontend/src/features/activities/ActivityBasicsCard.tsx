@@ -5,6 +5,7 @@ import { FormCard } from '@/ui/FormRail/FormRail';
 import { LockedNote } from '@/ui/LockedNote/LockedNote';
 import { TextField } from '@/ui/TextField/TextField';
 import { PersonField } from '@/features/people';
+import { FieldHelpTip, useFieldHelp } from '@/features/settings';
 import { formatMoneyText } from '@/format/decimal';
 import type { ActivityFormData, ActivityTypeOption } from './api';
 import { fieldId } from './activity-form-state';
@@ -41,6 +42,7 @@ export function ActivityBasicsCard({
     defaults?.approvalWorkflowId && value.approvalWorkflowId === defaults.approvalWorkflowId,
   );
   const noTypes = form.activityTypes.length === 0;
+  const { help } = useFieldHelp();
 
   return (
     <FormCard id={ACTIVITY_SECTION.basics} title="Basics">
@@ -48,7 +50,13 @@ export function ActivityBasicsCard({
         control={control}
         name="name"
         render={(field) => (
-          <TextField label="Activity name" marking="Required" {...field} name={fieldId('name')} />
+          <TextField
+            label="Activity name"
+            marking="Required"
+            tip={help('activity.name')}
+            {...field}
+            name={fieldId('name')}
+          />
         )}
       />
       <FormField
@@ -57,6 +65,7 @@ export function ActivityBasicsCard({
         render={(field) => (
           <TextField
             label="External name"
+            tip={help('activity.externalName')}
             hint="Leave empty to use the activity name"
             {...field}
             name={fieldId('externalName')}
@@ -66,7 +75,9 @@ export function ActivityBasicsCard({
       <div className={styles.readOnly}>
         <dl className={styles.pairs}>
           <div className={styles.pair}>
-            <dt>Campaign</dt>
+            <dt>
+              Campaign <FieldHelpTip helpKey="activity.initiative" label="Campaign, Initiative" />
+            </dt>
             <dd>{context.campaign.name}</dd>
           </div>
           <div className={styles.pair}>
@@ -83,6 +94,7 @@ export function ActivityBasicsCard({
           <ChoiceField
             label="Activity type"
             marking="Required"
+            tip={help('activity.activityType')}
             options={form.activityTypes.map((type) => ({
               id: type.id,
               label: typeLabel(type),
@@ -102,6 +114,7 @@ export function ActivityBasicsCard({
           <PersonField
             label="Owner"
             marking="Needed to submit"
+            tip={help('activity.owner')}
             hint={ownerFromInitiative ? FROM_INITIATIVE : undefined}
             {...field}
             name={fieldId('ownerId')}
@@ -115,6 +128,7 @@ export function ActivityBasicsCard({
           <ChoiceField
             label="Approval workflow"
             marking="Needed to submit"
+            tip={help('activity.approvalWorkflow')}
             hint={onlyWorkflow ? 'The only active approval workflow' : undefined}
             options={form.approvalWorkflows.map((workflow) => ({
               id: workflow.id,

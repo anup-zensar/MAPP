@@ -5,6 +5,7 @@ import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { TextField } from '@/ui/TextField/TextField';
 import type { components } from '@/api/generated/schema';
 import { PersonField, TeamField } from '@/features/people';
+import { useFieldHelp } from '@/features/settings';
 import { formatAmount, formatPercent } from '@/format/decimal';
 import type { Plan, PlanDefaults } from './api';
 import { PLAN_TYPE_LABELS, PLAN_TYPES } from './plan-currency';
@@ -39,6 +40,7 @@ export function PlanBasicsSection({
   ownerName,
   onYearChange,
 }: PlanBasicsSectionProps) {
+  const { help } = useFieldHelp();
   const modelOptions = models.map((model) => ({
     id: model.id,
     label: model.name,
@@ -54,7 +56,13 @@ export function PlanBasicsSection({
         control={control}
         name="name"
         render={(field) => (
-          <TextField label="Plan name" marking="Required" maxLength={120} {...field} />
+          <TextField
+            label="Plan name"
+            marking="Required"
+            tip={help('plan.name')}
+            maxLength={120}
+            {...field}
+          />
         )}
       />
       {mode === 'create' ? (
@@ -65,6 +73,7 @@ export function PlanBasicsSection({
             <ChoiceField
               label="Year"
               marking="Required"
+              tip={help('plan.year')}
               hint={hint('year', 'Default: the current year')}
               options={(defaults?.years ?? [Number(field.value)]).map((year) => ({
                 id: String(year),
@@ -80,7 +89,7 @@ export function PlanBasicsSection({
           )}
         />
       ) : (
-        <ReadOnlyField label="Year" marking="Required" value={values.year}>
+        <ReadOnlyField label="Year" marking="Required" tip={help('plan.year')} value={values.year}>
           {YEAR_LOCKED}
         </ReadOnlyField>
       )}
@@ -92,6 +101,7 @@ export function PlanBasicsSection({
             <ChoiceField
               label="Plan type"
               marking="Required"
+              tip={help('plan.planType')}
               hint={hint('planType', 'Default: Operational')}
               options={PLAN_TYPES.map((type) => ({
                 id: type,
@@ -113,6 +123,7 @@ export function PlanBasicsSection({
           <ChoiceField
             label="Model"
             marking="Required"
+            tip={help('plan.model')}
             hint={hint('modelId', 'Default: the only active model', !!defaults?.modelId)}
             options={modelOptions}
             note={
@@ -131,6 +142,7 @@ export function PlanBasicsSection({
           <TeamField
             label="Teams"
             marking="Needed to publish"
+            tip={help('plan.teams')}
             hint={hint('teamIds', 'Default: your teams', !!defaults?.teamIds.length)}
             {...field}
           />
@@ -143,6 +155,7 @@ export function PlanBasicsSection({
           <PersonField
             label="Owner"
             marking="Needed to publish"
+            tip={help('plan.owner')}
             hint={hint('ownerId', 'Default: you', !!defaults?.ownerId)}
             teamIds={values.teamIds}
             notMemberText={`${ownerName} isn't in any of the chosen teams — choose another owner or clear the field`}
@@ -157,6 +170,7 @@ export function PlanBasicsSection({
           <CheckboxField
             label="Strategic / AOP plan"
             name={name}
+            tip={help('plan.aop')}
             hint={hint('aop', 'Default: No')}
             checked={value}
             onChange={onChange}
@@ -166,7 +180,14 @@ export function PlanBasicsSection({
       <FormField
         control={control}
         name="description"
-        render={(field) => <TextAreaField label="Description" maxLength={2000} {...field} />}
+        render={(field) => (
+          <TextAreaField
+            label="Description"
+            tip={help('plan.description')}
+            maxLength={2000}
+            {...field}
+          />
+        )}
       />
     </PlanFormCard>
   );

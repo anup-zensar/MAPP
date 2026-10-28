@@ -31,7 +31,7 @@ export function SwbsCard({ lineItem }: { lineItem: LineItem }) {
         </p>
         {canSend && <SendNowButton lineItemId={lineItem.id} lineItemName={lineItem.name} />}
         <DetailsList>
-          <Detail label={SWBS_LABEL.code}>
+          <Detail label={SWBS_LABEL.code} helpKey="lineItem.swbsCode">
             {received ? <span className={styles.code}>{lineItem.swbsCode}</span> : NOT_RECEIVED}
           </Detail>
           {received && <Detail label={SWBS_LABEL.source}>{SIMULATED_GSAP}</Detail>}

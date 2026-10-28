@@ -9,20 +9,19 @@ import {
   STRATEGIC_LABELS,
 } from './all-work-text';
 import type { AllWorkOptions, FilterValue, Filters, ViewState } from './all-work-types';
+import { attributeChipLabel, withAttributeValues } from './attribute-filters';
 import { ID_FILTERS, NO_FILTERS, VALUE_FILTERS, choicesOf } from './view-state';
 import type { IdFilter } from './view-state';
 
-/** One filter value in use, as a removable chip (FR-008): "Activity status: Declined". */
+const ATTRIBUTE_CHIP = 'attributes:';
+
+/** One filter value in use, as a removable chip: "Activity status: Declined". */
 export interface Chip {
-  /** "<filter>:<value>", for removeChip. */
   key: string;
   label: string;
 }
 
-/**
- * The chips of every filter in use but the year (FR-008), in the filter bar's order. Names come
- * from the filter bar's choices, else from the name stored when the value was chosen.
- */
+/** Every filter in use but the year, in the filter bar's order, named from its choices. */
 export function chipsOf(state: ViewState, options?: AllWorkOptions): Chip[] {
   const { filters } = state;
   const chips: Chip[] = [];
@@ -56,10 +55,15 @@ export function chipsOf(state: ViewState, options?: AllWorkOptions): Chip[] {
   filters.planTypes?.forEach((value) => add('planTypes', value, PLAN_TYPE_LABELS[value]));
   filters.planCurrencies?.forEach((value) => add('planCurrencies', value, value));
   filters.finance?.forEach((value) => add('finance', value, FINANCE_LABELS[value]));
+  filters.attributes?.forEach((filter) =>
+    chips.push({
+      key: `${ATTRIBUTE_CHIP}${filter.attributeId}`,
+      label: attributeChipLabel(filter, options?.attributes),
+    }),
+  );
   return chips;
 }
 
-/** The state without the chip's value. */
 export function removeChip(state: ViewState, chipKey: string): ViewState {
   const separator = chipKey.indexOf(':');
   const filter = chipKey.slice(0, separator);
@@ -67,17 +71,15 @@ export function removeChip(state: ViewState, chipKey: string): ViewState {
   return { ...state, filters: withoutValue(state.filters, filter, value) };
 }
 
-/** Clear all (FR-008): every filter and the search go; the year stays. */
+/** Clear all: every filter and the search go; the year stays. */
 export function clearAll(state: ViewState): ViewState {
   return { ...state, filters: NO_FILTERS, search: '' };
 }
 
-/** Whether any filter but the year, or a search, is in use. */
 export function hasFilters(state: ViewState): boolean {
   return chipsOf(state).length > 0 || state.search.trim() !== '';
 }
 
-/** A value's name: from the choices (with "(inactive)"), else the name stored with it. */
 function optionLabel(
   choices: { id: string; label: string; inactive?: boolean }[],
   value: FilterValue,
@@ -102,6 +104,9 @@ function withoutValue(filters: Filters, filter: string, value: string): Filters 
   }
   if (filter === 'strategic') {
     return { ...filters, strategic: 'include' };
+  }
+  if (filter === 'attributes') {
+    return { ...filters, attributes: withAttributeValues(filters.attributes, value, []) };
   }
   return filter === 'showLevels' ? { ...filters, showLevels: 'everything' } : filters;
 }

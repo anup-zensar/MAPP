@@ -5,7 +5,7 @@ import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import { formatAmount, formatWhole, parseWholeInput } from '@/format/decimal';
 import { formatMoney } from '@/format/intl';
-import { waterfall } from '@/features/settings';
+import { FieldHelpTip, useFieldHelp, waterfall } from '@/features/settings';
 import type { GoalsState } from './activity-form-state';
 import { fieldId, usdOf } from './activity-form-state';
 import { EMPTY, goalsFormula } from './activity-text';
@@ -25,16 +25,15 @@ export interface GoalsFieldsProps {
 }
 
 /**
- * The Goals section of the activity form (FR-018): INQ as typed; MQL and revenue calculated from
- * the plan's model ("Calculated", with the formula in an ⓘ) unless **Set later stages myself** is
- * on, when they are typed too and kept when INQ changes. Turning it off lists the typed values
- * that saving will replace.
+ * INQ as typed; MQL and revenue calculated from the plan's model unless **Set later stages myself**
+ * is on. Turning it off lists the typed values that saving will replace.
  */
 export function GoalsFields({ value, onChange, model, errors }: GoalsFieldsProps) {
   const set = (change: Partial<GoalsState>) => onChange({ ...value, ...change });
   const calculated = calculate(value.inq, model);
   const typedNow = value.setLaterStagesMyself;
   const typedKept = !typedNow && (value.mql.trim() !== '' || value.revenue.trim() !== '');
+  const { help } = useFieldHelp();
 
   function turnTyping(on: boolean) {
     // Typing starts from the calculated values when nothing was typed yet.
@@ -51,10 +50,10 @@ export function GoalsFields({ value, onChange, model, errors }: GoalsFieldsProps
 
   return (
     <FormSection title="Goals">
-      {/* The funnel on one row, INQ → MQL → Revenue, so the form stays short (UI audit AF-01). */}
       <div className={styles.funnel}>
         <DecimalField
           label="INQ"
+          tip={help('activity.inq')}
           name={fieldId('goals.inq')}
           decimals={0}
           value={value.inq}
@@ -65,6 +64,7 @@ export function GoalsFields({ value, onChange, model, errors }: GoalsFieldsProps
           <>
             <DecimalField
               label="MQL"
+              tip={help('activity.mql')}
               name={fieldId('goals.mql')}
               decimals={0}
               value={value.mql}
@@ -73,6 +73,7 @@ export function GoalsFields({ value, onChange, model, errors }: GoalsFieldsProps
             />
             <MoneyField
               label="Revenue"
+              tip={help('activity.revenue')}
               name={fieldId('goals.revenue')}
               currency="USD"
               value={value.revenue}
@@ -82,9 +83,15 @@ export function GoalsFields({ value, onChange, model, errors }: GoalsFieldsProps
           </>
         ) : (
           <dl className={styles.stages}>
-            <CalculatedStage stage="MQL" text={stageText(calculated, 'mql')} model={model} />
+            <CalculatedStage
+              stage="MQL"
+              helpKey="activity.mql"
+              text={stageText(calculated, 'mql')}
+              model={model}
+            />
             <CalculatedStage
               stage="Revenue"
+              helpKey="activity.revenue"
               text={stageText(calculated, 'revenue')}
               model={model}
             />
@@ -94,6 +101,7 @@ export function GoalsFields({ value, onChange, model, errors }: GoalsFieldsProps
       <CheckboxField
         label="Set later stages myself"
         name={fieldId('goals.setLaterStagesMyself')}
+        tip={help('activity.setLaterStagesMyself')}
         checked={typedNow}
         onChange={turnTyping}
       />
@@ -110,16 +118,21 @@ export function GoalsFields({ value, onChange, model, errors }: GoalsFieldsProps
 
 function CalculatedStage({
   stage,
+  helpKey,
   text,
   model,
 }: {
   stage: string;
+  helpKey: string;
   text: string;
   model: ModelFacts;
 }) {
   return (
     <div className={styles.stage}>
-      <dt>{stage}</dt>
+      <dt>
+        {stage}
+        <FieldHelpTip helpKey={helpKey} label={stage} />
+      </dt>
       <dd>
         <span className={styles.value}>{text}</span>
         <span className={styles.calculated}>

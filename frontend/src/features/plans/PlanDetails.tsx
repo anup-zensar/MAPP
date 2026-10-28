@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
-import { useAttributeForm } from '@/features/settings';
+import { FieldHelpTip, useAttributeForm } from '@/features/settings';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
@@ -18,14 +18,20 @@ import { SPREAD_LABELS } from './plan-text';
 
 const NOTHING = '—';
 
-/**
- * One label and value of the details (design system §5.4 DescriptionList): a 200 px label column
- * from 600 px, the label above its value below, so every value of the page starts at one x.
- */
-export function Field({ label, children }: { label: ReactNode; children: ReactNode }) {
+interface FieldProps {
+  label: string;
+  /** The Field help entry explaining the value, shown as an ⓘ after the label. */
+  helpKey?: string;
+  children: ReactNode;
+}
+
+function Field({ label, helpKey, children }: FieldProps) {
   return (
     <div className={styles.field}>
-      <dt>{label}</dt>
+      <dt>
+        {label}
+        {helpKey && <FieldHelpTip helpKey={helpKey} label={label} />}
+      </dt>
       <dd>{children}</dd>
     </div>
   );
@@ -33,19 +39,12 @@ export function Field({ label, children }: { label: ReactNode; children: ReactNo
 
 export interface PlanDetailsProps {
   plan: Plan;
-  /** Rows added to Basics by later features (016: plan type). */
   basicsExtra?: ReactNode;
-  /** Rows added to Budget by later features (016: plan currency; 014: allocation). */
   budgetExtra?: ReactNode;
-  /** The plan budget as shown (016: in the plan currency with the display currency beside). */
   budgetValue?: ReactNode;
 }
 
-/**
- * Every field of the plan, read-only (FR-015): Basics, Budget and the Shell attributes shown for
- * its business unit; "—" for empty values and "(inactive)" for values that left Settings; then
- * who created and last changed the plan (design system §6.3).
- */
+/** Every field of the plan, read-only: Basics, Budget, the Shell attributes and who changed it. */
 export function PlanDetails({ plan, basicsExtra, budgetExtra, budgetValue }: PlanDetailsProps) {
   const { date } = useFormatters();
   const attributeForm = useAttributeForm('plan');
@@ -59,9 +58,13 @@ export function PlanDetails({ plan, basicsExtra, budgetExtra, budgetValue }: Pla
             Basics
           </h3>
           <dl className={styles.fields}>
-            <Field label="Plan name">{plan.name}</Field>
-            <Field label="Year">{plan.year}</Field>
-            <Field label="Model">
+            <Field label="Plan name" helpKey="plan.name">
+              {plan.name}
+            </Field>
+            <Field label="Year" helpKey="plan.year">
+              {plan.year}
+            </Field>
+            <Field label="Model" helpKey="plan.model">
               {model.name}
               {!model.active && ' (inactive)'}
               <span className={styles.subtle}>
@@ -70,16 +73,24 @@ export function PlanDetails({ plan, basicsExtra, budgetExtra, budgetValue }: Pla
                 {formatAmount(model.averageDealSize.amount)} {model.averageDealSize.currency}
               </span>
             </Field>
-            <Field label="Teams">
+            <Field label="Teams" helpKey="plan.teams">
               {plan.teams.length > 0 ? <TeamPills teams={plan.teams} linked /> : NOTHING}
             </Field>
-            <Field label="Owner">
+            <Field label="Owner" helpKey="plan.owner">
               {plan.owner ? <PersonLabel person={plan.owner} /> : NOTHING}
             </Field>
-            {plan.planType && <Field label="Plan type">{PLAN_TYPE_LABELS[plan.planType]}</Field>}
+            {plan.planType && (
+              <Field label="Plan type" helpKey="plan.planType">
+                {PLAN_TYPE_LABELS[plan.planType]}
+              </Field>
+            )}
             {basicsExtra}
-            <Field label="Strategic / AOP plan">{plan.aop ? 'Yes' : 'No'}</Field>
-            <Field label="Description">{plan.description || NOTHING}</Field>
+            <Field label="Strategic / AOP plan" helpKey="plan.aop">
+              {plan.aop ? 'Yes' : 'No'}
+            </Field>
+            <Field label="Description" helpKey="plan.description">
+              {plan.description || NOTHING}
+            </Field>
           </dl>
         </section>
         <section aria-labelledby="details-budget">
@@ -88,13 +99,13 @@ export function PlanDetails({ plan, basicsExtra, budgetExtra, budgetValue }: Pla
           </h3>
           <dl className={styles.fields}>
             {plan.currency && (
-              <Field label="Plan currency">
+              <Field label="Plan currency" helpKey="plan.currency">
                 {plan.currency}
                 {plan.currencyLock && <span className={styles.subtle}>{plan.currencyLock}</span>}
               </Field>
             )}
             {budgetExtra}
-            <Field label="Plan budget">
+            <Field label="Plan budget" helpKey="plan.budget">
               {budgetValue ?? (
                 <AmountPair
                   primary={plan.budget ?? plan.figures.budget}
@@ -119,11 +130,15 @@ export function PlanDetails({ plan, basicsExtra, budgetExtra, budgetValue }: Pla
                 )}
               </Field>
             )}
-            <Field label="Default finance budget">
+            <Field label="Default finance budget" helpKey="plan.defaultFinanceBudget">
               {plan.defaultFinanceBudget?.name ?? NOTHING}
             </Field>
-            <Field label="Default line-item spread">{SPREAD_LABELS[plan.defaultSpread]}</Field>
-            <Field label="BCPIR plan">{plan.bcpir ? 'Yes' : 'No'}</Field>
+            <Field label="Default line-item spread" helpKey="plan.defaultSpread">
+              {SPREAD_LABELS[plan.defaultSpread]}
+            </Field>
+            <Field label="BCPIR plan" helpKey="plan.bcpir">
+              {plan.bcpir ? 'Yes' : 'No'}
+            </Field>
           </dl>
         </section>
         <section aria-labelledby="details-attributes">

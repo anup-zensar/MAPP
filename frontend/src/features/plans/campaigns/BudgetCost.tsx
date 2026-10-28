@@ -1,4 +1,4 @@
-import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { FieldHelpTip } from '@/features/settings';
 import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
 import type { components } from '@/api/generated/schema';
 import { formatWhole } from '@/format/decimal';
@@ -12,20 +12,16 @@ import {
   BUDGET,
   BUDGET_AND_COST,
   BUDGET_USED,
-  BUDGET_USED_TIP,
   CALCULATED,
   GOALS,
-  GOALS_TIP,
   INQ,
   LEFT_TO_PLAN,
-  LEFT_TO_PLAN_TIP,
   MQL,
   NO_BUDGET_SET,
   NO_BUDGET_TO_ALLOCATE_FROM,
   NO_PLANNED_COST,
   overAllocatedBy,
   PLANNED_COST,
-  PLANNED_COST_TIP,
   REMAINING_CAMPAIGN_BUDGET,
   REMAINING_FOR_INITIATIVES,
   REVENUE,
@@ -36,7 +32,6 @@ type Money = components['schemas']['Money'];
 type BudgetAndCost = components['schemas']['BudgetAndCost'];
 type GoalSums = components['schemas']['GoalSums'];
 
-/** An amount, red with "Over-allocated by …" beneath when below zero; "—" with `none` without one. */
 export function RemainingAmount({ value, none }: { value: Money | null; none: string }) {
   const { money } = useFormatters();
   if (!value) {
@@ -59,25 +54,18 @@ export function RemainingAmount({ value, none }: { value: Money | null; none: st
 }
 
 export interface RemainingBudgetLineProps {
-  /** "Remaining plan budget" / "Remaining campaign budget". */
   label: string;
-  tip: string;
+  helpKey: string;
   /** The parent's remaining budget as saved (this record's saved budget already taken off). */
   parentRemaining: Money | null;
-  /** This record's budget as saved; null on a create form. */
   savedOwn: Money | null;
-  /** What the budget field holds now. */
   typed: string;
 }
 
-/**
- * The parent's remaining budget under the budget field, following what is typed (FR-010):
- * red with "Over-allocated by …" below zero (never blocks Save, D-015); "—" with "No budget to
- * allocate from" when the parent has no budget.
- */
+/** The parent's remaining budget under the budget field, following what is typed; never blocks. */
 export function RemainingBudgetLine({
   label,
-  tip,
+  helpKey,
   parentRemaining,
   savedOwn,
   typed,
@@ -87,20 +75,19 @@ export function RemainingBudgetLine({
     <div className={styles.line} aria-live="polite">
       <span className={styles.lineLabel}>
         {label}
-        <InfoTip label={label} text={tip} />
+        <FieldHelpTip helpKey={helpKey} label={label} />
       </span>
       <RemainingAmount value={shown} none={NO_BUDGET_TO_ALLOCATE_FROM} />
     </div>
   );
 }
 
-/** "Calculated" and the ⓘ formula next to a derived value's label (FR-011). */
-function CalculatedLabel({ label, tip }: { label: string; tip: string }) {
+function CalculatedLabel({ label, helpKey }: { label: string; helpKey: string }) {
   return (
     <>
       {label}
       <span className={styles.calculated}>{CALCULATED}</span>
-      <InfoTip label={label} text={tip} />
+      <FieldHelpTip helpKey={helpKey} label={label} />
     </>
   );
 }
@@ -111,18 +98,11 @@ export interface BudgetCostSectionProps {
   budgetAndCost: BudgetAndCost;
   /** The parent's remaining budget (an initiative shows its campaign's). */
   parentRemainingBudget: Money | null;
-  /**
-   * The same budget and planned cost in the reader's display currency, shown beneath when it
-   * differs from the plan currency (016 FR-013).
-   */
+  /** The budget and planned cost in the reader's display currency, beneath when it differs. */
   display?: { budget: Money | null; plannedCost: Money | null };
 }
 
-/**
- * Budget and cost in a details panel (FR-010, FR-011): the budget, what the campaign gave its
- * initiatives and what remains, the remaining campaign budget of an initiative, the planned cost
- * rolled up from below, budget used and what is left to plan.
- */
+/** Budget and cost in a details panel: budget, what remains, planned cost, used and left. */
 export function BudgetCostSection({
   level,
   budget,
@@ -135,7 +115,7 @@ export function BudgetCostSection({
   return (
     <PanelSection id="budget" title={BUDGET_AND_COST}>
       <Facts>
-        <Fact label={BUDGET}>
+        <Fact label={BUDGET} helpKey={`${level}.budget`}>
           {budget && display?.budget ? (
             <AmountPair primary={budget} secondary={display.budget} />
           ) : (
@@ -150,11 +130,11 @@ export function BudgetCostSection({
             </Fact>
           </>
         ) : (
-          <Fact label={REMAINING_CAMPAIGN_BUDGET}>
+          <Fact label={REMAINING_CAMPAIGN_BUDGET} helpKey="initiative.remainingCampaignBudget">
             <RemainingAmount value={parentRemainingBudget} none={NO_BUDGET_TO_ALLOCATE_FROM} />
           </Fact>
         )}
-        <Fact label={<CalculatedLabel label={PLANNED_COST} tip={PLANNED_COST_TIP[level]} />}>
+        <Fact label={<CalculatedLabel label={PLANNED_COST} helpKey={`${level}.plannedCost`} />}>
           {plannedCost ? (
             <AmountPair primary={plannedCost} secondary={display?.plannedCost} />
           ) : (
@@ -164,10 +144,10 @@ export function BudgetCostSection({
             </span>
           )}
         </Fact>
-        <Fact label={<CalculatedLabel label={BUDGET_USED} tip={BUDGET_USED_TIP} />}>
+        <Fact label={<CalculatedLabel label={BUDGET_USED} helpKey={`${level}.budgetUsed`} />}>
           <BudgetUsed percent={budgetUsedPercent} overBudget={overBudget} />
         </Fact>
-        <Fact label={<CalculatedLabel label={LEFT_TO_PLAN} tip={LEFT_TO_PLAN_TIP} />}>
+        <Fact label={<CalculatedLabel label={LEFT_TO_PLAN} helpKey={`${level}.leftToPlan`} />}>
           {leftToPlan ? (
             <span className={isNegative(leftToPlan) ? styles.negative : undefined}>
               {money(leftToPlan)}
@@ -181,10 +161,7 @@ export function BudgetCostSection({
   );
 }
 
-/**
- * The budget-used bar with "125%", red above 100 % (FR-011); "—" without a value. `compact` is
- * the plan tree's: a short bar, never wrapping, so the column stays narrow.
- */
+/** The budget-used bar with "125%", red above 100 %; `compact` never wraps, for the plan tree. */
 export function BudgetUsed({
   percent,
   overBudget,
@@ -194,7 +171,6 @@ export function BudgetUsed({
   percent: number | null;
   overBudget: boolean;
   compact?: boolean;
-  /** The bar's accessible name ("Budget used of Helix launch" in a tree row). */
   label?: string;
 }) {
   if (percent === null) {
@@ -208,20 +184,11 @@ export function BudgetUsed({
   );
 }
 
-/** The goals of the activities below (FR-016): INQ, MQL, Revenue; "—" each without a value. */
-export function GoalsSection({ goals }: { goals: GoalSums }) {
+/** The goals of the activities below: INQ, MQL, Revenue; "—" each without a value. */
+export function GoalsSection({ level, goals }: { level: RecordLevel; goals: GoalSums }) {
   const { money } = useFormatters();
   return (
-    <PanelSection
-      title={
-        // In ink like every other heading of the panel, never grey (UI audit C-03).
-        <>
-          {GOALS}
-          <span className={styles.calculated}>{CALCULATED}</span>
-          <InfoTip label={GOALS} text={GOALS_TIP} />
-        </>
-      }
-    >
+    <PanelSection title={<CalculatedLabel label={GOALS} helpKey={`${level}.goals`} />}>
       <Facts>
         <Fact label={INQ}>{goals.inq === null ? '—' : formatWhole(goals.inq)}</Fact>
         <Fact label={MQL}>{goals.mql === null ? '—' : formatWhole(goals.mql)}</Fact>

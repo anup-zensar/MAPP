@@ -10,8 +10,6 @@ export const ADD_LINE_ITEM = 'Add line item';
 export const EMPTY_SECTION =
   "No line items yet — split this activity's planned cost into the costs you will pay";
 export const BALANCE_LABEL = 'Unassigned planned cost (Sys_Gen_Balance)';
-export const BALANCE_TIP =
-  "Unassigned planned cost = the activity's planned cost − the sum of its line items' planned costs in USD. Aim for 0.00: line items above the planned cost stop the activity from being submitted.";
 export const METER_LABEL = 'Assigned to line items';
 export const ALL_ASSIGNED = 'All of the planned cost is assigned';
 export const NO_PLANNED_COST =
@@ -160,13 +158,6 @@ export function conversionText(
 export function rateDatesText(dates: string[]): string {
   const distinct = dates.filter((date, index) => dates.indexOf(date) === index);
   return `${dates.length === 1 ? 'rate' : 'rates'} of ${distinct.join(' and ')}`;
-}
-
-export function conversionTip(code: string, planCode = 'USD'): string {
-  if (planCode === 'USD') {
-    return `Planned cost in USD = planned cost ÷ the rate in Settings (units of ${code} per 1 USD), rounded to the cent.`;
-  }
-  return `Planned cost in ${planCode}, the plan's currency = planned cost ÷ the ${code} rate × the ${planCode} rate (units per 1 USD), rounded to the cent.`;
 }
 
 export function changedToText(local: string, usd: string): string {

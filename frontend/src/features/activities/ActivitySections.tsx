@@ -15,10 +15,7 @@ import styles from './ActivitySections.module.css';
 import { EMPTY, goalsFormula } from './activity-text';
 import type { ModelFacts } from './activity-text';
 
-/**
- * The Details card of an activity's page (FR-020): every value in the one key–value layout, "—"
- * when empty, then who created and last changed it (design system §6.3).
- */
+/** The Details card: every value, "—" when empty, then who created and last changed it. */
 export function ActivityDetails({ activity }: { activity: Activity }) {
   const { date } = useFormatters();
   const type = activity.activityType;
@@ -28,27 +25,33 @@ export function ActivityDetails({ activity }: { activity: Activity }) {
     <Card title="Details">
       <div className={styles.stack}>
         <DetailsList>
-          <Detail label="Activity name">{activity.name}</Detail>
-          <Detail label="External name">
+          <Detail label="Activity name" helpKey="activity.name">
+            {activity.name}
+          </Detail>
+          <Detail label="External name" helpKey="activity.externalName">
             {activity.externalName || (
               <>
                 {EMPTY} <span className={styles.muted}>(the activity name is used)</span>
               </>
             )}
           </Detail>
-          <Detail label="Campaign">{activity.campaign.name}</Detail>
+          <Detail label="Campaign" helpKey="activity.initiative">
+            {activity.campaign.name}
+          </Detail>
           <Detail label="Initiative">{activity.initiative.name}</Detail>
-          <Detail label="Activity type">
+          <Detail label="Activity type" helpKey="activity.activityType">
             {type.name}
             {!type.active && ' (inactive)'}
             {!type.allowed && (
               <span className={styles.problem}>Not allowed by the plan&apos;s model</span>
             )}
           </Detail>
-          <Detail label="Owner">
+          <Detail label="Owner" helpKey="activity.owner">
             {activity.owner ? <PersonLabel person={activity.owner} /> : null}
           </Detail>
-          <Detail label="Start date">{activity.startDate ? date(activity.startDate) : null}</Detail>
+          <Detail label="Start date" helpKey="activity.dates">
+            {activity.startDate ? date(activity.startDate) : null}
+          </Detail>
           <Detail label="End date">
             {activity.ongoing
               ? 'Ongoing (no end date)'
@@ -56,16 +59,15 @@ export function ActivityDetails({ activity }: { activity: Activity }) {
                 ? date(activity.endDate)
                 : null}
           </Detail>
-          {/* In the plan currency, with the reader's display currency beside it (016 FR-013). */}
-          <Detail label="Planned cost" numeric>
+          <Detail label="Planned cost" helpKey="activity.plannedCost" numeric>
             {activity.plannedCost ? (
               <MoneyPair primary={activity.plannedCost} secondary={activity.display.plannedCost} />
             ) : null}
           </Detail>
-          <Detail label="Approval workflow">
+          <Detail label="Approval workflow" helpKey="activity.approvalWorkflow">
             {workflow ? `${workflow.name}${workflow.active ? '' : ' (inactive)'}` : null}
           </Detail>
-          <Detail label="Description">
+          <Detail label="Description" helpKey="activity.description">
             {activity.description ? (
               <span className={styles.description}>{activity.description}</span>
             ) : null}
@@ -82,21 +84,13 @@ export function ActivityDetails({ activity }: { activity: Activity }) {
 
 export interface ActivityAttributesProps {
   activity: Activity;
-  /** The activity level's Shell attribute form (feature 002), once loaded. */
   form: AttributeForm | undefined;
-  /** The plan's business units (option ids), once loaded. */
   businessUnits: string[] | undefined;
-  /** Why the form or the business units did not load. */
   error: unknown;
   onRetry: () => void;
 }
 
-/**
- * The Shell attributes card (FR-014, FR-015): feature 002's read-only values, the groups shown for
- * the plan's business unit with the reason, "—" when empty. The form's own section names are the
- * card's headings ("Shell attributes", "Lubricants attributes"), so no heading repeats its parent
- * (UI audit AF-02, functional review P-08).
- */
+/** The Shell attributes card; the form's own section names are its headings, never repeated. */
 export function ActivityAttributes({
   activity,
   form,
@@ -124,10 +118,7 @@ export function ActivityAttributes({
   );
 }
 
-/**
- * The Goals card (FR-018): INQ, MQL and revenue, MQL and revenue "Calculated" from the plan's
- * model (the formula in an ⓘ once the model is known) or "Typed"; "—" when empty.
- */
+/** The Goals card: MQL and revenue "Calculated" from the plan's model (formula in an ⓘ) or "Typed". */
 export function ActivityGoals({ activity, model }: { activity: Activity; model?: ModelFacts }) {
   const { goals } = activity;
   const origin = (stage: string) =>
@@ -143,17 +134,17 @@ export function ActivityGoals({ activity, model }: { activity: Activity; model?:
   return (
     <Card title="Goals">
       <DetailsList>
-        <Detail label="INQ" numeric>
+        <Detail label="INQ" helpKey="activity.inq" numeric>
           {goals.inq === null ? null : formatWhole(goals.inq)}
         </Detail>
-        <Detail label="MQL" numeric>
+        <Detail label="MQL" helpKey="activity.mql" numeric>
           {goals.mql === null ? null : (
             <>
               {formatWhole(goals.mql)} {origin('MQL')}
             </>
           )}
         </Detail>
-        <Detail label="Revenue" numeric>
+        <Detail label="Revenue" helpKey="activity.revenue" numeric>
           {activity.display.revenue === null ? null : (
             <>
               {moneyText(activity.display.revenue)} {origin('Revenue')}

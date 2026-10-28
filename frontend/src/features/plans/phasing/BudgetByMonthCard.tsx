@@ -1,6 +1,7 @@
 import { TriangleAlert } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useLocation } from 'react-router';
+import { FieldHelpTip } from '@/features/settings';
 import { Button } from '@/ui/Button/Button';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
@@ -41,11 +42,8 @@ const CHILDREN: Record<PhasingLevel, string | null> = {
 };
 
 /**
- * **Budget by month** (016 FR-024): the record's phased budget, its planned cost by month, the
- * difference and — for plans and campaigns — what their children's phased budgets take, Monthly or
- * Quarterly, with Other years and No dates when they hold amounts. A period whose planned cost or
- * children go above its budget is red with "Over by …"; nothing here blocks. **Edit** opens the
- * editor (FR-023). Shown only by an API that phases budgets (016).
+ * The record's phased budget, planned cost, difference and children's phased budgets by month or
+ * quarter; a period over its budget is red with "Over by …", nothing blocks. **Edit** opens the editor.
  */
 export function BudgetByMonthCard({
   level,
@@ -134,12 +132,14 @@ export function BudgetByMonthCard({
           <tbody>
             <PeriodRow
               label="Budget"
+              helpKey="phasing.budget"
               values={periods.budget}
               extraCount={extra.length}
               empty={row.method === 'none' ? 'Not phased' : undefined}
             />
             <PeriodRow
               label="Planned cost"
+              helpKey="phasing.plannedCost"
               values={periods.plannedCost}
               extra={extra.map((column) => column.planned)}
             />
@@ -147,6 +147,7 @@ export function BudgetByMonthCard({
             {children && periods.allocated && (
               <PeriodRow
                 label={`Allocated to ${children}`}
+                helpKey="phasing.allocated"
                 values={periods.allocated}
                 extraCount={extra.length}
               />
@@ -169,9 +170,12 @@ export function BudgetByMonthCard({
     >
       <div className={styles.header}>
         <div>
-          <Heading id={headingId} className={styles.title}>
-            Budget by month
-          </Heading>
+          <div className={styles.titleRow}>
+            <Heading id={headingId} className={styles.title}>
+              Budget by month
+            </Heading>
+            <FieldHelpTip helpKey={`${level}.budgetPhasing`} label="Budget by month" />
+          </div>
           <p className={styles.caption}>
             Amounts in {amountsIn}, the plan currency · {year}
           </p>

@@ -12,36 +12,26 @@ export interface DateRange {
 }
 
 export interface DateRangeFieldProps {
-  /** Names the pair: "Dates". */
   label: string;
-  /**
-   * The inputs' ids are `<idPrefix>-startDate` and `<idPrefix>-endDate` ("campaign-startDate",
-   * "field-startDate"), so FormErrorSummary can link to each.
-   */
+  /** The inputs are `<idPrefix>-startDate` and `<idPrefix>-endDate`, for FormErrorSummary's links. */
   idPrefix: string;
   start: string;
   end: string;
   onChange: (range: DateRange) => void;
   /** The dates the record must stay inside (its parent's); sets the inputs' min and max. */
   allowed?: { start: string; end: string } | null;
-  /** Says what the allowed range is: "Must be inside the campaign's dates (01 Feb – 30 Nov 2026)". */
   allowedHint?: string;
   /** The latest end date when there is no allowed range (activities: 31 Dec, 10 years on). */
   maxEnd?: string;
   hint?: string;
+  tip?: string;
   marking?: FieldMarking;
   errors?: { start?: string; end?: string };
-  /** A warning that does not block saving (R4: "This campaign runs outside 2026, the plan's year"). */
   warning?: string;
-  /** Locks the end date and says why (an ongoing activity has none). */
   endDisabledReason?: string;
 }
 
-/**
- * Start and end dates as one field (feature 005, design system §5 "Date range picker"): two
- * native date inputs in a group, kept inside the allowed range, each with its own problem, and the
- * allowed range and any warning under both.
- */
+/** Start and end dates as one field, kept inside the allowed range, each with its own problem. */
 export function DateRangeField({
   label,
   idPrefix,
@@ -52,6 +42,7 @@ export function DateRangeField({
   allowedHint,
   maxEnd,
   hint,
+  tip,
   marking,
   errors = {},
   warning,
@@ -68,6 +59,7 @@ export function DateRangeField({
       label={label}
       marking={marking}
       hint={hint}
+      tip={tip}
       note={
         notes.length > 0 || warning ? (
           <>

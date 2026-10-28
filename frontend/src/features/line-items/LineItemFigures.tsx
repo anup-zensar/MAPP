@@ -1,4 +1,5 @@
 import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
+import { useFieldHelp } from '@/features/settings';
 import { formatRate, toCents } from '@/format/decimal';
 import { centsInput, formatMonth, moneyText } from './line-item-math';
 import type { LineItem, UnassignedBalance } from './api';
@@ -7,8 +8,6 @@ import styles from './LineItemPage.module.css';
 import { RateTip } from './MoneyPair';
 
 const UNASSIGNED_LABEL = "Activity's unassigned planned cost";
-const UNASSIGNED_TIP =
-  "The activity's planned cost minus all its line items' planned costs (Sys_Gen_Balance). Aim for 0.00.";
 
 /** The summary cards: planned cost (other currencies and rates beside it), spread, unassigned. */
 export function LineItemFigures({
@@ -21,21 +20,24 @@ export function LineItemFigures({
   const { spread } = lineItem;
   const left = balance.balance;
   const negative = left !== null && toCents(left.amount) < 0n;
+  const { help } = useFieldHelp();
   return (
     <section className={styles.figures} aria-label="Summary">
       <SummaryCard
         label={LABEL.plannedCost}
+        tip={help('lineItem.plannedCost')}
         value={moneyText(lineItem.plannedCost)}
         detail={<CostBeside lineItem={lineItem} />}
       />
       <SummaryCard
         label={LABEL.spread}
+        tip={help('lineItem.spread')}
         value={SPREAD_LABELS[spread.method]}
         detail={spreadDetail(spread)}
       />
       <SummaryCard
         label={UNASSIGNED_LABEL}
-        tip={UNASSIGNED_TIP}
+        tip={help('activity.unassignedPlannedCost')}
         value={left ? moneyText(left) : '—'}
         tone={negative ? 'problem' : undefined}
         detail={

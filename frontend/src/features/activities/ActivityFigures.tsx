@@ -1,22 +1,16 @@
 import type { ReactNode } from 'react';
 import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { amountText, moneyText, RateTip } from '@/features/line-items';
+import { useFieldHelp } from '@/features/settings';
 import type { Money } from '@/features/line-items';
 import { toCents } from '@/format/decimal';
 import type { Activity } from './api';
 import styles from './ActivityPage.module.css';
 import { lineItemsAttentionText, lineItemsText } from './activity-text';
 
-const UNASSIGNED_TIP =
-  "The activity's planned cost minus its line items' planned costs, in the plan currency (Sys_Gen_Balance). Aim for 0.00.";
-
-/**
- * The activity's money and progress facts under the header (FR-019, design system §2.4 B): planned
- * cost, unassigned planned cost (red words when line items exceed it) and its line items. Amounts
- * are in the plan currency, with the reader's display currency beside them when it differs (016
- * FR-013), in the one money format of this page ("120,000.00 USD").
- */
+/** Planned cost, unassigned planned cost and line items, with the display currency beside. */
 export function ActivityFigures({ activity }: { activity: Activity }) {
+  const { help } = useFieldHelp();
   const planned = activity.plannedCost;
   const { count } = activity.lineItems;
   const attention = activity.completeness.lineItemsNeedingAttention;
@@ -25,6 +19,7 @@ export function ActivityFigures({ activity }: { activity: Activity }) {
     <section className={styles.figures} aria-label="Summary">
       <SummaryCard
         label="Planned cost"
+        tip={help('activity.plannedCost')}
         value={planned ? moneyText(planned) : '—'}
         detail={
           planned ? (
@@ -60,11 +55,12 @@ function UnassignedCard({
   unassigned: Money | null;
   display: Money | null;
 }) {
+  const tip = useFieldHelp().help('activity.unassignedPlannedCost');
   if (!unassigned) {
     return (
       <SummaryCard
         label="Unassigned planned cost"
-        tip={UNASSIGNED_TIP}
+        tip={tip}
         value="—"
         detail="No planned cost yet"
       />
@@ -91,7 +87,7 @@ function UnassignedCard({
   return (
     <SummaryCard
       label="Unassigned planned cost"
-      tip={UNASSIGNED_TIP}
+      tip={tip}
       value={moneyText(unassigned)}
       tone={cents < 0n ? 'problem' : undefined}
       detail={detail}

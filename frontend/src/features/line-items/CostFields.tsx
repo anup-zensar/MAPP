@@ -1,8 +1,8 @@
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
 import { problemOf } from '@/ui/FormPanel/problem-of';
-import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { FieldHelpTip, useFieldHelp } from '@/features/settings';
 import { formatRate } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
 import styles from './LineItemForm.module.css';
@@ -13,7 +13,6 @@ import type { LineItemCurrency } from './api';
 import {
   CALCULATED,
   conversionText,
-  conversionTip,
   currencyLabel,
   inactiveCurrencyNote,
   LABEL,
@@ -23,22 +22,15 @@ import { useCurrentRates } from './rates';
 
 export interface CostFieldsProps {
   state: LineItemFormState;
-  /** The active currencies and, on an edit form, the line item's inactive one (FR-011). */
+  /** The active currencies and, on an edit form, the line item's inactive one. */
   currencies: LineItemCurrency[];
   problems: FieldProblem[];
-  /** The plan currency the planned cost is converted into (016 FR-015); USD before 016. */
   planCode?: string;
   onCurrencyChange: (code: string) => void;
   onPlannedCostChange: (text: string) => void;
 }
 
-/**
- * Currency and planned cost (FR-011, FR-012): the currency choice with an inactive currency kept
- * and explained, the amount in that currency, and for another currency than the plan's the
- * calculated amount in the plan currency under it with the rates and their date: "= 19,750.00 GBP
- * at 0.92 EUR and 0.79 GBP per USD (rates of 19 Oct 2026)" (016 FR-009, FR-015), or "= 10,869.57 USD
- * at 0.92 EUR per USD" in a USD plan.
- */
+/** Currency and planned cost, with the calculated amount in the plan currency under another currency's. */
 export function CostFields({
   state,
   currencies,
@@ -53,11 +45,13 @@ export function CostFields({
   const converts = Boolean(currency && currency.code !== planCode && cents !== null && planRate);
   const costNote =
     state.costNotes.length > 0 ? state.costNotes.join(' ') : state.sources.plannedCost;
+  const { help } = useFieldHelp();
 
   return (
     <>
       <ChoiceField
         label={LABEL.currency}
+        tip={help('lineItem.currency')}
         name="currency"
         marking="Required"
         options={currencies.map((option) => ({
@@ -77,6 +71,7 @@ export function CostFields({
       <div>
         <MoneyField
           label={LABEL.plannedCost}
+          tip={help('lineItem.plannedCost')}
           name="plannedCost"
           marking="Required"
           currency={state.currency}
@@ -98,10 +93,7 @@ export function CostFields({
   );
 }
 
-/**
- * "Calculated = 19,750.00 GBP at 0.92 EUR and 0.79 GBP per USD (rates of 19 Oct 2026)": the rates
- * of the currencies other than USD, and their date once the current rates have loaded (FR-009).
- */
+/** "Calculated = 19,750.00 GBP at 0.92 EUR and 0.79 GBP per USD (rates of 19 Oct 2026)". */
 function Conversion({
   cents,
   from,
@@ -136,9 +128,9 @@ function Conversion({
           known,
         )}
       </span>
-      <InfoTip
+      <FieldHelpTip
+        helpKey={planCode === 'USD' ? 'lineItem.plannedCostUsd' : 'lineItem.plannedCostPlan'}
         label={`the calculated ${planCode} amount`}
-        text={conversionTip(from.code, planCode)}
       />
     </p>
   );

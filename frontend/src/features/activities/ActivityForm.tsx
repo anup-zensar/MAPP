@@ -10,6 +10,7 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
+import { useFieldHelp } from '@/features/settings';
 import { formatAmount, formatMoneyText } from '@/format/decimal';
 import { recordHref } from '@/ui/record-links';
 import type { ActivityFormData, ActivityTypeOption, Money } from './api';
@@ -63,6 +64,7 @@ export function ActivityForm({
   const [costFromType, setCostFromType] = useState(false);
   const [question, setQuestion] = useState<TypeQuestion | null>(null);
   const { context } = data;
+  const { help } = useFieldHelp();
 
   function setPlannedCost(amount: Money) {
     setCostFromType(true);
@@ -167,6 +169,7 @@ export function ActivityForm({
           render={(field) => (
             <TextAreaField
               label="Description"
+              tip={help('activity.description')}
               maxLength={2000}
               {...field}
               name={fieldId('description')}

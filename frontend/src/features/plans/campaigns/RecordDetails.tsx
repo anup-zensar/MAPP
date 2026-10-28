@@ -1,7 +1,6 @@
-import { Plus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { useAttributeForm } from '@/features/settings';
+import { FieldHelpTip, useAttributeForm } from '@/features/settings';
 import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { LinkButton } from '@/ui/Button/Button';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
@@ -20,6 +19,7 @@ import { completenessFieldHref } from '../phasing/phasing-links';
 import { RecordFinancials } from '../RecordFinancials';
 import { BudgetByMonthCard } from '../phasing/BudgetByMonthCard';
 import { AttentionChip } from './AttentionChip';
+import { CampaignInitiatives } from './CampaignInitiatives';
 import { BudgetCostSection, GoalsSection } from './BudgetCost';
 import { usePlan } from './api';
 import type { Campaign, Initiative } from './api';
@@ -31,15 +31,15 @@ import { ApprovalProgressChip, OutsideYearNote } from './StatusChips';
 import {
   activitiesLine,
   ADD_INITIATIVE,
+  APPROVAL_PROGRESS_LABEL,
   CAMPAIGN,
+  COMPLETENESS,
   createdLine,
   DATES,
   DESCRIPTION,
   EDIT,
   ID,
-  initiativesHeading,
   NO_ACTIVITIES_YET,
-  NO_INITIATIVES,
   OWNER,
   PLAN,
   TIMING_WORD,
@@ -125,6 +125,7 @@ export function RecordDetails({
           <div className={styles.chips}>
             <LevelTag level={level} />
             <ApprovalProgressChip progress={record.approvalProgress} />
+            <FieldHelpTip helpKey={`${level}.approvalProgress`} label={APPROVAL_PROGRESS_LABEL} />
             {/* #completeness: where Home's "Show fields" leads (feature 009). */}
             <span id="completeness">
               <AttentionChip
@@ -140,23 +141,28 @@ export function RecordDetails({
                   void navigate(planHref, { state: { highlight: record.id } })
                 }
               />
+              <FieldHelpTip helpKey="common.completeness" label={COMPLETENESS} />
             </span>
           </div>
           {isCampaign && record.outsidePlanYear && <OutsideYearNote year={record.plan.year} />}
           <Facts>
-            <Fact label={ID}>{record.id}</Fact>
+            <Fact label={ID} helpKey="common.id">
+              {record.id}
+            </Fact>
             <Fact label={PLAN}>
               <Link to={planHref}>{record.plan.name}</Link>
             </Fact>
             {initiative && (
-              <Fact label={CAMPAIGN}>
+              <Fact label={CAMPAIGN} helpKey="initiative.campaign">
                 <Link to={recordHref('campaign', initiative.campaign.id, planId)}>
                   {initiative.campaign.name}
                 </Link>
               </Fact>
             )}
-            <Fact label={OWNER}>{record.owner ? <PersonLabel person={record.owner} /> : '—'}</Fact>
-            <Fact label={DATES}>
+            <Fact label={OWNER} helpKey={`${level}.owner`}>
+              {record.owner ? <PersonLabel person={record.owner} /> : '—'}
+            </Fact>
+            <Fact label={DATES} helpKey={`${level}.dates`}>
               {dateRange(record.startDate, record.endDate)}
               {record.timing && ` · ${TIMING_WORD[record.timing]}`}
             </Fact>
@@ -169,8 +175,6 @@ export function RecordDetails({
               date(localDate(record.updatedAt)),
             )}
           </p>
-          {/* Amounts in the plan currency, the reader's display currency beneath when it
-              differs (016 FR-013; before 016 both are the same). */}
           <BudgetCostSection
             level={level}
             budget={record.budget}
@@ -191,8 +195,15 @@ export function RecordDetails({
             variant="panel"
           />
           <RecordFinancials recordId={record.id} planId={planId} variant="panel" />
-          <GoalsSection goals={record.display.goals} />
-          <PanelSection title={DESCRIPTION}>
+          <GoalsSection level={level} goals={record.display.goals} />
+          <PanelSection
+            title={
+              <>
+                {DESCRIPTION}
+                <FieldHelpTip helpKey={`${level}.description`} label={DESCRIPTION} />
+              </>
+            }
+          >
             <p className={styles.text}>{record.description || '—'}</p>
           </PanelSection>
           <AttributeValues level={level} record={record} planId={planId} />
@@ -257,39 +268,5 @@ function AttributeValues({
       planLink={`/plans/${planId}`}
       sectionHeading="h3"
     />
-  );
-}
-
-/** "Initiatives (n)": each with its link, dates, approval progress and budget (FR-016). */
-function CampaignInitiatives({ campaign, planId }: { campaign: Campaign; planId: string }) {
-  const { dateRange, money } = useFormatters();
-  return (
-    <PanelSection title={initiativesHeading(campaign.initiatives.length)}>
-      {campaign.initiatives.length === 0 ? (
-        <div className={styles.empty}>
-          <p className={styles.text}>{NO_INITIATIVES}</p>
-          {allows(campaign.access?.addChild) && (
-            <LinkButton to={addInitiativeHref(planId, campaign.id)} icon={<Plus />} size="sm">
-              {ADD_INITIATIVE}
-            </LinkButton>
-          )}
-        </div>
-      ) : (
-        <ul className={styles.children}>
-          {campaign.initiatives.map((item) => (
-            <li key={item.id} className={styles.child}>
-              <div className={styles.childMain}>
-                <Link to={recordHref('initiative', item.id, planId)}>{item.name}</Link>
-                <span className={styles.muted}>{dateRange(item.startDate, item.endDate)}</span>
-              </div>
-              <div className={styles.childSide}>
-                <ApprovalProgressChip progress={item.approvalProgress} />
-                <span>{money(item.display.budget)}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </PanelSection>
   );
 }

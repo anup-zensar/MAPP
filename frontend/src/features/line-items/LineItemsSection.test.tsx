@@ -82,9 +82,6 @@ describe('LineItemsSection (US1)', () => {
     );
     expect(screen.getByText('100,000.00 of 120,000.00 USD assigned')).toBeInTheDocument();
     expect(screen.getByText('20,000.00 USD not yet assigned to a line item')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'About Unassigned planned cost' }),
-    ).toBeInTheDocument();
   });
 
   it('shows the grid by month with totals (scenario 2, FR-003)', async () => {

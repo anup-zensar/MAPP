@@ -11,6 +11,7 @@ import { TextField } from '@/ui/TextField/TextField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { AttributeForm, AttributeValues } from '@/ui/ShellAttributeFields/rules';
 import { PersonField } from '@/features/people';
+import { FieldHelpTip, useFieldHelp } from '@/features/settings';
 import { useFormatters } from '@/format/useFormatters';
 import { PHASING_REMOVED } from '../plan-text';
 import { RemainingBudgetLine } from './BudgetCost';
@@ -33,9 +34,7 @@ import {
   outsidePlanYear,
   OWNER,
   REMAINING_CAMPAIGN_BUDGET,
-  REMAINING_CAMPAIGN_BUDGET_TIP,
   REMAINING_PLAN_BUDGET,
-  REMAINING_PLAN_BUDGET_TIP,
   THE_CAMPAIGNS_DATES,
   THE_PLANS_YEAR,
 } from './texts';
@@ -60,33 +59,24 @@ export interface RecordFormProps {
   control: Control<RecordFormValues>;
   /** The field problems of the last save, all at once. */
   problems: FieldProblem[];
-  /** The level's Shell attributes (GET /api/v1/shell-attribute-forms/{level}). */
   attributeForm: AttributeForm;
   /** The plan's Business unit option ids: they decide the conditional attributes. */
   businessUnit: string[];
-  /** The stored attribute values (edit forms). */
   previousAttributes?: AttributeValues;
   planId: string;
   /** The plan's year, for the R4 warning (campaigns). */
   planYear: number;
-  /** The initiative's campaign. */
   campaign?: ParentCampaign;
-  /** Create forms: the pre-filled values and their hints. */
   defaults?: FormDefaults;
   /** The parent's remaining budget as saved, and this record's saved budget (FR-010). */
   parentRemaining: Money | null;
   savedBudget: Money | null;
-  /** The plan currency: the budget is typed in it (016 FR-011). */
   currency: string;
   /** Edit forms: the saved budget has a Budget by month, which clearing the budget removes. */
   phased?: boolean;
 }
 
-/**
- * The campaign or initiative form (plan "Forms", FR-002): Basics, Budget and the level's Shell
- * attributes from Settings, one column, markings as words, every problem under its field. Field
- * ids are "<level>-<field>" (attributes: "attributes.<id>"), as the error summary links them.
- */
+/** The campaign or initiative form; field ids are "<level>-<field>", as the error summary links them. */
 export function RecordForm({
   level,
   control,
@@ -104,6 +94,8 @@ export function RecordForm({
   phased = false,
 }: RecordFormProps) {
   const { date } = useFormatters();
+  const { help } = useFieldHelp();
+  const tip = (field: string) => help(`${level}.${field}`);
   const campaignFieldId = useId();
   const values = useWatch({ control, compute: (all: RecordFormValues) => all });
   const isCampaign = level === 'campaign';
@@ -128,6 +120,7 @@ export function RecordForm({
             <TextField
               label={NAME_LABEL[level]}
               marking="Required"
+              tip={tip('name')}
               maxLength={120}
               {...field}
               name={`${level}-name`}
@@ -139,6 +132,7 @@ export function RecordForm({
             <label htmlFor={campaignFieldId} className={styles.readOnlyLabel}>
               {CAMPAIGN}
             </label>
+            <FieldHelpTip helpKey="initiative.campaign" label={CAMPAIGN} />
             <input
               id={campaignFieldId}
               type="text"
@@ -159,6 +153,7 @@ export function RecordForm({
             <PersonField
               label={OWNER}
               marking="Needed to publish"
+              tip={tip('owner')}
               hint={ownerDefaulted ? (isCampaign ? FROM_THE_PLAN : FROM_THE_CAMPAIGN) : undefined}
               {...field}
               name={`${level}-ownerId`}
@@ -177,6 +172,7 @@ export function RecordForm({
                   label={DATES}
                   idPrefix={level}
                   marking="Needed to publish"
+                  tip={tip('dates')}
                   hint={
                     datesDefaulted ? (isCampaign ? THE_PLANS_YEAR : THE_CAMPAIGNS_DATES) : undefined
                   }
@@ -209,6 +205,7 @@ export function RecordForm({
           render={(field) => (
             <TextAreaField
               label={DESCRIPTION}
+              tip={tip('description')}
               maxLength={2000}
               {...field}
               name={`${level}-description`}
@@ -223,6 +220,7 @@ export function RecordForm({
           render={(field) => (
             <MoneyField
               label={BUDGET_LABEL[level]}
+              tip={tip('budget')}
               currency={currency}
               note={
                 phased && savedBudget && field.value.trim() === '' ? PHASING_REMOVED : undefined
@@ -234,7 +232,9 @@ export function RecordForm({
         />
         <RemainingBudgetLine
           label={isCampaign ? REMAINING_PLAN_BUDGET : REMAINING_CAMPAIGN_BUDGET}
-          tip={isCampaign ? REMAINING_PLAN_BUDGET_TIP : REMAINING_CAMPAIGN_BUDGET_TIP}
+          helpKey={
+            isCampaign ? 'campaign.remainingPlanBudget' : 'initiative.remainingCampaignBudget'
+          }
           parentRemaining={parentRemaining}
           savedOwn={savedBudget}
           typed={values.budget}

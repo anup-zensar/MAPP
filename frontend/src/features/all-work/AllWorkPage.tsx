@@ -13,6 +13,9 @@ import styles from './AllWorkPage.module.css';
 import { ALL_WORK_DESCRIPTION, VIEW_LABELS } from './all-work-text';
 import type { Sort, ViewState, ViewType } from './all-work-types';
 import { AllWorkGrid } from './AllWorkGrid';
+import { withBreakdownChoice } from './breakdown-state';
+import { BREAKDOWN } from './breakdown-text';
+import { BreakdownView } from './BreakdownView';
 import { BudgetView } from './BudgetView';
 import { CalendarView } from './CalendarView';
 import { ColumnChooser } from './ColumnChooser';
@@ -32,19 +35,15 @@ import { continuedPath, pageOf, toggleRow, visibleRows } from './view-rows';
 import { nextSort } from './view-columns';
 import { standardState, toQueryParams, withoutRefused, yearRange } from './view-state';
 
-/** The views as pill tabs (FR-001). */
 const TABS: TabItem<ViewType>[] = [
   { value: 'grid', label: VIEW_LABELS.grid },
   { value: 'calendar', label: VIEW_LABELS.calendar },
   { value: 'budget', label: VIEW_LABELS.budget },
+  { value: 'breakdown', label: BREAKDOWN },
 ];
 
-/**
- * All work (feature 010, FR-001): every plan of a year as a read-only Grid, Calendar or Budget &
- * cost view, with the summary cards and one filter bar, under one state that survives moving around
- * MAPP (FR-009). Nothing is created, changed or deleted here (FR-002); a row opens its
- * record (FR-016).
- */
+// Every plan of the years as a read-only Grid, Calendar, Budget & cost or Breakdown, under one state
+// that survives moving around the app. Nothing is changed here; a row opens its record.
 export function AllWorkPage() {
   const { has } = useAccess();
   usePageTitle('All work');
@@ -69,10 +68,8 @@ export function AllWorkPage() {
     [result, state],
   );
   const page = pageOf(visible, entry.page, entry.pageSize);
-  // The Calendar's Month layout shows one month of activities; it has no pages.
   const monthLayout = state?.view === 'calendar' && state.calendarLayout === 'month';
 
-  // Back from a record: the page scrolls to where it was (FR-016), once the rows are there.
   const scrollRestored = useRef(false);
   useEffect(() => {
     if (result && !scrollRestored.current) {
@@ -83,7 +80,6 @@ export function AllWorkPage() {
     }
   }, [result, entry.scrollY]);
 
-  // A refused filter is named in a message and set back (plan "States").
   const refusal =
     query.error instanceof ApiError && query.error.kind === 'validation' ? query.error : null;
   useEffect(() => {
@@ -97,14 +93,10 @@ export function AllWorkPage() {
   }, [refusal, state, preferences.data, options.data, setState, show]);
 
   function changeExpansion(next: ViewState) {
-    // Opening and closing rows keeps the page (it may become shorter).
     setState(next, { keepPage: true });
   }
 
-  /**
-   * Shows other columns or another sort (FR-015, FR-018). They are remembered for the person
-   * while no saved view is applied; with one, they only make it "Modified" (FR-021, FR-030).
-   */
+  // Columns and sort are remembered for the person only while no saved view is applied.
   function changeColumns(columns: string[], sort: Sort | null) {
     setState((current) => ({ ...current, columns, sort }), { keepPage: true });
     if (!entry.appliedViewId) {
@@ -112,6 +104,7 @@ export function AllWorkPage() {
     }
   }
 
+  const shown = state && withBreakdownChoice(state, options.data?.attributes);
   const view = state && (
     <>
       <FilterBar
@@ -124,57 +117,67 @@ export function AllWorkPage() {
       {/* The cards and the count are the same in every view: the last answer serves. */}
       <SummaryCards summary={query.data?.summary ?? null} />
       <div aria-busy={query.isFetching} className={styles.card}>
-        <ViewToolbar
-          state={state}
-          generatedAt={result?.generatedAt}
-          onChange={changeExpansion}
-          onColumns={() => setChoosingColumns(true)}
-          onRefresh={() => void query.refetch()}
-        />
-        <ViewContent
-          state={state}
-          result={result}
-          error={query.isError ? query.error : null}
-          hasPlans={options.data ? options.data.plans.length > 0 : true}
-          onRetry={() => void query.refetch()}
-          onClearFilters={() => setState(clearAll)}
-        >
-          {result && monthLayout && (
-            <MonthCalendar key={result.year} result={result} onOpen={(row) => void open(row)} />
-          )}
-          {result && state.view === 'calendar' && !monthLayout && (
-            <CalendarView
-              result={result}
-              rows={page.rows}
-              continued={continuedPath(page.rows, result.rows)}
-              search={state.search}
-              onToggle={(key) => changeExpansion(toggleRow(state, key))}
-              onOpen={(row) => void open(row)}
+        {state.view === 'breakdown' ? (
+          <BreakdownView
+            state={state}
+            attributes={options.data ? (options.data.attributes ?? []) : undefined}
+            onChange={(next) => setState(next)}
+          />
+        ) : (
+          <>
+            <ViewToolbar
+              state={state}
+              generatedAt={result?.generatedAt}
+              onChange={changeExpansion}
+              onColumns={() => setChoosingColumns(true)}
+              onRefresh={() => void query.refetch()}
             />
-          )}
-          {result && state.view === 'budget' && (
-            <BudgetView
+            <ViewContent
+              state={state}
               result={result}
-              rows={page.rows}
-              continued={continuedPath(page.rows, result.rows)}
-              search={state.search}
-              onToggle={(key) => changeExpansion(toggleRow(state, key))}
-              onOpen={(row) => void open(row)}
-            />
-          )}
-          {result && state.view === 'grid' && (
-            <AllWorkGrid
-              result={result}
-              rows={page.rows}
-              continued={continuedPath(page.rows, result.rows)}
-              search={state.search}
-              sort={state.sort}
-              onSort={(column) => changeColumns(state.columns, nextSort(state.sort, column))}
-              onToggle={(key) => changeExpansion(toggleRow(state, key))}
-              onOpen={(row) => void open(row)}
-            />
-          )}
-        </ViewContent>
+              error={query.isError ? query.error : null}
+              hasPlans={options.data ? options.data.plans.length > 0 : true}
+              onRetry={() => void query.refetch()}
+              onClearFilters={() => setState(clearAll)}
+            >
+              {result && monthLayout && (
+                <MonthCalendar key={result.year} result={result} onOpen={(row) => void open(row)} />
+              )}
+              {result && state.view === 'calendar' && !monthLayout && (
+                <CalendarView
+                  result={result}
+                  rows={page.rows}
+                  continued={continuedPath(page.rows, result.rows)}
+                  search={state.search}
+                  onToggle={(key) => changeExpansion(toggleRow(state, key))}
+                  onOpen={(row) => void open(row)}
+                />
+              )}
+              {result && state.view === 'budget' && (
+                <BudgetView
+                  result={result}
+                  rows={page.rows}
+                  continued={continuedPath(page.rows, result.rows)}
+                  search={state.search}
+                  onToggle={(key) => changeExpansion(toggleRow(state, key))}
+                  onOpen={(row) => void open(row)}
+                />
+              )}
+              {result && state.view === 'grid' && (
+                <AllWorkGrid
+                  result={result}
+                  rows={page.rows}
+                  continued={continuedPath(page.rows, result.rows)}
+                  search={state.search}
+                  sort={state.sort}
+                  onSort={(column) => changeColumns(state.columns, nextSort(state.sort, column))}
+                  onToggle={(key) => changeExpansion(toggleRow(state, key))}
+                  onOpen={(row) => void open(row)}
+                />
+              )}
+            </ViewContent>
+          </>
+        )}
       </div>
       {result && result.rows.length > 0 && !monthLayout && (
         <Pager
@@ -195,14 +198,13 @@ export function AllWorkPage() {
         actions={
           <>
             <ViewsControl
-              state={state}
+              state={shown}
               appliedViewId={entry.appliedViewId}
               onApply={(saved) => void session.applyView(saved)}
               onSaved={(saved) => session.setAppliedView(saved.id)}
               onStandard={session.applyStandard}
             />
-            {/* Export needs data.export (feature 014, FR-012); the server checks it too. */}
-            {state && has('data.export') && <ExportMenu state={state} result={result} />}
+            {shown && has('data.export') && <ExportMenu state={shown} result={result} />}
           </>
         }
       />
@@ -212,7 +214,6 @@ export function AllWorkPage() {
             <ErrorState error={session.startError} onRetry={session.retryStart} />
           </Card>
         ) : state ? (
-          // The view switch sits right under the header, the filters after it (UI audit AW-03).
           <Tabs
             label="All work views"
             tabs={TABS}
