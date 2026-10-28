@@ -135,6 +135,7 @@ third; all three are Created, the history explains why, and the right people are
    the owner are notified (except the person who made the change).
 2. **Given** an Approved activity shown as In progress, **When** a line item's currency is changed and
    confirmed, **Then** it returns to Created and its line items show "Waiting for activity approval".
+   *Replaced by feature 034 (D-322): a line item's currency change keeps the activity Approved.*
 3. **Given** a Submitted activity, **When** the owner chooses **Recall submission**, optionally gives a
    reason and confirms, **Then** it becomes Created, the round ends as "Recalled" with the reason, and it
    leaves the approvers' **Waiting for me** tab.
@@ -250,7 +251,8 @@ own action.
 - **FR-021**: A Submitted activity MUST offer **Recall submission** with an optional reason; confirming
   MUST end the round as "Recalled" and set the activity to **Created**. Approved activities MUST NOT offer
   it and MUST explain that the changes of domain model §2.5 need approval again. Anyone may recall in
-  this phase (only the owner once roles arrive).
+  this phase (only the owner once roles arrive). *Amended by 034 FR-005: the explanation names only the
+  activity's planned cost and dates.*
 - **FR-022**: When a change listed in domain model §2.5 is saved on a Submitted or Approved activity
   (after the confirmation provided by features 006 and 007), MAPP MUST end any open round as
   "Approval restarted", set the activity to **Created** and record the changed values (old → new) in the

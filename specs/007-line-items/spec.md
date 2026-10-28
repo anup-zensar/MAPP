@@ -123,7 +123,9 @@ check the preview; then move the activity's dates by one month and check the spr
 
 Selecting a line item opens its page with **Edit** and **More** (Duplicate, View history, Delete). When the
 activity is submitted or approved, changing a line item's cost or currency, or adding or removing a line
-item, sends the activity back for approval — after the user confirms.
+item, sends the activity back for approval — after the user confirms. *Amended by feature 034 (D-322):
+line-item changes no longer send the activity back for approval or ask for confirmation (scenarios 3 and 5
+and FR-031 replaced, FR-033 changed).*
 
 **Why this priority**: Costs change all year; approval must stay meaningful without blocking coding fixes
 (decision D-013).
@@ -316,11 +318,12 @@ its amount (confirmation, activity becomes *Created*), duplicate it and delete t
   or changing its planned cost or currency, MUST first show "This
   activity will need approval again" with the change, and **Save and restart approval** / **Keep
   editing** (in the delete dialog, as an extra line). On confirmation the activity MUST return to
-  *Created* as defined in feature 006 and domain model §2.5 (D-013).
+  *Created* as defined in feature 006 and domain model §2.5 (D-013). *Replaced by 034 FR-001 (D-322).*
 - **FR-032**: All other line-item edits (name, owner, description, spread, finance coding, finance budget
   link, SWBS request) MUST NOT change the activity's status.
 - **FR-033**: Undoing a line-item delete MUST NOT restore an approval the delete ended; restoring a line
-  item into a *Submitted* or *Approved* activity counts as adding one.
+  item into a *Submitted* or *Approved* activity counts as adding one. *Second sentence replaced by 034
+  FR-002: restoring a line item never changes the activity's status.*
 
 ### Key Entities *(include if feature involves data)*
 

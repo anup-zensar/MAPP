@@ -1,0 +1,186 @@
+# Feature 031 — fragment of backend/api/openapi.yaml: new schemas and the changed properties of existing
+# ones. The full definitions live in backend/api/openapi.yaml.
+openapi: 3.1.0
+info:
+  title: MAPP API — feature 031 fragment
+  version: 0.31.0
+paths: {}
+components:
+  schemas:
+    ApprovalSubjectKind:
+      type: string
+      description: The record type an approval round or workflow is about (031 FR-001, FR-004).
+      enum: [activity, purchaseRequest, modifiedPurchaseRequest]
+    ApprovalSubjectStatus:
+      type: string
+      description: The record's status — an activity's (stored or display) or a purchase request's (032).
+      enum: [created, submitted, inReview, declined, approved, closed, inProgress, complete]
+    ApprovalSubject:
+      type: object
+      additionalProperties: false
+      required: [kind, label, id, name, status, displayStatus]
+      properties:
+        kind:
+          $ref: "#/components/schemas/ApprovalSubjectKind"
+        label:
+          type: string
+          example: Purchase request
+        id:
+          type: string
+          example: PR-1001
+        name:
+          type: string
+        status:
+          $ref: "#/components/schemas/ApprovalSubjectStatus"
+        displayStatus:
+          $ref: "#/components/schemas/ApprovalSubjectStatus"
+        version:
+          type: integer
+          minimum: 1
+          description: Sent in an approval section; absent in rows.
+    ApprovalSection:
+      type: object
+      additionalProperties: false
+      description: A record's approval section (Go approval.Section), for feature 032's purchase-request routes.
+      required: [subject, ownerId, owner, workflow, upcomingLevels, rounds, latestDecline, viewer, actions]
+      properties:
+        subject:
+          $ref: "#/components/schemas/ApprovalSubject"
+        ownerId:
+          type: string
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/ApprovalPerson"
+            - type: "null"
+        workflow:
+          oneOf:
+            - $ref: "#/components/schemas/WorkflowRef"
+            - type: "null"
+        upcomingLevels:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalWorkflowLevel"
+        rounds:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalRound"
+        latestDecline:
+          oneOf:
+            - $ref: "#/components/schemas/DeclineNote"
+            - type: "null"
+        viewer:
+          $ref: "#/components/schemas/ApprovalViewer"
+        actions:
+          $ref: "#/components/schemas/ApprovalActionSet"
+    # Changed properties (excerpts):
+    ApprovalWorkflow:
+      properties:
+        objectType:
+          $ref: "#/components/schemas/ApprovalSubjectKind"
+        objectTypeFixed:
+          type: boolean
+          description: The workflow is used, so its object type can no longer change (031 FR-005).
+    ApprovalWorkflowCreate:
+      properties:
+        objectType:
+          $ref: "#/components/schemas/ApprovalSubjectKind"
+    ApprovalWorkflowUpdate:
+      properties:
+        objectType:
+          $ref: "#/components/schemas/ApprovalSubjectKind"
+    ApprovalWorkflowLevel:
+      properties:
+        approverType:
+          enum: [people, manager, role, owner, recordField]
+        recordField:
+          oneOf:
+            - $ref: "#/components/schemas/ApprovalRecordField"
+            - type: "null"
+    ApprovalWorkflowLevelInput:
+      properties:
+        recordField:
+          type: string
+          description: The record field of a recordField level (moaApprover); empty otherwise.
+    ApprovalRecordField:
+      type: object
+      additionalProperties: false
+      required: [id, label]
+      properties:
+        id:
+          type: string
+          example: moaApprover
+        label:
+          type: string
+          example: MoA approver
+    ApprovalRuleOptions:
+      properties:
+        objectTypes:
+          type: array
+          items:
+            type: object
+            required: [id, label]
+            properties:
+              id:
+                $ref: "#/components/schemas/ApprovalSubjectKind"
+              label:
+                type: string
+        recordFields:
+          type: array
+          items:
+            type: object
+            required: [objectType, id, label]
+            properties:
+              objectType:
+                $ref: "#/components/schemas/ApprovalSubjectKind"
+              id:
+                type: string
+              label:
+                type: string
+    ApprovalRound:
+      properties:
+        kind:
+          $ref: "#/components/schemas/ApprovalSubjectKind"
+        outcome:
+          enum: [open, approved, declined, recalled, restarted, cancelled, superseded]
+    ApprovalHistoryEntry:
+      properties:
+        action:
+          description: adds superseded
+        selfApproval:
+          type: boolean
+    ApprovalSubmission:
+      properties:
+        replaces:
+          description: The open round a re-submission ends (031 FR-018); null otherwise.
+          oneOf:
+            - type: object
+              required: [roundNumber, level, levelLabel]
+              properties:
+                roundNumber:
+                  type: integer
+                level:
+                  type: integer
+                levelLabel:
+                  type: string
+            - type: "null"
+    ApprovalRow:
+      properties:
+        subject:
+          $ref: "#/components/schemas/ApprovalSubject"
+        activity:
+          description: The activity of an activity row; null for rows of other record types (use subject).
+    ApprovalLevelWaiting:
+      properties:
+        kind:
+          $ref: "#/components/schemas/ApprovalSubjectKind"
+    Notification:
+      properties:
+        subject:
+          type: object
+          required: [kind, label, id, name, exists]
+        activity:
+          description: The activity of an activity notification; null for other record types (use subject).
+    SubmitProblem:
+      properties:
+        group:
+          enum: [activity, lineItem, purchaseRequest, purchaseRequestLine]

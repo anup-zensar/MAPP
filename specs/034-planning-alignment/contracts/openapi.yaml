@@ -1,0 +1,90 @@
+openapi: 3.1.0
+info:
+  title: MAPP API — feature 034 Planning rules aligned with Shell's process (fragment)
+  version: 0.34.0
+  license:
+    name: Proprietary - internal use only
+  description: |
+    FRAGMENT: the changes feature 034 makes to operations and schemas that already exist in
+    backend/api/openapi.yaml. No path, operation, schema or response is added; nothing is removed
+    (B6: backward compatible, research R1).
+
+    How to merge: each operation or schema below replaces the "description" (and adds "deprecated")
+    of the one with the same name, and the deprecated request properties lose their "default" (so the
+    generated client types make them optional); keep everything else. Only the keys shown change.
+paths:
+  /api/v1/plan-defaults:
+    get:
+      operationId: getPlanDefaults
+      description: |
+        Year = the current year; years = the current year to + 10 (no past year, D-326); teams = the
+        person's active teams; owner = the person when they have one; model = the only active model.
+  /api/v1/activities/{activityId}/line-items:
+    post:
+      operationId: createLineItem
+      description: |
+        Only name, currency and planned cost are required to save (007 FR-009). Adding a line item never
+        changes the activity's status or approval, whatever its status (034 FR-001, D-322).
+  /api/v1/line-items/{lineItemId}:
+    patch:
+      operationId: updateLineItem
+      description: |
+        Every editable field is sent, with the version the person started editing from. No change of a
+        line item — its planned cost and currency included — changes the activity's status or approval
+        (034 FR-001, D-322). A save that changes nothing creates no new version.
+    delete:
+      operationId: deleteLineItem
+      description: >-
+        Moves the line item to the recycle bin; the activity's status and approval stay as they are
+        (034 FR-001). The query parameter restartApproval is deprecated and ignored.
+  /api/v1/line-items/{lineItemId}/duplicate:
+    post:
+      operationId: duplicateLineItem
+      description: >-
+        The copy has every value, a new ID and the name "<name> (copy)", "(copy 2)", … (007 FR-029). The
+        activity's status and approval stay as they are (034 FR-001).
+components:
+  parameters:
+    RestartApproval:
+      name: restartApproval
+      in: query
+      required: false
+      deprecated: true
+      description: Ignored since feature 034 (D-322) - a line-item delete never sends the activity back for approval.
+      schema:
+        type: boolean
+  schemas:
+    PlanDefaults:
+      properties:
+        years:
+          description: The years a new plan may have (the current year to the current year + 10).
+    NextYearOption:
+      properties:
+        reason:
+          description: Why the next year can't be chosen (it is after the current year + 10); empty when it can.
+    LineItemActivity:
+      properties:
+        restartsApproval:
+          type: boolean
+          deprecated: true
+          description: >-
+            Always false since feature 034 (D-322) - a line-item change never sends the activity back for
+            approval. Kept for older clients.
+    LineItemCreate:
+      properties:
+        restartApproval:
+          type: boolean
+          deprecated: true
+          description: Ignored since feature 034 (D-322).
+    LineItemUpdate:
+      properties:
+        restartApproval:
+          type: boolean
+          deprecated: true
+          description: Ignored since feature 034 (D-322).
+    LineItemDuplicate:
+      properties:
+        restartApproval:
+          type: boolean
+          deprecated: true
+          description: Ignored since feature 034 (D-322).

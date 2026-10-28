@@ -208,7 +208,8 @@ check the dialog's counts, choose Undo and confirm everything is back with the s
   markings shown as words (domain model §3).
 - **FR-006**: The form MUST pre-fill and label the defaults of field catalogue §1 (year = current year,
   choices current year − 1 to + 5; the user's teams; the user as owner when eligible; Strategic / AOP and
-  BCPIR plan = No; spread = Evenly; goal stage = INQ) and the model when only one is active.
+  BCPIR plan = No; spread = Evenly; goal stage = INQ) and the model when only one is active. *Amended by
+  feature 034 (D-326): the year choices are the current year to + 10, no past year.*
 - **FR-007**: Model MUST offer only active models and show the chosen model's rates and deal size; Owner
   MUST offer only members of the chosen teams and, with no team chosen, stay visible but disabled with the
   reason (R1); Default finance budget MUST offer only finance budgets of the plan's year, and a year
@@ -290,7 +291,8 @@ check the dialog's counts, choose Undo and confirm everything is back with the s
 - **FR-028**: A next-year copy MUST use the source year + 1, move every copied date one year later
   (29 February → 28 February), clear the default finance budget with a note, and move line items' finance
   budget links to the new year as defined by feature 007; "Next year" is offered only when it is a
-  permitted plan year, otherwise shown with the reason.
+  permitted plan year, otherwise shown with the reason. *Amended by feature 034 (D-326): permitted up to the
+  current year + 10.*
 
 **Delete plan**
 

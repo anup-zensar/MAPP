@@ -1,0 +1,149 @@
+# Feature 030 — the fragment merged into backend/api/openapi.yaml (paths, schemas and the tag).
+tags:
+  - name: Simulated GSAP
+    description: "SWBS codes from the simulated GSAP that stands in for GSAP until live integration (feature 030, ADR-0016)"
+paths:
+  /api/v1/simulated-gsap/swbs-runs:
+    get:
+      tags: [Simulated GSAP]
+      operationId: listSwbsRuns
+      summary: The runs of the simulated GSAP, newest first, and how many line items are ready to send (030 FR-011)
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: At most this many runs (1–100, default 20).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: The runs.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwbsRunPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Simulated GSAP]
+      operationId: createSwbsRun
+      summary: Send the line items that are ready to the simulated GSAP and store the codes it returns (030 FR-006 – FR-010)
+      description: |
+        Sends every line item whose SWBS status is readyToSend within the person's finance.import scope, or
+        only lineItemIds, to the simulated GSAP, which answers each with SIM-<company code|0000>-<nnnn>. The
+        line items store their codes, one run is kept and one activity-log entry written. A named line item
+        that does not exist or is out of scope answers 404 not_found; one that is not ready answers 409
+        not_allowed and nothing is sent. A run with nothing ready is kept with no codes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SwbsRunRequest"
+      responses:
+        "201":
+          description: The run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwbsRun"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+components:
+  schemas:
+    SwbsStatus:
+      type: string
+      description: >-
+        received when the line item has its SWBS code; notRequested when Request SWBS code from GSAP is off;
+        readyToSend once the activity is Approved; waitingForApproval otherwise (domain model §2.4, 030 FR-001).
+      enum: [notRequested, waitingForApproval, readyToSend, received]
+    # LineItem gains (all required): swbsCode (string, "" until received), swbsRequestedAt and swbsReceivedAt
+    # (date-time or null), hxKey (string, "HX" + the digits of the ID).
+    SwbsRunRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        lineItemIds:
+          type: array
+          description: Only these line items; leave it out to send every line item that is ready.
+          minItems: 1
+          maxItems: 200
+          items:
+            type: string
+            minLength: 1
+            maxLength: 40
+    SwbsRunCode:
+      type: object
+      additionalProperties: false
+      required: [lineItemId, lineItemName, companyCode, swbsCode]
+      properties:
+        lineItemId:
+          type: string
+          example: L-1006
+        lineItemName:
+          type: string
+          example: Stand build
+        companyCode:
+          type: string
+          description: The activity's company code; empty when it has none (the code then uses 0000).
+          example: GB01
+        swbsCode:
+          type: string
+          example: SIM-GB01-0001
+    SwbsRun:
+      type: object
+      additionalProperties: false
+      required: [id, source, ranAt, ranBy, sent, codes]
+      properties:
+        id:
+          type: string
+          example: SWR-1002
+        source:
+          type: string
+          enum: [simulatedGsap, demoData]
+        ranAt:
+          type: string
+          format: date-time
+        ranBy:
+          $ref: "#/components/schemas/ActorRef"
+        sent:
+          type: integer
+          minimum: 0
+        codes:
+          type: array
+          items:
+            $ref: "#/components/schemas/SwbsRunCode"
+    SwbsRunPage:
+      type: object
+      additionalProperties: false
+      required: [items, total, readyToSend]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SwbsRun"
+        total:
+          type: integer
+          minimum: 0
+        readyToSend:
+          type: integer
+          minimum: 0
+          description: How many line items in the person's scope are ready to send now.
