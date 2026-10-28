@@ -39,6 +39,11 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
 | 027 | [027-test-hygiene](../../specs/027-test-hygiene/spec.md) | Test hygiene: drop tests that prove nothing, fast and deterministic suites; coverage threshold once SonarQube exists | P3 | 019 | In review — phase 1 merged (#12); phase 2 (every other backend package) in review |
 | 028 | [028-query-efficiency](../../specs/028-query-efficiency/spec.md) | Query efficiency: no page or operation sends statements that grow with its records (N+1); reference data read once per transaction; statements per request in the request log; benchmarks at the scale targets' volumes | P1 | 023 | In review |
 | 029 | [029-test-fakes](../../specs/029-test-fakes/spec.md) | Test fakes: service, handler and contract tests on hand-written in-memory fakes; the JSON file store deleted | P2 | 023, 025 | In review |
+| 030 | [030-simulated-gsap-swbs](../../specs/030-simulated-gsap-swbs/spec.md) | SWBS codes from a simulated GSAP: requests for the line items of approved activities, a simulated GSAP batch that returns one code per line item, the code and its request status on the line item, the HX key shown (D-321, ADR-0016) | P1 | 007, 008, 015 | Built — simulated GSAP SWBS run (API + Financials panel + line-item action), code and HX key on the line item; all gates and e2e green |
+| 031 | [031-approval-any-record](../../specs/031-approval-any-record/spec.md) | The approval engine approves any record type: workflow object types (activity, purchase request, modified purchase request), owner and record-field approvers, re-submit from Submitted, self-approval for purchase requests (D-323, D-324) | P1 | 008, 017 | Built — subjects, object types, owner and record-field approvers, Re-submit from Submitted; all gates and e2e green |
+| 032 | [032-purchase-requests](../../specs/032-purchase-requests/spec.md) | Purchase requests on MAPP's side: raise from line items, lines and reservation, approval and modification, routing to the requisitioner in MAPP with a PR form, close-out, Purchase requests page (client 013; D-320) | P1 | 030, 031 | Built — PR record, reservation, approval and change approval, in-app routing with PR form, close, page, settings, Requisitioner role; all gates and e2e green; converge items T096–T100 open |
+| 033 | [033-simulated-gsap-pr-po](../../specs/033-simulated-gsap-pr-po/spec.md) | GSAP PR number and purchase order created by the simulated GSAP for a routed purchase request, shown on the purchase request and its lines, with Committed figures from the PO lines (D-321) | P1 | 032, 015 | Built — simulated GSAP PR and PO, booked as GSAP transactions, top-up; all gates and the whole PR→PO e2e green |
+| 034 | [034-planning-alignment](../../specs/034-planning-alignment/spec.md) | Planning rules aligned with Shell's process: line-item changes keep the activity's approval, Shell's finance lists and zero-based cost hierarchy, plan year current to +10 (D-322, D-325, D-326) | P1 | 006, 007, 002 | Built — line-item changes keep approval, Shell's lists, plan year current to +10; all gates and e2e green |
 
 ## Scope boundaries
 
@@ -76,13 +81,16 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
    closed). Specs 001–013 describe "the user"; 014's Table C gives the rule of each of their operations, and
    specs 015–017 name the permission each action needs.
 5. **Every change is logged** with the actor (mechanism from 001).
-6. **Out of scope:** Finance budgets module, purchase requests, accrual calculation, Measure, live GSAP
-   integration, e-mail, real sign-in (SSO), AI. GSAP transactions and daily rates come from simulated feeds
+6. **Out of scope:** Finance budgets module, accrual calculation, invoice approval, supporting documents on
+   purchase requests, Measure, live GSAP integration, e-mail, real sign-in (SSO), AI. Purchase requests on
+   MAPP's side and a simulated GSAP for SWBS codes, GSAP PRs and POs are in scope since constitution 4.4.0
+   (features 030–034). GSAP transactions and daily rates come from simulated feeds
    behind adapters (015, 016; D-242, D-259, D-308). Mention the rest only as future integration points.
 
 ## Later (not in this phase)
 
-Finance module (finance budgets, purchase requests, accrual calculation), Measure dashboards, live GSAP
-integration (SWBS request/response, PR/PO/invoice sync, rate feed), Microsoft Entra ID sign-in (roles from Entra),
+Finance module (finance budgets, accrual calculation, invoice approval, PR supporting documents), Measure
+dashboards, live GSAP integration (the real SWBS request/response, PR/PO/invoice sync and rate feed behind the
+adapters the simulated GSAP uses), Microsoft Entra ID sign-in (roles from Entra),
 Azure hosting, templates, snapshots, related plans/activities, multi-year activity linking,
 custom goals, latest estimates, media codes, calendar feeds, AI assistant.

@@ -1,6 +1,6 @@
 # CLAUDE.md — guidance for AI agents working on MAPP
 
-Read this with `.specify/memory/constitution.md` (the rules, version 4.3) before doing anything. Where
+Read this with `.specify/memory/constitution.md` (the rules, version 4.4) before doing anything. Where
 this file and the constitution disagree, the constitution wins and this file is corrected. Working in
 `backend/`? `backend/CLAUDE.md` loads the Go standards (`backend/docs/GO_STANDARDS.md`).
 
@@ -8,8 +8,10 @@ this file and the constitution disagree, the constitution wins and this file is 
 
 MAPP is Shell's marketing planning application replacing the Hive9 Plan module. This phase covers
 only the **Plan module**: demo sign-in, application shell, home dashboard, settings, people and teams,
-plans, campaigns, initiatives, activities, line items, activity approvals, planning views, activity log
-and recycle bin. Spec-driven development with GitHub Spec Kit. The constitution applies Shell's
+plans, campaigns, initiatives, activities, line items, approvals, planning views, activity log and
+recycle bin, and Shell's purchase-request process on MAPP's side up to the purchase order, with SWBS codes,
+GSAP PRs and POs from a simulated GSAP (features 030–034). Spec-driven development with GitHub Spec Kit. The
+constitution applies Shell's
 Software Design & Construction Policy and SEMS, which are mandatory.
 
 ## Non-negotiables
@@ -65,9 +67,11 @@ Software Design & Construction Policy and SEMS, which are mandatory.
     here"; red only for danger and errors; respect the contrast limits listed with the palette.
     `tokens.css` and `docs/product/design-system.md` §3.1 carry these values (feature 020); on a grey
     background secondary text, links and red text switch to Text Strong (`--ink-2: var(--ink)`).
-13. **Out of scope:** the Finance budgets module, purchase requests, accrual calculation, Measure, live
-    GSAP integration, e-mail, real sign-in (SSO), AI. Do not build them. GSAP rates and transactions come
-    only from simulated feeds behind adapters (ADR-0009).
+13. **Out of scope:** the Finance budgets module, accrual calculation, invoice approval, supporting
+    documents on purchase requests, Measure, live GSAP integration, e-mail, real sign-in (SSO), AI. Do not
+    build them. GSAP rates and transactions come only from simulated feeds behind adapters (ADR-0009); SWBS
+    codes, GSAP PR numbers and purchase orders come only from the simulated GSAP (ADR-0016). Purchase requests
+    on MAPP's side are in scope since constitution 4.4.0 (features 030–034, D-320).
 14. **Local only:** servers listen on `127.0.0.1`; no cloud services at run time; Docker or Podman only
     optionally, for PostgreSQL or for reviewers running the whole app from `compose.yaml` (ADR-0012);
     developing MAPP never needs them; no secrets in the repository.
@@ -145,7 +149,8 @@ Fixed by feature 001 (`specs/001-app-shell-and-sign-in/research.md` explains eac
   gin.IRoutes)` and its access rule in `access/routes.go`. JSON logs through `internal/platform/logging`,
   OpenTelemetry through `internal/platform/telemetry`.
   Packages: `internal/app` (wiring, config), `internal/platform/{actor,clock,errs,web,ids,record,fake,apitest}`,
-  then one package per business area (`auth`, `people`, `history`, `plan`, `campaign`, `activity`, …; record
+  then one package per business area (`auth`, `people`, `history`, `plan`, `campaign`, `activity`, …,
+  `swbs` and `simulatedgsap` for the simulated GSAP (030, 033), `purchaserequest` (032); record
   areas have singular names since feature 025), each `model.go · store.go · store_postgres.go · service.go ·
   handler.go` plus tests and its test fake `<area>test/`, every file within 300 non-blank lines.
 - **Storage**: PostgreSQL (feature 023, ADR-0013): `internal/platform/database` (pool, goose migrations,
