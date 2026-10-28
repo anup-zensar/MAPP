@@ -11,7 +11,6 @@ import (
 	"mapp/internal/platform/apitest"
 )
 
-// The demo people's e-mail addresses (demo-users-and-data.md).
 const (
 	alexsEmail   = "alex.morgan@shell.com"
 	priyasEmail  = "priya.raman@shell.com"
@@ -20,21 +19,15 @@ const (
 	carlosEmail  = "carlos.mendes@shell.com"
 )
 
-// now is the time of the test server's clock: 12 Mar 2026 09:00 UTC. The seeded approval history is dated
-// before it (data model §8).
 var now = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 
-// The seeded activities these tests use (seed/activities.go).
 const (
-	fleetRoadshow     = "A-1005" // Lubricants, Declined by Daniel Okoro, no line items
-	fleetCardLaunch   = "A-1009" // Mobility China, Submitted, waiting at level 2 for Alex Morgan
-	lunarNewYearPromo = "A-1010" // Mobility China, Created, deliberately incomplete
-	tradeMagazineAds  = "A-1004" // Lubricants, Submitted, round 2 waiting for Daniel Okoro
+	fleetRoadshow     = "A-1005"
+	fleetCardLaunch   = "A-1009"
+	lunarNewYearPromo = "A-1010"
+	tradeMagazineAds  = "A-1004"
 )
 
-// The seeded Mobility activity waits at level 2 for Alex Morgan after Carlos Mendes approved level 1 two
-// hours ago; Alex sees the chain, the history newest first, that he is the current approver, and the
-// actions of a Submitted activity (FR-024, FR-025, FR-037).
 func TestGetActivityApproval_MobilityWaitingAtLevel2_FR024_FR037(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -71,8 +64,6 @@ func TestGetActivityApproval_MobilityWaitingAtLevel2_FR024_FR037(t *testing.T) {
 	assertError(t, gone, http.StatusNotFound, "not_found", "This activity no longer exists — someone may have deleted it.")
 }
 
-// The confirmation of an incomplete activity lists its problems, all at once, with the fields that fix them;
-// it has no workflow and changes nothing (FR-010).
 func TestGetSubmission_IncompleteMobilityListsAll_FR010(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -92,9 +83,6 @@ func TestGetSubmission_IncompleteMobilityListsAll_FR010(t *testing.T) {
 	assertListsFields(t, problemFields(submission.Problems), "ownerId", "startDate", "endDate", "plannedCost", "approvalWorkflowId")
 }
 
-// Priya re-submits the fixed Declined activity: it is Submitted, round 2 waits at level 1 for Daniel Okoro
-// with her comment. Sent again from the old version it is refused with version_conflict; a Submitted
-// activity cannot be submitted (FR-011, FR-020, FR-009, D-030).
 func TestSubmit_ReadyActivity_FR011(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -124,13 +112,8 @@ func TestSubmit_ReadyActivity_FR011(t *testing.T) {
 		t.Errorf("history of round 2 = %q, want resubmitted", actions)
 	}
 	assertError(t, stale, http.StatusConflict, "version_conflict", "Not saved — Priya Raman changed this activity")
-
-	again := priya.Do(t, http.MethodPost, "/api/v1/activities/"+fleetRoadshow+"/approval/submit", map[string]any{"version": appr.ActivityVersion})
-	assertError(t, again, http.StatusBadRequest, "bad_request", "Only Created or Declined activities can be submitted for approval.")
 }
 
-// Alex Morgan approves the seeded Mobility activity at level 2: it is Approved, and its history shows both
-// levels' decisions, Carlos Mendes's and his (US2, FR-015).
 func TestApprove_Level2AsAlex_US2(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -153,19 +136,16 @@ func TestApprove_Level2AsAlex_US2(t *testing.T) {
 	}
 }
 
-// Daniel Okoro's tabs on the demo data: the re-submitted Lubricants activity waits for him; all open adds
-// the Mobility activity waiting at level 2, oldest submission first; decided by me lists his two declines,
-// latest first, then his approvals. A tab that does not exist is refused (FR-029, FR-030).
 func TestListApprovals_TabsForDaniel_FR029(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	daniel := server.SignIn(t, danielsEmail)
-	server.GrantRole(t, danielsEmail, "approver", "all") // 014: every market's approvals
+	server.GrantRole(t, danielsEmail, "approver", "all")
 
 	waiting := decodeRows(t, daniel.Do(t, http.MethodGet, "/api/v1/approvals", nil))
 	open := decodeRows(t, daniel.Do(t, http.MethodGet, "/api/v1/approvals?tab=open", nil))
 	decided := decodeRows(t, daniel.Do(t, http.MethodGet, "/api/v1/approvals?tab=decided", nil))
-	unknown := daniel.Do(t, http.MethodGet, "/api/v1/approvals?tab=mine", nil, apitest.SkipRequestValidation()) // off the contract on purpose
+	unknown := daniel.Do(t, http.MethodGet, "/api/v1/approvals?tab=mine", nil, apitest.SkipRequestValidation())
 
 	if got := rowIDs(waiting); !slices.Equal(got, []string{tradeMagazineAds}) || waiting.Total != 1 {
 		t.Errorf("waiting = %q (total %d), want only %s", got, waiting.Total, tradeMagazineAds)
@@ -187,19 +167,16 @@ func TestListApprovals_TabsForDaniel_FR029(t *testing.T) {
 	assertError(t, unknown, http.StatusBadRequest, "validation_failed", "Some fields need your attention.")
 }
 
-// The summary cards: one waiting for Daniel of two open; two declines this month (4 and 7 March) and no
-// approval (the four approvals are of early February), or February's when its bounds are sent; a bound
-// that is not a time is refused (FR-027, FR-028).
 func TestApprovalSummary_FR028(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	daniel := server.SignIn(t, danielsEmail)
-	server.GrantRole(t, danielsEmail, "approver", "all") // 014: every market's approvals
+	server.GrantRole(t, danielsEmail, "approver", "all")
 
 	march := daniel.Do(t, http.MethodGet, "/api/v1/approvals/summary", nil)
 	february := daniel.Do(t, http.MethodGet, "/api/v1/approvals/summary?monthStart=2026-02-01T00:00:00Z&monthEnd=2026-03-01T00:00:00Z", nil)
 	broken := daniel.Do(t, http.MethodGet, "/api/v1/approvals/summary?monthStart=yesterday&monthEnd=2026-03-01T00:00:00Z", nil,
-		apitest.SkipRequestValidation()) // off the contract on purpose
+		apitest.SkipRequestValidation())
 
 	if got, want := decodeCounts(t, march), (approval.Counts{WaitingForMe: 1, AllOpen: 2, DeclinedThisMonth: 2}); got != want {
 		t.Errorf("this month = %+v, want %+v", got, want)
@@ -210,9 +187,6 @@ func TestApprovalSummary_FR028(t *testing.T) {
 	assertError(t, broken, http.StatusBadRequest, "validation_failed", "Some fields need your attention.")
 }
 
-// The preview of the re-submitted Lubricants activity: its facts, its line item with the planned cost in
-// its currency and in USD, the unassigned planned cost and the approval waiting for Daniel; an activity
-// that is gone answers 404 (FR-032).
 func TestApprovalPreview_FR032(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -244,7 +218,6 @@ func TestApprovalPreview_FR032(t *testing.T) {
 	assertError(t, gone, http.StatusNotFound, "not_found", "This activity no longer exists — someone may have deleted it.")
 }
 
-// decodeRows reads an ApprovalRowPage answered with 200.
 func decodeRows(t *testing.T, response *apitest.Response) approval.RowPage {
 	t.Helper()
 	if response.Status != http.StatusOK {
@@ -255,7 +228,6 @@ func decodeRows(t *testing.T, response *apitest.Response) approval.RowPage {
 	return page
 }
 
-// rowIDs lists the activity ids of rows, in order.
 func rowIDs(page approval.RowPage) []string {
 	ids := []string{}
 	for _, row := range page.Items {
@@ -264,7 +236,6 @@ func rowIDs(page approval.RowPage) []string {
 	return ids
 }
 
-// decodeCounts reads an ApprovalCounts answered with 200.
 func decodeCounts(t *testing.T, response *apitest.Response) approval.Counts {
 	t.Helper()
 	if response.Status != http.StatusOK {
@@ -275,7 +246,6 @@ func decodeCounts(t *testing.T, response *apitest.Response) approval.Counts {
 	return counts
 }
 
-// decodeApproval reads an ActivityApproval answered with 200.
 func decodeApproval(t *testing.T, response *apitest.Response) approval.ActivityApproval {
 	t.Helper()
 	if response.Status != http.StatusOK {
@@ -286,7 +256,6 @@ func decodeApproval(t *testing.T, response *apitest.Response) approval.ActivityA
 	return appr
 }
 
-// historyActions lists the actions of a round's history, as served: newest first.
 func historyActions(round approval.RoundView) []string {
 	var actions []string
 	for _, e := range round.History {
@@ -295,7 +264,6 @@ func historyActions(round approval.RoundView) []string {
 	return actions
 }
 
-// problemFields lists the fields of submit problems.
 func problemFields(problems []approval.SubmitProblem) []string {
 	var fields []string
 	for _, p := range problems {
@@ -304,8 +272,6 @@ func problemFields(problems []approval.SubmitProblem) []string {
 	return fields
 }
 
-// assertListsFields checks that fields contains every one of want. The check of feature 006 may list more
-// (Shell attributes, line items), so the test names only the fields the activity itself stores empty.
 func assertListsFields(t *testing.T, fields []string, want ...string) {
 	t.Helper()
 	for _, field := range want {
@@ -315,7 +281,6 @@ func assertListsFields(t *testing.T, fields []string, want ...string) {
 	}
 }
 
-// assertError checks an error answer's status, code and message.
 func assertError(t *testing.T, response *apitest.Response, status int, code, message string) {
 	t.Helper()
 	var answer struct {

@@ -13,7 +13,6 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// inboxIDs returns the activity ids of a's rows in tab, in order, and stops the test when Inbox fails.
 func (f *fixture) inboxIDs(t *testing.T, a actor.Actor, tab string) []string {
 	t.Helper()
 	ids := []string{}
@@ -23,7 +22,6 @@ func (f *fixture) inboxIDs(t *testing.T, a actor.Actor, tab string) []string {
 	return ids
 }
 
-// inbox returns a's rows in tab, and stops the test when Inbox fails.
 func (f *fixture) inbox(t *testing.T, a actor.Actor, tab string) []Row {
 	t.Helper()
 	rows, err := f.service.Inbox(t.Context(), a, tab)
@@ -33,19 +31,17 @@ func (f *fixture) inbox(t *testing.T, a actor.Actor, tab string) []Row {
 	return rows
 }
 
-// Waiting for me lists the Submitted activities whose current level lists the person, oldest submission
-// first; a level already approved, a Created activity and another level's approvers do not count (FR-029).
 func TestInbox_Waiting_FR029(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1001", "Trade magazine ads", priya.ID, lubricantsFlow)
 	f.addActivity(t, "A-1002", "Fleet card launch", mei.ID, chinaFlow)
 	f.addActivity(t, "A-1003", "Fleet roadshow", priya.ID, lubricantsFlow)
-	f.addActivity(t, "A-1004", "Workshop kits", priya.ID, lubricantsFlow) // stays Created
+	f.addActivity(t, "A-1004", "Workshop kits", priya.ID, lubricantsFlow)
 	f.submit(t, priya, "A-1003", "")
 	f.clock.Advance(time.Hour)
 	f.submit(t, mei, "A-1002", "")
-	f.approve(t, carlos, "A-1002", "") // now waits for Alex at level 2
+	f.approve(t, carlos, "A-1002", "")
 	f.clock.Advance(time.Hour)
 	f.submit(t, priya, "A-1001", "")
 
@@ -66,22 +62,20 @@ func TestInbox_Waiting_FR029(t *testing.T) {
 	assertError(t, err, errs.Validation(errs.FieldError{Field: "tab", Message: "Choose waiting, open or decided."}))
 }
 
-// All open lists every Submitted activity, at any level, oldest submission first, the same for everyone;
-// Created, Approved and Declined activities are not open (FR-029).
 func TestInbox_Open_FR029(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1001", "Trade magazine ads", priya.ID, lubricantsFlow)
 	f.addActivity(t, "A-1002", "Fleet roadshow", priya.ID, lubricantsFlow)
 	f.addActivity(t, "A-1003", "Workshop kits", priya.ID, lubricantsFlow)
-	f.addActivity(t, "A-1004", "Retail displays", priya.ID, lubricantsFlow) // stays Created
+	f.addActivity(t, "A-1004", "Retail displays", priya.ID, lubricantsFlow)
 	f.addActivity(t, "A-1005", "Fleet card launch", mei.ID, chinaFlow)
 	f.submit(t, priya, "A-1005", "")
 	f.clock.Advance(time.Minute)
 	f.submit(t, priya, "A-1002", "")
-	f.approve(t, daniel, "A-1002", "") // Approved
+	f.approve(t, daniel, "A-1002", "")
 	f.submit(t, priya, "A-1003", "")
-	f.decline(t, daniel, "A-1003", "Not this year.") // Declined
+	f.decline(t, daniel, "A-1003", "Not this year.")
 	f.clock.Advance(time.Minute)
 	f.submit(t, priya, "A-1001", "")
 
@@ -92,9 +86,6 @@ func TestInbox_Open_FR029(t *testing.T) {
 	}
 }
 
-// Decided by me lists the activities on which the person approved or declined a level in any round, latest
-// decision first, with that decision, the activity's latest round and its status now; a decision made on
-// the person's behalf is not theirs (FR-029, FR-030).
 func TestInbox_Decided_FR029_FR030(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -110,8 +101,8 @@ func TestInbox_Decided_FR029_FR030(t *testing.T) {
 	f.decline(t, daniel, "A-1002", "Split it by country.")
 	declinedAt := f.clock.Now()
 	f.clock.Advance(time.Hour)
-	f.submit(t, priya, "A-1002", "Split.") // round 2 waits for Daniel again
-	f.approve(t, alex, "A-1003", "")       // on behalf of Daniel: Alex's decision
+	f.submit(t, priya, "A-1002", "Split.")
+	f.approve(t, alex, "A-1003", "")
 
 	rows := f.inbox(t, daniel, TabDecided)
 
@@ -142,8 +133,6 @@ func TestInbox_Decided_FR029_FR030(t *testing.T) {
 	}
 }
 
-// An activity in the recycle bin is in no tab and no count, although its open round stays stored for an
-// exact Undo (FR-023, 008-P3).
 func TestInbox_DeletedActivityAbsent_FR023(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -153,7 +142,7 @@ func TestInbox_DeletedActivityAbsent_FR023(t *testing.T) {
 	f.submit(t, priya, "A-1002", "")
 	f.decline(t, daniel, "A-1002", "No.")
 
-	delete(f.activities.facts, "A-1001") // moved to the recycle bin by 006
+	delete(f.activities.facts, "A-1001")
 	delete(f.activities.facts, "A-1002")
 
 	for _, tab := range []string{TabWaiting, TabOpen, TabDecided} {
@@ -170,9 +159,6 @@ func TestInbox_DeletedActivityAbsent_FR023(t *testing.T) {
 	}
 }
 
-// A row shows the activity, its path, owner, planned cost and workflow, "Level n of m" with the level's
-// approvers, when it was submitted and since when it waits at its level; the start date passing while it
-// waits is flagged (FR-030, edge case).
 func TestInbox_RowFacts_FR030_EdgeCase(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -191,10 +177,10 @@ func TestInbox_RowFacts_FR030_EdgeCase(t *testing.T) {
 
 	start := date.MustParse("2026-04-01")
 	cost := money.USD(mustAmount(t, "50000.00"))
-	zeroDays := 0 // waited one hour
+	zeroDays := 0
 	want := Row{
-		Activity: RowActivity{ID: "A-1009", Name: "Fleet card launch", Status: StatusSubmitted, DisplayStatus: StatusSubmitted},
-		Path:     facts.Path, Owner: &PersonView{ID: mei.ID, Name: "Mei Lin", Initials: "ML", Active: true}, PlannedCost: &cost,
+		Subject: SubjectView{Kind: KindActivity, Label: "Activity", ID: "A-1009", Name: "Fleet card launch", Status: StatusSubmitted, DisplayStatus: StatusSubmitted}, Activity: &RowActivity{ID: "A-1009", Name: "Fleet card launch", Status: StatusSubmitted, DisplayStatus: StatusSubmitted},
+		Path: facts.Path, Owner: &PersonView{ID: mei.ID, Name: "Mei Lin", Initials: "ML", Active: true}, PlannedCost: &cost,
 		Workflow: WorkflowRef{ID: chinaFlow, Name: "China BC approval workflow", Active: true},
 		Round: RowRound{
 			ID: round.ID, Number: 1, Outcome: OutcomeOpen, CurrentLevel: 2, LevelCount: 2, LevelLabel: "Level 2",
@@ -212,16 +198,14 @@ func TestInbox_RowFacts_FR030_EdgeCase(t *testing.T) {
 		t.Errorf("open = %+v, want A-1010 without owner, waiting at level 1 since its submission", open)
 	}
 
-	f.clock.Advance(21 * 24 * time.Hour) // 2 Apr 2026: the start date has passed
+	f.clock.Advance(21 * 24 * time.Hour)
 	if rows := f.inbox(t, alex, TabWaiting); len(rows) != 1 || !rows[0].StartDatePassed {
 		t.Errorf("rows = %+v, want the start date flagged as passed", rows)
 	}
 }
 
-// fakeRates are the display currencies of the people of a test: who shows amounts in what, at which rate.
 type fakeRates map[string]people.DisplayRate
 
-// DisplayRateOf returns the person's display currency; USD for anyone not listed.
 func (r fakeRates) DisplayRateOf(_ context.Context, personID string) (people.DisplayRate, error) {
 	if rate, found := r[personID]; found {
 		return rate, nil
@@ -229,9 +213,6 @@ func (r fakeRates) DisplayRateOf(_ context.Context, personID string) (people.Dis
 	return people.DisplayRate{Code: "USD", Rate: "1"}, nil
 }
 
-// For a reader who shows amounts in EUR, the Approvals page's rows, the preview's planned cost, line items
-// and unassigned planned cost, and the submit dialog's unassigned planned cost are answered in EUR at 0.92;
-// Inbox, which Home adds up, stays in USD (008 FR-030, D-213).
 func TestDisplayCurrency_RowsPreviewSubmission_FR030_D213(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -254,7 +235,7 @@ func TestDisplayCurrency_RowsPreviewSubmission_FR030_D213(t *testing.T) {
 	if inbox := f.inbox(t, carlos, TabWaiting); inbox[0].PlannedCost.Format() != "50,000.00 USD" {
 		t.Errorf("Inbox planned cost = %s, want 50,000.00 USD", inbox[0].PlannedCost.Format())
 	}
-	for range 2 { // the second read must not convert twice
+	for range 2 {
 		preview, err := f.service.Preview(t.Context(), carlos, "A-1009")
 		if err != nil {
 			t.Fatalf("Preview: %v", err)
@@ -270,8 +251,6 @@ func TestDisplayCurrency_RowsPreviewSubmission_FR030_D213(t *testing.T) {
 	}
 }
 
-// The preview shows the activity's facts and completeness, its line items, its unassigned planned cost and
-// its Approval section; an activity that is gone answers not_found (FR-032).
 func TestPreview_FR032(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

@@ -8,15 +8,12 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// amount returns a pointer to the USD amount text, for conditions.
 func amount(t *testing.T, text string) *money.Amount {
 	t.Helper()
 	a := mustAmount(t, text)
 	return &a
 }
 
-// factsOf are rule facts of a planned cost (USD text, "" for none), an activity type id ("" for none) and
-// business unit ids.
 func factsOf(t *testing.T, cost, typeID string, units ...string) RuleFacts {
 	t.Helper()
 	f := RuleFacts{BusinessUnits: []FactOption{}}
@@ -33,15 +30,11 @@ func factsOf(t *testing.T, cost, typeID string, units ...string) RuleFacts {
 	return f
 }
 
-// fixtureNames are the labels of the fixture's rule choices.
 var fixtureNames = namesOf(
 	[]Choice{{ID: lubricantsUnit, Label: "Lubricants", Active: true}, {ID: mobilityUnit, Label: "Mobility", Active: true}},
 	[]Choice{{ID: eventType, Label: "Event", Active: true}, {ID: sponsorshipType, Label: "Sponsorship", Active: true}},
 )
 
-// A condition matches when every part it holds matches (017 FR-005, D-277): planned cost at least (≥) and
-// below (<) in USD — an activity without planned cost matches neither —, one of the plan's business units
-// listed, the activity's type listed.
 func TestConditionMatches_Table_FR005(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -78,8 +71,6 @@ func TestConditionMatches_Table_FR005(t *testing.T) {
 	}
 }
 
-// A condition in words: its parts in order joined with " and ", amounts as "$10,000.00", lists of values
-// with "or" (017 data-model §2, FR-009).
 func TestConditionText_FR009(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -102,8 +93,6 @@ func TestConditionText_FR009(t *testing.T) {
 	}
 }
 
-// The levels text summarises each level's rule (017 FR-009, data-model §2): label, source, "all must
-// approve", "automatic when …", "only when …", joined with " → ".
 func TestLevelsText_FR009(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -119,7 +108,7 @@ func TestLevelsText_FR009(t *testing.T) {
 		return err
 	})
 
-	got := levelsText(levelViews(levels, rc))
+	got := levelsText(levelViews(levels, rc, KindActivity))
 
 	want := "Line manager · Line manager · automatic when planned cost is below $10,000.00 → " +
 		"Level 2 · Alex Morgan · only when planned cost is at least $100,000.00 → " +
@@ -130,10 +119,6 @@ func TestLevelsText_FR009(t *testing.T) {
 	}
 }
 
-// The rules decide each level in order, once (017 FR-003, FR-004, FR-010, SC-001): a level whose "Only
-// needed when" does not match is not needed; otherwise one whose "Approve automatically when" matches is
-// approved automatically; otherwise its approvers decide. "Only needed when" is checked first when a level
-// has both.
 func TestEvaluate_Table_FR003_FR004_SC001(t *testing.T) {
 	t.Parallel()
 	below10k := &Condition{PlannedCostBelow: amount(t, "10000.00")}

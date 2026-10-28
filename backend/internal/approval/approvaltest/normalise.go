@@ -10,6 +10,7 @@ import (
 // normalisedWorkflow saves a level with the defaults of one stored before feature 017, as the PostgreSQL store
 // does with approval's unexported normaliser: named people, any one approves.
 func normalisedWorkflow(w approval.Workflow) approval.Workflow {
+	w.ObjectType = cmp.Or(w.ObjectType, approval.KindActivity)
 	levels := make([]approval.Level, 0, len(w.Levels))
 	for _, l := range w.Levels {
 		l.ApproverType = cmp.Or(l.ApproverType, approval.SourcePeople)
@@ -24,6 +25,7 @@ func normalisedWorkflow(w approval.Workflow) approval.Workflow {
 }
 
 func normalisedRound(r approval.Round) approval.Round {
+	r.SubjectKind = cmp.Or(r.SubjectKind, approval.KindActivity)
 	if r.Levels == nil {
 		return r
 	}

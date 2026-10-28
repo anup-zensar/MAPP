@@ -8,66 +8,22 @@ import (
 	"mapp/internal/platform/actor"
 )
 
-// The fields that problems name: the activity form's Approval workflow, and the version every change sends.
 const (
-	workflowField = "approvalWorkflowId"
-	versionField  = "version"
+	workflowField             = "approvalWorkflowId"
+	modificationWorkflowField = "modificationWorkflowId"
+	versionField              = "version"
 )
 
-// The kinds of a submission (ApprovalSubmission.kind).
-const (
-	kindSubmit   = "submit"
-	kindResubmit = "resubmit"
-)
-
-// Submission says what Submit for approval (or Re-submit for approval) would do now, and changes nothing
-// (FR-010, FR-011; 017 FR-012, FR-013): every problem of the ready-to-submit check and of the workflow's
-// approver sources, or the workflow with what would happen to each level — who approves it and how they were
-// found, or why it is not needed or approved automatically — with a positive unassigned planned cost as a
-// note.
-func (s *Service) Submission(ctx context.Context, a actor.Actor, activityID string) (Submission, error) { //nolint:gocyclo // 11: one Read whose every step returns its error.
+// Submission says what Submit (or Re-submit) for approval would do now, and changes nothing.
+func (s *Service) Submission(ctx context.Context, a actor.Actor, activityID string) (Submission, error) {
 	var submission Submission
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		facts, err := s.activity(ctx, activityID)
 		if err != nil {
 			return err
 		}
-		d, err := s.directory(ctx)
-		if err != nil {
-			return err
-		}
-		check, workflow, res, err := s.submitCheck(ctx, a, facts, d)
-		if err != nil {
-			return err
-		}
-		rounds, err := s.repo.RoundsOf(ctx, facts.ID)
-		if err != nil {
-			return err
-		}
-		shown, err := s.displayOf(ctx, a)
-		if err != nil {
-			return err
-		}
-
-		submission = Submission{
-			ActivityID: facts.ID, ActivityName: facts.Name, ActivityVersion: facts.Version,
-			Kind: kindSubmit, Available: submittable(facts.Status), RoundNumber: nextRoundNumber(rounds),
-			Ready: len(check.Problems) == 0, Problems: check.Problems, Levels: []LevelView{}, Outcomes: []SubmissionLevel{},
-			UnassignedPlannedCost: shown.optional(check.UnassignedPlannedCost), // in a's display currency (D-213)
-		}
-		if facts.Status == StatusDeclined {
-			submission.Kind = kindResubmit
-		}
-		if !submission.Available {
-			submission.Reason = onlyCreatedOrDeclinedMessage
-		}
-		if submission.Workflow, submission.Levels, err = s.submissionWorkflow(ctx, workflow); err != nil {
-			return err
-		}
-		if res != nil {
-			submission.Outcomes, submission.ApprovedAutomatically = submissionOutcomes(*res, d, a)
-		}
-		return nil
+		submission, err = s.submission(ctx, a, activitySubject(facts))
+		return err
 	})
 	if err != nil {
 		return Submission{}, err
@@ -75,14 +31,45 @@ func (s *Service) Submission(ctx context.Context, a actor.Actor, activityID stri
 	return submission, nil
 }
 
-// submittable reports whether an activity with status can be submitted: Created, or Declined to re-submit
-// (FR-009).
-func submittable(status string) bool {
-	return status == StatusCreated || status == StatusDeclined
+func (s *Service) submission(ctx context.Context, a actor.Actor, sub subject) (Submission, error) {
+	d, err := s.directory(ctx)
+	if err != nil {
+		return Submission{}, err
+	}
+	check, workflow, res, err := s.submitCheck(ctx, a, sub, d)
+	if err != nil {
+		return Submission{}, err
+	}
+	rounds, err := s.repo.RoundsOf(ctx, sub.ID)
+	if err != nil {
+		return Submission{}, err
+	}
+	shown, err := s.displayOf(ctx, a)
+	if err != nil {
+		return Submission{}, err
+	}
+	open := openRoundPointer(rounds)
+	submission := Submission{
+		ActivityID: sub.ID, ActivityName: sub.Name, ActivityVersion: sub.Version, Kind: kindSubmit,
+		RoundNumber: nextRoundNumber(rounds), Ready: len(check.Problems) == 0, Problems: check.Problems,
+		Levels: []LevelView{}, Outcomes: []SubmissionLevel{}, Replaces: replaced(sub, open),
+		UnassignedPlannedCost: shown.optional(check.UnassignedPlannedCost),
+	}
+	if kind := submissionKind(sub, open); kind != "" {
+		submission.Kind, submission.Available = kind, true
+	} else {
+		submission.Reason = notSubmittableMessage(sub.Kind)
+	}
+	if submission.Workflow, submission.Levels, err = s.submissionWorkflow(ctx, workflow); err != nil {
+		return Submission{}, err
+	}
+	if res != nil {
+		submission.Outcomes, submission.ApprovedAutomatically = submissionOutcomes(*res, d, a)
+	}
+	return submission, nil
 }
 
-// nextRoundNumber is the number of an activity's next round: 1, then the highest number + 1 (FR-020).
-// rounds are ordered by number.
+// nextRoundNumber is the number of a record's next round: 1, then the highest number + 1; rounds are by number.
 func nextRoundNumber(rounds []Round) int {
 	if len(rounds) == 0 {
 		return 1
@@ -90,7 +77,6 @@ func nextRoundNumber(rounds []Round) int {
 	return rounds[len(rounds)-1].Number + 1
 }
 
-// submissionWorkflow returns the workflow and its levels as the confirmation shows them: none without one.
 func (s *Service) submissionWorkflow(ctx context.Context, workflow *Workflow) (*WorkflowRef, []LevelView, error) {
 	if workflow == nil {
 		return nil, []LevelView{}, nil
@@ -99,10 +85,9 @@ func (s *Service) submissionWorkflow(ctx context.Context, workflow *Workflow) (*
 	if err != nil {
 		return nil, nil, err
 	}
-	return workflowRef(*workflow), levelViews(workflow.Levels, rc), nil
+	return workflowRef(*workflow), levelViews(workflow.Levels, rc, workflow.Kind()), nil
 }
 
-// submissionOutcomes says what would happen to each level, and whether the activity would be approved at once.
 func submissionOutcomes(res resolution, d directory, a actor.Actor) ([]SubmissionLevel, bool) {
 	outcomes := []SubmissionLevel{}
 	for _, l := range res.levels {
@@ -115,69 +100,94 @@ func submissionOutcomes(res resolution, d directory, a actor.Actor) ([]Submissio
 	return outcomes, len(res.problems) == 0 && len(res.levels) > 0 && firstDecideLevel(res.levels, 0) == 0
 }
 
-// submitCheck runs the ready-to-submit check of 006 and 007 for facts and adds the problem of its approval
-// workflow — not chosen or no longer stored, or inactive (FR-010 e) — unless the check already lists that
-// field. With a usable workflow it evaluates the rules and resolves the approvers as a would submit now (017
-// FR-010 – FR-012), adding a problem for each level whose source names nobody, after the workflow's. It
-// returns the workflow too, nil when there is none, and the resolution, nil without a usable workflow.
-// Problems are never nil.
-func (s *Service) submitCheck(ctx context.Context, a actor.Actor, facts ActivityFacts, d directory) (ReadyCheck, *Workflow, *resolution, error) {
-	check, err := s.activities.ReadyCheck(ctx, a, facts.ID)
+// submitCheck runs the record's ready-to-submit check and adds its workflow's problem — none, inactive, or
+// of another record type — unless the check lists that field; with a usable workflow it
+// resolves the approvers as a would submit now, adding the problems of levels whose source names nobody.
+func (s *Service) submitCheck(ctx context.Context, a actor.Actor, sub subject, d directory) (ReadyCheck, *Workflow, *resolution, error) {
+	check, err := s.readyCheck(ctx, a, sub)
 	if err != nil {
 		return ReadyCheck{}, nil, nil, err
 	}
-	workflow, err := s.workflowOf(ctx, facts)
+	workflow, err := s.workflowOf(ctx, sub)
 	if err != nil {
 		return ReadyCheck{}, nil, nil, err
 	}
-
+	field, group := workflowFieldOf(sub.Kind), recordGroup(sub.Kind)
 	problems := slices.Clone(check.Problems)
-	listed := slices.ContainsFunc(problems, func(p SubmitProblem) bool { return p.Field == workflowField })
-	var added []SubmitProblem
 	var res *resolution
+	added := []SubmitProblem{}
+	listed := slices.ContainsFunc(problems, func(p SubmitProblem) bool { return p.Field == field })
+	message := workflowProblem(sub.Kind, workflow)
 	switch {
 	case listed:
-	case workflow == nil:
-		added = append(added, SubmitProblem{Field: workflowField, Group: GroupActivity, Message: workflowNeededMessage})
-	case !workflow.Active:
-		added = append(added, SubmitProblem{Field: workflowField, Group: GroupActivity, Message: fmt.Sprintf(workflowInactiveMessage, workflow.Name)})
+	case message != "":
+		added = append(added, SubmitProblem{Field: field, Group: group, Message: message})
 	default:
-		names, err := s.choiceNames(ctx)
+		resolved, err := s.resolvedLevels(ctx, resolving{sub: sub, submitter: a, d: d}, workflow)
 		if err != nil {
 			return ReadyCheck{}, nil, nil, err
 		}
-		resolved, err := s.resolve(ctx, evaluate(workflow.Levels, ruleFacts(facts), names), facts, a, d)
-		if err != nil {
-			return ReadyCheck{}, nil, nil, err
-		}
-		res = &resolved
-		added = append(added, resolved.problems...)
+		res, added = &resolved, resolved.problems
 	}
-	check.Problems = withWorkflowProblems(problems, added)
+	check.Problems = withWorkflowProblems(problems, added, group)
 	return check, workflow, res, nil
 }
 
-// workflowOf returns the approval workflow of the activity, nil when it has none or it is no longer stored.
-func (s *Service) workflowOf(ctx context.Context, facts ActivityFacts) (*Workflow, error) {
-	var workflow *Workflow
-	if facts.WorkflowID != "" {
-		w, found, err := s.repo.GetWorkflow(ctx, facts.WorkflowID)
-		if err != nil {
-			return nil, err
-		}
-		if found {
-			workflow = &w
-		}
+func (s *Service) resolvedLevels(ctx context.Context, r resolving, workflow *Workflow) (resolution, error) {
+	names, err := s.choiceNames(ctx)
+	if err != nil {
+		return resolution{}, err
 	}
-	return workflow, nil
+	plans := evaluate(workflow.Levels, ruleFacts(r.sub), names.forKind(r.sub.Kind))
+	return s.resolve(ctx, plans, r)
 }
 
-func withWorkflowProblems(problems, added []SubmitProblem) []SubmitProblem {
+// workflowProblem is the problem of the record's workflow, "" when it can be used.
+func workflowProblem(kind SubjectKind, workflow *Workflow) string {
+	switch {
+	case workflow == nil && kind == KindModifiedPurchaseRequest:
+		return modificationWorkflowNeededMessage
+	case workflow == nil:
+		return workflowNeededMessage
+	case !workflow.Active:
+		return fmt.Sprintf(workflowInactiveMessage, workflow.Name)
+	case workflow.Kind() != kind:
+		return fmt.Sprintf(workflowOtherKindMessage, workflow.Name, workflow.Kind().plural(), kind.plural())
+	}
+	return ""
+}
+
+func workflowFieldOf(kind SubjectKind) string {
+	if kind == KindModifiedPurchaseRequest {
+		return modificationWorkflowField
+	}
+	return workflowField
+}
+
+func recordGroup(kind SubjectKind) string {
+	if kind.isPurchaseRequest() {
+		return GroupPurchaseRequest
+	}
+	return GroupActivity
+}
+
+func (s *Service) workflowOf(ctx context.Context, sub subject) (*Workflow, error) {
+	id := sub.workflowID()
+	if id == "" {
+		return nil, nil
+	}
+	w, found, err := s.repo.GetWorkflow(ctx, id)
+	if err != nil || !found {
+		return nil, err
+	}
+	return &w, nil
+}
+
+// withWorkflowProblems puts the workflow's problems last among the record's own, before those of its lines.
+func withWorkflowProblems(problems, added []SubmitProblem, group string) []SubmitProblem {
 	if len(added) > 0 {
-		// The activity's own problems come first, then those of its line items: the workflow's go last of
-		// the activity's.
 		at := len(problems)
-		for at > 0 && problems[at-1].Group != GroupActivity {
+		for at > 0 && problems[at-1].Group != group {
 			at--
 		}
 		problems = slices.Insert(problems, at, added...)
@@ -188,7 +198,6 @@ func withWorkflowProblems(problems, added []SubmitProblem) []SubmitProblem {
 	return problems
 }
 
-// choiceNames reads the labels of the business units and activity types conditions name.
 func (s *Service) choiceNames(ctx context.Context) (choiceNames, error) {
 	types, err := s.choices.ActivityTypes(ctx)
 	if err != nil {
@@ -201,7 +210,6 @@ func (s *Service) choiceNames(ctx context.Context) (choiceNames, error) {
 	return namesOf(units, types), nil
 }
 
-// workflowRef is how an activity refers to w.
 func workflowRef(w Workflow) *WorkflowRef {
 	return &WorkflowRef{ID: w.ID, Name: w.Name, Active: w.Active}
 }

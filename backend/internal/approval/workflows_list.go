@@ -10,12 +10,11 @@ import (
 
 	"mapp/internal/history"
 	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
 	"mapp/internal/platform/errs"
 )
 
-// ListWorkflows returns every approval workflow, active and inactive, sorted by name ignoring letter case,
-// each with its levels and their approvers now, its levels text, how many activities use it and wait for
-// approval with it, and its warnings (FR-001, FR-005).
+// ListWorkflows returns every approval workflow by name ignoring case, with its usage and warnings.
 func (s *Service) ListWorkflows(ctx context.Context, _ actor.Actor) ([]WorkflowView, error) {
 	var views []WorkflowView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -46,8 +45,7 @@ func (s *Service) ListWorkflows(ctx context.Context, _ actor.Actor) ([]WorkflowV
 	return views, nil
 }
 
-// GetWorkflow returns the approval workflow id as ListWorkflows does, with the activities that use it, by
-// plan name and then activity name (FR-005).
+// GetWorkflow returns the workflow and the records that use it, by plan and then name.
 func (s *Service) GetWorkflow(ctx context.Context, _ actor.Actor, id string) (WorkflowDetails, error) {
 	var details WorkflowDetails
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -63,15 +61,14 @@ func (s *Service) GetWorkflow(ctx context.Context, _ actor.Actor, id string) (Wo
 		if err != nil {
 			return err
 		}
-		details = WorkflowDetails{Workflow: workflowView(w, u, rc), Activities: []WorkflowUsage{}}
-		using, err := s.activities.ListOf(ctx, u.usedBy[w.ID])
+		using, err := s.usingRecords(ctx, u.usedBy[w.ID], u)
 		if err != nil {
 			return err
 		}
-		for _, facts := range using {
+		details = WorkflowDetails{Workflow: workflowView(w, u, rc), Activities: make([]WorkflowUsage, 0, len(using))}
+		for _, sub := range using {
 			details.Activities = append(details.Activities, WorkflowUsage{
-				Activity: errs.RecordRef{Type: activityKind, ID: facts.ID, Name: facts.Name}, Path: nonNilPath(facts.Path),
-				DisplayStatus: facts.DisplayStatus, Waiting: u.waiting[w.ID][facts.ID],
+				Activity: sub.ref(), Path: nonNilPath(sub.Path), DisplayStatus: sub.DisplayStatus, Waiting: u.waiting[w.ID][sub.ID],
 			})
 		}
 		slices.SortStableFunc(details.Activities, func(x, y WorkflowUsage) int {
@@ -86,12 +83,40 @@ func (s *Service) GetWorkflow(ctx context.Context, _ actor.Actor, id string) (Wo
 	return details, nil
 }
 
-// DeleteWorkflow moves the approval workflow id to the recycle bin and returns the bin entry for Undo
-// (FR-008). A workflow that any activity uses is refused with in_use: it can be set inactive instead.
+// usingRecords reads the records among ids: every stored activity, and the purchase requests the person sees.
+func (s *Service) usingRecords(ctx context.Context, ids []string, u usages) ([]subject, error) {
+	var activityIDs, purchaseIDs []string
+	for _, id := range ids {
+		if u.purchases[id] {
+			purchaseIDs = append(purchaseIDs, id)
+		} else {
+			activityIDs = append(activityIDs, id)
+		}
+	}
+	acts, err := s.activities.ListOf(ctx, nonNilIDs(activityIDs))
+	if err != nil {
+		return nil, err
+	}
+	list := make([]subject, 0, len(ids))
+	for _, f := range acts {
+		list = append(list, activitySubject(f))
+	}
+	if s.purchases == nil || len(purchaseIDs) == 0 {
+		return list, nil
+	}
+	prs, err := s.purchases.ListInScope(ctx, authz.ScopeOf(ctx), purchaseIDs)
+	for _, f := range prs {
+		list = append(list, purchaseSubject(KindPurchaseRequest, f))
+	}
+	return list, err
+}
+
+// DeleteWorkflow moves an unused workflow to the recycle bin; a used one is refused with in_use.
 func (s *Service) DeleteWorkflow(ctx context.Context, a actor.Actor, id string) (history.BinEntry, error) {
 	var entry history.BinEntry
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
-		if _, err := s.storedWorkflow(ctx, id); err != nil {
+		w, err := s.storedWorkflow(ctx, id)
+		if err != nil {
 			return err
 		}
 		u, err := s.usage(ctx)
@@ -101,9 +126,9 @@ func (s *Service) DeleteWorkflow(ctx context.Context, a actor.Actor, id string) 
 		switch n := len(u.usedBy[id]); n {
 		case 0:
 		case 1:
-			return errs.InUse(inUseOneMessage)
+			return errs.InUse(fmt.Sprintf(inUseOneMessage, w.Kind().word()))
 		default:
-			return errs.InUse(fmt.Sprintf(inUseManyMessage, n))
+			return errs.InUse(fmt.Sprintf(inUseManyMessage, n, w.Kind().records()))
 		}
 		entry, err = s.history.MoveToBin(ctx, a, workflowKind, id)
 		return err
@@ -114,7 +139,6 @@ func (s *Service) DeleteWorkflow(ctx context.Context, a actor.Actor, id string) 
 	return entry, nil
 }
 
-// storedWorkflow returns the stored workflow id, or not_found with the plan's message.
 func (s *Service) storedWorkflow(ctx context.Context, id string) (Workflow, error) {
 	w, found, err := s.repo.GetWorkflow(ctx, id)
 	if err != nil {
@@ -126,8 +150,6 @@ func (s *Service) storedWorkflow(ctx context.Context, id string) (Workflow, erro
 	return w, nil
 }
 
-// workflowNamed returns the workflow among workflows, other than exceptID, whose name is name ignoring
-// letter case, and false when there is none. Names are stored without surrounding spaces.
 func workflowNamed(workflows []Workflow, name, exceptID string) (Workflow, bool) {
 	for _, w := range workflows {
 		if w.ID != exceptID && strings.EqualFold(w.Name, name) {
@@ -137,7 +159,6 @@ func workflowNamed(workflows []Workflow, name, exceptID string) (Workflow, bool)
 	return Workflow{}, false
 }
 
-// planName is the name of the plan of a path, "" when the path has none.
 func planName(path []errs.RecordRef) string {
 	if len(path) == 0 {
 		return ""
@@ -145,16 +166,13 @@ func planName(path []errs.RecordRef) string {
 	return path[0].Name
 }
 
-// usages is who uses each workflow (data model §1): by workflow id, the stored activities that have it in
-// their Approval workflow field or have a round with it, in the order of the activities, and those of them
-// with an open round of it.
+// usages: by workflow id, the stored records that name it or have a round with it, and those waiting on it.
 type usages struct {
-	usedBy  map[string][]string        // workflow id → activity ids
-	waiting map[string]map[string]bool // workflow id → activity id → waiting
+	usedBy    map[string][]string
+	waiting   map[string]map[string]bool
+	purchases map[string]bool
 }
 
-// usage reads who uses each workflow, inside the caller's transaction: the activities' workflow fields and
-// the rounds, never the activities themselves, which only GetWorkflow lists.
 func (s *Service) usage(ctx context.Context) (usages, error) {
 	fields, err := s.activities.WorkflowFields(ctx)
 	if err != nil {
@@ -164,34 +182,60 @@ func (s *Service) usage(ctx context.Context) (usages, error) {
 	if err != nil {
 		return usages{}, err
 	}
-	byActivity := map[string][]Round{}
-	for _, r := range rounds {
-		byActivity[r.ActivityID] = append(byActivity[r.ActivityID], r)
+	stored, err := s.storedPurchaseRequests(ctx, rounds)
+	if err != nil {
+		return usages{}, err
 	}
-	u := usages{usedBy: map[string][]string{}, waiting: map[string]map[string]bool{}}
-	for _, activityID := range inIDOrder(slices.Collect(maps.Keys(fields))) {
+	byRecord := map[string][]Round{}
+	for _, r := range rounds {
+		byRecord[r.SubjectID] = append(byRecord[r.SubjectID], r)
+	}
+	u := usages{usedBy: map[string][]string{}, waiting: map[string]map[string]bool{}, purchases: map[string]bool{}}
+	for _, id := range stored {
+		u.purchases[id] = true
+	}
+	for _, recordID := range inIDOrder(append(slices.Collect(maps.Keys(fields)), stored...)) {
 		uses := map[string]bool{}
-		if fields[activityID] != "" {
-			uses[fields[activityID]] = true
+		if fields[recordID] != "" {
+			uses[fields[recordID]] = true
 		}
-		for _, r := range byActivity[activityID] {
+		for _, r := range byRecord[recordID] {
 			uses[r.WorkflowID] = true
 			if r.Outcome == OutcomeOpen {
-				u.wait(r.WorkflowID, activityID)
+				u.wait(r.WorkflowID, recordID)
 			}
 		}
 		for id := range uses {
-			u.usedBy[id] = append(u.usedBy[id], activityID)
+			u.usedBy[id] = append(u.usedBy[id], recordID)
 		}
 	}
 	return u, nil
 }
 
-func (u usages) wait(workflowID, activityID string) {
+// storedPurchaseRequests returns the ids of the stored purchase requests that have rounds.
+func (s *Service) storedPurchaseRequests(ctx context.Context, rounds []Round) ([]string, error) {
+	var ids []string
+	for _, r := range recordsOf(rounds) {
+		if r.kind.isPurchaseRequest() {
+			ids = append(ids, r.id)
+		}
+	}
+	if s.purchases == nil || len(ids) == 0 {
+		return nil, nil
+	}
+	prs, err := s.purchases.ListInScope(ctx, authz.Scope{Everything: true, TeamIDs: []string{}}, ids)
+	stored := make([]string, 0, len(prs))
+	for _, f := range prs {
+		stored = append(stored, f.ID)
+	}
+	return stored, err
+}
+
+func (u usages) wait(workflowID, recordID string) {
 	if u.waiting[workflowID] == nil {
 		u.waiting[workflowID] = map[string]bool{}
 	}
-	u.waiting[workflowID][activityID] = true
+	u.waiting[workflowID][recordID] = true
 }
 
 // inIDOrder sorts readable ids as the stores list records: shorter ids first, then by text.

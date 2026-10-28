@@ -9,7 +9,8 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// viewOf returns w as the API shows it, reading its usage inside the caller's transaction.
+const recordOwnerLabel = "Record owner"
+
 func (s *Service) viewOf(ctx context.Context, w Workflow, rc ruleContext) (WorkflowView, error) {
 	u, err := s.usage(ctx)
 	if err != nil {
@@ -18,11 +19,9 @@ func (s *Service) viewOf(ctx context.Context, w Workflow, rc ruleContext) (Workf
 	return workflowView(w, u, rc), nil
 }
 
-// workflowView returns w as the API shows it: its levels with their rules and approvers now, the levels
-// text, its timings, its usage and its warnings — a named-people level without an active approver, a
-// backup approver who is inactive or cannot approve, a role that no longer exists (FR-005; 017 FR-009).
+// workflowView returns w with its levels and approvers now, its usage and its warnings.
 func workflowView(w Workflow, u usages, rc ruleContext) WorkflowView {
-	levels := levelViews(w.Levels, rc)
+	levels := levelViews(w.Levels, rc, w.Kind())
 	warnings := []string{}
 	for i, l := range w.Levels {
 		n := i + 1
@@ -38,13 +37,13 @@ func workflowView(w Workflow, u usages, rc ruleContext) WorkflowView {
 		}
 	}
 	return WorkflowView{
-		ID: w.ID, Name: w.Name, Description: w.Description, Active: w.Active, Levels: levels, LevelsText: levelsText(levels),
+		ID: w.ID, Name: w.Name, Description: w.Description, Active: w.Active, ObjectType: w.Kind(),
+		ObjectTypeFixed: len(u.usedBy[w.ID]) > 0, Levels: levels, LevelsText: levelsText(levels),
 		UsedByCount: len(u.usedBy[w.ID]), WaitingCount: len(u.waiting[w.ID]), Warnings: warnings,
 		ReminderDays: w.ReminderDays, EscalationDays: w.EscalationDays, Meta: w.Meta,
 	}
 }
 
-// backupWarning warns that the backup approver b of level n is inactive or cannot approve; "" otherwise.
 func backupWarning(n int, b *PersonView, rc ruleContext) string {
 	switch {
 	case b == nil:
@@ -57,8 +56,6 @@ func backupWarning(n int, b *PersonView, rc ruleContext) string {
 	return ""
 }
 
-// ruleContext is what the views and checks of workflows read once per operation: the people, whether each
-// can approve (014), the roles, and the labels of the values conditions name.
 type ruleContext struct {
 	people        directory
 	canApprove    map[string]bool
@@ -68,7 +65,6 @@ type ruleContext struct {
 	businessUnits []Choice
 }
 
-// ruleContext reads the rule context inside the caller's transaction.
 func (s *Service) ruleContext(ctx context.Context) (ruleContext, error) {
 	d, err := s.directory(ctx)
 	if err != nil {
@@ -98,56 +94,69 @@ func (s *Service) ruleContext(ctx context.Context) (ruleContext, error) {
 	return ruleContext{people: d, canApprove: can, roles: roles, names: namesOf(units, types), activityTypes: types, businessUnits: units}, nil
 }
 
-// levelViews returns a workflow's levels as the API shows them, with their approvers' names now and their
-// rules in words; never nil.
-func levelViews(levels []Level, rc ruleContext) []LevelView {
-	d := rc.people
+// levelViews returns a workflow's levels as the API shows them, worded for what the workflow approves.
+func levelViews(levels []Level, rc ruleContext, kind SubjectKind) []LevelView {
 	views := make([]LevelView, 0, len(levels))
 	for i, l := range levels {
-		n := i + 1
-		view := LevelView{
-			Number: n, Name: l.Name, Label: levelLabel(l.Name, n), Approvers: make([]PersonView, 0, len(l.ApproverIDs)),
-			ApproverType: l.ApproverType, Mode: l.Mode,
-			AppliesWhen: conditionView(l.AppliesWhen, rc), AutoApproveWhen: conditionView(l.AutoApproveWhen, rc),
-		}
-		for _, id := range l.ApproverIDs {
-			view.Approvers = append(view.Approvers, d.person(id))
-		}
-		if l.BackupApproverID != "" {
-			backup := d.person(l.BackupApproverID)
-			view.BackupApprover = &backup
-		}
-		var source string
-		switch l.ApproverType {
-		case SourceManager:
-			source = "Line manager"
-		case SourceRole:
-			role, known := rc.roles[l.RoleID]
-			if !known {
-				role.RoleRef = RoleRef{ID: l.RoleID, Name: l.RoleID}
-			}
-			ref := role.RoleRef
-			view.Role = &ref
-			source = "Role: " + role.Name
-		default:
-			names := make([]string, 0, len(view.Approvers))
-			for _, p := range view.Approvers {
-				if p.Active {
-					names = append(names, p.Name)
-				} else {
-					names = append(names, p.Name+" (inactive)")
-				}
-			}
-			source = strings.Join(names, ", ")
-		}
-		view.Summary = levelSummary(l, n, source, rc.names)
-		views = append(views, view)
+		views = append(views, levelView(l, i+1, rc, kind))
 	}
 	return views
 }
 
-// levelsText writes the levels in one line, their summaries joined with " → " (data-model §2, FR-005):
-// "Level 1 · Line manager · automatic when planned cost is below $10,000.00 → Level 2 · Alex Morgan".
+func levelView(l Level, n int, rc ruleContext, kind SubjectKind) LevelView {
+	names := rc.names.forKind(kind)
+	view := LevelView{
+		Number: n, Name: l.Name, Label: levelLabel(l.Name, n), Approvers: make([]PersonView, 0, len(l.ApproverIDs)),
+		ApproverType: l.ApproverType, Mode: l.Mode,
+		AppliesWhen: conditionView(l.AppliesWhen, rc, names), AutoApproveWhen: conditionView(l.AutoApproveWhen, rc, names),
+	}
+	for _, id := range l.ApproverIDs {
+		view.Approvers = append(view.Approvers, rc.people.person(id))
+	}
+	if l.BackupApproverID != "" {
+		backup := rc.people.person(l.BackupApproverID)
+		view.BackupApprover = &backup
+	}
+	if field, known := kind.recordField(l.RecordField); known && l.ApproverType == SourceRecordField {
+		view.RecordField = &field
+	}
+	view.Summary = levelSummary(l, n, levelSource(l, &view, rc), names)
+	return view
+}
+
+// levelSource is how a level's summary names its approvers: "Line manager", "Role: Approver", "Record owner",
+// the record field's label, or the named people.
+func levelSource(l Level, view *LevelView, rc ruleContext) string {
+	switch l.ApproverType {
+	case SourceManager:
+		return "Line manager"
+	case SourceRole:
+		role, known := rc.roles[l.RoleID]
+		if !known {
+			role.RoleRef = RoleRef{ID: l.RoleID, Name: l.RoleID}
+		}
+		ref := role.RoleRef
+		view.Role = &ref
+		return "Role: " + role.Name
+	case SourceOwner:
+		return recordOwnerLabel
+	case SourceRecordField:
+		if view.RecordField != nil {
+			return view.RecordField.Label
+		}
+		return l.RecordField
+	}
+	names := make([]string, 0, len(view.Approvers))
+	for _, p := range view.Approvers {
+		if p.Active {
+			names = append(names, p.Name)
+		} else {
+			names = append(names, p.Name+" (inactive)")
+		}
+	}
+	return strings.Join(names, ", ")
+}
+
 func levelsText(levels []LevelView) string {
 	parts := make([]string, 0, len(levels))
 	for _, l := range levels {
@@ -156,13 +165,11 @@ func levelsText(levels []LevelView) string {
 	return strings.Join(parts, " → ")
 }
 
-// conditionView returns a condition as the API answers it, with its values' labels and its text; nil for
-// none.
-func conditionView(c *Condition, rc ruleContext) *ConditionView {
+func conditionView(c *Condition, rc ruleContext, names choiceNames) *ConditionView {
 	if c == nil {
 		return nil
 	}
-	view := &ConditionView{BusinessUnits: []OptionRef{}, ActivityTypes: []SettingRef{}, Text: conditionText(*c, rc.names)}
+	view := &ConditionView{BusinessUnits: []OptionRef{}, ActivityTypes: []SettingRef{}, Text: conditionText(*c, names)}
 	if c.PlannedCostAtLeast != nil {
 		usd := money.USD(*c.PlannedCostAtLeast)
 		view.PlannedCostAtLeast = &usd

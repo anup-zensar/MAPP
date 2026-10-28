@@ -10,58 +10,24 @@ import (
 )
 
 // Recall takes back the submission of a Submitted activity, as in.RoundID names its open round, with an
-// optional reason (FR-021): the round ends as recalled at the level it waited at, the activity is Created
-// again and leaves the approvers' lists, the round's history and the activity log record it with the reason
-// (FR-026), and the owner and the approvers of the waiting level are told (FR-035). The owner and the
-// round's submitter recall with "Submit activities for approval and recall them" in the plan, others only
-// on behalf of the approvers (014 FR-027). An Approved activity cannot be recalled — a change of domain model §2.5 sends it back
-// for approval — and the refusal says so. A round that ended meanwhile is refused, saying what ended it
-// (FR-018).
-func (s *Service) Recall(ctx context.Context, a actor.Actor, activityID string, in RecallInput) (ActivityApproval, error) { //nolint:gocyclo // 10: one Write whose every step returns its error.
+// optional reason.
+func (s *Service) Recall(ctx context.Context, a actor.Actor, activityID string, in RecallInput) (ActivityApproval, error) {
 	reason := strings.TrimSpace(in.Reason)
 	if err := recallProblems(in, reason); err != nil {
 		return ActivityApproval{}, err
 	}
-
 	var approval ActivityApproval
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
 		facts, err := s.activity(ctx, activityID)
 		if err != nil {
 			return err
 		}
-		round, err := s.roundToRecall(ctx, facts, in.RoundID)
+		updated, err := s.recall(ctx, a, activitySubject(facts), recalling{roundID: in.RoundID, reason: reason})
 		if err != nil {
 			return err
 		}
-
-		now := s.now()
-		waiting := round.Levels[round.CurrentLevel-1]
-		round.Outcome, round.EndedAt = OutcomeRecalled, &now
-		round.Touch(a, now)
-		if err = s.repo.PutRound(ctx, round); err != nil {
-			return err
-		}
-		if err = s.addAction(ctx, round, Action{Action: ActionRecalled, Level: waiting.Number, Actor: a, At: now, Comment: reason}); err != nil {
-			return err
-		}
-		updated, err := s.activities.SetStatus(ctx, a, facts.ID, StatusCreated)
-		if err != nil {
-			return err
-		}
-		err = s.logOnActivity(ctx, a, updated, statusLog{
-			verb: "recalled", oldStatus: facts.Status, newer: StatusCreated, comment: reason,
-			details: fmt.Sprintf("Round %d · was waiting for level %d (%s)", round.Number, waiting.Number, names(waiting.Approvers)),
-		})
-		if err != nil {
-			return err
-		}
-		recipients := append([]string{facts.OwnerID}, idsOf(waiting.Approvers)...)
-		err = s.notifier(a, updated, now).send(ctx, recipients, NotifyRecalled, recalledTitle,
-			fmt.Sprintf(recalledText, a.Name, activityText(updated)))
-		if err != nil {
-			return err
-		}
-		approval, err = s.approval(ctx, a, updated)
+		sec, err := s.section(ctx, a, updated)
+		approval = activityApproval(sec)
 		return err
 	})
 	if err != nil {
@@ -81,19 +47,58 @@ func recallProblems(in RecallInput, reason string) error {
 	return problems.Err()
 }
 
+type recalling struct {
+	roundID, reason string
+}
+
+// recall ends the open round as recalled at the level it waited at, hands the record the event, logs it and
+// tells the owner and the waiting approvers.
+func (s *Service) recall(ctx context.Context, a actor.Actor, sub subject, in recalling) (subject, error) {
+	round, err := s.roundToRecall(ctx, sub, in.roundID)
+	if err != nil {
+		return subject{}, err
+	}
+	sub = sub.as(round.kind())
+	now := s.now()
+	waiting := round.Levels[round.CurrentLevel-1]
+	round.Outcome, round.EndedAt = OutcomeRecalled, &now
+	round.Touch(a, now)
+	if err = s.repo.PutRound(ctx, round); err != nil {
+		return subject{}, err
+	}
+	if err = s.addAction(ctx, round, Action{Action: ActionRecalled, Level: waiting.Number, Actor: a, At: now, Comment: in.reason}); err != nil {
+		return subject{}, err
+	}
+	updated, err := s.moved(ctx, a, sub, OutcomeRecalled)
+	if err != nil {
+		return subject{}, err
+	}
+	err = s.logOn(ctx, a, updated, statusLog{
+		verb: "recalled", oldStatus: sub.Status, newer: updated.Status, comment: in.reason,
+		details: fmt.Sprintf("Round %d · was waiting for level %d (%s)", round.Number, waiting.Number, names(waiting.Approvers)),
+	})
+	if err != nil {
+		return subject{}, err
+	}
+	recipients := append([]string{sub.OwnerID}, idsOf(waiting.Approvers)...)
+	err = s.notifier(a, updated, now).send(ctx, recipients, NotifyRecalled, recalledTitle,
+		fmt.Sprintf(recalledText, a.Name, subjectText(updated)))
+	return updated, err
+}
+
 // roundToRecall returns the open round roundID if the person acting may recall it, or why they may not.
-func (s *Service) roundToRecall(ctx context.Context, facts ActivityFacts, roundID string) (Round, error) {
-	if facts.Status == StatusApproved {
+func (s *Service) roundToRecall(ctx context.Context, sub subject, roundID string) (Round, error) {
+	if sub.Kind == KindActivity && sub.Status == StatusApproved {
 		return Round{}, errs.BadRequest(approvedNoRecallMessage)
 	}
-	round, err := s.roundOf(ctx, facts, roundID)
+	round, err := s.roundOf(ctx, sub, roundID)
 	if err != nil {
 		return Round{}, err
 	}
 	if round.Outcome != OutcomeOpen {
-		return Round{}, s.movedOn(ctx, round, 0) // no level is decided by a recall: what ended the round explains it
+		return Round{}, s.movedOn(ctx, round, 0)
 	}
-	if refusal, _ := recallRefusal(ctx, facts, round); refusal != "" { // 014 FR-027
+	if refusal, _ := recallRefusal(ctx, sub, round); refusal != "" {
 		return Round{}, errs.Forbidden(refusal)
 	}
 	return round, nil

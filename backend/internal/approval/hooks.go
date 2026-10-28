@@ -8,21 +8,8 @@ import (
 	"mapp/internal/platform/actor"
 )
 
-// The two events of features 006 and 007 that change an activity's approval. internal/app passes them on
-// from activities.ApprovalHooks (approvals_adapter.go): approvals never imports activities. Both run inside
-// the caller's Write, which ctx carries, so the activity's change and its approval's end are saved
-// together, or neither is.
-
-// ApprovalRestarted ends the approval of an activity that a re-approval change (domain model §2.5) sent
-// back from Submitted or Approved (previousStatus) to Created (FR-022). Features 006 and 007 call it after
-// they saved the change with the person's confirmation, set the status and logged both, so it writes no
-// log entry. changes are the changed values of that save, with their labels and texts.
-//
-// A Submitted activity's open round ends as restarted at the level it waited at; an Approved activity's
-// last approved round keeps its outcome and gets a restart entry without a level (data model §2). Either
-// entry holds the changes (old → new). The owner is told, and the approvers of the waiting level or, for an
-// Approved activity, the people who approved that round (FR-035, D-161) — never a about their own change
-// (FR-036). An activity without such a round is left alone.
+// ApprovalRestarted ends the approval of an activity that a re-approval change (domain model §2.5) sent back
+// to Created from previousStatus, inside the caller's Write; it writes no log entry.
 func (s *Service) ApprovalRestarted(ctx context.Context, a actor.Actor, activityID, previousStatus string, changes []history.Change) error {
 	return s.tx.Write(ctx, func(ctx context.Context) error {
 		facts, err := s.activity(ctx, activityID)
@@ -37,7 +24,7 @@ func (s *Service) ApprovalRestarted(ctx context.Context, a actor.Actor, activity
 
 		var round Round
 		var level int
-		var approvers []string // the people told besides the owner
+		var approvers []string
 		switch previousStatus {
 		case StatusSubmitted:
 			open, found := openRound(rounds)
@@ -65,7 +52,7 @@ func (s *Service) ApprovalRestarted(ctx context.Context, a actor.Actor, activity
 					approvers = append(approvers, e.Actor.ID)
 				}
 			}
-			round = approved // it stays approved: no level waits, so the entry has none
+			round = approved
 		default:
 			return nil
 		}
@@ -81,17 +68,13 @@ func (s *Service) ApprovalRestarted(ctx context.Context, a actor.Actor, activity
 			return err
 		}
 		recipients := append([]string{facts.OwnerID}, approvers...)
-		return s.notifier(a, facts, now).send(ctx, recipients, NotifyRestarted, restartedTitle,
-			fmt.Sprintf(restartedText, a.Name, activityText(facts)))
+		sub := activitySubject(facts)
+		return s.notifier(a, sub, now).send(ctx, recipients, NotifyRestarted, restartedTitle,
+			fmt.Sprintf(restartedText, a.Name, subjectText(sub)))
 	})
 }
 
-// ActivityRestored ends the round that was open when the activity was deleted, now that a restore from the
-// recycle bin brings the activity back Created (FR-023, R14). Feature 006 calls it from the activity kind's
-// PrepareRestore, never for an Undo, which puts the activity back Submitted with its open round (D-031).
-// The round ends as cancelled at the level it waited at, dated at the delete and attributed to the person
-// who deleted the activity (008-P3); nobody is told. It returns the note for the "restored" log entry, or
-// none when no round was open.
+// ActivityRestored ends, as cancelled, the round that was open when the activity was deleted.
 func (s *Service) ActivityRestored(ctx context.Context, rc history.RestoreContext, activityID string) ([]string, error) {
 	var notes []string
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -117,18 +100,15 @@ func (s *Service) ActivityRestored(ctx context.Context, rc history.RestoreContex
 	return notes, nil
 }
 
-// openRoundOf returns the open round of the activity activityID, and false when it has none.
 func (s *Service) openRoundOf(ctx context.Context, activityID string) (Round, bool, error) {
 	rounds, err := s.repo.OpenRounds(ctx)
 	if err != nil {
 		return Round{}, false, err
 	}
-	open, found := openRound(where(rounds, func(r Round) bool { return r.ActivityID == activityID }))
+	open, found := openRound(where(rounds, func(r Round) bool { return r.SubjectID == activityID }))
 	return open, found, nil
 }
 
-// lastApproved returns the approved round with the highest number among rounds, which are ordered by
-// number, and false when none was approved.
 func lastApproved(rounds []Round) (Round, bool) {
 	for i := len(rounds) - 1; i >= 0; i-- {
 		if rounds[i].Outcome == OutcomeApproved {

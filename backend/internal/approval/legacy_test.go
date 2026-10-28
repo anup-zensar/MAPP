@@ -21,7 +21,7 @@ func TestLegacyRecords_ReadWithDefaults_017P19(t *testing.T) {
 			Levels: []Level{{ApproverIDs: []string{"U-1003"}}}, Meta: meta}); err != nil {
 			return err
 		}
-		return repo.PutRound(ctx, Round{ID: "AR-1001", ActivityID: "A-1004", Number: 1, WorkflowID: "WF-1001",
+		return repo.PutRound(ctx, Round{ID: "AR-1001", SubjectKind: KindActivity, SubjectID: "A-1004", Number: 1, WorkflowID: "WF-1001",
 			WorkflowName: "Lubricants EU approval", Levels: []RoundLevel{{Number: 1, Approvers: []actor.Actor{daniel}}},
 			CurrentLevel: 1, Outcome: OutcomeOpen, SubmittedAt: start, SubmittedBy: priya, Meta: meta})
 	})

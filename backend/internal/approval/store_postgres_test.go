@@ -61,7 +61,7 @@ func pgPlanned(t *testing.T) (*database.DB, *approval.PostgresStore) {
 
 func pgRound(id, activityID string, number int, outcome approval.Outcome) approval.Round {
 	cost := money.USD(money.FromCents(120000))
-	return approval.Round{ID: id, ActivityID: activityID, Number: number, WorkflowID: "WF-1001", WorkflowName: "Standard",
+	return approval.Round{ID: id, SubjectKind: approval.KindActivity, SubjectID: activityID, Number: number, WorkflowID: "WF-1001", WorkflowName: "Standard",
 		Levels: []approval.RoundLevel{{Number: 1, Name: "Finance", Approvers: []actor.Actor{},
 			ApproverType: approval.SourcePeople, Mode: approval.ModeAny, Resolution: approval.ResolutionDecide,
 			Excluded:  []approval.Excluded{{Person: actor.Actor{ID: "U-1001", Name: "Priya Raman"}, Reason: approval.ReasonOwner}},
@@ -77,7 +77,7 @@ func named(r approval.Round) approval.Round {
 }
 
 func pgAction(id, roundID, activityID string) approval.Action {
-	return approval.Action{ID: id, RoundID: roundID, RoundNumber: 1, ActivityID: activityID,
+	return approval.Action{ID: id, RoundID: roundID, RoundNumber: 1, SubjectKind: approval.KindActivity, SubjectID: activityID,
 		Action: approval.ActionApproved, Level: 1, LevelName: "Finance", Approvers: []actor.Actor{approver},
 		Actor: actor.Actor{ID: "U-1002", Name: "Daniel Okoro"}, OnBehalfOf: []actor.Actor{approver}, At: submitted,
 		Changes: []approval.ChangeText{}, Capacity: approval.CapacityDelegate, AsDelegateOf: &approver}
@@ -110,7 +110,7 @@ func TestPostgresStoreRoundScopeIncludesNamedApproversFR009(t *testing.T) {
 			if err := errors.Join(roundsErr, actionsErr); err != nil {
 				t.Fatalf("RoundsInScope(), ActionsInScope() error: %v", err)
 			}
-			if len(rounds) != 1 || rounds[0].ID != tt.wantRounds[0] || len(actions) != 1 || actions[0].ActivityID != tt.wantActivity {
+			if len(rounds) != 1 || rounds[0].ID != tt.wantRounds[0] || len(actions) != 1 || actions[0].SubjectID != tt.wantActivity {
 				t.Errorf("RoundsInScope() = %d rounds, ActionsInScope() = %d entries; want only %v of %s",
 					len(rounds), len(actions), tt.wantRounds, tt.wantActivity)
 			}

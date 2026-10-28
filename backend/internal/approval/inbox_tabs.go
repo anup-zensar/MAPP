@@ -8,12 +8,7 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// Inbox returns the rows of one tab of the Approvals page as a sees it (FR-029, FR-030): waiting — the
-// Submitted activities a may decide as approver, delegate or backup approver, not on behalf (017 FR-031);
-// open — every Submitted activity; both oldest
-// submission first; decided — the activities on which a approved or declined a level in any round, latest
-// decision first, with that decision and the activity's latest round. Only stored activities are listed:
-// one in the recycle bin is not (FR-023).
+// Inbox returns the rows of one tab of the Approvals page — waiting, open or decided — over the records a sees.
 func (s *Service) Inbox(ctx context.Context, a actor.Actor, tab string) ([]Row, error) {
 	if tab != TabWaiting && tab != TabOpen && tab != TabDecided {
 		return nil, errs.Validation(errs.FieldError{Field: "tab", Message: chooseTabMessage})
@@ -40,55 +35,51 @@ func (s *Service) Inbox(ctx context.Context, a actor.Actor, tab string) ([]Row, 
 	return rows, nil
 }
 
-// submitted calls fn for every Submitted activity with its open round and the round's history entries.
-func (b *board) submitted(fn func(facts ActivityFacts, round Round, entries []Action) error) error {
-	for _, facts := range b.activities {
-		if facts.Status != StatusSubmitted {
+// submitted calls fn for every record in approval with its open round, seen as the round's record type.
+func (b *board) submitted(fn func(sub subject, round Round, entries []Action) error) error {
+	for _, sub := range b.subjects {
+		round, found := openRound(b.rounds[sub.ID])
+		if !found || !sub.waiting() {
 			continue
 		}
-		round, found := openRound(b.rounds[facts.ID])
-		if !found {
-			continue
-		}
-		if err := fn(facts, round, entriesOf(b.entries[facts.ID], round.ID)); err != nil {
+		if err := fn(sub.as(round.kind()), round, entriesOf(b.entries[sub.ID], round.ID)); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// open returns a row for every Submitted activity, oldest submission first (FR-029, FR-030).
 func (b *board) open() []Row {
 	rows := []Row{}
-	_ = b.submitted(func(facts ActivityFacts, round Round, _ []Action) error {
-		rows = append(rows, b.row(facts, round))
+	_ = b.submitted(func(sub subject, round Round, _ []Action) error {
+		rows = append(rows, b.row(sub, round))
 		return nil
 	})
 	sortBySubmission(rows)
 	return rows
 }
 
-// sortBySubmission orders rows by submission, oldest first.
 func sortBySubmission(rows []Row) {
 	slices.SortStableFunc(rows, func(x, y Row) int { return x.SubmittedAt.Compare(y.SubmittedAt) })
 }
 
-// decided returns a row for every activity on which a approved or declined a level, with a's latest
-// decision and the activity's latest round, latest decision first (FR-029, FR-030).
+// decided returns a row for every record on which a approved or declined a level, with a's latest decision
+// and the record's latest round, latest decision first.
 func (b *board) decided(a actor.Actor) []Row {
 	rows := []Row{}
-	for _, facts := range b.activities {
-		rounds := b.rounds[facts.ID]
+	for _, sub := range b.subjects {
+		rounds := b.rounds[sub.ID]
 		var mine *Action
-		for _, e := range b.entries[facts.ID] {
+		for _, e := range b.entries[sub.ID] {
 			if e.Actor.ID == a.ID && (e.Action == ActionApproved || e.Action == ActionDeclined) {
-				mine = &e // entries are oldest first: the last one is the latest
+				mine = &e
 			}
 		}
 		if mine == nil || len(rounds) == 0 {
 			continue
 		}
-		row := b.row(facts, rounds[len(rounds)-1])
+		latest := rounds[len(rounds)-1]
+		row := b.row(sub.as(latest.kind()), latest)
 		row.MyDecision = &MyDecision{Action: string(mine.Action), At: mine.At, RoundNumber: mine.RoundNumber, Level: mine.Level}
 		rows = append(rows, row)
 	}

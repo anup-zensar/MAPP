@@ -41,6 +41,7 @@ func (s fakeStore) PutWorkflow(ctx context.Context, w Workflow) error {
 	if w.Levels == nil {
 		w.Levels = []Level{}
 	}
+	w.ObjectType = w.Kind()
 	return s.workflows.Put(ctx, w)
 }
 
@@ -56,8 +57,8 @@ func (s fakeStore) ListRounds(context.Context) ([]Round, error) {
 	return s.rounds.List()
 }
 
-func (s fakeStore) RoundsOf(_ context.Context, activityID string) ([]Round, error) {
-	rounds, err := s.rounds.Where(func(r Round) bool { return r.ActivityID == activityID })
+func (s fakeStore) RoundsOf(_ context.Context, subjectID string) ([]Round, error) {
+	rounds, err := s.rounds.Where(func(r Round) bool { return r.SubjectID == subjectID })
 	slices.SortStableFunc(rounds, func(a, b Round) int { return cmp.Compare(a.Number, b.Number) })
 	return rounds, err
 }
@@ -67,11 +68,12 @@ func (s fakeStore) OpenRounds(context.Context) ([]Round, error) {
 }
 
 func (s fakeStore) PutRound(ctx context.Context, r Round) error {
-	r.Levels = Round{Levels: slices.Clone(r.Levels)}.normalised().Levels
+	r.Levels, r.SubjectKind = Round{Levels: slices.Clone(r.Levels)}.normalised().Levels, r.kind()
 	return s.rounds.Put(ctx, r)
 }
 
 func (s fakeStore) PutAction(ctx context.Context, a Action) error {
+	a.SubjectKind = a.subjectKind()
 	return s.actions.Put(ctx, a)
 }
 
@@ -79,8 +81,8 @@ func (s fakeStore) ListActions(context.Context) ([]Action, error) {
 	return s.actions.List()
 }
 
-func (s fakeStore) ActionsOf(_ context.Context, activityID string) ([]Action, error) {
-	return s.actions.Where(func(a Action) bool { return a.ActivityID == activityID })
+func (s fakeStore) ActionsOf(_ context.Context, subjectID string) ([]Action, error) {
+	return s.actions.Where(func(a Action) bool { return a.SubjectID == subjectID })
 }
 
 func (s fakeStore) GetNotification(_ context.Context, id string) (Notification, bool, error) {
@@ -112,6 +114,7 @@ func (s fakeStore) MarkNotificationsRead(ctx context.Context, ids []string, at t
 }
 
 func (s fakeStore) PutNotification(ctx context.Context, n Notification) error {
+	n.SubjectKind = n.subjectKind()
 	return s.notifications.Put(ctx, n)
 }
 

@@ -24,11 +24,11 @@ func TestListApprovalWorkflows_SeededThree_FR005_FR037(t *testing.T) {
 	}
 	var page approval.WorkflowPage
 	response.Decode(t, &page)
-	if page.Total != 3 || len(page.Items) != 3 {
-		t.Fatalf("page = %+v, want the 3 seeded workflows", page)
+	if page.Total != 5 || len(page.Items) != 5 {
+		t.Fatalf("page = %+v, want the 5 seeded workflows (032 adds two for purchase requests)", page)
 	}
 	china, lubricants := page.Items[0], page.Items[1]
-	if standard := page.Items[2]; standard.ID != "WF-1003" || standard.Name != "Standard marketing approval" ||
+	if standard := page.Items[4]; standard.ID != "WF-1003" || standard.Name != "Standard marketing approval" ||
 		*standard.ReminderDays != 3 || *standard.EscalationDays != 5 || standard.UsedByCount != 0 {
 		t.Errorf("third = %+v, want 017's Standard marketing approval, unused", standard)
 	}
@@ -70,13 +70,12 @@ func TestGetApprovalWorkflow_UsedBy_FR005(t *testing.T) {
 	}
 }
 
-// An update from an old version is refused with version_conflict naming who changed the workflow (FR-003).
 func TestUpdateApprovalWorkflow_409(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	priya := server.SignIn(t, priyasEmail)
-	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: changing workflows
+	server.GrantRole(t, priyasEmail, "administrator", "all")
 	renamed := alex.Do(t, http.MethodPatch, "/api/v1/approval-workflows/WF-1001", map[string]any{"name": "Lubricants approval", "version": 1})
 	decodeWorkflow(t, renamed, http.StatusOK)
 
@@ -85,7 +84,6 @@ func TestUpdateApprovalWorkflow_409(t *testing.T) {
 	assertError(t, response, http.StatusConflict, "version_conflict", "Not saved — Alex Morgan changed this approval workflow")
 }
 
-// An unused workflow moves to the recycle bin; Undo brings it back; one in use is refused (FR-008).
 func TestDeleteApprovalWorkflow_UnusedUndo_FR008(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -147,7 +145,6 @@ func TestDeactivateActivate_FR007(t *testing.T) {
 	}
 }
 
-// decodeWorkflow reads an ApprovalWorkflow answered with status.
 func decodeWorkflow(t *testing.T, response *apitest.Response, status int) approval.WorkflowView {
 	t.Helper()
 	if response.Status != status {

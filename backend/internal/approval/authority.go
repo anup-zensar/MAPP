@@ -11,20 +11,13 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// Who may decide (017 FR-017 – FR-020, data-model §6): 014's approve/decline check order, extended with the
-// delegates of waiting approvers, the backup approver of an escalated level and the round's submitter in
-// segregation of duties. Every check runs on the server; the answers' actions follow the same steps.
-
-// decider is the signed-in person as the checks need them, read once per operation: whether they hold
-// approvals.decide, whether 014's access rule is on, and the delegations current today.
 type decider struct {
 	person      actor.Actor
 	canApprove  bool
 	rule        bool
-	delegations []Delegation // current today, with an active delegate who can approve (FR-023)
+	delegations []Delegation
 }
 
-// deciderOf reads the decider a, with the current delegations dl.
 func (s *Service) deciderOf(ctx context.Context, a actor.Actor, dl []Delegation) (decider, error) {
 	can, err := s.access.CanApprove(ctx, []string{a.ID})
 	if err != nil {
@@ -37,8 +30,6 @@ func (s *Service) deciderOf(ctx context.Context, a actor.Actor, dl []Delegation)
 	return decider{person: a, canApprove: can[a.ID], rule: rule, delegations: dl}, nil
 }
 
-// currentDelegations returns the delegations that count today (FR-023, data-model §7 Effect): not
-// cancelled, today within their dates, and their delegate active and holding approvals.decide.
 func (s *Service) currentDelegations(ctx context.Context, d directory) ([]Delegation, error) {
 	all, err := s.repo.ListDelegations(ctx)
 	if err != nil {
@@ -63,7 +54,6 @@ func (s *Service) currentDelegations(ctx context.Context, d directory) ([]Delega
 	return where(current, func(dl Delegation) bool { return can[dl.DelegateID] }), nil
 }
 
-// delegatesOf returns the ids of the current delegates of the person personID among dl.
 func delegatesOf(dl []Delegation, personID string) []string {
 	var ids []string
 	for _, x := range dl {
@@ -74,8 +64,6 @@ func delegatesOf(dl []Delegation, personID string) []string {
 	return ids
 }
 
-// countedFor returns the approvers of the level who have an approval counted for them among entries (data
-// model §5): their own (capacity approver, or none for entries written before 017), or their delegate's.
 func countedFor(level RoundLevel, entries []Action) map[string]bool {
 	counted := map[string]bool{}
 	for _, e := range entries {
@@ -94,7 +82,6 @@ func countedFor(level RoundLevel, entries []Action) map[string]bool {
 	return counted
 }
 
-// waitingOn returns the resolved approvers of the level with no approval counted for them, in order.
 func waitingOn(level RoundLevel, entries []Action) []actor.Actor {
 	counted := countedFor(level, entries)
 	waiting := []actor.Actor{}
@@ -106,9 +93,6 @@ func waitingOn(level RoundLevel, entries []Action) []actor.Actor {
 	return waiting
 }
 
-// levelDone reports whether the level is approved by entries (017 FR-015, data-model §4): by its first
-// approval when any one approves; when every resolved approver has an approval counted for them when all
-// must approve; and in both modes by an approval of the backup approver or on behalf.
 func levelDone(level RoundLevel, entries []Action) bool {
 	approved := false
 	for _, e := range entries {
@@ -129,50 +113,36 @@ func levelDone(level RoundLevel, entries []Action) bool {
 	return len(waitingOn(level, entries)) == 0
 }
 
-// authority is whether the decider may approve or decline the current level of a round, and in which
-// capacity (data-model §6).
 type authority struct {
 	allowed      bool
 	capacity     Capacity
-	asDelegateOf []actor.Actor // delegate: every waiting approver who delegated to the person today
-	onBehalfOf   []actor.Actor // onBehalf: the waiting approvers
-	refusal      *errs.Error   // 403 forbidden; nil when allowed
-	shown        string        // the reason of actions.approve and decline; "" hides the buttons (014)
-	waiting      []actor.Actor // the level's approvers still waiting
+	asDelegateOf []actor.Actor
+	onBehalfOf   []actor.Actor
+	refusal      *errs.Error
+	shown        string
+	waiting      []actor.Actor
 }
 
-// waits reports whether the round belongs in the decider's Waiting for me: they may decide it as approver,
-// delegate or backup approver — never on behalf (FR-031).
 func (au authority) waits() bool {
 	return au.allowed && au.capacity != CapacityOnBehalf
 }
 
-// authority runs the check order of data-model §6 for the decider dc on the current level of the open
-// round, whose history entries are entries: steps 3a–3f (approver, delegate, backup approver after
-// escalation, on behalf, already approved, anyone else), then step 4 (segregation of duties while 014's
-// rule is on: not the owner, not the round's submitter, in any capacity). onBehalf says whether to ask 014
-// about deciding on behalf (step 3d); Waiting for me never does.
-func (s *Service) authority(ctx context.Context, dc decider, facts ActivityFacts, round Round, entries []Action, onBehalf bool) (authority, error) {
-	level := round.Levels[round.CurrentLevel-1]
-	p := dc.person.ID
-	au := authority{waiting: waitingOn(level, entries)}
+// decisionPoint is the current level of a record's open round as authority looks at it; onBehalf says whether
+// to ask 014 about deciding on behalf (Waiting for me never does).
+type decisionPoint struct {
+	sub      subject
+	round    Round
+	entries  []Action
+	onBehalf bool
+}
 
-	var delegators []actor.Actor
-	for _, w := range au.waiting {
-		if slices.ContainsFunc(dc.delegations, func(dl Delegation) bool { return dl.PersonID == w.ID && dl.DelegateID == p }) {
-			delegators = append(delegators, w)
-		}
-	}
-	switch {
-	case includes(au.waiting, p) && dc.canApprove:
-		au.allowed, au.capacity = true, CapacityApprover
-	case len(delegators) > 0 && dc.canApprove:
-		au.allowed, au.capacity, au.asDelegateOf = true, CapacityDelegate, delegators
-	case level.EscalatedAt != nil && level.Backup != nil && level.Backup.ID == p && dc.canApprove:
-		au.allowed, au.capacity = true, CapacityBackup
-	}
-	if !au.allowed && onBehalf {
-		grant, err := s.access.Check(ctx, p, PermissionDecideOnBehalf, &facts.Plan)
+// authority runs the check order of 017 data-model §6 for the decider on the current level: approver,
+// delegate, backup approver after escalation, on behalf; then segregation of duties for activities.
+func (s *Service) authority(ctx context.Context, dc decider, at decisionPoint) (authority, error) {
+	level := at.round.Levels[at.round.CurrentLevel-1]
+	au := namedCapacity(dc, level, at.entries)
+	if !au.allowed && at.onBehalf {
+		grant, err := s.access.Check(ctx, dc.person.ID, PermissionDecideOnBehalf, &at.sub.Plan)
 		if err != nil {
 			return authority{}, err
 		}
@@ -181,33 +151,73 @@ func (s *Service) authority(ctx context.Context, dc decider, facts ActivityFacts
 		}
 	}
 	if !au.allowed {
-		if includes(level.Approvers, p) && countedFor(level, entries)[p] {
-			au.shown = fmt.Sprintf(alreadyApprovedLevelMessage, level.Number, names(au.waiting))
-			au.refusal = errs.Forbidden(au.shown)
-			return au, nil
-		}
-		who := names(level.Approvers)
-		if len(level.Approvers) == 0 {
-			who = nobodyText
-		}
-		au.refusal = errs.Forbidden(fmt.Sprintf(onlyApproversMessage, level.Number, who))
-		return au, nil
+		return refused(au, dc.person.ID, level, at), nil
 	}
+	return segregated(au, dc, at), nil
+}
 
+func namedCapacity(dc decider, level RoundLevel, entries []Action) authority {
+	p := dc.person.ID
+	au := authority{waiting: waitingOn(level, entries)}
+	if !dc.canApprove {
+		return au
+	}
+	delegators := delegatorsOf(dc, au.waiting)
+	escalatedToMe := level.EscalatedAt != nil && level.Backup != nil && level.Backup.ID == p
 	switch {
-	case dc.rule && facts.OwnerID != "" && p == facts.OwnerID:
+	case includes(au.waiting, p):
+		au.allowed, au.capacity = true, CapacityApprover
+	case len(delegators) > 0:
+		au.allowed, au.capacity, au.asDelegateOf = true, CapacityDelegate, delegators
+	case escalatedToMe:
+		au.allowed, au.capacity = true, CapacityBackup
+	}
+	return au
+}
+
+// delegatorsOf returns the waiting approvers who delegated to the decider today.
+func delegatorsOf(dc decider, waiting []actor.Actor) []actor.Actor {
+	var delegators []actor.Actor
+	for _, w := range waiting {
+		if slices.ContainsFunc(dc.delegations, func(dl Delegation) bool { return dl.PersonID == w.ID && dl.DelegateID == dc.person.ID }) {
+			delegators = append(delegators, w)
+		}
+	}
+	return delegators
+}
+
+func refused(au authority, p string, level RoundLevel, at decisionPoint) authority {
+	if includes(level.Approvers, p) && countedFor(level, at.entries)[p] {
+		au.shown = fmt.Sprintf(alreadyApprovedLevelMessage, level.Number, names(au.waiting))
+		au.refusal = errs.Forbidden(au.shown)
+		return au
+	}
+	who := names(level.Approvers)
+	if len(level.Approvers) == 0 {
+		who = nobodyText
+	}
+	au.refusal = errs.Forbidden(fmt.Sprintf(onlyApproversMessage, level.Number, who, at.sub.Kind.word()))
+	return au
+}
+
+// segregated refuses the owner and the round's submitter while 014's access rule is on — for activities only.
+func segregated(au authority, dc decider, at decisionPoint) authority {
+	if !dc.rule || !at.sub.Kind.barsSelfApproval() {
+		return au
+	}
+	p := dc.person.ID
+	switch {
+	case at.sub.OwnerID != "" && p == at.sub.OwnerID:
 		au.shown = ownActivityMessage
-	case dc.rule && p == round.SubmittedBy.ID:
+	case p == at.round.SubmittedBy.ID:
 		au.shown = submittedActivityMessage
 	}
 	if au.shown != "" {
 		au.allowed, au.refusal = false, errs.Forbidden(au.shown)
 	}
-	return au, nil
+	return au
 }
 
-// capacitySuffix is the end of a decision's log details that says its capacity (plan, Activity-log
-// entries): "; as delegate of <name>", "; as backup approver", "; on behalf of <names>".
 func capacitySuffix(au authority) string {
 	switch au.capacity {
 	case CapacityDelegate:
@@ -223,10 +233,6 @@ func capacitySuffix(au authority) string {
 	return ""
 }
 
-// NamedIn reports whether the person personID may see the activity activityID because of its approval
-// (014 FR-006, extended by 017 FR-021): they are named as an approver in any of its rounds, are a current
-// delegate of a waiting approver of its open round, or are the backup approver of its escalated current
-// level. Feature 014's activities.Approvers.NamedIn adapter calls it, inside the caller's transaction.
 func (s *Service) NamedIn(ctx context.Context, personID, activityID string) (bool, error) {
 	rounds, err := s.repo.RoundsOf(ctx, activityID)
 	if err != nil {
@@ -267,7 +273,6 @@ func (s *Service) NamedIn(ctx context.Context, personID, activityID string) (boo
 	return false, nil
 }
 
-// approversText names the approvers of a level for the log: their names, or "no approver".
 func approversText(level RoundLevel) string {
 	if len(level.Approvers) == 0 {
 		return "no approver"
@@ -275,8 +280,6 @@ func approversText(level RoundLevel) string {
 	return names(level.Approvers)
 }
 
-// levelNotes are the notes of the levels that did not wait at submission (plan, Activity-log entries):
-// "level 2 not needed (only when …); level 3 approved automatically (…)".
 func levelNotes(levels []RoundLevel) string {
 	var notes []string
 	for _, l := range levels {
