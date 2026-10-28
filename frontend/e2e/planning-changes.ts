@@ -92,12 +92,12 @@ export async function changeActivityPlannedCost(
   });
 }
 
-function lineItemFields(name: string, plannedCost: string) {
+export function lineItemFields(name: string, plannedCost: string, currency = 'USD') {
   return {
     name,
     ownerId: null,
     description: '',
-    currency: 'USD',
+    currency,
     plannedCost,
     spread: { method: 'evenly', months: [] },
     attributes: {},

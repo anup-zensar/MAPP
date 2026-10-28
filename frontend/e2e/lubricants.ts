@@ -63,15 +63,16 @@ export interface LubricantsActivity extends Named {
 /**
  * As the signed-in person: a Lubricants plan of next year (team Lubricants Europe) with one campaign
  * and one initiative, and a Created activity of `amount` USD with every needed field filled, owned by
- * Priya Raman with the Standard marketing approval (017 seed) unless `options` say otherwise.
+ * Priya Raman with the Standard marketing approval (017 seed), in USD, unless `options` say otherwise.
  */
 export async function lubricantsActivity(
   page: Page,
   label: string,
   amount: string,
-  options: { owner?: string; workflow?: string } = {},
+  options: { owner?: string; workflow?: string; currency?: string } = {},
 ): Promise<LubricantsActivity> {
   const workflowName = options.workflow ?? STANDARD_WORKFLOW;
+  const currency = options.currency ?? 'USD';
   const year = new Date().getUTCFullYear() + 1;
   const [modelId, teamId, ownerId, planForm] = await Promise.all([
     idOf(page, '/api/v1/models', 'Lubricants 1.0'),
@@ -94,7 +95,8 @@ export async function lubricantsActivity(
     ownerId,
     aop: false,
     description: '',
-    budget: { amount: '100000.00', currency: 'USD' },
+    budget: { amount: '100000.00', currency },
+    currency,
     defaultFinanceBudgetId: null,
     defaultSpread: 'evenly',
     bcpir: false,
@@ -107,7 +109,7 @@ export async function lubricantsActivity(
     name: uniqueName(`${label} campaign`),
     description: '',
     ...wholeYear,
-    budget: { amount: '50000.00', currency: 'USD' },
+    budget: { amount: '50000.00', currency },
     attributes: {},
   });
   const initiative = await callApi<Named>(
@@ -118,7 +120,7 @@ export async function lubricantsActivity(
       name: uniqueName(`${label} initiative`),
       description: '',
       ...wholeYear,
-      budget: { amount: '40000.00', currency: 'USD' },
+      budget: { amount: '40000.00', currency },
       attributes: {},
     },
   );
@@ -144,7 +146,7 @@ export async function lubricantsActivity(
       startDate: `${year}-03-01`,
       endDate: `${year}-05-31`,
       ongoing: false,
-      plannedCost: { amount, currency: 'USD' },
+      plannedCost: { amount, currency },
       approvalWorkflowId: workflow.id,
       description: '',
       attributes: await lubricantsAttributes(page),

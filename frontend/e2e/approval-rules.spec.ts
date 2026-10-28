@@ -102,7 +102,7 @@ test('017 US2 (T047 journey 2): a Mobility activity skips level 2 and needs both
   let approve = await approveOnScreen(page, DANIEL, activity.name);
   await expect(approve).toContainText('Level 3 of 3');
   await approve.getByRole('button', { name: 'Approve', exact: true }).click();
-  await expectToast(page, /approved/);
+  await expectToast(page, `Level 3 approved — '${activity.name}' now waits for`);
   await signInAs(page, MEI);
   const section = await openApprovalSection(page, activity);
   await expect(section).toContainText(

@@ -12,7 +12,7 @@ description: "Task list for feature 016 — Planning and Currency Extensions"
 > `/settings/currencies/import` is not in `frontend/src/app/router.tsx` — `SETTINGS_016_ROUTES` is unused — so
 > the Currencies page's **Import GSAP rates** button opens Not found); T074–T077 (attribute filters, Breakdown,
 > Planned cost by, saved views and export of them); T084–T088 (record screens do not read Field help yet);
-> T089 (end-to-end journeys); T090–T093 (product documents); T094, T095.
+> T090–T093 (product documents); T094, T095.
 
 **Input**: Design documents from `specs/016-planning-and-currency-extensions/`
 
@@ -242,7 +242,15 @@ and multi-year · US6 categories · US7 field help.
 
 ## Phase 10: End-to-end, documentation and checks
 
-- [ ] T089 Write `frontend/e2e/planning-currency.spec.ts` (journeys of plan *Tests* › End-to-end, records prepared through the API as `e2e/planning.ts` does, axe on Currencies with rate history, Import rates, Field help, plan page with Budget by month, Split dialog, All work Breakdown and Budget & cost Yearly); existing `core-flow`, `module-rest`, `smoke` stay green (depends on Phases 3–9)
+- [x] T089 Write `frontend/e2e/planning-currency.spec.ts` (journeys of plan *Tests* › End-to-end, records prepared through the API as `e2e/planning.ts` does, axe on Currencies with rate history, Import rates, Field help, plan page with Budget by month, Split dialog, All work Breakdown and Budget & cost Yearly); existing `core-flow`, `module-rest`, `smoke` stay green (depends on Phases 3–9)
+  - Done 2026-10-29 for the screens built today: the GSAP rate import with its review (axe on Import rates and on
+    Currencies › EUR with its rate history), a GBP plan made on the plan form with USD beside its amounts, its
+    budget by month evenly and then custom by quarter (axe on the editor and the plan page), a GBP activity
+    with a EUR line item split off into a new activity (axe on the Split dialog), and All work over two years
+    in Budget & cost Yearly with Compare with phased budget (axe). Every journey uses records of its own. Not
+    covered here because another feature lane is finishing them: attribute filters, Breakdown and Field help
+    (T074–T077, T084–T088). The plan form shows "≈ … USD" only after saving, as T039 decided, so the journey
+    checks it on the plan page.
 - [ ] T090 [P] Update `docs/product/domain-model.md`: §4 money rules (plan currency, dated rates, `Convert`, unassigned in the plan currency), §4.1 Budget by month, §2.5 split as a re-approval change, §6 Currency (rate history), §7 records (exchange rate, rate import, field help)
 - [ ] T091 [P] Update `docs/product/field-catalogue.md`: §1 Plan type, Plan currency, Budget by month; §1 #8, §2 #5, §3 #6, §4.1 #8 "money (plan currency)"; §2–§3 Budget by month; §4 Split from / Split into; §5 #6 "Planned cost (plan currency)"
 - [ ] T092 [P] Update `docs/product/glossary.md` (Plan currency, Current rate, Rate history, GSAP rate import, Budget by month, Phased budget, Split activity, Plan type, Breakdown, Field help) and `docs/product/design-system.md` §4–§5 (AmountPair, RateTip, YearRangeField, Budget by month card)
