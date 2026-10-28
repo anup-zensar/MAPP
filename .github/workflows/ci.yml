@@ -64,7 +64,7 @@ jobs:
   backend-vet:
     needs: changes
     if: ${{ !cancelled() && needs.changes.outputs.backend != 'false' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
     defaults: &in-backend
       run:
@@ -106,7 +106,7 @@ jobs:
   backend-lint:
     needs: changes
     if: ${{ !cancelled() && needs.changes.outputs.backend != 'false' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
     permissions:
       contents: read
@@ -133,7 +133,7 @@ jobs:
   backend-test:
     needs: changes
     if: ${{ !cancelled() && needs.changes.outputs.backend != 'false' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -204,7 +204,7 @@ jobs:
   frontend-checks:
     needs: changes
     if: ${{ !cancelled() && needs.changes.outputs.frontend != 'false' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
     defaults: &in-frontend
       run:
@@ -238,7 +238,7 @@ jobs:
   frontend-test:
     needs: changes
     if: ${{ !cancelled() && needs.changes.outputs.frontend != 'false' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -266,7 +266,7 @@ jobs:
   frontend:
     needs: [changes, frontend-checks, frontend-test]
     if: ${{ !cancelled() && needs.changes.outputs.frontend != 'false' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 10
     defaults: *in-frontend
     steps:
@@ -295,7 +295,7 @@ jobs:
   e2e-test:
     needs: changes
     if: ${{ !cancelled() && (needs.changes.outputs.backend != 'false' || needs.changes.outputs.frontend != 'false') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 20
     strategy:
       fail-fast: false
