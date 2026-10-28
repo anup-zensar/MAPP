@@ -10,18 +10,11 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// The longest workflow name and level name, in characters (data model §1).
 const (
 	maxWorkflowNameLength = 120
 	maxLevelNameLength    = 60
 )
 
-// UpdateWorkflow changes the fields of the approval workflow id that update sends (D-203), levels as a
-// whole new list, after checking every rule on the result at once (FR-003). update.Version must be the
-// version the person started from (D-030). An approver already in a level may stay there after becoming
-// inactive, but may not be added (008-P8). A save that changes nothing makes no new version and no log
-// entry; otherwise one "changed" entry lists every changed field (FR-026). Open rounds keep the levels they
-// were submitted with (FR-006).
 func (s *Service) UpdateWorkflow(ctx context.Context, a actor.Actor, id string, update WorkflowUpdate) (WorkflowView, error) {
 	var view WorkflowView
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -55,7 +48,6 @@ func (s *Service) UpdateWorkflow(ctx context.Context, a actor.Actor, id string, 
 	return view, nil
 }
 
-// checkedUpdate returns stored with what update sends, and the rule context, or every problem of the result.
 func (s *Service) checkedUpdate(ctx context.Context, stored Workflow, update WorkflowUpdate) (Workflow, ruleContext, error) {
 	var problems errs.Problems
 	if update.Version == nil || *update.Version < 1 {
@@ -68,6 +60,9 @@ func (s *Service) checkedUpdate(ctx context.Context, stored Workflow, update Wor
 	if err != nil {
 		return Workflow{}, ruleContext{}, err
 	}
+	if err = s.checkObjectTypeChange(ctx, &problems, stored, changed); err != nil {
+		return Workflow{}, ruleContext{}, err
+	}
 	err = s.checkWorkflow(ctx, &problems, workflowCheck{rc: rc, w: changed, amountProblems: amountProblems, stored: stored})
 	if err != nil {
 		return Workflow{}, ruleContext{}, err
@@ -78,7 +73,6 @@ func (s *Service) checkedUpdate(ctx context.Context, stored Workflow, update Wor
 	return changed, rc, nil
 }
 
-// withUpdate returns stored with the fields update sends, and the amounts levelsOf could not read.
 func withUpdate(stored Workflow, update WorkflowUpdate) (Workflow, map[string]string) {
 	changed, amountProblems := stored, map[string]string{}
 	if update.Name != nil {
@@ -86,6 +80,9 @@ func withUpdate(stored Workflow, update WorkflowUpdate) (Workflow, map[string]st
 	}
 	if update.Description != nil {
 		changed.Description = strings.TrimSpace(*update.Description)
+	}
+	if update.ObjectType != nil {
+		changed.ObjectType = *update.ObjectType
 	}
 	if update.Levels != nil {
 		changed.Levels, amountProblems = levelsOf(*update.Levels)
@@ -99,10 +96,6 @@ func withUpdate(stored Workflow, update WorkflowUpdate) (Workflow, map[string]st
 	return changed, amountProblems
 }
 
-// SetWorkflowActive sets the approval workflow id inactive (active false) or active again (FR-007), from the
-// version the person saw. An inactive workflow is not offered on activities; those that use it keep it, and
-// open rounds finish with the levels they were submitted with. Setting the value it already has changes
-// nothing; otherwise the change is logged as "deactivated" or "reactivated" (FR-026).
 func (s *Service) SetWorkflowActive(ctx context.Context, a actor.Actor, id string, active bool, version *int) (WorkflowView, error) { //nolint:revive // argument-limit 5: the version the body sends, and whether the route deactivates or activates
 	if version == nil || *version < 1 {
 		return WorkflowView{}, errs.Validation(errs.FieldError{Field: versionField, Message: reloadMessage})
@@ -133,7 +126,6 @@ func (s *Service) SetWorkflowActive(ctx context.Context, a actor.Actor, id strin
 	return view, nil
 }
 
-// withActive returns stored set active, saved and logged; stored itself when it already is.
 func (s *Service) withActive(ctx context.Context, a actor.Actor, stored Workflow, active bool) (Workflow, error) {
 	if stored.Active == active {
 		return stored, nil
@@ -154,7 +146,6 @@ func (s *Service) withActive(ctx context.Context, a actor.Actor, stored Workflow
 	})
 }
 
-// saveWorkflow stores changed with a new version, logs entry and returns the workflow as stored.
 func (s *Service) saveWorkflow(ctx context.Context, a actor.Actor, changed Workflow, entry history.LogInput) (Workflow, error) {
 	changed.Touch(a, s.now())
 	if err := s.repo.PutWorkflow(ctx, changed); err != nil {
@@ -166,15 +157,11 @@ func (s *Service) saveWorkflow(ctx context.Context, a actor.Actor, changed Workf
 	return changed, nil
 }
 
-// The day counts of reminders and escalation (017 FR-007).
 const (
 	maxReminderDays   = 60
 	maxEscalationDays = 90
 )
 
-// workflowCheck is what checkWorkflow checks: the workflow w, the amounts levelsOf could not read, and stored,
-// the workflow before an update (its id "" on a create), whose inactive approvers and backup approvers may
-// stay in their level.
 type workflowCheck struct {
 	rc             ruleContext
 	w              Workflow
@@ -182,11 +169,24 @@ type workflowCheck struct {
 	stored         Workflow
 }
 
-// checkWorkflow adds every problem of the workflow wc.w to problems (FR-002, FR-003; 017 FR-008, FR-025, data
-// model §1–§2).
+// checkObjectTypeChange refuses a change of what a used workflow approves.
+func (s *Service) checkObjectTypeChange(ctx context.Context, problems *errs.Problems, stored, changed Workflow) error {
+	if changed.Kind() == stored.Kind() {
+		return nil
+	}
+	u, err := s.usage(ctx)
+	if err == nil && len(u.usedBy[stored.ID]) > 0 {
+		problems.Add(objectTypeField, fmt.Sprintf(objectTypeFixedMessage, stored.Kind().plural()))
+	}
+	return err
+}
+
 func (s *Service) checkWorkflow(ctx context.Context, problems *errs.Problems, wc workflowCheck) error {
 	if err := s.checkWorkflowName(ctx, problems, wc.w.Name, wc.stored.ID); err != nil {
 		return err
+	}
+	if !wc.w.Kind().IsValid() {
+		problems.Add(objectTypeField, chooseObjectTypeMessage)
 	}
 	if tooLong(wc.w.Description, maxCommentLength) {
 		problems.Add("description", tooLong2000Message)
@@ -196,7 +196,7 @@ func (s *Service) checkWorkflow(ctx context.Context, problems *errs.Problems, wc
 		problems.Add("levels", addLevelMessage)
 	}
 	for i, l := range wc.w.Levels {
-		c := levelCheck{problems: problems, rc: wc.rc, n: i + 1, l: l}
+		c := levelCheck{problems: problems, rc: wc.rc, n: i + 1, l: l, kind: wc.w.Kind()}
 		if i < len(wc.stored.Levels) {
 			c.before = wc.stored.Levels[i]
 		}

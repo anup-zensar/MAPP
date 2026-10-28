@@ -10,8 +10,6 @@ import (
 	"mapp/internal/platform/actor"
 )
 
-// restart does what features 006 and 007 do when a re-approval change is saved: in one Write, the activity
-// id goes back to Created and approvals is told, as a, with changes.
 func (f *fixture) restart(t *testing.T, a actor.Actor, id string, changes ...history.Change) {
 	t.Helper()
 	previous := f.activities.facts[id].Status
@@ -23,10 +21,6 @@ func (f *fixture) restart(t *testing.T, a actor.Actor, id string, changes ...his
 	})
 }
 
-// A re-approval change on a Submitted activity ends its open round as restarted at the level it waited
-// at, with the changed values; the activity's owner and the waiting level's approvers are told, the person
-// who changed it is not, and approvals writes no log entry of its own: the saving feature did (FR-022,
-// FR-035, FR-036).
 func TestApprovalRestarted_Submitted_FR022(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -44,7 +38,7 @@ func TestApprovalRestarted_Submitted_FR022(t *testing.T) {
 		t.Errorf("round = %+v, want restarted at level 2 now, by Priya Raman", round)
 	}
 	wantEntry := Action{
-		ID: "AH-1003", RoundID: round.ID, RoundNumber: 1, ActivityID: "A-1009", Action: ActionRestarted, Level: 2,
+		ID: "AH-1003", RoundID: round.ID, RoundNumber: 1, SubjectKind: KindActivity, SubjectID: "A-1009", Action: ActionRestarted, Level: 2,
 		Approvers: []actor.Actor{alex}, Actor: priya, OnBehalfOf: []actor.Actor{}, At: restartedAt,
 		Changes: []ChangeText{{Label: "Planned cost", OldText: "$50,000.00", NewText: "$65,000.00"}},
 	}
@@ -80,10 +74,6 @@ func TestApprovalRestarted_Submitted_FR022(t *testing.T) {
 	}
 }
 
-// A re-approval change on an Approved activity keeps its approved round approved and records the restart
-// on it without a level, with the change as 007's ready-made sentence; the owner and the people who
-// approved the round are told — here the owner made the change, so only the approvers (FR-022, D-161). An
-// activity without a round, or one that was not in approval, is left alone.
 func TestApprovalRestarted_Approved_FR022(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -91,12 +81,12 @@ func TestApprovalRestarted_Approved_FR022(t *testing.T) {
 	f.addActivity(t, "A-1008", "Grand opening Shanghai", mei.ID, chinaFlow)
 	f.submit(t, mei, "A-1009", "")
 	f.approve(t, carlos, "A-1009", "")
-	f.approve(t, sara, "A-1009", "") // on behalf of Alex Morgan
+	f.approve(t, sara, "A-1009", "")
 	f.clock.Advance(time.Hour)
 	reason := "Line item 'Agency fee' (L-1003) added: 1,200.00 USD"
 
 	f.restart(t, mei, "A-1009", history.Change{Label: reason})
-	f.restart(t, mei, "A-1008") // Created, never submitted
+	f.restart(t, mei, "A-1008")
 
 	round := f.rounds(t, "A-1009")[0]
 	if round.Outcome != OutcomeApproved || round.Version != 3 {
@@ -134,9 +124,6 @@ func TestApprovalRestarted_Approved_FR022(t *testing.T) {
 	}
 }
 
-// A restore from the recycle bin brings a deleted Submitted activity back Created: the round that was open
-// at the delete ends as cancelled at its waiting level, dated at the delete and by the person who deleted
-// it, with a note for the "restored" log entry; nobody is told (FR-023, 008-P3).
 func TestActivityRestored_CancelsOpenRound_FR023(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -144,7 +131,7 @@ func TestActivityRestored_CancelsOpenRound_FR023(t *testing.T) {
 	f.submit(t, priya, "A-1004", "")
 	f.clock.Advance(time.Hour)
 	deletedAt := f.clock.Now()
-	delete(f.activities.facts, "A-1004") // in the recycle bin: not stored
+	delete(f.activities.facts, "A-1004")
 	f.clock.Advance(24 * time.Hour)
 	rc := history.RestoreContext{Actor: daniel, Now: f.clock.Now(), DeletedAt: deletedAt, DeletedBy: mei}
 	told := len(f.notifications(t, daniel.ID)) + len(f.notifications(t, priya.ID))
@@ -154,7 +141,7 @@ func TestActivityRestored_CancelsOpenRound_FR023(t *testing.T) {
 		if notes, err = f.service.ActivityRestored(ctx, rc, "A-1004"); err != nil {
 			return err
 		}
-		again, err = f.service.ActivityRestored(ctx, rc, "A-1004") // no round is open any more
+		again, err = f.service.ActivityRestored(ctx, rc, "A-1004")
 		return err
 	})
 

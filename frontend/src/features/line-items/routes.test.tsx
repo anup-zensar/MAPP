@@ -10,6 +10,7 @@ import {
   transaction,
   transactionPage,
 } from '@/testing/fixtures/line-item-financials';
+import { lineItemSection } from '@/testing/fixtures/purchase-requests';
 import { reply } from '@/testing/replies';
 
 const FORM_OPTIONS: HttpHandler[] = [
@@ -30,6 +31,9 @@ const DETAILS: HttpHandler[] = [
     { recordId: 'L-1001' },
   ),
   reply('GET /api/v1/financials/transactions', { body: transactionPage([transaction()]) }),
+  reply('GET /api/v1/line-items/{lineItemId}/purchase-requests', {
+    body: lineItemSection({ lineItemId: 'L-1001', purchaseRequests: [] }),
+  }),
 ];
 
 // Feature 007's addresses (build guide §5), with the requests each page makes.

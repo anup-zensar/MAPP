@@ -7,6 +7,11 @@ const (
 	meiLin       = "Mei Lin"
 	carlosMendes = "Carlos Mendes"
 	alexMorgan   = "Alex Morgan"
+	leaSantos    = "Lea Santos"
+	leasEmail    = "lea.santos@shell.com"
+
+	requisitioner      = "Requisitioner"
+	globalMarketingOps = "Global Marketing Ops"
 
 	typeAgencyFeesCreative = "Agency fees – Creative"
 	typeEvent              = "Event"
@@ -15,12 +20,12 @@ const (
 	typeSponsorship        = "Sponsorship"
 	typeLongTermContract   = "MOBILITY – Long-term contract"
 
-	spendDigitalPlatform = "Digital – Platform development"
-	spendEvent           = "BTL – Event"
-	spendAgencyCreative  = "Agency – Creative"
-	glAdvertisingDigital = "7250080 – Advertising digital"
-	glEventsSponsorship  = "7250040 – Events and sponsorship"
-	glAgencyFees         = "7250060 – Agency fees"
+	spendDigitalPlatform = "ATL - Digital"
+	spendEvent           = "BTL - Event"
+	spendAgencyCreative  = "BTL - Agency Fees"
+	glAdvertisingDigital = "7250080 - Advertising - Digital"
+	glEventsSponsorship  = "7250150 - Sponsorship programmes"
+	glAgencyFees         = "7250060 - Advertising - Corp/Agency/Production"
 
 	lubricantsBudget  = "2026 Lubricants Budget"
 	itemEuropeDigital = "Europe – Digital"

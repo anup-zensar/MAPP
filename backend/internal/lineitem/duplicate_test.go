@@ -21,19 +21,19 @@ func TestDuplicate_CopiesEverything_FR029(t *testing.T) { //nolint:gocyclo // 11
 	fee := f.create(t, priya, launchFilm, in)
 	long := f.create(t, priya, launchFilm, input(strings.Repeat("n", 120), "USD", "1.00"))
 
-	first, err := f.service.Duplicate(t.Context(), daniel, fee.ID, DuplicateInput{})
+	first, err := f.service.Duplicate(t.Context(), daniel, fee.ID)
 	if err != nil {
 		t.Fatalf("Duplicate: %v", err)
 	}
-	second, _ := f.service.Duplicate(t.Context(), daniel, fee.ID, DuplicateInput{})
-	longCopy, _ := f.service.Duplicate(t.Context(), daniel, long.ID, DuplicateInput{})
+	second, _ := f.service.Duplicate(t.Context(), daniel, fee.ID)
+	longCopy, _ := f.service.Duplicate(t.Context(), daniel, long.ID)
 
 	if first.ID != "L-1003" || first.Name != "Agency fee (copy)" || second.Name != "Agency fee (copy 2)" ||
 		longCopy.Name != strings.Repeat("n", 113)+" (copy)" {
 		t.Errorf("copies = %s %q, %q, %q", first.ID, first.Name, second.Name, longCopy.Name)
 	}
 	copied, original := first, fee
-	copied.ID, copied.Name, copied.Meta = original.ID, original.Name, original.Meta
+	copied.ID, copied.Name, copied.HXKey, copied.Meta = original.ID, original.Name, original.HXKey, original.Meta
 	if !reflect.DeepEqual(copied, original) {
 		t.Errorf("copy = %+v\nwant the values of %+v", copied, original)
 	}
@@ -46,28 +46,24 @@ func TestDuplicate_CopiesEverything_FR029(t *testing.T) { //nolint:gocyclo // 11
 	}
 }
 
-// Duplicating counts as adding a line item: on a Submitted or Approved activity only with confirmation,
-// which sends it back to Created (FR-031, US4 scenario 3).
-func TestDuplicate_RestartNeedsConfirmation_FR031(t *testing.T) {
+// Duplicating a line item of a Submitted or Approved activity needs no confirmation and keeps the activity's
+// approval (D-322); an unknown line item is not found.
+func TestDuplicate_InApprovalKeepsStatus_034_FR001(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
-	venue := f.create(t, priya, socialOnAir, confirmed(input("Venue hire", "GBP", "15800")))
-	facts := f.activities.facts[socialOnAir]
-	facts.Status = "approved"
-	f.activities.facts[socialOnAir] = facts
-	f.activities.restarts = nil
+	venue := f.create(t, priya, socialOnAir, input("Venue hire", "GBP", "15800"))
+	printRun := f.create(t, priya, tradeAds, input("Print run", "USD", "2000"))
 
-	_, refused := f.service.Duplicate(t.Context(), priya, venue.ID, DuplicateInput{})
-	dup, err := f.service.Duplicate(t.Context(), priya, venue.ID, DuplicateInput{RestartApproval: true})
-	_, gone := f.service.Duplicate(t.Context(), priya, "L-9999", DuplicateInput{RestartApproval: true})
+	dup, err := f.service.Duplicate(t.Context(), priya, venue.ID)
+	printCopy, err2 := f.service.Duplicate(t.Context(), priya, printRun.ID)
+	_, gone := f.service.Duplicate(t.Context(), priya, "L-9999")
 
-	assertError(t, refused, errs.Validation(errs.FieldError{Field: "restartApproval", Message: restartMessage}))
+	if err != nil || err2 != nil || dup.Name != "Venue hire (copy)" || printCopy.Name != "Print run (copy)" {
+		t.Fatalf("Duplicate = %q %v, %q %v; want both copies made without confirmation", dup.Name, err, printCopy.Name, err2)
+	}
+	if dup.SwbsStatus != SwbsReadyToSend || printCopy.SwbsStatus != SwbsWaitingForApproval {
+		t.Errorf("SWBS statuses %s, %s; want readyToSend (still Approved) and waitingForApproval (still Submitted)",
+			dup.SwbsStatus, printCopy.SwbsStatus)
+	}
 	assertError(t, gone, errs.NotFound(lineItemGoneMessage))
-	if err != nil || dup.ID != "L-1002" {
-		t.Fatalf("Duplicate = %+v, %v", dup, err)
-	}
-	want := []restartCall{{activityID: socialOnAir, reasons: []string{"Line item 'Venue hire (copy)' (L-1002) added: 15,800.00 GBP"}}}
-	if !reflect.DeepEqual(f.activities.restarts, want) {
-		t.Errorf("restarts = %+v, want %+v", f.activities.restarts, want)
-	}
 }

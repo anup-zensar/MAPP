@@ -37,7 +37,7 @@ var priyaBody = `{"id":"U-1002","name":"Priya Raman","firstName":"Priya","email"
 	`"scope":{"type":"myTeams","teams":[` + lubricantsEurope + `],"text":"My teams"},"scopeEmpty":false}],` +
 	`"permissions":[` + inLubricantsEurope("plans.view", "plans.create", "plans.edit", "plans.publish", "campaigns.edit",
 	"campaigns.delete", "activities.edit", "activities.delete", "activities.submit", "data.export", "finance.view",
-	"finance.link") + `],` +
+	"finance.link", "purchaseRequests.edit", "purchaseRequests.delete", "purchaseRequests.submit") + `],` + // 032 FR-049
 	`"administrators":[{"id":"U-1001","name":"Alex Morgan","initials":"AM","jobTitle":"Marketing administrator","active":true}],` +
 	`"noSelfApproval":true}}`
 
@@ -69,6 +69,7 @@ func TestGetDemoPeople_ActivePeopleAndPassword_FR001_FR002(t *testing.T) {
 		{ID: "U-1001", Name: "Alex Morgan", Email: "alex.morgan@shell.com", JobTitle: "Marketing administrator", Initials: "AM"},
 		{ID: "U-1005", Name: "Carlos Mendes", Email: "carlos.mendes@shell.com", JobTitle: "Business champion", Initials: "CM"},
 		{ID: "U-1003", Name: "Daniel Okoro", Email: "daniel.okoro@shell.com", JobTitle: "Marketing team leader", Initials: "DO"},
+		{ID: "U-1007", Name: "Lea Santos", Email: "lea.santos@shell.com", JobTitle: "Requisitioner", Initials: "LS"},
 		{ID: "U-1004", Name: "Mei Lin", Email: "mei.lin@shell.com", JobTitle: "Marketer", Initials: "ML"},
 		{ID: "U-1002", Name: "Priya Raman", Email: "priya.raman@shell.com", JobTitle: "Marketer", Initials: "PR"},
 		{ID: "U-1006", Name: "Sara Novak", Email: "sara.novak@shell.com", JobTitle: "Local finance advisor", Initials: "SN"},

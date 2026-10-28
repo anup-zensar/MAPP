@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
-import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
+import { SubjectStatusChip } from '@/ui/SubjectStatusChip/SubjectStatusChip';
 import { formatWaitingTime, localDate } from '@/format/intl';
 import { useFormatters } from '@/format/useFormatters';
 import type { Formatters } from '@/format/useFormatters';
@@ -14,20 +14,9 @@ import styles from './ApprovalsTable.module.css';
 export interface ApprovalsTableProps {
   rows: ApprovalRow[];
   tab: ApprovalTab;
-  /** Opens the preview of the row's activity. */
   onOpen: (activityId: string) => void;
 }
 
-/**
- * The rows of the approvals page (FR-030), in the order served: the activity (its name opens the
- * preview; its problems in one chip), plan › campaign, owner, planned cost, workflow,
- * the level it waits at and since when. **Decided by me** adds my decision and the current status,
- * and shows the level only while the round is open.
- *
- * The data table standard of design system §5.4: names never break inside a word, people never
- * wrap, money right-aligned under its header. Below 600 px every row is a stacked card instead
- * (inbox-type list), so nothing scrolls sideways on a phone.
- */
 export function ApprovalsTable({ rows, tab, onOpen }: ApprovalsTableProps) {
   const phone = useIsPhone();
   const decided = tab === 'decided';
@@ -36,7 +25,12 @@ export function ApprovalsTable({ rows, tab, onOpen }: ApprovalsTableProps) {
     return (
       <ul role="list" className={styles.cards}>
         {rows.map((row) => (
-          <RowCard key={row.activity.id} row={row} decided={decided} onOpen={onOpen} />
+          <RowCard
+            key={`${row.subject.kind}-${row.subject.id}`}
+            row={row}
+            decided={decided}
+            onOpen={onOpen}
+          />
         ))}
       </ul>
     );
@@ -48,8 +42,9 @@ export function ApprovalsTable({ rows, tab, onOpen }: ApprovalsTableProps) {
         <thead>
           <tr>
             <th scope="col" className={styles.nameCol}>
-              Activity
+              Record
             </th>
+            <th scope="col">Record type</th>
             <th scope="col" className={styles.pathCol}>
               Plan › campaign
             </th>
@@ -68,7 +63,12 @@ export function ApprovalsTable({ rows, tab, onOpen }: ApprovalsTableProps) {
         </thead>
         <tbody>
           {rows.map((row) => (
-            <Row key={row.activity.id} row={row} decided={decided} onOpen={onOpen} />
+            <Row
+              key={`${row.subject.kind}-${row.subject.id}`}
+              row={row}
+              decided={decided}
+              onOpen={onOpen}
+            />
           ))}
         </tbody>
       </table>
@@ -90,10 +90,11 @@ function Row({ row, decided, onOpen }: RowProps) {
     <tr>
       <th scope="row">
         <OpenButton row={row} onOpen={onOpen} />
-        <span className={styles.id}>{row.activity.id}</span>
+        <span className={styles.id}>{row.subject.id}</span>
         <DelegateNote row={row} />
         {chips && <span className={styles.chips}>{chips}</span>}
       </th>
+      <td className={styles.nowrap}>{row.subject.label}</td>
       <td>{pathText(row)}</td>
       <td className={styles.nowrap}>{row.owner ? <PersonLabel person={row.owner} /> : '—'}</td>
       <td className={styles.amount}>{format.money(row.plannedCost)}</td>
@@ -111,14 +112,13 @@ function Row({ row, decided, onOpen }: RowProps) {
       )}
       {decided && (
         <td className={styles.nowrap}>
-          <ActivityStatusChip status={row.activity.displayStatus} />
+          <SubjectStatusChip status={row.subject.displayStatus} />
         </td>
       )}
     </tr>
   );
 }
 
-/** One row as a card on a phone: the name, its chips, then the facts as label and value. */
 function RowCard({ row, decided, onOpen }: RowProps) {
   const format = useFormatters();
   const chips = rowChips(row);
@@ -128,16 +128,17 @@ function RowCard({ row, decided, onOpen }: RowProps) {
     <li className={styles.card}>
       <div className={styles.cardHead}>
         <OpenButton row={row} onOpen={onOpen} />
-        <span className={styles.id}>{row.activity.id}</span>
+        <span className={styles.id}>{row.subject.id}</span>
         <DelegateNote row={row} />
       </div>
       {(decided || chips) && (
         <div className={styles.chips}>
-          {decided && <ActivityStatusChip status={row.activity.displayStatus} />}
+          {decided && <SubjectStatusChip status={row.subject.displayStatus} />}
           {chips}
         </div>
       )}
       <dl className={styles.facts}>
+        <Fact label="Record type">{row.subject.label}</Fact>
         <Fact label="Plan › campaign">{pathText(row)}</Fact>
         <Fact label="Owner">{row.owner ? <PersonLabel person={row.owner} /> : '—'}</Fact>
         <Fact label="Planned cost">
@@ -171,19 +172,16 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** The activity's name, which opens its preview: a link-coloured button. */
+/** Every record opens in its preview panel: an activity's, or a purchase request's (032 FR-029). */
 function OpenButton({ row, onOpen }: { row: ApprovalRow; onOpen: (id: string) => void }) {
+  const { subject } = row;
   return (
-    <button type="button" className={styles.open} onClick={() => onOpen(row.activity.id)}>
-      {row.activity.name}
+    <button type="button" className={styles.open} onClick={() => onOpen(subject.id)}>
+      {subject.name}
     </button>
   );
 }
 
-/**
- * "Level 1 of 2" over the level's approvers, and "1 of 3 approved" on a level where all must
- * approve (017 FR-031); "—" once the round ended.
- */
 function LevelCell({ row }: { row: ApprovalRow }) {
   const { round } = row;
   if (round.outcome !== 'open') {
@@ -219,11 +217,6 @@ function SubmittedCell({ row, format }: { row: ApprovalRow; format: Formatters }
   );
 }
 
-/**
- * The chips of a row (008, 017 FR-031), at most two (design system §4.1): one problem chip with the
- * row's problems most pressing first — "No approver", "Overdue", "Start date passed" — and
- * "Escalated to <name>" (waiting); null when it has none.
- */
 function rowChips(row: ApprovalRow): ReactNode {
   const open = row.round.outcome === 'open';
   const problems = [
@@ -246,10 +239,6 @@ function rowChips(row: ApprovalRow): ReactNode {
   return chips.length > 0 ? chips : null;
 }
 
-/**
- * "as delegate of <names>" when the person decides this row for someone else (017 FR-031): a note
- * under the activity's ID, not a chip, as it says who decides rather than how the approval stands.
- */
 function DelegateNote({ row }: { row: ApprovalRow }) {
   if (row.round.outcome !== 'open' || !row.asDelegateOf || row.asDelegateOf.length === 0) {
     return null;
@@ -270,7 +259,6 @@ function workflowText(row: ApprovalRow): string {
   return `${row.workflow.name}${row.workflow.active ? '' : ' (inactive)'}`;
 }
 
-/** My decision over its date ("Approved" over "12 Mar 2026"), so the Decided table fits its card. */
 function DecisionCell({ row, format }: { row: ApprovalRow; format: Formatters }) {
   if (!row.myDecision) {
     return <>—</>;

@@ -18,9 +18,11 @@ import (
 	"mapp/internal/people/peopletest"
 	"mapp/internal/plan/plantest"
 	"mapp/internal/platform/fake"
+	"mapp/internal/purchaserequest/purchaserequesttest"
 	"mapp/internal/sample/sampletest"
 	"mapp/internal/settings/settingstest"
 	"mapp/internal/stores"
+	"mapp/internal/swbs/swbstest"
 )
 
 func New(db *fake.DB) stores.Set {
@@ -48,5 +50,8 @@ func planning(db *fake.DB) stores.Planning {
 }
 
 func finance(db *fake.DB) stores.Finance {
-	return stores.Finance{Budgets: budgettest.NewStore(db), Financials: financialstest.NewStore(db)}
+	return stores.Finance{
+		Budgets: budgettest.NewStore(db), Financials: financialstest.NewStore(db), SwbsRuns: swbstest.NewStore(db),
+		PurchaseRequests: purchaserequesttest.NewStore(db),
+	}
 }

@@ -24,7 +24,7 @@ func TestUsedBy_SeesEveryFeature_FR003(t *testing.T) {
 		"/api/v1/shell-attributes/SA-1011":      "Used by 11 initiatives (1 in the recycle bin)",
 		"/api/v1/shell-attributes/SA-1012":      "Used by 12 activities (1 in the recycle bin)",
 		"/api/v1/shell-attributes/SA-1033":      "Used by 9 line items (1 in the recycle bin)",
-		"/api/v1/currencies/USD":                "Used by 5 line items (1 in the recycle bin) · Display currency of 6 people · Plan currency of 3 plans",
+		"/api/v1/currencies/USD":                "Used by 5 line items (1 in the recycle bin) · Display currency of 7 people · Plan currency of 3 plans",
 		"/api/v1/currencies/CNY":                "Used by 1 line item",
 		"/api/v1/finance-budget-items/FBI-1001": "Linked to 2 line items",
 	}
@@ -63,7 +63,7 @@ func TestUsedBy_CountsTheRecycleBin_FR003(t *testing.T) {
 		"/api/v1/shell-attributes/SA-1011":      "Used by 11 initiatives (5 in the recycle bin)",
 		"/api/v1/shell-attributes/SA-1012":      "Used by 12 activities (6 in the recycle bin)",
 		"/api/v1/shell-attributes/SA-1033":      "Used by 9 line items (2 in the recycle bin)",
-		"/api/v1/currencies/USD":                "Used by 5 line items (2 in the recycle bin) · Display currency of 6 people · Plan currency of 3 plans (1 in the recycle bin)",
+		"/api/v1/currencies/USD":                "Used by 5 line items (2 in the recycle bin) · Display currency of 7 people · Plan currency of 3 plans (1 in the recycle bin)",
 		"/api/v1/currencies/CNY":                "Used by 1 line item (1 in the recycle bin)",
 		"/api/v1/finance-budget-items/FBI-1001": "Linked to 2 line items",
 	}

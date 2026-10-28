@@ -7,7 +7,7 @@ import { launchFilmSection } from '@/testing/fixtures/line-items';
 import { deleteResult } from '@/testing/fixtures/line-item-forms';
 import { activityRecord, lineItemRecord } from '@/testing/fixtures/line-item-financials';
 import { renderLineItemsSection } from '@/testing/fixtures/line-item-pages';
-import { reply } from '@/testing/replies';
+import { apiError, reply } from '@/testing/replies';
 import { LineItemsSection } from './LineItemsSection';
 
 describe('LineItemsSection, row actions (US1, US4)', () => {
@@ -84,5 +84,45 @@ describe('LineItemsSection, row actions (US1, US4)', () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/line-items/L-1001/edit'));
     expect(router.state.location.search).toBe('?field=financeBudgetItemId');
+  });
+});
+
+describe('032 FR-019: delete refused while a PR draws on it', () => {
+  it('shows the refusal naming the purchase request and keeps the row', async () => {
+    const refusal =
+      "Can't delete — purchase request PR-1002 draws on line item L-1001. Delete or close the purchase request first.";
+    mockApi([
+      reply(
+        'GET /api/v1/activities/{activityId}/line-items',
+        { body: launchFilmSection() },
+        { activityId: 'A-1001' },
+      ),
+      reply(
+        'GET /api/v1/financials/records/{recordId}',
+        { body: activityRecord() },
+        { recordId: 'A-1001' },
+      ),
+      reply(
+        'GET /api/v1/financials/records/{recordId}',
+        { body: lineItemRecord() },
+        { recordId: 'L-1001' },
+      ),
+      reply(
+        'DELETE /api/v1/line-items/{lineItemId}',
+        { status: 409, body: apiError('in_use', refusal) },
+        { lineItemId: 'L-1001' },
+      ),
+    ]);
+    const { user } = renderWithProviders(<LineItemsSection activityId="A-1001" />, {
+      route: '/plans/P-1001/activities/A-1001',
+      user: testUser(),
+    });
+
+    await user.click(await screen.findByRole('button', { name: 'Actions for Agency fee' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));
+    await user.click(await screen.findByRole('button', { name: 'Delete line item' }));
+
+    expect(await screen.findByText(refusal)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Agency fee' })).toBeVisible();
   });
 });

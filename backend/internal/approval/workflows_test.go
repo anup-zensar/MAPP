@@ -88,7 +88,7 @@ func TestCreateWorkflow_SavesOrderedLevels_FR002(t *testing.T) {
 	}
 	meta := record.NewMeta(alex, start)
 	want := WorkflowView{
-		ID: "WF-1003", Name: "Mobility India approval", Description: "For India.", Active: true,
+		ID: "WF-1003", Name: "Mobility India approval", Description: "For India.", Active: true, ObjectType: KindActivity,
 		Levels: []LevelView{
 			{Number: 1, Name: "Regional", Label: "Regional", Approvers: []PersonView{
 				{ID: carlos.ID, Name: "Carlos Mendes", Initials: "CM", Active: true}, {ID: mei.ID, Name: "Mei Lin", Initials: "ML", Active: true},
@@ -103,7 +103,7 @@ func TestCreateWorkflow_SavesOrderedLevels_FR002(t *testing.T) {
 	}
 	stored, _ := f.storedWorkflow(t, "WF-1003")
 	wantStored := Workflow{
-		ID: "WF-1003", Name: "Mobility India approval", Description: "For India.", Active: true,
+		ID: "WF-1003", Name: "Mobility India approval", Description: "For India.", Active: true, ObjectType: KindActivity,
 		Levels: []Level{
 			{Name: "Regional", ApproverType: SourcePeople, ApproverIDs: []string{carlos.ID, mei.ID}, Mode: ModeAny},
 			{ApproverType: SourcePeople, ApproverIDs: []string{alex.ID}, Mode: ModeAny},

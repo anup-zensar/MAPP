@@ -7,8 +7,6 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// recall recalls the submission of the activity id as a, naming its open round, and stops the test when
-// that fails.
 func (f *fixture) recall(t *testing.T, a actor.Actor, id, reason string) ActivityApproval {
 	t.Helper()
 	approval, err := f.service.Recall(t.Context(), a, id, RecallInput{RoundID: f.openRound(t, id).ID, Reason: reason})
@@ -18,8 +16,8 @@ func (f *fixture) recall(t *testing.T, a actor.Actor, id, reason string) Activit
 	return approval
 }
 
-// An Approved activity can't be recalled: the refusal says that a change of planned cost, dates or
-// line-item amounts sends it back for approval, and nothing changes (FR-021).
+// An Approved activity can't be recalled: the refusal says that a change of its planned cost or dates sends
+// it back for approval — line-item changes no longer do (034 FR-005) — and nothing changes (FR-021).
 func TestRecall_ApprovedRefused_FR021(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -31,7 +29,7 @@ func TestRecall_ApprovedRefused_FR021(t *testing.T) {
 
 	_, err := f.service.Recall(t.Context(), priya, "A-1004", RecallInput{RoundID: round.ID, Reason: "Changed my mind."})
 
-	reason := "Approved activities can't be recalled. Changing its planned cost, dates or line-item amounts sends it back for approval."
+	reason := "Approved activities can't be recalled. Changing its planned cost or dates sends it back for approval."
 	assertError(t, err, errs.BadRequest(reason))
 	if approval.Actions.Recall.Available || approval.Actions.Recall.Reason != reason {
 		t.Errorf("recall action = %+v, want unavailable with the reason", approval.Actions.Recall)

@@ -11,20 +11,22 @@ import (
 	"mapp/internal/platform/record"
 )
 
-// CreateWorkflow creates an active approval workflow from in, its texts without surrounding spaces, after
-// checking every rule at once (FR-002, FR-003; 017 FR-001 – FR-008, FR-025): the name, the description, the
-// reminder and escalation days and each level with its approver source, conditions and backup approver. It
-// is logged as created (FR-026).
+// CreateWorkflow creates an active approval workflow for its object type (default activity), after checking
+// every rule at once.
 func (s *Service) CreateWorkflow(ctx context.Context, a actor.Actor, in WorkflowInput) (WorkflowView, error) {
 	name, description := strings.TrimSpace(in.Name), strings.TrimSpace(in.Description)
 	levels, amountProblems := levelsOf(in.Levels)
+	kind := in.ObjectType
+	if kind == "" {
+		kind = KindActivity
+	}
 	var view WorkflowView
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
 		rc, err := s.ruleContext(ctx)
 		if err != nil {
 			return err
 		}
-		w := Workflow{Name: name, Description: description, Active: true, Levels: levels,
+		w := Workflow{Name: name, Description: description, Active: true, ObjectType: kind, Levels: levels,
 			ReminderDays: in.ReminderDays, EscalationDays: in.EscalationDays}
 		var problems errs.Problems
 		if err = s.checkWorkflow(ctx, &problems, workflowCheck{rc: rc, w: w, amountProblems: amountProblems}); err != nil {

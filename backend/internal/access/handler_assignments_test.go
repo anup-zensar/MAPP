@@ -22,9 +22,9 @@ func TestSetPersonRoles_Refusals_FR017_FR021(t *testing.T) {
 	stale := alex.Do(t, http.MethodPut, "/api/v1/people/U-1006/roles", map[string]any{"version": 7, "roles": []any{}})
 	lastAdmin := alex.Do(t, http.MethodPut, "/api/v1/people/U-1001/roles", map[string]any{"version": 1, "roles": []any{}})
 	alex.Do(t, http.MethodPost, "/api/v1/roles", map[string]any{"name": "People manager", "permissions": []string{"people.manage"},
-		"defaultScope": "all"}) // RL-1006, for Priya, who then tries to deactivate Alex
+		"defaultScope": "all"})
 	alex.Do(t, http.MethodPut, "/api/v1/people/U-1002/roles", map[string]any{"version": 1, "roles": []map[string]any{
-		{"roleId": "RL-1006", "scope": map[string]any{"type": "all"}}}})
+		{"roleId": "RL-1007", "scope": map[string]any{"type": "all"}}}})
 	deactivate := server.SignIn(t, priyasEmail).Do(t, http.MethodPost, "/api/v1/people/U-1001/status", map[string]any{"active": false, "version": 1})
 	missing := alex.Do(t, http.MethodGet, "/api/v1/people/U-9999/roles", nil)
 

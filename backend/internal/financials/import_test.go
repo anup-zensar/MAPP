@@ -71,7 +71,7 @@ func TestImport_CountsAddUpAndTwiceChangesNothing_FR006(t *testing.T) { //nolint
 	t.Parallel()
 	f := newFixture(t)
 	req := file("gsap.csv", header,
-		"PO,4500001001,10,,,2026-01-12,,15800.00,GBP,V-100101,Northlight Events GmbH,Venue hire Berlin,DE03-M26-0003,HX1003,",
+		"PO,4500001001,10,,,2026-01-12,,15800.00,GBP,V-100101,Northlight Events GmbH,Venue hire Berlin,SIM-DE03-0001,HX1003,",
 		"PO,4500001002,10,,,2026-05-04,,5200.00,USD,V-100102,Keynote Speakers Ltd,Keynote speakers,,HX1004,",
 		"PAYMENT,1500003010,,4500001002,,2026-10-01,,1000.00,USD,,,,,,",
 		"PAYMENT,1500003011,,,,2026-10-01,,1.00,USD,,,,,,",
@@ -191,7 +191,6 @@ func TestImport_RetryRelinksAndLogs_FR007(t *testing.T) {
 	}
 }
 
-// checkRelinkEntry checks the log entry of the import that linked an earlier transaction.
 func checkRelinkEntry(t *testing.T, e history.Entry) {
 	t.Helper()
 	if e.RecordType != "financialImport" || e.Verb != "imported" || e.RecordID != "FIM-1003" || e.RecordName != "po.csv" ||
@@ -201,7 +200,6 @@ func checkRelinkEntry(t *testing.T, e history.Entry) {
 	}
 }
 
-// An import never changes a manual link, even when it updates the transaction (FR-007, FR-026).
 func TestImport_KeepsManualLinks_FR007(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -219,7 +217,6 @@ func TestImport_KeepsManualLinks_FR007(t *testing.T) {
 	}
 }
 
-// A whole-file problem saves nothing; unknown columns are named in the check (FR-004).
 func TestImport_WholeFileRefusalSavesNothing_FR004(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -240,7 +237,6 @@ func TestImport_WholeFileRefusalSavesNothing_FR004(t *testing.T) {
 	}
 }
 
-// The import history is newest first; GSAP data as of is the newest import (FR-008).
 func TestImports_NewestFirstAndDataAsOf_FR008(t *testing.T) { //nolint:gocyclo // 12: the history and data as of before and after an import, then without data
 	t.Parallel()
 	f := newFixture(t)
@@ -265,7 +261,6 @@ func TestImports_NewestFirstAndDataAsOf_FR008(t *testing.T) { //nolint:gocyclo /
 	}
 }
 
-// fakeFeed is a second source of GSAP data, as a real GSAP feed later (SC-006).
 type fakeFeed struct{ rows []Incoming }
 
 func (fakeFeed) Name() string { return "GSAP PGSI 941" }
@@ -276,8 +271,6 @@ func (f fakeFeed) Read(context.Context, Delivery) ([]Incoming, []RowProblem, []s
 	return f.rows, nil, nil, nil
 }
 
-// Another feed replaces the simulated extract with no other change: the same checks, matching and figures
-// (FR-003, SC-006).
 func TestImport_AnotherFeed_FR003(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -294,7 +287,6 @@ func TestImport_AnotherFeed_FR003(t *testing.T) {
 	}
 }
 
-// The sample file has the header and three rows that import cleanly (FR-009).
 func TestTemplate_ImportsCleanly_FR009(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

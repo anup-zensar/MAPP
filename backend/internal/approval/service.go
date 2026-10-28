@@ -26,6 +26,7 @@ type Service struct {
 	repo         Store
 	people       People
 	activities   Activities
+	purchases    PurchaseRequests // nil until feature 032 is connected
 	ids          *ids.Generator
 	history      *history.Service
 	now          clock.Clock
@@ -49,7 +50,6 @@ func (s *Service) UseRuleChoices(choices RuleChoices) {
 	s.choices = choices
 }
 
-// openAccess is a service without feature 014: everyone holds every permission, the access rule is on, no roles.
 type openAccess struct{}
 
 func (openAccess) CanApprove(_ context.Context, personIDs []string) (map[string]bool, error) {
@@ -89,7 +89,6 @@ func (s *Service) activity(ctx context.Context, id string) (ActivityFacts, error
 	return facts, nil
 }
 
-// directory is every person by id, read once per operation.
 type directory struct {
 	byID      map[string]people.Person
 	approving map[string]bool // nil: access control is not wired
@@ -185,7 +184,7 @@ func changeText(c ChangeText) string {
 	const notFilledIn = "Not filled in"
 	switch {
 	case c.OldText == "" && c.NewText == "":
-		return c.Label // a ready-made sentence, such as a line-item change of 007
+		return c.Label
 	case c.OldText == notFilledIn:
 		return fmt.Sprintf("%s added: %s", c.Label, c.NewText)
 	case c.NewText == notFilledIn:
@@ -195,24 +194,23 @@ func changeText(c ChangeText) string {
 	}
 }
 
-func activityText(facts ActivityFacts) string {
-	return fmt.Sprintf("'%s' (%s)", facts.Name, facts.ID)
+func subjectText(sub subject) string {
+	return fmt.Sprintf("'%s' (%s)", sub.Name, sub.ID)
 }
 
 // notifier tells each person once per action, whatever the number of sends, and never the actor.
 type notifier struct {
 	service *Service
 	actor   actor.Actor
-	facts   ActivityFacts
+	sub     subject
 	at      time.Time
 	told    map[string]bool
 }
 
-func (s *Service) notifier(a actor.Actor, facts ActivityFacts, at time.Time) *notifier {
-	return &notifier{service: s, actor: a, facts: facts, at: at, told: map[string]bool{a.ID: true}}
+func (s *Service) notifier(a actor.Actor, sub subject, at time.Time) *notifier {
+	return &notifier{service: s, actor: a, sub: sub, at: at, told: map[string]bool{a.ID: true}}
 }
 
-// send skips an empty id: an activity without owner.
 func (n *notifier) send(ctx context.Context, recipientIDs []string, kind NotificationKind, title, text string) error {
 	for _, id := range recipientIDs {
 		if id == "" || n.told[id] {
@@ -224,8 +222,8 @@ func (n *notifier) send(ctx context.Context, recipientIDs []string, kind Notific
 			return err
 		}
 		err = n.service.repo.PutNotification(ctx, Notification{
-			ID: notificationID, RecipientID: id, Kind: kind, Title: title, Text: text,
-			ActivityID: n.facts.ID, ActivityName: n.facts.Name, Actor: n.actor, At: n.at,
+			ID: notificationID, RecipientID: id, Kind: kind, Title: title, Text: text, SubjectKind: n.sub.Kind,
+			SubjectID: n.sub.ID, SubjectName: n.sub.Name, Actor: n.actor, At: n.at,
 		})
 		if err != nil {
 			return err
@@ -251,12 +249,12 @@ func idsOf(actors []actor.Actor) []string {
 }
 
 type statusLog struct {
-	verb             string // "submitted", "approved level 1 of", …
-	oldStatus, newer string // both "" when the status stays
+	verb             string
+	oldStatus, newer string // equal when the status stays
 	comment, details string
 }
 
-func (s *Service) logOnActivity(ctx context.Context, a actor.Actor, facts ActivityFacts, entry statusLog) error {
+func (s *Service) logOn(ctx context.Context, a actor.Actor, sub subject, entry statusLog) error {
 	changes := []history.Change{}
 	if entry.oldStatus != entry.newer {
 		oldValue, err := json.Marshal(entry.oldStatus)
@@ -270,9 +268,9 @@ func (s *Service) logOnActivity(ctx context.Context, a actor.Actor, facts Activi
 		changes = append(changes, history.Change{Field: "status", Old: oldValue, New: newValue})
 	}
 	_, err := s.history.Log(ctx, a, history.LogInput{
-		Kind:       activityKind,
-		RecordID:   facts.ID,
-		RecordName: facts.Name,
+		Kind:       sub.Kind.recordType(),
+		RecordID:   sub.ID,
+		RecordName: sub.Name,
 		Action:     history.ActionStatusChanged,
 		Verb:       entry.verb,
 		Changes:    changes,

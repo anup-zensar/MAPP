@@ -12,6 +12,7 @@ import type { TabItem } from '@/ui/Tabs/Tabs';
 import { useAccess } from '@/session/access';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useFormatters } from '@/format/useFormatters';
+import { SimulatedGsapPanel } from '@/features/simulated-gsap';
 import { useFinancialTransactions } from './api';
 import type { FinancialTransactionPage } from './api';
 import { clearedFilters, filtersInUse, TABS, writeFilters } from './financials-links';
@@ -36,11 +37,9 @@ import { useNarrow } from './useNarrow';
 import styles from './FinancialsPage.module.css';
 
 /**
- * Financials (015 US3, FR-020 – FR-022), at /financials: every purchase order, invoice, payment and
- * accrual GSAP has sent, with tabs by type, search, year, plan and the record filter of the cards'
- * links, the four totals for the filters, and the table, paged by 50, 100 or 200. Everything is
- * kept in the address. A row opens its details panel at /financials/transactions/<id> (the child
- * route renders in the outlet). Import GSAP extract and Import history are in the header (US4).
+ * Financials (015 US3, FR-020 – FR-022): GSAP's transactions by type with search, filters, totals and
+ * paging, all kept in the address; a row opens its panel in the outlet. Importers also see the
+ * simulated GSAP's SWBS runs (030 FR-013).
  */
 export function FinancialsPage() {
   usePageTitle('Financials');
@@ -50,7 +49,7 @@ export function FinancialsPage() {
   const transactions = useFinancialTransactions(filters);
   const narrow = useNarrow();
   const [open, setOpen] = useState<'import' | 'history' | null>(null);
-  // 014 FR-011: Import GSAP extract only for a person who may import (finance.import).
+  // 014 FR-011, 030 FR-013: importing and the simulated GSAP only for a person who may import.
   const canImport = useAccess().has('finance.import');
   const data = transactions.data;
   const forbidden =
@@ -146,6 +145,7 @@ export function FinancialsPage() {
               )}
             </section>
           </Tabs>
+          {canImport && <SimulatedGsapPanel />}
         </div>
       )}
 

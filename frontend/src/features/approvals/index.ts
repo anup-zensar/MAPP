@@ -2,11 +2,13 @@
 // delegation.
 export { ApprovalAlert } from './ApprovalAlert';
 export { ApprovalChain } from './ApprovalChain';
+export { ApprovalHistory } from './ApprovalHistory';
 export { ApprovalSection } from './ApprovalSection';
 export { ApprovalsNavBadge } from './ApprovalsNavBadge';
 export { ApprovalsPage } from './ApprovalsPage';
 export { DecisionButton } from './DecisionButton';
 export { DecisionDialog } from './DecisionDialog';
+export { PurchaseRequestDecisionDialog } from './PurchaseRequestDecisionDialog';
 export { SubmitButton } from './SubmitButton';
 export type { ApprovalActivity, ShowSubmitProblems } from './approval-types';
 export { invalidateAllButSession, useActivityApproval } from './api';
@@ -19,4 +21,8 @@ export type {
   ApprovalSubmission,
 } from './api';
 export { declineBoxText } from './decision-messages';
+export type {
+  PurchaseRequestApproval,
+  PurchaseRequestApprovalSection,
+} from './purchase-request-api';
 export { activitiesCount, levelOf, names, timingsText } from './messages';

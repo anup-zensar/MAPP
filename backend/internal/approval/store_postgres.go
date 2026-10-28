@@ -78,7 +78,7 @@ func copyOfWorkflow(w Workflow) Workflow {
 func (s *PostgresStore) PutWorkflow(ctx context.Context, w Workflow) error {
 	q := s.change(ctx)
 	err := q.PutWorkflow(ctx, sqlcdb.PutWorkflowParams{
-		ID: w.ID, Name: w.Name, Description: w.Description, Active: w.Active, ReminderDays: w.ReminderDays,
+		ID: w.ID, Name: w.Name, Description: w.Description, Active: w.Active, ObjectType: string(w.Kind()), ReminderDays: w.ReminderDays,
 		EscalationDays: w.EscalationDays, Version: w.Version, CreatedAt: w.CreatedAt, CreatedByID: w.CreatedBy.ID,
 		CreatedByName: w.CreatedBy.Name, UpdatedAt: w.UpdatedAt, UpdatedByID: w.UpdatedBy.ID,
 		UpdatedByName: w.UpdatedBy.Name,
@@ -114,7 +114,7 @@ func (s *PostgresStore) insertLevel(ctx context.Context, workflowID string, numb
 	err := q.InsertWorkflowLevel(ctx, sqlcdb.InsertWorkflowLevelParams{
 		WorkflowID: workflowID, Number: number, Name: l.Name, ApproverType: l.ApproverType, RoleID: l.RoleID,
 		Mode: l.Mode, AppliesWhen: appliesWhen, AutoApproveWhen: autoApproveWhen,
-		BackupApproverID: database.NullIfEmpty(l.BackupApproverID),
+		BackupApproverID: database.NullIfEmpty(l.BackupApproverID), RecordField: l.RecordField,
 	})
 	if err != nil {
 		return err
@@ -150,7 +150,7 @@ func workflowFromRow(row sqlcdb.ApprovalWorkflow, levels []Level) Workflow {
 		levels = []Level{}
 	}
 	return Workflow{
-		ID: row.ID, Name: row.Name, Description: row.Description, Active: row.Active, Levels: levels,
+		ID: row.ID, Name: row.Name, Description: row.Description, Active: row.Active, ObjectType: SubjectKind(row.ObjectType), Levels: levels,
 		ReminderDays: row.ReminderDays, EscalationDays: row.EscalationDays,
 		Meta: record.Meta{
 			Version:   row.Version,
@@ -165,7 +165,7 @@ func workflowFromRow(row sqlcdb.ApprovalWorkflow, levels []Level) Workflow {
 func levelFromRow(row sqlcdb.ApprovalWorkflowLevel, approverIDs []string) (Level, error) {
 	l := Level{
 		Name: row.Name, ApproverType: row.ApproverType, ApproverIDs: approverIDs, RoleID: row.RoleID, Mode: row.Mode,
-		BackupApproverID: database.EmptyIfNull(row.BackupApproverID),
+		BackupApproverID: database.EmptyIfNull(row.BackupApproverID), RecordField: row.RecordField,
 	}
 	err := errors.Join(json.Unmarshal(row.AppliesWhen, &l.AppliesWhen), json.Unmarshal(row.AutoApproveWhen, &l.AutoApproveWhen))
 	if err != nil {

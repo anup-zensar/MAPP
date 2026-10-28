@@ -12,11 +12,11 @@ import (
 
 const insertAction = `-- name: InsertAction :exec
 INSERT INTO approval_actions (
-    id, round_id, round_number, activity_id, action, level, level_name, approvers, actor_id, actor_name,
+    id, round_id, round_number, subject_id, action, level, level_name, approvers, actor_id, actor_name,
     on_behalf_of, at, comment, changes, capacity, as_delegate_of_id, as_delegate_of_name, rule, escalated_to_id,
-    escalated_to_name, waited_days
+    escalated_to_name, waited_days, subject_kind, self_approval
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
 )
 `
 
@@ -24,7 +24,7 @@ type InsertActionParams struct {
 	ID               string
 	RoundID          string
 	RoundNumber      int
-	ActivityID       string
+	SubjectID        string
 	Action           string
 	Level            int
 	LevelName        string
@@ -42,6 +42,8 @@ type InsertActionParams struct {
 	EscalatedToID    *string
 	EscalatedToName  *string
 	WaitedDays       int
+	SubjectKind      string
+	SelfApproval     bool
 }
 
 func (q *Queries) InsertAction(ctx context.Context, arg InsertActionParams) error {
@@ -49,7 +51,7 @@ func (q *Queries) InsertAction(ctx context.Context, arg InsertActionParams) erro
 		arg.ID,
 		arg.RoundID,
 		arg.RoundNumber,
-		arg.ActivityID,
+		arg.SubjectID,
 		arg.Action,
 		arg.Level,
 		arg.LevelName,
@@ -67,21 +69,23 @@ func (q *Queries) InsertAction(ctx context.Context, arg InsertActionParams) erro
 		arg.EscalatedToID,
 		arg.EscalatedToName,
 		arg.WaitedDays,
+		arg.SubjectKind,
+		arg.SelfApproval,
 	)
 	return err
 }
 
 const listActions = `-- name: ListActions :many
-SELECT id, round_id, round_number, activity_id, action, level, level_name, approvers, actor_id, actor_name,
+SELECT id, round_id, round_number, subject_id, action, level, level_name, approvers, actor_id, actor_name,
     on_behalf_of, at, comment, changes, capacity, as_delegate_of_id, as_delegate_of_name, rule, escalated_to_id,
-    escalated_to_name, waited_days
+    escalated_to_name, waited_days, subject_kind, self_approval
 FROM approval_actions
-WHERE $1::text IS NULL OR activity_id = $1
+WHERE $1::text IS NULL OR subject_id = $1
 ORDER BY length(id), id COLLATE "C"
 `
 
-func (q *Queries) ListActions(ctx context.Context, activityID *string) ([]ApprovalAction, error) {
-	rows, err := q.db.Query(ctx, listActions, activityID)
+func (q *Queries) ListActions(ctx context.Context, subjectID *string) ([]ApprovalAction, error) {
+	rows, err := q.db.Query(ctx, listActions, subjectID)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +97,7 @@ func (q *Queries) ListActions(ctx context.Context, activityID *string) ([]Approv
 			&i.ID,
 			&i.RoundID,
 			&i.RoundNumber,
-			&i.ActivityID,
+			&i.SubjectID,
 			&i.Action,
 			&i.Level,
 			&i.LevelName,
@@ -111,6 +115,8 @@ func (q *Queries) ListActions(ctx context.Context, activityID *string) ([]Approv
 			&i.EscalatedToID,
 			&i.EscalatedToName,
 			&i.WaitedDays,
+			&i.SubjectKind,
+			&i.SelfApproval,
 		); err != nil {
 			return nil, err
 		}
@@ -123,12 +129,13 @@ func (q *Queries) ListActions(ctx context.Context, activityID *string) ([]Approv
 }
 
 const listActionsInScope = `-- name: ListActionsInScope :many
-SELECT id, round_id, round_number, activity_id, action, level, level_name, approvers, actor_id, actor_name,
+SELECT id, round_id, round_number, subject_id, action, level, level_name, approvers, actor_id, actor_name,
     on_behalf_of, at, comment, changes, capacity, as_delegate_of_id, as_delegate_of_name, rule, escalated_to_id,
-    escalated_to_name, waited_days
+    escalated_to_name, waited_days, subject_kind, self_approval
 FROM approval_actions
-WHERE activity_in_scope(activity_id, $1::boolean, $2::text,
-    $3::boolean, $4::text[])
+WHERE subject_kind = 'activity'
+    AND activity_in_scope(subject_id, $1::boolean, $2::text,
+        $3::boolean, $4::text[])
 ORDER BY length(id), id COLLATE "C"
 `
 
@@ -157,7 +164,7 @@ func (q *Queries) ListActionsInScope(ctx context.Context, arg ListActionsInScope
 			&i.ID,
 			&i.RoundID,
 			&i.RoundNumber,
-			&i.ActivityID,
+			&i.SubjectID,
 			&i.Action,
 			&i.Level,
 			&i.LevelName,
@@ -175,6 +182,8 @@ func (q *Queries) ListActionsInScope(ctx context.Context, arg ListActionsInScope
 			&i.EscalatedToID,
 			&i.EscalatedToName,
 			&i.WaitedDays,
+			&i.SubjectKind,
+			&i.SelfApproval,
 		); err != nil {
 			return nil, err
 		}

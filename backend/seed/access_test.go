@@ -9,8 +9,8 @@ import (
 	"mapp/internal/platform/authz"
 )
 
-// The seed holds the five roles of spec Table B (RL-1001 … RL-1005) with their permissions, descriptions and
-// default scopes, the roles of the six demo people and the access rules' defaults (FR-040, plan "Demo data").
+// The seed holds the five roles of spec Table B (RL-1001 … RL-1005) and 032's Requisitioner with their permissions,
+// descriptions and default scopes, the roles of the seven demo people and the access rules' defaults (FR-040).
 func TestSeed_RolesAssignmentsAndRules_FR040(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
@@ -31,11 +31,12 @@ func TestSeed_RolesAssignmentsAndRules_FR040(t *testing.T) {
 		}
 	}
 	wantRoles := []role{
-		{"RL-1001", "Administrator", authz.BuiltInAdministrator, 25, authz.ScopeAll},
-		{"RL-1002", "Global planner", authz.BuiltInGlobalPlanner, 16, authz.ScopeAll},
-		{"RL-1003", "Planner", authz.BuiltInPlanner, 12, authz.ScopeMyTeams},
+		{"RL-1001", "Administrator", authz.BuiltInAdministrator, 29, authz.ScopeAll},
+		{"RL-1002", "Global planner", authz.BuiltInGlobalPlanner, 20, authz.ScopeAll},
+		{"RL-1003", "Planner", authz.BuiltInPlanner, 15, authz.ScopeMyTeams},
 		{"RL-1004", "Approver", authz.BuiltInApprover, 4, authz.ScopeMyTeams},
 		{"RL-1005", "Viewer", authz.BuiltInViewer, 3, authz.ScopeMyTeams},
+		{"RL-1006", "Requisitioner", "", 3, authz.ScopeAll},
 	}
 	if !slices.Equal(roles, wantRoles) {
 		t.Errorf("roles =\n%v\nwant\n%v", roles, wantRoles)
@@ -81,13 +82,14 @@ func TestSeed_RolesAssignmentsAndRules_FR040(t *testing.T) {
 		}
 	}
 	wantAssignments := []string{
-		"RA-1001 U-1001 RL-1001 all",     // Alex: Administrator
-		"RA-1002 U-1005 RL-1002 all",     // Carlos: Global planner
-		"RA-1003 U-1003 RL-1003 myTeams", // Daniel: Planner
-		"RA-1004 U-1003 RL-1004 myTeams", // Daniel: Approver
-		"RA-1005 U-1002 RL-1003 myTeams", // Priya: Planner
-		"RA-1006 U-1004 RL-1003 myTeams", // Mei: Planner
-		"RA-1007 U-1006 RL-1005 myTeams", // Sara: Viewer
+		"RA-1001 U-1001 RL-1001 all",
+		"RA-1002 U-1005 RL-1002 all",
+		"RA-1003 U-1003 RL-1003 myTeams",
+		"RA-1004 U-1003 RL-1004 myTeams",
+		"RA-1005 U-1002 RL-1003 myTeams",
+		"RA-1006 U-1004 RL-1003 myTeams",
+		"RA-1007 U-1006 RL-1005 myTeams",
+		"RA-1008 U-1007 RL-1006 all",
 	}
 	if !slices.Equal(assignments, wantAssignments) {
 		t.Errorf("assignments =\n%q\nwant\n%q", assignments, wantAssignments)

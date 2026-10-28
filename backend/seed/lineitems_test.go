@@ -12,8 +12,7 @@ import (
 	"mapp/internal/settings"
 )
 
-// The line items of 007 data model §8, L-1001 … L-1008, with their activities, currencies, planned costs,
-// spreads and finance coding; every one has its activity's owner and the finance budget year 2026.
+// Every line item has its activity's owner, the finance budget year 2026 and finance coding from Shell's lists (D-325).
 func TestLoad_LineItems_FR009(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
@@ -47,26 +46,25 @@ func TestLoad_LineItems_FR009(t *testing.T) {
 		}
 	}
 	want := []string{
-		"L-1001 Launch film Agency fee USD 50,000.00 evenly[] swbs=true FBI-1001 / Digital – Platform development / 7250080 – Advertising digital",
+		"L-1001 Launch film Agency fee USD 50,000.00 evenly[] swbs=true FBI-1001 / ATL - Digital / 7250080 - Advertising - Digital",
 		"L-1002 Launch film Film production EUR 46,000.00 evenly[] swbs=true ",
-		"L-1003 Social always-on Venue hire GBP 15,800.00 firstMonth[] swbs=true FBI-1002 / BTL – Event / 7250040 – Events and sponsorship",
-		"L-1004 Social always-on Speaker fees USD 5,000.00 lastMonth[] swbs=false FBI-1002 / BTL – Event / 7250040 – Events and sponsorship",
+		"L-1003 Social always-on Venue hire GBP 15,800.00 firstMonth[] swbs=true FBI-1002 / BTL - Event / 7250150 - Sponsorship programmes",
+		"L-1004 Social always-on Speaker fees USD 5,000.00 lastMonth[] swbs=false FBI-1002 / BTL - Event / 7250150 - Sponsorship programmes",
 		"L-1005 Trade magazine ads Media booking USD 30,000.00 custom[2026-03=6,000.00 2026-04=4,000.00 2026-05=4,000.00 " +
-			"2026-06=4,000.00 2026-07=4,000.00 2026-08=4,000.00 2026-09=4,000.00] swbs=true FBI-1001 / Digital – Platform development / 7250080 – Advertising digital",
-		"L-1006 Billboard winter wave Stand build EUR 9,200.00 evenly[] swbs=true FBI-1003 / BTL – Event / 7250040 – Events and sponsorship",
-		"L-1007 Grand opening Shanghai Station signage USD 1,000.00 custom[2026-04=450.00 2026-05=450.00] swbs=true FBI-1004 / BTL – Event",
-		"L-1008 Grand opening Shanghai Fleet card promotion CNY 280,450.00 evenly[] swbs=true FBI-1005 / Digital – Platform development / 7250080 – Advertising digital",
-		"L-1009 UK launch event Venue GBP 15,000.00 evenly[] swbs=true  / BTL – Event / 7250040 – Events and sponsorship",
-		"L-1010 UK launch event Agency fee (Ireland) EUR 23,000.00 evenly[] swbs=true  / Agency – Creative / 7250060 – Agency fees",
+			"2026-06=4,000.00 2026-07=4,000.00 2026-08=4,000.00 2026-09=4,000.00] swbs=true FBI-1001 / ATL - Digital / 7250080 - Advertising - Digital",
+		"L-1006 Billboard winter wave Stand build EUR 9,200.00 evenly[] swbs=true FBI-1003 / BTL - Event / 7250150 - Sponsorship programmes",
+		"L-1007 Grand opening Shanghai Station signage USD 1,000.00 custom[2026-04=450.00 2026-05=450.00] swbs=true FBI-1004 / BTL - Event",
+		"L-1008 Grand opening Shanghai Fleet card promotion CNY 280,450.00 evenly[] swbs=true FBI-1005 / ATL - Digital / 7250080 - Advertising - Digital",
+		"L-1009 UK launch event Venue GBP 15,000.00 evenly[] swbs=true  / BTL - Event / 7250150 - Sponsorship programmes",
+		"L-1010 UK launch event Agency fee (Ireland) EUR 23,000.00 evenly[] swbs=true  / BTL - Agency Fees / 7250060 - Advertising - Corp/Agency/Production",
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("line items =\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
 	}
 }
 
-// With the seeded exchange rates, the unassigned planned cost of the demo story holds: Launch film keeps
-// 20,000.00 USD unassigned (spec US1), Grand opening Shanghai's line items exceed its planned cost by
-// 500.00 USD (006 US2), Fleet roadshow has no line items (007 data model §3.7, §8).
+// With the seeded rates, the demo story's unassigned planned cost holds: Launch film keeps 20,000.00 USD, Grand
+// opening Shanghai's line items exceed its planned cost by 500.00 USD, and Fleet roadshow has no line items.
 func TestLoad_UnassignedPlannedCost_US1(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)

@@ -8,8 +8,6 @@ import (
 	"mapp/internal/platform/apitest"
 )
 
-// The attributes of a level come in display order — sections in the order of their first attribute — and
-// every level's without the filter; an unknown level is refused (FR-019).
 func TestShellAttributesAPI_ListByLevel_FR019(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -23,13 +21,12 @@ func TestShellAttributesAPI_ListByLevel_FR019(t *testing.T) {
 		activity[15].Section != "Mobility attributes" {
 		t.Errorf("activity attributes = %+v", activity)
 	}
-	if len(all) != 35 || all[0].Label != "Business unit" || all[34].Label != "Contracted spend" {
+	if len(all) != 56 || all[0].Label != "Business unit" || all[34].Label != "Contracted spend" || all[55].Label != "Material / service code" {
 		t.Errorf("%d attributes, first %+v", len(all), all[0])
 	}
 	assertAnswer(t, unknown, http.StatusBadRequest, `{"error":{"code":"bad_request","message":"MAPP couldn't read this request. Reload the page and try again.","fields":[]}}`)
 }
 
-// listedAttribute is the part of an attribute these tests read.
 type listedAttribute struct {
 	ID, Label, Section string
 	BusinessUnit       bool
@@ -38,7 +35,6 @@ type listedAttribute struct {
 	OptionCount        int
 }
 
-// attributeList lists the attributes with the query.
 func attributeList(t *testing.T, c *apitest.Client, query string) []listedAttribute {
 	t.Helper()
 	var page struct{ Items []listedAttribute }
@@ -46,7 +42,6 @@ func attributeList(t *testing.T, c *apitest.Client, query string) []listedAttrib
 	return page.Items
 }
 
-// findAttribute returns the attribute label of the level.
 func findAttribute(t *testing.T, c *apitest.Client, level, label string) listedAttribute {
 	t.Helper()
 	for _, a := range attributeList(t, c, "?level="+level) {
@@ -81,20 +76,16 @@ func TestShellAttributesAPI_Get_FR020(t *testing.T) {
 	assertAnswer(t, gone, http.StatusNotFound, `{"error":{"code":"not_found","message":"This Shell attribute no longer exists — someone may have deleted it.","fields":[]}}`)
 }
 
-// Bodies of the Shell attribute tests.
 const (
 	attributeGoneBody = `{"error":{"code":"not_found","message":"This Shell attribute no longer exists — someone may have deleted it.","fields":[]}}`
 	optionGoneBody    = `{"error":{"code":"not_found","message":"This option no longer exists — someone may have deleted it.","fields":[]}}`
 )
 
-// mediaChannelBody is the new activity attribute of US2-1: a single choice with four options, needed to
-// submit.
 var mediaChannelBody = map[string]any{
 	"label": "Media channel", "level": "activity", "type": "singleChoice", "marking": "neededToSubmit", "section": "Shell attributes",
 	"options": []map[string]any{{"label": "TV"}, {"label": "Radio"}, {"label": "Print"}, {"label": "Online"}},
 }
 
-// savedAttribute is the part of an attribute answer these tests read.
 type savedAttribute struct {
 	ID, Label, Section, Type, Marking string
 	Position, Version, OptionCount    int
@@ -102,14 +93,12 @@ type savedAttribute struct {
 	ParentAttribute                   *struct{ ID, Name string }
 }
 
-// savedOption is the part of an option answer these tests read.
 type savedOption struct {
 	ID, AttributeID, Label string
 	Position, Version      int
 	Active                 bool
 }
 
-// createMediaChannel creates Media channel and returns it with its options.
 func createMediaChannel(t *testing.T, c *apitest.Client) (savedAttribute, []savedOption) {
 	t.Helper()
 	var created savedAttribute
@@ -277,7 +266,6 @@ func TestShellAttributesAPI_Delete_FR004(t *testing.T) {
 	assertAnswer(t, gone, http.StatusNotFound, attributeGoneBody)
 }
 
-// assertLastOfShellAttributes checks that the attribute id comes last in the section "Shell attributes" of list.
 func assertLastOfShellAttributes(t *testing.T, list []listedAttribute, id string) {
 	t.Helper()
 	for i, a := range list {

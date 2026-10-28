@@ -12,10 +12,6 @@ import (
 	"mapp/internal/platform/date"
 )
 
-// The approval rounds of 008 data model §8 match the seeded statuses: approved activities have one approved
-// round, Trade magazine ads was declined in round 1 and waits for Daniel Okoro in round 2, Fleet roadshow was
-// declined, Fleet card launch waits at level 2 for Alex Morgan after Carlos Mendes approved level 1; Created
-// activities have none (FR-037).
 func TestLoad_ApprovalRounds_FR037(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
@@ -26,17 +22,17 @@ func TestLoad_ApprovalRounds_FR037(t *testing.T) {
 	}
 
 	var got []string
-	last := map[string]approval.Round{} // activity → its last round
+	last := map[string]approval.Round{}
 	for _, r := range d.rounds {
 		ended := "open"
 		if r.EndedAt != nil {
 			ended = "ended " + days(r.EndedAt.Sub(loadedAt))
 		}
 		waiting := r.Levels[r.CurrentLevel-1].Approvers[0].Name
-		got = append(got, fmt.Sprintf("%s %s #%d %s %s level %d of %d (%s) submitted %s by %s, %s", r.ID, nameOf[r.ActivityID],
+		got = append(got, fmt.Sprintf("%s %s #%d %s %s level %d of %d (%s) submitted %s by %s, %s", r.ID, nameOf[r.SubjectID],
 			r.Number, r.WorkflowID, r.Outcome, r.CurrentLevel, len(r.Levels), waiting, days(r.SubmittedAt.Sub(loadedAt)),
 			r.SubmittedBy.Name, ended))
-		last[r.ActivityID] = r
+		last[r.SubjectID] = r
 	}
 	want := []string{
 		"AR-1001 Social always-on #1 WF-1001 approved level 1 of 1 (Daniel Okoro) submitted -40d by Priya Raman, ended -38d",
@@ -70,14 +66,12 @@ func TestLoad_ApprovalRounds_FR037(t *testing.T) {
 	}
 }
 
-// Each round has its history entries, oldest first: the submission, then each decision with its comment
-// (008 data model §3).
 func TestLoad_ApprovalHistory_FR025(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
 	var got []string
 	for _, a := range d.actions {
-		got = append(got, fmt.Sprintf("%s %s #%d %s level %d by %s %s %q", a.ID, a.ActivityID, a.RoundNumber, a.Action, a.Level,
+		got = append(got, fmt.Sprintf("%s %s #%d %s level %d by %s %s %q", a.ID, a.SubjectID, a.RoundNumber, a.Action, a.Level,
 			a.Actor.Name, days(a.At.Sub(loadedAt)), a.Comment))
 		if len(a.Approvers) == 0 || a.OnBehalfOf == nil || a.Changes == nil {
 			t.Errorf("%s: approvers %v, on behalf of %v, changes %v", a.ID, a.Approvers, a.OnBehalfOf, a.Changes)
@@ -105,8 +99,6 @@ func TestLoad_ApprovalHistory_FR025(t *testing.T) {
 	}
 }
 
-// The notifications of 008 data model §8: Daniel, Alex and Mei Lin each have one unread; Priya Raman has
-// the unread decline of Fleet roadshow and five read ones (FR-033).
 func TestLoad_Notifications_FR033(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
@@ -141,7 +133,6 @@ func TestLoad_Notifications_FR033(t *testing.T) {
 	}
 }
 
-// days writes a duration before the seed time in whole days ("-40d"), or hours below one day ("-2h").
 func days(d time.Duration) string {
 	if d > -24*time.Hour && d < 24*time.Hour {
 		return fmt.Sprintf("%dh", int(d.Hours()))
@@ -149,10 +140,6 @@ func days(d time.Duration) string {
 	return fmt.Sprintf("%dd", int(d.Hours()/24))
 }
 
-// The demo data of feature 017 (FR-037, data-model §13): line managers; WF-1001 reminds after 1 day and
-// escalates after 2 to Alex Morgan; WF-1002 after 3 and 5 with backups Alex Morgan and Carlos Mendes; WF-1003
-// "Standard marketing approval" with its three rules; the seeded rounds carry their facts, timings and
-// backups, Trade magazine ads waiting since its submission; DLG-1001 Daniel Okoro → Carlos Mendes, planned.
 func TestSeed_ApprovalRules_FR037(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
@@ -183,6 +170,7 @@ func TestSeed_ApprovalRules_FR037(t *testing.T) {
 		"WF-1001 1/2 | people any U-1003 backup U-1001",
 		"WF-1002 3/5 | people any U-1005 backup U-1001 | people any U-1001 backup U-1005",
 		"WF-1003 3/5 | manager any  backup U-1001 automatic when | people any U-1001 backup U-1005 only when | people all U-1003,U-1001 backup U-1005 only when",
+		"WF-1004 3/5 | recordField any  backup U-1001", "WF-1005 3/5 | recordField any  backup U-1001", // 032 FR-051
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("workflows =\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))

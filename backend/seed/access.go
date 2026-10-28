@@ -8,8 +8,7 @@ import (
 	"mapp/internal/platform/ids"
 )
 
-// The roles of feature 014 (spec Table B, plan "Demo data"), RL-1001 … RL-1005, with their permissions in
-// Table A order and the scope the People tab proposes.
+// The roles of 014's Table B, RL-1001 … RL-1005, and 032's Requisitioner RL-1006, permissions in Table A order.
 var demoRoles = []struct {
 	name, builtIn, description string
 	permissions                []authz.Permission
@@ -22,21 +21,25 @@ var demoRoles = []struct {
 			authz.PlansView, authz.PlansCreate, authz.PlansEdit, authz.PlansPublish, authz.PlansDelete,
 			authz.CampaignsEdit, authz.CampaignsDelete, authz.ActivitiesEdit, authz.ActivitiesDelete,
 			authz.ActivitiesSubmit, authz.DataExport, authz.FinanceView, authz.FinanceLink, authz.ApprovalsDecide,
-			authz.GlobalBudgetsView, authz.GlobalBudgetsManage,
+			authz.GlobalBudgetsView, authz.GlobalBudgetsManage, authz.PurchaseRequestsEdit, authz.PurchaseRequestsDelete,
+			authz.PurchaseRequestsSubmit, authz.PurchaseRequestsList,
 		}, authz.ScopeAll},
 	{"Planner", authz.BuiltInPlanner, "Plans for their own markets.",
 		[]authz.Permission{
 			authz.PlansView, authz.PlansCreate, authz.PlansEdit, authz.PlansPublish,
 			authz.CampaignsEdit, authz.CampaignsDelete, authz.ActivitiesEdit, authz.ActivitiesDelete,
 			authz.ActivitiesSubmit, authz.DataExport, authz.FinanceView, authz.FinanceLink,
+			authz.PurchaseRequestsEdit, authz.PurchaseRequestsDelete, authz.PurchaseRequestsSubmit,
 		}, authz.ScopeMyTeams},
 	{"Approver", authz.BuiltInApprover, "Approves activities they are named on.",
 		[]authz.Permission{authz.PlansView, authz.DataExport, authz.FinanceView, authz.ApprovalsDecide}, authz.ScopeMyTeams},
 	{"Viewer", authz.BuiltInViewer, "Sees plans of their markets without changing them.",
 		[]authz.Permission{authz.PlansView, authz.DataExport, authz.FinanceView}, authz.ScopeMyTeams},
+	{requisitioner, "", "Turns approved purchase requests into GSAP purchase requests.",
+		[]authz.Permission{authz.PlansView, authz.FinanceImport, authz.PurchaseRequestsList}, authz.ScopeAll},
 }
 
-// demoRoleAssignments are the roles of the six demo people (plan "Demo data"), RA-1001 … RA-1007, in this
+// demoRoleAssignments are the roles of the seven demo people (plan "Demo data"), RA-1001 … RA-1008, in this
 // order: the Administrator and the Global planner for All markets, everyone else for their own teams.
 var demoRoleAssignments = []struct {
 	person, role string
@@ -49,13 +52,14 @@ var demoRoleAssignments = []struct {
 	{"Priya Raman", "Planner", authz.ScopeMyTeams},
 	{"Mei Lin", "Planner", authz.ScopeMyTeams},
 	{"Sara Novak", "Viewer", authz.ScopeMyTeams},
+	{leaSantos, requisitioner, authz.ScopeAll},
 }
 
-// addAccess creates the five roles, the demo people's roles and the access rules (segregation of duties on,
+// addAccess creates the six roles, the demo people's roles and the access rules (segregation of duties on,
 // the Viewer role for new people) through the access repository, after the teams (FR-040, D-306).
 func (d *demo) addAccess(ctx context.Context) error {
 	repo := d.stores.Access
-	roles := map[string]string{} // role name → ID
+	roles := map[string]string{}
 	for _, r := range demoRoles {
 		id, err := d.next(ctx, ids.PrefixRole)
 		if err != nil {

@@ -1,9 +1,3 @@
-/**
- * Approval records for feature 008's component tests, shaped exactly as the contract answers them
- * (the seeded demo people and the "Launch film" activity A-1042). Tests change only what they need:
- *
- *   approvalOf({ status: 'declined', latestDecline: DECLINE })
- */
 import type { components } from '@/api/generated/schema';
 import type {
   ActivityApproval,
@@ -47,7 +41,6 @@ export const WORKFLOW_REF = { id: 'WF-1001', name: 'Lubricants EU approval', act
 
 const actor = (person: ApprovalPerson) => ({ id: person.id, name: person.name });
 
-/** Priya submitted "Launch film" on 10 Mar 2026 at 09:00. */
 export const SUBMITTED: HistoryEntry = {
   id: 'AH-1001',
   roundNumber: 1,
@@ -77,10 +70,10 @@ export const LEVEL_2: ChainLevel = {
   decision: null,
 };
 
-/** Round 1 of "Launch film", waiting at level 1 of 2 (Carlos, then Alex). */
 export function roundOf(overrides: Partial<ApprovalRound> = {}): ApprovalRound {
   return {
     id: 'AR-1001',
+    kind: 'activity',
     number: 1,
     outcome: 'open',
     workflow: { id: WORKFLOW_REF.id, name: WORKFLOW_REF.name },
@@ -99,7 +92,6 @@ export function roundOf(overrides: Partial<ApprovalRound> = {}): ApprovalRound {
 const NOT_AVAILABLE = { available: false, reason: '' };
 const AVAILABLE = { available: true, reason: '' };
 
-/** "Launch film" (A-1042), Submitted and waiting at level 1 for Carlos; the viewer is Priya. */
 export function approvalOf(overrides: Partial<ActivityApproval> = {}): ActivityApproval {
   return {
     activityId: 'A-1042',
@@ -125,7 +117,6 @@ export function approvalOf(overrides: Partial<ActivityApproval> = {}): ActivityA
   };
 }
 
-/** Daniel declined level 1 on behalf of Carlos on 11 Mar 2026 at 14:32. */
 export const DECLINE: DeclineNote = {
   roundNumber: 1,
   level: 1,
@@ -136,7 +127,6 @@ export const DECLINE: DeclineNote = {
   comment: 'The agency fee is missing its GL code.',
 };
 
-/** What Submit would do for the Created "Launch film": ready, two levels. */
 export function submissionOf(overrides: Partial<ApprovalSubmission> = {}): ApprovalSubmission {
   return {
     activityId: 'A-1042',
@@ -164,15 +154,22 @@ const PATH = [
   { type: 'initiative', id: 'I-1001', name: 'Brand film' },
 ];
 
-/** A row of the Waiting for me tab: "Launch film", waiting at level 1 of 2 for Carlos. */
+const LAUNCH_FILM_ROW = {
+  id: 'A-1042',
+  name: 'Launch film',
+  status: 'submitted',
+  displayStatus: 'submitted',
+} as const;
+
+/** A row's subject follows the activity a test gives, unless the test gives a subject. */
 export function rowOf(overrides: Partial<ApprovalRow> = {}): ApprovalRow {
+  const activity = overrides.activity === undefined ? LAUNCH_FILM_ROW : overrides.activity;
+  const subject = activity
+    ? { kind: 'activity' as const, label: 'Activity', ...activity }
+    : { kind: 'purchaseRequest' as const, label: 'Purchase request', ...LAUNCH_FILM_ROW };
   return {
-    activity: {
-      id: 'A-1042',
-      name: 'Launch film',
-      status: 'submitted',
-      displayStatus: 'submitted',
-    },
+    subject: overrides.subject ?? subject,
+    activity,
     path: PATH,
     owner: PRIYA,
     plannedCost: { amount: '50000.00', currency: 'USD' },
@@ -195,7 +192,6 @@ export function rowOf(overrides: Partial<ApprovalRow> = {}): ApprovalRow {
   };
 }
 
-/** The preview of "Launch film" with one line item. */
 export function previewOf(overrides: Partial<ApprovalPreview> = {}): ApprovalPreview {
   return {
     activity: {
@@ -233,7 +229,6 @@ export function previewOf(overrides: Partial<ApprovalPreview> = {}): ApprovalPre
 type Delegation = components['schemas']['ApprovalDelegation'];
 type Monitoring = components['schemas']['ApprovalMonitoring'];
 
-/** Daniel delegates to Carlos (017, the seeded DLG-1001 shape); tests set dates and state. */
 export function delegationOf(overrides: Partial<Delegation> = {}): Delegation {
   return {
     id: 'DLG-1001',
@@ -255,10 +250,8 @@ export function delegationOf(overrides: Partial<Delegation> = {}): Delegation {
   };
 }
 
-/** GET /api/v1/approval-delegations without any delegation. */
 export const NO_DELEGATIONS = { body: { items: [], total: 0, canManageOthers: false } };
 
-/** The monitoring figures: one overdue approval of "Launch film", waiting 6 days at level 1. */
 export function monitoringOf(overrides: Partial<Monitoring> = {}): Monitoring {
   return {
     cards: {
@@ -277,6 +270,7 @@ export function monitoringOf(overrides: Partial<Monitoring> = {}): Monitoring {
     ],
     byLevel: [
       {
+        kind: 'activity',
         workflow: { id: WORKFLOW_REF.id, name: WORKFLOW_REF.name },
         level: 1,
         levelLabel: 'Level 1',

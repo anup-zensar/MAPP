@@ -32,7 +32,7 @@ func (q *Queries) DeleteWorkflowLevels(ctx context.Context, workflowID string) e
 
 const getWorkflow = `-- name: GetWorkflow :one
 SELECT id, name, description, active, reminder_days, escalation_days, version, created_at, created_by_id,
-    created_by_name, updated_at, updated_by_id, updated_by_name
+    created_by_name, updated_at, updated_by_id, updated_by_name, object_type
 FROM approval_workflows
 WHERE id = $1
 `
@@ -54,15 +54,17 @@ func (q *Queries) GetWorkflow(ctx context.Context, id string) (ApprovalWorkflow,
 		&i.UpdatedAt,
 		&i.UpdatedByID,
 		&i.UpdatedByName,
+		&i.ObjectType,
 	)
 	return i, err
 }
 
 const insertWorkflowLevel = `-- name: InsertWorkflowLevel :exec
 INSERT INTO approval_workflow_levels (
-    workflow_id, number, name, approver_type, role_id, mode, applies_when, auto_approve_when, backup_approver_id
+    workflow_id, number, name, approver_type, role_id, mode, applies_when, auto_approve_when, backup_approver_id,
+    record_field
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 )
 `
 
@@ -76,6 +78,7 @@ type InsertWorkflowLevelParams struct {
 	AppliesWhen      []byte
 	AutoApproveWhen  []byte
 	BackupApproverID *string
+	RecordField      string
 }
 
 func (q *Queries) InsertWorkflowLevel(ctx context.Context, arg InsertWorkflowLevelParams) error {
@@ -89,6 +92,7 @@ func (q *Queries) InsertWorkflowLevel(ctx context.Context, arg InsertWorkflowLev
 		arg.AppliesWhen,
 		arg.AutoApproveWhen,
 		arg.BackupApproverID,
+		arg.RecordField,
 	)
 	return err
 }
@@ -111,7 +115,7 @@ func (q *Queries) InsertWorkflowLevelApprovers(ctx context.Context, arg InsertWo
 }
 
 const listWorkflowLevels = `-- name: ListWorkflowLevels :many
-SELECT approval_workflow_levels.workflow_id, approval_workflow_levels.number, approval_workflow_levels.name, approval_workflow_levels.approver_type, approval_workflow_levels.role_id, approval_workflow_levels.mode, approval_workflow_levels.applies_when, approval_workflow_levels.auto_approve_when, approval_workflow_levels.backup_approver_id,
+SELECT approval_workflow_levels.workflow_id, approval_workflow_levels.number, approval_workflow_levels.name, approval_workflow_levels.approver_type, approval_workflow_levels.role_id, approval_workflow_levels.mode, approval_workflow_levels.applies_when, approval_workflow_levels.auto_approve_when, approval_workflow_levels.backup_approver_id, approval_workflow_levels.record_field,
     coalesce((SELECT array_agg(a.person_id ORDER BY a.position) FROM approval_workflow_level_approvers a
         WHERE a.workflow_id = approval_workflow_levels.workflow_id
             AND a.level_number = approval_workflow_levels.number), '{}')::text[] AS approver_ids
@@ -144,6 +148,7 @@ func (q *Queries) ListWorkflowLevels(ctx context.Context, workflowID *string) ([
 			&i.ApprovalWorkflowLevel.AppliesWhen,
 			&i.ApprovalWorkflowLevel.AutoApproveWhen,
 			&i.ApprovalWorkflowLevel.BackupApproverID,
+			&i.ApprovalWorkflowLevel.RecordField,
 			&i.ApproverIds,
 		); err != nil {
 			return nil, err
@@ -158,7 +163,7 @@ func (q *Queries) ListWorkflowLevels(ctx context.Context, workflowID *string) ([
 
 const listWorkflows = `-- name: ListWorkflows :many
 SELECT id, name, description, active, reminder_days, escalation_days, version, created_at, created_by_id,
-    created_by_name, updated_at, updated_by_id, updated_by_name
+    created_by_name, updated_at, updated_by_id, updated_by_name, object_type
 FROM approval_workflows
 ORDER BY length(id), id COLLATE "C"
 `
@@ -186,6 +191,7 @@ func (q *Queries) ListWorkflows(ctx context.Context) ([]ApprovalWorkflow, error)
 			&i.UpdatedAt,
 			&i.UpdatedByID,
 			&i.UpdatedByName,
+			&i.ObjectType,
 		); err != nil {
 			return nil, err
 		}
@@ -200,14 +206,15 @@ func (q *Queries) ListWorkflows(ctx context.Context) ([]ApprovalWorkflow, error)
 const putWorkflow = `-- name: PutWorkflow :exec
 INSERT INTO approval_workflows (
     id, name, description, active, reminder_days, escalation_days, version, created_at, created_by_id,
-    created_by_name, updated_at, updated_by_id, updated_by_name
+    created_by_name, updated_at, updated_by_id, updated_by_name, object_type
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
 )
 ON CONFLICT (id) DO UPDATE SET
     name = excluded.name,
     description = excluded.description,
     active = excluded.active,
+    object_type = excluded.object_type,
     reminder_days = excluded.reminder_days,
     escalation_days = excluded.escalation_days,
     version = excluded.version,
@@ -233,6 +240,7 @@ type PutWorkflowParams struct {
 	UpdatedAt      time.Time
 	UpdatedByID    string
 	UpdatedByName  string
+	ObjectType     string
 }
 
 func (q *Queries) PutWorkflow(ctx context.Context, arg PutWorkflowParams) error {
@@ -250,6 +258,7 @@ func (q *Queries) PutWorkflow(ctx context.Context, arg PutWorkflowParams) error 
 		arg.UpdatedAt,
 		arg.UpdatedByID,
 		arg.UpdatedByName,
+		arg.ObjectType,
 	)
 	return err
 }

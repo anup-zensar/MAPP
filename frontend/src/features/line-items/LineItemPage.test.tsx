@@ -25,6 +25,7 @@ import {
   transaction,
   transactionPage,
 } from '@/testing/fixtures/line-item-financials';
+import { lineItemSection } from '@/testing/fixtures/purchase-requests';
 import { reply } from '@/testing/replies';
 import { LineItemPage } from './LineItemPage';
 
@@ -54,6 +55,9 @@ function renderPage(answers: HttpHandler[] = []) {
       ]),
     }),
     reply('GET /api/v1/line-items/{lineItemId}', { body: details() }, { lineItemId: 'L-1001' }),
+    reply('GET /api/v1/line-items/{lineItemId}/purchase-requests', {
+      body: lineItemSection({ lineItemId: 'L-1001', purchaseRequests: [] }),
+    }),
     ...answers,
   ]);
   return {
@@ -87,7 +91,7 @@ describe('LineItemPage (US4, FR-026)', () => {
     expect(within(breadcrumb).getByText('Agency fee')).toHaveAttribute('aria-current', 'page');
     expect(screen.getByText('LINE ITEM')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '3 fields needed' })).toBeInTheDocument();
-    expect(screen.getByText('Waiting for activity approval')).toBeInTheDocument();
+    expect(screen.getAllByText('Waiting for activity approval')).toHaveLength(2);
     expect(screen.getByText('L-1001')).toBeInTheDocument();
     expect(screen.getAllByText('Priya Raman').length).toBeGreaterThan(0);
     expect(screen.getAllByText('50,000.00 USD').length).toBeGreaterThan(0);
@@ -109,14 +113,13 @@ describe('LineItemPage (US4, FR-026)', () => {
     const coding = await screen.findByRole('region', { name: 'Finance coding' });
     expect(within(coding).getAllByRole('heading')).toHaveLength(1);
     expect(within(coding).getByText('Request SWBS code from GSAP')).toBeInTheDocument();
-    // GSAP's money, open (015 FR-017): figures, every transaction and the SWBS code.
+    // GSAP's money, open (015 FR-017): figures and every transaction.
     const financials = await screen.findByRole('region', { name: 'Financials' });
     expect(within(financials).getAllByText('30,000.00 USD').length).toBeGreaterThan(0);
     expect(
       await within(financials).findByRole('table', { name: /transactions, newest first/ }),
     ).toBeInTheDocument();
     expect(within(financials).getByText('Invoice 5100002003')).toBeInTheDocument();
-    expect(within(financials).getByText('DE03-M26-0003 (from GSAP data)')).toBeInTheDocument();
     expect(screen.queryByText('From finance (coming later)')).not.toBeInTheDocument();
   });
 
@@ -177,18 +180,19 @@ describe('LineItemPage (US4, FR-026)', () => {
         },
         { lineItemId: 'L-2002' },
       ),
+      ...financialsNotServed('L-2002'),
     ]);
     await screen.findByRole('heading', { level: 1, name: 'Agency fee' });
 
     await openMore(user, 'Duplicate');
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/line-items/L-2002'));
-    expect(api.bodiesOf(DUPLICATE)).toEqual([{ restartApproval: false }]);
+    expect(api.bodiesOf(DUPLICATE)).toEqual([{}]);
     expect(await screen.findByText("Line item 'Agency fee (copy)' created")).toBeInTheDocument();
   });
 
-  it('asks before duplicating in an approved activity (FR-031)', async () => {
-    const { user, api } = renderPage([
+  it('034 FR-001: duplicates in an approved activity at once, without asking (D-322)', async () => {
+    const { user, api, router } = renderPage([
       reply(
         'GET /api/v1/line-items/{lineItemId}',
         { body: details({ activity: approvedActivity() }) },
@@ -211,14 +215,10 @@ describe('LineItemPage (US4, FR-026)', () => {
     await screen.findByRole('heading', { level: 1, name: 'Agency fee' });
 
     await openMore(user, 'Duplicate');
-    const dialog = await screen.findByRole('alertdialog', {
-      name: 'This activity will need approval again',
-    });
-    expect(dialog).toHaveTextContent("Copy of 'Agency fee': 50,000.00 USD");
-    expect(api.bodiesOf(DUPLICATE)).toHaveLength(0);
 
-    await user.click(within(dialog).getByRole('button', { name: 'Save and restart approval' }));
-    await waitFor(() => expect(api.bodiesOf(DUPLICATE)).toEqual([{ restartApproval: true }]));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/line-items/L-2002'));
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(api.bodiesOf(DUPLICATE)).toEqual([{}]);
   });
 
   it('deletes after the dialog and offers Undo (scenario 5, FR-030)', async () => {
@@ -274,7 +274,7 @@ describe('LineItemPage (US4, FR-026)', () => {
     expect(await screen.findByText("Line item 'Agency fee' restored")).toBeInTheDocument();
   });
 
-  it('says that deleting restarts the approval of an approved activity (FR-031)', async () => {
+  it('034 FR-001: deletes from an approved activity without any word of approval (D-322)', async () => {
     const { user, api } = renderPage([
       reply(
         'GET /api/v1/line-items/{lineItemId}',
@@ -293,12 +293,10 @@ describe('LineItemPage (US4, FR-026)', () => {
     const dialog = await screen.findByRole('alertdialog', {
       name: "Delete line item 'Agency fee'?",
     });
-    expect(dialog).toHaveTextContent('This activity will need approval again.');
+    expect(dialog).not.toHaveTextContent(/approval/i);
     await user.click(within(dialog).getByRole('button', { name: 'Delete line item' }));
 
-    await waitFor(() =>
-      expect(api.requests.find((r) => r.method === 'DELETE')?.search).toBe('?restartApproval=true'),
-    );
+    await waitFor(() => expect(api.requests.find((r) => r.method === 'DELETE')?.search).toBe(''));
   });
 
   it.each([

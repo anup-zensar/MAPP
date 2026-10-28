@@ -1,27 +1,11 @@
 // Package authz is MAPP's access policy (feature 014): the fixed list of permissions, what one signed-in
 // person holds (Grants) and the checks every service calls before it shows or changes a record.
-//
-// Permissions are fixed here, in code: they are the actions MAPP offers. Roles, which group permissions,
-// are data that administrators change in Settings (package access, decision D-223). The access middleware
-// builds the Grants of the signed-in person once per request and puts them in the request's context; the
-// services then ask:
-//
-//	if err := authz.RequireIn(ctx, authz.PlansEdit, plans.AccessFacts(p)); err != nil {
-//		return err // 403 forbidden, with a message that says what to do
-//	}
-//
-// A context without Grants (the seed, internal jobs, service unit tests) is not restricted (D-228): every
-// HTTP request passes the middleware, which a test proves.
-//
-// The package imports only actor and errs, so every business package can use it.
 package authz
 
 import "slices"
 
-// Permission is one thing a person may do, such as "plans.edit" (spec Table A).
 type Permission string
 
-// The 25 permissions of spec Table A, in its order.
 const (
 	PlansView               Permission = "plans.view"
 	PlansCreate             Permission = "plans.create"
@@ -37,6 +21,10 @@ const (
 	FinanceView             Permission = "finance.view"
 	FinanceLink             Permission = "finance.link"
 	FinanceImport           Permission = "finance.import"
+	PurchaseRequestsEdit    Permission = "purchaseRequests.edit"
+	PurchaseRequestsDelete  Permission = "purchaseRequests.delete"
+	PurchaseRequestsSubmit  Permission = "purchaseRequests.submit"
+	PurchaseRequestsList    Permission = "purchaseRequests.list"
 	ApprovalsDecide         Permission = "approvals.decide"
 	ApprovalsDecideOnBehalf Permission = "approvals.decideOnBehalf"
 	GlobalBudgetsView       Permission = "globalBudgets.view"
@@ -52,19 +40,17 @@ const (
 
 // The groups of Table A, in its order: the role page shows the permissions under these headings.
 const (
-	GroupPlanning       = "Plans and planning"
-	GroupFinance        = "Financial data"
-	GroupApprovals      = "Approvals"
-	GroupGlobalBudgets  = "Global budgets"
-	GroupAdministration = "Administration"
+	GroupPlanning         = "Plans and planning"
+	GroupFinance          = "Financial data"
+	GroupPurchaseRequests = "Purchase requests"
+	GroupApprovals        = "Approvals"
+	GroupGlobalBudgets    = "Global budgets"
+	GroupAdministration   = "Administration"
 )
 
-// Groups lists the groups of Table A in order.
-var Groups = []string{GroupPlanning, GroupFinance, GroupApprovals, GroupGlobalBudgets, GroupAdministration}
+var Groups = []string{ //nolint:gochecknoglobals // Table A's groups: built once, only read
+	GroupPlanning, GroupFinance, GroupPurchaseRequests, GroupApprovals, GroupGlobalBudgets, GroupAdministration}
 
-// PermissionInfo describes one permission: its group and label on the role page, whether it applies only
-// to plans in the role's scope, and the noun that starts its refusal message ("<Noun> isn't part of your
-// role …").
 type PermissionInfo struct {
 	Key    Permission
 	Group  string
@@ -89,6 +75,10 @@ var catalogue = []PermissionInfo{
 	{FinanceView, GroupFinance, "See financial data", "Seeing financial data", true},
 	{FinanceLink, GroupFinance, "Link financial transactions to line items", "Linking financial transactions", true},
 	{FinanceImport, GroupFinance, "Import GSAP extracts", "Importing GSAP extracts", false},
+	{PurchaseRequestsEdit, GroupPurchaseRequests, "Raise and edit purchase requests", "Raising and changing purchase requests", true},
+	{PurchaseRequestsDelete, GroupPurchaseRequests, "Delete purchase requests", "Deleting purchase requests", true},
+	{PurchaseRequestsSubmit, GroupPurchaseRequests, "Submit purchase requests for approval and recall them", "Submitting purchase requests", true},
+	{PurchaseRequestsList, GroupPurchaseRequests, "See the Purchase requests page", "Seeing the Purchase requests page", true},
 	{ApprovalsDecide, GroupApprovals, "Approve or decline when named as an approver", "Approving activities", false},
 	{ApprovalsDecideOnBehalf, GroupApprovals, "Approve or decline on behalf of the named approvers", "Deciding on behalf of other approvers", true},
 	{GlobalBudgetsView, GroupGlobalBudgets, "See global budgets and their allocations", "Seeing global budgets", true},
@@ -102,12 +92,10 @@ var catalogue = []PermissionInfo{
 	{RecycleBinPurge, GroupAdministration, "Delete permanently and empty the recycle bin", "Deleting permanently", false},
 }
 
-// Catalogue returns every permission in Table A order. GET /api/v1/access/permissions serves it.
 func Catalogue() []PermissionInfo {
 	return slices.Clone(catalogue)
 }
 
-// Lookup returns the permission with key, and false when there is no such permission.
 func Lookup(key string) (PermissionInfo, bool) {
 	i := slices.IndexFunc(catalogue, func(p PermissionInfo) bool { return string(p.Key) == key })
 	if i < 0 {
@@ -116,7 +104,6 @@ func Lookup(key string) (PermissionInfo, bool) {
 	return catalogue[i], true
 }
 
-// All returns the key of every permission, in Table A order: what the Administrator role always holds.
 func All() []Permission {
 	keys := make([]Permission, 0, len(catalogue))
 	for _, p := range catalogue {
@@ -125,7 +112,6 @@ func All() []Permission {
 	return keys
 }
 
-// InOrder returns the known permissions among keys, without repeats, in Table A order. Never nil.
 func InOrder(keys []Permission) []Permission {
 	ordered := []Permission{}
 	for _, p := range catalogue {

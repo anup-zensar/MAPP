@@ -14,6 +14,8 @@ const LEVEL_WORDS: Record<FinancialRecordRef['type'], string> = {
   initiative: 'Initiative',
   activity: 'Activity',
   lineItem: 'Line item',
+  purchaseRequest: 'Purchase request',
+  purchaseRequestLine: 'PR line',
 };
 
 interface FinancialsToolbarProps {

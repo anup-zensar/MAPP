@@ -16,7 +16,12 @@ function Harness({ start, problems = [] }: { start: LevelDraft[]; problems?: Fie
   const [levels, setLevels] = useState(start);
   return (
     <>
-      <LevelsEditor levels={levels} onChange={setLevels} problems={problems} />
+      <LevelsEditor
+        levels={levels}
+        onChange={setLevels}
+        problems={problems}
+        objectType="activity"
+      />
       <output>{JSON.stringify(toInputs(levels))}</output>
     </>
   );

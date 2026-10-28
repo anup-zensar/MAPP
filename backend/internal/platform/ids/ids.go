@@ -49,6 +49,14 @@ const (
 
 	PrefixExchangeRate = "XR"
 	PrefixRateImport   = "RI"
+
+	PrefixSwbsRun = "SWR"
+
+	PrefixPurchaseRequest        = "PR"
+	PrefixPurchaseRequestLine    = "PRL"
+	PrefixPurchaseRequestRouting = "PRR"
+	PrefixSimulatedGSAPPR        = "GPR"
+	PrefixSimulatedPO            = "GPO"
 )
 
 var Prefixes = []string{
@@ -62,6 +70,8 @@ var Prefixes = []string{
 	PrefixApprovalDelegation,
 	PrefixRole, PrefixRoleAssignment, PrefixGlobalBudget, PrefixBudgetAllocation,
 	PrefixExchangeRate, PrefixRateImport,
+	PrefixSwbsRun,
+	PrefixPurchaseRequest, PrefixPurchaseRequestLine, PrefixPurchaseRequestRouting, PrefixSimulatedGSAPPR, PrefixSimulatedPO,
 }
 
 const firstNumber = 1001

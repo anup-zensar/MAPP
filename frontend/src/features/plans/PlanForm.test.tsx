@@ -28,6 +28,12 @@ function renderForm(props: Partial<PlanFormProps> = {}, answers: HttpHandler[] =
   return { ...result, api };
 }
 
+/** Chooses `year` in the Year field: 11 years (034 FR-014) make it searchable (design system §5). */
+async function chooseYear(user: ReturnType<typeof renderForm>['user'], year: string) {
+  await user.click(screen.getByRole('combobox', { name: /Year/ }));
+  await user.click(screen.getByRole('option', { name: year }));
+}
+
 /** The headings of the form's sections, in order. */
 function sectionTitles() {
   return screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent);
@@ -41,7 +47,7 @@ describe('PlanForm (US1, FR-005 – FR-010)', () => {
     expect(sectionTitles()).toEqual(['Basics', 'Budget', 'Shell attributes', 'Goals']);
     const basics = screen.getByRole('region', { name: 'Basics' });
     expect(within(basics).getByText('Plan name').parentElement).toHaveTextContent('Required');
-    expect(screen.getByRole('combobox', { name: /Year/ })).toHaveValue('2026');
+    expect(screen.getByRole('button', { name: 'Remove 2026' })).toBeInTheDocument();
     expect(screen.getByText('Default: the current year')).toBeInTheDocument();
     expect(await screen.findByText('Default: your teams')).toBeInTheDocument();
     expect(await screen.findByText('Default: you')).toBeInTheDocument();
@@ -56,7 +62,8 @@ describe('PlanForm (US1, FR-005 – FR-010)', () => {
   it('drops a default hint once the person changes the field', async () => {
     const { user } = renderForm();
 
-    await user.selectOptions(await screen.findByRole('combobox', { name: /Year/ }), '2027');
+    await screen.findByRole('combobox', { name: /Year/ });
+    await chooseYear(user, '2027');
 
     expect(screen.queryByText('Default: the current year')).not.toBeInTheDocument();
   });
@@ -121,7 +128,7 @@ describe('PlanForm (US1, FR-005 – FR-010)', () => {
 
     const budget = await screen.findByRole('combobox', { name: 'Default finance budget' });
     await waitFor(() => expect(budget).toHaveValue('FB-1001'));
-    await user.selectOptions(screen.getByRole('combobox', { name: /Year/ }), '2027');
+    await chooseYear(user, '2027');
 
     expect(
       await screen.findByText(

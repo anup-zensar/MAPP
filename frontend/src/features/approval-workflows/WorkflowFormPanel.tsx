@@ -7,6 +7,7 @@ import type { Control } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { conflictMessage } from '@/api/errors';
 import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
 import { DecimalField } from '@/ui/DecimalField/DecimalField';
 import { FormField } from '@/ui/FormField/FormField';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
@@ -28,7 +29,7 @@ import {
   workflowValuesOf,
 } from './schemas';
 import type { WorkflowValues } from './schemas';
-import { openRoundsNote } from './workflow-texts';
+import { isObjectType, objectTypeFixedText, OBJECT_TYPES, openRoundsNote } from './workflow-texts';
 import { fetchLatestWorkflow, useCreateWorkflow, useUpdateWorkflow } from './api';
 import type { ApprovalWorkflow } from './api';
 import styles from './WorkflowFormPanel.module.css';
@@ -36,8 +37,9 @@ import styles from './WorkflowFormPanel.module.css';
 const CONFLICT_NEXT_STEP =
   'Your changes are still here. Save again to replace their changes, or Cancel to see theirs.';
 const LEVELS_HINT =
-  'Levels are checked in order. A level can be needed only sometimes, approved automatically, or need every approver. Nobody approves an activity they own or submitted.';
-const FIELDS = ['name', 'description', 'reminderDays', 'escalationDays'] as const;
+  'Levels are checked in order. A level can be needed only sometimes, approved automatically, or need every approver.';
+const SELF_APPROVAL_HINT = ' Nobody approves an activity they own or submitted.';
+const FIELDS = ['name', 'objectType', 'description', 'reminderDays', 'escalationDays'] as const;
 
 export interface WorkflowFormPanelProps {
   /** The workflow to edit; without one, the panel creates a new workflow. */
@@ -45,12 +47,7 @@ export interface WorkflowFormPanelProps {
   onClose: () => void;
 }
 
-/**
- * "New approval workflow" / "Edit approval workflow" (US4, FR-002, FR-003, FR-006): name,
- * description and the ordered levels. The web app checks nothing it cannot show at once: Save sends
- * the form and every problem the API finds is shown together, in the summary and at its field.
- * Editing a workflow with open rounds says that those rounds keep their levels.
- */
+/** The web app checks nothing it cannot show at once: the API's problems all show together. */
 export function WorkflowFormPanel({ workflow, onClose }: WorkflowFormPanelProps) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -73,6 +70,7 @@ export function WorkflowFormPanel({ workflow, onClose }: WorkflowFormPanelProps)
   const [version, setVersion] = useState(workflow?.version ?? 0);
   const [saving, setSaving] = useState(false);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
+  const objectType = useWatch({ control: form.control, name: 'objectType' });
 
   async function save(values: WorkflowValues) {
     setSaving(true);
@@ -146,7 +144,7 @@ export function WorkflowFormPanel({ workflow, onClose }: WorkflowFormPanelProps)
       {workflow && workflow.waitingCount > 0 && (
         <p className={styles.note}>
           <Info aria-hidden="true" />
-          <span>{openRoundsNote(workflow.waitingCount)}</span>
+          <span>{openRoundsNote(workflow)}</span>
         </p>
       )}
       <FormField
@@ -156,12 +154,31 @@ export function WorkflowFormPanel({ workflow, onClose }: WorkflowFormPanelProps)
       />
       <FormField
         control={form.control}
+        name="objectType"
+        render={(field) => (
+          <ChoiceField
+            label="Approves"
+            marking="Required"
+            options={OBJECT_TYPES}
+            {...field}
+            onChange={(value) => field.onChange(isObjectType(value) ? value : field.value)}
+            disabledReason={
+              workflow?.objectTypeFixed ? objectTypeFixedText(workflow.objectType) : undefined
+            }
+          />
+        )}
+      />
+      <FormField
+        control={form.control}
         name="description"
         render={(field) => (
           <TextAreaField label="Description" maxLength={2000} rows={3} {...field} />
         )}
       />
-      <FormSection title="Levels" description={LEVELS_HINT}>
+      <FormSection
+        title="Levels"
+        description={objectType === 'activity' ? LEVELS_HINT + SELF_APPROVAL_HINT : LEVELS_HINT}
+      >
         {problemOf(problems, 'levels') && (
           <p id="levels" className={styles.error}>
             {problemOf(problems, 'levels')}
@@ -171,7 +188,12 @@ export function WorkflowFormPanel({ workflow, onClose }: WorkflowFormPanelProps)
           control={form.control}
           name="levels"
           render={(field) => (
-            <LevelsEditor levels={field.value} onChange={field.onChange} problems={problems} />
+            <LevelsEditor
+              levels={field.value}
+              onChange={field.onChange}
+              problems={problems}
+              objectType={objectType}
+            />
           )}
         />
       </FormSection>

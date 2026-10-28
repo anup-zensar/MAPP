@@ -28,18 +28,11 @@ import type { ApprovalWorkflow } from './api';
 /** The side panel that is open besides the details (which have their own address). */
 type OpenForm = { kind: 'new' } | { kind: 'edit'; workflow: ApprovalWorkflow };
 
-/** The question that waits for its answer. */
 type PendingDialog =
   | { kind: 'cantDelete'; workflow: ApprovalWorkflow }
   | { kind: 'delete'; workflow: ApprovalWorkflow };
 
-/**
- * Settings › Approval workflows (US4, FR-001 – FR-008): the Settings list toolbar (search, Active ·
- * Inactive · All, "2 of 2 approval workflows"), the list with each workflow's levels, use and
- * status, and its "⋯" actions; details at /settings/approval-workflows/:workflowId; create and edit
- * in a side panel; a workflow in use is set inactive instead of deleted, with the one set-inactive
- * behaviour of Settings (design system §6.7).
- */
+/** A workflow in use is set inactive instead of deleted (design system §6.7). */
 export function ApprovalWorkflowsPage() {
   usePageTitle('Approval workflows');
   const { workflowId } = useParams();
@@ -65,13 +58,11 @@ export function ApprovalWorkflowsPage() {
     });
   }
 
-  // In use (activities use it or wait with it), the question lists the effects first (FR-007).
+  // In use, the question lists the effects first.
   const status = useStatusFlow<ApprovalWorkflow>({
     words: { title: 'Approval workflow', noun: 'approval workflow' },
     usage: (workflow) =>
-      workflow.usedByCount > 0 || workflow.waitingCount > 0
-        ? setInactiveEffects(workflow.usedByCount, workflow.waitingCount)
-        : [],
+      workflow.usedByCount > 0 || workflow.waitingCount > 0 ? setInactiveEffects(workflow) : [],
     effect: () => [],
     request: (workflow, active, version) =>
       setActive.mutateAsync({ id: workflow.id, active, version }),
@@ -146,7 +137,7 @@ export function ApprovalWorkflowsPage() {
               : setDialog(null)
           }
         >
-          {cantDeleteText(dialog.workflow.usedByCount)}
+          {cantDeleteText(dialog.workflow)}
         </ConfirmDialog>
       )}
       {dialog?.kind === 'delete' && (

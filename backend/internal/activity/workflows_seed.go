@@ -9,12 +9,10 @@ import (
 	"mapp/internal/approval"
 )
 
-// seededWorkflows reads the approval workflows the seed wrote in feature 008's table (D-103, D-201).
 type seededWorkflows struct {
 	repo approvalWorkflows
 }
 
-// approvalWorkflows is what the seeded workflows read of feature 008's table.
 type approvalWorkflows interface {
 	GetWorkflow(ctx context.Context, id string) (approval.Workflow, bool, error)
 	ListWorkflows(ctx context.Context) ([]approval.Workflow, error)
@@ -26,16 +24,14 @@ func NewSeededWorkflows(repo approvalWorkflows) Workflows {
 	return seededWorkflows{repo: repo}
 }
 
-// GetWorkflow returns the workflow with id, active or not.
 func (w seededWorkflows) GetWorkflow(ctx context.Context, id string) (WorkflowFacts, bool, error) {
 	workflow, found, err := w.repo.GetWorkflow(ctx, id)
-	if err != nil || !found {
+	if err != nil || !found || workflow.Kind() != approval.KindActivity {
 		return WorkflowFacts{}, false, err
 	}
 	return workflowFacts(workflow), true, nil
 }
 
-// ListWorkflows returns every workflow, active and inactive, sorted by name ignoring letter case.
 func (w seededWorkflows) ListWorkflows(ctx context.Context) ([]WorkflowFacts, error) {
 	stored, err := w.repo.ListWorkflows(ctx)
 	if err != nil {
@@ -43,7 +39,9 @@ func (w seededWorkflows) ListWorkflows(ctx context.Context) ([]WorkflowFacts, er
 	}
 	list := make([]WorkflowFacts, 0, len(stored))
 	for _, workflow := range stored {
-		list = append(list, workflowFacts(workflow))
+		if workflow.Kind() == approval.KindActivity { // 032's purchase-request workflows approve no activity
+			list = append(list, workflowFacts(workflow))
+		}
 	}
 	slices.SortStableFunc(list, func(x, y WorkflowFacts) int {
 		return cmp.Compare(strings.ToLower(x.Name), strings.ToLower(y.Name))
@@ -51,7 +49,6 @@ func (w seededWorkflows) ListWorkflows(ctx context.Context) ([]WorkflowFacts, er
 	return list, nil
 }
 
-// workflowFacts is a stored workflow as activities needs it.
 func workflowFacts(w approval.Workflow) WorkflowFacts {
 	levels := make([]WorkflowLevelFacts, 0, len(w.Levels))
 	for _, l := range w.Levels {

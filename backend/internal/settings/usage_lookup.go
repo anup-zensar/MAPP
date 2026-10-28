@@ -9,8 +9,6 @@ import (
 	"mapp/internal/history"
 )
 
-// part returns one usage part: text, followed by " (<n> in the recycle bin)" when some of the records
-// counted are in the bin.
 func part(kind string, t tally, text string) UsagePart {
 	if t.inBin > 0 {
 		text += fmt.Sprintf(" (%d in the recycle bin)", t.inBin)
@@ -18,8 +16,6 @@ func part(kind string, t tally, text string) UsagePart {
 	return UsagePart{Kind: kind, Text: text, Count: t.count, InRecycleBin: t.inBin}
 }
 
-// newUsage returns the usage of parts: in use when there is any part, the parts joined with " · " as its
-// summary, or "Not used yet". records lists plans for models and finance budgets; it is never nil.
 func newUsage(parts []UsagePart, records []history.RecordRef) Usage {
 	if records == nil {
 		records = []history.RecordRef{}
@@ -34,7 +30,6 @@ func newUsage(parts []UsagePart, records []history.RecordRef) Usage {
 	return Usage{InUse: true, Summary: strings.Join(texts, " · "), Parts: parts, Records: records}
 }
 
-// usedBy returns the part "Used by <n> <records>" of tallies[key], or false when nothing is counted.
 func usedBy(tallies map[string]*tally, key, kind string, nouns [2]string) (UsagePart, bool) {
 	t := tallies[key]
 	if t == nil {
@@ -43,7 +38,6 @@ func usedBy(tallies map[string]*tally, key, kind string, nouns [2]string) (Usage
 	return part(kind, *t, "Used by "+plural(t.count, nouns[0], nouns[1])), true
 }
 
-// model returns the usage of the model id: the plans using it, and the live ones among them as records.
 func (u *usageIndex) model(id string) Usage {
 	var parts []UsagePart
 	if p, used := usedBy(u.plansByModel, id, string(LevelPlan), levelNouns[LevelPlan]); used {
@@ -52,8 +46,6 @@ func (u *usageIndex) model(id string) Usage {
 	return newUsage(parts, u.livePlans(func(ref Reference) bool { return ref.ModelID == id }))
 }
 
-// activityType returns the usage of the activity type id: the activities of that type and the models that
-// allow it.
 func (u *usageIndex) activityType(id string) Usage {
 	var parts []UsagePart
 	if p, used := usedBy(u.activitiesByType, id, string(LevelActivity), levelNouns[LevelActivity]); used {
@@ -69,7 +61,7 @@ func (u *usageIndex) activityType(id string) Usage {
 // attributes depending on it and, for the Business unit attribute, the attributes with a condition.
 func (u *usageIndex) attribute(a Attribute) Usage {
 	var parts []UsagePart
-	nouns := levelNouns[a.Level]
+	nouns := nounsOf(a.Level)
 	if p, used := usedBy(u.valuesByAttribute, a.ID, string(a.Level), nouns); used {
 		parts = append(parts, p)
 	}
@@ -94,7 +86,7 @@ func (u *usageIndex) attribute(a Attribute) Usage {
 // of dependent attributes linked to it, and the attributes whose condition has it.
 func (u *usageIndex) option(o Option, a Attribute) Usage {
 	var parts []UsagePart
-	nouns := levelNouns[a.Level]
+	nouns := nounsOf(a.Level)
 	if p, used := usedBy(u.valuesByOption, o.ID, string(a.Level), nouns); used {
 		parts = append(parts, p)
 	}
@@ -129,7 +121,6 @@ func (u *usageIndex) currency(code string) Usage {
 	return newUsage(parts, plans)
 }
 
-// item returns the usage of the finance budget item id: the line items linked to it.
 func (u *usageIndex) item(id string) Usage {
 	var parts []UsagePart
 	if t := u.lineItemsByItem[id]; t != nil {
@@ -138,8 +129,6 @@ func (u *usageIndex) item(id string) Usage {
 	return newUsage(parts, nil)
 }
 
-// budget returns the usage of the finance budget id: the plans using it as their default finance budget,
-// and the live ones among them as records. It never blocks anything: budgets are not deleted (D-047).
 func (u *usageIndex) budget(id string) Usage {
 	var parts []UsagePart
 	if t := u.plansByBudget[id]; t != nil {
@@ -148,7 +137,6 @@ func (u *usageIndex) budget(id string) Usage {
 	return newUsage(parts, u.livePlans(func(ref Reference) bool { return ref.FinanceBudgetID == id }))
 }
 
-// livePlans lists the plans outside the recycle bin that match, sorted by name, at most 50.
 func (u *usageIndex) livePlans(match func(Reference) bool) []history.RecordRef {
 	plans := []history.RecordRef{}
 	for _, ref := range u.refs {

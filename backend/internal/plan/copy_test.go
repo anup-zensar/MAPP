@@ -52,16 +52,17 @@ func TestCopyName_ShortenedTo120_EdgeCase(t *testing.T) {
 	}
 }
 
-// The next year is offered only up to the current year + 5; the copy refuses a year the dialog does not offer.
-func TestCopyOptions_NextYearAvailability_FR028(t *testing.T) {
+// The next year is offered only up to the current year + 10; the copy refuses a year the dialog does not offer
+// (FR-028, 034 FR-016).
+func TestCopyOptions_NextYearAvailability_034_FR016(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 	f.addLevel(t, "campaign", map[string]Facts{
 		"P-1001": {Campaigns: 2, Initiatives: 4, Activities: 7, ApprovedActivities: 4, LineItems: 15},
 	})
 	europe := f.create(t, priya, input("FY2026 Lubricants Europe"))
-	farAhead := input("FY2031 Lubricants Europe")
-	farAhead.Year = ptr(2031)
+	farAhead := input("FY2036 Lubricants Europe")
+	farAhead.Year = ptr(2036)
 	last := f.create(t, priya, farAhead)
 
 	got := f.copyOptions(t, europe.ID)
@@ -72,17 +73,17 @@ func TestCopyOptions_NextYearAvailability_FR028(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("CopyOptions(2026 plan) = %+v\nwant %+v", got, want)
 	}
-	if got := f.copyOptions(t, last.ID).NextYear; got != (NextYearOption{Year: 2032, Reason: "Plans can only be created up to 2031."}) {
-		t.Errorf("next year of a 2031 plan = %+v, want 2032, unavailable, with the reason", got)
+	if got := f.copyOptions(t, last.ID).NextYear; got != (NextYearOption{Year: 2037, Reason: "Plans can only be created up to 2036."}) {
+		t.Errorf("next year of a 2036 plan = %+v, want 2037, unavailable, with the reason", got)
 	}
 
-	_, beyond := f.service.Copy(t.Context(), daniel, last.ID, CopyRequest{Name: "Copy", Year: ptr(2032)})
-	_, other := f.service.Copy(t.Context(), daniel, last.ID, CopyRequest{Name: "Copy", Year: ptr(2030)})
+	_, beyond := f.service.Copy(t.Context(), daniel, last.ID, CopyRequest{Name: "Copy", Year: ptr(2037)})
+	_, other := f.service.Copy(t.Context(), daniel, last.ID, CopyRequest{Name: "Copy", Year: ptr(2035)})
 	_, optionsGone := f.service.CopyOptions(t.Context(), daniel, "P-9999")
 	_, copyGone := f.service.Copy(t.Context(), daniel, "P-9999", CopyRequest{Name: "Copy", Year: ptr(2026)})
 
-	assertError(t, beyond, problems("year", "Plans can only be created up to 2031."))
-	assertError(t, other, problems("year", "Copy into 2031 or 2032."))
+	assertError(t, beyond, problems("year", "Plans can only be created up to 2036."))
+	assertError(t, other, problems("year", "Copy into 2036 or 2037."))
 	assertError(t, optionsGone, errs.NotFound(planGoneMessage))
 	assertError(t, copyGone, errs.NotFound(planGoneMessage))
 }

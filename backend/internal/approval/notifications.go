@@ -7,16 +7,8 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// maxNotifications is how many notifications the bell lists (FR-033).
 const maxNotifications = 50
 
-// The approval actions write the notifications (notifier in service.go, data model §4). The bell reads
-// them here: a person only ever sees their own. Notifications are not business records, so reading them
-// or marking them read writes no activity-log entry and no version (008-P9, D-163).
-
-// ListNotifications returns a's 50 most recent notifications, newest first, with how many a has in all and
-// how many of them are unread (FR-033). Each says whether its activity is still stored: one in the recycle
-// bin is shown with a pointer there (edge case).
 func (s *Service) ListNotifications(ctx context.Context, a actor.Actor) (NotificationPage, error) {
 	var page NotificationPage
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -31,12 +23,12 @@ func (s *Service) ListNotifications(ctx context.Context, a actor.Actor) (Notific
 			}
 		}
 		shown := mine[:min(len(mine), maxNotifications)]
-		stored, err := s.storedActivities(ctx, shown)
+		stored, err := s.subjectsStored(ctx, shown)
 		if err != nil {
 			return err
 		}
 		for _, n := range shown {
-			page.Items = append(page.Items, notificationView(n, stored[n.ActivityID]))
+			page.Items = append(page.Items, notificationView(n, stored[n.SubjectID]))
 		}
 		return nil
 	})
@@ -46,23 +38,6 @@ func (s *Service) ListNotifications(ctx context.Context, a actor.Actor) (Notific
 	return page, nil
 }
 
-// storedActivities reports which activities of the notifications are still stored, read all at once.
-func (s *Service) storedActivities(ctx context.Context, notifications []Notification) (map[string]bool, error) {
-	ids := make([]string, 0, len(notifications))
-	for _, n := range notifications {
-		ids = append(ids, n.ActivityID)
-	}
-	listed, err := s.activities.ListOf(ctx, ids)
-	stored := make(map[string]bool, len(listed))
-	for _, facts := range listed {
-		stored[facts.ID] = true
-	}
-	return stored, err
-}
-
-// MarkRead marks a's notification id as read, when a opens it (FR-034), and returns it. Someone else's
-// notification is answered like one that does not exist; marking a read notification again changes
-// nothing.
 func (s *Service) MarkRead(ctx context.Context, a actor.Actor, id string) (NotificationView, error) {
 	var view NotificationView
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -80,11 +55,11 @@ func (s *Service) MarkRead(ctx context.Context, a actor.Actor, id string) (Notif
 				return err
 			}
 		}
-		_, exists, err := s.activities.Activity(ctx, n.ActivityID)
+		stored, err := s.subjectsStored(ctx, []Notification{n})
 		if err != nil {
 			return err
 		}
-		view = notificationView(n, exists)
+		view = notificationView(n, stored[n.SubjectID])
 		return nil
 	})
 	if err != nil {
@@ -93,8 +68,6 @@ func (s *Service) MarkRead(ctx context.Context, a actor.Actor, id string) (Notif
 	return view, nil
 }
 
-// MarkAllRead marks every unread notification of a as read (FR-034) and says how many it marked; they stay
-// listed.
 func (s *Service) MarkAllRead(ctx context.Context, a actor.Actor) (ReadAll, error) {
 	marked := 0
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -117,11 +90,15 @@ func (s *Service) MarkAllRead(ctx context.Context, a actor.Actor) (ReadAll, erro
 	return ReadAll{Marked: marked, Unread: 0}, nil
 }
 
-// notificationView returns n as the API shows it; exists says whether its activity is still stored.
+// notificationView shows n with its record; exists says whether the record is still stored and visible.
 func notificationView(n Notification, exists bool) NotificationView {
-	return NotificationView{
-		ID: n.ID, Kind: n.Kind, Title: n.Title, Text: n.Text,
-		Activity: NotificationActivity{ID: n.ActivityID, Name: n.ActivityName, Exists: exists},
-		Actor:    n.Actor, At: n.At, Read: n.Read,
+	kind := n.subjectKind()
+	view := NotificationView{
+		ID: n.ID, Kind: n.Kind, Title: n.Title, Text: n.Text, Actor: n.Actor, At: n.At, Read: n.Read,
+		Subject: NotificationSubject{Kind: kind, Label: kind.Label(), ID: n.SubjectID, Name: n.SubjectName, Exists: exists},
 	}
+	if kind == KindActivity {
+		view.Activity = &NotificationActivity{ID: n.SubjectID, Name: n.SubjectName, Exists: exists}
+	}
+	return view
 }

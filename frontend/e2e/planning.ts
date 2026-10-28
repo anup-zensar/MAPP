@@ -44,11 +44,9 @@ export interface PlanningRecords {
   activityId: string;
   activityName: string;
   activityVersion: number;
-  /** The activity page: /plans/<planId>/activities/<activityId>. */
   activityPath: string;
 }
 
-/** The needed-to-submit activity attributes (always shown) and the demo option each test picks. */
 const ACTIVITY_ATTRIBUTES = [
   'Channel / audience',
   'Country / OU',
@@ -63,7 +61,6 @@ const ACTIVITY_ATTRIBUTES = [
 
 export type ActivityAttribute = (typeof ACTIVITY_ATTRIBUTES)[number];
 
-/** Finds the record called `name` in a list answer of the API. */
 export async function idOf(page: Page, url: string, name: string): Promise<string> {
   const list = await callApi<ListOf<Named>>(page, 'GET', url);
   const found = list.items.find((item) => item.name === name);
@@ -73,10 +70,7 @@ export async function idOf(page: Page, url: string, name: string): Promise<strin
   return found.id;
 }
 
-/**
- * The values of the needed-to-submit activity attributes of a Mobility plan, every one filled except
- * `leaveEmpty` (Mobility's own attribute group is optional, so these are all that is needed).
- */
+/** The needed-to-submit activity attributes of a Mobility plan, all filled except `leaveEmpty`. */
 async function activityAttributeValues(
   page: Page,
   leaveEmpty: readonly ActivityAttribute[],
@@ -116,14 +110,8 @@ async function activityAttributeValues(
   );
 }
 
-/**
- * As the signed-in person (Mei Lin): a Draft plan of next year called "<label> plan <unique>" (Mobility
- * 1.0, team Mobility China, owner Mei Lin, business unit Mobility, budget 100,000.00 USD), without
- * campaigns.
- *
- * Next year by default, so an activity in it starts after today: once approved it shows "Approved",
- * not "In progress" (006 FR-021). The plan form accepts years up to the current year + 5.
- */
+// As Mei Lin: a Draft Mobility plan "<label> plan <unique>", of next year by default so an approved
+// activity in it shows "Approved", not "In progress"; plans accept the current year to + 10.
 export async function createPlan(
   page: Page,
   label: string,
@@ -158,10 +146,7 @@ export async function createPlan(
   return { ...plan, year };
 }
 
-/**
- * As the signed-in person (Mei Lin): an initiative "<label> initiative <unique>" in the campaign, for
- * the whole of `year`, owned by Mei Lin, with the budget in USD (such as '40000.00').
- */
+/** As Mei Lin: an initiative "<label> initiative <unique>" for the whole of `year`. */
 export async function createInitiative(
   page: Page,
   campaignId: string,
@@ -181,11 +166,8 @@ export async function createInitiative(
   });
 }
 
-/**
- * As the signed-in person (Mei Lin): a plan of next year (see createPlan) with one campaign (50,000.00),
- * one initiative (40,000.00) and one Created activity "Content production" of 20,000.00 USD from 1 Mar
- * to 31 May.
- */
+// As Mei Lin: a plan of next year with one campaign, one initiative and one Created activity
+// "Content production" of 20,000.00 USD from 1 Mar to 31 May.
 export async function createPlanningRecords(
   page: Page,
   label: string,
@@ -252,7 +234,6 @@ export async function createPlanningRecords(
   };
 }
 
-/** The readable ID in `url` captured by the first group of `pattern`. */
 export function idIn(url: string, pattern: RegExp): string {
   const match = pattern.exec(url);
   if (!match) {
@@ -261,13 +242,11 @@ export function idIn(url: string, pattern: RegExp): string {
   return match[1] ?? '';
 }
 
-/** The plan page's tree (004's TreeTable, a treegrid). */
 export function planTree(page: Page): Locator {
   // PlanTree names its TreeTable after the card's title.
   return page.getByRole('treegrid', { name: 'Plan tree' });
 }
 
-/** The tree row of the plan, campaign, initiative or activity called `name`. */
 export function treeRow(page: Page, name: string): Locator {
   return planTree(page).getByRole('row').filter({ hasText: name });
 }

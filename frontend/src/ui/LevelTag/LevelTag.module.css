@@ -36,7 +36,9 @@
   background: color-mix(in srgb, var(--level-activity) 12%, transparent);
 }
 
-.lineItem {
+.lineItem,
+.purchaseRequest,
+.purchaseRequestLine {
   border-left-color: var(--level-line-item);
   background: color-mix(in srgb, var(--level-line-item) 12%, transparent);
 }

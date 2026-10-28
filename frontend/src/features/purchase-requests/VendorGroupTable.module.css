@@ -1,0 +1,130 @@
+/* The data table standard (design system §5.4): it scrolls sideways inside its card, never the page. */
+.scroll {
+  overflow-x: auto;
+}
+
+.table,
+.lines {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.table th,
+.table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--row-divider);
+  font-weight: var(--weight-regular);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table tr > :first-child {
+  padding-left: var(--card-padding);
+}
+
+.table tr > :last-child {
+  padding-right: var(--card-padding);
+}
+
+.table thead th,
+.lines thead th {
+  height: var(--control-md);
+  padding-block: 0;
+  background: var(--gray-bg);
+  color: var(--ink);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* A vendor's heading row: its name and totals on the grey of a group heading. */
+.vendor th,
+.vendor td {
+  background: var(--gray-bg);
+  font-weight: var(--weight-bold);
+}
+
+.vendorName {
+  font-weight: var(--weight-bold);
+}
+
+.muted {
+  color: var(--ink);
+  font-weight: var(--weight-regular);
+}
+
+.name {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+  min-width: 220px;
+}
+
+.toggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.toggle:hover {
+  background: var(--hover);
+}
+
+.toggle svg {
+  width: 16px;
+  height: 16px;
+}
+
+.waiting {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+
+.numeric {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.table .numeric {
+  text-align: right;
+}
+
+.linesRow > td {
+  padding-left: calc(var(--card-padding) + var(--space-6));
+  background: var(--surface);
+}
+
+.lines th,
+.lines td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--row-divider);
+  font-weight: var(--weight-regular);
+  text-align: left;
+  vertical-align: top;
+}
+
+.linesCaption {
+  padding-bottom: var(--space-2);
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  text-align: left;
+}

@@ -6,11 +6,11 @@ import (
 	"mapp/internal/platform/actor"
 )
 
-// RuleOptions returns what a level's rule may name (017 FR-001, FR-005): every activity type and business
-// unit, active or not, as Settings sorts them, and feature 014's roles that include approvals.decide, by
-// name. Every signed-in person may read them (D-296), so a is not used.
-func (s *Service) RuleOptions(ctx context.Context, a actor.Actor) (RuleOptions, error) {
+// RuleOptions returns what a level's rule may name; every signed-in
+// person may read them (D-296).
+func (s *Service) RuleOptions(ctx context.Context, _ actor.Actor) (RuleOptions, error) {
 	options := RuleOptions{ActivityTypes: []SettingRef{}, BusinessUnits: []OptionRef{}, Roles: []RoleRef{}}
+	options.ObjectTypes, options.RecordFields = kindOptions()
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		types, err := s.choices.ActivityTypes(ctx)
 		if err != nil {
@@ -41,4 +41,16 @@ func (s *Service) RuleOptions(ctx context.Context, a actor.Actor) (RuleOptions, 
 		return RuleOptions{}, err
 	}
 	return options, nil
+}
+
+// kindOptions are what a workflow can approve and the record fields a level may name, per object type.
+func kindOptions() ([]KindOption, []RecordFieldOption) {
+	kinds, fields := []KindOption{}, []RecordFieldOption{}
+	for _, kind := range allKinds() {
+		kinds = append(kinds, KindOption{ID: kind, Label: kind.Label()})
+		for _, f := range kind.recordFields() {
+			fields = append(fields, RecordFieldOption{ObjectType: kind, ID: f.ID, Label: f.Label})
+		}
+	}
+	return kinds, fields
 }

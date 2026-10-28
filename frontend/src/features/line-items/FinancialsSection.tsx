@@ -13,21 +13,16 @@ import {
   NO_ACCESS,
   NO_DATA,
   sourceText,
-  swbsCodesText,
   useFinancialRecord,
 } from './gsap-financials';
 import type { FinancialLevel, FinancialRecordView } from './gsap-financials';
 import { GsapFigures } from './GsapFigures';
 import styles from './FinancialsSection.module.css';
-import { LABEL } from './line-item-text';
 
 /** Latest transactions shown on the activity page (015 FR-015). */
 const LATEST = 5;
 
-/**
- * The white card of the Financials section (design system §5.3): the title "Financials" with its ⓘ
- * (015 plan, "User-visible messages"), open — never collapsed (FR-015, FR-017).
- */
+/** The Financials card: open, never collapsed (015 FR-015, FR-017). */
 function Frame({ level, children }: { level: FinancialLevel; children: ReactNode }) {
   const titleId = useId();
   return (
@@ -45,24 +40,17 @@ function Frame({ level, children }: { level: FinancialLevel; children: ReactNode
 
 /** Loading, refused or failed: the card's body instead of the figures. */
 function NotLoaded({ error, onRetry }: { error: unknown; onRetry: () => void }) {
-  // Refused: the in-place note of 015 (T044); 014's access pass decides who sees the card.
+  // Refused: the in-place note of 015 (T044); the access rules decide who sees the card.
   if (error instanceof ApiError && (error.kind === 'notAllowed' || error.kind === 'forbidden')) {
     return <p className={styles.note}>{NO_ACCESS}</p>;
   }
-  // No figures for the record yet: an API without GSAP data answers 404 (before 015 is served).
+  // An API without GSAP data answers 404 for the record (before 015 is served).
   if (error instanceof ApiError && error.kind === 'notFound') {
     return <p className={styles.note}>{NO_DATA}</p>;
   }
   return error ? <ErrorState error={error} onRetry={onRetry} /> : <Skeleton lines={4} />;
 }
 
-/**
- * The activity page's **Financials** card (015 US1, FR-011 – FR-015), open and in the Overview,
- * right after the summary: the five figures with the % committed meter and the red warnings, the
- * **By line item** table, the **Latest transactions** (at most 5, newest first), **View all n
- * transactions in Financials** and "GSAP data as of …". Amounts are in the reader's display currency,
- * as the API answers them; the web app never converts (D-061).
- */
 export function ActivityFinancials({ activityId }: { activityId: string }) {
   const record = useFinancialRecord(activityId);
   const view = record.data;
@@ -88,10 +76,6 @@ export function ActivityFinancials({ activityId }: { activityId: string }) {
   );
 }
 
-/**
- * The line-item page's **Financials** section (015 FR-017): the figures, the **Transactions** table of
- * all its transactions (paged by 50) and the SWBS code from GSAP data.
- */
 export function LineItemFinancials({ lineItemId }: { lineItemId: string }) {
   const record = useFinancialRecord(lineItemId);
   const view = record.data;
@@ -105,10 +89,6 @@ export function LineItemFinancials({ lineItemId }: { lineItemId: string }) {
           {view.figures.transactionCount > 0 && (
             <LineItemTransactions lineItemId={lineItemId} count={view.figures.transactionCount} />
           )}
-          <p className={styles.swbs}>
-            <span className={styles.swbsLabel}>{LABEL.swbsCode}:</span>{' '}
-            {swbsCodesText(view.swbsCodes)}
-          </p>
           <Source view={view} />
         </div>
       )}
@@ -116,7 +96,6 @@ export function LineItemFinancials({ lineItemId }: { lineItemId: string }) {
   );
 }
 
-/** The figures, or the sentence of a record without transactions (FR-014) above them. */
 function Figures({ view, level }: { view: FinancialRecordView; level: FinancialLevel }) {
   return (
     <>
@@ -128,7 +107,6 @@ function Figures({ view, level }: { view: FinancialRecordView; level: FinancialL
   );
 }
 
-/** "GSAP data as of 19 Oct 2026, 09:00 · Demo data (simulated GSAP)", or "No GSAP data loaded yet." */
 function Source({ view }: { view: FinancialRecordView }) {
   const { dateTime } = useFormatters();
   return (

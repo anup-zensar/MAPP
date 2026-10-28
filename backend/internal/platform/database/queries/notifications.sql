@@ -1,27 +1,30 @@
 -- name: GetNotification :one
-SELECT id, recipient_id, kind, title, text, activity_id, activity_name, actor_id, actor_name, at, read, read_at
+SELECT id, recipient_id, kind, title, text, subject_id, subject_name, actor_id, actor_name, at, read, read_at,
+    subject_kind
 FROM notifications
 WHERE id = $1;
 
 -- name: NotificationsOf :many
-SELECT id, recipient_id, kind, title, text, activity_id, activity_name, actor_id, actor_name, at, read, read_at
+SELECT id, recipient_id, kind, title, text, subject_id, subject_name, actor_id, actor_name, at, read, read_at,
+    subject_kind
 FROM notifications
 WHERE recipient_id = $1
 ORDER BY at DESC, length(id) DESC, id COLLATE "C" DESC;
 
 -- name: PutNotification :exec
 INSERT INTO notifications (
-    id, recipient_id, kind, title, text, activity_id, activity_name, actor_id, actor_name, at, read, read_at
+    id, recipient_id, kind, title, text, subject_id, subject_name, actor_id, actor_name, at, read, read_at, subject_kind
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
 )
 ON CONFLICT (id) DO UPDATE SET
     recipient_id = excluded.recipient_id,
     kind = excluded.kind,
     title = excluded.title,
     text = excluded.text,
-    activity_id = excluded.activity_id,
-    activity_name = excluded.activity_name,
+    subject_kind = excluded.subject_kind,
+    subject_id = excluded.subject_id,
+    subject_name = excluded.subject_name,
     actor_id = excluded.actor_id,
     actor_name = excluded.actor_name,
     at = excluded.at,

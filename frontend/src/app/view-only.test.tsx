@@ -2,11 +2,12 @@ import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { CurrentUser } from '@/session/useSession';
 import { mockApi } from '@/testing/mock-api';
-import { renderWithProviders } from '@/testing/render';
+import { renderRoutes, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { ModelsPage, SettingsPage } from '@/features/settings';
 import { ACTIVITY_TYPES, MODELS } from '@/testing/fixtures/settings';
 import { reply } from '@/testing/replies';
+import { routes } from './routes';
 import { Sidebar } from './Sidebar';
 import { loadSettingsSections } from './settings-sections';
 
@@ -107,5 +108,17 @@ describe('Light access gating (feature 014, FR-011, FR-012)', () => {
     await screen.findByRole('table');
     expect(screen.getByRole('button', { name: 'New model' })).toBeInTheDocument();
     expect(screen.queryByRole('note')).not.toBeInTheDocument();
+  });
+});
+
+describe('032 FR-049: the Purchase requests page needs purchaseRequests.list', () => {
+  it('shows the no-access page at its address to anyone else', async () => {
+    mockApi([reply('GET /api/v1/me', { body: SARA })]);
+    renderRoutes(routes, { route: '/purchase-requests' });
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'No access' })).toBeVisible();
+    expect(
+      screen.getByText("You don't have access to this page. Ask an administrator if you need it."),
+    ).toBeVisible();
   });
 });

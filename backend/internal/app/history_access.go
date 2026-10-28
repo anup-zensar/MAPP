@@ -12,25 +12,15 @@ import (
 	"mapp/internal/stores"
 )
 
-// historyAccess implements history.Access (feature 014, D-238, D-304): who sees which activity-log and
-// recycle-bin entries, and who may bring a deleted record back.
-//
-//   - Entries about planning records (plans and everything in them) follow the plan's visibility: the plan
-//     from the entry (the plan itself, or the first record of its path), stored or in the recycle bin; the
-//     entries of a plan deleted permanently are seen only with "View plans" for All markets.
-//   - Entries about Settings, people, teams, approval workflows, roles and the access rules need "See the
-//     whole activity log"; global budgets also "See global budgets" for All markets; GSAP imports and
-//     transactions (015) also "Import GSAP extracts" (D-304). Entries of any other kind need "See the whole
-//     activity log" too (fail closed): the delegations (017), exchange rates, rate imports and field help
-//     (016) among them.
-//   - Restoring needs to see the entry and the level's delete permission in the plan, or the permission that
-//     manages an administration record. The developer sample records stay open to everyone.
+// historyAccess implements history.Access (014, D-238, D-304): entries about planning records follow the plan's
+// visibility; administration kinds need the whole activity log, GSAP imports and SWBS runs also finance.import,
+// global budgets globalBudgets.view for All markets; any other kind the whole log (fail closed).
 type historyAccess struct {
-	plans   stores.PlanStore
-	history *history.Service
+	plans            stores.PlanStore
+	history          *history.Service
+	purchaseRequests stores.PurchaseRequestStore
 }
 
-// The managing permission of each administration kind: what restoring one of its records needs.
 var managedBy = map[string]authz.Permission{
 	"model": authz.SettingsManage, "activityType": authz.SettingsManage, "shellAttribute": authz.SettingsManage,
 	"shellAttributeOption": authz.SettingsManage, "financeBudget": authz.SettingsManage,
@@ -39,37 +29,41 @@ var managedBy = map[string]authz.Permission{
 	"approvalWorkflow": authz.WorkflowsManage, "role": authz.AccessManage, "accessRules": authz.AccessManage,
 	"globalBudget": authz.GlobalBudgetsManage, "approvalDelegation": authz.WorkflowsManage,
 	"exchangeRate": authz.ExchangeRatesManage, "rateImport": authz.ExchangeRatesManage, "fieldHelp": authz.SettingsManage,
-	"financialImport": authz.FinanceImport, "financialTransaction": authz.FinanceImport,
+	kindFinancialImport: authz.FinanceImport, kindFinancialTransaction: authz.FinanceImport, kindSwbsRun: authz.FinanceImport,
 }
 
-// importedFinance are the kinds of feature 015's GSAP imports, which "Import GSAP extracts" also opens in the
-// log (D-304).
-var importedFinance = map[string]bool{"financialImport": true, "financialTransaction": true}
+const (
+	kindFinancialImport      = "financialImport"
+	kindFinancialTransaction = "financialTransaction"
+	kindSwbsRun              = "swbsRun"
+)
 
-// deletedWith is the delete permission of each level of a plan: what restoring one of its records needs.
+func isImportedFinance(kind string) bool {
+	switch kind {
+	case kindFinancialImport, kindFinancialTransaction, kindSwbsRun:
+		return true
+	}
+	return false
+}
+
 var deletedWith = map[string]authz.Permission{
 	"plan": authz.PlansDelete, "campaign": authz.CampaignsDelete, "initiative": authz.CampaignsDelete,
 	"activity": authz.ActivitiesDelete, "lineItem": authz.ActivitiesDelete, "budgetAllocation": authz.GlobalBudgetsManage,
+	kindPurchaseRequest: authz.PurchaseRequestsDelete, kindPurchaseRequestLine: authz.PurchaseRequestsEdit,
 }
 
-// openToAll are the kinds of the developer sample pages, which every signed-in person uses (D-036).
 var openToAll = map[string]bool{"sampleFolder": true, "sampleNote": true}
 
-// The compiler checks here that historyAccess implements history.Access.
 var _ history.Access = historyAccess{}
 
-// CanSeeEntry reports whether the person acting may see the log entry e.
 func (h historyAccess) CanSeeEntry(ctx context.Context, e history.Entry) bool {
 	return h.canSee(ctx, e.RecordType, e.RecordID, e.Path, nil)
 }
 
-// CanSeeBinEntry reports whether the person acting may see the recycle-bin entry e.
 func (h historyAccess) CanSeeBinEntry(ctx context.Context, e history.BinEntry) bool {
 	return h.canSee(ctx, e.RecordType, e.RecordID, e.Path, e.Snapshots)
 }
 
-// CanRestore refuses an Undo or Restore of e that the person acting may not make: 404 when they cannot see
-// it, as for a missing record, otherwise 403 forbidden.
 func (h historyAccess) CanRestore(ctx context.Context, e history.BinEntry) error {
 	g, restricted := authz.From(ctx)
 	if !restricted || openToAll[e.RecordType] {
@@ -91,8 +85,6 @@ func (h historyAccess) CanRestore(ctx context.Context, e history.BinEntry) error
 	return nil
 }
 
-// canSee reports whether the person acting may see an entry about the record id of kind, whose ancestors
-// are path; snapshots are the records of a recycle-bin entry (nil for a log entry).
 func (h historyAccess) canSee(ctx context.Context, kind, id string, path []history.RecordRef, snapshots []history.Snapshot) bool {
 	g, restricted := authz.From(ctx)
 	switch {
@@ -101,7 +93,7 @@ func (h historyAccess) canSee(ctx context.Context, kind, id string, path []histo
 	case kind == "globalBudget":
 		all, _ := g.Teams(authz.GlobalBudgetsView)
 		return all || g.Has(authz.ActivityLogViewAll)
-	case importedFinance[kind]:
+	case isImportedFinance(kind):
 		return g.Has(authz.FinanceImport) || g.Has(authz.ActivityLogViewAll)
 	}
 	if _, planning := deletedWith[kind]; !planning {
@@ -115,16 +107,10 @@ func (h historyAccess) canSee(ctx context.Context, kind, id string, path []histo
 	return g.CanViewPlan(p)
 }
 
-// planOf returns the access facts of the plan an entry is about: the plan itself or the first record of the
-// path, as stored, as the entry's own snapshot, or as a snapshot in the recycle bin; false when the plan is
-// nowhere any more.
 func (h historyAccess) planOf(ctx context.Context, kind, id string, path []history.RecordRef, snapshots []history.Snapshot) (authz.PlanFacts, bool) {
-	planID := id
-	if kind != "plan" {
-		if len(path) == 0 || path[0].Type != "plan" {
-			return authz.PlanFacts{}, false
-		}
-		planID = path[0].ID
+	planID, found := h.planIDOf(ctx, entryRecord{kind: kind, id: id, path: path, snapshots: snapshots})
+	if !found {
+		return authz.PlanFacts{}, false
 	}
 	known, err := h.knownPlans(ctx)
 	if err != nil {
@@ -142,13 +128,10 @@ func (h historyAccess) planOf(ctx context.Context, kind, id string, path []histo
 	return facts, inBin
 }
 
-// knownPlans are the access facts of every stored plan and of every plan in the recycle bin.
 type knownPlans struct {
 	stored, inBin map[string]authz.PlanFacts
 }
 
-// knownPlans reads every plan, stored and in the recycle bin, once per transaction until data changes: the
-// log and the bin ask for the plan of each of their entries, and there are fewer plans than entries.
 func (h historyAccess) knownPlans(ctx context.Context) (knownPlans, error) {
 	return memo.Get(ctx, memo.Derived+":historyPlans", func(ctx context.Context) (knownPlans, error) {
 		known := knownPlans{stored: map[string]authz.PlanFacts{}, inBin: map[string]authz.PlanFacts{}}
@@ -172,7 +155,6 @@ func (h historyAccess) knownPlans(ctx context.Context) (knownPlans, error) {
 	})
 }
 
-// planSnapshotFacts returns the access facts of a plan as the recycle bin keeps it.
 func planSnapshotFacts(s history.Snapshot) (authz.PlanFacts, bool) {
 	var p plan.Plan
 	if err := json.Unmarshal(s.Data, &p); err != nil {

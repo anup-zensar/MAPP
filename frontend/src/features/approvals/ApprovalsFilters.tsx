@@ -14,11 +14,7 @@ export interface ApprovalsFiltersProps {
   onChange: (filters: ApprovalFilterValues) => void;
 }
 
-/**
- * **Filters** (FR-031): a popover with Plan, Approval workflow and Owner — the choices the tab's
- * rows have — and the submitted dates. The button says how many are in use: "Filters (2)". The
- * chips under the toolbar remove them one by one.
- */
+/** The choices come from the tab's rows, so no filter offers a value that matches nothing. */
 export function ApprovalsFilters({ filters, options, onChange }: ApprovalsFiltersProps) {
   const id = useId();
   const inUse = filtersInUse(filters);
@@ -37,6 +33,13 @@ export function ApprovalsFilters({ filters, options, onChange }: ApprovalsFilter
           aria-label="Filters"
         >
           <div className={styles.fields}>
+            <ChoiceField
+              label="Record type"
+              name={`${id}-kind`}
+              options={options.kinds}
+              value={filters.kind}
+              onChange={(kind) => set({ kind })}
+            />
             <ChoiceField
               label="Plan"
               name={`${id}-plan`}

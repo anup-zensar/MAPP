@@ -117,18 +117,12 @@ describe('ActivityFinancials (015 US1, FR-011 – FR-015)', () => {
 });
 
 describe('LineItemFinancials (015 FR-017)', () => {
-  it('shows the figures, every transaction and the SWBS code from GSAP data', async () => {
+  it('shows the figures and every transaction, and leaves the SWBS code to the SWBS request card (030 FR-019)', async () => {
     renderLineItem({ body: lineItemRecord() });
 
     const section = await screen.findByRole('region', { name: 'Financials' });
     expect(await within(section).findByText('PO 4500001001 / 10')).toBeVisible();
     expect(within(section).getByText('Purchase order · Brightlight Agency')).toBeVisible();
-    expect(within(section).getByText('DE03-M26-0003 (from GSAP data)')).toBeVisible();
-  });
-
-  it('says the SWBS code is filled by GSAP later when no transaction carries one', async () => {
-    renderLineItem({ body: lineItemRecord({ swbsCodes: [] }) });
-
-    expect(await screen.findByText('Filled by GSAP later')).toBeVisible();
+    expect(within(section).queryByText(/from GSAP data/)).not.toBeInTheDocument();
   });
 });

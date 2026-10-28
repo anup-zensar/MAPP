@@ -13,16 +13,14 @@ import (
 	"mapp/internal/settings"
 )
 
-// The longest name and description, in characters.
 const (
 	maxNameLength        = 120
 	maxDescriptionLength = 2000
 )
 
-// maxAmount is the largest amount a line item takes: 999,999,999,999.99 (plan, "Validation messages").
+// maxAmount is 999,999,999,999.99, the largest amount a line item takes.
 var maxAmount = money.FromCents(99_999_999_999_999)
 
-// Messages of the plan's "Validation messages" table.
 const (
 	enterNameMessage          = "Enter a name for the line item."
 	nameTooLongMessage        = "Use 120 characters or fewer."
@@ -49,24 +47,19 @@ const (
 	inactiveItemMessage       = "Choose an active finance budget item — '%s' is no longer active."
 )
 
-// spreadMethods are the four spread methods (design system §8).
 var spreadMethods = []SpreadMethod{SpreadEvenly, SpreadFirstMonth, SpreadLastMonth, SpreadCustom}
 
-// input returns the form fields of an update, which are those of a create.
 func (u Update) input() Input {
 	return Input{
 		Name: u.Name, OwnerID: u.OwnerID, Description: u.Description, Currency: u.Currency,
 		PlannedCost: u.PlannedCost, Spread: u.Spread, Attributes: u.Attributes, ContractedAmount: u.ContractedAmount,
 		RequestSwbs: u.RequestSwbs, FinanceBudgetYear: u.FinanceBudgetYear, FinanceBudgetItemID: u.FinanceBudgetItemID,
-		RestartApproval: u.RestartApproval,
 	}
 }
 
-// check checks the form in of a line item of the activity f, inside the caller's transaction, and returns
-// the fields to store with every problem at once (FR-009, SC-005). siblings are the activity's other line
-// items (for the unique name); before is the stored line item of an update, nil for a new one: an inactive
-// owner, currency, finance budget year or item it already has may stay (FR-011, FR-016), a new choice must
-// be active. Only name, currency and planned cost are required (D-009).
+// check returns the fields to store with every problem of the form at once. before is the stored line item of
+// an update, nil for a new one: an inactive owner, currency, finance budget year or item it already has may
+// stay, a new choice must be active. Only name, currency and planned cost are required (D-009).
 func (s *Service) check(ctx context.Context, f ActivityFacts, siblings []LineItem, in Input, before *LineItem) (LineItem, errs.Problems, error) {
 	var problems errs.Problems
 	var li LineItem
@@ -152,9 +145,8 @@ func (s *Service) check(ctx context.Context, f ActivityFacts, siblings []LineIte
 	return li, problems, nil
 }
 
-// checkSpread checks the spread of a request and returns it as stored: the custom months only for a custom
-// spread, sorted by month, each a month from January of the plan's year − 1 to December of the plan's year
-// + 10 at most once, with an amount of 0.00 or more (FR-018, D-152); an empty list for the other methods.
+// checkSpread returns the spread as stored: the custom months, each at most once, sorted, only for a custom
+// spread (D-152).
 func checkSpread(problems *errs.Problems, in SpreadInput, planYear int) Spread {
 	spread := Spread{Method: in.Method, Months: []MonthAmount{}}
 	if !slices.Contains(spreadMethods, in.Method) {
@@ -186,8 +178,7 @@ func checkSpread(problems *errs.Problems, in SpreadInput, planYear int) Spread {
 	return spread
 }
 
-// checkFinanceBudget checks the finance budget year and item of the form in and sets them on li (FR-015,
-// FR-016, R12): the year is the plan's year, a year with active items, or the one already stored; the item
+// checkFinanceBudget accepts the plan's year, a year with active items or the one already stored; the item
 // needs a year first, must exist, belong to that year and, when newly chosen, be active.
 func (s *Service) checkFinanceBudget(ctx context.Context, problems *errs.Problems, li *LineItem, in Input, f ActivityFacts, before *LineItem) error {
 	itemID := ""
@@ -229,8 +220,7 @@ func (s *Service) checkFinanceBudget(ctx context.Context, problems *errs.Problem
 	return nil
 }
 
-// parseAmount reads an amount a person typed: a decimal number with at most two decimals (D-190), 0.00 or
-// more, below one trillion. It returns the message of what is wrong, "" when the amount is fine;
+// parseAmount returns the message of what is wrong with a typed amount, "" when it is fine (D-190);
 // negativeMessage is the field's own message for a negative amount.
 func parseAmount(text, negativeMessage string) (money.Amount, string) {
 	amount, err := money.ParseAmount(strings.TrimSpace(text))
@@ -249,8 +239,6 @@ func parseAmount(text, negativeMessage string) (money.Amount, string) {
 	return amount, ""
 }
 
-// named returns the line item among items whose name is name, ignoring letter case and surrounding spaces,
-// and false when there is none.
 func named(items []LineItem, name string) (LineItem, bool) {
 	for _, li := range items {
 		if strings.EqualFold(strings.TrimSpace(li.Name), strings.TrimSpace(name)) {
@@ -260,7 +248,6 @@ func named(items []LineItem, name string) (LineItem, bool) {
 	return LineItem{}, false
 }
 
-// yearsWithActiveItems returns the years that have at least one active finance budget item, ascending.
 func yearsWithActiveItems(items []BudgetItem) []int {
 	years := []int{}
 	for _, item := range items {
@@ -272,7 +259,7 @@ func yearsWithActiveItems(items []BudgetItem) []int {
 	return years
 }
 
-// orNoValues returns values, or empty values instead of nil: a stored line item never has nil attributes.
+// orNoValues returns empty values instead of nil, as a stored line item never has nil attributes.
 func orNoValues(values settings.AttributeValues) settings.AttributeValues {
 	if values == nil {
 		return settings.AttributeValues{}

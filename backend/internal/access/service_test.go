@@ -128,8 +128,8 @@ func TestSummary_RolesPermissionsAdministrators_FR024(t *testing.T) {
 	}
 
 	alexs, _ := f.service.Summary(t.Context(), alex.ID)
-	if len(alexs.Permissions) != 25 || !alexs.Permissions[0].All || len(alexs.Permissions[0].Teams) != 0 {
-		t.Errorf("Alex's permissions = %+v, want all 25 for All markets", alexs.Permissions)
+	if len(alexs.Permissions) != 29 || !alexs.Permissions[0].All || len(alexs.Permissions[0].Teams) != 0 {
+		t.Errorf("Alex's permissions = %+v, want all 29 for All markets", alexs.Permissions)
 	}
 }
 

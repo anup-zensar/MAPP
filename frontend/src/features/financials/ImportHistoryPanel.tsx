@@ -11,14 +11,13 @@ import type { FinancialImport } from './api';
 import { importCountsText, NO_ACCESS, NO_DATA, relinkedText } from './financials-text';
 import styles from './ImportHistoryPanel.module.css';
 
+const SIMULATED_GSAP_SOURCE = 'Simulated GSAP';
+
 export interface ImportHistoryPanelProps {
   onClose: () => void;
 }
 
-/**
- * Import history (015 FR-008): every import, newest first, with its file name, source, who made
- * it, when, and its counts.
- */
+/** Import history (015 FR-008; 033 FR-011): every import, newest first, with its counts. */
 export function ImportHistoryPanel({ onClose }: ImportHistoryPanelProps) {
   const imports = useFinancialImports();
   const forbidden = imports.error instanceof ApiError && imports.error.kind === 'forbidden';
@@ -61,7 +60,13 @@ function ImportItem({ item }: { item: FinancialImport }) {
     <li className={styles.item}>
       <p className={styles.name}>{item.fileName || item.feedName}</p>
       <p className={styles.meta}>
-        {[item.fileName ? item.feedName : null, item.id].filter(Boolean).join(' · ')}
+        {[
+          item.source === 'simulatedGsap' ? SIMULATED_GSAP_SOURCE : null,
+          item.fileName ? item.feedName : null,
+          item.id,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
       </p>
       <p className={styles.meta}>{`${dateTime(item.importedAt)} by ${item.importedBy.name}`}</p>
       <p>{importCountsText(item.counts)}</p>

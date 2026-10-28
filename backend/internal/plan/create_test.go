@@ -13,10 +13,6 @@ import (
 	"mapp/internal/settings"
 )
 
-// User story 1 — Create a plan.
-
-// A new plan starts with the current year (choices 2025–2031), the person's active teams, the person as
-// owner when they have a team, the only active model, No, Evenly and INQ (FR-006, US1 scenario 1).
 func TestDefaults_FR006(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -24,10 +20,10 @@ func TestDefaults_FR006(t *testing.T) {
 	defaults, err := f.service.Defaults(t.Context(), priya)
 
 	want := Defaults{
-		CurrentYear: 2026, Years: []int{2025, 2026, 2027, 2028, 2029, 2030, 2031}, Year: 2026,
+		CurrentYear: 2026, Years: []int{2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036}, Year: 2026,
 		TeamIDs: []string{teamLubricants}, OwnerID: ptr(priya.ID), // Closed team is inactive
 		DefaultSpread: SpreadEvenly, GoalStage: StageINQ, // two active models: none chosen
-		Currency: "USD", PlanType: TypeOperational, // 016 FR-011, FR-032
+		Currency: "USD", PlanType: TypeOperational,
 	}
 	if err != nil || !reflect.DeepEqual(defaults, want) {
 		t.Errorf("Defaults = %+v, %v\nwant       %+v", defaults, err, want)
@@ -42,8 +38,7 @@ func TestDefaults_FR006(t *testing.T) {
 	}
 }
 
-// Only name, year and model are needed to save; a plan without teams, owner or business unit is saved as
-// Draft, its missing fields listed (FR-010, spec edge case "The user belongs to no team").
+// A plan without teams, owner or business unit is saved as a Draft that lists its missing fields.
 func TestCreate_OnlyNameYearModelRequired_FR010(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -67,11 +62,10 @@ func TestCreate_OnlyNameYearModelRequired_FR010(t *testing.T) {
 	}
 
 	_, err = f.service.Create(t.Context(), nina, PlanInput{})
-	assertError(t, err, problems("name", "Enter a plan name.", "year", "Choose a year from 2025 to 2031.", "modelId", "Choose a model."))
+	assertError(t, err, problems("name", "Enter a plan name.", "year", "Choose a year from 2026 to 2036.", "modelId", "Choose a model."))
 }
 
-// Every problem of a form is reported in one attempt, also a name another plan has in other letters; and
-// nothing is saved (FR-010, US1 scenario 3).
+// A name another plan has in other letters is reported with every other problem, and nothing is saved.
 func TestCreate_AllProblemsAtOnce_FR010(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -95,29 +89,27 @@ func TestCreate_AllProblemsAtOnce_FR010(t *testing.T) {
 	}
 }
 
-// A new plan's year is from the current year − 1 to + 5 (FR-006).
-func TestCreate_YearRange_FR006(t *testing.T) {
+// Last year and the year after current + 10 are refused, with every other problem (D-326).
+func TestCreate_YearRange_034_FR014(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	for _, year := range []int{2025, 2031} {
+	for _, year := range []int{2026, 2036} {
 		in := input(fmt.Sprintf("Plan of %d", year))
 		in.Year = ptr(year)
 		if view := f.create(t, priya, in); view.Year != year {
 			t.Errorf("year = %d, want %d", view.Year, year)
 		}
 	}
-	for _, year := range []*int{ptr(2024), ptr(2032), nil} {
+	for _, year := range []*int{ptr(2025), ptr(2037), nil} {
 		in := input("Out of range")
 		in.Year = year
 
 		_, err := f.service.Create(t.Context(), priya, in)
 
-		assertError(t, err, problems("year", "Choose a year from 2025 to 2031."))
+		assertError(t, err, problems("year", "Choose a year from 2026 to 2036."))
 	}
 }
 
-// Without a team the owner can't be chosen: the owner must belong to one of the plan's teams (FR-007, R1,
-// US1 scenario 4).
 func TestCreate_OwnerNeedsTeams_FR007(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -129,7 +121,6 @@ func TestCreate_OwnerNeedsTeams_FR007(t *testing.T) {
 	assertError(t, err, problems("ownerId", "Choose teams first — the owner must belong to one of the plan's teams."))
 }
 
-// The problems Settings finds in the Shell attribute values are reported with the others (FR-008).
 func TestCreate_AttributeProblemsCollected_FR008(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -140,8 +131,6 @@ func TestCreate_AttributeProblemsCollected_FR008(t *testing.T) {
 	assertError(t, err, problems("name", "Enter a plan name.", "attributes.SA-BU", "'Marine' is inactive — choose another option."))
 }
 
-// A new plan is Draft with the next permanent ID, P-1001, its creator and time, and one "created" log entry
-// by its creator (FR-010, FR-031, US1 scenario 2).
 func TestCreate_DraftWithIDAndLog_FR010_FR031(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -161,8 +150,6 @@ func TestCreate_DraftWithIDAndLog_FR010_FR031(t *testing.T) {
 	assertCreatedByPriya(t, f.entries(t), "P-1001", "FY2026 Lubricants Test")
 }
 
-// assertLubricantsReferences checks the references of a plan created from input: the Lubricants team, Priya
-// as owner, the Lubricants model and business unit.
 func (f *fixture) assertLubricantsReferences(t *testing.T, view PlanView) {
 	t.Helper()
 	if !reflect.DeepEqual(view.Teams, []people.TeamRef{f.directory.teams[teamLubricants]}) ||
@@ -172,7 +159,6 @@ func (f *fixture) assertLubricantsReferences(t *testing.T, view PlanView) {
 	}
 }
 
-// assertCreatedByPriya checks that the log holds one entry: Priya's "created" entry of the plan id named name.
 func assertCreatedByPriya(t *testing.T, entries []history.Entry, id, name string) {
 	t.Helper()
 	if len(entries) != 1 || entries[0].Action != history.ActionCreated || entries[0].RecordID != id ||

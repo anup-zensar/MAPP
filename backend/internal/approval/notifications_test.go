@@ -15,16 +15,13 @@ import (
 	"mapp/internal/platform/ids"
 )
 
-// everyone is the demo people of the fixture.
 var everyone = []actor.Actor{alex, priya, daniel, mei, carlos, sara}
 
-// notifiedSince returns the notifications each person got after counts were taken (see counts), as
-// "<name>: <kind>, <kind>" with the oldest first, for the people who got any.
 func (f *fixture) notifiedSince(t *testing.T, counts map[string]int) []string {
 	t.Helper()
 	var lines []string
 	for _, p := range everyone {
-		mine := f.notifications(t, p.ID) // newest first
+		mine := f.notifications(t, p.ID)
 		fresh := mine[:len(mine)-counts[p.ID]]
 		if len(fresh) == 0 {
 			continue
@@ -38,7 +35,6 @@ func (f *fixture) notifiedSince(t *testing.T, counts map[string]int) []string {
 	return lines
 }
 
-// counts returns how many notifications each person has now.
 func (f *fixture) counts(t *testing.T) map[string]int {
 	t.Helper()
 	counts := map[string]int{}
@@ -48,23 +44,17 @@ func (f *fixture) counts(t *testing.T) map[string]int {
 	return counts
 }
 
-// Each approval action tells exactly the people of data model §4, once each: the level's approvers when a
-// round reaches it; the owner on every approval, decline, recall and restart; the waiting level's approvers
-// on a recall or a restart, or the people who approved a restarted Approved activity. A restore from the
-// recycle bin tells nobody (FR-035). Alex Morgan, who is no approver here, acts, so nobody is left out as
-// the actor.
 func TestNotify_Recipients_FR035(t *testing.T) {
 	t.Parallel()
-	const twoLevels = "WF-1003" // level 1 Daniel Okoro; level 2 Carlos Mendes and Sara Novak
+	const twoLevels = "WF-1003"
 	tests := []struct {
 		name  string
-		setUp func(t *testing.T, f *fixture) // brings the activity A-1004, owned by Priya Raman, to where the action starts
+		setUp func(t *testing.T, f *fixture)
 		act   func(t *testing.T, f *fixture)
 		want  []string
 	}{
 		{"submit", func(*testing.T, *fixture) {}, func(t *testing.T, f *fixture) { t.Helper(); f.submit(t, alex, "A-1004", "") },
 			[]string{"Daniel Okoro: approvalNeeded"}},
-		// 017 FR-018: Alex submits, so the approvers decide.
 		{"re-submit", func(t *testing.T, f *fixture) {
 			t.Helper()
 			f.submit(t, alex, "A-1004", "")
@@ -125,9 +115,6 @@ func TestNotify_Recipients_FR035(t *testing.T) {
 	}
 }
 
-// Nobody is ever told about their own action, also when they are the owner or an approver of the level:
-// Daniel Okoro submits, approves and recalls his own activity at a level that lists him (FR-036). He may,
-// because 014's access rule is off here (017 edge case "The access rule is turned off").
 func TestNotify_NeverOwnAction_FR036(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -135,11 +122,11 @@ func TestNotify_NeverOwnAction_FR036(t *testing.T) {
 	f.addActivity(t, "A-1004", "Trade magazine ads", daniel.ID, lubricantsFlow)
 	f.addActivity(t, "A-1005", "Fleet roadshow", daniel.ID, lubricantsFlow)
 
-	f.submit(t, daniel, "A-1004", "")  // he approves level 1 himself
-	f.approve(t, daniel, "A-1004", "") // he owns it
-	f.restart(t, daniel, "A-1004")     // owner, and the only person who approved it
+	f.submit(t, daniel, "A-1004", "")
+	f.approve(t, daniel, "A-1004", "")
+	f.restart(t, daniel, "A-1004")
 	f.submit(t, daniel, "A-1005", "")
-	f.recall(t, daniel, "A-1005", "") // owner, and the waiting level's only approver
+	f.recall(t, daniel, "A-1005", "")
 
 	for _, p := range everyone {
 		if got := f.notifications(t, p.ID); len(got) != 0 {
@@ -148,12 +135,10 @@ func TestNotify_NeverOwnAction_FR036(t *testing.T) {
 	}
 }
 
-// A decline tells the owner with the start of the comment: a comment of up to 80 characters whole, a longer
-// one cut after 80 characters (not bytes) with "…" (FR-035, 008-P16).
 func TestNotify_DeclineQuotesComment_FR035(t *testing.T) {
 	t.Parallel()
 	short := "Split the agency fee by country."
-	long := strings.Repeat("é", 79) + "ab" // 81 characters, 163 bytes
+	long := strings.Repeat("é", 79) + "ab"
 	for _, tt := range []struct{ comment, quoted string }{
 		{short, short},
 		{strings.Repeat("x", 80), strings.Repeat("x", 80)},
@@ -172,8 +157,6 @@ func TestNotify_DeclineQuotesComment_FR035(t *testing.T) {
 	}
 }
 
-// putNotifications stores n notifications for the person recipient about the activity A-1004, one a minute
-// from start, the first read ones read; it returns their ids, oldest first.
 func (f *fixture) putNotifications(t *testing.T, recipient actor.Actor, n, read int) []string {
 	t.Helper()
 	var list []string
@@ -186,7 +169,7 @@ func (f *fixture) putNotifications(t *testing.T, recipient actor.Actor, n, read 
 			at := start.Add(time.Duration(i) * time.Minute)
 			notification := Notification{
 				ID: id, RecipientID: recipient.ID, Kind: NotifyApprovalNeeded, Title: "Approval needed",
-				Text: "Priya Raman submitted 'Trade magazine ads' (A-1004)", ActivityID: "A-1004", ActivityName: "Trade magazine ads",
+				Text: "Priya Raman submitted 'Trade magazine ads' (A-1004)", SubjectKind: KindActivity, SubjectID: "A-1004", SubjectName: "Trade magazine ads",
 				Actor: priya, At: at,
 			}
 			if i < read {
@@ -202,13 +185,11 @@ func (f *fixture) putNotifications(t *testing.T, recipient actor.Actor, n, read 
 	return list
 }
 
-// The bell lists the person's 50 most recent notifications, newest first, with the number of all of them
-// and of all the unread ones — also those beyond the 50; nobody sees another person's (FR-033).
 func TestListNotifications_FR033(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1004", "Trade magazine ads", priya.ID, lubricantsFlow)
-	all := f.putNotifications(t, daniel, 55, 3) // the 3 oldest are read
+	all := f.putNotifications(t, daniel, 55, 3)
 	f.putNotifications(t, carlos, 2, 0)
 
 	page, err := f.service.ListNotifications(t.Context(), daniel)
@@ -225,7 +206,7 @@ func TestListNotifications_FR033(t *testing.T) {
 	}
 	wantFirst := NotificationView{
 		ID: all[54], Kind: NotifyApprovalNeeded, Title: "Approval needed", Text: "Priya Raman submitted 'Trade magazine ads' (A-1004)",
-		Activity: NotificationActivity{ID: "A-1004", Name: "Trade magazine ads", Exists: true}, Actor: priya,
+		Subject: NotificationSubject{Kind: KindActivity, Label: "Activity", ID: "A-1004", Name: "Trade magazine ads", Exists: true}, Activity: &NotificationActivity{ID: "A-1004", Name: "Trade magazine ads", Exists: true}, Actor: priya,
 		At: start.Add(54 * time.Minute),
 	}
 	if !reflect.DeepEqual(first, wantFirst) {
@@ -237,25 +218,21 @@ func TestListNotifications_FR033(t *testing.T) {
 	}
 }
 
-// A notification about an activity that is no longer stored (in the recycle bin) says so, with the name it
-// had (edge case).
 func TestListNotifications_DeletedActivity_EdgeCase(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1004", "Trade magazine ads", priya.ID, lubricantsFlow)
 	f.submit(t, priya, "A-1004", "")
-	delete(f.activities.facts, "A-1004") // deleted: in the recycle bin
+	delete(f.activities.facts, "A-1004")
 
 	page, err := f.service.ListNotifications(t.Context(), daniel)
 
 	want := NotificationActivity{ID: "A-1004", Name: "Trade magazine ads", Exists: false}
-	if err != nil || len(page.Items) != 1 || page.Items[0].Activity != want {
+	if err != nil || len(page.Items) != 1 || page.Items[0].Activity == nil || *page.Items[0].Activity != want || page.Items[0].Subject.Exists {
 		t.Errorf("page = %+v, %v; want the notification with its activity gone", page, err)
 	}
 }
 
-// Opening a notification marks it read once; marking it again changes nothing; another person's, or one
-// that does not exist, is not found. Notifications are not logged (FR-034, D-163).
 func TestMarkRead_FR034(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -291,8 +268,6 @@ func TestMarkRead_FR034(t *testing.T) {
 	}
 }
 
-// Mark all as read marks every unread notification of the person — also those beyond the 50 listed — and
-// keeps them listed; a second time there is nothing to mark; other people's stay unread (FR-034).
 func TestMarkAllRead_FR034(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

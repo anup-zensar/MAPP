@@ -1160,7 +1160,7 @@ export interface paths {
         };
         /**
          * The default values of a new plan for the signed-in person
-         * @description Year = the current year; years = current year - 1 to + 5; teams = the person's active teams;
+         * @description Year = the current year; years = the current year to + 10, no past year (D-326); teams = the person's active teams;
          *     owner = the person when they have one; model = the only active model.
          */
         get: operations["getPlanDefaults"];
@@ -1759,10 +1759,8 @@ export interface paths {
         put?: never;
         /**
          * Add a line item to an activity
-         * @description Only name, currency and planned cost are required to save (FR-009). On a Submitted or Approved
-         *     activity the request must confirm that the activity goes back for approval
-         *     (restartApproval true); otherwise nothing is saved and the answer is 400
-         *     validation_failed on restartApproval.
+         * @description Only name, currency and planned cost are required to save (FR-009). Adding a line item never
+         *     changes the activity's status or approval, whatever its status (034 FR-001, D-322).
          */
         post: operations["createLineItem"];
         delete?: never;
@@ -1804,17 +1802,16 @@ export interface paths {
         post?: never;
         /**
          * Delete a line item (it goes to the recycle bin)
-         * @description On a Submitted or Approved activity the query parameter restartApproval must be true (400 validation_failed on restartApproval otherwise); the activity then returns to Created.
+         * @description Moves the line item to the recycle bin; the activity's status and approval stay as they are (034 FR-001, D-322). The query parameter restartApproval is deprecated and ignored.
          */
         delete: operations["deleteLineItem"];
         options?: never;
         head?: never;
         /**
          * Save a line item (the whole form and the version it started from)
-         * @description Every editable field is sent, with the version the person started editing from. Changing the
-         *     planned cost or the currency of a line item of a Submitted or Approved activity needs
-         *     restartApproval true (400 validation_failed on restartApproval otherwise); other changes never change
-         *     the activity's status (FR-032). A save that changes nothing creates no new version.
+         * @description Every editable field is sent, with the version the person started editing from. No change of a
+         *     line item - its planned cost and currency included - changes the activity's status or approval
+         *     (034 FR-001, D-322). A save that changes nothing creates no new version.
          */
         patch: operations["updateLineItem"];
         trace?: never;
@@ -1830,7 +1827,7 @@ export interface paths {
         put?: never;
         /**
          * Duplicate a line item in the same activity
-         * @description The copy has every value, a new ID and the name "<name> (copy)", "(copy 2)", … (FR-029). Counts as adding a line item (restartApproval on a Submitted or Approved activity).
+         * @description The copy has every value, a new ID and the name "<name> (copy)", "(copy 2)", … (FR-029). The activity's status and approval stay as they are (034 FR-001, D-322).
          */
         post: operations["duplicateLineItem"];
         delete?: never;
@@ -3103,6 +3100,458 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/simulated-gsap/swbs-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The runs of the simulated GSAP, newest first, and how many line items are ready to send (030 FR-011) */
+        get: operations["listSwbsRuns"];
+        put?: never;
+        /**
+         * Send the line items that are ready to the simulated GSAP and store the codes it returns (030 FR-006 – FR-010)
+         * @description Sends every line item whose SWBS status is readyToSend within the person's finance.import scope, or
+         *     only lineItemIds, to the simulated GSAP, which answers each with SIM-<company code|0000>-<nnnn>. The
+         *     line items store their codes, one run is kept and one activity-log entry written. A named line item
+         *     that does not exist or is out of scope answers 404 not_found; one that is not ready answers 409
+         *     not_allowed and nothing is sent. A run with nothing ready is kept with no codes.
+         */
+        post: operations["createSwbsRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Purchase requests page — PRs grouped by vendor, with their lines (FR-044 – FR-048)
+         * @description PRs of the plans where the person holds purchaseRequests.list, ordered by vendor (case-insensitive;
+         *     an empty vendor last as "Not completed"), then by the sort. Each row carries its lines and their line
+         *     items. vendors gives each vendor on the page its number of matching PRs and totals over all matching
+         *     PRs (not only this page). Search matches PR ID, name, vendor, GSAP PR number, and the HX keys and PO
+         *     numbers of the lines. 409 not_allowed while Purchase Support is off.
+         */
+        get: operations["listPurchaseRequests"];
+        put?: never;
+        /**
+         * Raise a purchase request with at least one line (FR-001 – FR-017)
+         * @description Saves a Created PR and reserves its lines (FR-017). then must be "save". Needs purchaseRequests.edit in
+         *     the plan of the lines (403 otherwise); a line item the person cannot see answers 400 on its field.
+         *     Every problem is answered at once (400 validation_failed).
+         */
+        post: operations["createPurchaseRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-requests/new-defaults": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What a new PR from this line item is pre-filled with (FR-003) */
+        get: operations["getPurchaseRequestDefaults"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-requests/line-item-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Add line picker and the line-item step of New purchase request (FR-002, FR-010)
+         * @description At most 50 live line items the person can see and raise PRs for, matching search (name, ID or HX key).
+         *     With purchaseRequestId: only that PR's plan; line items already on it, of another company code or with
+         *     nothing left are listed with available false and the reason. Without it: every plan where the person
+         *     holds purchaseRequests.edit.
+         */
+        get: operations["listPurchaseRequestLineItemOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-requests/{purchaseRequestId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        /** A purchase request's details page (FR-005 – FR-011, FR-035, FR-043) */
+        get: operations["getPurchaseRequest"];
+        /**
+         * Save the whole purchase request — Save, Save and re-submit, or Submit changes (FR-015, FR-023, FR-036, FR-039)
+         * @description Replaces the header and the lines: a line with id is changed, a line without id is added, a stored line
+         *     left out is removed to the recycle bin (Created and Declined only). then must fit the status (data-model
+         *     §3.2): save (Created, Declined; Approved when only lines are added and Lines on approved purchase requests
+         *     is withoutApproval), resubmit (Submitted, In review), submitChanges (Approved). With resubmit and
+         *     submitChanges the person also needs purchaseRequests.submit and the gates must pass (409 not_ready;
+         *     error.missing groups every problem by record — purchaseRequest, purchaseRequestLine, activity, lineItem —
+         *     with MissingField.reason holding the message). An out-of-date version answers 409 version_conflict.
+         */
+        put: operations["savePurchaseRequest"];
+        post?: never;
+        /** Delete a Created or Declined purchase request to the recycle bin (FR-040, FR-042) */
+        delete: operations["deletePurchaseRequest"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-requests/{purchaseRequestId}/close-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        /** What Close purchase request would do, line by line (FR-041) */
+        get: operations["getPurchaseRequestClosePreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-requests/{purchaseRequestId}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close an Approved purchase request down to its invoiced amounts (FR-034, FR-041) */
+        post: operations["closePurchaseRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-requests/{purchaseRequestId}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route the PR form again (Resend PR form) on an Approved or Closed PR that was routed (FR-033) */
+        post: operations["resendPurchaseRequestForm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-requests/{purchaseRequestId}/routings/{routingId}/form": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+                /** @example PRR-1001 */
+                routingId: components["parameters"]["RoutingId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * The PR form of one routing, as routed (FR-031)
+         * @description One row per line in the column order of the spec's Requisitioner Attachment, after notes (PR, routing
+         *     type and time, recipients, "Routed by MAPP — no supporting documents are attached"). File name
+         *     "MAPP PR form – PR-1001 – Original – 27 Oct 2026.xlsx". Text a spreadsheet would read as a formula is
+         *     written with a leading apostrophe (D-120).
+         */
+        get: operations["downloadPurchaseRequestForm"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-requests/{purchaseRequestId}/approval": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        /** The PR's Approval section — first approval and changes (FR-022 – FR-027) */
+        get: operations["getPurchaseRequestApproval"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-requests/{purchaseRequestId}/approval/submission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        /** What Submit or Re-submit would do now — every gate problem and the levels (FR-021) */
+        get: operations["getPurchaseRequestSubmission"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-requests/{purchaseRequestId}/approval/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit (Created) or Re-submit (Submitted, In review, Declined) without changes (FR-021 – FR-023)
+         * @description 409 not_ready when a gate fails (error.missing groups every problem by record, as for PUT); 409
+         *     not_allowed for an Approved PR ("Edit the purchase request and choose Submit changes.") or a Closed one.
+         */
+        post: operations["submitPurchaseRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-requests/{purchaseRequestId}/approval/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve the waiting level as one of its approvers (self-approval allowed, FR-027) */
+        post: operations["approvePurchaseRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-requests/{purchaseRequestId}/approval/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decline the waiting level with a comment (FR-025) */
+        post: operations["declinePurchaseRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-requests/{purchaseRequestId}/approval/recall": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recall the open round — owner or submitter (FR-024) */
+        post: operations["recallPurchaseRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/approvals/purchase-requests/{purchaseRequestId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        /** The Approvals page's preview of a PR (FR-029) */
+        get: operations["getPurchaseRequestApprovalPreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/line-items/{lineItemId}/purchase-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example L-1001 */
+                lineItemId: components["parameters"]["LineItemId"];
+            };
+            cookie?: never;
+        };
+        /** A line item's Purchase requests section — total requested, available, its PRs (FR-018) */
+        get: operations["getLineItemPurchaseRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/activities/{activityId}/purchase-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        /** An activity's Purchase requests section — total requested in the plan currency, per line item (FR-018) */
+        get: operations["getActivityPurchaseRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-request-configuration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Settings › Purchase requests (FR-004) */
+        get: operations["getPurchaseRequestConfiguration"];
+        /** Change Purchase Support and Lines on approved purchase requests (needs settings.manage) */
+        put: operations["savePurchaseRequestConfiguration"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/simulated-gsap/purchase-requests/{purchaseRequestId}/purchase-order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The simulated GSAP creates the GSAP PR and the purchase order of an approved, routed PR (033)
+         * @description For a PR that is Approved with no change In review, was routed to the requisitioner and is waiting for
+         *     GSAP, the simulated GSAP gives it a GSAP PR number (SIM-0010001001 …, once) and a purchase order
+         *     (SIM-4500001001 …, once) with one PO line per PR line (10, 20, …; status Released; dated today; value =
+         *     the line's amount). Lines whose PO line already matches are not sent; changed lines update their PO
+         *     line (top-up); new lines get new PO lines. The PO lines are booked as GSAP purchase-order transactions
+         *     in one import (source simulatedGsap, feed "Simulated GSAP purchase order", file name the PR's ID),
+         *     linked to their line items by the HX key. Everything is saved together or not at all.
+         *
+         *     Refusals: 404 not_found (no such PR or outside the person's access); 403 forbidden (no
+         *     finance.import); 409 version_conflict (the PR changed since it was opened); 409 not_allowed with
+         *     "The simulated GSAP processes approved purchase requests that were routed to the requisitioner.",
+         *     "Wait until the change of this purchase request is approved or declined.", "The simulated GSAP already
+         *     created the PO for this purchase request. Run it again after an approved change of its amounts or
+         *     lines." or "Purchase requests are switched off for your organisation."
+         */
+        post: operations["createSimulatedGsapPurchaseOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/currencies/{code}/rates": {
         parameters: {
             query?: never;
@@ -3620,6 +4069,434 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @enum {string} */
+        PurchaseRequestStatus: "created" | "submitted" | "inReview" | "declined" | "approved" | "closed";
+        /**
+         * @description The approval engine's subject kind of a round (031).
+         * @enum {string}
+         */
+        PurchaseRequestRoundKind: "purchaseRequest" | "modifiedPurchaseRequest";
+        /** @enum {string} */
+        LinesOnApprovedPurchaseRequests: "notAllowed" | "withModificationApproval" | "withoutApproval";
+        /** @enum {string} */
+        PurchaseRequestRoutingType: "original" | "modification" | "resend" | "close";
+        /**
+         * @description Who filled the GSAP fields; empty until GSAP answered. Screens say "Simulated GSAP" or "GSAP".
+         * @enum {string}
+         */
+        GsapSource: "" | "simulatedGsap" | "gsap";
+        PurchaseRequestConfiguration: {
+            purchaseSupport: boolean;
+            linesOnApprovedPurchaseRequests: components["schemas"]["LinesOnApprovedPurchaseRequests"];
+            version: number;
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+            canChange: components["schemas"]["ActionAvailability"];
+        };
+        PurchaseRequestConfigurationInput: {
+            version: number;
+            purchaseSupport: boolean;
+            linesOnApprovedPurchaseRequests: components["schemas"]["LinesOnApprovedPurchaseRequests"];
+        };
+        /** @description The line item a PR line draws on, as it is now. */
+        PurchaseRequestLineItemRef: {
+            /** @example L-1006 */
+            id: string;
+            /** @example Stand build */
+            name: string;
+            activityId: string;
+            activityName: string;
+            currency: string;
+            plannedCost: components["schemas"]["Money"];
+            /** @description Empty until the line item received its code (030). */
+            swbsCode: string;
+            swbsStatus: components["schemas"]["SwbsStatus"];
+            companyCode: string;
+            costCentre: string;
+            glCode: string;
+        };
+        PurchaseRequestLine: {
+            /** @example PRL-1001 */
+            id: string;
+            position: number;
+            lineItem: components["schemas"]["PurchaseRequestLineItemRef"];
+            /** @example HX1006 */
+            hxKey: string;
+            currency: string;
+            amount: components["schemas"]["Money"];
+            /** Format: date */
+            deliveryDate: string;
+            overallLimit: components["schemas"]["Money"] | null;
+            description: string;
+            attributes: components["schemas"]["AttributeValues"];
+            /** Format: date */
+            sentOn: string | null;
+            poNumber: string;
+            poLine: string;
+            poLineStatus: string;
+            /** Format: date */
+            poDate: string | null;
+            poValue: components["schemas"]["Money"] | null;
+            /** @description Invoices minus credit notes on the line's PO line, in the line's currency (0.00 without a PO). */
+            invoiced: components["schemas"]["Money"];
+            /** @description True while a change is In review and this line differs from the approved version or is new. */
+            changed: boolean;
+            /** @description The line's empty needed-to-submit fields. */
+            missing: components["schemas"]["MissingField"][];
+            access: components["schemas"]["PurchaseRequestLineAccess"];
+            version: number;
+            /** @description The line has no PO line yet, or its amount or currency differs from its PO value: the next run of the simulated GSAP sends it (033 FR-003, FR-007). */
+            gsapPending: boolean;
+        };
+        PurchaseRequestLineAccess: {
+            remove: components["schemas"]["ActionAvailability"];
+        };
+        /** @description The PR's values at its last approval, shown as "Approved version" while a change is In review. */
+        PurchaseRequestVersion: {
+            name: string;
+            description: string;
+            owner: components["schemas"]["PersonRef"] | null;
+            moaApprover: components["schemas"]["PersonRef"] | null;
+            attributes: components["schemas"]["AttributeValues"];
+            amountDisplay: components["schemas"]["Money"];
+            lines: components["schemas"]["PurchaseRequestVersionLine"][];
+            /** Format: date-time */
+            approvedAt: string;
+        };
+        PurchaseRequestVersionLine: {
+            id: string;
+            lineItemId: string;
+            hxKey: string;
+            amount: components["schemas"]["Money"];
+            /** Format: date */
+            deliveryDate: string;
+            overallLimit: components["schemas"]["Money"] | null;
+            description: string;
+        };
+        PurchaseRequestRouting: {
+            /** @example PRR-1001 */
+            id: string;
+            type: components["schemas"]["PurchaseRequestRoutingType"];
+            /** Format: date-time */
+            routedAt: string;
+            routedBy: components["schemas"]["ActorRef"];
+            /**
+             * @example [
+             *       "DE_LUBES"
+             *     ]
+             */
+            recipients: string[];
+            lineCount: number;
+        };
+        /** @description One thing that stops a submission (FR-021). */
+        PurchaseRequestProblem: {
+            /** @description The form field to go to, e.g. moaApproverId, attributes.SA-1101, lines[0].overallLimit; empty for a gate on another record. */
+            field: string;
+            /** @enum {string} */
+            group: "purchaseRequest" | "line" | "activity" | "lineItem";
+            /** @description The PR, PR line, activity or line item concerned. */
+            recordId: string;
+            /** @example Activity 'Trade magazine ads' must be approved before this purchase request can be submitted. */
+            message: string;
+        };
+        PurchaseRequestReadiness: {
+            ready: boolean;
+            problems: components["schemas"]["PurchaseRequestProblem"][];
+        };
+        /** @description What the signed-in person may do with this PR now, and why not (FR-056). */
+        PurchaseRequestAccess: {
+            edit: components["schemas"]["ActionAvailability"];
+            delete: components["schemas"]["ActionAvailability"];
+            submit: components["schemas"]["ActionAvailability"];
+            resubmit: components["schemas"]["ActionAvailability"];
+            submitChanges: components["schemas"]["ActionAvailability"];
+            recall: components["schemas"]["ActionAvailability"];
+            close: components["schemas"]["ActionAvailability"];
+            resend: components["schemas"]["ActionAvailability"];
+            addLine: components["schemas"]["ActionAvailability"];
+            /** @description Create GSAP PR and PO (simulated): hidden (available false, reason empty) without finance.import; otherwise available, or the reason it is not (033 FR-001). */
+            gsapOrder: components["schemas"]["ActionAvailability"];
+        };
+        PurchaseRequest: {
+            /** @example PR-1001 */
+            id: string;
+            name: string;
+            description: string;
+            owner: components["schemas"]["PersonRef"] | null;
+            /** @description The MoA approver (needed to submit); null until chosen. */
+            moaApprover: components["schemas"]["PersonRef"] | null;
+            approvalWorkflow: components["schemas"]["WorkflowRef"] | null;
+            modificationWorkflow: components["schemas"]["WorkflowRef"] | null;
+            status: components["schemas"]["PurchaseRequestStatus"];
+            /** @description A change of the Approved PR is In review. */
+            changePending: boolean;
+            plan: components["schemas"]["RecordRef"];
+            /** @description Plan, campaign, initiative and activity of the first line. */
+            path: components["schemas"]["RecordRef"][];
+            /** @description The company code of the lines' activities; empty when none is filled. */
+            companyCode: string;
+            costCentres: string[];
+            hxKeys: string[];
+            attributes: components["schemas"]["AttributeValues"];
+            vendor: string;
+            amountDisplay: components["schemas"]["Money"];
+            invoicedDisplay: components["schemas"]["Money"];
+            /** @description GSAP's PR number, read-only, "Filled by GSAP"; empty until GSAP answers (033). */
+            gsapPrNumber: string;
+            /** Format: date */
+            gsapPrDate: string | null;
+            gsapSource: components["schemas"]["GsapSource"];
+            waitingForGsap: boolean;
+            lines: components["schemas"]["PurchaseRequestLine"][];
+            approvedVersion: components["schemas"]["PurchaseRequestVersion"] | null;
+            /** @description Newest first. */
+            routings: components["schemas"]["PurchaseRequestRouting"][];
+            readiness: components["schemas"]["PurchaseRequestReadiness"];
+            /** @description The header's empty needed-to-submit fields (completeness chip). */
+            missing: components["schemas"]["MissingField"][];
+            /**
+             * @description One sentence the page shows above the details, or empty: "Awaiting approval — saving changes will
+             *     restart approval.", "Closed purchase requests cannot be changed.", "Purchase requests are switched
+             *     off for your organisation."
+             */
+            notice: string;
+            access: components["schemas"]["PurchaseRequestAccess"];
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        PurchaseRequestInput: {
+            /** @description Required by PUT (the version the person started from); ignored by POST. */
+            version?: number;
+            name: string;
+            description?: string;
+            ownerId: string;
+            moaApproverId?: string | null;
+            approvalWorkflowId: string;
+            modificationWorkflowId: string;
+            attributes: components["schemas"]["AttributeValues"];
+            lines: components["schemas"]["PurchaseRequestLineInput"][];
+            /** @enum {string} */
+            then: "save" | "resubmit" | "submitChanges";
+            /** @description The submission comment of resubmit and submitChanges; at most 2,000 characters. */
+            comment?: string;
+        };
+        PurchaseRequestLineInput: {
+            /** @description The stored line this row changes; absent for a new line. */
+            id?: string;
+            lineItemId: string;
+            currency: string;
+            /**
+             * @description Decimal string, at most two decimals.
+             * @example 9200.00
+             */
+            amount: string;
+            /** Format: date */
+            deliveryDate: string;
+            /** @description Decimal string; null when empty. */
+            overallLimit?: string | null;
+            description?: string;
+            attributes?: components["schemas"]["AttributeValues"];
+        };
+        PurchaseRequestDefaults: {
+            /** @example PR for Stand build */
+            name: string;
+            owner: components["schemas"]["PersonRef"];
+            plan: components["schemas"]["RecordRef"];
+            companyCode: string;
+            line: {
+                lineItem: components["schemas"]["PurchaseRequestLineItemRef"];
+                hxKey: string;
+                currency: string;
+                amount: components["schemas"]["Money"];
+                overallLimit: components["schemas"]["Money"];
+            };
+        };
+        PurchaseRequestLineItemOption: {
+            lineItem: components["schemas"]["PurchaseRequestLineItemRef"];
+            plan: components["schemas"]["RecordRef"];
+            path: components["schemas"]["RecordRef"][];
+            hxKey: string;
+            availableToRequest: components["schemas"]["Money"];
+            available: boolean;
+            /** @example One purchase request cannot charge two company codes (GB01 and NL02). */
+            reason: string;
+        };
+        PurchaseRequestLineItemOptionPage: {
+            items: components["schemas"]["PurchaseRequestLineItemOption"][];
+            total: number;
+        };
+        PurchaseRequestVendorGroup: {
+            /** @description The vendor text; empty for "Not completed". */
+            vendor: string;
+            /** @example Brightside Media BV */
+            label: string;
+            purchaseRequests: number;
+            amountDisplay: components["schemas"]["Money"];
+            invoicedDisplay: components["schemas"]["Money"];
+        };
+        PurchaseRequestRowLine: {
+            id: string;
+            lineItem: components["schemas"]["PurchaseRequestLineItemRef"];
+            lineItemOwner: components["schemas"]["PersonRef"] | null;
+            hxKey: string;
+            amount: components["schemas"]["Money"];
+            /** Format: date */
+            deliveryDate: string;
+            /** Format: date */
+            sentOn: string | null;
+            poNumber: string;
+            poLine: string;
+            poLineStatus: string;
+            invoiced: components["schemas"]["Money"];
+        };
+        PurchaseRequestRow: {
+            id: string;
+            name: string;
+            vendor: string;
+            status: components["schemas"]["PurchaseRequestStatus"];
+            changePending: boolean;
+            amountDisplay: components["schemas"]["Money"];
+            invoicedDisplay: components["schemas"]["Money"];
+            owner: components["schemas"]["PersonRef"] | null;
+            /** Format: date-time */
+            createdAt: string;
+            approvalWorkflow: components["schemas"]["WorkflowRef"] | null;
+            gsapPrNumber: string;
+            waitingForGsap: boolean;
+            plan: components["schemas"]["RecordRef"];
+            lines: components["schemas"]["PurchaseRequestRowLine"][];
+        };
+        PurchaseRequestListPage: {
+            items: components["schemas"]["PurchaseRequestRow"][];
+            total: number;
+            page: number;
+            pageSize: number;
+            /** @description The vendors of this page's rows, in the page's order. */
+            vendors: components["schemas"]["PurchaseRequestVendorGroup"][];
+            purchaseSupport: boolean;
+        };
+        PurchaseRequestCloseLine: {
+            lineId: string;
+            lineItemId: string;
+            hxKey: string;
+            amount: components["schemas"]["Money"];
+            invoiced: components["schemas"]["Money"];
+            closedAmount: components["schemas"]["Money"];
+            released: components["schemas"]["Money"];
+        };
+        PurchaseRequestClosePreview: {
+            purchaseRequestId: string;
+            version: number;
+            available: boolean;
+            reason: string;
+            lines: components["schemas"]["PurchaseRequestCloseLine"][];
+            releasedDisplay: components["schemas"]["Money"];
+        };
+        PurchaseRequestCloseRequest: {
+            version: number;
+        };
+        PurchaseRequestResendRequest: {
+            version: number;
+        };
+        PurchaseRequestApprovalActions: {
+            submit: components["schemas"]["ActionAvailability"];
+            resubmit: components["schemas"]["ActionAvailability"];
+            approve: components["schemas"]["ActionAvailability"];
+            decline: components["schemas"]["ActionAvailability"];
+            recall: components["schemas"]["ActionAvailability"];
+        };
+        /** @description The rounds of one kind, as the approval engine's SectionOf gives them (031). */
+        PurchaseRequestApprovalSection: {
+            kind: components["schemas"]["PurchaseRequestRoundKind"];
+            workflow: components["schemas"]["WorkflowRef"] | null;
+            upcomingLevels: components["schemas"]["ApprovalWorkflowLevel"][];
+            /** @description Newest first. */
+            rounds: components["schemas"]["ApprovalRound"][];
+            latestDecline: components["schemas"]["DeclineNote"] | null;
+            viewer: components["schemas"]["ApprovalViewer"];
+            actions: components["schemas"]["PurchaseRequestApprovalActions"];
+        };
+        PurchaseRequestApproval: {
+            purchaseRequestId: string;
+            purchaseRequestName: string;
+            purchaseRequestVersion: number;
+            status: components["schemas"]["PurchaseRequestStatus"];
+            changePending: boolean;
+            owner: components["schemas"]["ApprovalPerson"] | null;
+            moaApprover: components["schemas"]["ApprovalPerson"] | null;
+            /** @description The section in focus first (the open round's kind, else the kind a submission would start), then the other kind when it has rounds. */
+            sections: components["schemas"]["PurchaseRequestApprovalSection"][];
+        };
+        PurchaseRequestSubmission: {
+            purchaseRequestId: string;
+            version: number;
+            /** @enum {string} */
+            kind: "submit" | "resubmit";
+            roundKind: components["schemas"]["PurchaseRequestRoundKind"];
+            available: boolean;
+            reason: string;
+            ready: boolean;
+            problems: components["schemas"]["PurchaseRequestProblem"][];
+            workflow: components["schemas"]["WorkflowRef"] | null;
+            levels: components["schemas"]["ApprovalWorkflowLevel"][];
+        };
+        PurchaseRequestSubmitRequest: {
+            version: number;
+            /** @description Optional, at most 2,000 characters. */
+            comment?: string;
+        };
+        PurchaseRequestApprovalPreview: {
+            purchaseRequest: components["schemas"]["PurchaseRequestRow"];
+            approval: components["schemas"]["PurchaseRequestApproval"];
+        };
+        LineItemPurchaseRequestRow: {
+            purchaseRequestId: string;
+            name: string;
+            status: components["schemas"]["PurchaseRequestStatus"];
+            changePending: boolean;
+            lineId: string;
+            amount: components["schemas"]["Money"];
+            amountInLineItemCurrency: components["schemas"]["Money"];
+            /** Format: date */
+            sentOn: string | null;
+            poNumber: string;
+            owner: components["schemas"]["PersonRef"] | null;
+        };
+        LineItemPurchaseRequests: {
+            lineItemId: string;
+            hxKey: string;
+            plannedCost: components["schemas"]["Money"];
+            requested: components["schemas"]["Money"];
+            /** @description Negative when rates moved PR lines in other currencies above the planned cost. */
+            availableToRequest: components["schemas"]["Money"];
+            /** @description The PRs the person can see that draw on the line item, newest first. */
+            purchaseRequests: components["schemas"]["LineItemPurchaseRequestRow"][];
+            create: components["schemas"]["ActionAvailability"];
+            notice: string;
+        };
+        ActivityPurchaseRequestLineItem: {
+            lineItemId: string;
+            name: string;
+            requested: components["schemas"]["Money"];
+            availableToRequest: components["schemas"]["Money"];
+            purchaseRequests: number;
+        };
+        ActivityPurchaseRequests: {
+            activityId: string;
+            /** @description The activity's Total requested in the plan currency. */
+            requested: components["schemas"]["Money"];
+            lineItems: components["schemas"]["ActivityPurchaseRequestLineItem"][];
+        };
+        SimulatedGsapOrderRequest: {
+            /** @description The purchase request's version the person saw. */
+            version: number;
+        };
         /** @description Every failure, in one envelope (constitution B6). */
         Error: {
             error: components["schemas"]["ErrorDetail"];
@@ -3937,10 +4814,10 @@ export interface components {
         };
         UsagePart: {
             /**
-             * @description What uses the record.
+             * @description What uses the record (the purchase request levels since 032).
              * @enum {string}
              */
-            kind: "plan" | "campaign" | "initiative" | "activity" | "lineItem" | "person" | "model" | "dependentAttribute" | "condition" | "linkedOption";
+            kind: "plan" | "campaign" | "initiative" | "activity" | "lineItem" | "purchaseRequest" | "purchaseRequestLine" | "person" | "model" | "dependentAttribute" | "condition" | "linkedOption";
             /** @description The part as people read it, for example Used by 12 activities (1 in the recycle bin). */
             text: string;
             /** @description Records using it, those in the recycle bin included. */
@@ -4078,7 +4955,7 @@ export interface components {
             version: number;
         };
         /** @enum {string} */
-        AttributeLevel: "plan" | "campaign" | "initiative" | "activity" | "lineItem";
+        AttributeLevel: "plan" | "campaign" | "initiative" | "activity" | "lineItem" | "purchaseRequest" | "purchaseRequestLine";
         /** @enum {string} */
         AttributeType: "singleChoice" | "multipleChoice" | "multipleChoiceSplit" | "yesNo" | "text" | "longText" | "number";
         /** @enum {string} */
@@ -4867,7 +5744,7 @@ export interface components {
         };
         PlanDefaults: {
             currentYear: number;
-            /** @description The years a new plan may have (current - 1 to current + 5). */
+            /** @description The years a new plan may have (the current year to the current year + 10). */
             years: number[];
             year: number;
             teamIds: string[];
@@ -4943,7 +5820,7 @@ export interface components {
         NextYearOption: {
             year: number;
             available: boolean;
-            /** @description Why the next year can't be chosen; empty when it can. */
+            /** @description Why the next year can't be chosen (it is after the current year + 10); empty when it can. */
             reason: string;
         };
         PlanCopyOptions: {
@@ -5652,10 +6529,10 @@ export interface components {
             defaults: components["schemas"]["ActivityDefaults"] | null;
         };
         /**
-         * @description notRequested when Request SWBS code from GSAP is off; waitingForApproval while the activity is not Approved; readyToSend once it is Approved (domain model §2.4).
+         * @description received when the line item has its SWBS code (it stays whatever happens to the activity); notRequested when Request SWBS code from GSAP is off; readyToSend once the activity is Approved; waitingForApproval otherwise (domain model §2.4, 030 FR-001).
          * @enum {string}
          */
-        SwbsStatus: "notRequested" | "waitingForApproval" | "readyToSend";
+        SwbsStatus: "notRequested" | "waitingForApproval" | "readyToSend" | "received";
         /** @description A currency as the line-item screens need it. */
         LineItemCurrency: {
             /** @example EUR */
@@ -5759,6 +6636,20 @@ export interface components {
             contractedAmount: components["schemas"]["Money"] | null;
             requestSwbs: boolean;
             swbsStatus: components["schemas"]["SwbsStatus"];
+            /**
+             * @description The SWBS code GSAP returned, read-only; empty until received (030 FR-002).
+             * @example SIM-GB01-0001
+             */
+            swbsCode: string;
+            /** @description When the SWBS request was sent; null until then. */
+            swbsRequestedAt: string | null;
+            /** @description When the SWBS code was received; null until then. */
+            swbsReceivedAt: string | null;
+            /**
+             * @description "HX" followed by the digits of the line item's ID, the key GSAP data is matched on (030 FR-016).
+             * @example HX1006
+             */
+            hxKey: string;
             financeBudgetYear: number | null;
             financeBudgetItem: components["schemas"]["FinanceBudgetItemRef"] | null;
             /** @description What still blocks submitting the activity, in order — empty needed-to-submit fields, an inactive finance budget item, a custom spread that doesn't add up (FR-028). Empty when all is filled in. */
@@ -5780,7 +6671,10 @@ export interface components {
             /** @example Launch film */
             name: string;
             status: components["schemas"]["ActivityStatus"];
-            /** @description True while the activity is Submitted or Approved — adding, duplicating or deleting a line item, or changing its planned cost or currency, then sends it back to Created after confirmation. */
+            /**
+             * @deprecated
+             * @description Always false since feature 034 (D-322) - a line-item change never sends the activity back for approval. Kept for older clients.
+             */
             restartsApproval: boolean;
             startDate: string | null;
             endDate: string | null;
@@ -5913,10 +6807,10 @@ export interface components {
             financeBudgetYear: number | null;
             financeBudgetItemId: string | null;
             /**
-             * @description True when the person confirmed "This activity will need approval again".
-             * @default false
+             * @deprecated
+             * @description Ignored since feature 034 (D-322).
              */
-            restartApproval: boolean;
+            restartApproval?: boolean;
         };
         LineItemUpdate: {
             name: string;
@@ -5930,14 +6824,20 @@ export interface components {
             requestSwbs: boolean;
             financeBudgetYear: number | null;
             financeBudgetItemId: string | null;
-            /** @default false */
-            restartApproval: boolean;
+            /**
+             * @deprecated
+             * @description Ignored since feature 034 (D-322).
+             */
+            restartApproval?: boolean;
             /** @description The version the person started editing from. */
             version: number;
         };
         LineItemDuplicate: {
-            /** @default false */
-            restartApproval: boolean;
+            /**
+             * @deprecated
+             * @description Ignored since feature 034 (D-322).
+             */
+            restartApproval?: boolean;
         };
         /** @description A designated approver or owner, with the live active flag ("(inactive)"). */
         ApprovalPerson: {
@@ -5950,6 +6850,58 @@ export interface components {
             active: boolean;
             /** @description False when the person holds no role that approves (014 FR-028). Optional in the contract; always sent once its feature is built (D-298). */
             canApprove?: boolean;
+        };
+        /**
+         * @description The record type an approval round or workflow is about (031 FR-001, FR-004).
+         * @enum {string}
+         */
+        ApprovalSubjectKind: "activity" | "purchaseRequest" | "modifiedPurchaseRequest";
+        /**
+         * @description The record's status — an activity's stored or display status, or a purchase request's (032).
+         * @enum {string}
+         */
+        ApprovalSubjectStatus: "created" | "submitted" | "inReview" | "declined" | "approved" | "closed" | "inProgress" | "complete";
+        /** @description The record of an approval row or section (031 FR-026). */
+        ApprovalSubject: {
+            kind: components["schemas"]["ApprovalSubjectKind"];
+            /**
+             * @description The record type as screens name it.
+             * @example Purchase request
+             */
+            label: string;
+            /** @example A-1042 */
+            id: string;
+            name: string;
+            status: components["schemas"]["ApprovalSubjectStatus"];
+            displayStatus: components["schemas"]["ApprovalSubjectStatus"];
+            /** @description Sent in an approval section; absent in rows. */
+            version?: number;
+        };
+        ApprovalActionSet: {
+            submit: components["schemas"]["ApprovalActionAvailability"];
+            resubmit: components["schemas"]["ApprovalActionAvailability"];
+            approve: components["schemas"]["ApprovalActionAvailability"];
+            decline: components["schemas"]["ApprovalActionAvailability"];
+            recall: components["schemas"]["ApprovalActionAvailability"];
+        };
+        /** @description A record's approval section (Go approval.Section) for the approval routes of other record types (feature 032): every round of the record, newest first, and the actions of the record type asked for. */
+        ApprovalSection: {
+            subject: components["schemas"]["ApprovalSubject"];
+            ownerId: string;
+            owner: components["schemas"]["ApprovalPerson"] | null;
+            workflow: components["schemas"]["WorkflowRef"] | null;
+            upcomingLevels: components["schemas"]["ApprovalWorkflowLevel"][];
+            rounds: components["schemas"]["ApprovalRound"][];
+            latestDecline: components["schemas"]["DeclineNote"] | null;
+            viewer: components["schemas"]["ApprovalViewer"];
+            actions: components["schemas"]["ApprovalActionSet"];
+        };
+        /** @description A field of a record that names a person, as a level's approver source (031 FR-011). */
+        ApprovalRecordField: {
+            /** @example moaApprover */
+            id: string;
+            /** @example MoA approver */
+            label: string;
         };
         WorkflowRef: {
             /** @example WF-1002 */
@@ -5972,7 +6924,7 @@ export interface components {
              * @description 017. Optional in the contract; always sent once its feature is built (D-298).
              * @enum {string}
              */
-            approverType?: "people" | "manager" | "role";
+            approverType?: "people" | "manager" | "role" | "owner" | "recordField";
             /** @description The 014 role of a role level (RoleRef, consolidation D-300); null for other levels. */
             role?: components["schemas"]["RoleRef"] | null;
             /**
@@ -5986,6 +6938,8 @@ export interface components {
             autoApproveWhen?: components["schemas"]["ApprovalCondition"] | null;
             /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
             backupApprover?: components["schemas"]["ApprovalPerson"] | null;
+            /** @description The record field of a recordField level (031 FR-011); null for other levels. */
+            recordField?: components["schemas"]["ApprovalRecordField"] | null;
             /**
              * @description This level's part of levelsText.
              * @example Level 1 · Line manager · automatic when planned cost is below $10,000.00
@@ -5998,12 +6952,15 @@ export interface components {
             name: string;
             description: string;
             active: boolean;
+            objectType: components["schemas"]["ApprovalSubjectKind"];
+            /** @description The workflow is used, so what it approves can no longer change (031 FR-005). */
+            objectTypeFixed: boolean;
             levels: components["schemas"]["ApprovalWorkflowLevel"][];
             /** @example Level 1 · Carlos Mendes → Level 2 · Alex Morgan */
             levelsText: string;
-            /** @description Stored activities that have it in their Approval workflow field or have an approval round with it. */
+            /** @description Stored records that have it in their Approval workflow field or have an approval round with it (031 FR-009). */
             usedByCount: number;
-            /** @description Stored activities with an open round of this workflow. */
+            /** @description Stored records with an open round of this workflow. */
             waitingCount: number;
             /** @description For example "Level 2 has no active approver". */
             warnings: string[];
@@ -6024,10 +6981,11 @@ export interface components {
             total: number;
         };
         ApprovalWorkflowUsage: {
+            /** @description The record; its type is activity or purchaseRequest (031 FR-009). */
             activity: components["schemas"]["RecordRef"];
-            /** @description Plan, campaign and initiative of the activity, top level first. */
+            /** @description Plan, campaign and initiative of the record, top level first. */
             path: components["schemas"]["RecordRef"][];
-            displayStatus: components["schemas"]["ActivityDisplayStatus"];
+            displayStatus: components["schemas"]["ApprovalSubjectStatus"];
             /** @description It has an open round of this workflow. */
             waiting: boolean;
         };
@@ -6057,9 +7015,13 @@ export interface components {
             autoApproveWhen?: components["schemas"]["ApprovalConditionInput"] | null;
             /** @description Empty for none. */
             backupApproverId?: string;
+            /** @description The record field of a recordField level (moaApprover); ignored for other sources. */
+            recordField?: string;
         };
         ApprovalWorkflowCreate: {
             name: string;
+            /** @description What the workflow approves; default activity (031 FR-004). */
+            objectType?: components["schemas"]["ApprovalSubjectKind"];
             description?: string;
             /** @description In order; the first is level 1. The server reports an empty list as a field problem ("levels"), and a level's problems on "levels.<n>.name" and "levels.<n>.approverIds", n counted from 1 as in the messages (D-215). */
             levels: components["schemas"]["ApprovalWorkflowLevelInput"][];
@@ -6071,6 +7033,8 @@ export interface components {
         /** @description Only the fields to change, plus the version the person started editing from. */
         ApprovalWorkflowUpdate: {
             name?: string;
+            /** @description Changeable only while the workflow is unused (031 FR-005). */
+            objectType?: components["schemas"]["ApprovalSubjectKind"];
             description?: string;
             /** @description The complete new list of levels, in order; problems as in ApprovalWorkflowCreate ("levels.<n>.…", n from 1, D-215). */
             levels?: components["schemas"]["ApprovalWorkflowLevelInput"][];
@@ -6100,6 +7064,8 @@ export interface components {
             capacity?: "approver" | "delegate" | "backup" | "onBehalf" | "";
             /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
             asDelegateOf?: components["schemas"]["ActorRef"] | null;
+            /** @description A decision on a purchase request by its owner or the round's submitter (031 FR-016). */
+            selfApproval?: boolean;
         };
         ApprovalChainLevel: {
             number: number;
@@ -6185,7 +7151,7 @@ export interface components {
             actor: components["schemas"]["ActorRef"];
             onBehalfOf: components["schemas"]["ActorRef"][];
             /** @enum {string} */
-            action: "submitted" | "resubmitted" | "approved" | "declined" | "recalled" | "restarted" | "cancelled" | "autoApproved" | "skipped" | "reminded" | "escalated";
+            action: "submitted" | "resubmitted" | "approved" | "declined" | "recalled" | "restarted" | "cancelled" | "autoApproved" | "skipped" | "reminded" | "escalated" | "superseded";
             /** Format: date-time */
             at: string;
             comment: string;
@@ -6204,13 +7170,16 @@ export interface components {
             escalatedTo?: components["schemas"]["ActorRef"] | null;
             /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
             waitedDays?: number;
+            /** @description A decision on a purchase request by its owner or the round's submitter (031 FR-016). */
+            selfApproval?: boolean;
         };
         ApprovalRound: {
             /** @example AR-1001 */
             id: string;
+            kind: components["schemas"]["ApprovalSubjectKind"];
             number: number;
             /** @enum {string} */
-            outcome: "open" | "approved" | "declined" | "recalled" | "restarted" | "cancelled";
+            outcome: "open" | "approved" | "declined" | "recalled" | "restarted" | "cancelled" | "superseded";
             /** @description The workflow as it was at submission. */
             workflow: {
                 id: string;
@@ -6297,13 +7266,7 @@ export interface components {
             rounds: components["schemas"]["ApprovalRound"][];
             latestDecline: components["schemas"]["DeclineNote"] | null;
             viewer: components["schemas"]["ApprovalViewer"];
-            actions: {
-                submit: components["schemas"]["ApprovalActionAvailability"];
-                resubmit: components["schemas"]["ApprovalActionAvailability"];
-                approve: components["schemas"]["ApprovalActionAvailability"];
-                decline: components["schemas"]["ApprovalActionAvailability"];
-                recall: components["schemas"]["ApprovalActionAvailability"];
-            };
+            actions: components["schemas"]["ApprovalActionSet"];
         };
         SubmitProblem: {
             /**
@@ -6312,7 +7275,7 @@ export interface components {
              */
             field: string;
             /** @enum {string} */
-            group: "activity" | "lineItem";
+            group: "activity" | "lineItem" | "purchaseRequest" | "purchaseRequestLine";
             /** @description The line item (L-…) for the lineItem group; empty otherwise. */
             lineItemId: string;
             /** @example Owner — needed to submit */
@@ -6323,11 +7286,11 @@ export interface components {
             activityName: string;
             activityVersion: number;
             /**
-             * @description resubmit when the activity is Declined.
+             * @description resubmit when the activity is Declined or Submitted (031 FR-017).
              * @enum {string}
              */
             kind: "submit" | "resubmit";
-            /** @description false when the activity is neither Created nor Declined. */
+            /** @description false when the activity is Approved. */
             available: boolean;
             reason: string;
             /** @description The number the new round would get. */
@@ -6344,6 +7307,12 @@ export interface components {
             outcomes?: components["schemas"]["ApprovalSubmissionLevel"][];
             /** @description No level needs a decision; confirming approves the activity. */
             approvedAutomatically?: boolean;
+            /** @description The open round a re-submission ends, and the level it waits at (031 FR-018); null otherwise. */
+            replaces?: {
+                roundNumber: number;
+                level: number;
+                levelLabel: string;
+            } | null;
         };
         SubmitRequest: {
             /** @description The activity version the person saw (activityVersion). */
@@ -6393,12 +7362,14 @@ export interface components {
             level: number;
         };
         ApprovalRow: {
+            subject: components["schemas"]["ApprovalSubject"];
+            /** @description The activity of an activity row; null for rows of other record types (use subject). */
             activity: {
                 id: string;
                 name: string;
                 status: components["schemas"]["ActivityStatus"];
                 displayStatus: components["schemas"]["ActivityDisplayStatus"];
-            };
+            } | null;
             /** @description Plan, campaign, initiative. */
             path: components["schemas"]["RecordRef"][];
             owner: components["schemas"]["ApprovalPerson"] | null;
@@ -6491,13 +7462,24 @@ export interface components {
             title: string;
             /** @example Priya Raman submitted 'Launch film' (A-1042) */
             text: string;
+            /** @description The record the notification is about (031 FR-028). */
+            subject: {
+                kind: components["schemas"]["ApprovalSubjectKind"];
+                label: string;
+                id: string;
+                /** @description The name at the time. */
+                name: string;
+                /** @description false when the record is no longer stored (deleted) or visible. */
+                exists: boolean;
+            };
+            /** @description The activity of an activity notification; null for other record types (use subject). */
             activity: {
                 id: string;
                 /** @description The name at the time. */
                 name: string;
                 /** @description false when the activity is no longer stored (deleted). */
                 exists: boolean;
-            };
+            } | null;
             actor: components["schemas"]["ActorRef"];
             /** Format: date-time */
             at: string;
@@ -7410,7 +8392,7 @@ export interface components {
          * @description A permission of spec Table A.
          * @enum {string}
          */
-        PermissionKey: "plans.view" | "plans.create" | "plans.edit" | "plans.publish" | "plans.delete" | "campaigns.edit" | "campaigns.delete" | "activities.edit" | "activities.delete" | "activities.submit" | "data.export" | "finance.view" | "finance.link" | "finance.import" | "approvals.decide" | "approvals.decideOnBehalf" | "globalBudgets.view" | "globalBudgets.manage" | "settings.manage" | "exchangeRates.manage" | "workflows.manage" | "people.manage" | "access.manage" | "activityLog.viewAll" | "recycleBin.purge";
+        PermissionKey: "plans.view" | "plans.create" | "plans.edit" | "plans.publish" | "plans.delete" | "campaigns.edit" | "campaigns.delete" | "activities.edit" | "activities.delete" | "activities.submit" | "data.export" | "finance.view" | "finance.link" | "finance.import" | "purchaseRequests.edit" | "purchaseRequests.delete" | "purchaseRequests.submit" | "purchaseRequests.list" | "approvals.decide" | "approvals.decideOnBehalf" | "globalBudgets.view" | "globalBudgets.manage" | "settings.manage" | "exchangeRates.manage" | "workflows.manage" | "people.manage" | "access.manage" | "activityLog.viewAll" | "recycleBin.purge";
         PermissionInfo: {
             key: components["schemas"]["PermissionKey"];
             /** @example Edit plan details */
@@ -7420,7 +8402,7 @@ export interface components {
         };
         PermissionGroup: {
             /** @enum {string} */
-            name: "Plans and planning" | "Financial data" | "Approvals" | "Global budgets" | "Administration";
+            name: "Plans and planning" | "Financial data" | "Purchase requests" | "Approvals" | "Global budgets" | "Administration";
             permissions: components["schemas"]["PermissionInfo"][];
         };
         PermissionCatalogue: {
@@ -8030,8 +9012,11 @@ export interface components {
         FinancialImport: {
             /** @example FIM-1002 */
             id: string;
-            /** @enum {string} */
-            source: "file" | "demo";
+            /**
+             * @description file and demo (015); simulatedGsap is booked by the simulated GSAP for a purchase request (033), and fileName is the PR's ID.
+             * @enum {string}
+             */
+            source: "file" | "demo" | "simulatedGsap";
             /** @example Simulated GSAP extract */
             feedName: string;
             fileName: string;
@@ -8050,6 +9035,40 @@ export interface components {
         FinancialImportPage: {
             items: components["schemas"]["FinancialImport"][];
             total: number;
+        };
+        SwbsRunRequest: {
+            /** @description Only these line items; leave it out to send every line item that is ready. */
+            lineItemIds?: string[];
+        };
+        SwbsRunCode: {
+            /** @example L-1006 */
+            lineItemId: string;
+            /** @example Stand build */
+            lineItemName: string;
+            /**
+             * @description The activity's company code; empty when it has none (the code then uses 0000).
+             * @example GB01
+             */
+            companyCode: string;
+            /** @example SIM-GB01-0001 */
+            swbsCode: string;
+        };
+        SwbsRun: {
+            /** @example SWR-1002 */
+            id: string;
+            /** @enum {string} */
+            source: "simulatedGsap" | "demoData";
+            /** Format: date-time */
+            ranAt: string;
+            ranBy: components["schemas"]["ActorRef"];
+            sent: number;
+            codes: components["schemas"]["SwbsRunCode"][];
+        };
+        SwbsRunPage: {
+            items: components["schemas"]["SwbsRun"][];
+            total: number;
+            /** @description How many line items in the person's scope are ready to send now. */
+            readyToSend: number;
         };
         FinancialOverview: {
             year: number;
@@ -8441,6 +9460,17 @@ export interface components {
             businessUnits: components["schemas"]["OptionRef"][];
             /** @description Feature 014's roles that include approvals.decide, sorted by name. */
             roles: components["schemas"]["RoleRef"][];
+            /** @description What a workflow can approve, in order (031 FR-004). */
+            objectTypes: {
+                id: components["schemas"]["ApprovalSubjectKind"];
+                label: string;
+            }[];
+            /** @description The record fields a level may name, per object type (031 FR-011). */
+            recordFields: {
+                objectType: components["schemas"]["ApprovalSubjectKind"];
+                id: string;
+                label: string;
+            }[];
         };
         /** @description A person left out of a level when it was resolved (FR-011). */
         ApprovalExcludedPerson: {
@@ -8536,6 +9566,7 @@ export interface components {
             count: number;
         };
         ApprovalLevelWaiting: {
+            kind: components["schemas"]["ApprovalSubjectKind"];
             workflow: {
                 id: string;
                 /** @description The name at submission of the oldest round in the group. */
@@ -8569,6 +9600,7 @@ export interface components {
             canRunEscalations: boolean;
         };
         EscalationEvent: {
+            /** @description The record; its type is activity or purchaseRequest. */
             activity: components["schemas"]["RecordRef"];
             roundNumber: number;
             level: number;
@@ -8643,6 +9675,28 @@ export interface components {
         };
     };
     parameters: {
+        /** @example PR-1001 */
+        PurchaseRequestId: string;
+        /** @example PRR-1001 */
+        RoutingId: string;
+        PurchaseRequestSearch: string;
+        PurchaseRequestStatusFilter: components["schemas"]["PurchaseRequestStatus"][];
+        /** @description Option IDs of the attribute with role PR type; any of them matches. */
+        PurchaseRequestTypeFilter: string[];
+        /** @description Also match PRs without a PR type ("Not completed"). */
+        PurchaseRequestTypeNotCompleted: boolean;
+        /** @description Vendor texts, compared ignoring case. */
+        PurchaseRequestVendorFilter: string[];
+        PurchaseRequestVendorNotCompleted: boolean;
+        PurchaseRequestOwnerFilter: string[];
+        PurchaseRequestCreatedFrom: string;
+        PurchaseRequestCreatedTo: string;
+        /** @description Only approved, routed PRs that GSAP has not answered yet (FR-032). */
+        PurchaseRequestWaitingForGsap: boolean;
+        /** @description Sort inside each vendor group; "-" sorts descending. */
+        PurchaseRequestSort: "name" | "-name" | "id" | "-id" | "status" | "-status" | "amount" | "-amount" | "created" | "-created";
+        PurchaseRequestPageNumber: number;
+        PurchaseRequestPageSize: 50 | 100 | 200;
         /** @example BIN-1001 */
         EntryId: string;
         /** @example SF-1001 */
@@ -8683,7 +9737,10 @@ export interface components {
         InitiativeIdPath: string;
         /** @example L-1001 */
         LineItemId: string;
-        /** @description True when the person confirmed "This activity will need approval again" (needed only while the activity is Submitted or Approved). */
+        /**
+         * @deprecated
+         * @description Ignored since feature 034 (D-322) - a line-item delete never sends the activity back for approval.
+         */
         RestartApproval: boolean;
         /** @example WF-1001 */
         WorkflowId: string;
@@ -12375,7 +13432,10 @@ export interface operations {
     deleteLineItem: {
         parameters: {
             query?: {
-                /** @description True when the person confirmed "This activity will need approval again" (needed only while the activity is Submitted or Approved). */
+                /**
+                 * @deprecated
+                 * @description Ignored since feature 034 (D-322) - a line-item delete never sends the activity back for approval.
+                 */
                 restartApproval?: components["parameters"]["RestartApproval"];
             };
             header?: never;
@@ -14875,6 +15935,759 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listSwbsRuns: {
+        parameters: {
+            query?: {
+                /** @description At most this many runs (1–100, default 20). */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The runs. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwbsRunPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createSwbsRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwbsRunRequest"];
+            };
+        };
+        responses: {
+            /** @description The run. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwbsRun"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listPurchaseRequests: {
+        parameters: {
+            query?: {
+                q?: components["parameters"]["PurchaseRequestSearch"];
+                status?: components["parameters"]["PurchaseRequestStatusFilter"];
+                /** @description Option IDs of the attribute with role PR type; any of them matches. */
+                type?: components["parameters"]["PurchaseRequestTypeFilter"];
+                /** @description Also match PRs without a PR type ("Not completed"). */
+                typeNotCompleted?: components["parameters"]["PurchaseRequestTypeNotCompleted"];
+                /** @description Vendor texts, compared ignoring case. */
+                vendor?: components["parameters"]["PurchaseRequestVendorFilter"];
+                vendorNotCompleted?: components["parameters"]["PurchaseRequestVendorNotCompleted"];
+                owner?: components["parameters"]["PurchaseRequestOwnerFilter"];
+                createdFrom?: components["parameters"]["PurchaseRequestCreatedFrom"];
+                createdTo?: components["parameters"]["PurchaseRequestCreatedTo"];
+                /** @description Only approved, routed PRs that GSAP has not answered yet (FR-032). */
+                waitingForGsap?: components["parameters"]["PurchaseRequestWaitingForGsap"];
+                /** @description Sort inside each vendor group; "-" sorts descending. */
+                sort?: components["parameters"]["PurchaseRequestSort"];
+                page?: components["parameters"]["PurchaseRequestPageNumber"];
+                pageSize?: components["parameters"]["PurchaseRequestPageSize"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestListPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createPurchaseRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseRequestInput"];
+            };
+        };
+        responses: {
+            /** @description The new purchase request. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequest"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getPurchaseRequestDefaults: {
+        parameters: {
+            query: {
+                /** @example L-1006 */
+                lineItemId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The pre-filled values; nothing is saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestDefaults"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listPurchaseRequestLineItemOptions: {
+        parameters: {
+            query?: {
+                search?: string;
+                purchaseRequestId?: string;
+                /** @description The company code of the lines already in the form of a PR not saved yet. */
+                companyCode?: string;
+                /** @description The plan of the lines already in the form of a PR not saved yet. */
+                planId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The options, by ID. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestLineItemOptionPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getPurchaseRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The purchase request. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequest"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    savePurchaseRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseRequestInput"];
+            };
+        };
+        responses: {
+            /** @description The purchase request as saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequest"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deletePurchaseRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to the recycle bin with its lines; the reservations are released. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getPurchaseRequestClosePreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Per line the current, invoiced, closed and released amounts; nothing is saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestClosePreview"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    closePurchaseRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseRequestCloseRequest"];
+            };
+        };
+        responses: {
+            /** @description The Closed purchase request, routed with type close. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequest"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    resendPurchaseRequestForm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseRequestResendRequest"];
+            };
+        };
+        responses: {
+            /** @description The purchase request with the new routing first in its routing history. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequest"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    downloadPurchaseRequestForm: {
+        parameters: {
+            query: {
+                format: "xlsx" | "csv";
+            };
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+                /** @example PRR-1001 */
+                routingId: components["parameters"]["RoutingId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file, as an attachment. */
+            200: {
+                headers: {
+                    /** @description attachment with filename (ASCII) and filename* (UTF-8). */
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                    "text/csv": string;
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getPurchaseRequestApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The approval sections, the one in focus first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestApproval"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getPurchaseRequestSubmission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The check; nothing is saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestSubmission"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    submitPurchaseRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseRequestSubmitRequest"];
+            };
+        };
+        responses: {
+            /** @description The Approval section after the submission. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestApproval"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    approvePurchaseRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description The Approval section after the decision (an approved PR is routed in the same step). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestApproval"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    declinePurchaseRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description The Approval section after the decision. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestApproval"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    recallPurchaseRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecallRequest"];
+            };
+        };
+        responses: {
+            /** @description The Approval section after the recall. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestApproval"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getPurchaseRequestApprovalPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The PR's summary, lines and Approval section. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestApprovalPreview"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getLineItemPurchaseRequests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example L-1001 */
+                lineItemId: components["parameters"]["LineItemId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The section. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LineItemPurchaseRequests"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getActivityPurchaseRequests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The section. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityPurchaseRequests"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getPurchaseRequestConfiguration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The configuration, with whether the person may change it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestConfiguration"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    savePurchaseRequestConfiguration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseRequestConfigurationInput"];
+            };
+        };
+        responses: {
+            /** @description The configuration as saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequestConfiguration"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createSimulatedGsapPurchaseOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example PR-1001 */
+                purchaseRequestId: components["parameters"]["PurchaseRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulatedGsapOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description The purchase request with GSAP's answer. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRequest"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
         };
     };

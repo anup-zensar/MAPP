@@ -14,10 +14,9 @@ import (
 const (
 	alexsEmail   = "alex.morgan@shell.com"
 	danielsEmail = "daniel.okoro@shell.com"
-	janesEmail   = "jane.doe@shell.com" // the person the tests create
+	janesEmail   = "jane.doe@shell.com"
 )
 
-// The bodies of the API's refusals about people.
 const (
 	personGoneBody      = `{"error":{"code":"not_found","message":"This person doesn't exist.","fields":[]}}`
 	noSuchPathBody      = `{"error":{"code":"not_found","message":"This page or record doesn't exist.","fields":[]}}`
@@ -44,11 +43,11 @@ func TestListPeople_GivesPickerData_FR017_FR018(t *testing.T) {
 	for _, p := range page.Items {
 		names = append(names, p.Name)
 	}
-	want := []string{"Alex Morgan", "Carlos Mendes", "Daniel Okoro", "Mei Lin", "Priya Raman", "Sara Novak"}
+	want := []string{"Alex Morgan", "Carlos Mendes", "Daniel Okoro", "Lea Santos", "Mei Lin", "Priya Raman", "Sara Novak"}
 	if !slices.Equal(names, want) || page.Total != len(want) {
 		t.Fatalf("people = %q (total %d), want %q", names, page.Total, want)
 	}
-	sara := page.Items[5]
+	sara := page.Items[6]
 	wantTeams := []people.TeamRef{
 		{ID: "T-1001", Name: "Lubricants Europe", Colour: "blue", Active: true},
 		{ID: "T-1002", Name: "Mobility China", Colour: "violet", Active: true},
@@ -59,8 +58,6 @@ func TestListPeople_GivesPickerData_FR017_FR018(t *testing.T) {
 	}
 }
 
-// A person's details answer their teams and what they own or approve; an unknown person answers 404 with
-// the message the details panel shows (FR-004).
 func TestGetPerson_DetailsOrNotFound_FR004(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -82,8 +79,6 @@ func TestGetPerson_DetailsOrNotFound_FR004(t *testing.T) {
 	assertAnswer(t, missing, http.StatusNotFound, personGoneBody)
 }
 
-// People are never deleted (FR-008): there is no DELETE operation, so it answers the JSON 404 of any
-// unknown path, and the person is still there.
 func TestDeleteNotOffered_FR008(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -110,7 +105,7 @@ func TestCreatePerson_CreatedOrRefused_FR001_FR002(t *testing.T) {
 		"email": "PRIYA.raman@shell.com", "jobTitle": strings.Repeat("j", 121), "teamIds": []string{"T-9999"}})
 	invalidEmail := alex.Do(t, http.MethodPost, "/api/v1/people", map[string]any{"name": "Jane", "email": "jane@shell"})
 
-	assertAnswer(t, created, http.StatusCreated, `{"id":"U-1007","name":"Jane Doe","email":"jane.doe@shell.com",`+
+	assertAnswer(t, created, http.StatusCreated, `{"id":"U-1008","name":"Jane Doe","email":"jane.doe@shell.com",`+
 		`"jobTitle":"Marketer","initials":"JD","active":true,`+
 		`"teams":[{"id":"T-1001","name":"Lubricants Europe","colour":"blue","active":true}],`+
 		`"version":1,"createdAt":"2026-03-12T09:00:00Z","createdBy":{"id":"U-1001","name":"Alex Morgan"},`+
@@ -132,7 +127,7 @@ func TestUpdatePerson_ChangedConflictInvalidOrNotFound_FR002(t *testing.T) {
 	alex := server.SignIn(t, alexsEmail)
 	jane := createPerson(t, alex, map[string]any{"name": "Jane Doe", "email": janesEmail})
 	priya := server.SignIn(t, priyasEmail)
-	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: changing people
+	server.GrantRole(t, priyasEmail, "administrator", "all")
 	server.Advance(time.Hour)
 	update := map[string]any{"name": "Jane Smith", "email": "jane.smith@shell.com", "jobTitle": "Marketer",
 		"teamIds": []string{"T-1001"}, "version": 1}
@@ -158,8 +153,6 @@ func TestUpdatePerson_ChangedConflictInvalidOrNotFound_FR002(t *testing.T) {
 	assertAnswer(t, missing, http.StatusNotFound, personGoneBody)
 }
 
-// Without plans the person owns, leaving a team needs no confirmation; the check validates the form like
-// the save, finds an unknown person, and saves nothing (FR-013, D-058).
 func TestPersonImpact_NoPlansNoWarnings_FR013(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -182,8 +175,6 @@ func TestPersonImpact_NoPlansNoWarnings_FR013(t *testing.T) {
 	}
 }
 
-// Deactivate and Reactivate answer the person in their new status; both fields of the body are needed, an
-// out-of-date version is refused and an unknown person answers 404 (FR-005, FR-007).
 func TestSetPersonStatus_InactiveAndBack_FR005_FR007(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -246,7 +237,6 @@ func TestPeopleManagedWithPeopleManage_FR027(t *testing.T) {
 	}
 }
 
-// createPerson creates a person through POST /api/v1/people and stops the test when that fails.
 func createPerson(t *testing.T, client *apitest.Client, body map[string]any) people.PersonDetails {
 	t.Helper()
 	response := client.Do(t, http.MethodPost, "/api/v1/people", body)
@@ -258,8 +248,6 @@ func createPerson(t *testing.T, client *apitest.Client, body map[string]any) peo
 	return person
 }
 
-// setStatus deactivates (active false) or reactivates the person id through POST /api/v1/people/{id}/status
-// from version, and stops the test when that fails.
 func setStatus(t *testing.T, client *apitest.Client, id string, active bool, version int) people.PersonDetails {
 	t.Helper()
 	response := client.Do(t, http.MethodPost, "/api/v1/people/"+id+"/status", map[string]any{"active": active, "version": version})

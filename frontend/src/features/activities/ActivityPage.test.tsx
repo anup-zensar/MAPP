@@ -5,6 +5,7 @@ import { approvalOf, submissionOf } from '@/testing/fixtures/approvals';
 import { activityRecord } from '@/testing/fixtures/line-item-financials';
 import { closestTo } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
+import { activitySection } from '@/testing/fixtures/purchase-requests';
 import type { Answer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
@@ -82,6 +83,9 @@ function openPage(
       { body: activityAttributeForm() },
       { level: 'activity' },
     ),
+    reply('GET /api/v1/activities/{activityId}/purchase-requests', {
+      body: activitySection({ activityId: 'A-1042', lineItems: [] }),
+    }),
   ]);
   return { ...renderWithProviders(<ActivityPage />, { route, path: PATH, user: testUser() }), api };
 }

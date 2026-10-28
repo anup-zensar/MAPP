@@ -50,9 +50,16 @@ describe('MonitoringView (feature 017, US6)', () => {
     const headers = within(byLevel)
       .getAllByRole('columnheader')
       .map((header) => header.textContent);
-    expect(headers).toEqual(['Workflow', 'Level', 'Waiting', 'Overdue', 'Oldest waiting']);
+    expect(headers).toEqual([
+      'Workflow',
+      'Approves',
+      'Level',
+      'Waiting',
+      'Overdue',
+      'Oldest waiting',
+    ]);
     expect(within(byLevel).getByRole('row', { name: /Lubricants EU approval/ })).toHaveTextContent(
-      'Level 131',
+      'ActivityLevel 131',
     );
 
     const overdue = screen.getByRole('region', { name: 'Overdue' });
@@ -85,6 +92,31 @@ describe('MonitoringView (feature 017, US6)', () => {
 
     expect(await screen.findByText('Nothing is waiting for approval.')).toBeInTheDocument();
     expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  it('says what each waiting group approves (031 FR-027)', async () => {
+    const group = monitoringOf().byLevel[0];
+    if (!group) {
+      throw new Error('monitoringOf() has a waiting group');
+    }
+    renderView([
+      reply('GET /api/v1/approvals/monitoring', {
+        body: monitoringOf({
+          byLevel: [
+            {
+              ...group,
+              kind: 'modifiedPurchaseRequest',
+              workflow: { id: 'WF-1003', name: 'PR modification approval' },
+            },
+          ],
+        }),
+      }),
+    ]);
+
+    const byLevel = await screen.findByRole('region', { name: 'Waiting by level' });
+    expect(
+      within(byLevel).getByRole('row', { name: /PR modification approval/ }),
+    ).toHaveTextContent('Modified purchase request');
   });
 
   it('says Nothing is overdue while approvals wait in time', async () => {

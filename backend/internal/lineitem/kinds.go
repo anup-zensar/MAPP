@@ -11,14 +11,12 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// The history kind of line items and its parent, feature 006's activity (data model §7.1).
 const (
 	lineItemKind     = "lineItem"
 	activityKind     = "activity"
 	lineItemSingular = "line item"
 )
 
-// spreadLabels are the names of the spread methods on screens and in the log (design system §8).
 var spreadLabels = map[string]string{
 	string(SpreadEvenly):     "Evenly",
 	string(SpreadFirstMonth): "All in first month",
@@ -26,9 +24,7 @@ var spreadLabels = map[string]string{
 	string(SpreadCustom):     "Custom",
 }
 
-// Kinds returns the history kind of line items, for internal/app to register after feature 006's kind
-// "activity" (data model §7.1). With it, history logs line-item changes with their path, deletes a line item
-// (and an activity with its line items) to the recycle bin and brings it back.
+// Kinds returns the line-item history kind, which internal/app registers after its parent kind, activity.
 func (s *Service) Kinds() []history.Kind {
 	return []history.Kind{{
 		Name:           lineItemKind,
@@ -45,21 +41,16 @@ func (s *Service) Kinds() []history.Kind {
 		PutAll:         s.putAll,
 		Describe:       s.describe,
 		PrepareRestore: s.prepareRestore,
-		AfterRestore:   s.afterRestore,
 	}}
 }
 
-// Messages and notes of a line item that comes back (plan, "History notes").
 const (
 	undoNameTakenMessage = "Can't undo — there is now another line item called '%s'. Restore it from the recycle bin instead."
 	renamedNote          = "Renamed to '%s' because the name was taken."
-	restartedNote        = "Activity '%s' needs approval again because a line item came back."
-	restoredReason       = "Line item '%s' (%s) restored: %s %s"
 )
 
-// prepareRestore applies the name rule of a line item that comes back (data model §7.1). Names stay unique
-// in the activity: an Undo of a name that is taken meanwhile is refused (D-037), a Restore renames to "<name>
-// (restored)", " (restored 2)", … and says so.
+// prepareRestore keeps names unique in the activity: an Undo of a name taken meanwhile is refused (D-037), a
+// Restore renames to "<name> (restored)", " (restored 2)", … and says so.
 func (s *Service) prepareRestore(ctx context.Context, rc history.RestoreContext, snapshot *history.Snapshot) ([]string, error) {
 	var li LineItem
 	if err := json.Unmarshal(snapshot.Data, &li); err != nil {
@@ -86,28 +77,6 @@ func (s *Service) prepareRestore(ctx context.Context, rc history.RestoreContext,
 	return notes, nil
 }
 
-// afterRestore applies FR-033 once the line item the person deleted is back, after an Undo or a Restore:
-// history calls it only when the line item itself was deleted, never when it comes back with its activity
-// (or a level above). When its activity is Submitted or Approved now, bringing it back counts as adding one:
-// the activity goes back to Created and a note says so (D-147). An Undo right after a delete that ended an
-// approval finds the activity Created, so it never brings that approval back.
-func (s *Service) afterRestore(ctx context.Context, rc history.RestoreContext, top history.Snapshot) ([]string, error) {
-	var li LineItem
-	if err := json.Unmarshal(top.Data, &li); err != nil {
-		return nil, err
-	}
-	f, err := s.facts(ctx, li.ActivityID)
-	if err != nil || !f.restartsApproval() {
-		return nil, err
-	}
-	reason := fmt.Sprintf(restoredReason, li.Name, li.ID, li.PlannedCost.Format(), li.Currency)
-	if err := s.deps.Activities.RestartApproval(ctx, rc.Actor, f.ID, []string{reason}); err != nil {
-		return nil, err
-	}
-	return []string{fmt.Sprintf(restartedNote, f.Name)}, nil
-}
-
-// restoredNameSuffix is the suffix of the n-th restored name: " (restored)", " (restored 2)", …
 func restoredNameSuffix(n int) string {
 	if n == 1 {
 		return " (restored)"
@@ -115,8 +84,6 @@ func restoredNameSuffix(n int) string {
 	return fmt.Sprintf(" (restored %d)", n)
 }
 
-// snapshot reads the line item id as history keeps it: the stored line item, its name, and its activity as
-// its parent.
 func (s *Service) snapshot(ctx context.Context, id string) (history.Snapshot, bool, error) {
 	li, found, err := s.repo.Get(ctx, id)
 	if err != nil || !found {
@@ -129,7 +96,6 @@ func (s *Service) snapshot(ctx context.Context, id string) (history.Snapshot, bo
 	return history.Snapshot{ID: li.ID, Name: li.Name, ParentID: li.ActivityID, Data: data}, true, nil
 }
 
-// lineItemIDs lists the ids of the line items of the activity activityID.
 func (s *Service) lineItemIDs(ctx context.Context, activityID string) ([]string, error) {
 	items, err := s.repo.ListByActivity(ctx, activityID)
 	if err != nil {
@@ -142,7 +108,6 @@ func (s *Service) lineItemIDs(ctx context.Context, activityID string) ([]string,
 	return list, nil
 }
 
-// put stores the line item of a snapshot again, exactly as the snapshot holds it.
 func (s *Service) put(ctx context.Context, snapshot history.Snapshot) error {
 	var li LineItem
 	if err := json.Unmarshal(snapshot.Data, &li); err != nil {
@@ -151,10 +116,8 @@ func (s *Service) put(ctx context.Context, snapshot history.Snapshot) error {
 	return s.repo.Put(ctx, li)
 }
 
-// describe gives the label of a changed line-item field and the text of a value, for the activity log
-// (data model §7.3): the owner's name, amounts as "46,000.00", the spread in words, the finance budget item
-// as "2026 Lubricants Budget › Europe – Digital", and each Shell attribute as feature 002 describes it. An
-// empty label or text means the default.
+// describe gives the activity log the label of a changed field and the text of a value as people read them;
+// an empty label or text means history's default.
 func (s *Service) describe(ctx context.Context, field string, value any) (label, text string, err error) {
 	if strings.HasPrefix(field, "attributes.") {
 		return s.deps.Attributes.Describe(ctx, field, value)
@@ -202,7 +165,6 @@ func (s *Service) describe(ctx context.Context, field string, value any) (label,
 	return "", "", nil // name, description, currency: the defaults read well
 }
 
-// amountText writes a stored amount as people read it: "46000.00" → "46,000.00"; "" for no amount.
 func amountText(stored string) string {
 	amount, err := money.ParseAmount(stored)
 	if stored == "" || err != nil {
@@ -211,8 +173,6 @@ func amountText(stored string) string {
 	return amount.Format()
 }
 
-// spreadText writes a stored spread as people read it: "Evenly", or for a custom spread its months,
-// "Custom: Feb 2026 2,000.00 · Mar 2026 3,333.33".
 func spreadText(value any) string {
 	spread, _ := value.(map[string]any)
 	method, _ := spread["method"].(string)

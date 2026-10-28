@@ -35,6 +35,7 @@ type Service struct {
 	now    clock.Clock
 	kinds  []Kind // parents before children
 	access Access // nil: no restriction
+	guards []DeleteGuard
 }
 
 func NewService(tx Transactor, repo Store, generator *ids.Generator, now clock.Clock) *Service {

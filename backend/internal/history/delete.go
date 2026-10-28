@@ -24,7 +24,10 @@ func (s *Service) MoveToBin(ctx context.Context, a actor.Actor, kindName, id str
 		if err != nil {
 			return err
 		}
-		top := snapshots[0] // the deleted record itself
+		if err = s.guarded(ctx, snapshots); err != nil {
+			return err
+		}
+		top := snapshots[0]
 		path, err := s.ancestors(ctx, k.Parent, top.ParentID)
 		if err != nil {
 			return err
@@ -53,7 +56,6 @@ func (s *Service) MoveToBin(ctx context.Context, a actor.Actor, kindName, id str
 		if err = s.repo.PutBinEntry(ctx, entry); err != nil {
 			return err
 		}
-		// One entry for the whole delete (SC-004). The record is gone now, so its path starts at its parent.
 		_, err = s.Log(ctx, a, LogInput{
 			Kind:       k.Name,
 			RecordID:   top.ID,
@@ -70,9 +72,6 @@ func (s *Service) MoveToBin(ctx context.Context, a actor.Actor, kindName, id str
 	return entry, nil
 }
 
-// contentsOf counts the records under a deleted record by kind, in the order the kinds were registered,
-// and leaves out the kinds it has none of (data model §6). The label is the kind's singular for a count of
-// 1. The list is never nil.
 func (s *Service) contentsOf(below []Snapshot) []ContentCount {
 	contents := []ContentCount{}
 	for _, k := range s.kinds {
@@ -94,8 +93,6 @@ func (s *Service) contentsOf(below []Snapshot) []ContentCount {
 	return contents
 }
 
-// contentsText says what was under a deleted record, for the details of its log entries: "with 2 sample
-// notes", or "with 2 campaigns and 5 initiatives". It is "" when nothing was under it.
 func contentsText(contents []ContentCount) string {
 	if len(contents) == 0 {
 		return ""
@@ -111,7 +108,6 @@ func contentsText(contents []ContentCount) string {
 	return "with " + strings.Join(counts[:len(counts)-1], ", ") + " and " + last
 }
 
-// lastOf returns a copy of the last element of path, or nil for an empty path: the parent of a record.
 func lastOf(path []RecordRef) *RecordRef {
 	if len(path) == 0 {
 		return nil

@@ -2,17 +2,18 @@ package seed
 
 import (
 	"context"
+	"slices"
 
 	"mapp/internal/platform/ids"
 	"mapp/internal/settings"
 	"mapp/internal/stores"
 )
 
-// addAttributes creates the 35 Shell attributes, SA-1001 … SA-1035, with their 110 options, SO-1001 …,
-// the links of dependent options to their parent options, and the business-unit conditions.
+// addAttributes creates the 56 Shell attributes, SA-1001 … SA-1056, with their 185 options, SO-1001 …: the
+// planning levels' first, then the purchase request's (032).
 func (d *demo) addAttributes(ctx context.Context, repo stores.SettingsStore) error {
 	positions := map[settings.Level]int{}
-	for _, a := range demoAttributes {
+	for _, a := range append(slices.Clone(demoAttributes), purchaseRequestAttributes()...) {
 		positions[a.level]++
 		attribute, err := d.attributeOf(a, positions[a.level])
 		if err != nil {
@@ -32,8 +33,7 @@ func (d *demo) addAttributes(ctx context.Context, repo stores.SettingsStore) err
 	return nil
 }
 
-// attributeOf builds the seeded attribute a at position, with its parent attribute and its business-unit
-// condition resolved, but without its ID.
+// attributeOf resolves the parent attribute and business-unit condition of a but leaves its ID empty.
 func (d *demo) attributeOf(a demoAttribute, position int) (settings.Attribute, error) {
 	var r resolver
 	section := a.section
@@ -54,8 +54,6 @@ func (d *demo) attributeOf(a demoAttribute, position int) (settings.Attribute, e
 	return attribute, r.err
 }
 
-// addOptions creates the options of the seeded attribute a, stored as attributeID, linked to their
-// parent options.
 func (d *demo) addOptions(ctx context.Context, repo stores.SettingsStore, a demoAttribute, attributeID string) error {
 	var r resolver
 	for position, o := range a.options {

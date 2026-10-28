@@ -7,12 +7,12 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// addFinancials loads the demo GSAP data of feature 015 (FR-031, data model §6): the 11 fictitious
-// transactions of the demo feed, through the same matching rules as an import, and one import record "Demo
-// data (simulated GSAP)" created by MAPP at the seed time. They link to Venue hire (L-1003), Speaker
-// fees (L-1004) and Stand build (L-1006) only, plus one PO whose HX key matches no line item (D-306). The
-// step runs after approvals and writes no activity-log entry (D-188).
+// addFinancials loads the simulated GSAP's demo data after approvals (D-306), without log entries (D-188): the
+// SWBS run first (030), whose code Venue hire's transactions carry, then 015's transactions and their import.
 func (d *demo) addFinancials(ctx context.Context) error {
+	if err := d.addSwbsRun(ctx); err != nil {
+		return err
+	}
 	items, err := d.stores.LineItems.List(ctx)
 	if err != nil {
 		return err
@@ -33,8 +33,6 @@ func (d *demo) addFinancials(ctx context.Context) error {
 	return err
 }
 
-// storedLineItems are the line items the seed stored, for matching: the seed has no recycle bin.
 type storedLineItems map[string]bool
 
-// Stored reports whether the line item id was stored.
 func (s storedLineItems) Stored(id string) bool { return s[id] }

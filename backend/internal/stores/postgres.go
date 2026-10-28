@@ -17,8 +17,10 @@ import (
 	"mapp/internal/plan"
 	"mapp/internal/platform/database"
 	"mapp/internal/platform/ids"
+	"mapp/internal/purchaserequest"
 	"mapp/internal/sample"
 	"mapp/internal/settings"
+	"mapp/internal/swbs"
 )
 
 // Postgres is the set the API and the seed run on. Nothing stored yet means no number given out yet: every
@@ -52,5 +54,8 @@ func postgresPlanning(db *database.DB) Planning {
 }
 
 func postgresFinance(db *database.DB) Finance {
-	return Finance{Budgets: budget.NewPostgresStore(db), Financials: financials.NewPostgresStore(db)}
+	return Finance{
+		Budgets: budget.NewPostgresStore(db), Financials: financials.NewPostgresStore(db), SwbsRuns: swbs.NewPostgresStore(db),
+		PurchaseRequests: purchaserequest.NewPostgresStore(db),
+	}
 }

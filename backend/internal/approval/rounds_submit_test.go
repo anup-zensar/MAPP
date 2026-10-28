@@ -11,8 +11,6 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// The submit confirmation says what will happen to every level, and lists the problems of approver sources
-// with every other problem; asking changes nothing (017 FR-012, FR-013, FR-036).
 func TestSubmission_OutcomesAndProblems_FR012_FR013_FR036(t *testing.T) { //nolint:gocyclo // 14: three asks of one confirmation, each checked in full
 	t.Parallel()
 	f := newFixture(t)
@@ -69,8 +67,6 @@ func TestSubmission_OutcomesAndProblems_FR012_FR013_FR036(t *testing.T) { //noli
 	}
 }
 
-// The confirmation shows the workflow, each level with its approvers, a positive unassigned planned cost as
-// a note and the number of the round it starts; asking changes nothing (FR-011, FR-010).
 func TestSubmission_ListsLevelsAndNote_FR011(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -94,7 +90,7 @@ func TestSubmission_ListsLevelsAndNote_FR011(t *testing.T) {
 				Summary: "Level 2 · Alex Morgan"},
 		},
 		UnassignedPlannedCost: &note,
-		Outcomes: []SubmissionLevel{ // 017 FR-013: both levels need a decision
+		Outcomes: []SubmissionLevel{
 			{Number: 1, Label: "Level 1", Outcome: ResolutionDecide, Approvers: []PersonView{{ID: carlos.ID, Name: "Carlos Mendes", Initials: "CM", Active: true}}, Mode: ModeAny, Excluded: []ExcludedView{}},
 			{Number: 2, Label: "Level 2", Outcome: ResolutionDecide, Approvers: []PersonView{{ID: alex.ID, Name: "Alex Morgan", Initials: "AM", Active: true}}, Mode: ModeAny, Excluded: []ExcludedView{}},
 		},
@@ -107,9 +103,6 @@ func TestSubmission_ListsLevelsAndNote_FR011(t *testing.T) {
 	}
 }
 
-// With any problem, Submit changes nothing and lists every problem at once, each with the field that fixes
-// it: empty needed fields, an unfinished % split, a line item's missing field, a negative unassigned planned
-// cost (from the check of 006 and 007) and the missing approval workflow (FR-010).
 func TestSubmit_ProblemsChangeNothing_FR010(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -147,8 +140,6 @@ func TestSubmit_ProblemsChangeNothing_FR010(t *testing.T) {
 	assertNothingHappened(t, f, "A-1008", StatusCreated)
 }
 
-// An inactive approval workflow, or one that no longer exists, is a problem of the check; a problem the
-// check of 006 already lists for the field is not listed twice (FR-010 e, FR-007).
 func TestSubmit_InactiveWorkflowIsAProblem_FR010(t *testing.T) { //nolint:tparallel // the subtests share one fixture
 	t.Parallel()
 	f := newFixture(t)
@@ -184,13 +175,11 @@ func TestSubmit_InactiveWorkflowIsAProblem_FR010(t *testing.T) { //nolint:tparal
 	}
 }
 
-// A positive unassigned planned cost, or no line items at all, does not block submitting; the
-// confirmation shows the amount as a note (spec edge case, domain model §4.3).
 func TestSubmit_PositiveUnassignedDoesNotBlock_EdgeCase(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1001", "Launch film", priya.ID, lubricantsFlow)
-	note := money.USD(mustAmount(t, "50000.00")) // the whole planned cost: no line items
+	note := money.USD(mustAmount(t, "50000.00"))
 	f.activities.unassigned["A-1001"] = &note
 
 	approval := f.submit(t, priya, "A-1001", "")
@@ -200,36 +189,29 @@ func TestSubmit_PositiveUnassignedDoesNotBlock_EdgeCase(t *testing.T) {
 	}
 }
 
-// Only a Created activity can be submitted and only a Declined one re-submitted; the others are refused and
-// the confirmation says why (FR-009).
-func TestSubmit_OnlyCreatedOrDeclined_FR009(t *testing.T) {
+func TestSubmit_ApprovedRefused_FR009_031FR017(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	for i, status := range []string{StatusSubmitted, StatusApproved} {
-		id := []string{"A-1004", "A-1002"}[i]
-		facts := f.addActivity(t, id, "Activity "+status, priya.ID, lubricantsFlow)
-		facts.Status = status
-		f.activities.facts[id] = facts
+	facts := f.addActivity(t, "A-1002", "Social always-on", priya.ID, lubricantsFlow)
+	facts.Status = StatusApproved
+	f.activities.facts["A-1002"] = facts
+	const refusal = "Only Created, Submitted or Declined activities can be submitted for approval."
 
-		submission, err := f.service.Submission(t.Context(), priya, id)
-		if err != nil {
-			t.Fatalf("Submission: %v", err)
-		}
-		_, submitErr := f.service.Submit(t.Context(), priya, id, SubmitInput{Version: version(1)})
+	submission, err := f.service.Submission(t.Context(), priya, "A-1002")
+	if err != nil {
+		t.Fatalf("Submission: %v", err)
+	}
+	_, submitErr := f.service.Submit(t.Context(), priya, "A-1002", SubmitInput{Version: version(1)})
 
-		if submission.Available || submission.Reason != "Only Created or Declined activities can be submitted for approval." {
-			t.Errorf("%s: available %v, reason %q", status, submission.Available, submission.Reason)
-		}
-		assertError(t, submitErr, errs.BadRequest("Only Created or Declined activities can be submitted for approval."))
-		if rounds := f.rounds(t, id); len(rounds) != 0 {
-			t.Errorf("%s: rounds = %+v, want none", status, rounds)
-		}
+	if submission.Available || submission.Reason != refusal {
+		t.Errorf("available %v, reason %q", submission.Available, submission.Reason)
+	}
+	assertError(t, submitErr, errs.BadRequest(refusal))
+	if rounds := f.rounds(t, "A-1002"); len(rounds) != 0 {
+		t.Errorf("rounds = %+v, want none", rounds)
 	}
 }
 
-// Submit needs the activity version the person saw: without it the request is refused, and an out-of-date
-// one is refused with version_conflict naming who changed the activity and when (D-030); a comment holds
-// at most 2,000 characters.
 func TestSubmit_StaleVersionRefused_D030(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -252,13 +234,11 @@ func TestSubmit_StaleVersionRefused_D030(t *testing.T) {
 	assertNothingHappened(t, f, "A-1001", StatusCreated)
 }
 
-// The plan's status is never checked: an activity of a Draft plan is submitted like any other (FR-012,
-// D-206).
 func TestSubmit_DraftPlanAllowed_FR012(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 	facts := f.addActivity(t, "A-1010", "Lunar new year promo", mei.ID, chinaFlow)
-	facts.Path[0] = errs.RecordRef{Type: "plan", ID: "P-1002", Name: "FY2026 Mobility China"} // a Draft plan
+	facts.Path[0] = errs.RecordRef{Type: "plan", ID: "P-1002", Name: "FY2026 Mobility China"}
 	f.activities.facts["A-1010"] = facts
 
 	approval := f.submit(t, mei, "A-1010", "")

@@ -8,9 +8,6 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// ListAttributes returns the Shell attributes of level, or of every level top-down when level is nil, in
-// display order (FR-002, FR-019), each with its options counted, its usage and its locks. Every signed-in
-// person may see them (FR-008).
 func (s *Service) ListAttributes(ctx context.Context, _ actor.Actor, level *Level) ([]ShellAttributeView, error) {
 	var views []ShellAttributeView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -21,8 +18,6 @@ func (s *Service) ListAttributes(ctx context.Context, _ actor.Actor, level *Leve
 	return views, err
 }
 
-// attributeList returns the attributes of level (every level when nil) as the API lists them, inside the
-// caller's transaction.
 func (s *Service) attributeList(ctx context.Context, level *Level) ([]ShellAttributeView, error) {
 	f, err := s.loadForm(ctx, "")
 	if err != nil {
@@ -32,7 +27,7 @@ func (s *Service) attributeList(ctx context.Context, level *Level) ([]ShellAttri
 	if err != nil {
 		return nil, err
 	}
-	levels := Levels
+	levels := AllLevels()
 	if level != nil {
 		levels = []Level{*level}
 	}
@@ -49,8 +44,6 @@ func (s *Service) attributeList(ctx context.Context, level *Level) ([]ShellAttri
 	return views, nil
 }
 
-// GetAttribute returns the Shell attribute id with its usage and locks; its options are listed separately
-// (FR-020).
 func (s *Service) GetAttribute(ctx context.Context, _ actor.Actor, id string) (ShellAttributeView, error) {
 	var view ShellAttributeView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -61,7 +54,6 @@ func (s *Service) GetAttribute(ctx context.Context, _ actor.Actor, id string) (S
 	return view, err
 }
 
-// attributeViewOf reads the attribute id as the API answers it, or answers not found.
 func (s *Service) attributeViewOf(ctx context.Context, id string) (ShellAttributeView, error) {
 	f, err := s.loadForm(ctx, "")
 	if err != nil {
@@ -78,7 +70,6 @@ func (s *Service) attributeViewOf(ctx context.Context, id string) (ShellAttribut
 	return f.attributeView(attribute, u), nil
 }
 
-// attributeView returns the attribute a as the API answers it.
 func (f formData) attributeView(a Attribute, u *usageIndex) ShellAttributeView {
 	var parent *SettingRef
 	if p, found := f.byID[a.ParentAttributeID]; found {
@@ -112,7 +103,7 @@ func (f formData) attributeView(a Attribute, u *usageIndex) ShellAttributeView {
 func attributeLocks(a Attribute, u *usageIndex) []Lock {
 	locks := []Lock{}
 	add := func(field, reason string) {
-		if _, locked := lockOf(locks, field); !locked { // one reason per field: the first that applies
+		if _, locked := lockOf(locks, field); !locked {
 			locks = append(locks, Lock{Field: field, Reason: reason})
 		}
 	}
@@ -121,6 +112,11 @@ func attributeLocks(a Attribute, u *usageIndex) []Lock {
 			add(field, businessUnitLock)
 		}
 		return locks
+	}
+	if a.Role != "" {
+		for _, field := range []string{fieldType, fieldLevel, actionDelete} {
+			add(field, roleLock)
+		}
 	}
 	if u.valuesByAttribute[a.ID] != nil {
 		add(fieldType, typeLockedMessage)
@@ -145,8 +141,6 @@ func businessUnitLocks() []string {
 	return []string{fieldType, fieldLevel, fieldSection, fieldPosition, fieldCondition, fieldParent, fieldActive, actionDelete}
 }
 
-// statusLock is why the status of a can't change: it has active dependents, or (inactive) its parent is
-// inactive too.
 func statusLock(a Attribute, u *usageIndex) (string, bool) {
 	if !a.Active {
 		parent, found := u.attributes[a.ParentAttributeID]
@@ -163,7 +157,6 @@ func statusLock(a Attribute, u *usageIndex) (string, bool) {
 	return "", false
 }
 
-// lockOf returns the reason of the lock on field among locks, and false when the field is not locked.
 func lockOf(locks []Lock, field string) (string, bool) {
 	for _, l := range locks {
 		if l.Field == field {

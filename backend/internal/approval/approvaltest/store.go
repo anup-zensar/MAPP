@@ -54,8 +54,8 @@ func (s Store) ListRounds(context.Context) ([]approval.Round, error) {
 	return s.rounds.List()
 }
 
-func (s Store) RoundsOf(_ context.Context, activityID string) ([]approval.Round, error) {
-	rounds, err := s.rounds.Where(func(r approval.Round) bool { return r.ActivityID == activityID })
+func (s Store) RoundsOf(_ context.Context, subjectID string) ([]approval.Round, error) {
+	rounds, err := s.rounds.Where(func(r approval.Round) bool { return r.SubjectID == subjectID })
 	slices.SortStableFunc(rounds, func(a, b approval.Round) int { return cmp.Compare(a.Number, b.Number) })
 	return rounds, err
 }
@@ -69,6 +69,7 @@ func (s Store) PutRound(ctx context.Context, r approval.Round) error {
 }
 
 func (s Store) PutAction(ctx context.Context, a approval.Action) error {
+	a.SubjectKind = cmp.Or(a.SubjectKind, approval.KindActivity)
 	return s.actions.Put(ctx, a)
 }
 
@@ -76,8 +77,8 @@ func (s Store) ListActions(context.Context) ([]approval.Action, error) {
 	return s.actions.List()
 }
 
-func (s Store) ActionsOf(_ context.Context, activityID string) ([]approval.Action, error) {
-	return s.actions.Where(func(a approval.Action) bool { return a.ActivityID == activityID })
+func (s Store) ActionsOf(_ context.Context, subjectID string) ([]approval.Action, error) {
+	return s.actions.Where(func(a approval.Action) bool { return a.SubjectID == subjectID })
 }
 
 func (s Store) GetNotification(_ context.Context, id string) (approval.Notification, bool, error) {
@@ -110,6 +111,7 @@ func (s Store) MarkNotificationsRead(ctx context.Context, ids []string, at time.
 }
 
 func (s Store) PutNotification(ctx context.Context, n approval.Notification) error {
+	n.SubjectKind = cmp.Or(n.SubjectKind, approval.KindActivity)
 	return s.notifications.Put(ctx, n)
 }
 

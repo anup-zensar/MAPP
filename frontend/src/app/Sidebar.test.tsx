@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
+import type { Permission } from '@/session/access';
 import type { CurrentUser } from '@/session/useSession';
 import { testUser } from '@/testing/fixtures/users';
 import { reply } from '@/testing/replies';
@@ -37,6 +38,7 @@ describe('Sidebar', () => {
       'Approvals',
       'All work',
       'Financials',
+      'Purchase requests',
       'Settings',
       'Recycle bin',
       'Activity log',
@@ -122,5 +124,37 @@ describe('Sidebar', () => {
       expect(screen.getByRole('button', { name: 'Collapse' })).toBeInTheDocument(),
     );
     expect(api.bodiesOf('PATCH /api/v1/me/preferences')).toEqual([{ sidebarCollapsed: false }]);
+  });
+});
+
+function withPermissions(keys: Permission[]): CurrentUser {
+  return testUser({
+    access: {
+      roles: [],
+      permissions: keys.map((key) => ({ key, all: true, teams: [] })),
+      administrators: [],
+      noSelfApproval: true,
+    },
+  });
+}
+
+describe('032 FR-044/FR-049: Purchase requests in the sidebar only with purchaseRequests.list', () => {
+  it('shows Purchase requests after Financials to a requisitioner', () => {
+    renderWithProviders(<Sidebar />, {
+      user: withPermissions(['plans.view', 'purchaseRequests.list', 'finance.import']),
+    });
+
+    expect(screen.getByRole('link', { name: 'Purchase requests' })).toHaveAttribute(
+      'href',
+      '/purchase-requests',
+    );
+  });
+
+  it('leaves it out for a planner who raises purchase requests but may not see the page', () => {
+    renderWithProviders(<Sidebar />, {
+      user: withPermissions(['plans.view', 'purchaseRequests.edit', 'purchaseRequests.submit']),
+    });
+
+    expect(screen.queryByRole('link', { name: 'Purchase requests' })).not.toBeInTheDocument();
   });
 });

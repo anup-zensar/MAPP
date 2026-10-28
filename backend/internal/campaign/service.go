@@ -19,6 +19,7 @@ type Service struct {
 	now          clock.Clock
 	deps         Deps
 	displayRates DisplayRates // nil until UseDisplayRates: amounts show in USD
+	purchases    PurchaseRequests
 }
 
 func NewService(tools history.Tools, repo Store, deps Deps) *Service {

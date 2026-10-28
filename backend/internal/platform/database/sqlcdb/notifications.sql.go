@@ -42,7 +42,8 @@ func (q *Queries) GetDelegation(ctx context.Context, id string) (ApprovalDelegat
 }
 
 const getNotification = `-- name: GetNotification :one
-SELECT id, recipient_id, kind, title, text, activity_id, activity_name, actor_id, actor_name, at, read, read_at
+SELECT id, recipient_id, kind, title, text, subject_id, subject_name, actor_id, actor_name, at, read, read_at,
+    subject_kind
 FROM notifications
 WHERE id = $1
 `
@@ -56,13 +57,14 @@ func (q *Queries) GetNotification(ctx context.Context, id string) (Notification,
 		&i.Kind,
 		&i.Title,
 		&i.Text,
-		&i.ActivityID,
-		&i.ActivityName,
+		&i.SubjectID,
+		&i.SubjectName,
 		&i.ActorID,
 		&i.ActorName,
 		&i.At,
 		&i.Read,
 		&i.ReadAt,
+		&i.SubjectKind,
 	)
 	return i, err
 }
@@ -128,7 +130,8 @@ func (q *Queries) MarkNotificationsRead(ctx context.Context, arg MarkNotificatio
 }
 
 const notificationsOf = `-- name: NotificationsOf :many
-SELECT id, recipient_id, kind, title, text, activity_id, activity_name, actor_id, actor_name, at, read, read_at
+SELECT id, recipient_id, kind, title, text, subject_id, subject_name, actor_id, actor_name, at, read, read_at,
+    subject_kind
 FROM notifications
 WHERE recipient_id = $1
 ORDER BY at DESC, length(id) DESC, id COLLATE "C" DESC
@@ -149,13 +152,14 @@ func (q *Queries) NotificationsOf(ctx context.Context, recipientID string) ([]No
 			&i.Kind,
 			&i.Title,
 			&i.Text,
-			&i.ActivityID,
-			&i.ActivityName,
+			&i.SubjectID,
+			&i.SubjectName,
 			&i.ActorID,
 			&i.ActorName,
 			&i.At,
 			&i.Read,
 			&i.ReadAt,
+			&i.SubjectKind,
 		); err != nil {
 			return nil, err
 		}
@@ -235,17 +239,18 @@ func (q *Queries) PutDelegation(ctx context.Context, arg PutDelegationParams) er
 
 const putNotification = `-- name: PutNotification :exec
 INSERT INTO notifications (
-    id, recipient_id, kind, title, text, activity_id, activity_name, actor_id, actor_name, at, read, read_at
+    id, recipient_id, kind, title, text, subject_id, subject_name, actor_id, actor_name, at, read, read_at, subject_kind
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
 )
 ON CONFLICT (id) DO UPDATE SET
     recipient_id = excluded.recipient_id,
     kind = excluded.kind,
     title = excluded.title,
     text = excluded.text,
-    activity_id = excluded.activity_id,
-    activity_name = excluded.activity_name,
+    subject_kind = excluded.subject_kind,
+    subject_id = excluded.subject_id,
+    subject_name = excluded.subject_name,
     actor_id = excluded.actor_id,
     actor_name = excluded.actor_name,
     at = excluded.at,
@@ -254,18 +259,19 @@ ON CONFLICT (id) DO UPDATE SET
 `
 
 type PutNotificationParams struct {
-	ID           string
-	RecipientID  string
-	Kind         string
-	Title        string
-	Text         string
-	ActivityID   string
-	ActivityName string
-	ActorID      string
-	ActorName    string
-	At           time.Time
-	Read         bool
-	ReadAt       *time.Time
+	ID          string
+	RecipientID string
+	Kind        string
+	Title       string
+	Text        string
+	SubjectID   string
+	SubjectName string
+	ActorID     string
+	ActorName   string
+	At          time.Time
+	Read        bool
+	ReadAt      *time.Time
+	SubjectKind string
 }
 
 func (q *Queries) PutNotification(ctx context.Context, arg PutNotificationParams) error {
@@ -275,13 +281,14 @@ func (q *Queries) PutNotification(ctx context.Context, arg PutNotificationParams
 		arg.Kind,
 		arg.Title,
 		arg.Text,
-		arg.ActivityID,
-		arg.ActivityName,
+		arg.SubjectID,
+		arg.SubjectName,
 		arg.ActorID,
 		arg.ActorName,
 		arg.At,
 		arg.Read,
 		arg.ReadAt,
+		arg.SubjectKind,
 	)
 	return err
 }

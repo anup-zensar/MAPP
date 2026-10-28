@@ -6,12 +6,13 @@ import { problemOf } from '@/ui/FormPanel/problem-of';
 import { TextField } from '@/ui/TextField/TextField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { PersonField } from '@/features/people';
-import { emptyLevel, levelFieldName } from './level-drafts';
+import { emptyLevel, levelFieldName, singlePerson } from './level-drafts';
 import type { ApproverType, LevelDraft, LevelField, LevelMode } from './level-drafts';
 import { RadioGroup } from './RadioGroup';
 import { RuleConditionFields } from './RuleConditionFields';
 import { useRuleOptions } from './api';
 import type { ApprovalRuleOptions } from './api';
+import type { ObjectType } from './schemas';
 import styles from './LevelsEditor.module.css';
 
 export interface LevelsEditorProps {
@@ -19,13 +20,23 @@ export interface LevelsEditorProps {
   onChange: (levels: LevelDraft[]) => void;
   /** The last save's problems; a level's are keyed "levels.<n>.<field>" (n from 1). */
   problems: FieldProblem[];
+  objectType: ObjectType;
 }
 
 const SOURCES: { value: ApproverType; label: string }[] = [
   { value: 'people', label: 'Named people' },
+  { value: 'owner', label: 'Record owner' },
   { value: 'manager', label: "The owner's line manager" },
   { value: 'role', label: 'People with a role' },
+  { value: 'recordField', label: 'Person named on the record' },
 ];
+
+/** Activities have no field that names an approver, so their workflows don't offer one. */
+function sourcesOf(objectType: ObjectType) {
+  return objectType === 'activity'
+    ? SOURCES.filter((source) => source.value !== 'recordField')
+    : SOURCES;
+}
 
 const MODES: { value: LevelMode; label: string }[] = [
   { value: 'any', label: 'Any one approves' },
@@ -34,17 +45,13 @@ const MODES: { value: LevelMode; label: string }[] = [
 
 const BACKUP_HINT = 'Takes over when an approval is escalated, or when nobody else can approve.';
 
-/**
- * The levels of an approval workflow (008 FR-002, FR-003; 017 FR-001 – FR-006): one block per
- * level, in order — its name, who approves (named people, the owner's line manager or the people
- * with a role), whether any one or all of them must approve, when the level is needed at all or
- * approved automatically, and its backup approver — with Move up, Move down and Remove named per
- * level, and **Add level**. Each of the API's problems shows at its field.
- */
-export function LevelsEditor({ levels, onChange, problems }: LevelsEditorProps) {
-  // The roles, business units and activity types load once a level needs them.
+export function LevelsEditor({ levels, onChange, problems, objectType }: LevelsEditorProps) {
   const needsOptions = levels.some(
-    (level) => level.approverType === 'role' || level.onlyWhen || level.autoWhen,
+    (level) =>
+      level.approverType === 'role' ||
+      level.approverType === 'recordField' ||
+      level.onlyWhen ||
+      level.autoWhen,
   );
   const ruleOptions = useRuleOptions(needsOptions);
   const optionsReason = ruleOptions.isError
@@ -116,6 +123,7 @@ export function LevelsEditor({ levels, onChange, problems }: LevelsEditorProps) 
                 level={level}
                 number={number}
                 problems={problems}
+                objectType={objectType}
                 options={ruleOptions.data}
                 optionsReason={optionsReason}
                 onChange={(update) => change(index, update)}
@@ -137,16 +145,17 @@ interface LevelFieldsProps {
   level: LevelDraft;
   number: number;
   problems: FieldProblem[];
+  objectType: ObjectType;
   options: ApprovalRuleOptions | undefined;
   optionsReason: string;
   onChange: (update: Partial<LevelDraft>) => void;
 }
 
-/** The fields of one level, in the order of 017 plan "Settings › Approval workflows". */
 function LevelFields({
   level,
   number,
   problems,
+  objectType,
   options,
   optionsReason,
   onChange,
@@ -158,6 +167,9 @@ function LevelFields({
     label: role.name,
     active: true,
   }));
+  const recordFields = (options?.recordFields ?? [])
+    .filter((recordField) => recordField.objectType === objectType)
+    .map((recordField) => ({ id: recordField.id, label: recordField.label, active: true }));
 
   return (
     <>
@@ -173,7 +185,7 @@ function LevelFields({
       <RadioGroup
         legend="Who approves"
         name={field('approverType')}
-        options={SOURCES}
+        options={sourcesOf(objectType)}
         value={level.approverType}
         onChange={(approverType) => onChange({ approverType })}
         error={problem('approverType')}
@@ -202,7 +214,19 @@ function LevelFields({
           error={problem('roleId')}
         />
       )}
-      {level.approverType !== 'manager' && (
+      {level.approverType === 'recordField' && (
+        <ChoiceField
+          label="Field that names the approver"
+          marking="Required"
+          name={field('recordField')}
+          options={recordFields}
+          value={level.recordField}
+          onChange={(recordField) => onChange({ recordField })}
+          disabledReason={optionsReason || undefined}
+          error={problem('recordField')}
+        />
+      )}
+      {!singlePerson(level.approverType) && (
         <RadioGroup
           legend="When there are several approvers"
           name={field('mode')}
@@ -226,6 +250,7 @@ function LevelFields({
             idPrefix={field('appliesWhen')}
             value={level.appliesWhen}
             onChange={(appliesWhen) => onChange({ appliesWhen })}
+            objectType={objectType}
             options={options}
             optionsReason={optionsReason}
           />
@@ -245,6 +270,7 @@ function LevelFields({
             idPrefix={field('autoApproveWhen')}
             value={level.autoApproveWhen}
             onChange={(autoApproveWhen) => onChange({ autoApproveWhen })}
+            objectType={objectType}
             options={options}
             optionsReason={optionsReason}
           />

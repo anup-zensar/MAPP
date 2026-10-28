@@ -169,8 +169,3 @@ func launchFilmWithTwoItems(t *testing.T, f *fixture) (fee, film View) {
 	film = f.create(t, priya, launchFilm, input("Film production", "EUR", "46000.00"))
 	return fee, film
 }
-
-func confirmed(in Input) Input {
-	in.RestartApproval = true
-	return in
-}

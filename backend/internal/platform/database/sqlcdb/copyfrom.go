@@ -308,6 +308,9 @@ func (r iteratorForAddLineItems) Values() ([]interface{}, error) {
 		r.rows[0].UpdatedAt,
 		r.rows[0].UpdatedByID,
 		r.rows[0].UpdatedByName,
+		r.rows[0].SwbsCode,
+		r.rows[0].SwbsRequestedAt,
+		r.rows[0].SwbsReceivedAt,
 	}, nil
 }
 
@@ -316,7 +319,7 @@ func (r iteratorForAddLineItems) Err() error {
 }
 
 func (q *Queries) AddLineItems(ctx context.Context, arg []AddLineItemsParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"line_items"}, []string{"id", "activity_id", "name", "owner_id", "description", "currency", "planned_cost_minor", "spread_method", "attributes", "contracted_amount_minor", "request_swbs", "finance_budget_year", "finance_budget_item_id", "version", "created_at", "created_by_id", "created_by_name", "updated_at", "updated_by_id", "updated_by_name"}, &iteratorForAddLineItems{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"line_items"}, []string{"id", "activity_id", "name", "owner_id", "description", "currency", "planned_cost_minor", "spread_method", "attributes", "contracted_amount_minor", "request_swbs", "finance_budget_year", "finance_budget_item_id", "version", "created_at", "created_by_id", "created_by_name", "updated_at", "updated_by_id", "updated_by_name", "swbs_code", "swbs_requested_at", "swbs_received_at"}, &iteratorForAddLineItems{rows: arg})
 }
 
 // iteratorForAddOptionParents implements pgx.CopyFromSource.
@@ -438,6 +441,43 @@ func (r iteratorForAddRates) Err() error {
 
 func (q *Queries) AddRates(ctx context.Context, arg []AddRatesParams) (int64, error) {
 	return q.db.CopyFrom(ctx, []string{"exchange_rates"}, []string{"id", "currency", "date", "rate_micros", "source", "import_id", "version", "created_at", "created_by_id", "created_by_name", "updated_at", "updated_by_id", "updated_by_name"}, &iteratorForAddRates{rows: arg})
+}
+
+// iteratorForAddSwbsRunCodes implements pgx.CopyFromSource.
+type iteratorForAddSwbsRunCodes struct {
+	rows                 []AddSwbsRunCodesParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForAddSwbsRunCodes) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForAddSwbsRunCodes) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].RunID,
+		r.rows[0].Position,
+		r.rows[0].LineItemID,
+		r.rows[0].LineItemName,
+		r.rows[0].CompanyCode,
+		r.rows[0].SwbsCode,
+	}, nil
+}
+
+func (r iteratorForAddSwbsRunCodes) Err() error {
+	return nil
+}
+
+func (q *Queries) AddSwbsRunCodes(ctx context.Context, arg []AddSwbsRunCodesParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"swbs_run_codes"}, []string{"run_id", "position", "line_item_id", "line_item_name", "company_code", "swbs_code"}, &iteratorForAddSwbsRunCodes{rows: arg})
 }
 
 // iteratorForAddTransactions implements pgx.CopyFromSource.

@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import type { components } from '@/api/generated/schema';
 import { useFormatters } from '@/format/useFormatters';
+import { subjectKindLabel } from '@/ui/subject-links';
 import type { ApprovalRound } from './api';
 import {
   historyActorText,
@@ -14,24 +15,13 @@ import styles from './ApprovalHistory.module.css';
 
 type HistoryEntry = components['schemas']['ApprovalHistoryEntry'];
 
-/** How many entries the compact history (the approvals page's preview) shows. */
 const COMPACT_ENTRIES = 3;
 
 export interface ApprovalHistoryProps {
-  /** Every round, newest first (as the API answers them). */
   rounds: ApprovalRound[];
-  /** Only the latest 3 entries, without the round headings (the approvals page's preview). */
   compact?: boolean;
 }
 
-/**
- * "Approval history" (008 FR-025, 017 FR-034): the rounds newest first ("Round 2 · Waiting at
- * level 1 of 1 · Lubricants EU approval") with the facts the rules used ("Rules applied to: …"),
- * each with its entries newest first — when, what (also "Approved automatically", "Not needed",
- * "Reminder sent", "Escalated to …"), which level, the level's approvers at the time, who acted
- * and in which capacity (as delegate of, as backup approver, on behalf of), the rule or how long
- * the level waited, the comment and, for a restart, what changed.
- */
 export function ApprovalHistory({ rounds, compact = false }: ApprovalHistoryProps) {
   const headingId = useId();
   const { money } = useFormatters();
@@ -57,9 +47,7 @@ export function ApprovalHistory({ rounds, compact = false }: ApprovalHistoryProp
         <ol role="list" className={styles.rounds}>
           {rounds.map((round) => (
             <li key={round.id}>
-              <h4 className={styles.roundHeading}>
-                {`Round ${round.number} · ${roundOutcomeText(round)} · ${round.workflow.name}`}
-              </h4>
+              <h4 className={styles.roundHeading}>{roundTitle(round)}</h4>
               {round.facts && (
                 <p className={styles.facts}>{rulesAppliedText(round.facts, money)}</p>
               )}
@@ -76,7 +64,11 @@ export function ApprovalHistory({ rounds, compact = false }: ApprovalHistoryProp
   );
 }
 
-/** One entry: "Approved · Level 1 · 12 Mar 2026, 14:32", who, the approvers, comment, changes. */
+function roundTitle(round: ApprovalRound): string {
+  const kind = round.kind === 'activity' ? '' : ` · ${subjectKindLabel(round.kind)}`;
+  return `Round ${round.number}${kind} · ${roundOutcomeText(round)} · ${round.workflow.name}`;
+}
+
 function Entry({ entry, withRound = false }: { entry: HistoryEntry; withRound?: boolean }) {
   const { dateTime } = useFormatters();
   const note = historyEntryNote(entry);

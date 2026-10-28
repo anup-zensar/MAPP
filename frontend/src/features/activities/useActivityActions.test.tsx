@@ -7,7 +7,7 @@ import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { launchFilm, DELETED, RESTORED } from '@/testing/fixtures/activities';
 import { destinations } from '@/testing/fixtures/activity-destinations';
-import { reply } from '@/testing/replies';
+import { apiError, reply } from '@/testing/replies';
 import type { Activity } from './api';
 import { useActivityActions } from './useActivityActions';
 
@@ -175,6 +175,27 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
     expect(
       await screen.findByText('This activity no longer exists — someone may have deleted it.'),
     ).toBeVisible();
+    expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1042');
+  });
+});
+
+describe('032 FR-019: delete refused while a PR draws on it', () => {
+  it('shows the refusal naming the purchase request and stays on the activity', async () => {
+    const refusal =
+      "Can't delete — purchase request PR-1002 draws on line item L-1006. Delete or close the purchase request first.";
+    const { user, router } = openMenu([
+      reply(
+        'DELETE /api/v1/activities/{activityId}',
+        { status: 409, body: apiError('in_use', refusal) },
+        { activityId: 'A-1042' },
+      ),
+    ]);
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Launch film' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));
+    await user.click(await screen.findByRole('button', { name: 'Delete activity' }));
+
+    expect(await screen.findByText(refusal)).toBeVisible();
     expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1042');
   });
 });

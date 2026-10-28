@@ -1,42 +1,52 @@
 package approval
 
-// Messages of the plan's "User-visible messages" table that the API sends. Code and tests quote them.
+// The messages of the plans' "User-visible messages" tables (008, 017, 031) that the API sends.
 const (
-	// Records that are gone.
-	activityGoneMessage = "This activity no longer exists — someone may have deleted it."
-	workflowGoneMessage = "This approval workflow no longer exists — someone may have deleted it."
-	roundNotOfActivity  = "This approval round doesn't belong to this activity. Reload the page and try again."
-	reloadMessage       = "Reload the page and try again."
-	chooseTabMessage    = "Choose waiting, open or decided."
+	activityGoneMessage        = "This activity no longer exists — someone may have deleted it."
+	purchaseRequestGoneMessage = "This purchase request no longer exists — someone may have deleted it."
+	workflowGoneMessage        = "This approval workflow no longer exists — someone may have deleted it."
+	roundNotOfMessage          = "This approval round doesn't belong to this %s. Reload the page and try again."
+	reloadMessage              = "Reload the page and try again."
+	chooseTabMessage           = "Choose waiting, open or decided."
 
-	// Submitting (FR-009, FR-010).
-	onlyCreatedOrDeclinedMessage = "Only Created or Declined activities can be submitted for approval."
-	workflowNeededMessage        = "Approval workflow — needed to submit"
-	workflowInactiveMessage      = "Approval workflow '%s' is inactive — choose an active one."
+	onlyCreatedOrDeclinedMessage      = "Only Created, Submitted or Declined activities can be submitted for approval."
+	purchaseNotSubmittableMessage     = "Only Created, Submitted, In review or Declined purchase requests can be submitted for approval."
+	modificationNotSubmittableMessage = "Only changes to an Approved purchase request, or changes in review, can be submitted for approval."
+	workflowNeededMessage             = "Approval workflow — needed to submit"
+	modificationWorkflowNeededMessage = "Approval workflow for modification — needed to submit"
+	workflowInactiveMessage           = "Approval workflow '%s' is inactive — choose an active one."
+	workflowOtherKindMessage          = "Approval workflow '%s' approves %s — choose one that approves %s."
+	nothingToRecallMessage            = "This %s is not waiting for approval, so there is nothing to recall."
+	resubmittedByMessage              = "The submission was re-submitted by %s"
+	changesText                       = "%%s %s %%s"
 
-	// Recall of an approved activity (FR-021).
+	objectTypeField               = "objectType"
+	chooseObjectTypeMessage       = "Choose what the workflow approves."
+	objectTypeFixedMessage        = "It approves %s and is in use, so this can't change. Create a new workflow instead."
+	activityConditionsOnlyMessage = "Level %d: only activity workflows can use business unit and activity type conditions."
+	activityNoRecordFieldMessage  = "Level %d: activities have no field that names an approver. Choose another option."
+	chooseRecordFieldMessage      = "Level %d: choose the field that names the approver."
+	noOwnerProblem                = "Level %d: this %s has no owner."
+	emptyFieldProblem             = "Level %d: %s is empty on this %s."
+	recordOwnerSource             = "record owner"
+	selfApprovalSuffix            = "; self-approval"
+
 	approvedNoRecallMessage = "Approved activities can't be recalled. " +
-		"Changing its planned cost, dates or line-item amounts sends it back for approval."
+		"Changing its planned cost or dates sends it back for approval."
 
-	// The note of the "restored" log entry when a restore ends the round that was open at the delete
-	// (FR-023, 008-P3).
 	cancelledNote = "Approval round %d was cancelled because the activity was deleted — submit it for approval again."
 
-	// A notification that is not the signed-in person's, or none (FR-034).
 	notificationGoneMessage = "This notification no longer exists."
 
-	// Comments.
-	declineCommentMessage = "Add a comment explaining why the activity is declined."
+	declineCommentMessage = "Add a comment explaining why the %s is declined."
 	tooLong2000Message    = "Use 2,000 characters or fewer."
 
-	// A decision on a level or round that has moved on (FR-018). The web app adds the time.
 	alreadyApprovedMessage = "Level %d was already approved by %s"
 	alreadyDeclinedMessage = "Level %d was already declined by %s"
 	recalledByMessage      = "The submission was recalled by %s"
 	restartedByMessage     = "Approval was restarted by %s"
 	cancelledMessage       = "The approval round was cancelled because the activity was deleted"
 
-	// Approval workflows (FR-002, FR-003, FR-008, data model §1).
 	enterNameMessage         = "Enter a name."
 	nameTooLongMessage       = "Use 120 characters or fewer."
 	nameTakenMessage         = "There is already an approval workflow called '%s'. Choose another name."
@@ -47,29 +57,27 @@ const (
 	listedTwiceMessage       = "Level %d: %s is listed twice."
 	inactiveApproverMessage  = "Level %d: %s is inactive — choose an active person."
 	noActiveApproverWarning  = "Level %d has no active approver"
-	inUseOneMessage          = "Used by 1 activity — set it inactive instead."
-	inUseManyMessage         = "Used by %d activities — set it inactive instead."
+	inUseOneMessage          = "Used by 1 %s — set it inactive instead."
+	inUseManyMessage         = "Used by %d %s — set it inactive instead."
 	undoNameTakenMessage     = "Can't undo — there is now another approval workflow called '%s'. Restore it from the recycle bin instead."
 	renamedOnRestoreMessage  = "Renamed to '%s' because the name was taken."
 	activeText, inactiveText = "Active", "Inactive"
 
-	// Notifications: titles and texts, fixed when they are created (data model §4).
-	approvalNeededTitle   = "Approval needed"
-	levelApprovedTitle    = "Level %d approved"
-	activityApprovedTitle = "Activity approved"
-	activityDeclinedTitle = "Activity declined"
-	recalledTitle         = "Submission recalled"
-	restartedTitle        = "Approval restarted"
-	submittedText         = "%s submitted %s"
-	resubmittedText       = "%s re-submitted %s"
-	nextLevelWaitsText    = "%s approved level %d of %s — level %d waits for you"
-	levelApprovedText     = "%s approved level %d of %d of %s"
-	approvedText          = "%s approved %s"
-	declinedText          = "%s declined %s: \"%s\""
-	recalledText          = "%s recalled %s"
-	restartedText         = "%s changed %s — it needs approval again"
+	approvalNeededTitle = "Approval needed"
+	levelApprovedTitle  = "Level %d approved"
+	approvedTitle       = "%s approved"
+	declinedTitle       = "%s declined"
+	recalledTitle       = "Submission recalled"
+	restartedTitle      = "Approval restarted"
+	submittedText       = "%s submitted %s"
+	resubmittedText     = "%s re-submitted %s"
+	nextLevelWaitsText  = "%s approved level %d of %s — level %d waits for you"
+	levelApprovedText   = "%s approved level %d of %d of %s"
+	approvedText        = "%s approved %s"
+	declinedText        = "%s declined %s: \"%s\""
+	recalledText        = "%s recalled %s"
+	restartedText       = "%s changed %s — it needs approval again"
 
-	// Feature 017: approval rules (data-model §1–§3, plan "User-visible messages").
 	chooseSourceMessage          = "Level %d: choose who approves."
 	chooseRoleMessage            = "Level %d: choose a role."
 	roleFromListMessage          = "Level %d: choose a role from the list."
@@ -97,22 +105,19 @@ const (
 	escalateAfterLabel           = "Escalate after"
 	offText                      = "Off"
 
-	// Resolution problems and the no-approver advice (data-model §3).
 	noLineManagerProblem   = "Level %d: %s has no line manager. Ask an administrator to set one in Settings › People."
 	roleGoneProblem        = "Level %d: the role of this level no longer exists. Ask an administrator to change the approval workflow."
 	nobodyHoldsRoleProblem = "Level %d: nobody holds the role '%s' for this plan."
 	onlyApproverAdvice     = "You are the only approver of level %d. An administrator will have to approve on your behalf."
 	nobodyElseAdvice       = "Nobody else can approve level %d. Someone allowed to decide on behalf, such as an administrator, will have to approve it."
 
-	// Who may decide (data-model §6; 014 messages 5, 6a and 6b).
-	onlyApproversMessage        = "Only the approvers of level %d (%s) can approve or decline this activity."
+	onlyApproversMessage        = "Only the approvers of level %d (%s) can approve or decline this %s."
 	ownActivityMessage          = "You own this activity, so someone else must approve it."
 	submittedActivityMessage    = "You submitted this activity, so someone else must approve it."
 	alreadyApprovedLevelMessage = "You already approved level %d. Waiting for %s."
 	nobodyText                  = "nobody"
 	noLevelAppliesNote          = "no level applies"
 
-	// Approval delegations (data-model §7).
 	choosePersonMessage          = "Choose a person from the list."
 	personInactiveMessage        = "%s is inactive — choose an active person."
 	chooseDelegateMessage        = "Choose who approves for you."
@@ -135,9 +140,8 @@ const (
 	chooseScopeMessage           = "Choose mine or all."
 	cancelledStatusText          = "Cancelled"
 
-	// Notifications of feature 017 (plan "User-visible messages").
 	delegateSuffix      = " — you approve as delegate of %s"
-	autoApprovedTitle   = "Activity approved automatically"
+	autoApprovedTitle   = "%s approved automatically"
 	autoApprovedText    = "%s was approved automatically: %s"
 	reminderTitle       = "Reminder — approval waiting %s"
 	reminderText        = "%s has waited %s for you at level %d"

@@ -29,7 +29,7 @@ describe('PlanCreatePage (US1)', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'New plan' })).toBeInTheDocument();
     expect(document.title).toBe('New plan · MAPP');
-    expect(await screen.findByRole('combobox', { name: /Year/ })).toHaveValue('2026');
+    expect(await screen.findByRole('button', { name: 'Remove 2026' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: /Goal stage/ })).toHaveValue('inq');
   });
 

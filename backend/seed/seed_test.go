@@ -22,7 +22,7 @@ import (
 
 var loadedAt = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 
-// The six demo people of docs/product/demo-users-and-data.md, in its table's order, active, created by MAPP.
+// The seven demo people (032 FR-051 adds Lea Santos) of docs/product/demo-users-and-data.md, in its table's order, active, created by MAPP.
 func TestLoad_SixDemoPeople_FR028(t *testing.T) {
 	t.Parallel()
 	db := loadedStore(t)
@@ -34,8 +34,9 @@ func TestLoad_SixDemoPeople_FR028(t *testing.T) {
 		demoPerson("U-1004", "Mei Lin", "mei.lin@shell.com", "Marketer"),
 		demoPerson("U-1005", "Carlos Mendes", "carlos.mendes@shell.com", "Business champion"),
 		demoPerson("U-1006", "Sara Novak", "sara.novak@shell.com", "Local finance advisor"),
+		demoPerson("U-1007", "Lea Santos", "lea.santos@shell.com", "Requisitioner"),
 	}
-	for i, manager := range []string{"", "U-1003", "U-1001", "U-1005", "U-1001", "U-1003"} {
+	for i, manager := range []string{"", "U-1003", "U-1001", "U-1005", "U-1001", "U-1003", ""} {
 		want[i].ManagerID = manager
 	}
 	got := storedPeople(t, db)
@@ -55,17 +56,18 @@ func TestLoad_IDsComeFromTheCounters_FR027_FR040(t *testing.T) {
 	db := loadedStore(t)
 
 	want := map[string]string{
-		ids.PrefixPerson: "U-1007", ids.PrefixActivityType: "AT-1007", ids.PrefixModel: "MOD-1003",
-		ids.PrefixShellAttribute: "SA-1036", ids.PrefixShellOption: "SO-1111", ids.PrefixFinanceBudget: "FB-1003",
-		ids.PrefixFinanceBudgetItem: "FBI-1007", ids.PrefixTeam: "T-1004", ids.PrefixTeamMembership: "TM-1009",
+		ids.PrefixPerson: "U-1008", ids.PrefixActivityType: "AT-1007", ids.PrefixModel: "MOD-1003",
+		ids.PrefixShellAttribute: "SA-1057", ids.PrefixShellOption: "SO-1186", ids.PrefixFinanceBudget: "FB-1003",
+		ids.PrefixFinanceBudgetItem: "FBI-1007", ids.PrefixTeam: "T-1004", ids.PrefixTeamMembership: "TM-1010",
 		ids.PrefixPlan: "P-1005", ids.PrefixCampaign: "C-1006", ids.PrefixInitiative: "I-1012", ids.PrefixActivity: "A-1014",
 		ids.PrefixLineItem: "L-1012", ids.PrefixLogEntry: "LOG-1055", ids.PrefixBinEntry: "BIN-1002",
-		ids.PrefixApprovalWorkflow: "WF-1004", ids.PrefixApprovalRound: "AR-1009",
+		ids.PrefixApprovalWorkflow: "WF-1006", ids.PrefixApprovalRound: "AR-1009",
 		ids.PrefixExchangeRate: "XR-1125", ids.PrefixRateImport: "RI-1002",
 		ids.PrefixApprovalAction: "AH-1016", ids.PrefixNotification: "NT-1010",
 		ids.PrefixFinancialTransaction: "FT-1012", ids.PrefixFinancialImport: "FIM-1002",
 		ids.PrefixApprovalDelegation: "DLG-1002", budget.PrefixGlobalBudget: "GB-1002", budget.PrefixAllocation: "BA-1003",
-		ids.PrefixRole: "RL-1006", ids.PrefixRoleAssignment: "RA-1008",
+		ids.PrefixRole: "RL-1007", ids.PrefixRoleAssignment: "RA-1009",
+		ids.PrefixPurchaseRequest: "PR-1002", ids.PrefixPurchaseRequestLine: "PRL-1002",
 	}
 	generator := ids.NewGenerator(fake.NewCounters(db))
 	err := db.Write(t.Context(), func(ctx context.Context) error {
@@ -120,8 +122,8 @@ func TestLoad_Twice_FR028(t *testing.T) {
 	if !errors.Is(err, seed.ErrNotEmpty) {
 		t.Errorf("second Load = %v, want ErrNotEmpty", err)
 	}
-	if got := storedPeople(t, db); len(got) != 6 {
-		t.Errorf("%d people after loading twice, want 6", len(got))
+	if got := storedPeople(t, db); len(got) != 7 {
+		t.Errorf("%d people after loading twice, want 7", len(got))
 	}
 }
 
@@ -153,11 +155,11 @@ func TestLoaded_SaysWhatIsLoaded_FR028(t *testing.T) {
 	got := fmt.Sprintf("%d people, %d teams, %d models, %d activity types, %d Shell attributes with %d options, "+
 		"%d currencies, %d finance budget items, %d plans, %d campaigns, %d initiatives, %d activities, %d line items, "+
 		"%d approval workflows, %d approval rounds, %d approval delegation, %d roles, %d role assignments, "+
-		"%d activity-log entries, %d recycle-bin entry",
+		"%d purchase request, %d activity-log entries, %d recycle-bin entry",
 		len(d.people), len(d.teams), len(d.models), len(d.activityTypes), len(d.attributes), activeOptions,
 		len(d.currencies), len(d.items), len(d.plans), len(d.campaigns), len(d.initiatives), len(d.activities),
 		len(d.lineItems), len(d.workflows), len(d.rounds), len(d.delegations), len(d.roles), len(d.assignments),
-		len(entries), len(bin))
+		len(d.purchaseRequests), len(entries), len(bin))
 	if got != seed.Loaded {
 		t.Errorf("stored: %s\nseed.Loaded: %s", got, seed.Loaded)
 	}

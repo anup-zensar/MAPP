@@ -14,17 +14,14 @@ import (
 // unreadableMessage answers a path or query value the API cannot read, such as an unknown level.
 const unreadableMessage = "MAPP couldn't read this request. Reload the page and try again."
 
-// Handler answers the HTTP requests of Settings (feature 002).
 type Handler struct {
 	service *Service
 }
 
-// NewHandler returns the handler of the Settings routes.
 func NewHandler(s *Service) *Handler {
 	return &Handler{service: s}
 }
 
-// RegisterRoutes registers the Settings routes on r.
 func (h *Handler) RegisterRoutes(r gin.IRoutes) {
 	r.GET("/settings/overview", h.overview)
 
@@ -65,7 +62,6 @@ func (h *Handler) RegisterRoutes(r gin.IRoutes) {
 	r.POST("/finance-budget-items/:itemId/status", h.setFinanceBudgetItemStatus)
 }
 
-// attributeRoutes registers the Shell attribute, option and form routes.
 func (h *Handler) attributeRoutes(r gin.IRoutes) {
 	r.GET("/shell-attributes", h.listAttributes)
 	r.POST("/shell-attributes", h.createAttribute)
@@ -94,7 +90,6 @@ func (h *Handler) overview(c *gin.Context) {
 	respond(c, http.StatusOK, overview, err)
 }
 
-// actorOf returns the signed-in person, put in the request's context by the sign-in middleware.
 func actorOf(c *gin.Context) actor.Actor {
 	a, _ := actor.From(c.Request.Context())
 	return a
@@ -110,7 +105,6 @@ func readBody(c *gin.Context, dst any) bool {
 	return true
 }
 
-// respond answers body with status, or err when the service failed.
 func respond(c *gin.Context, status int, body any, err error) {
 	if err != nil {
 		web.RespondError(c, err)
@@ -119,14 +113,12 @@ func respond(c *gin.Context, status int, body any, err error) {
 	web.Respond(c, status, body)
 }
 
-// respondDeleted answers a delete with the recycle-bin entry, so the web app can offer Undo.
 func respondDeleted(c *gin.Context, entry history.BinEntry, err error) {
 	respond(c, http.StatusOK, history.DeleteResult{RecycleBinEntry: entry.View()}, err)
 }
 
-// parseLevel reads a level from a path or query value.
 func parseLevel(text string) (Level, bool) {
-	for _, l := range Levels {
+	for _, l := range AllLevels() {
 		if string(l) == text {
 			return l, true
 		}
@@ -134,7 +126,6 @@ func parseLevel(text string) (Level, bool) {
 	return "", false
 }
 
-// wholeNumber reads a whole number from a query value; anything else is -1, which every range refuses.
 func wholeNumber(text string) int {
 	n, err := strconv.Atoi(text)
 	if err != nil {

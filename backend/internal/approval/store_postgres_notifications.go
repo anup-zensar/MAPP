@@ -39,8 +39,8 @@ func (s *PostgresStore) NotificationsOf(ctx context.Context, personID string) ([
 func (s *PostgresStore) PutNotification(ctx context.Context, n Notification) error {
 	err := s.change(ctx).PutNotification(ctx, sqlcdb.PutNotificationParams{
 		ID: n.ID, RecipientID: n.RecipientID, Kind: string(n.Kind), Title: n.Title, Text: n.Text,
-		ActivityID: n.ActivityID, ActivityName: n.ActivityName, ActorID: n.Actor.ID, ActorName: n.Actor.Name,
-		At: n.At, Read: n.Read, ReadAt: n.ReadAt,
+		SubjectKind: string(n.subjectKind()), SubjectID: n.SubjectID, SubjectName: n.SubjectName,
+		ActorID: n.Actor.ID, ActorName: n.Actor.Name, At: n.At, Read: n.Read, ReadAt: n.ReadAt,
 	})
 	if err != nil {
 		return fmt.Errorf("save notification %s: %w", n.ID, err)
@@ -88,8 +88,8 @@ func (s *PostgresStore) PutDelegation(ctx context.Context, dl Delegation) error 
 func notificationFromRow(row sqlcdb.Notification) Notification {
 	return Notification{
 		ID: row.ID, RecipientID: row.RecipientID, Kind: NotificationKind(row.Kind), Title: row.Title, Text: row.Text,
-		ActivityID: row.ActivityID, ActivityName: row.ActivityName, Actor: actor.Actor{ID: row.ActorID, Name: row.ActorName},
-		At: row.At, Read: row.Read, ReadAt: row.ReadAt,
+		SubjectKind: SubjectKind(row.SubjectKind), SubjectID: row.SubjectID, SubjectName: row.SubjectName,
+		Actor: actor.Actor{ID: row.ActorID, Name: row.ActorName}, At: row.At, Read: row.Read, ReadAt: row.ReadAt,
 	}
 }
 

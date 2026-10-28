@@ -14,8 +14,7 @@ import (
 	"mapp/internal/settings"
 )
 
-// Only name, currency and planned cost are needed to save (FR-009, D-009); what is needed to submit stays
-// empty and is listed: "3 fields needed" (US2 scenario 6).
+// What is needed only to submit may stay empty and is listed as missing (D-009).
 func TestCreate_OnlyRequired_FR009(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -46,15 +45,14 @@ func TestCreate_OnlyRequired_FR009(t *testing.T) {
 	}
 }
 
-// Names are unique within the activity, ignoring letter case and surrounding spaces, and have at most 120
-// characters; another activity may use the same name (FR-009).
+// Names are unique in the activity ignoring case and spaces, at most 120 characters; other activities may reuse them.
 func TestCreate_NameUnique_FR009(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
 	f.create(t, priya, launchFilm, input("Agency fee", "USD", "1.00"))
 
 	saved := f.create(t, priya, launchFilm, input("  "+strings.Repeat("é", 120)+" ", "USD", "1.00"))
-	f.create(t, priya, socialOnAir, func() Input { in := input("Agency fee", "USD", "1.00"); in.RestartApproval = true; return in }())
+	f.create(t, priya, socialOnAir, input("Agency fee", "USD", "1.00"))
 	_, taken := f.service.Create(t.Context(), priya, launchFilm, input(" AGENCY fee", "USD", "1.00"))
 	_, long := f.service.Create(t.Context(), priya, launchFilm, input(strings.Repeat("a", 121), "USD", "1.00"))
 
@@ -65,8 +63,6 @@ func TestCreate_NameUnique_FR009(t *testing.T) {
 	assertError(t, long, errs.Validation(errs.FieldError{Field: "name", Message: "Use 120 characters or fewer."}))
 }
 
-// Typed amounts have at most two decimals: the form rounds and says so, the API refuses more (D-190, spec
-// edge case "Rounding"); amounts stay below one trillion.
 func TestCreate_AmountsAtMostTwoDecimals_D190(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -92,8 +88,6 @@ func TestCreate_AmountsAtMostTwoDecimals_D190(t *testing.T) {
 	}
 }
 
-// A new line item gets the next readable ID L-…, the person and time who created it, and one "created" log
-// entry with its activity as its path (FR-010, D-019).
 func TestCreate_IDAndLog_FR010(t *testing.T) { //nolint:gocyclo // 14: the IDs, the bookkeeping and the log entry of two creates, field by field
 	t.Parallel()
 	f := newTestService(t)
@@ -119,8 +113,7 @@ func TestCreate_IDAndLog_FR010(t *testing.T) { //nolint:gocyclo // 14: the IDs, 
 	}
 }
 
-// A new currency choice must be an active currency of Settings (FR-011); the USD amount is calculated at
-// its current rate: 10,000.00 EUR at 0.92 → 10,869.57 USD (US2 scenario 2).
+// The USD amount is at the currency's current rate: 10,000.00 EUR at 0.92 → 10,869.57 USD.
 func TestCreate_CurrencyActive_FR011(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -139,8 +132,7 @@ func TestCreate_CurrencyActive_FR011(t *testing.T) {
 	}
 }
 
-// Shell attribute problems of feature 002 (R11: a GL code that doesn't fit the spend type) are reported with
-// the others; the values 002 returns are stored (FR-014).
+// Shell attribute problems are reported with the others; the values Settings returns are stored.
 func TestCreate_AttributeProblems_FR014(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -165,7 +157,6 @@ func TestCreate_AttributeProblems_FR014(t *testing.T) {
 	}
 }
 
-// The contracted amount is optional, 0.00 or more, in the line item's currency (FR-014).
 func TestCreate_ContractedAmount_FR014(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -194,31 +185,38 @@ func TestCreate_ContractedAmount_FR014(t *testing.T) {
 	}
 }
 
-// Adding a line item to a Submitted or Approved activity needs the person's confirmation; without it nothing
-// is saved. With it, the activity goes back to Created with the reason (FR-031, D-146). A Created activity
-// needs no confirmation and keeps its status.
-func TestCreate_RestartNeedsConfirmation_FR031(t *testing.T) {
+// Adding a line item to a Submitted or Approved activity saves without confirmation and leaves its approval
+// alone (D-322): the only log entries are the line items'.
+func TestCreate_InApprovalKeepsStatus_034_FR001(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
-	for _, activityID := range []string{socialOnAir, tradeAds} {
-		_, err := f.service.Create(t.Context(), priya, activityID, input("Venue hire", "GBP", "15800"))
 
-		assertError(t, err, errs.Validation(errs.FieldError{Field: "restartApproval", Message: restartMessage}))
-	}
-	if len(f.stored(t)) != 0 || len(f.activities.restarts) != 0 {
-		t.Fatalf("saved %d line items and restarted %d times, want nothing", len(f.stored(t)), len(f.activities.restarts))
-	}
+	onApproved, err := f.service.Create(t.Context(), priya, socialOnAir, input("Venue hire", "GBP", "15800"))
+	onSubmitted, err2 := f.service.Create(t.Context(), priya, tradeAds, input("Print run", "USD", "2000"))
 
-	confirmed := input("Venue hire", "GBP", "15800")
-	confirmed.RestartApproval = true
-	v := f.create(t, priya, socialOnAir, confirmed)
-	f.create(t, priya, launchFilm, input("Agency fee", "USD", "50000.00"))
-
-	want := []restartCall{{activityID: socialOnAir, reasons: []string{"Line item 'Venue hire' (L-1001) added: 15,800.00 GBP"}}}
-	if !reflect.DeepEqual(f.activities.restarts, want) {
-		t.Errorf("restarts = %+v, want %+v", f.activities.restarts, want)
+	if err != nil || err2 != nil {
+		t.Fatalf("Create without confirmation: %v, %v; want both saved", err, err2)
 	}
-	if v.SwbsStatus != SwbsWaitingForApproval {
-		t.Errorf("SWBS status = %s, want waitingForApproval: the activity is Created again", v.SwbsStatus)
+	if onApproved.SwbsStatus != SwbsReadyToSend || onSubmitted.SwbsStatus != SwbsWaitingForApproval {
+		t.Errorf("SWBS statuses %s, %s; want readyToSend (still Approved) and waitingForApproval (still Submitted)",
+			onApproved.SwbsStatus, onSubmitted.SwbsStatus)
+	}
+	if entries := f.log(t); len(entries) != 2 || entries[0].Action != history.ActionCreated || entries[1].Action != history.ActionCreated {
+		t.Errorf("log = %+v, want the two line items' created entries only", entries)
+	}
+}
+
+// Going past an Approved activity's planned cost saves, turns the balance negative and keeps it Approved (D-016).
+func TestCreate_NegativeBalanceKeepsApproval_034_FR004(t *testing.T) {
+	t.Parallel()
+	f := newTestService(t)
+
+	v, err := f.service.Create(t.Context(), priya, socialOnAir, input("Stadium screen", "USD", "90000.00"))
+
+	if err != nil || v.SwbsStatus != SwbsReadyToSend {
+		t.Fatalf("Create = %s, %v; want saved on the still Approved activity", v.SwbsStatus, err)
+	}
+	if b := f.section(t, priya, socialOnAir).Balance; b.State != BalanceExceeded || b.Balance.Format() != "-10,000.00 USD" {
+		t.Errorf("balance = %+v, want exceeded by 10,000.00 USD", b)
 	}
 }

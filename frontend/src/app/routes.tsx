@@ -41,6 +41,11 @@ import {
   PlanPage,
   PlansPage,
   ProfilePage,
+  PurchaseRequestCreatePage,
+  PurchaseRequestEditPage,
+  PurchaseRequestPage,
+  PurchaseRequestSettingsPage,
+  PurchaseRequestsPage,
   RecycleBinPage,
   RoleFormPage,
   RolePage,
@@ -56,7 +61,6 @@ import {
 import { RootLayout } from './RootLayout';
 import { RouteErrorPage } from './RouteErrorPage';
 
-/** The tab title shown while the session is checked (each page names itself afterwards). */
 function titled(title: string): { handle: PageHandle } {
   return { handle: { title } };
 }
@@ -97,7 +101,6 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
     element: <FinanceBudgetItemsPage />,
     ...titled('Finance budget items'),
   },
-  // 003 People and teams; with an id the details panel is open
   { path: '/settings/people/:personId?', element: <PeoplePage />, ...titled('People') },
   { path: '/settings/teams/:teamId?', element: <TeamsPage />, ...titled('Teams') },
   { path: '/profile', element: <ProfilePage />, ...titled('My profile') },
@@ -155,7 +158,6 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
     ...titled('Edit activity'),
   },
   { path: '/activities/:activityId', element: <ActivityShortLink />, ...titled('Activity') },
-  // 007 Line items
   {
     path: '/activities/:activityId/line-items/new',
     element: <LineItemCreatePage />,
@@ -174,9 +176,7 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
     element: <ApprovalWorkflowsPage />,
     ...titled('Approval workflows'),
   },
-  // 010 All work
   { path: '/all-work', element: <AllWorkPage />, ...titled('All work') },
-  // 014 Global budgets (US6)
   { path: '/budgets', element: <GlobalBudgetsPage />, ...titled('Global budgets') },
   {
     path: '/budgets/:globalBudgetId',
@@ -195,6 +195,36 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
         ...titled('Financials'),
       },
     ],
+  },
+  // 032 Purchase requests; the list only for people holding purchaseRequests.list
+  {
+    path: '/purchase-requests',
+    element: (
+      <RequirePermission permission="purchaseRequests.list">
+        <PurchaseRequestsPage />
+      </RequirePermission>
+    ),
+    ...titled('Purchase requests'),
+  },
+  {
+    path: '/purchase-requests/new',
+    element: <PurchaseRequestCreatePage />,
+    ...titled('New purchase request'),
+  },
+  {
+    path: '/purchase-requests/:purchaseRequestId',
+    element: <PurchaseRequestPage />,
+    ...titled('Purchase request'),
+  },
+  {
+    path: '/purchase-requests/:purchaseRequestId/edit',
+    element: <PurchaseRequestEditPage />,
+    ...titled('Edit purchase request'),
+  },
+  {
+    path: '/settings/purchase-requests',
+    element: <PurchaseRequestSettingsPage />,
+    ...titled('Purchase requests'),
   },
   // 011 Activity log and Recycle bin (under MORE in the sidebar)
   { path: '/activity-log', element: <ActivityLogPage />, ...titled('Activity log') },
@@ -222,22 +252,15 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
   })),
 ];
 
-/**
- * Every page of the web app and its address (plan "Router", constitution F1: routes in one module).
- * A data router without loaders or actions: pages load their own data with TanStack Query, and
- * their code with their feature (app/pages.tsx). Tests build a memory router from these.
- */
+/** Every page and its address (F1): a data router without loaders; pages load their own data. */
 export const routes: RouteObject[] = [
   {
     path: '/',
     element: <RootLayout />,
-    // Any page that fails to draw shows the error page instead of a blank screen.
     errorElement: <RouteErrorPage />,
     children: [
       { path: '/sign-in', element: <SignInPage /> },
       {
-        // Every page in here needs a signed-in person and is drawn inside the app layout. Each
-        // names itself in `handle`, for the browser tab while the session is being checked.
         element: (
           <RequireSignIn>
             <AppLayout>
@@ -253,8 +276,7 @@ export const routes: RouteObject[] = [
             element: <ComingSoonPage section={section} />,
             ...titled(section.label),
           })),
-          // The developer pages: not in the navigation, and only where demo sign-in is on — the
-          // local and development environments (research R23, D-036).
+          // Developer pages: only where demo sign-in is on (research R23, D-036).
           {
             path: '/dev/sample-records',
             element: (
@@ -275,7 +297,6 @@ export const routes: RouteObject[] = [
           },
         ],
       },
-      // Any other address: "Page not found", for signed-in people and visitors alike (FR-015).
       { path: '*', element: <NotFoundRoute /> },
     ],
   },

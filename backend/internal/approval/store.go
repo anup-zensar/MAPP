@@ -22,13 +22,13 @@ type Store interface {
 
 	GetRound(ctx context.Context, id string) (Round, bool, error)
 	ListRounds(ctx context.Context) ([]Round, error)
-	RoundsOf(ctx context.Context, activityID string) ([]Round, error)
+	RoundsOf(ctx context.Context, subjectID string) ([]Round, error)
 	OpenRounds(ctx context.Context) ([]Round, error)
 	PutRound(ctx context.Context, r Round) error
 
 	PutAction(ctx context.Context, a Action) error
 	ListActions(ctx context.Context) ([]Action, error)
-	ActionsOf(ctx context.Context, activityID string) ([]Action, error)
+	ActionsOf(ctx context.Context, subjectID string) ([]Action, error)
 
 	GetNotification(ctx context.Context, id string) (Notification, bool, error)
 	NotificationsOf(ctx context.Context, personID string) ([]Notification, error)

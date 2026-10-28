@@ -12,7 +12,6 @@ import { createPlanningRecords, planTree, treeRow } from './planning';
 
 // The core flow of the Plan module (features 002–008), against the real API with the demo data.
 // Tests create their own records (names from uniqueName) and never assert global counts.
-// C–E: Settings, the owner rules of the plan form, and delete with Undo.
 
 const ALEX = 'alex.morgan@shell.com';
 const MEI = 'mei.lin@shell.com';
@@ -23,11 +22,9 @@ test('C: Settings — an administrator edits a model, a Shell attribute and a cu
   test.slow();
   await signInAs(page, ALEX);
 
-  // Models (002 US1): a duplicate of Lubricants 1.0, then an edit of its INQ→MQL rate. The demo models
-  // stay as they are; other tests use them by name.
+  // Models (002 US1): edit a duplicate, never a demo model — other tests use the demo models by name.
   await page.goto('/settings');
   await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
-  // Each Settings card's title is a link to its section.
   await page.getByRole('link', { name: 'Models', exact: true }).click();
   await expect(page).toHaveURL(/\/settings\/models/);
   await expect(page.getByRole('heading', { name: 'Models', level: 1 })).toBeVisible();
@@ -44,7 +41,6 @@ test('C: Settings — an administrator edits a model, a Shell attribute and a cu
   await page.getByRole('button', { name: `Actions for ${modelName}` }).click();
   await page.getByRole('menuitem', { name: 'Edit' }).click();
   const editModel = page.getByRole('dialog', { name: 'Edit model' });
-  // 002's DecimalField is a textbox named by its label; the worked example starts from 250,000 INQ.
   await editModel.getByRole('textbox', { name: /^INQ→MQL rate/ }).fill('3');
   await expect(
     editModel.getByText('250,000 INQ → 7,500 MQL → 375 deals → 3,750,000.00 USD revenue'),
@@ -56,11 +52,9 @@ test('C: Settings — an administrator edits a model, a Shell attribute and a cu
     '3.00 % → 5.00 %',
   );
 
-  // Shell attributes (002 US2): the help text of the optional line-item attribute Contracted spend.
   await page.goto('/settings');
   await page.getByRole('link', { name: 'Shell attributes', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Shell attributes', level: 1 })).toBeVisible();
-  // The level filter is 002's SegmentedFilter: buttons named "<level> <count>".
   await page.getByRole('button', { name: /^Line item/ }).click();
   await page.getByRole('link', { name: 'Contracted spend', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Contracted spend', level: 1 })).toBeVisible();
@@ -72,18 +66,15 @@ test('C: Settings — an administrator edits a model, a Shell attribute and a cu
   await page.getByRole('textbox', { name: /^Help text/ }).fill(helpText);
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expectToast(page, "Shell attribute 'Contracted spend' saved");
-  // After an edit the editor returns to the attribute page, which shows the help text.
   await expect(page.getByRole('heading', { name: 'Contracted spend', level: 1 })).toBeVisible();
   await expect(page.getByText(helpText).first()).toBeVisible();
 
-  // Currencies (002 US4): INR's rate, which no demo line item uses (so no impact to confirm), with the
-  // live line both ways; put back to 83.50 at the end for the tests that follow.
+  // Currencies (002 US4): INR, which no demo line item uses; put back to 83.50 for the tests that follow.
   await page.goto('/settings');
   await page.getByRole('link', { name: 'Currencies', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Currencies', level: 1 })).toBeVisible();
   const inrRow = page.getByRole('row').filter({ hasText: 'INR' });
   await expect(inrRow).toContainText('1 USD = 83.50 INR');
-  // The row's ⋯ menu is named with the currency's code.
   await inrRow.getByRole('button', { name: 'Actions for INR' }).click();
   await page.getByRole('menuitem', { name: 'Edit' }).click();
   const editCurrency = page.getByRole('dialog', { name: 'Edit currency' });
@@ -94,7 +85,6 @@ test('C: Settings — an administrator edits a model, a Shell attribute and a cu
   await expect(editCurrency.getByText('1 USD = 84.00 INR')).toBeVisible();
   await expect(editCurrency.getByText('1 INR = 0.011905 USD')).toBeVisible();
   await editCurrency.getByRole('button', { name: 'Save', exact: true }).click();
-  // The toast names the currency by its name.
   await expectToast(page, "Currency 'Indian rupee' saved");
   await expect(inrRow).toContainText('1 USD = 84.00 INR');
 
@@ -109,25 +99,21 @@ test('D: the plan form offers only members of the chosen teams as owner and refu
   await signInAs(page, ALEX);
   await page.goto('/plans/new');
   await expect(page.getByRole('heading', { name: 'New plan', level: 1 })).toBeVisible();
-  // 003's TeamPicker and PersonPicker inputs are comboboxes named by their labels.
   const teams = page.getByRole('combobox', { name: /^Teams/ });
   const owner = page.getByRole('combobox', { name: /^Owner/ });
 
-  // Defaults: Alex's team and Alex himself (004 FR-006).
   await expect(page.getByText('Default: your teams')).toBeVisible();
   await expect(page.getByText('Default: you', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Remove Global Marketing Ops' })).toBeVisible();
 
-  // The owner list holds only active members of Global Marketing Ops, Alex first (003 FR-017, FR-019).
-  // The picker's list is a listbox named like its field; the form's native selects have options too.
   const owners = page.getByRole('listbox', { name: 'Owner' });
   await owner.click();
   await owner.press('ArrowDown');
-  // An option's name is the person's name, then the job title and teams.
   await expect(owners.getByRole('option').first()).toHaveAccessibleName(/^Alex Morgan \(you\)/);
   await expect(owners.getByRole('option', { name: /^Carlos Mendes/ })).toBeVisible();
+  await expect(owners.getByRole('option', { name: /^Lea Santos/ })).toBeVisible();
   await expect(owners.getByRole('option', { name: /^Mei Lin/ })).toHaveCount(0);
-  await expect(page.getByText('2 people').first()).toBeVisible();
+  await expect(page.getByText('3 people').first()).toBeVisible();
   await owner.fill('mei');
   await expect(
     page.getByText(
@@ -143,7 +129,6 @@ test('D: the plan form offers only members of the chosen teams as owner and refu
   await page.getByRole('button', { name: 'Remove Global Marketing Ops' }).click();
   const notInTeams =
     "Alex Morgan isn't in any of the chosen teams — choose another owner or clear the field";
-  // The owner picker flags the chosen owner with this sentence (the plan form's notMemberText).
   await expect(page.getByText(notInTeams).first()).toBeVisible();
 
   // Saving anyway is refused by the API with the same rule, listed in the error summary.
@@ -160,14 +145,12 @@ test('D: the plan form offers only members of the chosen teams as owner and refu
   ).toBeVisible();
   await expect(page).toHaveURL(/\/plans\/new$/);
 
-  // Without any team the owner field is disabled and says why (004 FR-007).
   await page.getByRole('button', { name: 'Remove Mobility China' }).click();
   await expect(owner).toHaveAttribute('aria-disabled', 'true');
   await expect(
     page.getByText("Choose teams first — the owner must belong to one of the plan's teams").first(),
   ).toBeVisible();
 
-  // Back to Mobility China and choose one of its members; the picker searches job titles too.
   await teams.fill('Mobility');
   await page.getByRole('option', { name: /^Mobility China/ }).click();
   await teams.press('Escape');
@@ -180,7 +163,6 @@ test('D: the plan form offers only members of the chosen teams as owner and refu
   await expectToast(page, `Plan '${planName}' created — add campaigns next.`);
   await expect(page).toHaveURL(/\/plans\/P-\d+$/);
   await expect(page.getByRole('heading', { name: planName, level: 1 })).toBeVisible();
-  // The header's Plan facts row names the owner with their avatar (design system v2).
   await expect(
     page.getByRole('group', { name: 'Plan facts' }).getByText('Mei Lin', { exact: true }),
   ).toBeVisible();
@@ -199,11 +181,9 @@ test('E: deleting an activity moves it to the recycle bin with its cost, and Und
 
   await page.goto(records.activityPath);
   await expect(page.getByRole('heading', { name, level: 1 })).toBeVisible();
-  // The header's More menu is 001's ActionsMenu, named with the activity name.
   await page.getByRole('button', { name: `Actions for ${name}` }).click();
   await page.getByRole('menuitem', { name: 'Delete' }).click();
   const dialog = page.getByRole('alertdialog', { name: `Delete activity '${name}'?` });
-  // The amount is written with its currency code, as in the API's messages.
   await expect(
     dialog.getByText('The initiative, campaign and plan planned costs go down by 20,000.00 USD.'),
   ).toBeVisible();
@@ -211,7 +191,6 @@ test('E: deleting an activity moves it to the recycle bin with its cost, and Und
   await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeFocused();
   await dialog.getByRole('button', { name: 'Delete activity' }).click();
 
-  // Back on the plan page: the activity and its planned cost are gone from the tree (006 FR-031).
   await expect(page).toHaveURL(new RegExp(`/plans/${records.planId}$`));
   await expectToast(page, `Activity '${name}' moved to the recycle bin`);
   await page.getByRole('button', { name: 'Expand all' }).click();

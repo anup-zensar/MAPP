@@ -8,7 +8,6 @@ import (
 	"mapp/internal/platform/apitest"
 )
 
-// The demo records these tests use (seed: 006 activities, 007 line items).
 const (
 	priyasEmail = "priya.raman@shell.com"
 	launchFilm  = "A-1001" // Created, 120,000.00 USD, Mar–May 2026: Agency fee L-1001 and Film production L-1002
@@ -16,15 +15,11 @@ const (
 	fleetShow   = "A-1005" // Declined, no line items
 )
 
-// The answers that do not depend on the data.
 const (
 	activityGoneBody = `{"error":{"code":"not_found",` +
 		`"message":"This activity was deleted — restore it from the recycle bin to keep working on its line items.","fields":[]}}`
-	restartBody = `{"error":{"code":"validation_failed","message":"Some fields need your attention.","fields":[` +
-		`{"field":"restartApproval","message":"This activity will need approval again. Confirm the change to send it back for approval."}]}}`
 )
 
-// newLineItem is the body of a create with the fields the form always sends.
 func newLineItem(name, currency, cost string) map[string]any {
 	return map[string]any{
 		"name": name, "ownerId": "U-1002", "description": "", "currency": currency, "plannedCost": cost,
@@ -33,10 +28,8 @@ func newLineItem(name, currency, cost string) map[string]any {
 	}
 }
 
-// lineItemGoneBody is the answer about a line item that no longer exists.
 const lineItemGoneBody = `{"error":{"code":"not_found","message":"This line item no longer exists — someone may have deleted it.","fields":[]}}`
 
-// formOf returns the whole form of a line item as the edit page sends it, with its version.
 func formOf(v lineitem.View) map[string]any {
 	months := []any{}
 	if v.Spread.Method == lineitem.SpreadCustom {
@@ -62,7 +55,6 @@ func formOf(v lineitem.View) map[string]any {
 	return form
 }
 
-// lineItem reads the line item id through GET /api/v1/line-items/{id}.
 func lineItem(t *testing.T, client *apitest.Client, id string) lineitem.View {
 	t.Helper()
 	response := client.Do(t, http.MethodGet, "/api/v1/line-items/"+id, nil)
@@ -74,7 +66,15 @@ func lineItem(t *testing.T, client *apitest.Client, id string) lineitem.View {
 	return details.LineItem
 }
 
-// assertAnswer checks the status and, when want is not empty, the exact body of an answer.
+func assertStillApproved(t *testing.T, client *apitest.Client) {
+	t.Helper()
+	var a struct{ Status string }
+	client.Do(t, http.MethodGet, "/api/v1/activities/"+socialOnAir, nil).Decode(t, &a)
+	if a.Status != "approved" {
+		t.Errorf("Social always-on is %s, want still approved", a.Status)
+	}
+}
+
 func assertAnswer(t *testing.T, response *apitest.Response, status int, want string) {
 	t.Helper()
 	if response.Status != status || (want != "" && string(response.Body) != want) {
@@ -82,10 +82,7 @@ func assertAnswer(t *testing.T, response *apitest.Response, status int, want str
 	}
 }
 
-// GET …/line-items answers Launch film's section (US1 scenario 1): Agency fee and Film production (46,000.00
-// EUR = 50,000.00 USD, "3 fields needed"), 20,000.00 USD unassigned and the grid over Mar–May 2026; an
-// activity without line items has its whole planned cost unassigned (FR-004); 404 for an activity that is
-// gone.
+// An activity without line items has its whole planned cost unassigned; 404 for an activity that is gone.
 func TestListActivityLineItems_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -123,8 +120,7 @@ func TestListActivityLineItems_Contract(t *testing.T) {
 	assertAnswer(t, gone, http.StatusNotFound, activityGoneBody)
 }
 
-// GET …/line-items/form-options answers the defaults and choices of a new line item of Launch film: its
-// 20,000.00 USD unassigned planned cost as the planned cost (FR-008); 404 for an activity that is gone.
+// A new line item of Launch film starts with its 20,000.00 USD unassigned planned cost as the planned cost.
 func TestGetLineItemFormOptions_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -149,9 +145,8 @@ func TestGetLineItemFormOptions_Contract(t *testing.T) {
 	assertAnswer(t, gone, http.StatusNotFound, activityGoneBody)
 }
 
-// POST …/line-items creates a line item with the next ID and answers 201 with it (FR-009, FR-010); every
-// problem at once; 404 for an activity that is gone; on an Approved activity only with restartApproval
-// (FR-031).
+// On an Approved activity a create saves without confirmation and the activity stays Approved; the
+// deprecated restartApproval is accepted and ignored (D-322).
 func TestCreateLineItem_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -160,16 +155,15 @@ func TestCreateLineItem_Contract(t *testing.T) {
 	created := priya.Do(t, http.MethodPost, "/api/v1/activities/"+launchFilm+"/line-items", newLineItem("Music rights", "EUR", "10000"))
 	invalid := priya.Do(t, http.MethodPost, "/api/v1/activities/"+launchFilm+"/line-items", newLineItem(" ", "USD", "-50"))
 	gone := priya.Do(t, http.MethodPost, "/api/v1/activities/A-9999/line-items", newLineItem("Music rights", "USD", "1"))
-	unconfirmed := priya.Do(t, http.MethodPost, "/api/v1/activities/"+socialOnAir+"/line-items", newLineItem("Catering", "USD", "1"))
-	confirm := newLineItem("Catering", "USD", "1")
-	confirm["restartApproval"] = true
-	confirmed := priya.Do(t, http.MethodPost, "/api/v1/activities/"+socialOnAir+"/line-items", confirm)
+	onApproved := priya.Do(t, http.MethodPost, "/api/v1/activities/"+socialOnAir+"/line-items", newLineItem("Catering", "USD", "1"))
+	oldClient := newLineItem("Drinks", "USD", "1")
+	oldClient["restartApproval"] = true
+	withOldFlag := priya.Do(t, http.MethodPost, "/api/v1/activities/"+socialOnAir+"/line-items", oldClient)
 
 	assertAnswer(t, created, http.StatusCreated, "")
 	var v lineitem.View
 	created.Decode(t, &v)
-	// L-1011 is the line item of the demo history's deleted initiative, in the recycle bin (011 T019); L-1009 and
-	// L-1010 are 016's GBP plan.
+	// L-1009 to L-1011 belong to the GBP plan and to the deleted initiative in the demo recycle bin.
 	if v.ID != "L-1012" || v.Name != "Music rights" || v.PlannedCost.Format() != "10,000.00 EUR" ||
 		v.PlannedCostUSD.Format() != "10,869.57 USD" || v.SwbsStatus != "waitingForApproval" || len(v.Spread.Months) != 3 ||
 		v.Owner == nil || v.Version != 1 || v.CreatedBy.Name != "Priya Raman" {
@@ -179,12 +173,11 @@ func TestCreateLineItem_Contract(t *testing.T) {
 		`{"field":"name","message":"Enter a name for the line item."},`+
 		`{"field":"plannedCost","message":"Planned cost can't be negative."}]}}`)
 	assertAnswer(t, gone, http.StatusNotFound, activityGoneBody)
-	assertAnswer(t, unconfirmed, http.StatusBadRequest, restartBody)
-	assertAnswer(t, confirmed, http.StatusCreated, "")
+	assertAnswer(t, onApproved, http.StatusCreated, "")
+	assertAnswer(t, withOldFlag, http.StatusCreated, "")
+	assertStillApproved(t, priya)
 }
 
-// GET /api/v1/line-items/{id} answers the line item with its activity and the balance (FR-026); 404 for one that
-// does not exist.
 func TestGetLineItem_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -204,9 +197,8 @@ func TestGetLineItem_Contract(t *testing.T) {
 	assertAnswer(t, gone, http.StatusNotFound, lineItemGoneBody)
 }
 
-// PATCH /api/v1/line-items/{id} saves the whole form with its version (FR-027): the next version; a missing
-// version with the other problems; an out-of-date one 409 version_conflict; a cost change on an Approved
-// activity only with restartApproval (FR-031); 404 for one that does not exist.
+// A missing version is reported with the other problems, an out-of-date one is a 409; a cost and currency
+// change on an Approved activity saves without confirmation and the activity stays Approved (D-322).
 func TestUpdateLineItem_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -220,8 +212,8 @@ func TestUpdateLineItem_Contract(t *testing.T) {
 	film["name"] = ""
 	noVersion := priya.Do(t, http.MethodPatch, "/api/v1/line-items/L-1002", film, apitest.SkipRequestValidation())
 	venue := formOf(lineItem(t, priya, "L-1003"))
-	venue["plannedCost"] = "17000.00"
-	unconfirmed := priya.Do(t, http.MethodPatch, "/api/v1/line-items/L-1003", venue)
+	venue["plannedCost"], venue["currency"] = "17000.00", "EUR"
+	onApproved := priya.Do(t, http.MethodPatch, "/api/v1/line-items/L-1003", venue)
 	gone := priya.Do(t, http.MethodPatch, "/api/v1/line-items/L-9999", venue)
 
 	assertAnswer(t, saved, http.StatusOK, "")
@@ -239,20 +231,20 @@ func TestUpdateLineItem_Contract(t *testing.T) {
 	assertAnswer(t, noVersion, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.","fields":[`+
 		`{"field":"name","message":"Enter a name for the line item."},`+
 		`{"field":"version","message":"Reload the page and try again."}]}}`)
-	assertAnswer(t, unconfirmed, http.StatusBadRequest, restartBody)
+	assertAnswer(t, onApproved, http.StatusOK, "")
+	assertStillApproved(t, priya)
 	assertAnswer(t, gone, http.StatusNotFound, lineItemGoneBody)
 }
 
-// POST /api/v1/line-items/{id}/duplicate answers 201 with the copy, "Agency fee (copy)" (FR-029); on an Approved
-// activity only with restartApproval (FR-031); 404 for one that does not exist.
+// On an Approved activity a copy needs no confirmation; the deprecated restartApproval is accepted and ignored.
 func TestDuplicateLineItem_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
 	copied := priya.Do(t, http.MethodPost, "/api/v1/line-items/L-1001/duplicate", map[string]any{})
-	unconfirmed := priya.Do(t, http.MethodPost, "/api/v1/line-items/L-1003/duplicate", map[string]any{})
-	confirmed := priya.Do(t, http.MethodPost, "/api/v1/line-items/L-1003/duplicate", map[string]any{"restartApproval": true})
+	onApproved := priya.Do(t, http.MethodPost, "/api/v1/line-items/L-1003/duplicate", map[string]any{})
+	withOldFlag := priya.Do(t, http.MethodPost, "/api/v1/line-items/L-1003/duplicate", map[string]any{"restartApproval": true})
 	gone := priya.Do(t, http.MethodPost, "/api/v1/line-items/L-9999/duplicate", map[string]any{})
 
 	assertAnswer(t, copied, http.StatusCreated, "")
@@ -261,14 +253,13 @@ func TestDuplicateLineItem_Contract(t *testing.T) {
 	if v.ID != "L-1012" || v.Name != "Agency fee (copy)" || v.PlannedCost.Format() != "50,000.00 USD" || len(v.Missing) != 0 {
 		t.Errorf("copy = %+v", v)
 	}
-	assertAnswer(t, unconfirmed, http.StatusBadRequest, restartBody)
-	assertAnswer(t, confirmed, http.StatusCreated, "")
+	assertAnswer(t, onApproved, http.StatusCreated, "")
+	assertAnswer(t, withOldFlag, http.StatusCreated, "")
+	assertStillApproved(t, priya)
 	assertAnswer(t, gone, http.StatusNotFound, lineItemGoneBody)
 }
 
-// DELETE /api/v1/line-items/{id} moves the line item to the recycle bin and answers the entry, and Undo brings
-// it back with the same ID (FR-030); on an Approved activity only with ?restartApproval=true (FR-031); a
-// query value other than true or false is refused; 404 for one that does not exist.
+// On an Approved activity a delete needs no confirmation; the deprecated ?restartApproval is ignored.
 func TestDeleteLineItem_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -283,9 +274,8 @@ func TestDeleteLineItem_Contract(t *testing.T) {
 	}
 	deleted.Decode(t, &result)
 	undone := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+result.RecycleBinEntry.ID+"/undo", nil)
-	unconfirmed := priya.Do(t, http.MethodDelete, "/api/v1/line-items/L-1003", nil)
-	unreadable := priya.Do(t, http.MethodDelete, "/api/v1/line-items/L-1003?restartApproval=maybe", nil, apitest.SkipRequestValidation())
-	confirmed := priya.Do(t, http.MethodDelete, "/api/v1/line-items/L-1003?restartApproval=true", nil)
+	onApproved := priya.Do(t, http.MethodDelete, "/api/v1/line-items/L-1003", nil)
+	withOldFlag := priya.Do(t, http.MethodDelete, "/api/v1/line-items/L-1004?restartApproval=true", nil)
 	unknown := priya.Do(t, http.MethodDelete, "/api/v1/line-items/L-9999", nil)
 
 	assertAnswer(t, deleted, http.StatusOK, "")
@@ -297,9 +287,8 @@ func TestDeleteLineItem_Contract(t *testing.T) {
 	if back := lineItem(t, priya, "L-1001"); back.Name != "Agency fee" || back.Version != 1 {
 		t.Errorf("after Undo: %+v", back)
 	}
-	assertAnswer(t, unconfirmed, http.StatusBadRequest, restartBody)
-	assertAnswer(t, unreadable, http.StatusBadRequest, `{"error":{"code":"bad_request",`+
-		`"message":"MAPP couldn't read this request. Reload the page and try again.","fields":[]}}`)
-	assertAnswer(t, confirmed, http.StatusOK, "")
+	assertAnswer(t, onApproved, http.StatusOK, "")
+	assertAnswer(t, withOldFlag, http.StatusOK, "")
+	assertStillApproved(t, priya)
 	assertAnswer(t, unknown, http.StatusNotFound, lineItemGoneBody)
 }

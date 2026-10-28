@@ -10,17 +10,12 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// Who may decide, step by step (017 FR-017, FR-018, FR-020, SC-002, data-model §6): a waiting approver who
-// can approve; a current delegate of one; the backup approver once the level is escalated; someone allowed
-// to decide on behalf; an approver who already approved is told who is still waiting; anyone else is
-// refused with 014's message 5 (and no reason shown). While 014's rule is on, the owner and the round's
-// submitter are refused in every capacity, delegates included; with it off they may decide.
 func TestAuthority_Table_FR017_FR018_FR020_SC002(t *testing.T) {
 	t.Parallel()
 	escalated := start.Add(time.Hour)
 	level := RoundLevel{Number: 1, Approvers: []actor.Actor{daniel, carlos}, ApproverType: SourcePeople, Mode: ModeAll,
 		Resolution: ResolutionDecide, Excluded: []Excluded{}, Backup: &mei}
-	round := Round{ID: "AR-1001", ActivityID: "A-1001", Number: 1, Levels: []RoundLevel{level}, CurrentLevel: 1, Outcome: OutcomeOpen,
+	round := Round{ID: "AR-1001", SubjectKind: KindActivity, SubjectID: "A-1001", Number: 1, Levels: []RoundLevel{level}, CurrentLevel: 1, Outcome: OutcomeOpen,
 		SubmittedBy: priya}
 	escalatedRound := round
 	escalatedRound.Levels = []RoundLevel{level}
@@ -40,7 +35,7 @@ func TestAuthority_Table_FR017_FR018_FR020_SC002(t *testing.T) {
 		delegations []Delegation
 		capacity    Capacity
 		refusal     string
-		shown       bool // the refusal is shown as the actions' reason
+		shown       bool
 	}{
 		{name: "approver", who: daniel, round: round, capacity: CapacityApprover},
 		{name: "approver who cannot approve", who: carlos, round: round, refusal: onlyApprovers},
@@ -75,7 +70,7 @@ func TestAuthority_Table_FR017_FR018_FR020_SC002(t *testing.T) {
 				if err != nil {
 					return err
 				}
-				au, err = f.service.authority(ctx, dc, facts, tt.round, tt.entries, true)
+				au, err = f.service.authority(ctx, dc, decisionPoint{sub: activitySubject(facts), round: tt.round, entries: tt.entries, onBehalf: true})
 				return err
 			})
 			if tt.refusal == "" {
@@ -94,9 +89,6 @@ func TestAuthority_Table_FR017_FR018_FR020_SC002(t *testing.T) {
 	}
 }
 
-// A person may see an activity because of its approval (017 FR-021, extends 014 FR-006): named as an
-// approver in any round, a current delegate of a waiting approver, or the backup approver of its escalated
-// level — not a planned delegate, nor a backup before escalation.
 func TestNamedIn_DelegatesAndBackup_FR021(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -125,9 +117,6 @@ func TestNamedIn_DelegatesAndBackup_FR021(t *testing.T) {
 	}
 }
 
-// Every decision records its capacity (017 FR-019): approver; delegate with the approver acted for; backup
-// approver after escalation; on behalf with the approvers still waiting — the "on behalf of" list only for
-// that capacity. The log details end with the capacity.
 func TestDecide_RecordsCapacity_FR019(t *testing.T) { //nolint:gocyclo // 10: one table, each entry and log line checked in turn
 	t.Parallel()
 	f := newFixture(t)
@@ -173,9 +162,6 @@ func TestDecide_RecordsCapacity_FR019(t *testing.T) { //nolint:gocyclo // 10: on
 	}
 }
 
-// The viewer's relation and the approve and decline actions follow who may decide (017 FR-017): available
-// to an approver; unavailable with the reason to the owner or the submitter who could otherwise decide;
-// hidden (no reason) for anyone else; on behalf for someone allowed, with the approvers still waiting.
 func TestApproval_ViewerAuthority_FR017(t *testing.T) { //nolint:gocyclo,tparallel // 13: one table of viewers; the subtests share one fixture
 	t.Parallel()
 	f := newFixture(t)

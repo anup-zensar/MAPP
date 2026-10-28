@@ -10,11 +10,6 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// levelsOf returns the levels of a request, normalised (017 plan, Service operations): names and ids without
-// surrounding spaces; a level without an approver source has named people, one without a mode "any one
-// approves"; approvers are kept only for named people, the role only for role levels, and line-manager
-// levels are always "any". Amounts that cannot be read are returned as problems by condition field
-// ("levels.<n>.appliesWhen"), so that checkWorkflow reports them with the others. Levels are never nil.
 func levelsOf(inputs []LevelInput) ([]Level, map[string]string) {
 	levels := make([]Level, 0, len(inputs))
 	problems := map[string]string{}
@@ -33,16 +28,16 @@ func levelsOf(inputs []LevelInput) ([]Level, map[string]string) {
 	return levels, problems
 }
 
-// levelOf returns the level in sends, normalised as levelsOf says, without its conditions.
 func levelOf(in LevelInput) Level {
 	l := Level{
 		Name: strings.TrimSpace(in.Name), ApproverType: strings.TrimSpace(in.ApproverType), ApproverIDs: []string{},
 		RoleID: strings.TrimSpace(in.RoleID), Mode: strings.TrimSpace(in.Mode), BackupApproverID: strings.TrimSpace(in.BackupApproverID),
+		RecordField: strings.TrimSpace(in.RecordField),
 	}
 	if l.ApproverType == "" {
 		l.ApproverType = SourcePeople
 	}
-	if l.Mode == "" || l.ApproverType == SourceManager {
+	if l.Mode == "" || singlePerson(l.ApproverType) {
 		l.Mode = ModeAny
 	}
 	if l.ApproverType == SourcePeople && in.ApproverIDs != nil {
@@ -51,11 +46,17 @@ func levelOf(in LevelInput) Level {
 	if l.ApproverType != SourceRole {
 		l.RoleID = ""
 	}
+	if l.ApproverType != SourceRecordField {
+		l.RecordField = ""
+	}
 	return l
 }
 
-// conditionOf reads a condition as sent: nil stays nil; empty amount texts are no part. bad is true when an
-// amount is not a decimal number with at most two decimals.
+// singlePerson reports whether a source names one person, so its level is always "any one approves".
+func singlePerson(source string) bool {
+	return source == SourceManager || source == SourceOwner || source == SourceRecordField
+}
+
 func conditionOf(in *ConditionInput) (*Condition, bool) {
 	if in == nil {
 		return nil, false
@@ -79,7 +80,6 @@ func conditionOf(in *ConditionInput) (*Condition, bool) {
 	return &c, bad
 }
 
-// nonNilIDs returns ids, or an empty list for nil.
 func nonNilIDs(ids []string) []string {
 	if ids == nil {
 		return []string{}
@@ -87,31 +87,30 @@ func nonNilIDs(ids []string) []string {
 	return ids
 }
 
-// levelCheck checks the level l at position n; before is the level at that position before an update.
 type levelCheck struct {
 	problems  *errs.Problems
 	rc        ruleContext
 	n         int
 	l, before Level
+	kind      SubjectKind
 }
 
 func (c levelCheck) field(name string) string { return fmt.Sprintf("levels.%d.%s", c.n, name) }
 
-// checkLevel adds every problem of c's level to c.problems (data-model §2), in the order of its fields.
 func checkLevel(c levelCheck, amountProblems map[string]string, escalates bool) {
 	if tooLong(c.l.Name, maxLevelNameLength) {
 		c.problems.Add(c.field("name"), fmt.Sprintf(levelNameTooLongMessage, c.n))
 	}
 	switch c.l.ApproverType {
-	case SourcePeople, SourceManager, SourceRole:
+	case SourcePeople:
+		c.checkApprovers()
+	case SourceRole:
+		c.checkRole()
+	case SourceRecordField:
+		c.checkRecordField()
+	case SourceManager, SourceOwner:
 	default:
 		c.problems.Add(c.field("approverType"), fmt.Sprintf(chooseSourceMessage, c.n))
-	}
-	if c.l.ApproverType == SourcePeople {
-		c.checkApprovers()
-	}
-	if c.l.ApproverType == SourceRole {
-		c.checkRole()
 	}
 	if c.l.Mode != ModeAny && c.l.Mode != ModeAll {
 		c.problems.Add(c.field("mode"), fmt.Sprintf(chooseModeMessage, c.n))
@@ -140,8 +139,6 @@ func (c levelCheck) checkApprovers() {
 	}
 }
 
-// approverProblem returns the problem of the named approver p, or "": someone kept from before the update may
-// stay when inactive or no longer allowed to approve.
 func (c levelCheck) approverProblem(p people.Person, listedBefore bool) string {
 	added := !slices.Contains(c.before.ApproverIDs, p.ID)
 	switch {
@@ -180,10 +177,31 @@ func (c levelCheck) checkConditions(amountProblems map[string]string) {
 		if cond.condition == nil {
 			continue
 		}
-		if message := conditionProblem(c.rc, c.n, *cond.condition, cond.emptyMessage); message != "" {
+		if message := c.conditionProblem(*cond.condition, cond.emptyMessage); message != "" {
 			c.problems.Add(field, message)
 		}
 	}
+}
+
+// conditionProblem adds to the rules of every condition that only activity workflows name activity facts.
+func (c levelCheck) conditionProblem(condition Condition, emptyMessage string) string {
+	message := conditionProblem(c.rc, c.n, condition, emptyMessage)
+	if message == "" && c.kind != KindActivity && condition.namesActivityFacts() {
+		return fmt.Sprintf(activityConditionsOnlyMessage, c.n)
+	}
+	return message
+}
+
+func (c levelCheck) checkRecordField() {
+	field := c.field("recordField")
+	if _, known := c.kind.recordField(c.l.RecordField); known {
+		return
+	}
+	if c.kind == KindActivity {
+		c.problems.Add(field, fmt.Sprintf(activityNoRecordFieldMessage, c.n))
+		return
+	}
+	c.problems.Add(field, fmt.Sprintf(chooseRecordFieldMessage, c.n))
 }
 
 func (c levelCheck) checkBackup(escalates bool) {
@@ -199,8 +217,6 @@ func (c levelCheck) checkBackup(escalates bool) {
 	}
 }
 
-// backupProblem returns the problem of the backup approver, or "": one kept from before the update may stay
-// when inactive or no longer allowed to approve.
 func (c levelCheck) backupProblem() string {
 	p, found := c.rc.people.byID[c.l.BackupApproverID]
 	changed := c.l.BackupApproverID != c.before.BackupApproverID
@@ -217,8 +233,6 @@ func (c levelCheck) backupProblem() string {
 	return ""
 }
 
-// conditionProblem returns the first problem of the condition c of the level n (data-model §2: one message
-// per condition field), or "".
 func conditionProblem(rc ruleContext, n int, c Condition, emptyMessage string) string {
 	switch {
 	case c.empty():
@@ -239,12 +253,10 @@ func (c Condition) hasNegativeAmount() bool {
 	return (c.PlannedCostAtLeast != nil && c.PlannedCostAtLeast.Sign() < 0) || (c.PlannedCostBelow != nil && c.PlannedCostBelow.Sign() < 0)
 }
 
-// hasReversedAmounts reports whether c's "at least" amount is not below its "below" amount.
 func (c Condition) hasReversedAmounts() bool {
 	return c.PlannedCostAtLeast != nil && c.PlannedCostBelow != nil && c.PlannedCostAtLeast.Cmp(*c.PlannedCostBelow) >= 0
 }
 
-// knownOnce reports whether every id is one of choices, each listed once. Inactive choices may be listed.
 func knownOnce(ids []string, choices map[string]Choice) bool {
 	seen := map[string]bool{}
 	for _, id := range ids {

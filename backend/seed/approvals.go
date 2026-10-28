@@ -15,7 +15,6 @@ import (
 // day is 24 hours: the approval history is dated in days and hours before the seed time.
 const day = 24 * time.Hour
 
-// The decline comments and the notification titles of the demo story (008 data model §8).
 const (
 	splitComment  = "Please split the agency fee by country before re-submitting."
 	budgetComment = "The planned cost is above this quarter's budget — please reduce it or move part of it to Q3."
@@ -26,7 +25,6 @@ const (
 	levelOneApprovedTitle = "Level 1 approved"
 )
 
-// demoDecision is one decision on the current level of a round, ago before the seed time.
 type demoDecision struct {
 	by       string
 	ago      time.Duration
@@ -34,8 +32,7 @@ type demoDecision struct {
 	comment  string
 }
 
-// demoRound is one approval round of 008 data model §8: who submitted it and when, and the decisions
-// taken since. A round whose decisions do not end it is open.
+// demoRound is one approval round of 008 data model §8; a round whose decisions do not end it is open.
 type demoRound struct {
 	plan, activity string
 	resubmitted    bool
@@ -44,8 +41,6 @@ type demoRound struct {
 	decisions      []demoDecision
 }
 
-// approvedBy is the one round of an approved Lubricants activity: submitted 40 days before, approved by
-// Daniel Okoro 38 days before.
 func approvedBy(activity string) demoRound {
 	return demoRound{plan: lubricantsPlan, activity: activity, submittedBy: "Priya Raman", submittedAgo: 40 * day,
 		decisions: []demoDecision{{by: "Daniel Okoro", ago: 38 * day}}}
@@ -76,13 +71,12 @@ type demoNotification struct {
 	read                      bool
 }
 
-// approvedNotice tells Priya Raman, read, that Daniel Okoro approved one of her activities.
 func approvedNotice(activity string) demoNotification {
 	return demoNotification{recipient: priyaRaman, plan: lubricantsPlan, activity: activity, kind: approval.NotifyApproved,
 		title: activityApprovedTitle, text: "Daniel Okoro approved %s", by: danielOkoro, ago: 38 * day, read: true}
 }
 
-// declinedText is the text of a declined notification: the first 80 characters of the comment, then "…".
+// declinedText quotes the first 80 characters of the comment, then "…".
 func declinedText(by, comment string) string {
 	runes := []rune(comment)
 	if len(runes) > 80 {
@@ -91,7 +85,6 @@ func declinedText(by, comment string) string {
 	return by + " declined %s: \"" + comment + "\""
 }
 
-// demoNotifications are NT-1001 … NT-1009.
 var demoNotifications = []demoNotification{
 	approvedNotice("Social always-on"),
 	approvedNotice("Billboard winter wave"),
@@ -109,10 +102,9 @@ var demoNotifications = []demoNotification{
 		title: levelOneApprovedTitle, text: "Carlos Mendes approved level 1 of 2 of %s", by: carlosMendes, ago: 2 * time.Hour},
 }
 
-// addApprovals creates the approval rounds with their history entries, then the notifications, through
-// the approvals repository. The rounds match the activities' seeded statuses.
+// addApprovals creates the rounds with their history entries, then the notifications, as the statuses say.
 func (d *demo) addApprovals(ctx context.Context) error {
-	if err := d.addApprovalRules(ctx); err != nil { // 017: timings, backups and WF-1003 first
+	if err := d.addApprovalRules(ctx); err != nil {
 		return err
 	}
 	repo := d.stores.Approvals
@@ -127,7 +119,7 @@ func (d *demo) addApprovals(ctx context.Context) error {
 		return p.Actor(), err
 	}
 
-	numbers := map[string]int{} // activity ID → its last round number
+	numbers := map[string]int{}
 	for _, dr := range demoRounds {
 		activityID, err := find(d.activities, "activity", dr.plan+"/"+dr.activity)
 		if err != nil {
@@ -161,8 +153,9 @@ func (d *demo) addApprovals(ctx context.Context) error {
 		numbers[activityID]++
 		submittedAt := d.at.Add(-dr.submittedAgo)
 		round := approval.Round{
-			ActivityID: activityID, Number: numbers[activityID], WorkflowID: workflow.ID, WorkflowName: workflow.Name,
-			Levels: levels, CurrentLevel: 1, Outcome: approval.OutcomeOpen, SubmittedAt: submittedAt, SubmittedBy: submitter,
+			SubjectKind: approval.KindActivity, SubjectID: activityID, Number: numbers[activityID], WorkflowID: workflow.ID,
+			WorkflowName: workflow.Name,
+			Levels:       levels, CurrentLevel: 1, Outcome: approval.OutcomeOpen, SubmittedAt: submittedAt, SubmittedBy: submitter,
 			Meta: record.NewMeta(submitter, submittedAt),
 		}
 		round.Levels[0].StartedAt = &submittedAt
@@ -213,7 +206,6 @@ func (d *demo) addApprovals(ctx context.Context) error {
 	return d.addDelegation(ctx)
 }
 
-// roundAction is what one history entry of a round records: what was done, by whom, when and why.
 type roundAction struct {
 	kind    approval.ActionKind
 	by      actor.Actor
@@ -221,7 +213,6 @@ type roundAction struct {
 	comment string
 }
 
-// addAction writes one history entry of round at its current level.
 func (d *demo) addAction(ctx context.Context, repo stores.ApprovalStore, round approval.Round, action roundAction) error {
 	id, err := d.next(ctx, ids.PrefixApprovalAction)
 	if err != nil {
@@ -229,8 +220,9 @@ func (d *demo) addAction(ctx context.Context, repo stores.ApprovalStore, round a
 	}
 	level := round.Levels[round.CurrentLevel-1]
 	return repo.PutAction(ctx, approval.Action{
-		ID: id, RoundID: round.ID, RoundNumber: round.Number, ActivityID: round.ActivityID, Action: action.kind,
-		Level: level.Number, LevelName: level.Name, Approvers: level.Approvers, Actor: action.by, OnBehalfOf: []actor.Actor{},
+		ID: id, RoundID: round.ID, RoundNumber: round.Number, SubjectKind: round.SubjectKind, SubjectID: round.SubjectID,
+		Action: action.kind,
+		Level:  level.Number, LevelName: level.Name, Approvers: level.Approvers, Actor: action.by, OnBehalfOf: []actor.Actor{},
 		At: action.at, Comment: action.comment, Changes: []approval.ChangeText{},
 	})
 }
@@ -253,8 +245,8 @@ func (d *demo) addNotifications(ctx context.Context, repo stores.ApprovalStore, 
 		at := d.at.Add(-dn.ago)
 		notification := approval.Notification{
 			RecipientID: recipient, Kind: dn.kind, Title: dn.title,
-			Text:       fmt.Sprintf(dn.text, fmt.Sprintf("'%s' (%s)", dn.activity, activityID)),
-			ActivityID: activityID, ActivityName: dn.activity, Actor: by, At: at, Read: dn.read,
+			Text:        fmt.Sprintf(dn.text, fmt.Sprintf("'%s' (%s)", dn.activity, activityID)),
+			SubjectKind: approval.KindActivity, SubjectID: activityID, SubjectName: dn.activity, Actor: by, At: at, Read: dn.read,
 		}
 		if dn.read {
 			readAt := at.Add(time.Hour)

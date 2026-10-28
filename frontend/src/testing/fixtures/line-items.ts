@@ -113,9 +113,9 @@ export function activity(overrides: Partial<LineItemActivity> = {}): LineItemAct
   };
 }
 
-/** An approved activity: line-item changes of cost restart its approval (FR-031). */
+/** An approved activity; line-item changes never restart its approval (D-322), so restartsApproval is false. */
 export function approvedActivity(): LineItemActivity {
-  return activity({ status: 'approved', restartsApproval: true });
+  return activity({ status: 'approved' });
 }
 
 export function lineItem(overrides: Partial<LineItem> = {}): LineItem {
@@ -146,6 +146,10 @@ export function lineItem(overrides: Partial<LineItem> = {}): LineItem {
     contractedAmount: null,
     requestSwbs: true,
     swbsStatus: 'waitingForApproval',
+    swbsCode: '',
+    swbsRequestedAt: null,
+    swbsReceivedAt: null,
+    hxKey: `HX${(overrides.id ?? 'L-1001').replace('L-', '')}`,
     financeBudgetYear: 2026,
     financeBudgetItem: null,
     missing: [

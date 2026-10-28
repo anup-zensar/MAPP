@@ -11,10 +11,7 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// The Approval section offers the actions of the activity's status: Submit for a Created one, Re-submit
-// for a Declined one, Approve, Decline and Recall while Submitted; an Approved one cannot be recalled and
-// says why (FR-009, FR-014, FR-021).
-func TestApproval_Actions_FR009_FR014_FR021(t *testing.T) {
+func TestApproval_Actions_FR009_FR014_FR021_031FR017(t *testing.T) {
 	t.Parallel()
 	available := ActionAvailability{Available: true}
 	tests := []struct {
@@ -23,10 +20,9 @@ func TestApproval_Actions_FR009_FR014_FR021(t *testing.T) {
 	}{
 		{StatusCreated, ActionSet{Submit: available}},
 		{StatusDeclined, ActionSet{Resubmit: available}},
-		// 017 FR-017: approve and decline follow who may decide the open round's level (TestApproval_ViewerAuthority_FR017).
-		{StatusSubmitted, ActionSet{Recall: available}},
+		{StatusSubmitted, ActionSet{Resubmit: available, Recall: available}},
 		{StatusApproved, ActionSet{Recall: ActionAvailability{Reason: "Approved activities can't be recalled. " +
-			"Changing its planned cost, dates or line-item amounts sends it back for approval."}}},
+			"Changing its planned cost or dates sends it back for approval."}}},
 	}
 
 	for _, tt := range tests {
@@ -51,8 +47,7 @@ func TestApproval_Actions_FR009_FR014_FR021(t *testing.T) {
 
 // The section shows every round, newest first: its chain — each level with its designated approvers and
 // its state (approved or declined with the decision, waiting, not reached, not decided) — and its history,
-// newest first, with the round, level, approvers at the time, actor, "on behalf of" and comment (FR-024,
-// FR-025).
+// newest first, with the round, level, approvers at the time, actor, "on behalf of" and comment.
 func TestApproval_ChainAndHistory_FR024_FR025(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -127,7 +122,7 @@ func TestChangeText_Sentences_FR022(t *testing.T) {
 }
 
 // Before the first submission the section shows the activity's workflow and its levels as they are now
-// ("Not submitted yet"); the viewer is told whether they own the activity (FR-024, edge case), and the
+// ("Not submitted yet"); the viewer is told whether they own the activity, and the
 // owner is named, as the decline dialog needs (D-214); an activity without an owner has none.
 func TestApproval_NotSubmittedYet_FR024(t *testing.T) {
 	t.Parallel()
@@ -171,7 +166,7 @@ func TestApproval_NotSubmittedYet_FR024(t *testing.T) {
 	}
 }
 
-// The approval history shows the new entries and fields (017 FR-034): Not needed and Approved
+// The approval history shows the new entries and fields: Not needed and Approved
 // automatically by MAPP with their rule, Reminder sent and Escalated with the days waited and the
 // backup approver, each decision's capacity.
 func TestApproval_HistoryRuleEntries_FR034(t *testing.T) {

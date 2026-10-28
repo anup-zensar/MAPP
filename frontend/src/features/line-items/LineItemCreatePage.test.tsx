@@ -39,7 +39,11 @@ describe('LineItemCreatePage (US2)', () => {
     ).toBeInTheDocument();
     expect(screen.getByLabelText('Request SWBS code from GSAP')).toBeChecked();
     expect(screen.getByText(/On by default/)).toBeInTheDocument();
-    expect(screen.getByText('Filled by GSAP later')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Filled by the simulated GSAP once the activity is approved and the request is sent',
+      ),
+    ).toBeInTheDocument();
 
     const summary = screen.getByLabelText('Activity summary');
     expect(summary).toHaveTextContent('Activity planned cost120,000.00 USD');
@@ -108,6 +112,53 @@ describe('LineItemCreatePage (US2)', () => {
 
     await user.selectOptions(screen.getByLabelText('Spend type'), 'BTL – Event');
     expect(screen.getByLabelText('GL code')).toHaveValue('SO-GL-EVT');
+  });
+
+  /** The line-item form as Shell's lists are seeded: GL code depends on no other attribute (D-325). */
+  function shellListsForm() {
+    const form = lineItemForm();
+    nth(form.sections, 0).attributes = [
+      attribute({
+        id: 'SA-ST',
+        label: 'Spend type',
+        marking: 'neededToSubmit',
+        options: [option('SO-ST-1', 'ATL - Digital'), option('SO-ST-2', 'BTL - Event')],
+      }),
+      attribute({
+        id: 'SA-GL',
+        label: 'GL code',
+        marking: 'neededToSubmit',
+        options: [
+          option('SO-GL-1', '7250080 - Advertising - Digital'),
+          option('SO-GL-2', '7250150 - Sponsorship programmes'),
+        ],
+      }),
+    ];
+    return { body: form };
+  }
+
+  it('034 FR-011: offers every GL code whatever the spend type, and never clears it', async () => {
+    const { user, api } = renderCreatePage([
+      reply('GET /api/v1/shell-attribute-forms/{level}', shellListsForm(), { level: 'lineItem' }),
+      reply(
+        'POST /api/v1/activities/{activityId}/line-items',
+        { status: 201, body: lineItem() },
+        { activityId: 'A-1001' },
+      ),
+    ]);
+    await findNameField();
+
+    const glCode = screen.getByLabelText('GL code');
+    expect(glCode).toBeEnabled();
+    await user.selectOptions(glCode, '7250150 - Sponsorship programmes');
+    await user.selectOptions(screen.getByLabelText('Spend type'), 'ATL - Digital');
+    expect(screen.queryByText(/will be cleared/)).not.toBeInTheDocument();
+
+    await user.click(formButton('Save'));
+    await waitFor(() => expect(api.bodiesOf(CREATE)).toHaveLength(1));
+    expect(api.bodiesOf(CREATE)[0]).toMatchObject({
+      attributes: { 'SA-ST': 'SO-ST-1', 'SA-GL': 'SO-GL-2' },
+    });
   });
 
   it('says when the activity was deleted (edge case)', async () => {

@@ -16,7 +16,6 @@ import (
 // Moving and copying campaigns and initiatives (US6, FR-023 – FR-027): the destinations the dialogs offer,
 // the moves, the copies and the copy of a plan's contents for feature 004.
 
-// Messages of the plan's "API validation and error messages" table about moves and copies.
 const (
 	choosePurposeMessage       = "Choose move or copy."
 	campaignRuleMove           = "Campaigns move only between plans of the same year"
@@ -36,15 +35,15 @@ const (
 	initiativeMoveNameTaken    = "'%s' already has an initiative called '%s' — rename it first."
 	datesDontFitMessage        = "Dates don't fit (%s) — change the initiative's dates first."
 	campaignCopyOtherYear      = "Campaigns can be copied only into plans of the same year (%d)."
-	otherCurrencyReason        = "Planned in %s — this campaign's amounts are in %s." // 016 FR-017
+	otherCurrencyReason        = "Planned in %s — this campaign's amounts are in %s."
 	initiativeCopyOtherPlan    = "Initiatives can be copied only into campaigns of the same plan."
 	copiedFromDetails          = "Copied from '%s' (%s)" // + ", with 2 initiatives, 7 activities and …" when records came along
 	copySuffix                 = " (copy)"
 	numberedCopySuffix         = " (copy %d)"
 	attributeGroupName         = "%s attributes (%s)" // "Lubricants attributes (activities)"
-	parentField                = "parent"             // the change of a move (data model §8)
-	activityKindName           = "activity"           // feature 006's kind: the counts of a copy's details
-	lineItemKindName           = "lineItem"           // feature 007's kind
+	parentField                = "parent"
+	activityKindName           = "activity"
+	lineItemKindName           = "lineItem"
 )
 
 const (
@@ -73,6 +72,9 @@ func (s *Service) MoveCampaign(ctx context.Context, a actor.Actor, id string, in
 		}
 		checkVersionSent(&problems, in.Version)
 		if err = problems.Err(); err != nil {
+			return err
+		}
+		if err = s.refuseDrawnOn(ctx, c.ID, target.ID != c.PlanID); err != nil {
 			return err
 		}
 		c.PlanID = target.ID
@@ -115,14 +117,13 @@ func (s *Service) campaignMoveTarget(ctx context.Context, c Campaign, plan PlanF
 	return target, problems, nil
 }
 
-// campaignMoveRule returns the message of the first rule that refuses the move, "" when none does.
 func campaignMoveRule(c Campaign, plan, target PlanFacts) string {
 	switch {
 	case target.Year != plan.Year:
 		return fmt.Sprintf(campaignOtherYearMessage, plan.Year)
 	case target.ID == plan.ID:
 		return fmt.Sprintf(alreadyInMessage, c.Name, plan.Name)
-	case target.Currency != plan.Currency: // 016 FR-017
+	case target.Currency != plan.Currency:
 		return fmt.Sprintf(otherCurrencyReason, target.Currency, plan.Currency)
 	}
 	return ""
@@ -176,7 +177,6 @@ func (s *Service) MoveInitiative(ctx context.Context, a actor.Actor, id string, 
 	return s.shownInitiative(ctx, a, view)
 }
 
-// initiativeMoveTarget reports a taken name and dates that do not fit together, as both can apply.
 func (s *Service) initiativeMoveTarget(ctx context.Context, i Initiative, c Campaign, campaignID string) (Campaign, errs.Problems, error) {
 	target, found, err := s.repo.GetCampaign(ctx, strings.TrimSpace(campaignID))
 	if err != nil {
@@ -226,8 +226,6 @@ func (s *Service) saveInitiativeMove(ctx context.Context, a actor.Actor, i Initi
 	return err
 }
 
-// fitsInside reports whether the initiative i may be in the campaign c by its dates (R3): always, unless
-// both have dates and i's are not inside c's.
 func fitsInside(i Initiative, c Campaign) bool {
 	if c.StartDate == nil || c.EndDate == nil || i.StartDate == nil || i.EndDate == nil {
 		return true
@@ -235,14 +233,11 @@ func fitsInside(i Initiative, c Campaign) bool {
 	return !i.StartDate.Before(*c.StartDate) && !i.EndDate.After(*c.EndDate)
 }
 
-// parentChange is the change of a move (data model §8): the parent's id before and after; the log shows
-// the parents' names.
 func parentChange(oldID, newID string) []history.Change {
 	return []history.Change{{Field: parentField, Old: jsonText(oldID), New: jsonText(newID)}}
 }
 
-// jsonText returns the text s as a JSON value.
 func jsonText(s string) json.RawMessage {
-	encoded, _ := json.Marshal(s) // a string always encodes
+	encoded, _ := json.Marshal(s)
 	return encoded
 }

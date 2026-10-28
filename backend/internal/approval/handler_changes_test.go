@@ -17,9 +17,6 @@ import (
 	"mapp/internal/settings"
 )
 
-// User story 5 — keep approval meaningful when things change, through the real endpoints of features 006
-// and 007 on the demo data.
-
 // socialAlwaysOn is the seeded Approved Lubricants activity, approved by Daniel Okoro in round 1, with the
 // line items Venue hire (L-1003, GBP) and Speaker fees (L-1004).
 const socialAlwaysOn = "A-1002"
@@ -55,7 +52,7 @@ func TestRecall_WaitingMobilityActivity_FR021(t *testing.T) {
 	approved := decodeApproval(t, mei.Do(t, http.MethodGet, "/api/v1/activities/"+socialAlwaysOn+"/approval", nil))
 	refused := mei.Do(t, http.MethodPost, "/api/v1/activities/"+socialAlwaysOn+"/approval/recall", map[string]any{"roundId": approved.Rounds[0].ID})
 	assertError(t, refused, http.StatusBadRequest, "bad_request",
-		"Approved activities can't be recalled. Changing its planned cost, dates or line-item amounts sends it back for approval.")
+		"Approved activities can't be recalled. Changing its planned cost or dates sends it back for approval.")
 	gone := mei.Do(t, http.MethodPost, "/api/v1/activities/A-9999/approval/recall", recall)
 	assertError(t, gone, http.StatusNotFound, "not_found", "This activity no longer exists — someone may have deleted it.")
 }
@@ -91,14 +88,16 @@ func TestPlannedCostChangeRestartsApproval_FR022(t *testing.T) {
 	}
 }
 
-// Changing a line item's currency through 007's edit, confirmed, returns the Approved activity to Created;
-// its approval history holds 007's sentence about the change (FR-022, US5 scenario 2).
-func TestLineItemCurrencyChangeRestartsApproval_FR022(t *testing.T) {
+// Changing a line item's currency through 007's edit keeps the Approved activity Approved: no confirmation,
+// its approved round stays approved and its history gets no entry (034 FR-001, D-322; replaces 008 US5
+// scenario 2).
+func TestLineItemCurrencyChangeKeepsApproval_034_FR001(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
+	before := decodeApproval(t, priya.Do(t, http.MethodGet, "/api/v1/activities/"+socialAlwaysOn+"/approval", nil))
 	form := lineItemForm(t, priya, "L-1003") // Venue hire, 15,800.00 GBP
-	form["currency"], form["restartApproval"] = "EUR", true
+	form["currency"] = "EUR"
 
 	response := priya.Do(t, http.MethodPatch, "/api/v1/line-items/L-1003", form)
 
@@ -106,17 +105,51 @@ func TestLineItemCurrencyChangeRestartsApproval_FR022(t *testing.T) {
 		t.Fatalf("PATCH L-1003 = %d %s, want 200", response.Status, response.Body)
 	}
 	appr := decodeApproval(t, priya.Do(t, http.MethodGet, "/api/v1/activities/"+socialAlwaysOn+"/approval", nil))
-	latest := appr.Rounds[0].History[0]
-	want := []string{"Planned cost of line item 'Venue hire' (L-1003): 15,800.00 GBP → 15,800.00 EUR"}
-	if appr.Status != "created" || latest.Action != "restarted" || !slices.Equal(changeTexts(latest), want) {
-		t.Errorf("approval %s, latest entry %+v; want Created with the restart %q", appr.Status, latest, want)
+	round := appr.Rounds[0]
+	if appr.Status != "approved" || round.Outcome != approval.OutcomeApproved || len(round.History) != len(before.Rounds[0].History) {
+		t.Errorf("approval %s, round %s with %d history entries; want still approved with %d", appr.Status, round.Outcome,
+			len(round.History), len(before.Rounds[0].History))
 	}
 }
 
-// Deleting a Submitted activity takes it off the approvals page; Undo brings it back Submitted with the same
-// open round (D-031); a later Restore from the recycle bin brings it back Created and ends that round as
-// cancelled, dated at the delete and by the person who deleted it, and the restore says so (FR-023,
-// 008-P3).
+// Adding a line item to the Submitted "Trade magazine ads" and re-costing it keep the activity Submitted: its
+// open round stays at its level and Daniel Okoro still finds it waiting for him (034 FR-001, US1 scenario 2).
+func TestLineItemChangeOnSubmittedKeepsRound_034_FR001(t *testing.T) {
+	t.Parallel()
+	server := apitest.New(t)
+	priya := server.SignIn(t, priyasEmail)
+	daniel := server.SignIn(t, danielsEmail)
+	path := "/api/v1/activities/" + tradeMagazineAds
+	before := decodeApproval(t, priya.Do(t, http.MethodGet, path+"/approval", nil))
+
+	added := priya.Do(t, http.MethodPost, path+"/line-items", map[string]any{
+		"name": "Print run", "ownerId": nil, "description": "", "currency": "USD", "plannedCost": "2000.00",
+		"spread": map[string]any{"method": "evenly", "months": []any{}}, "attributes": map[string]any{},
+		"contractedAmount": nil, "requestSwbs": true, "financeBudgetYear": 2026, "financeBudgetItemId": nil,
+	})
+	var created lineitem.View
+	added.Decode(t, &created)
+	form := lineItemForm(t, priya, created.ID)
+	form["plannedCost"] = "2500.00"
+	recosted := priya.Do(t, http.MethodPatch, "/api/v1/line-items/"+created.ID, form)
+
+	if added.Status != http.StatusCreated || recosted.Status != http.StatusOK {
+		t.Fatalf("POST = %d, PATCH = %d; want 201 and 200 without confirmation", added.Status, recosted.Status)
+	}
+	after := decodeApproval(t, priya.Do(t, http.MethodGet, path+"/approval", nil))
+	round := after.Rounds[0]
+	if after.Status != "submitted" || round.ID != before.Rounds[0].ID || round.Outcome != approval.OutcomeOpen ||
+		round.CurrentLevel != before.Rounds[0].CurrentLevel {
+		t.Errorf("approval %s, round %s %s at level %d; want still submitted in %s at level %d", after.Status, round.ID,
+			round.Outcome, round.CurrentLevel, before.Rounds[0].ID, before.Rounds[0].CurrentLevel)
+	}
+	if waiting := rowIDs(decodeRows(t, daniel.Do(t, http.MethodGet, "/api/v1/approvals?tab=waiting", nil))); !slices.Contains(waiting, tradeMagazineAds) {
+		t.Errorf("Daniel's waiting = %q, want %s still there", waiting, tradeMagazineAds)
+	}
+}
+
+// Deleting a Submitted activity: Undo brings it back Submitted with the same round (D-031); a later Restore
+// brings it back Created and ends that round as cancelled, dated at the delete (FR-023, 008-P3).
 func TestDeleteSubmittedActivity_UndoKeepsRound_RestoreCancels_FR023(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -167,8 +200,6 @@ func TestDeleteSubmittedActivity_UndoKeepsRound_RestoreCancels_FR023(t *testing.
 	}
 }
 
-// editActivity saves the activity id through 006's PATCH as client, with change applied to its whole form
-// and the re-approval confirmed, and returns the activity after the save.
 func editActivity(t *testing.T, client *apitest.Client, id string, change func(u *activity.Update)) activity.View {
 	t.Helper()
 	form := activityForm(t, client, id)
@@ -183,7 +214,6 @@ func editActivity(t *testing.T, client *apitest.Client, id string, change func(u
 	return view
 }
 
-// activityForm reads the activity id and returns its whole editable state, as 006's edit form sends it.
 func activityForm(t *testing.T, client *apitest.Client, id string) activity.Update {
 	t.Helper()
 	response := client.Do(t, http.MethodGet, "/api/v1/activities/"+id, nil)
@@ -219,7 +249,6 @@ func activityForm(t *testing.T, client *apitest.Client, id string) activity.Upda
 	return form
 }
 
-// dateText returns d as a form sends it, nil for none.
 func dateText(d *date.Date) *string {
 	if d == nil {
 		return nil
@@ -228,7 +257,6 @@ func dateText(d *date.Date) *string {
 	return &text
 }
 
-// lineItemForm reads the line item id and returns its whole form, as 007's edit page sends it.
 func lineItemForm(t *testing.T, client *apitest.Client, id string) map[string]any {
 	t.Helper()
 	response := client.Do(t, http.MethodGet, "/api/v1/line-items/"+id, nil)
@@ -262,7 +290,6 @@ func lineItemForm(t *testing.T, client *apitest.Client, id string) map[string]an
 	return form
 }
 
-// deleteActivity deletes the activity id through 006's DELETE as client and returns its recycle-bin entry.
 func deleteActivity(t *testing.T, client *apitest.Client, id string) string {
 	t.Helper()
 	response := client.Do(t, http.MethodDelete, "/api/v1/activities/"+id, nil)
@@ -274,12 +301,10 @@ func deleteActivity(t *testing.T, client *apitest.Client, id string) string {
 	return result.RecycleBinEntry.ID
 }
 
-// usd is an amount in US dollars as a request sends it.
 func usd(amount string) *money.Input {
 	return &money.Input{Amount: amount, Currency: "USD"}
 }
 
-// changeTexts lists the change sentences of a history entry.
 func changeTexts(e approval.HistoryEntryView) []string {
 	texts := []string{}
 	for _, c := range e.Changes {

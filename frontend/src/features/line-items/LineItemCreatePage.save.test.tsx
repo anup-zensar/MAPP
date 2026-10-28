@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { approvedActivity, lineItem, usd } from '@/testing/fixtures/line-items';
-import { formOptions, restartRefusal, validationError } from '@/testing/fixtures/line-item-forms';
+import { formOptions, validationError } from '@/testing/fixtures/line-item-forms';
 import {
   CREATE,
   CREATE_ROUTE,
@@ -71,7 +71,6 @@ describe('LineItemCreatePage, saving (US2)', () => {
       requestSwbs: true,
       financeBudgetYear: 2026,
       financeBudgetItemId: null,
-      restartApproval: false,
     });
     const keys = invalidate.mock.calls.map(([filters]) => filters?.queryKey);
     expect(keys).toEqual(
@@ -118,9 +117,9 @@ describe('LineItemCreatePage, saving (US2)', () => {
     expect(router.state.location.pathname).toBe(CREATE_ROUTE);
   });
 
-  it('asks before adding to an approved activity and confirms the restart (FR-031)', async () => {
+  it('034 FR-001: adds a line item to an approved activity at once, without asking (D-322)', async () => {
     const options = formOptions({ activity: approvedActivity() });
-    const { user, api } = renderCreatePage([
+    const { user, api, router } = renderCreatePage([
       reply(
         'GET /api/v1/activities/{activityId}/line-items/form-options',
         { body: options },
@@ -135,34 +134,13 @@ describe('LineItemCreatePage, saving (US2)', () => {
     await findNameField();
 
     await user.click(formButton('Save'));
-    const dialog = await screen.findByRole('alertdialog', {
-      name: 'This activity will need approval again',
-    });
-    expect(dialog).toHaveTextContent(
-      "'Launch film' is approved. Saving sends it back to Created, and it must be submitted for approval again.",
+
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1001'),
     );
-    expect(dialog).toHaveTextContent("New line item 'Launch film – line item': 20,000.00 USD");
-    expect(within(dialog).getByRole('button', { name: 'Keep editing' })).toHaveFocus();
-    expect(api.bodiesOf(CREATE)).toHaveLength(0);
-
-    await user.click(within(dialog).getByRole('button', { name: 'Save and restart approval' }));
-    await waitFor(() => expect(api.bodiesOf(CREATE)).toHaveLength(1));
-    expect(api.bodiesOf(CREATE)[0]).toMatchObject({ restartApproval: true });
-  });
-
-  it('asks for the restart when the activity was submitted meanwhile (D-146)', async () => {
-    const { user } = renderCreatePage([
-      reply('POST /api/v1/activities/{activityId}/line-items', restartRefusal(), {
-        activityId: 'A-1001',
-      }),
-    ]);
-    await findNameField();
-
-    await user.click(formButton('Save'));
-
-    expect(
-      await screen.findByRole('alertdialog', { name: 'This activity will need approval again' }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(api.bodiesOf(CREATE)).toHaveLength(1);
+    expect(api.bodiesOf(CREATE)[0]).not.toHaveProperty('restartApproval');
   });
 
   it('asks before discarding typed changes on Cancel', async () => {

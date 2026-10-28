@@ -2,7 +2,6 @@ package lineitem
 
 import (
 	"context"
-	"fmt"
 
 	"mapp/internal/history"
 	"mapp/internal/platform/actor"
@@ -10,10 +9,9 @@ import (
 	"mapp/internal/platform/record"
 )
 
-// Create adds a line item to the activity activityID (FR-009, FR-010): every problem of the form at once;
-// on a Submitted or Approved activity only with in.RestartApproval, which then sends the activity back to
-// Created (FR-031); a new ID L-…; one "created" log entry; all in one Write.
-func (s *Service) Create(ctx context.Context, a actor.Actor, activityID string, in Input) (View, error) { //nolint:gocyclo // 10: one Write whose every step returns its error.
+// Create adds a line item to the activity activityID: every problem of the form at once; a new ID L-…; one
+// "created" log entry; all in one Write. The activity's status never changes, whatever it is (D-322).
+func (s *Service) Create(ctx context.Context, a actor.Actor, activityID string, in Input) (View, error) {
 	var view View
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
 		f, err := s.facts(ctx, activityID)
@@ -28,7 +26,7 @@ func (s *Service) Create(ctx context.Context, a actor.Actor, activityID string, 
 		if err != nil {
 			return err
 		}
-		if err = confirmRestart(problems, f, in.RestartApproval); err != nil {
+		if err = problems.Err(); err != nil {
 			return err
 		}
 		if li.ID, err = s.ids.Next(ctx, ids.PrefixLineItem); err != nil {
@@ -41,9 +39,6 @@ func (s *Service) Create(ctx context.Context, a actor.Actor, activityID string, 
 		if _, err = s.history.Log(ctx, a, history.LogInput{
 			Kind: lineItemKind, RecordID: li.ID, RecordName: li.Name, Action: history.ActionCreated,
 		}); err != nil {
-			return err
-		}
-		if f, err = s.restart(ctx, a, f, fmt.Sprintf(addedReason, li.Name, li.ID, li.PlannedCost.Format(), li.Currency)); err != nil {
 			return err
 		}
 		view, err = s.shownView(ctx, a, f, li)

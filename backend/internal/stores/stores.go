@@ -45,4 +45,7 @@ type Planning struct {
 type Finance struct {
 	Budgets    BudgetStore
 	Financials FinancialsStore
+	SwbsRuns   SwbsStore
+
+	PurchaseRequests PurchaseRequestStore
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { completenessText, customTotalText, restartText } from './line-item-text';
+import { completenessText, customTotalText } from './line-item-text';
 
 describe('line-item texts', () => {
   it('counts the fields needed (FR-028)', () => {
@@ -17,15 +17,6 @@ describe('line-item texts', () => {
     );
     expect(customTotalText('10,000.00', '10,000.00', 'EUR', { sign: 0, amount: '0.00' })).toBe(
       '10,000.00 of 10,000.00 EUR spread — adds up',
-    );
-  });
-
-  it('says why approval restarts (FR-031)', () => {
-    expect(restartText('Launch film', 'approved')).toBe(
-      "'Launch film' is approved. Saving sends it back to Created, and it must be submitted for approval again.",
-    );
-    expect(restartText('Launch film', 'submitted')).toMatch(
-      /^'Launch film' is submitted for approval\./,
     );
   });
 });

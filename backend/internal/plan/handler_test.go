@@ -11,9 +11,9 @@ import (
 	"mapp/internal/platform/apitest"
 )
 
-// The handler tests run the real API on the demo data (apitest), and every request and answer is checked
-// against the contract. The seed has three plans: P-1001 FY2026 Lubricants Europe (Published), P-1002
-// FY2026 Mobility China (Draft, no business unit) and P-1003 FY2027 Global Brand (Draft).
+// The handler tests run the real API on the demo data (apitest), every request and answer checked against the contract.
+// Seed plans: P-1001 FY2026 Lubricants Europe (Published), P-1002 FY2026 Mobility China, P-1003 FY2027 Global Brand and
+// P-1004 FY2027 Lubricants UK & Ireland, planned in GBP.
 
 const (
 	priyasEmail  = "priya.raman@shell.com"
@@ -23,8 +23,7 @@ const (
 
 const planGoneBody = `{"error":{"code":"not_found","message":"This plan no longer exists — someone may have deleted it.","fields":[]}}`
 
-// newPlanBody is the whole form of a new plan, as the web app sends it: FY2026 Lubricants Test with
-// Lubricants 1.0, Lubricants Europe, Priya as owner, business unit Lubricants and an INQ goal of 250,000.
+// newPlanBody is FY2026 Lubricants Test: Lubricants 1.0, Lubricants Europe, Priya as owner, business unit Lubricants.
 func newPlanBody() map[string]any {
 	return map[string]any{
 		"name": "FY2026 Lubricants Test", "year": 2026, "modelId": "MOD-1001", "teamIds": []string{"T-1001"},
@@ -34,8 +33,7 @@ func newPlanBody() map[string]any {
 	}
 }
 
-// What a new plan starts with for Priya: 2026, the years 2025–2031, her team Lubricants Europe and herself
-// as owner; the seed has two active models, so none is chosen (FR-006).
+// The seed has two active models, so a new plan's model is not chosen.
 func TestPlanDefaults_FR006(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -43,13 +41,12 @@ func TestPlanDefaults_FR006(t *testing.T) {
 
 	response := priya.Do(t, http.MethodGet, "/api/v1/plan-defaults", nil)
 
-	assertAnswer(t, response, http.StatusOK, `{"currentYear":2026,"years":[2025,2026,2027,2028,2029,2030,2031],`+
+	assertAnswer(t, response, http.StatusOK, `{"currentYear":2026,"years":[2026,2027,2028,2029,2030,2031,2032,2033,2034,2035,2036],`+
 		`"year":2026,"teamIds":["T-1001"],"ownerId":"U-1002","modelId":null,"aop":false,"bcpir":false,`+
 		`"defaultSpread":"evenly","goalStage":"inq","currency":"USD","planType":"operational"}`)
 }
 
-// Creating a plan answers 201 with the new Draft plan, P-1005 after the seed (P-1004 is the GBP plan of 016), its figures and goals; a
-// form without name, year and model answers every problem at once (FR-010, US1 scenarios 2 and 3).
+// The new plan is P-1005, after the seed's four; a form without name, year and model gets every problem at once.
 func TestCreatePlan_201AndValidation_FR010(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -72,15 +69,13 @@ func TestCreatePlan_201AndValidation_FR010(t *testing.T) {
 		t.Errorf("created plan = %s", created.Body)
 	}
 	assertAnswer(t, refused, http.StatusBadRequest, validationBody(`{"field":"name","message":"Enter a plan name."},`+
-		`{"field":"year","message":"Choose a year from 2025 to 2031."},{"field":"modelId","message":"Choose a model."}`))
+		`{"field":"year","message":"Choose a year from 2026 to 2036."},{"field":"modelId","message":"Choose a model."}`))
 }
 
-// validationBody is the answer of a validation_failed error with the given field problems.
 func validationBody(fields string) string {
 	return `{"error":{"code":"validation_failed","message":"Some fields need your attention.","fields":[` + fields + `]}}`
 }
 
-// assertAnswer checks the status and the exact body of an answer.
 func assertAnswer(t *testing.T, response *apitest.Response, status int, body string) {
 	t.Helper()
 	if response.Status != status || string(response.Body) != body {
@@ -88,7 +83,6 @@ func assertAnswer(t *testing.T, response *apitest.Response, status int, body str
 	}
 }
 
-// assertJSON checks the status of an answer and that its body equals want as JSON.
 func assertJSON(t *testing.T, response *apitest.Response, status int, want any) {
 	t.Helper()
 	var got, expected any
@@ -99,7 +93,6 @@ func assertJSON(t *testing.T, response *apitest.Response, status int, want any) 
 	}
 }
 
-// listOf decodes a Plans list answer.
 func listOf(t *testing.T, response *apitest.Response) plan.PlanList {
 	t.Helper()
 	if response.Status != http.StatusOK {
@@ -110,7 +103,6 @@ func listOf(t *testing.T, response *apitest.Response) plan.PlanList {
 	return list
 }
 
-// listIDs returns the IDs of a list's plans, in order.
 func listIDs(list plan.PlanList) []string {
 	planIDs := []string{}
 	for _, item := range list.Items {
@@ -119,14 +111,12 @@ func listIDs(list plan.PlanList) []string {
 	return planIDs
 }
 
-// The Plans page shows the three seed plans, newest year first, then by name, with 3 plans, 2 Draft and 1
-// Published; Draft and 2026 leave FY2026 Mobility China, "1 of 3"; the search finds a name or an ID in any
-// letter case; wrong filters are refused (FR-001, FR-003, US2 scenarios 1–3).
+// Plans come newest year first, then by name; the search finds a name or an ID in any letter case.
 func TestListPlans_SeedOrderSummaryAndFilters_FR001_FR003(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
-	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all")
 
 	all := listOf(t, priya.Do(t, http.MethodGet, "/api/v1/plans", nil))
 	draft2026 := listOf(t, priya.Do(t, http.MethodGet, "/api/v1/plans?status=draft&year=2026", nil))
@@ -134,8 +124,7 @@ func TestListPlans_SeedOrderSummaryAndFilters_FR001_FR003(t *testing.T) {
 	byID := listOf(t, priya.Do(t, http.MethodGet, "/api/v1/plans?q=p-1002", nil))
 	wrong := priya.Do(t, http.MethodGet, "/api/v1/plans?status=open&year=next", nil, apitest.SkipRequestValidation())
 
-	// Since 016 the seed has P-1004, FY2027 Lubricants UK & Ireland, planned in GBP: 600,000.00 GBP budget
-	// (759,493.67 USD) and 65,000.00 GBP planned (82,278.48 USD), each plan converted once (FR-014).
+	// P-1004's 600,000.00 GBP budget is 759,493.67 USD and its 65,000.00 GBP planned 82,278.48 USD: each plan converted once.
 	if ids := listIDs(all); !reflect.DeepEqual(ids, []string{"P-1003", "P-1004", "P-1001", "P-1002"}) || all.Total != 4 ||
 		!reflect.DeepEqual(all.Years, []int{2027, 2026}) {
 		t.Errorf("all plans: %q, total %d, years %v", ids, all.Total, all.Years)
@@ -154,17 +143,13 @@ func TestListPlans_SeedOrderSummaryAndFilters_FR001_FR003(t *testing.T) {
 		`{"field":"year","message":"Choose a year such as 2026."}`))
 }
 
-// The plan page of FY2026 Lubricants Europe shows every stored field, its model with rates, team, owner,
-// business unit, budget and goals 250,000 → 5,000 → 250 → 2,500,000.00, all filled in; FY2026 Mobility
-// China needs its business unit, and below it its campaign Retail growth, initiative Fleet cards,
-// activities Grand opening Shanghai and Lunar new year promo and line item L-1007 (005's, 006's and 007's
-// demo data) are incomplete; an unknown plan is not found (FR-011 – FR-017, US3). The figures that
-// come from the levels below are proved with fakes in the service tests.
+// FY2026 Mobility China lacks its business unit and lists the incomplete records below it; the figures from the levels
+// below are proved with fakes in the service tests.
 func TestGetPlan_ViewAnd404_FR011(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
-	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all")
 
 	europe := priya.Do(t, http.MethodGet, "/api/v1/plans/P-1001", nil)
 	china := priya.Do(t, http.MethodGet, "/api/v1/plans/P-1002", nil)
@@ -212,7 +197,6 @@ func TestGetPlan_ViewAnd404_FR011(t *testing.T) {
 	assertAnswer(t, gone, http.StatusNotFound, planGoneBody)
 }
 
-// assertFields checks the status of an answer and the given fields of its JSON body.
 func assertFields(t *testing.T, response *apitest.Response, status int, want map[string]any) {
 	t.Helper()
 	var body map[string]any
@@ -230,8 +214,6 @@ func assertFields(t *testing.T, response *apitest.Response, status int, want map
 	}
 }
 
-// The copy dialog of FY2026 Lubricants Europe offers "(copy)", 2026 or 2027, and the counts of what comes
-// with it: 2 campaigns, 4 initiatives, 7 activities (4 approved) and 6 line items (FR-026, FR-028).
 func TestCopyOptions_FR026(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -246,10 +228,8 @@ func TestCopyOptions_FR026(t *testing.T) {
 	assertAnswer(t, gone, http.StatusNotFound, planGoneBody)
 }
 
-// Copying FY2026 Lubricants Europe into 2027 with everything in it answers 201 with a Draft 2027 plan
-// without a default finance budget and a note saying so; everything below comes along with new IDs, every
-// date one year later and every activity Created; one log entry counts it all (FR-027, FR-028, R13). A
-// wrong name and year answer 400 with both problems.
+// The copy takes every record below with new IDs, every date a year later and every activity Created, in one log entry;
+// a name taken in other letters and a wrong year answer 400 with both problems.
 func TestCopy_201_FR027_FR028(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)

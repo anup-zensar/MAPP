@@ -22,6 +22,7 @@ import (
 func (w *wiring) areas() error {
 	steps := []func() error{
 		w.settingsArea, w.plansArea, w.planningArea, w.budgetsArea, w.samplesArea, w.approvalsArea, w.financialsArea,
+		w.swbsArea, w.purchaseRequestsArea,
 	}
 	for _, step := range steps {
 		if err := step(); err != nil {
@@ -63,7 +64,7 @@ func (w *wiring) plansArea() error {
 		return err
 	}
 	mount(w.signedIn, plan.NewHandler(w.plans))
-	w.history.UseAccess(historyAccess{plans: w.set.Plans, history: w.history})
+	w.history.UseAccess(historyAccess{plans: w.set.Plans, history: w.history, purchaseRequests: w.set.PurchaseRequests})
 	return nil
 }
 
@@ -87,7 +88,7 @@ func (w *wiring) buildActivities() {
 	})
 	w.lineItems = lineitem.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}, s.LineItems, lineitem.Deps{
 		Activities: lineItemActivities{
-			activities: s.Activities, campaigns: s.Campaigns, plans: s.Plans, settings: w.settings, service: w.activities,
+			activities: s.Activities, campaigns: s.Campaigns, plans: s.Plans, settings: w.settings,
 		},
 		Currencies: w.settings, FinanceBudgets: lineItemBudgets{repo: s.Settings},
 		Attributes: lineItemAttributes{settings: w.settings}, People: lineItemPeople{repo: s.People, service: w.people},

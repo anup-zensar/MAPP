@@ -14,28 +14,16 @@ import styles from './approval-dialogs.module.css';
 
 type SubmissionLevel = components['schemas']['ApprovalSubmissionLevel'];
 
-/** The longest comment the API takes. */
 const COMMENT_MAX = 2000;
 
 export interface SubmitDialogProps {
-  /** What Submit would do now (the API's submission check, ready). */
   submission: ApprovalSubmission;
-  /** The submit is on its way. */
   busy: boolean;
-  /** What is wrong with the comment, from the API. */
   commentError?: string;
   onConfirm: (comment: string) => void;
   onCancel: () => void;
 }
 
-/**
- * "Submit 'Launch film' for approval?" (008 US1, FR-011, FR-020; 017 FR-011, FR-013, FR-014): the
- * approval workflow and what each level will do — its approvers and where they come from, "Not
- * needed" or "Approved automatically" with the rule, who is left out and why, the backup approver
- * or the advice when nobody can approve — "This activity will be approved automatically." when no
- * level needs a decision, the new round's number when re-submitting, a positive unassigned planned
- * cost as a note, and an optional comment for the approvers. Cancel has the focus.
- */
 export function SubmitDialog({
   submission,
   busy,
@@ -51,7 +39,6 @@ export function SubmitDialog({
   });
   const resubmit = submission.kind === 'resubmit';
   const verb = resubmit ? 'Re-submit' : 'Submit';
-  // Before 017 the API answers only the levels; then each level reads as "its approvers decide".
   const outcomes = submission.outcomes ?? [];
 
   return (
@@ -87,8 +74,13 @@ export function SubmitDialog({
         {submission.approvedAutomatically && (
           <p className={styles.strong}>This activity will be approved automatically.</p>
         )}
-        {resubmit && !submission.approvedAutomatically && (
-          <p>{`Round ${submission.roundNumber} starts at level 1.`}</p>
+        {submission.replaces ? (
+          <p className={styles.strong}>{replacesText(submission)}</p>
+        ) : (
+          resubmit &&
+          !submission.approvedAutomatically && (
+            <p>{`Round ${submission.roundNumber} starts at level 1.`}</p>
+          )
         )}
         {submission.unassignedPlannedCost && (
           <p className={styles.note}>
@@ -113,7 +105,15 @@ export function SubmitDialog({
   );
 }
 
-/** One level of the submission: what it will do, then its notes in secondary ink. */
+/** What re-submitting a Submitted record ends, said before anything changes. */
+function replacesText(submission: ApprovalSubmission): string {
+  const replaced = submission.replaces;
+  if (!replaced) {
+    return '';
+  }
+  return `Round ${replaced.roundNumber}, waiting at ${replaced.levelLabel}, ends and round ${submission.roundNumber} starts at the first level that needs a decision.`;
+}
+
 function OutcomeItem({ level }: { level: SubmissionLevel }) {
   const backup = level.backupUsed ? level.approvers[0] : undefined;
   const notes = [
@@ -134,10 +134,6 @@ function OutcomeItem({ level }: { level: SubmissionLevel }) {
   );
 }
 
-/**
- * "Level 1 · Daniel Okoro (line manager of Priya Raman)", "Level 2 · Not needed — only when …",
- * "Level 3 · Approved automatically — planned cost is below $10,000.00", "Level 1 · No approver".
- */
 function outcomeText(level: SubmissionLevel): string {
   switch (level.outcome) {
     case 'skipped':

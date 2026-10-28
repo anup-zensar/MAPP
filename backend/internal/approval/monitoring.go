@@ -12,10 +12,9 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// The ageing buckets in order, with their labels (data-model §11).
 var ageingBuckets = []struct {
 	bucket, label string
-	upTo          int // the most whole days of the bucket; -1 for no limit
+	upTo          int
 }{
 	{BucketUnder1, "Under 1 day", 0},
 	{BucketDays1to2, "1–2 days", 2},
@@ -24,12 +23,6 @@ var ageingBuckets = []struct {
 	{BucketOver10, "More than 10 days", -1},
 }
 
-// Monitoring returns the Monitoring tab of the Approvals page (017 FR-029, FR-030, data-model §11), computed
-// on read over the rows of All open (D-293): the overdue and escalated counts, the average time to decision
-// and the approvals at submission of the calendar month [monthStart, monthEnd) (the clock's UTC month when
-// neither is given; give both or neither), how long open approvals have waited in five buckets, the open
-// approvals by workflow and level, and the overdue rows, oldest waiting first, with their amounts in a's
-// display currency. canRunEscalations says whether a holds workflows.manage.
 func (s *Service) Monitoring(ctx context.Context, a actor.Actor, monthStart, monthEnd *time.Time) (Monitoring, error) {
 	from, until, err := s.month(monthStart, monthEnd)
 	if err != nil {
@@ -62,8 +55,6 @@ func (s *Service) Monitoring(ctx context.Context, a actor.Actor, monthStart, mon
 	return m, nil
 }
 
-// month returns the bounds of the month the counts use: [monthStart, monthEnd), or the clock's UTC calendar
-// month when neither is given (as Summary).
 func (s *Service) month(monthStart, monthEnd *time.Time) (time.Time, time.Time, error) {
 	switch {
 	case (monthStart == nil) != (monthEnd == nil):
@@ -78,7 +69,6 @@ func (s *Service) month(monthStart, monthEnd *time.Time) (time.Time, time.Time, 
 	return from, from.AddDate(0, 1, 0), nil
 }
 
-// monitoring computes the Monitoring values of the board for the month [from, until).
 func (b *board) monitoring(from, until time.Time) Monitoring {
 	m := Monitoring{Ageing: make([]AgeingBucket, 0, len(ageingBuckets)), ByLevel: []WaitingByLevel{}, Overdue: []Row{}}
 	for _, a := range ageingBuckets {
@@ -90,7 +80,7 @@ func (b *board) monitoring(from, until time.Time) Monitoring {
 		level      int
 	}
 	groups := map[groupKey]*WaitingByLevel{}
-	oldestName := map[groupKey]time.Time{} // when the round whose workflow name the group shows was submitted
+	oldestName := map[groupKey]time.Time{}
 	for _, row := range b.open() {
 		if row.EscalatedTo != nil {
 			m.Cards.Escalated++
@@ -113,7 +103,7 @@ func (b *board) monitoring(from, until time.Time) Monitoring {
 		key := groupKey{row.Workflow.ID, row.Round.CurrentLevel}
 		g, found := groups[key]
 		if !found {
-			g = &WaitingByLevel{Level: key.level, LevelLabel: row.Round.LevelLabel, OldestWaitingSince: *row.WaitingSince}
+			g = &WaitingByLevel{Kind: row.Subject.Kind, Level: key.level, LevelLabel: row.Round.LevelLabel, OldestWaitingSince: *row.WaitingSince}
 			groups[key] = g
 		}
 		g.Waiting++
@@ -139,23 +129,17 @@ func (b *board) monitoring(from, until time.Time) Monitoring {
 	slices.SortStableFunc(m.Overdue, func(x, y Row) int { return x.WaitingSince.Compare(*y.WaitingSince) })
 
 	var decided, seconds int64
-	for _, facts := range b.activities {
-		for _, r := range b.rounds[facts.ID] {
-			if r.EndedAt == nil || r.EndedAt.Before(from) || !r.EndedAt.Before(until) {
-				continue
-			}
-			switch {
-			case r.AutoApproved:
-				m.Cards.AutoApprovedThisMonth++
-			case r.Outcome == OutcomeApproved || r.Outcome == OutcomeDeclined:
-				decided++
-				seconds += int64(r.EndedAt.Sub(r.SubmittedAt) / time.Second)
-			}
+	for _, r := range b.endedRounds(from, until) {
+		switch {
+		case r.AutoApproved:
+			m.Cards.AutoApprovedThisMonth++
+		case r.Outcome == OutcomeApproved || r.Outcome == OutcomeDeclined:
+			decided++
+			seconds += int64(r.EndedAt.Sub(r.SubmittedAt) / time.Second)
 		}
 	}
 	m.Cards.DecidedThisMonth = int(decided)
 	if decided > 0 {
-		// The mean in days, half up to one decimal, in whole numbers: tenths = round(10 × seconds / (n × 86,400)).
 		denominator := decided * 86400
 		tenths := (20*seconds + denominator) / (2 * denominator)
 		average := fmt.Sprintf("%d.%d", tenths/10, tenths%10)
@@ -164,9 +148,8 @@ func (b *board) monitoring(from, until time.Time) Monitoring {
 	return m
 }
 
-// roundWorkflowName is the workflow name of a row's round at submission (data-model §11).
 func (b *board) roundWorkflowName(row Row) string {
-	for _, r := range b.rounds[row.Activity.ID] {
+	for _, r := range b.rounds[row.Subject.ID] {
 		if r.ID == row.Round.ID {
 			return r.WorkflowName
 		}

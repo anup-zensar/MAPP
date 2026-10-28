@@ -1,12 +1,12 @@
 -- name: GetWorkflow :one
 SELECT id, name, description, active, reminder_days, escalation_days, version, created_at, created_by_id,
-    created_by_name, updated_at, updated_by_id, updated_by_name
+    created_by_name, updated_at, updated_by_id, updated_by_name, object_type
 FROM approval_workflows
 WHERE id = $1;
 
 -- name: ListWorkflows :many
 SELECT id, name, description, active, reminder_days, escalation_days, version, created_at, created_by_id,
-    created_by_name, updated_at, updated_by_id, updated_by_name
+    created_by_name, updated_at, updated_by_id, updated_by_name, object_type
 FROM approval_workflows
 ORDER BY length(id), id COLLATE "C";
 
@@ -22,14 +22,15 @@ ORDER BY workflow_id, number;
 -- name: PutWorkflow :exec
 INSERT INTO approval_workflows (
     id, name, description, active, reminder_days, escalation_days, version, created_at, created_by_id,
-    created_by_name, updated_at, updated_by_id, updated_by_name
+    created_by_name, updated_at, updated_by_id, updated_by_name, object_type
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
 )
 ON CONFLICT (id) DO UPDATE SET
     name = excluded.name,
     description = excluded.description,
     active = excluded.active,
+    object_type = excluded.object_type,
     reminder_days = excluded.reminder_days,
     escalation_days = excluded.escalation_days,
     version = excluded.version,
@@ -46,9 +47,10 @@ WHERE workflow_id = $1;
 
 -- name: InsertWorkflowLevel :exec
 INSERT INTO approval_workflow_levels (
-    workflow_id, number, name, approver_type, role_id, mode, applies_when, auto_approve_when, backup_approver_id
+    workflow_id, number, name, approver_type, role_id, mode, applies_when, auto_approve_when, backup_approver_id,
+    record_field
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 );
 
 -- name: InsertWorkflowLevelApprovers :exec
