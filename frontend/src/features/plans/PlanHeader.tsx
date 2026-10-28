@@ -13,23 +13,16 @@ import styles from './PlanHeader.module.css';
 import type { Plan } from './api';
 import { yearDates } from './plan-text';
 import { PlanTypeTag } from './PlanTypeTag';
+import { BcpirTag } from './BcpirTag';
+import { spaHref } from './spa-link';
 
 export interface PlanHeaderProps {
   plan: Plan;
-  /** Publish on a Draft plan, Unpublish on a Published one (feature 004, US5): a secondary button. */
   statusAction?: ReactNode;
-  /** The ⋯ More menu: Copy, View history, Delete. */
   moreItems: ActionsMenuItem[];
-  /** Facts added by later features, after the plan type and currency. */
   extraFacts?: ReactNode;
 }
 
-/**
- * The plan's header (FR-011, design system §2.3, §6.3) on the one page header of the app: the
- * breadcrumb, the plan's name, ⋯ More · Publish or Unpublish · **Edit** (the one primary, last),
- * and the meta row — level tag, status, one completeness chip, ID, owner, dates, teams and
- * business unit. Who created and last changed the plan is at the end of the Details tab.
- */
 export function PlanHeader({ plan, statusAction, moreItems, extraFacts }: PlanHeaderProps) {
   const { dateRange } = useFormatters();
   const owner = plan.owner;
@@ -41,8 +34,8 @@ export function PlanHeader({ plan, statusAction, moreItems, extraFacts }: PlanHe
       moreActions={moreItems}
       actions={
         <>
+          <LinkButton to={spaHref(plan.id)}>SP&amp;A view</LinkButton>
           {statusAction}
-          {/* 014 FR-011: Edit only for a person who may edit the plan. */}
           {allows(plan.access?.edit) && (
             <LinkButton to={`/plans/${encodeURIComponent(plan.id)}/edit`} variant="primary">
               Edit
@@ -54,7 +47,6 @@ export function PlanHeader({ plan, statusAction, moreItems, extraFacts }: PlanHe
         <div className={styles.meta} aria-label="Plan facts" role="group">
           <LevelTag level="plan" />
           <PlanStatusChip status={plan.status} />
-          {/* #completeness: where Home's "Show fields" leads (feature 009). */}
           <span id="completeness" className={styles.anchor}>
             <PlanCompleteness planId={plan.id} completeness={plan.completeness} />
           </span>
@@ -69,8 +61,8 @@ export function PlanHeader({ plan, statusAction, moreItems, extraFacts }: PlanHe
             )}
           </span>
           <span className={styles.fact}>{yearDates(plan.year, dateRange)}</span>
-          {/* 016 FR-032, FR-013: the plan type, and the plan currency when it is not USD. */}
           <PlanTypeTag plan={plan} />
+          <BcpirTag plan={plan} />
           {plan.currency && plan.currency !== 'USD' && (
             <span className={styles.fact}>Planned in {plan.currency}</span>
           )}
