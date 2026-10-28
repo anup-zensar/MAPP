@@ -4945,7 +4945,7 @@ paths:
       tags:
         - Imports
       operationId: listPlanImports
-      summary: The plan's imports, newest first, and whether it can take an import now
+      summary: The plan's imports, newest first
       parameters:
         - $ref: "#/components/parameters/PlanId"
       responses:
@@ -4966,8 +4966,12 @@ paths:
     post:
       tags:
         - Imports
-      operationId: importActivities
-      summary: Import the confirmed rows of a file as Created activities
+      operationId: importPlanWorkbook
+      summary: Import the ready rows of a plan workbook in one step - create rows without ID, update rows with one
+      description: >-
+        Runs the same check as imports/check and applies its ready rows; rows with problems, and the rows below
+        them in the file, are left out and listed. Every record created or updated gets an activity-log entry with
+        the note "Imported from '<file>' (IMP-…)".
       parameters:
         - $ref: "#/components/parameters/PlanId"
       requestBody:
@@ -4975,7 +4979,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ImportRun"
+              $ref: "#/components/schemas/ImportUpload"
       responses:
         "201":
           description: Imported.
@@ -4998,7 +5002,7 @@ paths:
       tags:
         - Imports
       operationId: checkImportFile
-      summary: Check a filled template - every problem of every row at once; nothing is created
+      summary: Check a plan workbook - every problem of every row at once, what would be created and updated; nothing changes
       parameters:
         - $ref: "#/components/parameters/PlanId"
       requestBody:
@@ -5029,8 +5033,7 @@ paths:
       tags:
         - Imports
       operationId: getImportTemplate
-      summary: The import template made for this plan (.xlsx)
-      description: Refused with validation_failed until the plan has a campaign and an initiative.
+      summary: The plan workbook template made for this plan (.xlsx) - the level sheets without rows, allowed values, instructions
       parameters:
         - $ref: "#/components/parameters/PlanId"
       responses:
@@ -5047,6 +5050,34 @@ paths:
                 format: binary
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/plans/{planId}/export:
+    get:
+      tags:
+        - Imports
+      operationId: exportPlanWorkbook
+      summary: The plan as a plan workbook (.xlsx) - every campaign, initiative, activity and line item, ready to edit and import
+      parameters:
+        - $ref: "#/components/parameters/PlanId"
+      responses:
+        "200":
+          description: The workbook. Its name is in Content-Disposition (<plan> – SP&A One.xlsx).
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -18724,51 +18755,40 @@ components:
       required:
         - fileName
         - content
-        - createMissing
       properties:
         fileName:
           type: string
-          example: mobility-china.xlsx
+          minLength: 1
+          maxLength: 255
+          example: fy2026-lubricants-europe.xlsx
         content:
           type: string
           contentEncoding: base64
-          description: The file, base64-encoded (at most 5 MB before encoding).
-        createMissing:
-          type: boolean
-          description: Create missing campaigns and initiatives.
-    ImportRun:
-      type: object
-      additionalProperties: false
-      required:
-        - fileName
-        - content
-        - createMissing
-        - rows
-      properties:
-        fileName:
-          type: string
-        content:
-          type: string
-          contentEncoding: base64
-        createMissing:
-          type: boolean
-        rows:
-          type: array
-          description: The row numbers the user confirmed (the ready rows of the check).
-          items:
-            type: integer
+          description: The plan workbook (.xlsx) or an Activities sheet (.csv), base64-encoded (at most 5 MB before encoding).
+    ImportLevel:
+      type: string
+      enum:
+        - campaign
+        - initiative
+        - activity
+        - lineItem
     ImportProblem:
       type: object
       additionalProperties: false
       required:
+        - sheet
         - row
         - column
         - value
         - reason
       properties:
+        sheet:
+          type: string
+          description: The sheet's name ("" for a problem of the whole file).
+          example: Activities
         row:
           type: integer
-          description: The spreadsheet's own row number.
+          description: The spreadsheet's own row number (0 for a problem of the whole sheet).
         column:
           type: string
           description: The column heading ("" for a problem of the whole row).
@@ -18777,38 +18797,26 @@ components:
           description: The value found.
         reason:
           type: string
-        outcome:
-          type: string
-          enum:
-            - leftOut
-            - failed
-          description: Import results only.
-    ImportNewInitiative:
+    ImportLevelCounts:
       type: object
       additionalProperties: false
       required:
-        - campaign
-        - name
+        - level
+        - create
+        - update
+        - unchanged
+        - leftOut
       properties:
-        campaign:
-          type: string
-        name:
-          type: string
-    ImportWillCreate:
-      type: object
-      additionalProperties: false
-      required:
-        - campaigns
-        - initiatives
-      properties:
-        campaigns:
-          type: array
-          items:
-            type: string
-        initiatives:
-          type: array
-          items:
-            $ref: "#/components/schemas/ImportNewInitiative"
+        level:
+          $ref: "#/components/schemas/ImportLevel"
+        create:
+          type: integer
+        update:
+          type: integer
+        unchanged:
+          type: integer
+        leftOut:
+          type: integer
     ImportCheck:
       type: object
       additionalProperties: false
@@ -18817,50 +18825,80 @@ components:
         - rows
         - ready
         - withProblems
-        - readyRows
+        - levels
         - problems
         - ignoredColumns
-        - willCreate
         - needMoreFields
+        - nothingToChange
       properties:
         fileName:
           type: string
         rows:
           type: integer
+          description: Data rows read, every sheet together.
         ready:
           type: integer
+          description: Rows that Import applies (to create, to update or unchanged).
         withProblems:
           type: integer
-        readyRows:
+          description: Rows left out, with a problem of their own or of the row they belong under.
+        levels:
           type: array
-          description: Row numbers of the ready rows (sent back by Import N activities).
+          description: Per level, campaigns first.
           items:
-            type: integer
+            $ref: "#/components/schemas/ImportLevelCounts"
         problems:
           type: array
           items:
             $ref: "#/components/schemas/ImportProblem"
         ignoredColumns:
           type: array
+          description: Headings no column matches, each as the sheet, a colon and the heading.
           items:
             type: string
-        willCreate:
-          $ref: "#/components/schemas/ImportWillCreate"
         needMoreFields:
           type: integer
-          description: Ready rows whose activity will still miss a needed-to-submit field.
+          description: Rows to create or update that leave a needed-to-publish or needed-to-submit column empty.
+        nothingToChange:
+          type: boolean
+    ImportLevelTotals:
+      type: object
+      additionalProperties: false
+      required:
+        - campaigns
+        - initiatives
+        - activities
+        - lineItems
+      properties:
+        campaigns:
+          type: integer
+        initiatives:
+          type: integer
+        activities:
+          type: integer
+        lineItems:
+          type: integer
     ImportRecordRef:
       type: object
       additionalProperties: false
       required:
         - id
+        - level
         - name
+        - action
         - exists
       properties:
         id:
           type: string
+        level:
+          $ref: "#/components/schemas/ImportLevel"
         name:
           type: string
+        action:
+          type: string
+          enum:
+            - created
+            - updated
         exists:
           type: boolean
           description: false when it has been deleted since.
@@ -18868,25 +18906,40 @@ components:
       type: object
       additionalProperties: false
       required:
-        - activities
         - campaigns
         - initiatives
-        - changedSinceImport
-        - addedSinceImport
+        - activities
+        - lineItems
         - alreadyDeleted
       properties:
-        activities:
-          type: integer
         campaigns:
           type: integer
+          description: Created campaigns still there, which Undo import moves to the recycle bin.
         initiatives:
           type: integer
-        changedSinceImport:
+        activities:
           type: integer
-        addedSinceImport:
+        lineItems:
           type: integer
         alreadyDeleted:
           type: integer
+    ImportKept:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - level
+        - name
+        - reason
+      properties:
+        id:
+          type: string
+        level:
+          $ref: "#/components/schemas/ImportLevel"
+        name:
+          type: string
+        reason:
+          type: string
     ImportSummary:
       type: object
       additionalProperties: false
@@ -18898,11 +18951,9 @@ components:
         - importedAt
         - importedBy
         - rowsRead
-        - activitiesImported
-        - campaignsCreated
-        - initiativesCreated
         - rowsLeftOut
-        - rowsFailed
+        - created
+        - updated
         - undoneAt
         - undoneBy
       properties:
@@ -18925,16 +18976,12 @@ components:
           $ref: "#/components/schemas/ActorRef"
         rowsRead:
           type: integer
-        activitiesImported:
-          type: integer
-        campaignsCreated:
-          type: integer
-        initiativesCreated:
-          type: integer
         rowsLeftOut:
           type: integer
-        rowsFailed:
-          type: integer
+        created:
+          $ref: "#/components/schemas/ImportLevelTotals"
+        updated:
+          $ref: "#/components/schemas/ImportLevelTotals"
         undoneAt:
           oneOf:
             - type: string
@@ -18950,28 +18997,20 @@ components:
       required:
         - import
         - problems
-        - activities
-        - campaigns
-        - initiatives
+        - records
         - undo
+        - kept
       properties:
         import:
           $ref: "#/components/schemas/ImportSummary"
         problems:
           type: array
-          description: Rows left out and rows that failed, with their reasons.
+          description: The rows left out, with their reasons.
           items:
             $ref: "#/components/schemas/ImportProblem"
-        activities:
+        records:
           type: array
-          items:
-            $ref: "#/components/schemas/ImportRecordRef"
-        campaigns:
-          type: array
-          items:
-            $ref: "#/components/schemas/ImportRecordRef"
-        initiatives:
-          type: array
+          description: The records the import created and updated, in the file's order.
           items:
             $ref: "#/components/schemas/ImportRecordRef"
         undo:
@@ -18979,14 +19018,17 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ImportUndoPreview"
             - type: "null"
+        kept:
+          type: array
+          description: After Undo import, the created records that could not be deleted, with the reason.
+          items:
+            $ref: "#/components/schemas/ImportKept"
     PlanImportPage:
       type: object
       additionalProperties: false
       required:
         - items
         - total
-        - canImport
-        - cannotImportReason
       properties:
         items:
           type: array
@@ -18994,13 +19036,6 @@ components:
             $ref: "#/components/schemas/ImportSummary"
         total:
           type: integer
-        canImport:
-          type: boolean
-        cannotImportReason:
-          oneOf:
-            - type: string
-            - type: "null"
-          example: Add at least one campaign and one initiative to this plan before importing activities
     # Feature 014 Access control and global budgets (merged 2026-10-20, D-298)
     PermissionKey:
       type: string

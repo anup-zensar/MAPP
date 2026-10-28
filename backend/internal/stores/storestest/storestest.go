@@ -24,6 +24,7 @@ import (
 	"mapp/internal/settings/settingstest"
 	"mapp/internal/stores"
 	"mapp/internal/swbs/swbstest"
+	"mapp/internal/workbook/workbooktest"
 )
 
 func New(db *fake.DB) stores.Set {
@@ -47,7 +48,7 @@ func planning(db *fake.DB) stores.Planning {
 	return stores.Planning{
 		Plans: plantest.NewStore(db), Campaigns: campaigntest.NewStore(db), Activities: activitytest.NewStore(db),
 		LineItems: lineitemtest.NewStore(db), Approvals: approvaltest.NewStore(db), AllWork: allworktest.NewStore(db),
-		Bulk: bulktest.NewStore(db),
+		Bulk: bulktest.NewStore(db), Workbook: workbooktest.NewStore(db, plantest.NewStore(db)),
 	}
 }
 

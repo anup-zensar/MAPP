@@ -9,6 +9,7 @@ import (
 	"mapp/internal/platform/telemetry"
 	"mapp/internal/platform/web"
 	"mapp/internal/settings"
+	"mapp/internal/workbook"
 )
 
 const apiV1 = "/api/v1"
@@ -24,8 +25,10 @@ func newEngine(cfg Config) (*gin.Engine, *telemetry.Telemetry, error) {
 		return nil, nil, err
 	}
 	engine, err := web.NewEngine(web.Options{Tracer: tel.Tracer, Meter: tel.Meter, BodyLimits: map[string]int64{
-		"POST /api/v1/exchange-rates/import-check": settings.MaxRateUploadBytes,
-		"POST /api/v1/exchange-rates/import":       settings.MaxRateUploadBytes,
+		"POST /api/v1/exchange-rates/import-check":  settings.MaxRateUploadBytes,
+		"POST /api/v1/exchange-rates/import":        settings.MaxRateUploadBytes,
+		"POST /api/v1/plans/{planId}/imports/check": workbook.MaxUploadBytes,
+		"POST /api/v1/plans/{planId}/imports":       workbook.MaxUploadBytes,
 	}})
 	if err != nil {
 		return nil, nil, err

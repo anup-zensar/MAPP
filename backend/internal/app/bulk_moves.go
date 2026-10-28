@@ -66,7 +66,7 @@ func isNameProblem(err error) bool {
 		return false
 	}
 	for _, f := range apiErr.Fields {
-		if f.Field == "name" {
+		if f.Field == formName {
 			return true
 		}
 	}

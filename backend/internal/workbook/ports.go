@@ -1,0 +1,77 @@
+package workbook
+
+import (
+	"context"
+
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+)
+
+// Planning reads the plan (not_found when unseen) and runs the single operations, which refuse with *errs.Error.
+type Planning interface {
+	Plan(ctx context.Context, a actor.Actor, planID string) (Plan, error)
+	PlanFacts(ctx context.Context, planID string) (authz.PlanFacts, bool, error)
+	Create(ctx context.Context, a actor.Actor, r NewRecord) (string, error)
+	Update(ctx context.Context, a actor.Actor, c Change) error
+	Delete(ctx context.Context, a actor.Actor, level Level, id string) error
+	Exists(ctx context.Context, level Level, id string) (bool, error)
+}
+
+type NewRecord struct {
+	Level    Level
+	ParentID string
+	Values   Values
+}
+
+type Change struct {
+	ID      string
+	Values  Values
+	Present map[string]bool
+}
+
+// Plan is a plan with every record under it, parents first, and the lists its cells choose from.
+type Plan struct {
+	ID       string
+	Name     string
+	Currency string
+	Records  []Stored
+	Choices  Choices
+}
+
+type Stored struct {
+	Level    Level
+	ID       string
+	ParentID string
+	Status   string
+	Values   Values
+}
+
+type Choices struct {
+	People        []Person
+	ActivityTypes []Option
+	ModelName     string
+	Workflows     []Option
+	Currencies    []Option
+	Attributes    []Attribute
+}
+
+type Person struct {
+	ID     string
+	Email  string
+	Active bool
+}
+
+type Option struct {
+	ID     string
+	Label  string
+	Active bool
+}
+
+type Attribute struct {
+	ID      string
+	Label   string
+	Level   Level
+	Type    string
+	Marking string
+	Options []Option
+}
