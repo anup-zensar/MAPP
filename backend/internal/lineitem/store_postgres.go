@@ -120,6 +120,7 @@ func lineItemParams(li LineItem) (sqlcdb.PutLineItemParams, error) {
 		FinanceBudgetYear: li.FinanceBudgetYear, FinanceBudgetItemID: database.NullIfEmpty(li.FinanceBudgetItemID),
 		Version: li.Version, CreatedAt: li.CreatedAt, CreatedByID: li.CreatedBy.ID, CreatedByName: li.CreatedBy.Name,
 		UpdatedAt: li.UpdatedAt, UpdatedByID: li.UpdatedBy.ID, UpdatedByName: li.UpdatedBy.Name,
+		SwbsCode: li.SwbsCode, SwbsRequestedAt: li.SwbsRequestedAt, SwbsReceivedAt: li.SwbsReceivedAt,
 	}
 	if li.ContractedAmount != nil {
 		cents := li.ContractedAmount.Cents()
@@ -205,6 +206,7 @@ func lineItemsFromRows(rows []sqlcdb.ListLineItemsRow, err error) ([]LineItem, e
 			Spread:     Spread{Method: SpreadMethod(r.SpreadMethod), Months: make([]MonthAmount, 0, len(row.SpreadMonths))},
 			Attributes: attributes, RequestSwbs: r.RequestSwbs, FinanceBudgetYear: r.FinanceBudgetYear,
 			FinanceBudgetItemID: database.EmptyIfNull(r.FinanceBudgetItemID),
+			Swbs:                Swbs{SwbsCode: r.SwbsCode, SwbsRequestedAt: r.SwbsRequestedAt, SwbsReceivedAt: r.SwbsReceivedAt},
 			Meta: record.Meta{
 				Version:   r.Version,
 				CreatedAt: r.CreatedAt,

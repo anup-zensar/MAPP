@@ -34,7 +34,7 @@ func TestRecord_Contract_FR015(t *testing.T) {
 			activity.Source)
 	}
 	standBuild := get[financials.RecordView](t, alex, "/api/v1/financials/records/L-1006")
-	if standBuild.BreakdownLevel != nil || len(standBuild.SwbsCodes) != 1 || standBuild.SwbsCodes[0] != "GB01-M26-0006" {
+	if standBuild.BreakdownLevel != nil || len(standBuild.SwbsCodes) != 1 || standBuild.SwbsCodes[0] != "SIM-GB01-0001" {
 		t.Errorf("Stand build breakdown %v, SWBS codes %v", standBuild.BreakdownLevel, standBuild.SwbsCodes)
 	}
 	plan := get[financials.RecordView](t, alex, "/api/v1/financials/records/P-1001")
@@ -136,9 +136,7 @@ func TestTransaction_Contract_FR022(t *testing.T) {
 	}
 }
 
-// Link a not-linked transaction by hand and undo it, with every refusal: a rule-based link, a manual link
-// linked again, an unknown line item, a missing version, an out-of-date version, an unlink of a rule-based
-// link (FR-026, D-253).
+// Link a not-linked transaction by hand and undo it, with every refusal (FR-026, D-253).
 func TestLinkAndUnlink_Contract_FR026(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -195,8 +193,6 @@ func TestLinkAndUnlink_Contract_FR026(t *testing.T) {
 	}
 }
 
-// Home's card for the current year: Priya's team plan and everything (FR-025, data model §6.1); a scope
-// that is not listed is refused.
 func TestOverview_Contract_FR025(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -217,8 +213,6 @@ func TestOverview_Contract_FR025(t *testing.T) {
 		"Choose My teams or Everything.")
 }
 
-// The import history lists the demo load; the sample file is a CSV attachment with the header and three
-// rows (FR-008, FR-009).
 func TestImportsAndTemplate_Contract_FR008(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -242,7 +236,6 @@ func TestImportsAndTemplate_Contract_FR008(t *testing.T) {
 	}
 }
 
-// Check a three-row file, which saves nothing, and import it; a whole-file refusal of each.
 func TestImport_Contract_FR004(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -282,8 +275,6 @@ func TestImport_Contract_FR004(t *testing.T) {
 		"The first row must name the columns. Missing: document_number, posting_date, currency.")
 }
 
-// Transactions are read-only: of the ten operations, only an import, its check and a manual link or unlink
-// change anything; none creates, edits or deletes a transaction (FR-002).
 func TestOperations_TransactionsAreReadOnly_FR002(t *testing.T) {
 	t.Parallel()
 	gin.SetMode(gin.ReleaseMode)

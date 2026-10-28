@@ -2,38 +2,32 @@ package allwork
 
 import "fmt"
 
-// The status chips of All work (data model §9): every status a row shows, as a word and a tone, and the
-// lifecycle order in which statuses sort (data model §7). The values come from the owning features
-// (Node.Status, Timing, Swbs); All work only words them.
+// The status chips of All work (data model §9) as words, tones and lifecycle sort order (data model §7); the
+// values come from the owning features (Node.Status, Timing, Swbs).
 
-// chip is one status value as a chip, with its place in the lifecycle order.
 type chip struct {
 	label string
 	tone  Tone
 	order int
 }
 
-// planStatuses are the plan statuses (domain model §2.1).
 var planStatuses = map[string]chip{
 	"draft":     {"Draft", ToneNeutral, 0},
 	"published": {"Published", TonePositive, 1},
 }
 
-// progressStatuses are the Approval progress values of campaigns and initiatives (domain model §2.2).
 var progressStatuses = map[string]chip{
 	"noActivities": {"No activities", ToneNeutral, 0},
 	"inProgress":   {"In progress", ToneReview, 1},
 	"allApproved":  {"All approved", TonePositive, 2},
 }
 
-// timingStatuses are the Timing values of campaigns and initiatives (D-091).
 var timingStatuses = map[string]chip{
 	"notStarted": {"Not started", ToneNeutral, 0},
 	"running":    {"Running", ToneActive, 1},
 	"finished":   {"Finished", ToneDone, 2},
 }
 
-// activityStatuses are the activity display statuses (domain model §2.3).
 var activityStatuses = map[string]chip{
 	"created":    {"Created", ToneNeutral, 0},
 	"submitted":  {"Submitted", ToneReview, 1},
@@ -43,14 +37,13 @@ var activityStatuses = map[string]chip{
 	"complete":   {"Complete", ToneDone, 5},
 }
 
-// swbsStatuses are the SWBS request statuses of line items (007 data model §3.5).
 var swbsStatuses = map[string]chip{
 	"notRequested":       {"Not requested", ToneNeutral, 0},
 	"waitingForApproval": {"Waiting for activity approval", ToneReview, 1},
 	"readyToSend":        {"Ready to send to GSAP", TonePositive, 2},
+	"received":           {"SWBS code received", ToneDone, 3},
 }
 
-// statusFamily returns the status values of a level's Status.
 func statusFamily(level Level) map[string]chip {
 	switch level {
 	case LevelPlan:
@@ -63,9 +56,7 @@ func statusFamily(level Level) map[string]chip {
 	return nil
 }
 
-// statusOf returns the status chip of a node (FR-011, D-118): plan status, Approval progress with "n of m
-// activities approved", activity display status, or a line item's completeness. Nil when the node has no
-// known status.
+// statusOf is nil for a node without a known status; a line item's status is its completeness (FR-011, D-118).
 func statusOf(n *Node) *Status {
 	if n.Level == LevelLineItem {
 		return completenessOf(n.Missing)
@@ -77,18 +68,14 @@ func statusOf(n *Node) *Status {
 	return s
 }
 
-// timingOf returns the Timing chip of a campaign or initiative, nil without dates.
 func timingOf(n *Node) *Status {
 	return chipOf(timingStatuses, n.Timing)
 }
 
-// swbsOf returns the SWBS request chip of a line item.
 func swbsOf(n *Node) *Status {
 	return chipOf(swbsStatuses, n.Swbs)
 }
 
-// completenessOf returns the completeness chip for missing own needed fields: "All filled in" or "n fields
-// needed".
 func completenessOf(missing int) *Status {
 	switch missing {
 	case 0:

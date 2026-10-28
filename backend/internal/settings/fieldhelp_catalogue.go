@@ -5,10 +5,8 @@ package settings
 // Administrators may edit a text in Settings › Field help; only edited texts are stored. A new field gets
 // its default here, without any data change. Shell attributes keep their help on each attribute.
 
-// HelpLevel is the group of a Field help entry (contract FieldHelpLevel).
 type HelpLevel string
 
-// The Field help levels, in the order of the Settings page.
 const (
 	HelpPlan       HelpLevel = "plan"
 	HelpCampaign   HelpLevel = "campaign"
@@ -26,7 +24,6 @@ var helpLevelNames = map[HelpLevel]string{
 	HelpLineItem: "Line item", HelpPhasing: "Budget by month", HelpCommon: "Every record", HelpAllWork: "All work",
 }
 
-// helpDefinition is one entry of the catalogue.
 type helpDefinition struct {
 	Key, Label, Default string
 	Level               HelpLevel
@@ -116,7 +113,7 @@ var helpCatalogue = []helpDefinition{
 	{"lineItem.spread", "Spread over time", "How the cost is spread over months: evenly, all in the first or last month, or month by month.", HelpLineItem},
 	{"lineItem.contractedAmount", "Contracted amount", "The amount already agreed in a contract, in the line item's currency.", HelpLineItem},
 	{"lineItem.requestSwbs", "Request SWBS code from GSAP", "Ask GSAP for an SWBS code once the activity is approved.", HelpLineItem},
-	{"lineItem.swbsCode", "SWBS code", "Filled by GSAP later.", HelpLineItem},
+	{"lineItem.swbsCode", "SWBS code", "Filled by the simulated GSAP once the activity is approved and the request is sent.", HelpLineItem},
 	{"lineItem.financeBudgetYear", "Finance budget year", "The year of the finance budget this cost links to.", HelpLineItem},
 	{"lineItem.financeBudgetItem", "Finance budget item", "The finance budget item this cost is charged to. Needed to submit.", HelpLineItem},
 	{"lineItem.fromFinance", "From finance (coming later)", "Actuals, invoices and purchase requests, filled by Finance and GSAP later.", HelpLineItem},

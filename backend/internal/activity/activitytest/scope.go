@@ -47,7 +47,7 @@ func (s Store) approverIDs(ctx context.Context) (map[string][]string, error) {
 	for _, r := range rounds {
 		for _, level := range r.Levels {
 			for _, approver := range level.Approvers {
-				ids[r.ActivityID] = append(ids[r.ActivityID], approver.ID)
+				ids[r.SubjectID] = append(ids[r.SubjectID], approver.ID)
 			}
 		}
 	}

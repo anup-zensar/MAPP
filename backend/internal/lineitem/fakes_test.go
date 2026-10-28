@@ -7,26 +7,16 @@ import (
 
 	"mapp/internal/history"
 	"mapp/internal/people"
-	"mapp/internal/platform/actor"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/money"
 	"mapp/internal/settings"
 )
 
-// fakeActivities are the activities of these tests; RestartApproval sets Created and records the call.
 type fakeActivities struct {
-	facts    map[string]ActivityFacts
-	restarts []restartCall
+	facts map[string]ActivityFacts
 }
 
-// restartCall is one call of RestartApproval.
-type restartCall struct {
-	activityID string
-	reasons    []string
-}
-
-// newFakeActivities returns the activities of these tests.
 func newFakeActivities() *fakeActivities {
 	planned := func(s string) *money.Amount { a := amount(s); return &a }
 	path := []errs.RecordRef{
@@ -54,7 +44,6 @@ func newFakeActivities() *fakeActivities {
 	}}
 }
 
-// Facts returns the facts of the activity id.
 func (f *fakeActivities) Facts(_ context.Context, id string) (ActivityFacts, bool, error) {
 	facts, found := f.facts[id]
 	return facts, found, nil
@@ -68,15 +57,6 @@ func (f *fakeActivities) FactsOf(ctx context.Context, activityIDs []string) (map
 		}
 	}
 	return found, nil
-}
-
-// RestartApproval records the call and sets the activity to Created.
-func (f *fakeActivities) RestartApproval(_ context.Context, _ actor.Actor, id string, reasons []string) error {
-	f.restarts = append(f.restarts, restartCall{activityID: id, reasons: reasons})
-	facts := f.facts[id]
-	facts.Status = "created"
-	f.facts[id] = facts
-	return nil
 }
 
 // kind is a history kind "activity" over the fake activities, top level, as 006's would be.
@@ -111,7 +91,6 @@ type fakeCurrencies struct {
 	byCode map[string]settings.Currency
 }
 
-// newFakeCurrencies returns the currencies of these tests.
 func newFakeCurrencies() *fakeCurrencies {
 	c := &fakeCurrencies{byCode: map[string]settings.Currency{}}
 	for _, x := range []struct {
@@ -130,7 +109,6 @@ func newFakeCurrencies() *fakeCurrencies {
 	return c
 }
 
-// setRate changes the rate of code, as an administrator does in Settings.
 func (c *fakeCurrencies) setRate(code, rate string) {
 	parsed, err := money.ParseRate(rate)
 	if err != nil {
@@ -141,13 +119,11 @@ func (c *fakeCurrencies) setRate(code, rate string) {
 	c.byCode[code] = currency
 }
 
-// Currency returns the currency with code.
 func (c *fakeCurrencies) Currency(_ context.Context, code string) (settings.Currency, bool, error) {
 	currency, found := c.byCode[code]
 	return currency, found, nil
 }
 
-// Currencies returns every currency, by code.
 func (c *fakeCurrencies) Currencies(_ context.Context) ([]settings.Currency, error) {
 	list := []settings.Currency{}
 	for _, code := range []string{"CNY", "EUR", "GBP", "INR", "USD"} {
@@ -156,7 +132,6 @@ func (c *fakeCurrencies) Currencies(_ context.Context) ([]settings.Currency, err
 	return list, nil
 }
 
-// Rates returns every currency's rate (016).
 func (c *fakeCurrencies) Rates(_ context.Context) (money.Rates, error) {
 	rates := money.Rates{}
 	for code, currency := range c.byCode {
@@ -165,7 +140,7 @@ func (c *fakeCurrencies) Rates(_ context.Context) (money.Rates, error) {
 	return rates, nil
 }
 
-// CurrentRates returns every currency's rate, dated 19 Oct 2026 and imported from GSAP but USD (016 FR-009).
+// CurrentRates dates every rate 19 Oct 2026, imported from GSAP but USD's.
 func (c *fakeCurrencies) CurrentRates(_ context.Context) ([]settings.RateInfo, error) {
 	infos := []settings.RateInfo{}
 	day, source := date.MustParse("2026-10-19"), settings.RateGSAPImport
@@ -189,10 +164,8 @@ var budgetItems = []BudgetItem{
 	{ID: lastYearItem, Year: 2025, BudgetName: "2025 Lubricants Budget", Name: "Europe – Digital", Code: "LUB-EU-DIG", Active: true},
 }
 
-// fakeBudgets are the finance budget items of these tests.
 type fakeBudgets struct{}
 
-// Item returns the item with id.
 func (fakeBudgets) Item(_ context.Context, id string) (BudgetItem, bool, error) {
 	i := slices.IndexFunc(budgetItems, func(item BudgetItem) bool { return item.ID == id })
 	if i < 0 {
@@ -201,18 +174,16 @@ func (fakeBudgets) Item(_ context.Context, id string) (BudgetItem, bool, error) 
 	return budgetItems[i], true, nil
 }
 
-// Items returns every item.
 func (fakeBudgets) Items(context.Context) ([]BudgetItem, error) {
 	return slices.Clone(budgetItems), nil
 }
 
-// fakeAttributes stand for feature 002's attribute rules: Spend type and GL code are needed to submit; the
-// GL code "SO-1299" never fits the spend type; problems adds any other problems.
+// fakeAttributes stand for Settings' attribute rules: Spend type and GL code are needed to submit; the GL code
+// "SO-1299" never fits the spend type; problems adds any other problems.
 type fakeAttributes struct {
 	problems []errs.FieldError
 }
 
-// glCodeMismatch is 002's message for a GL code that doesn't fit the spend type (R11).
 const glCodeMismatch = "'7250080 – Advertising digital' doesn't belong to the chosen spend type — choose another GL code."
 
 // Check returns the values without empty ones, and the problems.
@@ -229,7 +200,6 @@ func (x *fakeAttributes) Check(_ context.Context, in settings.AttributeInput) (s
 	return result, nil
 }
 
-// Missing lists Spend type and GL code when they have no value.
 func (x *fakeAttributes) Missing(_ context.Context, values settings.AttributeValues, _ []string) ([]settings.MissingField, error) {
 	missing := []settings.MissingField{}
 	for _, attr := range []struct{ id, label string }{{spendType, "Spend type"}, {glCode, "GL code"}} {
@@ -240,7 +210,6 @@ func (x *fakeAttributes) Missing(_ context.Context, values settings.AttributeVal
 	return missing, nil
 }
 
-// Describe gives the attribute's label and the option's id in words.
 func (x *fakeAttributes) Describe(_ context.Context, field string, value any) (string, string, error) {
 	labels := map[string]string{"attributes." + spendType: "Spend type", "attributes." + glCode: "GL code"}
 	options := map[any]string{"SO-1101": "Digital – Platform development", "SO-1201": "7250080 – Advertising digital",
@@ -251,7 +220,6 @@ func (x *fakeAttributes) Describe(_ context.Context, field string, value any) (s
 // fakePeople are the people of these tests; Sam Former is inactive.
 type fakePeople struct{}
 
-// Person returns the person with id.
 func (fakePeople) Person(_ context.Context, id string) (people.PersonRef, bool, error) {
 	all := map[string]people.PersonRef{
 		priya.ID:  {ID: priya.ID, Name: priya.Name, Initials: "PR", JobTitle: "Marketer", Active: true},

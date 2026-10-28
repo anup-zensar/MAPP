@@ -12,7 +12,6 @@ import (
 	"mapp/internal/settings"
 )
 
-// text returns a sent text without its surrounding spaces; "" when it was not sent (null).
 func text(s *string) string {
 	if s == nil {
 		return ""
@@ -20,9 +19,7 @@ func text(s *string) string {
 	return strings.TrimSpace(*s)
 }
 
-// checkName checks a plan name, already trimmed: required, at most 120 characters, and no other stored
-// plan (than exceptID) with the same name ignoring letter case (data model §1). A plan in the recycle bin is
-// not stored, so its name is free.
+// checkName leaves free the names of plans in the recycle bin, which are not stored.
 func (s *Service) checkName(ctx context.Context, name, exceptID string, problems *errs.Problems) error {
 	switch {
 	case name == "":
@@ -41,8 +38,6 @@ func (s *Service) checkName(ctx context.Context, name, exceptID string, problems
 	return nil
 }
 
-// planNamed returns the plan among all, other than exceptID, whose name is name ignoring letter case, and
-// false when there is none. Names are stored trimmed, so surrounding spaces are ignored too.
 func planNamed(all []Plan, name, exceptID string) (Plan, bool) {
 	for _, p := range all {
 		if p.ID != exceptID && strings.EqualFold(p.Name, name) {
@@ -52,13 +47,12 @@ func planNamed(all []Plan, name, exceptID string) (Plan, bool) {
 	return Plan{}, false
 }
 
-// years returns the years a new plan may have: the current year − 1 to + 5 (FR-006).
+// years returns the years a new plan may have: the current year to + 10 (D-326).
 func (s *Service) years() (first, last int) {
 	current := s.now().Year()
 	return current - firstYearBeforeCurrent, current + lastYearAfterCurrent
 }
 
-// checkYear checks the year of a new plan and returns it (0 when it is wrong).
 func (s *Service) checkYear(year *int, problems *errs.Problems) int {
 	first, last := s.years()
 	if year == nil || *year < first || *year > last {
@@ -68,7 +62,6 @@ func (s *Service) checkYear(year *int, problems *errs.Problems) int {
 	return *year
 }
 
-// checkModel checks the model: required, known, and active unless the plan already has it.
 func (s *Service) checkModel(ctx context.Context, id string, stored *Plan, problems *errs.Problems) (string, error) {
 	if id == "" {
 		problems.Add("modelId", msgChooseModel)
@@ -86,8 +79,7 @@ func (s *Service) checkModel(ctx context.Context, id string, stored *Plan, probl
 	return id, nil
 }
 
-// checkBudget checks the plan budget, when one is sent: in USD, an amount with at most two decimals, not
-// negative. It returns the budget to store; nil for none or a wrong one.
+// checkBudget returns the plan budget to store: nil for none or a wrong one.
 func checkBudget(in *money.Input, currency string, problems *errs.Problems) *money.Amount {
 	if in == nil {
 		return nil
@@ -108,8 +100,7 @@ func checkBudget(in *money.Input, currency string, problems *errs.Problems) *mon
 	return nil
 }
 
-// checkFinanceBudget checks the default finance budget, when one is chosen: known and of the plan's year
-// (FR-007). Finance budgets have no status (D-193).
+// checkFinanceBudget checks no status: finance budgets have none (D-193).
 func (s *Service) checkFinanceBudget(ctx context.Context, id string, year int, problems *errs.Problems) error {
 	if id == "" {
 		return nil
@@ -126,8 +117,7 @@ func (s *Service) checkFinanceBudget(ctx context.Context, id string, year int, p
 	return nil
 }
 
-// checkAttributes has Settings check the plan's Shell attribute values (FR-008) and returns the values to
-// store; never nil. Values of attributes that are hidden are kept (R9).
+// checkAttributes keeps the values of hidden attributes and never returns nil.
 func (s *Service) checkAttributes(ctx context.Context, values settings.AttributeValues, stored *Plan, problems *errs.Problems) (settings.AttributeValues, error) {
 	if values == nil {
 		values = settings.AttributeValues{}

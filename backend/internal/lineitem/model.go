@@ -1,11 +1,5 @@
-// Package lineitems holds line items (feature 007): the costs of an activity, each in its own currency,
-// spread over the months, coded to finance. Line items have no status of their own; they are approved
-// with their activity.
-//
-// The shared foundation wrote the data layer: the stored line item and the API types (this file) and the
-// repository (repository.go, store_json.go). Feature 007 adds the calculations, the service, the dependency
-// interfaces with their adapters, the history kind and the handler. USD amounts, spreads of the Evenly,
-// First and Last methods, the SWBS status and completeness are derived on read, never stored (D-041).
+// Package lineitem holds line items (feature 007): the costs of an activity, each in its own currency, spread
+// over the months, coded to finance, and the SWBS code GSAP returns for them (feature 030).
 package lineitem
 
 import (
@@ -18,10 +12,8 @@ import (
 	"mapp/internal/settings"
 )
 
-// SpreadMethod is how a line item's planned cost is spread over the activity's months (004's SpreadMethod).
 type SpreadMethod string
 
-// The spread methods.
 const (
 	SpreadEvenly     SpreadMethod = "evenly"
 	SpreadFirstMonth SpreadMethod = "firstMonth"
@@ -29,53 +21,39 @@ const (
 	SpreadCustom     SpreadMethod = "custom"
 )
 
-// LineItem is a line item as stored in the table "line_items" (data model §1).
 type LineItem struct {
-	ID                  string                   `json:"id"`          // "L-1001"
-	ActivityID          string                   `json:"activityId"`  // never changes
-	Name                string                   `json:"name"`        // 1–120 characters, unique in the activity ignoring case
-	OwnerID             string                   `json:"ownerId"`     // "" when empty
-	Description         string                   `json:"description"` // 0–2,000 characters
-	Currency            string                   `json:"currency"`    // ISO code of a currency of feature 002
-	PlannedCost         money.Amount             `json:"plannedCost"` // in Currency, 0.00 or more
+	ID                  string                   `json:"id"`
+	ActivityID          string                   `json:"activityId"`
+	Name                string                   `json:"name"`
+	OwnerID             string                   `json:"ownerId"`
+	Description         string                   `json:"description"`
+	Currency            string                   `json:"currency"`
+	PlannedCost         money.Amount             `json:"plannedCost"`
 	Spread              Spread                   `json:"spread"`
-	Attributes          settings.AttributeValues `json:"attributes"`          // line-item Shell attribute values; never nil
-	ContractedAmount    *money.Amount            `json:"contractedAmount"`    // in Currency; nil when empty
-	RequestSwbs         bool                     `json:"requestSwbs"`         // Request SWBS code from GSAP
-	FinanceBudgetYear   *int                     `json:"financeBudgetYear"`   // nil when empty
-	FinanceBudgetItemID string                   `json:"financeBudgetItemId"` // an item of FinanceBudgetYear; "" when empty
+	Attributes          settings.AttributeValues `json:"attributes"`
+	ContractedAmount    *money.Amount            `json:"contractedAmount"`
+	RequestSwbs         bool                     `json:"requestSwbs"`
+	FinanceBudgetYear   *int                     `json:"financeBudgetYear"`
+	FinanceBudgetItemID string                   `json:"financeBudgetItemId"`
+	Swbs
 	record.Meta
 }
 
-// Spread is a line item's spread method and, for a custom spread only, its month amounts.
 type Spread struct {
 	Method SpreadMethod  `json:"method"`
 	Months []MonthAmount `json:"months"` // custom only, sorted by month; [] otherwise (never nil)
 }
 
-// MonthAmount is one month of a custom spread, in the line item's currency.
 type MonthAmount struct {
-	Month  string       `json:"month"`  // "2026-02"
-	Amount money.Amount `json:"amount"` // 0.00 or more
+	Month  string       `json:"month"`
+	Amount money.Amount `json:"amount"`
 }
 
-// SwbsStatus is the derived SWBS request status (data model §3.5, contract SwbsStatus).
-type SwbsStatus string
-
-// The SWBS request statuses.
-const (
-	SwbsNotRequested       SwbsStatus = "notRequested"       // Request SWBS code from GSAP is off
-	SwbsWaitingForApproval SwbsStatus = "waitingForApproval" // the activity is not Approved yet
-	SwbsReadyToSend        SwbsStatus = "readyToSend"        // the activity is Approved
-)
-
-// The states of a spread (SpreadView.State).
 const (
 	StateSpread    = "spread"
 	StateNotSpread = "notSpread" // Evenly, First or Last month without activity dates (D-032)
 )
 
-// The states of the unassigned balance (UnassignedBalance.State).
 const (
 	BalanceLeft          = "left"
 	BalanceAllAssigned   = "allAssigned"
@@ -83,32 +61,26 @@ const (
 	BalanceNoPlannedCost = "noPlannedCost"
 )
 
-// Where a new line item's planned cost comes from (Defaults.PlannedCostSource).
 const (
 	SourceUnassignedBalance     = "unassignedBalance"
 	SourceNothingLeftToAssign   = "nothingLeftToAssign"
 	SourceNoActivityPlannedCost = "noActivityPlannedCost"
 )
 
-// NoDatesColumn is the key of the spread grid's "No dates yet" column.
 const NoDatesColumn = "noDates"
 
-// The API types below are what the API returns and receives (contract schema in brackets, JSON names as
-// the contract). Lists are never nil. Amounts sent are decimal strings in the line item's currency.
+// The API types below follow the contract's schemas: lists are never nil, amounts sent are decimal strings.
 
-// CurrencyView is a currency as the line-item screens need it (LineItemCurrency).
 type CurrencyView struct {
-	Code       string     `json:"code"`
-	Name       string     `json:"name"`
-	Symbol     string     `json:"symbol"`
-	RatePerUSD money.Rate `json:"ratePerUsd"` // current rate in units per 1 USD ("1" for USD)
-	Active     bool       `json:"active"`
-	// The current rate's date and source (016 FR-009): "rate of 19 Oct 2026 · GSAP import"; null for USD.
+	Code       string               `json:"code"`
+	Name       string               `json:"name"`
+	Symbol     string               `json:"symbol"`
+	RatePerUSD money.Rate           `json:"ratePerUsd"`
+	Active     bool                 `json:"active"`
 	RateDate   *date.Date           `json:"rateDate"`
 	RateSource *settings.RateSource `json:"rateSource"`
 }
 
-// FinanceBudgetItemRef is a finance budget item as line items show it (FinanceBudgetItemRef).
 type FinanceBudgetItemRef struct {
 	ID         string `json:"id"`
 	Year       int    `json:"year"`
@@ -118,37 +90,32 @@ type FinanceBudgetItemRef struct {
 	Active     bool   `json:"active"`
 }
 
-// SpreadMonth is one month of a spread, in the line item's currency and in USD (SpreadMonth).
 type SpreadMonth struct {
 	Month                string      `json:"month"`
 	Amount               money.Money `json:"amount"`
 	AmountUSD            money.Money `json:"amountUsd"`
 	OutsideActivityDates bool        `json:"outsideActivityDates"`
-	AmountPlan           money.Money `json:"-"` // in the plan currency (016 FR-015): the spread grid's cell
+	AmountPlan           money.Money `json:"-"`
 }
 
-// SpreadView is a line item's spread as the API returns it (Spread).
 type SpreadView struct {
 	Method      SpreadMethod  `json:"method"`
-	State       string        `json:"state"`       // StateSpread or StateNotSpread
-	Months      []SpreadMonth `json:"months"`      // empty when not spread
-	CustomTotal *money.Money  `json:"customTotal"` // custom only
+	State       string        `json:"state"`
+	Months      []SpreadMonth `json:"months"`
+	CustomTotal *money.Money  `json:"customTotal"`
 	AddsUp      bool          `json:"addsUp"`
 }
 
-// SpreadMonthInput is one custom month of a request (SpreadMonthInput).
 type SpreadMonthInput struct {
-	Month  string `json:"month"`  // YYYY-MM
-	Amount string `json:"amount"` // decimal amount in the line item's currency
+	Month  string `json:"month"`
+	Amount string `json:"amount"`
 }
 
-// SpreadInput is the spread of a request (SpreadInput); Months are kept only for a custom spread.
 type SpreadInput struct {
 	Method SpreadMethod       `json:"method"`
 	Months []SpreadMonthInput `json:"months"`
 }
 
-// View is a line item as the API returns it (LineItem).
 type View struct {
 	ID                 string                   `json:"id"`
 	ActivityID         string                   `json:"activityId"`
@@ -158,95 +125,87 @@ type View struct {
 	Currency           CurrencyView             `json:"currency"`
 	PlannedCost        money.Money              `json:"plannedCost"`
 	PlannedCostUSD     money.Money              `json:"plannedCostUsd"`
-	PlannedCostDisplay money.Money              `json:"plannedCostDisplay"` // PlannedCostUSD in the reader's display currency (D-213)
-	PlannedCostPlan    money.Money              `json:"plannedCostPlan"`    // 016 FR-015: in the plan currency at the current rates
+	PlannedCostDisplay money.Money              `json:"plannedCostDisplay"`
+	PlannedCostPlan    money.Money              `json:"plannedCostPlan"`
 	Spread             SpreadView               `json:"spread"`
 	Attributes         settings.AttributeValues `json:"attributes"`
 	ContractedAmount   *money.Money             `json:"contractedAmount"`
 	RequestSwbs        bool                     `json:"requestSwbs"`
 	SwbsStatus         SwbsStatus               `json:"swbsStatus"`
-	FinanceBudgetYear  *int                     `json:"financeBudgetYear"`
-	FinanceBudgetItem  *FinanceBudgetItemRef    `json:"financeBudgetItem"`
-	Missing            []settings.MissingField  `json:"missing"` // what still blocks submitting, in order (data model §3.6)
+	Swbs
+	HXKey             string                  `json:"hxKey"`
+	FinanceBudgetYear *int                    `json:"financeBudgetYear"`
+	FinanceBudgetItem *FinanceBudgetItemRef   `json:"financeBudgetItem"`
+	Missing           []settings.MissingField `json:"missing"`
 	record.Meta
 }
 
-// ActivityView is what the line-item screens need to know about the activity (LineItemActivity).
 type ActivityView struct {
 	ID                    string           `json:"id"`
 	Name                  string           `json:"name"`
-	Status                string           `json:"status"`           // the activity's stored status
-	RestartsApproval      bool             `json:"restartsApproval"` // Submitted or Approved
+	Status                string           `json:"status"`
+	RestartsApproval      bool             `json:"restartsApproval"` // deprecated: always false, for older clients
 	StartDate             *date.Date       `json:"startDate"`
 	EndDate               *date.Date       `json:"endDate"`
 	Ongoing               bool             `json:"ongoing"`
-	PlannedCost           *money.Money     `json:"plannedCost"` // in the plan currency (016)
-	Path                  []errs.RecordRef `json:"path"`        // plan, campaign, initiative
+	PlannedCost           *money.Money     `json:"plannedCost"`
+	Path                  []errs.RecordRef `json:"path"`
 	PlanYear              int              `json:"planYear"`
 	DefaultSpreadMethod   SpreadMethod     `json:"defaultSpreadMethod"`
-	DefaultFinanceBudget  *string          `json:"defaultFinanceBudget"`  // the plan's default budget name
-	BusinessUnitOptionIDs []string         `json:"businessUnitOptionIds"` // the plan's Business unit options (D-212)
+	DefaultFinanceBudget  *string          `json:"defaultFinanceBudget"`
+	BusinessUnitOptionIDs []string         `json:"businessUnitOptionIds"`
 }
 
-// UnassignedBalance is the activity's planned cost minus its line items' planned costs in the plan currency
-// (UnassignedBalance, Sys_Gen_Balance; 016 FR-015).
+// UnassignedBalance is the activity's planned cost minus its line items' planned costs, in the plan currency.
 type UnassignedBalance struct {
-	PlannedCost  *money.Money `json:"plannedCost"` // in the plan currency; null while the activity has none
+	PlannedCost  *money.Money `json:"plannedCost"`
 	Assigned     money.Money  `json:"assigned"`
-	Balance      *money.Money `json:"balance"` // negative when exceeded; null without a planned cost
-	State        string       `json:"state"`   // one of the Balance… states
+	Balance      *money.Money `json:"balance"`
+	State        string       `json:"state"`
 	RoundingHint bool         `json:"roundingHint"`
 }
 
-// SpreadGridColumn is one column of the spread grid (SpreadGridColumn).
 type SpreadGridColumn struct {
-	Key                  string  `json:"key"`   // the month (YYYY-MM) or NoDatesColumn
-	Month                *string `json:"month"` // null for the No dates yet column
+	Key                  string  `json:"key"`
+	Month                *string `json:"month"`
 	OutsideActivityDates bool    `json:"outsideActivityDates"`
 }
 
-// SpreadGridRow is one line item's row of the grid, in USD or, in an answer, in the reader's display
-// currency (SpreadGridRow, D-213).
 type SpreadGridRow struct {
 	LineItemID string         `json:"lineItemId"`
 	Name       string         `json:"name"`
-	Cells      []*money.Money `json:"cells"` // one per column; null where the line item has nothing
+	Cells      []*money.Money `json:"cells"`
 	Total      money.Money    `json:"total"`
 }
 
-// SpreadGrid is the activity's line items by month, in USD or, in an answer, in the reader's display
-// currency (SpreadGrid, D-213).
 type SpreadGrid struct {
 	Columns []SpreadGridColumn `json:"columns"`
 	Rows    []SpreadGridRow    `json:"rows"`
-	Totals  []*money.Money     `json:"totals"` // null when every cell of the column is empty
+	Totals  []*money.Money     `json:"totals"`
 	Total   money.Money        `json:"total"`
 }
 
-// Section is the answer of GET /api/v1/activities/{activityId}/line-items (LineItemSection).
 type Section struct {
 	Activity ActivityView          `json:"activity"`
-	Items    []View                `json:"items"` // in creation order
+	Items    []View                `json:"items"`
 	Balance  UnassignedBalance     `json:"balance"`
 	Grid     SpreadGrid            `json:"grid"`
-	Access   *authz.LineItemAccess `json:"access,omitempty"` // what the reader may do (014 FR-011)
+	Access   *authz.LineItemAccess `json:"access,omitempty"`
 }
 
-// Details is the answer of GET /api/v1/line-items/{lineItemId} (LineItemDetails).
 type Details struct {
 	LineItem View                  `json:"lineItem"`
 	Activity ActivityView          `json:"activity"`
 	Balance  UnassignedBalance     `json:"balance"`
-	Access   *authz.LineItemAccess `json:"access,omitempty"` // what the reader may do (014 FR-011)
+	Access   *authz.LineItemAccess `json:"access,omitempty"`
 }
 
-// Defaults are what a new line item starts with (LineItemDefaults, FR-008).
 type Defaults struct {
 	Name                         string            `json:"name"`
 	Owner                        *people.PersonRef `json:"owner"`
 	Currency                     string            `json:"currency"`
 	PlannedCost                  *money.Money      `json:"plannedCost"`
-	PlannedCostSource            string            `json:"plannedCostSource"` // one of the Source… values
+	PlannedCostSource            string            `json:"plannedCostSource"`
 	SpreadMethod                 SpreadMethod      `json:"spreadMethod"`
 	FinanceBudgetYear            int               `json:"financeBudgetYear"`
 	FinanceBudgetItemID          *string           `json:"financeBudgetItemId"`
@@ -254,34 +213,30 @@ type Defaults struct {
 	RequestSwbs                  bool              `json:"requestSwbs"`
 }
 
-// FormOptions is the answer of GET /api/v1/activities/{activityId}/line-items/form-options
-// (LineItemFormOptions).
 type FormOptions struct {
 	Activity           ActivityView           `json:"activity"`
 	Balance            UnassignedBalance      `json:"balance"`
 	Defaults           Defaults               `json:"defaults"`
-	Currencies         []CurrencyView         `json:"currencies"`         // active ones, USD first, then by code
-	FinanceBudgetYears []int                  `json:"financeBudgetYears"` // ascending
+	Currencies         []CurrencyView         `json:"currencies"`
+	FinanceBudgetYears []int                  `json:"financeBudgetYears"`
 	FinanceBudgetItems []FinanceBudgetItemRef `json:"financeBudgetItems"`
 }
 
-// Input is the body of POST /api/v1/activities/{activityId}/line-items (LineItemCreate).
 type Input struct {
 	Name                string                   `json:"name"`
 	OwnerID             *string                  `json:"ownerId"`
 	Description         string                   `json:"description"`
 	Currency            string                   `json:"currency"`
-	PlannedCost         *string                  `json:"plannedCost"` // decimal amount in the currency
+	PlannedCost         *string                  `json:"plannedCost"`
 	Spread              SpreadInput              `json:"spread"`
 	Attributes          settings.AttributeValues `json:"attributes"`
 	ContractedAmount    *string                  `json:"contractedAmount"`
 	RequestSwbs         bool                     `json:"requestSwbs"`
 	FinanceBudgetYear   *int                     `json:"financeBudgetYear"`
 	FinanceBudgetItemID *string                  `json:"financeBudgetItemId"`
-	RestartApproval     bool                     `json:"restartApproval"` // the person confirmed the activity needs approval again
+	RestartApproval     bool                     `json:"restartApproval"` // deprecated and ignored, accepted for older clients
 }
 
-// Update is the body of PATCH /api/v1/line-items/{lineItemId} (LineItemUpdate): the whole form and the version.
 type Update struct {
 	Name                string                   `json:"name"`
 	OwnerID             *string                  `json:"ownerId"`
@@ -298,7 +253,6 @@ type Update struct {
 	Version             *int                     `json:"version"`
 }
 
-// DuplicateInput is the body of POST /api/v1/line-items/{lineItemId}/duplicate (LineItemDuplicate).
 type DuplicateInput struct {
 	RestartApproval bool `json:"restartApproval"`
 }

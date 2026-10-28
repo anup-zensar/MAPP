@@ -11,8 +11,6 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// attributeToChange reads every attribute and option, the attribute id — or answers not found — and the
-// usage index, inside the caller's transaction.
 func (s *Service) attributeToChange(ctx context.Context, id string) (formData, Attribute, *usageIndex, error) {
 	f, err := s.loadForm(ctx, "")
 	if err != nil {
@@ -29,8 +27,6 @@ func (s *Service) attributeToChange(ctx context.Context, id string) (formData, A
 	return f, stored, u, nil
 }
 
-// attributeChange is a checked change of a stored Shell attribute: the attribute after it, its options
-// whose links change (with their new links), and the options it removes because its new type has none.
 type attributeChange struct {
 	attribute Attribute
 	linked    []Option
@@ -59,7 +55,7 @@ func (f formData) planAttributeChange(stored Attribute, update ShellAttributeUpd
 	}
 	parent, valid := f.parentOf(changed)
 	if !valid {
-		return change // applyAttribute reported it
+		return change
 	}
 	links := map[string][]string{}
 	if update.OptionLinks != nil {
@@ -77,16 +73,16 @@ func (f formData) planAttributeChange(stored Attribute, update ShellAttributeUpd
 		given, sent := links[o.ID]
 		previous := o.ParentOptionIDs
 		if newParent {
-			previous = nil // links to the old parent's options are not links to the new one's
+			previous = nil
 		}
 		var next []string
 		switch {
 		case sent && !o.Active && len(unique(given)) == 0:
-			next = []string{} // an inactive option may stay unlinked
+			next = []string{}
 		case sent:
 			next = f.checkLinks(problems, linkCheck{field: field, label: o.Label, parent: parent, links: given, previous: previous})
 		case !newParent:
-			continue // keeps its links
+			continue
 		case o.Active:
 			problems.Add(field, fmt.Sprintf(linkOptionMessage, o.Label, midSentence(parent.Label)))
 			continue
@@ -170,7 +166,7 @@ func (f formData) applyAttribute(a Attribute, update ShellAttributeUpdate, locks
 		}
 	}
 
-	if levelKnown && typeKnown && a.Type == TypeMultipleChoiceSplit && publishes(a.Level) {
+	if levelKnown && typeKnown && a.Type == TypeMultipleChoiceSplit && !splits(a.Level) {
 		problems.Add("type", splitLevelMessage)
 	}
 	if levelKnown && typeKnown && markingKnown {
@@ -203,7 +199,7 @@ func (f formData) applyAttribute(a Attribute, update ShellAttributeUpdate, locks
 		case valid:
 		case a.ParentAttributeID != before.ParentAttributeID || parent.ID == "":
 			problems.Add("parentAttributeId", fmt.Sprintf(chooseParentMessage, levelWords[a.Level]))
-		default: // the parent stays, but the attribute moved above it
+		default:
 			problems.Add("section", fmt.Sprintf(stayBelowMessage, a.Label, parent.Label))
 		}
 	}

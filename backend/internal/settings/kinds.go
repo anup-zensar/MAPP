@@ -84,6 +84,7 @@ func (s *Service) Kinds() []history.Kind {
 var (
 	levelWords = map[Level]string{
 		LevelPlan: "Plan", LevelCampaign: "Campaign", LevelInitiative: "Initiative", LevelActivity: "Activity", LevelLineItem: "Line item",
+		LevelPurchaseRequest: "Purchase request", LevelPurchaseRequestLine: prLineWords,
 	}
 	typeWords = map[AttributeType]string{
 		TypeSingleChoice: "Single choice", TypeMultipleChoice: "Multiple choice", TypeMultipleChoiceSplit: "Multiple choice with % split",
@@ -222,13 +223,11 @@ func (s *Service) describeItem(ctx context.Context, field string, value any) (st
 	return "", "", nil
 }
 
-// attributeLabel looks up the label of the attribute id.
 func (s *Service) attributeLabel(ctx context.Context, id string) (string, bool, error) {
 	a, found, err := s.repo.GetAttribute(ctx, id)
 	return a.Label, found, err
 }
 
-// optionLabel looks up the label of the option id.
 func (s *Service) optionLabel(ctx context.Context, id string) (string, bool, error) {
 	o, found, err := s.repo.GetOption(ctx, id)
 	return o.Label, found, err
@@ -265,7 +264,6 @@ func (s *Service) namesOf(ctx context.Context, value any, name func(context.Cont
 	return strings.Join(names, ", "), nil
 }
 
-// statusText writes the field "active": "Active" or "Inactive".
 func statusText(value any) string {
 	if active, ok := value.(bool); ok && !active {
 		return "Inactive"
@@ -276,7 +274,6 @@ func statusText(value any) string {
 	return "Active"
 }
 
-// percentText writes a stored percentage as people read it: "2.00 %".
 func percentText(value any) string {
 	text, _ := value.(string)
 	p, err := money.ParsePercent(text)
@@ -286,7 +283,6 @@ func percentText(value any) string {
 	return p.Format()
 }
 
-// moneyText writes a stored money value as people read it: "10,000.00 USD".
 func moneyText(value any) string {
 	object, _ := value.(map[string]any)
 	text, _ := object["amount"].(string)

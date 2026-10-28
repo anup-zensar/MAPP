@@ -10,7 +10,6 @@ import (
 
 // User story 3 — the Financials page (FR-021).
 
-// list returns the page for q, stopping the test on an error.
 func (f *fixture) list(t *testing.T, a actor.Actor, q Query) TransactionPage {
 	t.Helper()
 	if q.Type == "" {
@@ -63,7 +62,7 @@ func TestTransactions_FiltersCountsAndTotals_FR021(t *testing.T) { //nolint:gocy
 		{"year", Query{Year: 2027}, 0, ""},
 		{"search vendor", Query{Search: "brightside"}, 1, "FT-1004"},
 		{"search HX key", Query{Search: "hx1003"}, 1, "FT-1001"},
-		{"search SWBS code", Query{Search: "GB01-M26"}, 3, "FT-1009"},
+		{"search SWBS code", Query{Search: "SIM-GB01"}, 3, "FT-1009"},
 		{"search line item", Query{Search: "Venue Hire"}, 3, "FT-1008"},
 		{"search line item ID", Query{Search: "L-1004"}, 4, "FT-1011"},
 		{"search activity ID", Query{Search: "a-1003"}, 3, "FT-1009"},
@@ -130,7 +129,6 @@ func (f *fixture) checkRecordAndYearFilters(t *testing.T) {
 	}
 }
 
-// A record or plan filter that is not live is refused on its parameter (FR-021).
 func TestTransactions_UnknownRecordAndPlan_FR021(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -144,7 +142,6 @@ func TestTransactions_UnknownRecordAndPlan_FR021(t *testing.T) {
 	}
 }
 
-// ParseQuery takes the defaults and reports every wrong parameter at once (FR-021, D-219).
 func TestParseQuery_DefaultsAndEveryProblem_FR021(t *testing.T) { //nolint:gocyclo // 10: the defaults, every parameter read, then every problem at once
 	t.Parallel()
 	q, err := ParseQuery(map[string][]string{})

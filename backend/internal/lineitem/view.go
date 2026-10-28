@@ -11,8 +11,7 @@ import (
 	"mapp/internal/settings"
 )
 
-// shownView returns li of the activity f as an answer shows it to a: its view, with its USD planned cost
-// also in a's display currency (D-213).
+// shownView converts the USD planned cost to a's display currency as well (D-213).
 func (s *Service) shownView(ctx context.Context, a actor.Actor, f ActivityFacts, li LineItem) (View, error) {
 	v, err := s.view(ctx, f, li)
 	if err != nil {
@@ -25,7 +24,6 @@ func (s *Service) shownView(ctx context.Context, a actor.Actor, f ActivityFacts,
 	return d.view(v), nil
 }
 
-// views returns the views of the activity's line items, in the order given, with the rates read once.
 func (s *Service) views(ctx context.Context, f ActivityFacts, items []LineItem) ([]View, error) {
 	ctx, err := s.withRates(ctx)
 	if err != nil {
@@ -42,16 +40,13 @@ func (s *Service) views(ctx context.Context, f ActivityFacts, items []LineItem) 
 	return views, nil
 }
 
-// view returns li of the activity f as the API shows it, with everything derived on read (D-140, D-141):
-// its currency with the current rate, its USD planned cost, its spread in the currency and in USD, its owner,
-// its finance budget item, what is missing and its SWBS request status.
 func (s *Service) view(ctx context.Context, f ActivityFacts, li LineItem) (View, error) {
 	rates, err := s.rates(ctx)
 	if err != nil {
 		return View{}, err
 	}
 	currency, found := rates.currencies[li.Currency]
-	if !found { // Settings never deletes a currency in use (domain model §6)
+	if !found {
 		return View{}, fmt.Errorf("lineitems: line item %s has the unknown currency %q", li.ID, li.Currency)
 	}
 	planRate := rates.rateOf(f.planCurrency())
@@ -66,6 +61,8 @@ func (s *Service) view(ctx context.Context, f ActivityFacts, li LineItem) (View,
 		Attributes:        orNoValues(li.Attributes),
 		RequestSwbs:       li.RequestSwbs,
 		SwbsStatus:        SwbsStatusOf(li, f),
+		Swbs:              li.Swbs,
+		HXKey:             li.HXKey(),
 		FinanceBudgetYear: li.FinanceBudgetYear,
 		Meta:              li.Meta,
 	}
@@ -92,7 +89,6 @@ func (s *Service) view(ctx context.Context, f ActivityFacts, li LineItem) (View,
 	return v, nil
 }
 
-// ownerOf returns the person id as records show them; nil when id is "" or the person is not stored.
 func (s *Service) ownerOf(ctx context.Context, id string) (*people.PersonRef, error) {
 	if id == "" {
 		return nil, nil
@@ -104,7 +100,6 @@ func (s *Service) ownerOf(ctx context.Context, id string) (*people.PersonRef, er
 	return &owner, nil
 }
 
-// budgetItemOf returns the finance budget item id; nil when id is "" or the item is not stored.
 func (s *Service) budgetItemOf(ctx context.Context, id string) (*BudgetItem, error) {
 	if id == "" {
 		return nil, nil
@@ -116,10 +111,7 @@ func (s *Service) budgetItemOf(ctx context.Context, id string) (*BudgetItem, err
 	return &item, nil
 }
 
-// spreadView returns the spread of li as the API shows it: the months in its currency and in USD at rate —
-// and, for the grid, in the plan currency at planRate (016 FR-015) — each marked when it lies outside the
-// activity's dates, and for a custom spread its total and whether it adds up to the planned cost (FR-017 –
-// FR-020).
+// spreadView marks months outside the activity's dates and, for a custom spread, whether it adds up (FR-017).
 func spreadView(li LineItem, f ActivityFacts, rate, planRate money.Rate) SpreadView {
 	months, spread := SpreadMonths(li, f)
 	usd := USDMonths(months, rate)
@@ -146,7 +138,6 @@ func spreadView(li LineItem, f ActivityFacts, rate, planRate money.Rate) SpreadV
 	return view
 }
 
-// balanceOf returns the unassigned planned cost of the activity f whose line items are views.
 func balanceOf(f ActivityFacts, views []View) UnassignedBalance {
 	planned := make([]money.Amount, 0, len(views))
 	currencies := make([]string, 0, len(views))
@@ -157,10 +148,9 @@ func balanceOf(f ActivityFacts, views []View) UnassignedBalance {
 	return Balance(f, planned, currencies)
 }
 
-// activityView returns what the line-item screens show of the activity f (LineItemActivity).
 func activityView(f ActivityFacts) ActivityView {
 	v := ActivityView{
-		ID: f.ID, Name: f.Name, Status: f.Status, RestartsApproval: f.restartsApproval(),
+		ID: f.ID, Name: f.Name, Status: f.Status,
 		StartDate: f.StartDate, EndDate: f.EndDate, Ongoing: f.Ongoing,
 		Path: orEmpty(f.Path), PlanYear: f.PlanYear, DefaultSpreadMethod: defaultSpread(f),
 		BusinessUnitOptionIDs: orEmpty(f.BusinessUnit),
@@ -176,17 +166,14 @@ func activityView(f ActivityFacts) ActivityView {
 	return v
 }
 
-// defaultSpread returns the plan's default line-item spread, Evenly when the plan has none.
 func defaultSpread(f ActivityFacts) SpreadMethod {
 	return cmp.Or(f.DefaultSpread, SpreadEvenly)
 }
 
-// currencyView returns a currency as the line-item screens show it.
 func currencyView(c settings.Currency) CurrencyView {
 	return CurrencyView{Code: c.Code, Name: c.Name, Symbol: c.Symbol, RatePerUSD: c.Rate, Active: c.Active}
 }
 
-// itemRef returns a finance budget item as the line-item screens show it.
 func itemRef(item BudgetItem) FinanceBudgetItemRef {
 	return FinanceBudgetItemRef(item)
 }

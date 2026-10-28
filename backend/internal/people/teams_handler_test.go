@@ -11,7 +11,6 @@ import (
 	"mapp/internal/platform/apitest"
 )
 
-// The body of the API's answer for a team that does not exist.
 const teamGoneBody = `{"error":{"code":"not_found","message":"This team no longer exists — someone may have deleted it.","fields":[]}}`
 
 // The Teams list and the team picker get every team, sorted by name, with its colour, status and members
@@ -33,7 +32,7 @@ func TestListTeams_TeamsWithMembers_FR010(t *testing.T) {
 		teams = append(teams, team.ID+" "+team.Name+" "+team.Colour+": "+memberNames(team.Members))
 	}
 	want := []string{
-		"T-1003 Global Marketing Ops teal: Alex Morgan, Carlos Mendes",
+		"T-1003 Global Marketing Ops teal: Alex Morgan, Carlos Mendes, Lea Santos",
 		"T-1001 Lubricants Europe blue: Daniel Okoro, Priya Raman, Sara Novak",
 		"T-1002 Mobility China violet: Carlos Mendes, Mei Lin, Sara Novak",
 	}
@@ -42,8 +41,6 @@ func TestListTeams_TeamsWithMembers_FR010(t *testing.T) {
 	}
 }
 
-// A team's details answer its description, members and the plans using it; an unknown team answers 404
-// with the message the details panel shows (US2 scenario 3).
 func TestGetTeam_DetailsOrNotFound_FR010(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -92,9 +89,9 @@ func TestUpdateTeam_ChangedConflictOrNotFound_FR011(t *testing.T) {
 	server := apitest.New(t)
 	asia := createTeam(t, server.SignIn(t, alexsEmail), map[string]any{"name": "Lubricants Asia", "memberIds": []string{"U-1002"}})
 	daniel := server.SignIn(t, danielsEmail)
-	server.GrantRole(t, danielsEmail, "administrator", "all") // 014: changing teams
+	server.GrantRole(t, danielsEmail, "administrator", "all")
 	priya := server.SignIn(t, priyasEmail)
-	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: changing teams
+	server.GrantRole(t, priyasEmail, "administrator", "all")
 	server.Advance(time.Hour)
 	update := map[string]any{"name": "Lubricants Asia Pacific", "description": "", "colour": asia.Colour,
 		"memberIds": []string{"U-1002", "U-1003"}, "version": 1}
@@ -146,8 +143,6 @@ func TestDeleteTeam_ThenUndo_FR015(t *testing.T) {
 	}
 }
 
-// Without plans that use the team, removing a member needs no confirmation; the check validates the form
-// like the save and saves nothing (FR-013, D-058).
 func TestTeamImpact_NoPlansNoWarnings_FR013(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -171,8 +166,6 @@ func TestTeamImpact_NoPlansNoWarnings_FR013(t *testing.T) {
 	}
 }
 
-// Set team inactive and Reactivate answer the team in its new status; both fields of the body are needed,
-// and an out-of-date version is refused (FR-014).
 func TestSetTeamStatus_InactiveAndBack_FR014(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -196,7 +189,6 @@ func TestSetTeamStatus_InactiveAndBack_FR014(t *testing.T) {
 	}
 }
 
-// createTeam creates a team through POST /api/v1/teams and stops the test when that fails.
 func createTeam(t *testing.T, client *apitest.Client, body map[string]any) people.TeamView {
 	t.Helper()
 	response := client.Do(t, http.MethodPost, "/api/v1/teams", body)
@@ -208,12 +200,10 @@ func createTeam(t *testing.T, client *apitest.Client, body map[string]any) peopl
 	return team
 }
 
-// validationBody is the body of a validation_failed answer with the field problems fields.
 func validationBody(fields string) string {
 	return `{"error":{"code":"validation_failed","message":"Some fields need your attention.","fields":[` + fields + `]}}`
 }
 
-// memberNames joins the names of members with ", ".
 func memberNames(members []people.PersonRef) string {
 	var names string
 	for i, m := range members {

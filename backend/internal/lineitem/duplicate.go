@@ -12,11 +12,9 @@ import (
 	"mapp/internal/platform/record"
 )
 
-// Duplicate copies the line item id into its activity with every value, including the spread, a new ID and
-// the name "<name> (copy)", " (copy 2)", … (FR-029, R13: there are no GSAP or finance values to leave out in
-// this phase). It counts as adding a line item: on a Submitted or Approved activity only with
-// in.RestartApproval (FR-031). One "copied" log entry names the original.
-func (s *Service) Duplicate(ctx context.Context, a actor.Actor, id string, in DuplicateInput) (View, error) { //nolint:gocyclo // 11: one Write whose every step returns its error.
+// Duplicate copies the line item id into its activity with a new ID, the name "<name> (copy)", " (copy 2)", …
+// and no SWBS code (FR-029, 030 FR-005); the activity's status never changes (D-322).
+func (s *Service) Duplicate(ctx context.Context, a actor.Actor, id string) (View, error) {
 	var view View
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
 		li, found, err := s.repo.Get(ctx, id)
@@ -28,9 +26,6 @@ func (s *Service) Duplicate(ctx context.Context, a actor.Actor, id string, in Du
 		}
 		f, err := s.facts(ctx, li.ActivityID)
 		if err != nil {
-			return err
-		}
-		if err = confirmRestart(nil, f, in.RestartApproval); err != nil {
 			return err
 		}
 		siblings, err := s.repo.ListByActivity(ctx, li.ActivityID)
@@ -52,9 +47,6 @@ func (s *Service) Duplicate(ctx context.Context, a actor.Actor, id string, in Du
 		}); err != nil {
 			return err
 		}
-		if f, err = s.restart(ctx, a, f, fmt.Sprintf(addedReason, dup.Name, dup.ID, dup.PlannedCost.Format(), dup.Currency)); err != nil {
-			return err
-		}
 		view, err = s.shownView(ctx, a, f, dup)
 		return err
 	})
@@ -64,10 +56,8 @@ func (s *Service) Duplicate(ctx context.Context, a actor.Actor, id string, in Du
 	return view, nil
 }
 
-// copiedDetails are the details of the "copied" log entry of a duplicate.
 const copiedDetails = "Copied from '%s' (%s)"
 
-// copyNameSuffix is the suffix of the n-th copy's name: " (copy)", " (copy 2)" and so on.
 func copyNameSuffix(n int) string {
 	if n == 1 {
 		return " (copy)"
@@ -75,9 +65,10 @@ func copyNameSuffix(n int) string {
 	return fmt.Sprintf(" (copy %d)", n)
 }
 
-// copyOf returns a copy of li that shares no list, map or pointer with it.
+// copyOf shares no list, map or pointer with li and leaves out the SWBS code: every copy path uses it.
 func copyOf(li LineItem) LineItem {
 	dup := li
+	dup.Swbs = Swbs{}
 	dup.Spread.Months = slices.Clone(li.Spread.Months)
 	dup.Attributes = maps.Clone(li.Attributes)
 	if li.ContractedAmount != nil {

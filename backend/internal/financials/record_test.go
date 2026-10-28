@@ -22,7 +22,6 @@ type want struct {
 	above                                                   string
 }
 
-// demoFigures is the table of data model §6.1.
 var demoFigures = []want{
 	{"L-1003", "20000.00", "20000.00", "20000.00", "20000.00", "0.00", "0.00", "100", "no"},
 	{"L-1004", "5000.00", "5000.00", "2500.00", "0.00", "2500.00", "0.00", "100", "no"},
@@ -37,7 +36,6 @@ var demoFigures = []want{
 	{"P-1001", "460000.00", "35652.17", "33152.17", "30652.17", "2500.00", "424347.83", "8", "1"},
 }
 
-// check compares figures with the row w.
 func (w want) check(t *testing.T, f Figures) { //nolint:gocyclo // 11: the amounts, then one case per answer of the row's above column
 	t.Helper()
 	if !reflect.DeepEqual(f, w.withAmounts(t, f)) {
@@ -95,12 +93,11 @@ func TestRecord_DemoFiguresAndRollUp_FR012(t *testing.T) {
 	}
 	checkActivityCard(t, f.record(t, priya, "A-1002"))
 	f.checkPlanCard(t)
-	if v := f.record(t, priya, "L-1003"); len(v.SwbsCodes) != 1 || v.SwbsCodes[0] != "DE03-M26-0003" {
+	if v := f.record(t, priya, "L-1003"); len(v.SwbsCodes) != 1 || v.SwbsCodes[0] != "SIM-DE03-0001" {
 		t.Errorf("Venue hire SWBS codes = %v", v.SwbsCodes)
 	}
 }
 
-// checkBreakdownRowsAreCards checks that every breakdown row of the card v equals its record's own card.
 func (f *fixture) checkBreakdownRowsAreCards(t *testing.T, v RecordView) {
 	t.Helper()
 	for _, row := range v.Breakdown {
@@ -126,8 +123,6 @@ func checkActivityCard(t *testing.T, activity RecordView) { //nolint:gocyclo // 
 	}
 }
 
-// checkPlanCard checks that the plan's card breaks down into its campaigns and has no path, and that a line
-// item's card has no breakdown.
 func (f *fixture) checkPlanCard(t *testing.T) {
 	t.Helper()
 	if plan := f.record(t, priya, "P-1001"); plan.BreakdownLevel == nil || *plan.BreakdownLevel != LevelCampaign ||
@@ -136,7 +131,6 @@ func (f *fixture) checkPlanCard(t *testing.T) {
 	}
 }
 
-// rowIDs lists the ids of rows.
 func rowIDs(rows []TransactionRow) []string {
 	list := []string{}
 	for _, r := range rows {
@@ -145,7 +139,6 @@ func rowIDs(rows []TransactionRow) []string {
 	return list
 }
 
-// A reader with the EUR display currency sees each figure converted once from its USD sum (FR-011, D-061).
 func TestRecord_DisplayCurrency_FR011(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -159,7 +152,6 @@ func TestRecord_DisplayCurrency_FR011(t *testing.T) {
 	}
 }
 
-// An activity moved to another initiative takes its figures with it (FR-012).
 func TestRecord_MovedActivityTakesItsFigures_FR012(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -179,7 +171,6 @@ func TestRecord_MovedActivityTakesItsFigures_FR012(t *testing.T) {
 	}
 }
 
-// A record that is not live is not found, with the level's sentence.
 func TestRecord_NotFound_FR015(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -189,8 +180,6 @@ func TestRecord_NotFound_FR015(t *testing.T) {
 	}
 }
 
-// A deleted line item's transactions stay linked and leave every figure; restoring it brings them back
-// (FR-012, D-249).
 func TestRecord_LineItemInTheBinLeavesTheFigures_FR012(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -218,7 +207,6 @@ func TestRecord_LineItemInTheBinLeavesTheFigures_FR012(t *testing.T) {
 	demoFigures[4].check(t, f.record(t, priya, "A-1003").Figures)
 }
 
-// Copies never copy transactions: a copied activity and its line items show 0.00 (FR-030).
 func TestRecord_CopiesHaveNoTransactions_FR030(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -238,8 +226,6 @@ func TestRecord_CopiesHaveNoTransactions_FR030(t *testing.T) {
 	}
 }
 
-// A record without transactions shows 0.00 for every amount, its whole planned cost as not yet committed and
-// no latest transactions, so the card can say that none have come yet (FR-014).
 func TestRecord_NoTransactionsShowsZero_FR014(t *testing.T) { //nolint:gocyclo // 12: every figure of two records without transactions, in one condition
 	t.Parallel()
 	f := newFixture(t)
@@ -255,8 +241,6 @@ func TestRecord_NoTransactionsShowsZero_FR014(t *testing.T) { //nolint:gocyclo /
 	}
 }
 
-// Every level answers how many transactions are linked under it, the count the delete dialogs show; a line
-// item in the recycle bin no longer counts (FR-029).
 func TestRecord_TransactionCountForDeleteDialogs_FR029(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

@@ -11,7 +11,6 @@ import (
 	"mapp/internal/settings"
 )
 
-// Every problem of a form is reported at once, and nothing is saved (FR-009, SC-005, US2 scenario 5).
 func TestCreate_AllProblemsAtOnce_FR009_SC005(t *testing.T) { //nolint:tparallel // the subtests share one service, and the count after them needs them finished
 	t.Parallel()
 	f := newTestService(t)
@@ -62,8 +61,6 @@ func TestCreate_AllProblemsAtOnce_FR009_SC005(t *testing.T) { //nolint:tparallel
 	}
 }
 
-// The finance budget year is the plan's year or a year with active items; the item needs a year first, must
-// exist, belong to that year and be active when newly chosen (FR-015, FR-016).
 func TestCreate_FinanceBudgetChecks_FR015_FR016(t *testing.T) { //nolint:tparallel // the subtests share one service with the create after them
 	t.Parallel()
 	f := newTestService(t)
@@ -100,14 +97,12 @@ func TestCreate_FinanceBudgetChecks_FR015_FR016(t *testing.T) { //nolint:tparall
 	}
 }
 
-// The section lists the activity's line items in creation order, each with its currency and rate, local and
-// USD amounts, spread, missing fields and SWBS status; the unassigned planned cost; and the grid (FR-001 –
-// FR-003, US1 scenario 1).
+// Each row has its currency and rate, local and USD amounts, spread, missing fields and SWBS status.
 func TestSection_RowsInCreationOrder_FR001(t *testing.T) { //nolint:gocyclo // 12: the order of the rows, then the section's balance, grid and activity
 	t.Parallel()
 	f := newTestService(t)
 	fee, film := launchFilmWithTwoItems(t, f)
-	f.create(t, priya, socialOnAir, func() Input { in := input("Elsewhere", "USD", "1.00"); in.RestartApproval = true; return in }())
+	f.create(t, priya, socialOnAir, input("Elsewhere", "USD", "1.00"))
 
 	section := f.section(t, priya, launchFilm)
 
@@ -150,11 +145,10 @@ func assertFilmProductionSpread(t *testing.T, spread SpreadView) {
 	}
 }
 
-// For a person who shows amounts in EUR, the section answers the USD column, the balance and the grid in
-// EUR, each amount converted once from its USD figure at 0.92, while plannedCostUsd stays the exact USD
-// amount; the line-item form's balance stays in USD, the currency the form calculates in, and the details
-// answer EUR like the section (FR-005, D-213). The activity carries its plan's Business unit options
-// (D-212).
+// For a reader who shows amounts in EUR, the section and the details answer the USD column, the balance and
+// the grid in EUR, each converted once from its USD figure, while plannedCostUsd stays exact; the form's
+// balance stays in USD, the currency the form calculates in. The activity carries its plan's Business unit
+// options (D-212).
 func TestSection_DisplayCurrency_FR005_D213(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -187,7 +181,6 @@ func TestSection_DisplayCurrency_FR005_D213(t *testing.T) {
 	f.assertBusinessUnits(t, section, usd)
 }
 
-// assertBusinessUnits checks that each activity carries its plan's Business unit options, [] when it has none.
 func (f *fixture) assertBusinessUnits(t *testing.T, section, usd Section) {
 	t.Helper()
 	if !slices.Equal(section.Activity.BusinessUnitOptionIDs, []string{"SO-1001"}) || usd.Activity.BusinessUnitOptionIDs == nil {
@@ -198,7 +191,6 @@ func (f *fixture) assertBusinessUnits(t *testing.T, section, usd Section) {
 	}
 }
 
-// assertSectionInEuros checks the section of launchFilmWithTwoItems for a reader who shows amounts in EUR.
 func assertSectionInEuros(t *testing.T, section Section) { //nolint:gocyclo // 10: the film row, the balance and the grid, each in one condition
 	t.Helper()
 	film := section.Items[1]
@@ -215,8 +207,7 @@ func assertSectionInEuros(t *testing.T, section Section) { //nolint:gocyclo // 1
 	}
 }
 
-// An activity without line items has an empty list, its whole planned cost unassigned and its months as
-// grid columns (FR-004).
+// An activity without line items has its whole planned cost unassigned and its months as grid columns.
 func TestSection_Empty_FR004(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -232,7 +223,6 @@ func TestSection_Empty_FR004(t *testing.T) {
 	}
 }
 
-// A deleted activity has no section: "This activity was deleted — …" (spec edge case).
 func TestSection_ActivityDeleted_EdgeCase(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -242,8 +232,8 @@ func TestSection_ActivityDeleted_EdgeCase(t *testing.T) {
 	assertError(t, err, errs.NotFound(activityGoneMessage))
 }
 
-// USD amounts are worked out with the currency's current rate on every read: a rate change in Settings
-// changes the USD amounts and the balance at once, writes nothing and restarts no approval (FR-013, D-141).
+// USD amounts use the current rate on every read: a rate change in Settings changes the USD amounts and the
+// balance at once and writes nothing (D-141).
 func TestSection_RateChange_FR013(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -261,14 +251,13 @@ func TestSection_RateChange_FR013(t *testing.T) {
 	if b := section.Balance; b.State != BalanceExceeded || b.Balance.Format() != "-22,000.00 USD" {
 		t.Errorf("at 0.50: balance %+v, want exceeded by 22,000.00 USD", b)
 	}
-	if !reflect.DeepEqual(f.stored(t), stored) || len(f.log(t)) != logged || len(f.activities.restarts) != 0 {
-		t.Errorf("a rate change wrote line items, log entries or restarts")
+	if !reflect.DeepEqual(f.stored(t), stored) || len(f.log(t)) != logged {
+		t.Errorf("a rate change wrote line items or log entries")
 	}
 }
 
-// A custom spread that does not add up still saves; its total shows how far off it is, and the line item's
-// missing list (which blocks submitting the activity) says "Spread doesn't add up to the planned cost"
-// (FR-019, US3 scenarios 2 and 3). The activity's grid shows the month outside its dates.
+// A custom spread that does not add up saves, shows its total and is listed as missing, which blocks
+// submitting; the grid shows the month outside the activity's dates.
 func TestCreate_CustomNotAddingUpSaves_FR019(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)

@@ -16,16 +16,14 @@ import (
 	"mapp/internal/settings"
 )
 
-// The limits of the plan form (data model §1).
 const (
-	maxNameLength          = 120 // characters
+	maxNameLength          = 120
 	maxDescriptionLength   = 2000
 	maxGoalWholeDigits     = 15 // a goal of INQ or MQL has at most 15 digits, like an amount
-	firstYearBeforeCurrent = 1  // a new plan's year: the current year − 1 …
-	lastYearAfterCurrent   = 5  // … to the current year + 5 (FR-006)
+	firstYearBeforeCurrent = 0  // a new plan's year: the current year, never a past one …
+	lastYearAfterCurrent   = 10 // … to the current year + 10 (D-326)
 )
 
-// The field checks' messages (plan "User-visible messages", API validation).
 const (
 	msgEnterName          = "Enter a plan name."
 	msgNameTooLong        = "Use 120 characters or fewer."
@@ -53,11 +51,9 @@ const (
 	msgGoalNegative       = "The goal can't be negative."
 )
 
-// numberText is the form of a typed goal: an optional minus, digits, and optionally a point and digits.
 var numberText = regexp.MustCompile(`^(-?)([0-9]+)(?:\.([0-9]+))?$`)
 
-// form is the plan form of a create or an update before its checks: every field of the form (D-078). The
-// year is only on a create.
+// form is the plan form of a create or an update before its checks (D-078); Year is set only on a create.
 type form struct {
 	Name                   string
 	Year                   *int
@@ -73,11 +69,10 @@ type form struct {
 	GoalStage              string
 	GoalAmount             *string
 	Attributes             settings.AttributeValues
-	Currency               *string // 016
-	PlanType               *string // 016
+	Currency               *string
+	PlanType               *string
 }
 
-// formOf returns the form of a create.
 func formOf(in PlanInput) form {
 	return form{
 		Name: in.Name, Year: in.Year, ModelID: in.ModelID, TeamIDs: in.TeamIDs, OwnerID: in.OwnerID, AOP: in.AOP,
@@ -87,7 +82,6 @@ func formOf(in PlanInput) form {
 	}
 }
 
-// formOfUpdate returns the form of an update.
 func formOfUpdate(in PlanUpdate) form {
 	return form{
 		Name: in.Name, ModelID: in.ModelID, TeamIDs: in.TeamIDs, OwnerID: in.OwnerID, AOP: in.AOP,
@@ -97,10 +91,8 @@ func formOfUpdate(in PlanUpdate) form {
 	}
 }
 
-// check checks every field of f inside the caller's transaction and returns the plan to store: stored
-// with the form's values on an update, a new plan without ID and bookkeeping on a create (stored nil). Every
-// problem is added to problems, in form order, so all of them are reported in one attempt (FR-010, FR-007,
-// FR-021). A value the plan already has may stay although it became inactive (002 FR-027).
+// check returns the plan to store: the form's values on stored, or a new plan when stored is nil. Every problem goes
+// to problems so all are reported at once; a value the plan already has may stay although it became inactive.
 func (s *Service) check(ctx context.Context, f form, stored *Plan, problems *errs.Problems) (Plan, error) {
 	var p Plan
 	if stored != nil {
@@ -114,7 +106,7 @@ func (s *Service) check(ctx context.Context, f form, stored *Plan, problems *err
 		p.Year = s.checkYear(f.Year, problems)
 		p.BudgetPhasing = rollup.NotPhased
 	}
-	p.PlanType = checkPlanType(f.PlanType, stored, problems) // 016 FR-032
+	p.PlanType = checkPlanType(f.PlanType, stored, problems)
 	var err error
 	if p.ModelID, err = s.checkModel(ctx, text(f.ModelID), stored, problems); err != nil {
 		return Plan{}, err
@@ -131,18 +123,18 @@ func (s *Service) check(ctx context.Context, f form, stored *Plan, problems *err
 	if utf8.RuneCountInString(p.Description) > maxDescriptionLength {
 		problems.Add("description", msgDescriptionTooLong)
 	}
-	if p.Currency, err = s.checkCurrency(ctx, f.Currency, stored, problems); err != nil { // 016 FR-011
+	if p.Currency, err = s.checkCurrency(ctx, f.Currency, stored, problems); err != nil {
 		return Plan{}, err
 	}
 	p.Budget = checkBudget(f.Budget, p.Currency, problems)
-	if p.Budget == nil { // a removed budget removes its phasing (016 FR-022)
+	if p.Budget == nil { // a removed budget removes its phasing
 		p.BudgetPhasing = rollup.NotPhased
 	}
 	p.DefaultFinanceBudgetID = text(f.DefaultFinanceBudgetID)
 	if err := s.checkFinanceBudget(ctx, p.DefaultFinanceBudgetID, p.Year, problems); err != nil {
 		return Plan{}, err
 	}
-	p.DefaultSpread = Spread(cmp.Or(f.DefaultSpread, string(SpreadEvenly))) // empty: the default (FR-006)
+	p.DefaultSpread = Spread(cmp.Or(f.DefaultSpread, string(SpreadEvenly)))
 	if !slices.Contains([]Spread{SpreadEvenly, SpreadFirstMonth, SpreadLastMonth, SpreadCustom}, p.DefaultSpread) {
 		problems.Add("defaultSpread", msgChooseSpread)
 	}
@@ -161,8 +153,6 @@ func (s *Service) check(ctx context.Context, f form, stored *Plan, problems *err
 	return p, nil
 }
 
-// checkTeams checks the teams: each known, and active unless the plan already has it. It returns them
-// without duplicates, sorted by team name; never nil.
 func (s *Service) checkTeams(ctx context.Context, sent []string, stored *Plan, problems *errs.Problems) ([]string, error) {
 	teamIDs := []string{}
 	for _, id := range sent {
@@ -193,9 +183,8 @@ func (s *Service) checkTeams(ctx context.Context, sent []string, stored *Plan, p
 	return teamIDs, nil
 }
 
-// checkOwner checks the owner, when one is chosen: known, active unless the plan already has them, and a
-// member of one of the plan's teams (R1, FR-007, FR-021). The R1 rule is checked on every save, so a plan
-// whose owner left its teams is refused until the owner is changed or cleared (D-085).
+// checkOwner requires the owner to be in one of the plan's teams on every save, so a plan whose owner left its
+// teams is refused until the owner is changed or cleared (D-085).
 func (s *Service) checkOwner(ctx context.Context, ownerID string, teamIDs []string, stored *Plan, problems *errs.Problems) error {
 	if ownerID == "" {
 		return nil
@@ -224,9 +213,7 @@ func (s *Service) checkOwner(ctx context.Context, ownerID string, teamIDs []stri
 	return nil
 }
 
-// checkGoalAmount checks a typed goal (already trimmed) for its stage and returns it as stored, with the
-// problem's message ("" when it is fine): not negative; for INQ and MQL a whole number, for Revenue a USD
-// amount with at most two decimals. "" means no goal.
+// checkGoalAmount returns the trimmed goal as stored, with the problem's message or "" when it is fine.
 func checkGoalAmount(amount string, stage GoalStage) (stored, message string) {
 	if amount == "" {
 		return "", ""

@@ -2,7 +2,6 @@ package lineitem
 
 import (
 	"encoding/json"
-	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -170,40 +169,37 @@ func TestUpdate_KeepsInactiveValues_FR011_FR016(t *testing.T) { //nolint:gocyclo
 	))
 }
 
-// A new planned cost or currency under a Submitted or Approved activity needs confirmation and restarts approval.
-func TestUpdate_CostOrCurrencyRestart_FR031(t *testing.T) {
+// A new planned cost or currency of a line item of a Submitted or Approved activity is saved without a
+// confirmation and keeps the activity's approval (D-322); each save logs its change.
+func TestUpdate_CostOrCurrencyKeepsStatus_034_FR001(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
-	venue := f.create(t, priya, socialOnAir, confirmed(input("Venue hire", "GBP", "15800")))
-	approve := func() {
-		facts := f.activities.facts[socialOnAir]
-		facts.Status = "approved"
-		f.activities.facts[socialOnAir] = facts
-	}
-	approve()
-	f.activities.restarts = nil
+	venue := f.create(t, priya, socialOnAir, input("Venue hire", "GBP", "15800"))
+	printRun := f.create(t, priya, tradeAds, input("Print run", "USD", "2000"))
 
 	more := formOf(venue)
 	more.PlannedCost = text("17000")
-	_, err := f.service.Update(t.Context(), priya, venue.ID, more)
-	assertError(t, err, errs.Validation(errs.FieldError{Field: "restartApproval", Message: restartMessage}))
-	if stored := f.stored(t)[0]; stored.Version != 1 || len(f.activities.restarts) != 0 {
-		t.Fatalf("unconfirmed save stored version %d and restarted %d times", stored.Version, len(f.activities.restarts))
-	}
-
-	more.RestartApproval = true
 	saved := f.update(t, priya, venue.ID, more)
-	approve()
 	euros := formOf(saved)
-	euros.Currency, euros.RestartApproval = "EUR", true
-	f.update(t, priya, venue.ID, euros)
+	euros.Currency = "EUR"
+	inEuros := f.update(t, priya, venue.ID, euros)
+	dearer := formOf(printRun)
+	dearer.PlannedCost = text("2500")
+	submitted := f.update(t, priya, printRun.ID, dearer)
 
-	want := []restartCall{
-		{activityID: socialOnAir, reasons: []string{"Planned cost of line item 'Venue hire' (L-1001): 15,800.00 GBP → 17,000.00 GBP"}},
-		{activityID: socialOnAir, reasons: []string{"Planned cost of line item 'Venue hire' (L-1001): 17,000.00 GBP → 17,000.00 EUR"}},
+	if inEuros.Version != 3 || inEuros.PlannedCost.Format() != "17,000.00 EUR" || inEuros.SwbsStatus != SwbsReadyToSend ||
+		submitted.SwbsStatus != SwbsWaitingForApproval {
+		t.Errorf("venue v%d %s %s, print run %s; want v3 17,000.00 EUR still ready to send, print run still waiting",
+			inEuros.Version, inEuros.PlannedCost.Format(), inEuros.SwbsStatus, submitted.SwbsStatus)
 	}
-	if !reflect.DeepEqual(f.activities.restarts, want) {
-		t.Errorf("restarts = %+v\nwant %+v", f.activities.restarts, want)
+	changed := 0
+	for _, e := range f.log(t) {
+		if e.Action == history.ActionChanged {
+			changed++
+		}
+	}
+	if changed != 3 {
+		t.Errorf("%d changed entries, want 3 (one per save)", changed)
 	}
 }
 
@@ -211,12 +207,7 @@ func TestUpdate_CostOrCurrencyRestart_FR031(t *testing.T) {
 func TestUpdate_OtherEditsKeepStatus_FR032_SC007(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
-	venue := f.create(t, priya, socialOnAir, confirmed(input("Venue hire", "GBP", "15800")))
-	facts := f.activities.facts[socialOnAir]
-	facts.Status = "approved"
-	f.activities.facts[socialOnAir] = facts
-	f.activities.restarts = nil
-
+	venue := f.create(t, priya, socialOnAir, input("Venue hire", "GBP", "15800"))
 	u := formOf(venue)
 	u.Name, u.OwnerID, u.Description, u.ContractedAmount = "Venue", text(daniel.ID), "Hall B", text("15000")
 	u.Spread = SpreadInput{Method: SpreadLastMonth, Months: []SpreadMonthInput{}}
@@ -224,9 +215,8 @@ func TestUpdate_OtherEditsKeepStatus_FR032_SC007(t *testing.T) {
 	u.RequestSwbs, u.FinanceBudgetItemID = false, text(europeBrand)
 	saved := f.update(t, priya, venue.ID, u)
 
-	if saved.Version != 2 || len(f.activities.restarts) != 0 || f.activities.facts[socialOnAir].Status != "approved" ||
-		saved.SwbsStatus != SwbsNotRequested {
-		t.Errorf("version %d, %d restarts, activity %s, SWBS %s; want 2, none, approved, notRequested",
-			saved.Version, len(f.activities.restarts), f.activities.facts[socialOnAir].Status, saved.SwbsStatus)
+	if saved.Version != 2 || f.activities.facts[socialOnAir].Status != "approved" || saved.SwbsStatus != SwbsNotRequested {
+		t.Errorf("version %d, activity %s, SWBS %s; want 2, approved, notRequested",
+			saved.Version, f.activities.facts[socialOnAir].Status, saved.SwbsStatus)
 	}
 }

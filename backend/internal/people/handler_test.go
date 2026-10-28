@@ -14,31 +14,25 @@ import (
 
 const priyasEmail = "priya.raman@shell.com"
 
-// The bodies of the API's refusals, as the web app receives them.
 const (
 	signInRequiredBody = `{"error":{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}}`
 	sessionExpiredBody = `{"error":{"code":"session_expired","message":"Please sign in again","fields":[]}}`
 )
 
-// The answers about Priya Raman as the seed has her: her preferences are the defaults, and she is in the
-// team Lubricants Europe.
 const (
 	defaultPreferencesBody = `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams","historyIncludeInside":false,"pinnedPlanIds":[]}`
 	lubricantsEuropeBody   = `{"id":"T-1001","name":"Lubricants Europe","colour":"blue","active":true}`
 	priyasTeamsBody        = `[` + lubricantsEuropeBody + `]`
 )
 
-// priyasAccessBody is Priya's access as the seed gives it (feature 014, FR-024): the Planner role for her
-// teams, its twelve permissions in Lubricants Europe, the administrator to ask, and segregation of duties on.
 var priyasAccessBody = `{"roles":[{"id":"RA-1005","role":{"id":"RL-1003","name":"Planner","builtIn":"planner"},` +
 	`"scope":{"type":"myTeams","teams":` + priyasTeamsBody + `,"text":"My teams"},"scopeEmpty":false}],` +
 	`"permissions":[` + inLubricantsEurope("plans.view", "plans.create", "plans.edit", "plans.publish", "campaigns.edit",
 	"campaigns.delete", "activities.edit", "activities.delete", "activities.submit", "data.export", "finance.view",
-	"finance.link") + `],` +
+	"finance.link", "purchaseRequests.edit", "purchaseRequests.delete", "purchaseRequests.submit") + `],` +
 	`"administrators":[{"id":"U-1001","name":"Alex Morgan","initials":"AM","jobTitle":"Marketing administrator","active":true}],` +
 	`"noSelfApproval":true}`
 
-// inLubricantsEurope writes permissions held for Lubricants Europe only, as MyAccess lists them.
 func inLubricantsEurope(keys ...string) string {
 	parts := make([]string, 0, len(keys))
 	for _, key := range keys {
@@ -75,7 +69,6 @@ func TestGetMe_SessionExpired_FR006(t *testing.T) {
 	assertAnswer(t, response, http.StatusUnauthorized, sessionExpiredBody)
 }
 
-// Only the preferences sent change, and the person keeps them (FR-011, FR-014).
 func TestPatchPreferences_ThemeKeepsSidebarCollapsed_FR014(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -104,7 +97,7 @@ func TestPatchPreferences_HomeScope_FR003(t *testing.T) {
 
 	response := priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"homeScope": "everything"})
 	refused := priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"homeScope": "all"},
-		apitest.SkipRequestValidation()) // the contract itself allows only the two scopes
+		apitest.SkipRequestValidation())
 
 	assertAnswer(t, response, http.StatusOK, `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"everything","historyIncludeInside":false,"pinnedPlanIds":[]}`)
 	var me people.CurrentUser
@@ -126,7 +119,7 @@ func TestPatchPreferences_PinnedPlans_FR004_FR005(t *testing.T) {
 
 	pinned := priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"pinnedPlanIds": []string{"P-1002", "P-1001", "P-1002"}})
 	refused := priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"pinnedPlanIds": []string{"plan-7"}},
-		apitest.SkipRequestValidation()) // the contract itself allows only plan ids
+		apitest.SkipRequestValidation())
 
 	assertAnswer(t, pinned, http.StatusOK, `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams","historyIncludeInside":false,"pinnedPlanIds":["P-1002","P-1001"]}`)
 	assertAnswer(t, refused, http.StatusBadRequest, validationBody(`{"field":"pinnedPlanIds","message":"Pin plans by their id, like P-1001."}`))
@@ -137,7 +130,6 @@ func TestPatchPreferences_PinnedPlans_FR004_FR005(t *testing.T) {
 	}
 }
 
-// Changing preferences needs a signed-in person (FR-005).
 func TestPatchPreferences_WithoutSession_FR005(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -147,9 +139,6 @@ func TestPatchPreferences_WithoutSession_FR005(t *testing.T) {
 	assertAnswer(t, response, http.StatusUnauthorized, signInRequiredBody)
 }
 
-// My profile changes the signed-in person's name and job title: the answer is the signed-in person after
-// the change, with initials and version, and every screen naming them shows the new name (003 FR-021,
-// FR-022, US4 scenario 2).
 func TestPatchMe_UpdatesProfile_FR021_FR022(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -171,9 +160,6 @@ func TestPatchMe_UpdatesProfile_FR021_FR022(t *testing.T) {
 	}
 }
 
-// The display currency and the date format are preferences like the theme: the answer has all five, and
-// anything but an active currency or one of the four date formats is refused next to its field, both at once
-// (003 FR-023, FR-024).
 func TestPatchPreferences_DisplayCurrencyAndDateFormat_FR023_FR024(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -187,9 +173,6 @@ func TestPatchPreferences_DisplayCurrencyAndDateFormat_FR023_FR024(t *testing.T)
 		`{"field":"dateFormat","message":"Choose one of the date formats."}`))
 }
 
-// The display currencies offered are the active currencies of Settings, by code; a currency set inactive
-// after a person chose it is still offered to that person, marked inactive, and to nobody else (003
-// FR-023, D-063).
 func TestGetDisplayCurrencies_FR023(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -219,8 +202,6 @@ func TestGetDisplayCurrencies_FR023(t *testing.T) {
 	assertAnswer(t, daniels, http.StatusOK, `{"items":[`+cny+`,`+eur+`,`+inr+`,`+usd+`],"total":4}`)
 }
 
-// Preferences belong to the person, not to the browser: signed in from another browser, the person sees
-// the display currency and date format they chose (003 FR-025).
 func TestPreferences_SameInAnotherBrowser_FR025(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -236,7 +217,6 @@ func TestPreferences_SameInAnotherBrowser_FR025(t *testing.T) {
 	}
 }
 
-// assertAnswer checks the status and the exact body of an answer.
 func assertAnswer(t *testing.T, response *apitest.Response, status int, body string) {
 	t.Helper()
 	if response.Status != status || string(response.Body) != body {

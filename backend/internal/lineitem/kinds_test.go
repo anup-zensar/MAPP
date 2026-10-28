@@ -10,7 +10,6 @@ import (
 	"mapp/internal/platform/record"
 )
 
-// undo undoes the bin entry and stops the test when that fails.
 func (f *fixture) undo(t *testing.T, entryID string) history.RestoreResult {
 	t.Helper()
 	result, err := f.history.Undo(t.Context(), priya, entryID)
@@ -20,31 +19,28 @@ func (f *fixture) undo(t *testing.T, entryID string) history.RestoreResult {
 	return result
 }
 
-// deleteNow deletes the line item id without confirmation and returns its bin entry.
-func (f *fixture) deleteNow(t *testing.T, id string, confirm bool) history.BinEntry {
+func (f *fixture) deleteNow(t *testing.T, id string) history.BinEntry {
 	t.Helper()
-	entry, err := f.service.Delete(t.Context(), priya, id, confirm)
+	entry, err := f.service.Delete(t.Context(), priya, id)
 	if err != nil {
 		t.Fatalf("Delete: %v", err)
 	}
 	return entry
 }
 
-// setStatus gives the fake activity id the stored status, as feature 008's approval actions do.
 func (f *fixture) setStatus(id, status string) {
 	facts := f.activities.facts[id]
 	facts.Status = status
 	f.activities.facts[id] = facts
 }
 
-// Undo brings the line item back exactly: the same ID, values and version (FR-030, domain model R14).
 func TestUndo_RestoresExactly_FR030(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
 	fee := f.create(t, priya, launchFilm, complete(input("Agency fee", "EUR", "46000.00")))
 	before := f.stored(t)
 
-	result := f.undo(t, f.deleteNow(t, fee.ID, false).ID)
+	result := f.undo(t, f.deleteNow(t, fee.ID).ID)
 
 	if !reflect.DeepEqual(f.stored(t), before) {
 		t.Errorf("after Undo: %+v\nwant %+v", f.stored(t), before)
@@ -54,46 +50,38 @@ func TestUndo_RestoresExactly_FR030(t *testing.T) {
 	}
 }
 
-// A delete that ended an approval stays ended after Undo: the activity is Created, and Undo restarts nothing
-// (FR-033).
-func TestUndo_EndedApprovalStaysEnded_FR033(t *testing.T) {
+// Deleting and undoing a line item of an Approved activity leave it Approved, with no note about approval (D-322).
+func TestUndo_InApprovalKeepsStatus_034_FR002(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
-	venue := f.create(t, priya, socialOnAir, confirmed(input("Venue hire", "GBP", "15800")))
-	f.setStatus(socialOnAir, "approved")
-	f.activities.restarts = nil
-	entry := f.deleteNow(t, venue.ID, true)
+	venue := f.create(t, priya, socialOnAir, input("Venue hire", "GBP", "15800"))
+	before := f.stored(t)
 
-	f.undo(t, entry.ID)
+	result := f.undo(t, f.deleteNow(t, venue.ID).ID)
 
-	if len(f.activities.restarts) != 1 || f.activities.facts[socialOnAir].Status != "created" {
-		t.Errorf("%d restarts, activity %s; want only the delete's, and Created", len(f.activities.restarts), f.activities.facts[socialOnAir].Status)
+	if !reflect.DeepEqual(f.stored(t), before) || result.Details != "" {
+		t.Errorf("after Undo: %+v with details %q; want the line item back exactly, no note", f.stored(t), result.Details)
 	}
 }
 
-// Bringing a line item back into a Submitted or Approved activity counts as adding one: the activity goes
-// back to Created and the restore says so (FR-033, D-147).
-func TestRestore_IntoApprovedRestarts_FR033(t *testing.T) {
+// A restore into an activity approved meanwhile keeps it Approved, with no approval note (D-322, replacing D-147).
+func TestRestore_IntoApprovedKeepsStatus_034_FR002(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
 	fee := f.create(t, priya, launchFilm, input("Agency fee", "USD", "50000.00"))
-	entry := f.deleteNow(t, fee.ID, false)
-	f.setStatus(launchFilm, "approved") // approved meanwhile
+	entry := f.deleteNow(t, fee.ID)
+	f.setStatus(launchFilm, "approved")
 
 	result, err := f.history.Restore(t.Context(), priya, entry.ID)
 	if err != nil {
 		t.Fatalf("Restore: %v", err)
 	}
 
-	want := []restartCall{{activityID: launchFilm, reasons: []string{"Line item 'Agency fee' (L-1001) restored: 50,000.00 USD"}}}
-	if !reflect.DeepEqual(f.activities.restarts, want) {
-		t.Errorf("restarts = %+v, want %+v", f.activities.restarts, want)
+	if result.Details != "" || len(f.stored(t)) != 1 {
+		t.Errorf("details %q with %d stored; want the line item back and no note", result.Details, len(f.stored(t)))
 	}
-	if note := "Activity 'Launch film' needs approval again because a line item came back."; result.Details != note {
-		t.Errorf("details = %q, want %q", result.Details, note)
-	}
-	if e := f.log(t)[0]; e.Action != history.ActionRestored || e.Details != "Restored from the recycle bin. Activity 'Launch film' needs approval again because a line item came back." {
-		t.Errorf("log entry = %+v", e)
+	if e := f.log(t)[0]; e.Action != history.ActionRestored || e.Details != "Restored from the recycle bin" {
+		t.Errorf("log entry = %+v, want restored without a note", e)
 	}
 }
 
@@ -103,7 +91,7 @@ func TestUndo_NameTaken_D037(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
 	fee := f.create(t, priya, launchFilm, input("Agency fee", "USD", "1.00"))
-	entry := f.deleteNow(t, fee.ID, false)
+	entry := f.deleteNow(t, fee.ID)
 	f.create(t, priya, launchFilm, input("agency FEE", "USD", "2.00"))
 
 	_, err := f.history.Undo(t.Context(), priya, entry.ID)
@@ -114,13 +102,12 @@ func TestUndo_NameTaken_D037(t *testing.T) {
 	}
 }
 
-// A Restore renames a line item whose name is taken: " (restored)", " (restored 2)", …, with a note and a new
-// version (FR-030, 011 FR-022).
+// A Restore renames a line item whose name is taken, with a note and a new version.
 func TestRestore_NameTakenSuffix_FR030(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
 	fee := f.create(t, priya, launchFilm, input("Agency fee", "USD", "1.00"))
-	entry := f.deleteNow(t, fee.ID, false)
+	entry := f.deleteNow(t, fee.ID)
 	f.create(t, priya, launchFilm, input("Agency fee", "USD", "2.00"))
 	f.create(t, priya, launchFilm, input("Agency fee (restored)", "USD", "3.00"))
 
@@ -138,16 +125,14 @@ func TestRestore_NameTakenSuffix_FR030(t *testing.T) {
 	}
 }
 
-// Deleting an activity takes its line items into the same recycle-bin entry ("with 2 line items"); undoing
-// it brings them back, and line items that come back with their activity never restart its approval
-// (FR-033, data model §7.1).
+// Deleting an activity takes its line items into the same bin entry; undoing it brings them back without
+// restarting its approval.
 func TestDeleteActivity_TakesLineItems(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
-	f.create(t, priya, socialOnAir, confirmed(input("Venue hire", "GBP", "15800")))
+	f.create(t, priya, socialOnAir, input("Venue hire", "GBP", "15800"))
 	f.create(t, priya, socialOnAir, input("Speaker fees", "USD", "5000"))
 	f.setStatus(socialOnAir, "approved")
-	f.activities.restarts = nil
 
 	var entry history.BinEntry
 	err := f.db.Write(t.Context(), func(ctx context.Context) error {
@@ -164,14 +149,12 @@ func TestDeleteActivity_TakesLineItems(t *testing.T) {
 
 	f.undo(t, entry.ID)
 
-	if len(f.stored(t)) != 2 || len(f.activities.restarts) != 0 || f.activities.facts[socialOnAir].Status != "approved" {
-		t.Errorf("%d stored, %d restarts, activity %s; want both back, no restart, still approved",
-			len(f.stored(t)), len(f.activities.restarts), f.activities.facts[socialOnAir].Status)
+	if len(f.stored(t)) != 2 || f.activities.facts[socialOnAir].Status != "approved" {
+		t.Errorf("%d stored, activity %s; want both back, still approved", len(f.stored(t)), f.activities.facts[socialOnAir].Status)
 	}
 }
 
-// The log reads like the screens: the owner's name, amounts with thousands separators, the spread in words,
-// the finance budget item with its budget, Shell attributes by their labels (FR-027, data model §7.3).
+// The log reads like the screens: names, formatted amounts, the spread in words, labels of Shell attributes.
 func TestDescribe_LogTexts_FR027(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -213,7 +196,7 @@ func TestKind_SnapshotAndChildren(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
 	fee := f.create(t, priya, launchFilm, input("Agency fee", "USD", "1.00"))
-	f.create(t, priya, socialOnAir, confirmed(input("Elsewhere", "USD", "1.00")))
+	f.create(t, priya, socialOnAir, input("Elsewhere", "USD", "1.00"))
 	kind := f.service.Kinds()[0]
 
 	err := f.db.Read(t.Context(), func(ctx context.Context) error {

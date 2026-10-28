@@ -13,10 +13,7 @@ import (
 	"mapp/internal/settings"
 )
 
-// User story 4 — Edit a plan.
-
-// Every save sends the version it started from; without one, or with one below 1, the save is refused
-// next to the field "version", together with every other problem, and nothing changes (FR-023).
+// A missing version, or one below 1, is refused on "version" with every other problem, and nothing changes.
 func TestUpdate_MissingVersion_FR023(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -37,8 +34,7 @@ func TestUpdate_MissingVersion_FR023(t *testing.T) {
 	}
 }
 
-// A save from an out-of-date version is refused, naming who changed the plan and when; nothing is
-// overwritten or logged (FR-023, spec edge case).
+// An out-of-date save is refused naming who changed the plan and when; nothing is overwritten or logged.
 func TestUpdate_VersionConflict_FR023(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -65,7 +61,25 @@ func TestUpdate_VersionConflict_FR023(t *testing.T) {
 	}
 }
 
-// A save that changes nothing creates no version and no log entry (FR-031, research R5).
+// In February 2027 the FY2026 plan is saved and keeps its year, though 2026 is no longer offered (D-326).
+func TestUpdate_PastYearPlan_034_FR015(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	created := f.create(t, priya, input("FY2026 Lubricants Europe"))
+	f.clock.Advance(time.Date(2027, 2, 3, 9, 0, 0, 0, time.UTC).Sub(start))
+	edit := updateOf(f.stored(t, created.ID))
+	edit.Description = "Carried into 2027"
+
+	saved, err := f.service.Update(t.Context(), priya, created.ID, edit)
+
+	if err != nil || saved.Year != 2026 || saved.Description != "Carried into 2027" || saved.Version != 2 {
+		t.Fatalf("Update = year %d, %q, version %d, %v; want saved with year 2026", saved.Year, saved.Description, saved.Version, err)
+	}
+	if defaults, _ := f.service.Defaults(t.Context(), priya); slices.Contains(defaults.Years, 2026) || defaults.Years[0] != 2027 {
+		t.Errorf("new-plan years = %v, want 2027 onwards", defaults.Years)
+	}
+}
+
 func TestUpdate_NoChangeNoLog_FR031(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -84,9 +98,7 @@ func TestUpdate_NoChangeNoLog_FR031(t *testing.T) {
 	}
 }
 
-// A Published plan stays Published when it is edited; the log holds one "changed" entry with every changed
-// field's old and new value in words, each Shell attribute on its own; the year never changes (FR-018,
-// FR-022, FR-031, US4 scenario 5).
+// The one "changed" entry gives each changed field's old and new value in words, each Shell attribute on its own.
 func TestUpdate_PublishedStaysPublishedAndLogsFields_FR022(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -124,8 +136,6 @@ func TestUpdate_PublishedStaysPublishedAndLogsFields_FR022(t *testing.T) {
 	}
 }
 
-// When the owner is in none of the chosen teams, the save is refused naming the person, until another
-// owner is chosen or the field is cleared (FR-021, R1, US4 scenario 4).
 func TestUpdate_OwnerNotInTeams_FR021(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -143,8 +153,7 @@ func TestUpdate_OwnerNotInTeams_FR021(t *testing.T) {
 	}
 }
 
-// A model, team or owner that became inactive stays on the plan when it is saved again; only choosing
-// one anew is refused (spec edge case, 002 FR-027).
+// A model, team or owner that became inactive stays on a saved plan; only choosing one anew is refused.
 func TestUpdate_InactiveValuesKept_EdgeCase(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -164,8 +173,6 @@ func TestUpdate_InactiveValuesKept_EdgeCase(t *testing.T) {
 	}
 }
 
-// Values of Shell attributes that a business-unit change hides are kept, so they come back when the
-// business unit is added again (FR-020, R9, US4 scenario 3).
 func TestUpdate_HiddenAttributeValuesKept_FR020(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -184,8 +191,7 @@ func TestUpdate_HiddenAttributeValuesKept_FR020(t *testing.T) {
 	}
 }
 
-// Before a model change is saved, the activities whose type the new model does not allow are listed; the
-// same model lists nothing, and an unknown one is refused (FR-019, R7, US4 scenario 2).
+// The same model lists no disallowed activities, and an unknown model is refused.
 func TestChangeEffects_DisallowedActivities_FR019(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -211,8 +217,6 @@ func TestChangeEffects_DisallowedActivities_FR019(t *testing.T) {
 	assertError(t, errGone, errs.NotFound("This plan no longer exists — someone may have deleted it."))
 }
 
-// Before a business-unit change is saved, the attribute groups it hides or shows are listed by unit, with
-// the levels they are on and their labels (FR-020, R9, US4 scenario 3).
 func TestChangeEffects_AttributeGroups_FR020(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

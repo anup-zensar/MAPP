@@ -19,14 +19,7 @@ import (
 const (
 	activityGoneMessage = "This activity was deleted — restore it from the recycle bin to keep working on its line items."
 	lineItemGoneMessage = "This line item no longer exists — someone may have deleted it."
-	restartMessage      = "This activity will need approval again. Confirm the change to send it back for approval."
 	reloadMessage       = "Reload the page and try again."
-)
-
-const (
-	addedReason   = "Line item '%s' (%s) added: %s %s"
-	deletedReason = "Line item '%s' (%s) deleted: %s %s"
-	changedReason = "Planned cost of line item '%s' (%s): %s %s → %s %s"
 )
 
 type Service struct {
@@ -36,6 +29,8 @@ type Service struct {
 	history *history.Service
 	deps    Deps
 	now     clock.Clock
+
+	purchases PurchaseRequests
 }
 
 func NewService(tools history.Tools, repo Store, deps Deps) *Service {
@@ -105,28 +100,6 @@ func sameValue(x, y json.RawMessage) bool {
 		return b.String()
 	}
 	return compact(x) == compact(y)
-}
-
-// confirmRestart refuses, after the form's problems, a change that restarts approval without confirmation.
-func confirmRestart(problems errs.Problems, f ActivityFacts, confirmed bool) error {
-	if err := problems.Err(); err != nil {
-		return err
-	}
-	if f.restartsApproval() && !confirmed {
-		return errs.Validation(errs.FieldError{Field: "restartApproval", Message: restartMessage})
-	}
-	return nil
-}
-
-// restart sends a Submitted or Approved activity back to Created and returns its facts afterwards.
-func (s *Service) restart(ctx context.Context, a actor.Actor, f ActivityFacts, reason string) (ActivityFacts, error) {
-	if !f.restartsApproval() {
-		return f, nil
-	}
-	if err := s.deps.Activities.RestartApproval(ctx, a, f.ID, []string{reason}); err != nil {
-		return ActivityFacts{}, err
-	}
-	return s.facts(ctx, f.ID)
 }
 
 // facts answers "activity was deleted" (404) for an activity that is not stored.
