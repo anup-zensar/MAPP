@@ -15,7 +15,8 @@ const (
 // parseListFilter reports every wrong parameter at once, in the order of the query: scope and status, then
 // the years, then the range and the plan types.
 func parseListFilter(query url.Values) (ListFilter, error) {
-	filter := ListFilter{Scope: query.Get(scopeField), Status: query.Get(statusField), Q: query.Get("q"), Types: query["type"]}
+	filter := ListFilter{Scope: query.Get(scopeField), Status: query.Get(statusField), Q: query.Get("q"), Types: query["type"],
+		BCPIR: query.Get("bcpir")}
 	var yearProblems errs.Problems
 	filter.Year = parseListYear(query, "year", &yearProblems)
 	filter.YearFrom = parseListYear(query, "yearFrom", &yearProblems)

@@ -12,11 +12,6 @@ import (
 	"mapp/internal/platform/ids"
 )
 
-// The rules of All work's personal settings (data model §1): the remembered columns and, later in this file,
-// the saved views. Both are personal settings like D-038 (D-121): no version, no activity-log entry, no
-// recycle bin, and nobody but their owner reads or changes them.
-
-// Messages of the plan's validation table (API).
 const (
 	msgEachColumnOnce = "Each column can be chosen once."
 	msgEnterViewName  = "Enter a name for the view."
@@ -26,10 +21,8 @@ const (
 	msgViewGone       = "This view no longer exists — it may have been deleted in another tab."
 )
 
-// maxViewName is the longest name of a saved view, in characters (FR-029).
 const maxViewName = 60
 
-// ListViews returns a's saved views, sorted by name ignoring letter case; nobody else's (FR-030).
 func (s *Service) ListViews(ctx context.Context, a actor.Actor) (SavedViewPage, error) {
 	page := SavedViewPage{Items: []SavedView{}}
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -39,7 +32,7 @@ func (s *Service) ListViews(ctx context.Context, a actor.Actor) (SavedViewPage, 
 		}
 		sortViews(own)
 		for _, v := range own {
-			v.State = migrateState(v.State) // a view saved before 016 reads as a one-year range
+			v.State = migrateState(v.State)
 			page.Items = append(page.Items, v.view())
 		}
 		page.Total = len(page.Items)
@@ -51,10 +44,6 @@ func (s *Service) ListViews(ctx context.Context, a actor.Actor) (SavedViewPage, 
 	return page, nil
 }
 
-// CreateView saves a's current state under a name (FR-029): the name is required, trimmed, at most 60
-// characters and unique among a's views ignoring letter case; the state is checked; a view made the default
-// takes that place from a's other default in the same Write (FR-031). Every problem is reported at once.
-// It is a personal setting: not logged (D-121).
 func (s *Service) CreateView(ctx context.Context, a actor.Actor, in SavedViewCreate) (SavedView, error) {
 	var created SavedView
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -91,9 +80,6 @@ func (s *Service) CreateView(ctx context.Context, a actor.Actor, in SavedViewCre
 	return created, nil
 }
 
-// UpdateView changes a's own view id (FR-030, FR-031): a new name (the rules of CreateView), a new state
-// (Update view), or whether it is the default; only the parts sent change. Another person's view, or one that
-// is gone, is not found, never revealed.
 func (s *Service) UpdateView(ctx context.Context, a actor.Actor, id string, in SavedViewUpdate) (SavedView, error) {
 	var updated SavedView
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -131,8 +117,6 @@ func (s *Service) UpdateView(ctx context.Context, a actor.Actor, id string, in S
 	return updated, nil
 }
 
-// DeleteView deletes a's own view id and answers it, so the web app's Undo can save it again (FR-031). It is
-// a personal setting: not to the recycle bin and not logged (D-121).
 func (s *Service) DeleteView(ctx context.Context, a actor.Actor, id string) (SavedView, error) {
 	var deleted SavedView
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -149,7 +133,6 @@ func (s *Service) DeleteView(ctx context.Context, a actor.Actor, id string) (Sav
 	return deleted, nil
 }
 
-// ownView returns a's view id, or not found when it is gone or someone else's (FR-030).
 func (s *Service) ownView(ctx context.Context, a actor.Actor, id string) (StoredView, error) {
 	v, found, err := s.repo.GetView(ctx, id)
 	if err != nil {
@@ -161,7 +144,6 @@ func (s *Service) ownView(ctx context.Context, a actor.Actor, id string) (Stored
 	return v, nil
 }
 
-// saveView stores v; when it is the default, the person's other default view stops being one (FR-031).
 func (s *Service) saveView(ctx context.Context, v StoredView, own []StoredView) error {
 	if v.IsDefault {
 		for _, other := range own {
@@ -176,8 +158,6 @@ func (s *Service) saveView(ctx context.Context, v StoredView, own []StoredView) 
 	return s.repo.PutView(ctx, v)
 }
 
-// checkViewName returns the trimmed name, adding its problems (FR-029): empty, longer than 60 characters, or
-// the name of another of the person's views than exceptID, ignoring letter case.
 func checkViewName(problems *errs.Problems, name string, own []StoredView, exceptID string) string {
 	name = strings.TrimSpace(name)
 	switch {
@@ -196,10 +176,6 @@ func checkViewName(problems *errs.Problems, name string, own []StoredView, excep
 	return name
 }
 
-// checkState returns the state of a view with its lists never nil and Name left out of its columns, adding
-// the one state problem when a value is not one of its choices (data model §1.2): the view, the year, the
-// filters with fixed values, the search, the columns, the sort, the expansion, the period and the calendar
-// layout.
 func checkState(problems *errs.Problems, s ViewState) ViewState {
 	s = migrateState(s)
 	f := &s.Filters
@@ -217,6 +193,7 @@ func checkState(problems *errs.Problems, s ViewState) ViewState {
 		(s.Breakdown == nil || s.Breakdown.By != "") &&
 		allIn(f.PlanStatuses, planStatusValues) && allIn(f.ContainerStatuses, containerStatusValues) &&
 		allIn(f.ActivityStatuses, activityStatusValues) && slices.Contains(strategicValues, f.Strategic) &&
+		(f.BCPIR == "" || slices.Contains(strategicValues, f.BCPIR)) &&
 		slices.Contains(showLevelsValues, f.ShowLevels) && utf8.RuneCountInString(s.Search) <= maxSearchLength &&
 		(s.Sort == nil || (s.Sort.Column != "" && validDirection(s.Sort.Direction))) &&
 		slices.Contains([]string{"default", "allExpanded", "allCollapsed"}, s.Expansion.Mode) &&
@@ -227,8 +204,6 @@ func checkState(problems *errs.Problems, s ViewState) ViewState {
 	return s
 }
 
-// migrateState reads a view state with the defaults of 016 (data-model §5.2): a state with only a year is the
-// range year–year; the new filters are empty lists; yearFrom is answered as year too.
 func migrateState(s ViewState) ViewState {
 	switch {
 	case s.YearFrom == 0 && s.YearTo == 0:
@@ -247,12 +222,10 @@ func migrateState(s ViewState) ViewState {
 	return s
 }
 
-// allIn reports whether every value is one of allowed.
 func allIn(values, allowed []string) bool {
 	return !slices.ContainsFunc(values, func(v string) bool { return !slices.Contains(allowed, v) })
 }
 
-// orNoValues returns values, or an empty list for nil.
 func orNoValues(values []FilterValue) []FilterValue {
 	if values == nil {
 		return []FilterValue{}
@@ -260,7 +233,6 @@ func orNoValues(values []FilterValue) []FilterValue {
 	return values
 }
 
-// orNoKeys returns keys, or an empty list for nil.
 func orNoKeys(keys []string) []string {
 	if keys == nil {
 		return []string{}
@@ -268,12 +240,10 @@ func orNoKeys(keys []string) []string {
 	return keys
 }
 
-// sortViews orders views by name ignoring letter case, then by ID.
 func sortViews(views []StoredView) {
 	slices.SortFunc(views, func(x, y StoredView) int { return compareNames(x.Name, x.ID, y.Name, y.ID) })
 }
 
-// checkColumns adds the problems of a list of column keys under field: more than 100, or a key listed twice.
 func checkColumns(problems *errs.Problems, field string, columns []string) {
 	if len(columns) > maxColumns {
 		problems.Add(field, msgTooManyCols)
@@ -288,7 +258,6 @@ func checkColumns(problems *errs.Problems, field string, columns []string) {
 	}
 }
 
-// validDirection reports whether direction is asc or desc.
 func validDirection(direction string) bool {
 	return direction == SortAscending || direction == SortDescending
 }

@@ -11,12 +11,6 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// The Breakdown (feature 016, FR-040 – FR-042, data-model §3.5, D-270): the planned cost of the activities that
-// match the filters, grouped by one grouping — a choice or yes/no Shell attribute of any level, or Plan, Plan
-// type, Plan currency, Year, Team, Business unit, Activity type, Owner — and optionally then by a second. It
-// is also the plan page's Planned cost by card (one plan, amounts in its plan currency).
-
-// The messages of the Breakdown (016 plan "User-visible messages").
 const (
 	msgChooseBy        = "Choose what to break down by."
 	msgChooseThenBy    = "Choose another grouping than the first."
@@ -29,7 +23,6 @@ const (
 	labelTotal         = "Total"
 )
 
-// The keys of the groups that are not values.
 const (
 	keyNotFilledIn   = "notFilledIn"
 	keyNotOnLineItem = "notOnLineItem"
@@ -37,7 +30,6 @@ const (
 	keyTotal         = "total"
 )
 
-// The built-in groupings (FR-040).
 const (
 	byPlan         = "plan"
 	byPlanType     = "planType"
@@ -50,8 +42,6 @@ const (
 	attrPrefix     = "attr:"
 )
 
-// Breakdown returns the Breakdown of q for a (FR-040 – FR-042), read in one transaction: by is needed, thenBy
-// must differ from it, and amountsIn=plan needs exactly one plan. Every problem is reported at once.
 func (s *Service) Breakdown(ctx context.Context, a actor.Actor, q Query) (Breakdown, error) {
 	var result Breakdown
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -68,7 +58,6 @@ func (s *Service) Breakdown(ctx context.Context, a actor.Actor, q Query) (Breakd
 	return result, nil
 }
 
-// breakdownOf works out the Breakdown of in (data-model §3.5).
 func breakdownOf(in input) (Breakdown, error) {
 	groupings := groupingsOf(in.attributes)
 	q := in.query
@@ -106,12 +95,11 @@ func breakdownOf(in input) (Breakdown, error) {
 	return w.result(groupings), nil
 }
 
-// groupingsOf returns every grouping the pickers offer (FR-040): the built-in ones, then the filterable Shell
-// attributes level by level.
 func groupingsOf(attributes []Attribute) []Grouping {
 	list := []Grouping{
 		{Key: byPlan, Label: "Plan", HasBudget: true},
 		{Key: byPlanType, Label: "Plan type", HasBudget: true},
+		{Key: byBCPIR, Label: "BCPIR plan", HasBudget: true},
 		{Key: byPlanCurrency, Label: "Plan currency", HasBudget: true},
 		{Key: byYear, Label: labelYear, HasBudget: true},
 		{Key: byTeam, Label: "Team", HasBudget: true},
@@ -133,7 +121,6 @@ func groupingsOf(attributes []Attribute) []Grouping {
 	return list
 }
 
-// groupingNamed returns the grouping with key.
 func groupingNamed(groupings []Grouping, key string) (Grouping, bool) {
 	i := slices.IndexFunc(groupings, func(g Grouping) bool { return g.Key == key })
 	if i < 0 {
@@ -142,8 +129,6 @@ func groupingNamed(groupings []Grouping, key string) (Grouping, bool) {
 	return groupings[i], true
 }
 
-// level returns the level the grouping's values come from: the attribute's, plans for the plan groupings,
-// activities for Activity type and Owner.
 func (g Grouping) level() Level {
 	switch {
 	case g.attribute != nil:
@@ -154,7 +139,6 @@ func (g Grouping) level() Level {
 	return LevelPlan
 }
 
-// unitsOf returns the Business unit options of every plan.
 func unitsOf(nodes []Node) map[string][]string {
 	units := map[string][]string{}
 	for _, n := range nodes {
@@ -165,10 +149,8 @@ func unitsOf(nodes []Node) map[string][]string {
 	return units
 }
 
-// notFilledIn is the group of records without a value.
 var notFilledIn = value{key: keyNotFilledIn, label: labelNotFilledIn, order: 1 << 30}
 
-// values returns the groups of the piece p by the grouping g (data-model §3.5).
 func (w *breakdownWork) values(p piece, g Grouping) []value {
 	a := p.activity
 	plan := planOf(a)
@@ -177,6 +159,8 @@ func (w *breakdownWork) values(p piece, g Grouping) []value {
 		return []value{{key: plan.n.ID, label: plan.n.Name}}
 	case byPlanType:
 		return []value{{key: plan.n.PlanType, label: cmp.Or(planTypeWords[plan.n.PlanType], plan.n.PlanType)}}
+	case byBCPIR:
+		return bcpirValues(plan)
 	case byPlanCurrency:
 		return []value{{key: plan.n.PlanCurrency, label: plan.n.PlanCurrency}}
 	case byYear:
@@ -213,8 +197,6 @@ func (w *breakdownWork) values(p piece, g Grouping) []value {
 	return attributeValues(*attribute, record.n, w.units[record.n.PlanID])
 }
 
-// attributeValues returns the groups of a record by a Shell attribute: its options in their order (with the
-// shares of a % split), Yes or No, or Not filled in.
 func attributeValues(a Attribute, n *Node, units []string) []value {
 	v, filled := valueOf(a, n, units)
 	if !filled {
@@ -241,8 +223,6 @@ func attributeValues(a Attribute, n *Node, units []string) []value {
 	return list
 }
 
-// optionValues returns the groups of ids named by options (labels; an unknown id shows itself), or Not filled
-// in without ids. Several ids count the amount in each.
 func (w *breakdownWork) optionValues(ids []string, options []Option) []value {
 	if len(ids) == 0 {
 		return []value{notFilledIn}
@@ -258,7 +238,6 @@ func (w *breakdownWork) optionValues(ids []string, options []Option) []value {
 	return list
 }
 
-// nonEmpty returns id as a list, or none for "".
 func nonEmpty(id string) []string {
 	if id == "" {
 		return nil
@@ -266,7 +245,6 @@ func nonEmpty(id string) []string {
 	return []string{id}
 }
 
-// planOf returns the plan of the record t.
 func planOf(t *tnode) *tnode {
 	for t.parent != nil {
 		t = t.parent
@@ -274,7 +252,6 @@ func planOf(t *tnode) *tnode {
 	return t
 }
 
-// ancestorAt returns the record t or its ancestor at level; nil when there is none.
 func ancestorAt(t *tnode, level Level) *tnode {
 	for ; t != nil; t = t.parent {
 		if t.n.Level == level {

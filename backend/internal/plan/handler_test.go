@@ -166,7 +166,7 @@ func TestGetPlan_ViewAnd404_FR011(t *testing.T) {
 		"ownerProblem": "", "aop": false, "description": "Lubricants marketing in Europe for 2026.",
 		"budget":               usdOf("1200000.00"),
 		"defaultFinanceBudget": map[string]any{"id": "FB-1001", "year": 2026, "name": "2026 Lubricants Budget"},
-		"defaultSpread":        "evenly", "bcpir": false, "goalStage": "inq", "goalAmount": "250000",
+		"defaultSpread":        "evenly", "bcpir": true, "goalStage": "inq", "goalAmount": "250000",
 		"attributes":   map[string]any{"SA-1001": []any{"SO-1002"}},
 		"businessUnit": []any{map[string]any{"id": "SO-1002", "label": "Lubricants", "active": true}},
 		"version":      1, "createdAt": "2026-03-12T09:00:00Z", "createdBy": system, "updatedAt": "2026-03-12T09:00:00Z", "updatedBy": system,
