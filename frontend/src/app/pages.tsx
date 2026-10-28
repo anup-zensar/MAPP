@@ -7,6 +7,7 @@ const activityLog = () => import('@/features/activity-log');
 const allWork = () => import('@/features/all-work');
 const approvalWorkflows = () => import('@/features/approval-workflows');
 const approvals = () => import('@/features/approvals');
+const dashboards = () => import('@/features/dashboards');
 const dev = () => import('@/features/dev');
 const financials = () => import('@/features/financials');
 const globalBudgets = () => import('@/features/global-budgets');
@@ -39,6 +40,9 @@ export const ApprovalWorkflowsPage = lazy(() =>
 );
 export const ApprovalsPage = lazy(() =>
   approvals().then((feature) => ({ default: feature.ApprovalsPage })),
+);
+export const DashboardsPage = lazy(() =>
+  dashboards().then((feature) => ({ default: feature.DashboardsPage })),
 );
 export const ComponentGalleryPage = lazy(() =>
   dev().then((feature) => ({ default: feature.ComponentGalleryPage })),

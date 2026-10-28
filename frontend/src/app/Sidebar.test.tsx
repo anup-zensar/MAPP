@@ -39,6 +39,7 @@ describe('Sidebar', () => {
       'All work',
       'Financials',
       'Purchase requests',
+      'Dashboards',
       'Settings',
       'Recycle bin',
       'Activity log',

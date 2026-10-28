@@ -4,17 +4,17 @@
 
 | Path | Page | Title |
 |---|---|---|
-| `/dashboards` | redirects to `/dashboards/executive` (keeps the query) | — |
+| `/dashboards` | redirects to `/dashboards/executive` | — |
 | `/dashboards/executive?year&planType&currency` | `DashboardsPage kind="executive"` | Executive dashboard |
 | `/dashboards/regional?year&planType&currency&team&plan` | `DashboardsPage kind="regional"` | Regional dashboard |
 
-The sidebar item **Dashboards** (`LayoutDashboard` icon, permission `plans.view`) sits after All work.
+The sidebar item **Dashboards** (`LayoutDashboard` icon, permission `plans.view`) sits after Purchase requests, so the existing order stays.
 
 ## Feature `src/features/dashboards`
 
 | Module | Role |
 |---|---|
-| `index.ts` | exports `DashboardsPage`, `DashboardsRedirect` |
+| `index.ts` | exports `DashboardsPage`; the routes are in `app/dashboard-routes.tsx` (routes.tsx is at its 300-line limit) |
 | `api.ts` | `useDashboard(kind, filters)` (key `['dashboards', kind, query]`), `downloadDashboard(kind, filters, format)` |
 | `schemas.ts` | Zod schema of the address: `year` (int 2000–2100), `planType`, `currency` (`/^[A-Z]{3}$/`), `team`, `plan`; invalid values drop to the default |
 | `dashboard-links.ts` | address ↔ filters ↔ API query; the Regional link of a market row |
@@ -29,7 +29,7 @@ The sidebar item **Dashboards** (`LayoutDashboard` icon, permission `plans.view`
 
 ## Plan page
 
-`src/features/plans/usePlanExport.tsx` gives the plan page's "More" menu two items, **Export to PowerPoint** and
+`src/features/plans/usePlanExport.ts` gives the plan page's "More" menu two items, **Export to PowerPoint** and
 **Export to PDF**, shown to holders of `data.export`; while a file is made the items are disabled with "Preparing
 the file…", and a failure shows the API's message in a toast.
 

@@ -48,8 +48,9 @@ amount in USD as the Purchase requests page counts it (`reader.usd`), its status
 (015 FR-028, D-301). Global budgets: `authz.From(ctx).Has(GlobalBudgetsView)`. Exports: the dashboards need
 `data.export`; the plan export is `inPlan(data.export)` on `{planId}`, so the access middleware answers 404 for
 a plan the person cannot see and 403 when they cannot export in it, and the service reads the plan with
-`PlanStore.GetInScope`. The permission's label changes to "Export from All work, plans and dashboards" in the
-catalogue and the web app's two copies.
+`PlanStore.GetInScope`. The permission keeps its label "Export from All work" for now: the catalogue's two
+copies in the web app are over the comment budget, so widening the label waits for the next change of the
+access screens (recorded in D-343).
 
 ## R6 — Where files are made (ADR-0017)
 

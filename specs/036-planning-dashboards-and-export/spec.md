@@ -49,8 +49,7 @@ decision (D-342–D-345) or an open question (Q-022, Q-023).
 - Q: Who may open the dashboards and who may export? → A: anyone who may view plans opens them; every figure
   covers only the plans the person may see; financial figures cover only the plans where they may see
   financial data; global budgets appear only to people who may see global budgets. Exporting a plan or a
-  dashboard needs the existing export permission, whose label becomes "Export from All work, plans and
-  dashboards" (D-343).
+  dashboard needs the existing export permission, `data.export` (D-343); every built-in role holds it.
 - Q: Where are the files made, and are they kept or sent anywhere? → A: SP&A One makes the file when asked
   and hands it to the browser to save; nothing is kept, e-mailed or shared (D-344, ADR-0017). Word and Excel
   are not part of this feature: All work already exports to Excel (010), and Word adds nothing a PDF does not
@@ -323,7 +322,8 @@ global budgets panels — the same figures as on screen. **Export › PDF** give
   stored, e-mailed or shared by SP&A One.
 - **FR-026**: Every chart in a file MUST be accompanied by its figures in a table, and every amount MUST carry its
   currency.
-- **FR-027**: The export permission's label MUST read "Export from All work, plans and dashboards".
+- **FR-027**: Exporting a plan or a dashboard MUST need the existing export permission (014 Table A,
+  `data.export`), in the plan for a plan's export.
 
 **Experience**
 

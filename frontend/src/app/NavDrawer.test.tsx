@@ -45,7 +45,7 @@ describe('NavDrawer', () => {
     const { drawer } = await openDrawer();
 
     const navigation = within(drawer).getByRole('navigation', { name: 'Main' });
-    expect(within(navigation).getAllByRole('link')).toHaveLength(10);
+    expect(within(navigation).getAllByRole('link')).toHaveLength(11);
     // Always the expanded sidebar, even for a person who collapsed it on a wide screen.
     expect(within(navigation).getByText('Plans')).not.toHaveClass('visually-hidden');
     expect(within(drawer).queryByRole('button', { name: 'Collapse' })).not.toBeInTheDocument();

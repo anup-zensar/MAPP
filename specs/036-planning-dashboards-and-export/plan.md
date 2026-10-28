@@ -145,7 +145,7 @@ backend/
 
 frontend/
 ├── src/features/dashboards/                 # NEW feature
-├── src/features/plans/usePlanExport.tsx     # Export › PowerPoint / PDF on the plan page
+├── src/features/plans/usePlanExport.ts     # Export › PowerPoint / PDF on the plan page
 ├── src/app/{navigation.ts,pages.tsx,routes.tsx}
 ├── src/ui/tokens.css                        # chart tokens
 └── e2e/dashboards.spec.ts

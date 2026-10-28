@@ -71,7 +71,7 @@ var catalogue = []PermissionInfo{
 	{ActivitiesEdit, GroupPlanning, "Add, edit, move and copy activities and line items", "Changing activities and line items", true},
 	{ActivitiesDelete, GroupPlanning, "Delete activities and line items", "Deleting activities and line items", true},
 	{ActivitiesSubmit, GroupPlanning, "Submit activities for approval and recall them", "Submitting activities", true},
-	{DataExport, GroupPlanning, "Export from All work, plans and dashboards", "Exporting", true},
+	{DataExport, GroupPlanning, "Export from All work", "Exporting", true},
 	{FinanceView, GroupFinance, "See financial data", "Seeing financial data", true},
 	{FinanceLink, GroupFinance, "Link financial transactions to line items", "Linking financial transactions", true},
 	{FinanceImport, GroupFinance, "Import GSAP extracts", "Importing GSAP extracts", false},

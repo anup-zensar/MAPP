@@ -132,7 +132,7 @@ func TestUpdateRole_ChangedFieldsLogged_FR018_FR037(t *testing.T) {
 	}
 	e := entries[0]
 	if e.Verb != "changed" || e.RecordID != viewerID || len(e.Changes) != 2 ||
-		e.Details != "Added: Submit activities for approval and recall them; removed: Export from All work, plans and dashboards" {
+		e.Details != "Added: Submit activities for approval and recall them; removed: Export from All work" {
 		t.Errorf("entry = %+v", e)
 	}
 	var texts []string
@@ -141,7 +141,7 @@ func TestUpdateRole_ChangedFieldsLogged_FR018_FR037(t *testing.T) {
 	}
 	want := []string{
 		"Default scope: My teams → All markets",
-		"Permissions: View plans and everything in them, Export from All work, plans and dashboards, See financial data → " +
+		"Permissions: View plans and everything in them, Export from All work, See financial data → " +
 			"View plans and everything in them, Submit activities for approval and recall them, See financial data",
 	}
 	if !slices.Equal(texts, want) {

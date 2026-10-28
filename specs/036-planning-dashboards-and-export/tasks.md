@@ -19,9 +19,7 @@ story (US1, US2). Write each new test first and see it fail.
 - [ ] T003 Contract first: add the five paths and the `Dashboard*` schemas to `backend/api/openapi.yaml` (tag
   Dashboards); run `pnpm run api:types`
 - [ ] T004 Access rules in `backend/internal/access/routes_dashboards.go` (`need(plans.view)` ×2,
-  `need(data.export)` ×2, `inPlan(data.export)` for the plan export) and join them in `routes.go`; relabel
-  `data.export` "Export from All work, plans and dashboards" in `backend/internal/platform/authz/catalogue.go`,
-  `frontend/src/session/access.ts`, `frontend/src/features/people/access/access-words.ts` (FR-027)
+  `need(data.export)` ×2, `inPlan(data.export)` for the plan export) and join them in `routes.go` (FR-027)
 - [ ] T005 [P] Tests first for `backend/internal/platform/deck`: layout (cards, table continuation with header
   repeated, chart beside table, fitting with "…", footer page numbers), .pptx (valid zip, the part set, one slide
   per sheet, well-formed XML, escaped text, a real table), .pdf (header, page count, xref offsets, WinAnsi
@@ -80,7 +78,7 @@ story (US1, US2). Write each new test first and see it fail.
   activities continued, finance hidden note, file name), contract `TestPlanExport_Contract` (pptx and pdf,
   Content-Disposition, 403 without `data.export` in the plan, 404 out of scope, 400 bad format)
 - [ ] T024 [US2] `dashboard/export.go`, `export_plan.go`; handler route `GET /plans/:planId/export`
-- [ ] T025 [P] [US2] `frontend/src/features/plans/usePlanExport.tsx` with tests (items for holders of
+- [ ] T025 [P] [US2] `frontend/src/features/plans/usePlanExport.ts` with tests (items for holders of
   `data.export`, busy, error toast); `PlanPage.tsx` More menu
 - [ ] T026 [US2] e2e "036 US2": Priya exports FY2026 Lubricants Europe to PowerPoint and PDF; check the
   signatures (`PK`, `%PDF-`), slide and page counts; axe on the open menu

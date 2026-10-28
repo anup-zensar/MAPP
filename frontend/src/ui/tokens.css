@@ -72,6 +72,11 @@
   --status-problem: var(--danger);
   --status-problem-text: var(--danger-text);
 
+  --chart-budget: #5b6b7a;
+  --chart-planned: #336094;
+  --chart-committed: #008192;
+  --chart-actual: #008557;
+
   --banner-bg: var(--ink);
   --banner-text: var(--surface);
 
@@ -206,6 +211,11 @@
   --status-neutral-text: #b0b8c1;
   --status-done: #8696a6;
   --status-done-text: #a9b8c6;
+
+  --chart-budget: #8696a6;
+  --chart-planned: #6f9bd1;
+  --chart-committed: #3fb6c5;
+  --chart-actual: #3dbb8c;
 
   --level-plan: #6f9bd1;
   --level-campaign: #c96bbf;
