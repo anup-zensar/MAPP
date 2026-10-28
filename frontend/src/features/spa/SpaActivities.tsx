@@ -42,7 +42,7 @@ export function SpaActivities({ view, sort, onSort }: SpaActivitiesProps) {
 
   return (
     <Card title={ACTIVITIES.title}>
-      <ScrollBox label={`${ACTIVITIES.title}, scrolls sideways`}>
+      <ScrollBox label={ACTIVITIES.title} className={styles.scroll}>
         <table className={styles.table}>
           <caption className="visually-hidden">{ACTIVITIES.title}</caption>
           <thead>

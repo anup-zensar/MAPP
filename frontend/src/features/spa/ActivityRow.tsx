@@ -34,7 +34,7 @@ export function ActivityRow({ row, planId, expanded, onToggle }: ActivityRowProp
             <Chevron aria-hidden="true" />
           </button>
         </td>
-        <th scope="row">
+        <th scope="row" className={styles.nameCell}>
           <Link to={recordHref('activity', row.id, planId)}>{row.name}</Link>
         </th>
         <td>{row.campaign.name}</td>
