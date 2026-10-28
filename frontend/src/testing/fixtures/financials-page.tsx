@@ -2,19 +2,18 @@ import { screen } from '@testing-library/react';
 import { Outlet } from 'react-router';
 import { FinancialsPage, TransactionPanel } from '@/features/financials';
 import { SessionProvider } from '@/session/SessionProvider';
-import { mockApi } from '../mock-api';
+import { mockApi, server } from '../mock-api';
 import type { MockedApi } from '../mock-api';
 import { renderRoutes } from '../render';
 import { reply } from '../replies';
 import type { Answer } from '../replies';
 import { transactionPage } from './financials';
+import { runsPage } from './swbs-runs';
 import { testUser } from './users';
 
-/**
- * Renders the Financials page as the router does: the list at /financials and the details panel
- * as its child route. Other addresses show "Another page".
- */
+// The Financials page as the router renders it; the simulated GSAP panel (030) is answered here.
 export function renderFinancials(route = '/financials') {
+  server.use(reply('GET /api/v1/simulated-gsap/swbs-runs', { body: runsPage() }));
   return renderRoutes(
     [
       {
@@ -41,7 +40,6 @@ export function renderFinancialsPage(
   route = '/financials',
   list: Answer<'GET /api/v1/financials/transactions'> = { body: transactionPage() },
 ) {
-  // A 403 makes the session provider reload the person's access (014 FR-020).
   const api = mockApi([
     reply('GET /api/v1/financials/transactions', list),
     reply('GET /api/v1/me', { body: testUser() }),
@@ -49,7 +47,6 @@ export function renderFinancialsPage(
   return { ...renderFinancials(route), api };
 }
 
-/** The query strings the page asked the list with, in order. */
 export function listQueries(api: MockedApi): URLSearchParams[] {
   return api.requests
     .filter((request) => request.path === '/api/v1/financials/transactions')

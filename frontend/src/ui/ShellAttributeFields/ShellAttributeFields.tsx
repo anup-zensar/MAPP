@@ -22,36 +22,23 @@ import {
 } from './texts';
 
 export interface ShellAttributeFieldsProps {
-  /** The level's form definition: GET /api/v1/shell-attribute-forms/{level} (useAttributeForm). */
   form: AttributeForm;
-  /** The record's values, keyed by attribute id (its `attributes` field). */
   values: AttributeValues;
   onChange: (values: AttributeValues) => void;
-  /**
-   * The plan's Business unit option ids, which decide the conditional attributes (forms below the
-   * plan); null on the plan form, where its own Business unit value decides.
-   */
+  /** The plan's Business unit option ids; null on the plan form, where its own value decides. */
   businessUnit: string[] | null;
-  /** The values as stored (edit forms); dependents whose parent changed since are cleared on save. */
   previousValues?: AttributeValues;
-  /** Problems by field name, as the API names them: "attributes.SA-1003". */
   errors?: Record<string, string>;
-  /** An attribute to draw on the hover grey (the Settings preview). */
   highlightAttributeId?: string;
-  /** The plan's address, linked from the "appear once the business unit is chosen" note. */
   planLink?: string;
-  /** The heading of each attribute section; 'none' when the form has its own heading. */
   sectionHeading?: 'h2' | 'h3' | 'none';
+  /** Put before every input id, for a record inside a form: "lines[0]." (032 PR lines). */
+  fieldPrefix?: string;
 }
 
 /**
- * A level's Shell attributes on a form (feature 002, FR-024 – FR-027): grouped in their sections
- * with marking words and ⓘ help; the control for each type; dependent fields locked until their
- * parent is chosen, filtered by it and filled in when only one option fits; attributes shown only
- * for some business units, with the reason; inactive attributes and options kept read-only.
- * Hidden attributes keep their values. Input ids are "attributes.<attributeId>".
- *
- * Before saving, list `valuesToClear(form, values, previousValues)` in ClearValuesDialog.
+ * A level's Shell attributes on a form (002 FR-024 – FR-027); input ids and `errors` keys are
+ * "<fieldPrefix>attributes.<id>". Before saving, list `valuesToClear(…)` in ClearValuesDialog.
  */
 export function ShellAttributeFields({
   form,
@@ -63,8 +50,8 @@ export function ShellAttributeFields({
   highlightAttributeId,
   planLink,
   sectionHeading = 'h3',
+  fieldPrefix = '',
 }: ShellAttributeFieldsProps) {
-  // The auto-fill messages of the last change, by attribute id ("Region set to …").
   const [autoFilled, setAutoFilled] = useState<Record<string, string>>({});
   const units = businessUnitOf(form, values, businessUnit);
   const cleared = valuesToClear(form, values, previousValues);
@@ -125,7 +112,8 @@ export function ShellAttributeFields({
                 form={form}
                 attribute={attribute}
                 values={values}
-                error={errors[attributeField(attribute.id)]}
+                fieldPrefix={fieldPrefix}
+                error={errors[fieldPrefix + attributeField(attribute.id)]}
                 cleared={cleared.find((item) => item.attributeId === attribute.id)}
                 autoFilled={autoFilled[attribute.id]}
                 conditionNote={

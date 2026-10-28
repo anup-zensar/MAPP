@@ -43,6 +43,7 @@ export interface AttributeFieldProps {
   conditionNote?: string;
   highlighted: boolean;
   onChange: (value: AttributeValue | undefined) => void;
+  fieldPrefix?: string;
 }
 
 /** One attribute: its control with its notes underneath. */
@@ -56,8 +57,9 @@ export function AttributeField({
   conditionNote,
   highlighted,
   onChange,
+  fieldPrefix = '',
 }: AttributeFieldProps) {
-  const name = attributeField(attribute.id);
+  const name = fieldPrefix + attributeField(attribute.id);
   const value = values[attribute.id];
   const parent = parentOf(attribute, form);
   const frame = {

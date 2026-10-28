@@ -108,6 +108,7 @@ describe('SettingsPage, the cards of other features (FR-001)', () => {
       'People',
       'Teams',
       'Approval workflows',
+      'Purchase requests',
       'Roles and access',
     ]);
     const people = card('People');
@@ -127,6 +128,10 @@ describe('SettingsPage, the cards of other features (FR-001)', () => {
       'href',
       '/settings/people',
     );
+    // 032 FR-004: the Purchase requests card follows Approval workflows.
+    expect(
+      within(card('Purchase requests')).getByRole('link', { name: 'Purchase requests' }),
+    ).toHaveAttribute('href', '/settings/purchase-requests');
     const access = card('Roles and access');
     expect(
       within(access).getByText('Who can see and change what, by role and market.'),

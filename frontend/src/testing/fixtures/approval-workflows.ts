@@ -1,7 +1,3 @@
-/**
- * Approval workflows and people for feature 008's Settings tests, shaped as the contract answers
- * them (the seeded "Lubricants EU approval" and "China BC approval workflow").
- */
 import type { components } from '@/api/generated/schema';
 import type { ApprovalWorkflow, ApprovalWorkflowDetails } from '@/features/approval-workflows';
 import { ALEX, CARLOS, DANIEL } from './approvals';
@@ -29,7 +25,6 @@ export const WORKFLOW_LEVEL_2: ApprovalWorkflowLevel = {
   approvers: [ALEX],
 };
 
-/** "Lubricants EU approval": Carlos, then Alex; used by 3 activities, 2 waiting. */
 export function workflowOf(overrides: Partial<ApprovalWorkflow> = {}): ApprovalWorkflow {
   return {
     id: 'WF-1001',
@@ -41,12 +36,13 @@ export function workflowOf(overrides: Partial<ApprovalWorkflow> = {}): ApprovalW
     usedByCount: 3,
     waitingCount: 2,
     warnings: [],
+    objectType: 'activity',
+    objectTypeFixed: (overrides.usedByCount ?? 3) > 0,
     ...META,
     ...overrides,
   };
 }
 
-/** "China BC approval workflow": inactive, unused, Daniel's level 1. */
 export const CHINA_WORKFLOW = workflowOf({
   id: 'WF-1002',
   name: 'China BC approval workflow',
@@ -97,7 +93,6 @@ const person = (id: string, name: string, initials: string, active = true) => ({
   ...PERSON_META,
 });
 
-/** GET /api/v1/people for the approver fields. */
 export const PEOPLE = {
   body: {
     total: 4,
@@ -110,7 +105,6 @@ export const PEOPLE = {
   },
 };
 
-/** GET /api/v1/approval-rule-options (017): the seeded activity types, business units and the roles that approve. */
 export const RULE_OPTIONS = {
   body: {
     activityTypes: [
@@ -126,6 +120,15 @@ export const RULE_OPTIONS = {
     roles: [
       { id: 'RL-1002', name: 'Administrator', builtIn: 'administrator' as const },
       { id: 'RL-1005', name: 'Approver', builtIn: 'approver' as const },
+    ],
+    objectTypes: [
+      { id: 'activity' as const, label: 'Activity' },
+      { id: 'purchaseRequest' as const, label: 'Purchase request' },
+      { id: 'modifiedPurchaseRequest' as const, label: 'Modified purchase request' },
+    ],
+    recordFields: [
+      { objectType: 'purchaseRequest' as const, id: 'moaApprover', label: 'MoA approver' },
+      { objectType: 'modifiedPurchaseRequest' as const, id: 'moaApprover', label: 'MoA approver' },
     ],
   },
 };

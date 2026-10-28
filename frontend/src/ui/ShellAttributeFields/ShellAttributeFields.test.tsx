@@ -57,6 +57,19 @@ describe('ShellAttributeFields', () => {
     expect(screen.getByRole('textbox', { name: 'Target accounts' })).toBeInTheDocument();
   });
 
+  it('032 FR-011: names the inputs of a record inside a form with its prefix, and its problems', () => {
+    renderWithProviders(
+      <Example
+        fieldPrefix="lines[1]."
+        errors={{ 'lines[1].attributes.SA-CODE': 'Enter at most 20 characters.' }}
+      />,
+    );
+
+    const code = screen.getByRole('textbox', { name: 'Campaign code' });
+    expect(code).toHaveAttribute('id', 'lines[1].attributes.SA-CODE');
+    expect(code).toHaveAccessibleDescription(/Enter at most 20 characters./);
+  });
+
   it('locks a dependent until its parent is chosen, then offers only the linked options (FR-025)', async () => {
     const { user } = renderWithProviders(<Example />);
 

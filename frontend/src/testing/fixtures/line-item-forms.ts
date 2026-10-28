@@ -118,17 +118,6 @@ export function validationError(fields: { field: string; message: string }[]): {
   };
 }
 
-/** The 400 that says the person must confirm "This activity will need approval again" (D-189). */
-export function restartRefusal() {
-  return validationError([
-    {
-      field: 'restartApproval',
-      message:
-        'This activity will need approval again. Confirm the change to send it back for approval.',
-    },
-  ]);
-}
-
 export function notFound(message: string): { status: number; body: ErrorBody } {
   return { status: 404, body: { error: { code: 'not_found', message, fields: [] } } };
 }

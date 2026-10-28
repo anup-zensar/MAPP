@@ -14,6 +14,7 @@ const home = () => import('@/features/home');
 const lineItems = () => import('@/features/line-items');
 const people = () => import('@/features/people');
 const plans = () => import('@/features/plans');
+const purchaseRequests = () => import('@/features/purchase-requests');
 const recycleBin = () => import('@/features/recycle-bin');
 const settings = () => import('@/features/settings');
 const signIn = () => import('@/features/sign-in');
@@ -134,3 +135,19 @@ export const SettingsPage = lazy(async () => {
   const [feature, sections] = await Promise.all([settings(), loadSettingsSections()]);
   return { default: () => <feature.SettingsPage sections={sections} /> };
 });
+
+export const PurchaseRequestsPage = lazy(() =>
+  purchaseRequests().then((feature) => ({ default: feature.PurchaseRequestsPage })),
+);
+export const PurchaseRequestPage = lazy(() =>
+  purchaseRequests().then((feature) => ({ default: feature.PurchaseRequestPage })),
+);
+export const PurchaseRequestCreatePage = lazy(() =>
+  purchaseRequests().then((feature) => ({ default: feature.PurchaseRequestCreatePage })),
+);
+export const PurchaseRequestEditPage = lazy(() =>
+  purchaseRequests().then((feature) => ({ default: feature.PurchaseRequestEditPage })),
+);
+export const PurchaseRequestSettingsPage = lazy(() =>
+  purchaseRequests().then((feature) => ({ default: feature.PurchaseRequestSettingsPage })),
+);

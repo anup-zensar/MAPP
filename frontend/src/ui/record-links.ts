@@ -1,18 +1,4 @@
-/**
- * The one place that knows the address of every planning record (D-194; owned by feature 004,
- * entries of 005–007 included). Completeness lists, the publish dialog, the Ready to submit panel,
- * Home, All work and the activity log link to records only through these functions.
- *
- * | Record     | Page or panel                              | A field to fill in                 |
- * | plan       | /plans/<id>                                | /plans/<id>/edit?focus=<field>     |
- * | campaign   | /plans/<planId>/campaigns/<id>             | …/campaigns/<id>/edit?focus=<field> |
- * | initiative | /plans/<planId>/initiatives/<id>           | …/initiatives/<id>/edit?focus=…    |
- * | activity   | /plans/<planId>/activities/<id> (no plan:  | …/activities/<id>/edit?field=…     |
- * |            | the short /activities/<id>, which redirects) |                                  |
- * | lineItem   | /line-items/<id>                           | /line-items/<id>/edit?field=<field> |
- */
-
-/** The planning records that have their own page or panel. */
+// The one place that knows each record's address (D-194): pages link to records only through these.
 export type PlanningRecordType = 'plan' | 'campaign' | 'initiative' | 'activity' | 'lineItem';
 
 const PLANNING_RECORD_TYPES: readonly PlanningRecordType[] = [
@@ -23,19 +9,33 @@ const PLANNING_RECORD_TYPES: readonly PlanningRecordType[] = [
   'lineItem',
 ];
 
-/** Whether a record type of the API (a string in the contract) is one of these records. */
 export function isPlanningType(type: string): type is PlanningRecordType {
   return PLANNING_RECORD_TYPES.some((known) => known === type);
 }
 
-/**
- * The address of a record's page or panel. Campaigns and initiatives open as panels over their
- * plan's page, so they need `planId`; an activity without it gets the short address that finds
- * its plan (D-194).
- */
-export function recordHref(type: PlanningRecordType, id: string, planId?: string): string {
+export type PurchaseRecordType = 'purchaseRequest' | 'purchaseRequestLine';
+
+export function purchaseRequestHref(id: string): string {
+  return `/purchase-requests/${encodeURIComponent(id)}`;
+}
+
+/** Approval rows and notifications name their subject by ID; a purchase request's starts "PR-". */
+export function isPurchaseRequestId(id: string): boolean {
+  return id.startsWith('PR-');
+}
+
+/** Campaigns and initiatives open over their plan (`planId`); else an activity gets its short link. */
+export function recordHref(
+  type: PlanningRecordType | PurchaseRecordType,
+  id: string,
+  planId?: string,
+): string {
   const path = encodeURIComponent(id);
   switch (type) {
+    case 'purchaseRequest':
+      return purchaseRequestHref(id);
+    case 'purchaseRequestLine':
+      return '/purchase-requests';
     case 'plan':
       return `/plans/${path}`;
     case 'campaign':
@@ -51,11 +51,7 @@ export function recordHref(type: PlanningRecordType, id: string, planId?: string
   }
 }
 
-/**
- * The address of a record's edit form with one field focused, for "3 fields needed" lists: plans,
- * campaigns and initiatives use `?focus=`, activities and line items `?field=` (their plans).
- * Activities need `planId` here: their edit page has no short address.
- */
+/** An edit form with one field focused: `?focus=` above activities, else `?field=`. */
 export function fieldHref(
   type: PlanningRecordType,
   id: string,

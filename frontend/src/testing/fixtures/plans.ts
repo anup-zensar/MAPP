@@ -111,7 +111,7 @@ export const FINANCE_BUDGETS = {
 export function planDefaults(overrides: Partial<PlanDefaults> = {}): PlanDefaults {
   return {
     currentYear: 2026,
-    years: [2025, 2026, 2027, 2028, 2029, 2030, 2031],
+    years: [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036],
     year: 2026,
     teamIds: ['T-1001'],
     ownerId: 'U-1002',
