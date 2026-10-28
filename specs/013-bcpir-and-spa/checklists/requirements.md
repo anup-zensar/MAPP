@@ -1,4 +1,4 @@
-# Specification Quality Checklist: BCPIR and SP&A Plan Views
+# Specification Quality Checklist: SP&A Plan View and BCPIR Marker
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-10-18
@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,14 +31,7 @@
 
 ## Notes
 
-- Validated 2026-10-18 (baseline, decision D-021). 16 functional requirements, 6 success criteria.
-- **Two `[NEEDS CLARIFICATION]` markers remain on purpose**; they depend on Shell's answer to Q-001 and
-  must be resolved with `/speckit-clarify` before `/speckit-plan` (planning gate in the spec):
-  1. FR-002 — BCPIR as a yes/no flag on a plan (Shell's form) or a business-case plan paired with an SP&A
-     plan per campaign (an alternative interpretation). Default: flag on the plan, views only.
-  2. FR-003 — whether the views need their own sign-off (Draft → Submitted → Published). Default: no;
-     plan publishing (004) and activity approval (008) are the agreement.
-- "Requirements are testable" holds under the default answers; if Shell chooses the paired-plan model,
-  the stories, requirements and entities must be rewritten, not patched.
-- "Spreadsheet" and "CSV" are named as file types users handle, not implementation choices.
-- Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`.
+- Re-validated 2026-10-28 after the re-baseline on Shell's spec 006 (D-333): 22 functional requirements, 6
+  success criteria, no `[NEEDS CLARIFICATION]` marker. The two markers of the 2026-10-18 baseline (Q-001) are
+  answered by Shell's spec 006 and D-334 (Model A, no sign-off of its own).
+- What 006 asks and MAPP does not build is listed in the spec's "Not built in this feature" (D-337).

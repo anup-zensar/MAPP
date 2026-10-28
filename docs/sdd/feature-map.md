@@ -22,7 +22,7 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
 | 010 | [010-all-work-views](../../specs/010-all-work-views/spec.md) | All work: grid with roll-ups, filters and search, calendar, budget & cost by month, saved views, export | P2 | 004–008 | Built |
 | 011 | [011-activity-log-and-recycle-bin](../../specs/011-activity-log-and-recycle-bin/spec.md) | Activity log page and record history; recycle bin page with restore and permanent delete | P2 | 001, 004–007 | Done |
 | 012 | [012-bulk-actions-and-import](../../specs/012-bulk-actions-and-import/spec.md) | Select many rows: change owner/status fields, copy, move, delete; import activities from a template | P3 | 010 | Draft |
-| 013 | [013-bcpir-and-spa](../../specs/013-bcpir-and-spa/spec.md) | Shell's BCPIR and SP&A plan views (meaning to be clarified with Shell) | P3 | 004–008 | Draft |
+| 013 | [013-bcpir-and-spa](../../specs/013-bcpir-and-spa/spec.md) | SP&A plan view of a plan or campaign (planned, committed, actual by period and dimension, budget and procurement panels) and the BCPIR marker and filter, re-baselined on Shell's spec 006 (D-333, D-334–D-337) | P1 | 004–008, 010, 015, 032 | In progress |
 | 014 | [014-access-control](../../specs/014-access-control/spec.md) | Roles and access: fixed permissions, five default roles, team scopes, view-only vs edit enforced by the API, segregation of duties; global budgets allocated to market plans (BUS.ADM.020, BUS.BUD.040) | P1 | 001–011 | Built — finish open: hide or explain actions per role (T043–T051), e2e (T061) |
 | 015 | [015-financial-transactions](../../specs/015-financial-transactions/spec.md) | Read-only GSAP purchase orders, invoices, payments and accruals from a simulated GSAP extract, shown on the activity, line item, plan, campaign, initiative, All work, Home and a Financials page (BUS.FIN.080) | P1 | 004–010, 014 | Built — finish open: e2e (T021, T025, T030, T035), Home no-access state (T044), container delete dialogs (T045) |
 | 016 | [016-planning-and-currency-extensions](../../specs/016-planning-and-currency-extensions/spec.md) | Dated exchange rates and a simulated GSAP rate import, plan currency, budget by month, split activity, plan type and multi-year views, Shell-attribute filters and Breakdown, field help (BUS.BUD.050, BUS.PLN.020, BUS.PLN.040, BUS.BUD.020, BUS.UX.020) | P1 | 002, 004–007, 010, 014 | Built — finish open: attribute filters and Breakdown screens (T074–T077), field-help tips (T084–T088), Import GSAP rates route (T028), e2e (T089) |
@@ -67,7 +67,7 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
 | Cross-plan grid, calendar, budget & cost, saved views, export | 010 | — |
 | Activity log page, History tab, recycle bin page | 011 | — |
 | Bulk actions, import | 012 | Single-record copy/move (004–006) |
-| BCPIR / SP&A views | 013 | The BCPIR flag field itself (004) |
+| SP&A view, BCPIR marker and filter | 013 | The BCPIR flag field itself (004); the BCPIR return view (Measure, later) |
 | Permissions, roles, scopes, access rules, who may decide an approval; global budgets and allocations | 014 | Approval rules (017) |
 | GSAP transactions, their simulated import and matching, financial figures | 015 | Creating POs or invoices (GSAP owns them) |
 | Exchange-rate history and rate import, plan currency, budget phasing, split activity, plan type, multi-year views, attribute filters and Breakdown, field help | 016 | A line item's own currency (007) |
