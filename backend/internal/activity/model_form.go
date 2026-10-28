@@ -1,6 +1,7 @@
 package activity
 
 import (
+	"mapp/internal/overspend"
 	"mapp/internal/people"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
@@ -8,15 +9,13 @@ import (
 	"mapp/internal/settings"
 )
 
-// PlanFacts is the plan of the form (ActivityPlanFacts).
 type PlanFacts struct {
 	ID     string `json:"id"`
 	Name   string `json:"name"`
 	Year   int    `json:"year"`
-	Status string `json:"status"` // the plan's status: "draft" or "published"
+	Status string `json:"status"`
 }
 
-// InitiativeFacts is the initiative of the form (ActivityInitiativeFacts).
 type InitiativeFacts struct {
 	ID        string            `json:"id"`
 	Name      string            `json:"name"`
@@ -25,7 +24,6 @@ type InitiativeFacts struct {
 	EndDate   *date.Date        `json:"endDate"`
 }
 
-// ModelFacts is the plan's model as the goals of the form need it (ActivityModelFacts).
 type ModelFacts struct {
 	ID              string        `json:"id"`
 	Name            string        `json:"name"`
@@ -35,41 +33,34 @@ type ModelFacts struct {
 	Active          bool          `json:"active"`
 }
 
-// BusinessUnit is one business unit the plan includes (ActivityBusinessUnit).
 type BusinessUnit struct {
-	ID    string `json:"id"` // the option id of the plan-level Business unit attribute
+	ID    string `json:"id"`
 	Label string `json:"label"`
 }
 
-// FormContext is the plan context of the activity form (ActivityFormContext).
 type FormContext struct {
 	Plan          PlanFacts       `json:"plan"`
 	Campaign      errs.RecordRef  `json:"campaign"`
 	Initiative    InitiativeFacts `json:"initiative"`
 	Model         ModelFacts      `json:"model"`
 	BusinessUnits []BusinessUnit  `json:"businessUnits"`
-	LatestEndDate date.Date       `json:"latestEndDate"` // 31 December of the plan's year + 10 (R5)
+	LatestEndDate date.Date       `json:"latestEndDate"`
 }
 
-// TypeOption is an activity type the form offers (ActivityTypeOption).
 type TypeOption struct {
-	ID                 string       `json:"id"`
-	Name               string       `json:"name"`
-	DefaultPlannedCost *money.Money `json:"defaultPlannedCost"` // 016 FR-016: converted into the plan currency
-	Active             bool         `json:"active"`
-	Allowed            bool         `json:"allowed"`
-	// DefaultPlannedCostUSD is the type's default as kept in Settings, for the form's note "Default 5,000.00 USD
-	// = 3,950.00 GBP at today's rate" (016 FR-016).
+	ID                    string       `json:"id"`
+	Name                  string       `json:"name"`
+	DefaultPlannedCost    *money.Money `json:"defaultPlannedCost"`
+	Active                bool         `json:"active"`
+	Allowed               bool         `json:"allowed"`
 	DefaultPlannedCostUSD *money.Money `json:"defaultPlannedCostUsd"`
 }
 
-// WorkflowLevel is one level of a workflow the form offers (ActivityWorkflowLevel).
 type WorkflowLevel struct {
 	Name      string             `json:"name"`
 	Approvers []people.PersonRef `json:"approvers"`
 }
 
-// WorkflowOption is an approval workflow the form offers (ActivityWorkflowOption).
 type WorkflowOption struct {
 	ID     string          `json:"id"`
 	Name   string          `json:"name"`
@@ -77,15 +68,13 @@ type WorkflowOption struct {
 	Levels []WorkflowLevel `json:"levels"`
 }
 
-// Defaults are what a new activity starts with (ActivityDefaults).
 type Defaults struct {
-	Owner              *people.PersonRef `json:"owner"` // the initiative's owner, when active
+	Owner              *people.PersonRef `json:"owner"`
 	StartDate          *date.Date        `json:"startDate"`
 	EndDate            *date.Date        `json:"endDate"`
-	ApprovalWorkflowID *string           `json:"approvalWorkflowId"` // when exactly one workflow is active
+	ApprovalWorkflowID *string           `json:"approvalWorkflowId"`
 }
 
-// FormView is the answer of the two form queries (ActivityForm): Defaults only for a new activity.
 type FormView struct {
 	Context           FormContext                   `json:"context"`
 	ActivityTypes     []TypeOption                  `json:"activityTypes"`
@@ -93,4 +82,5 @@ type FormView struct {
 	Attributes        []settings.ShellAttributeView `json:"attributes"`
 	ExistingNames     []string                      `json:"existingNames"`
 	Defaults          *Defaults                     `json:"defaults"`
+	OverspendLimits   []overspend.Limit             `json:"overspendLimits"`
 }

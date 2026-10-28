@@ -71,6 +71,7 @@ type form struct {
 	Attributes             settings.AttributeValues
 	Currency               *string
 	PlanType               *string
+	Overspend              *string
 }
 
 func formOf(in PlanInput) form {
@@ -78,7 +79,7 @@ func formOf(in PlanInput) form {
 		Name: in.Name, Year: in.Year, ModelID: in.ModelID, TeamIDs: in.TeamIDs, OwnerID: in.OwnerID, AOP: in.AOP,
 		Description: in.Description, Budget: in.Budget, DefaultFinanceBudgetID: in.DefaultFinanceBudgetID,
 		DefaultSpread: in.DefaultSpread, BCPIR: in.BCPIR, GoalStage: in.GoalStage, GoalAmount: in.GoalAmount,
-		Attributes: in.Attributes, Currency: in.Currency, PlanType: in.PlanType,
+		Attributes: in.Attributes, Currency: in.Currency, PlanType: in.PlanType, Overspend: in.Overspend,
 	}
 }
 
@@ -87,7 +88,7 @@ func formOfUpdate(in PlanUpdate) form {
 		Name: in.Name, ModelID: in.ModelID, TeamIDs: in.TeamIDs, OwnerID: in.OwnerID, AOP: in.AOP,
 		Description: in.Description, Budget: in.Budget, DefaultFinanceBudgetID: in.DefaultFinanceBudgetID,
 		DefaultSpread: in.DefaultSpread, BCPIR: in.BCPIR, GoalStage: in.GoalStage, GoalAmount: in.GoalAmount,
-		Attributes: in.Attributes, Currency: in.Currency, PlanType: in.PlanType,
+		Attributes: in.Attributes, Currency: in.Currency, PlanType: in.PlanType, Overspend: in.Overspend,
 	}
 }
 
@@ -150,6 +151,9 @@ func (s *Service) check(ctx context.Context, f form, stored *Plan, problems *err
 		problems.Add("goalAmount", message)
 	}
 	p.GoalAmount = amount
+	if p.Overspend, err = s.checkOverspend(ctx, f.Overspend, stored, problems); err != nil {
+		return Plan{}, err
+	}
 	return p, nil
 }
 

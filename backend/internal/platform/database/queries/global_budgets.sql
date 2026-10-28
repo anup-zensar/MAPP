@@ -1,21 +1,21 @@
 -- name: GetGlobalBudget :one
 SELECT id, name, year, amount_minor, owner_id, description, version, created_at, created_by_id, created_by_name,
-    updated_at, updated_by_id, updated_by_name
+    updated_at, updated_by_id, updated_by_name, overspend
 FROM global_budgets
 WHERE id = $1;
 
 -- name: ListGlobalBudgets :many
 SELECT id, name, year, amount_minor, owner_id, description, version, created_at, created_by_id, created_by_name,
-    updated_at, updated_by_id, updated_by_name
+    updated_at, updated_by_id, updated_by_name, overspend
 FROM global_budgets
 ORDER BY length(id), id COLLATE "C";
 
 -- name: PutGlobalBudget :exec
 INSERT INTO global_budgets (
     id, name, year, amount_minor, owner_id, description, version, created_at, created_by_id, created_by_name,
-    updated_at, updated_by_id, updated_by_name
+    updated_at, updated_by_id, updated_by_name, overspend
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
 )
 ON CONFLICT (id) DO UPDATE SET
     name = excluded.name,
@@ -29,7 +29,8 @@ ON CONFLICT (id) DO UPDATE SET
     created_by_name = excluded.created_by_name,
     updated_at = excluded.updated_at,
     updated_by_id = excluded.updated_by_id,
-    updated_by_name = excluded.updated_by_name;
+    updated_by_name = excluded.updated_by_name,
+    overspend = excluded.overspend;
 
 -- name: DeleteGlobalBudget :exec
 DELETE FROM global_budgets

@@ -15,7 +15,6 @@ import (
 	"mapp/internal/settings"
 )
 
-// converter returns the converter of a's display currency (FR-015, D-079).
 func (s *Service) converter(ctx context.Context, a actor.Actor) (converter, error) {
 	rate, err := s.directory.DisplayRateOf(ctx, a.ID)
 	if err != nil {
@@ -24,15 +23,12 @@ func (s *Service) converter(ctx context.Context, a actor.Actor) (converter, erro
 	return converterOf(rate), nil
 }
 
-// lookups are the people, teams and team members the views of some plans refer to, read once for all of
-// them.
 type lookups struct {
 	people  map[string]people.PersonRef
 	teams   map[string]people.TeamRef
 	members map[string][]string
 }
 
-// lookupsFor reads the owners, teams and team members of plans.
 func (s *Service) lookupsFor(ctx context.Context, plans []Plan) (lookups, error) {
 	var ownerIDs, teamIDs []string
 	for _, p := range plans {
@@ -59,7 +55,6 @@ func (s *Service) lookupsFor(ctx context.Context, plans []Plan) (lookups, error)
 	return l, nil
 }
 
-// shown is what the Plans list and the plan page both show of a plan.
 type shown struct {
 	owner        *people.PersonRef
 	ownerProblem string
@@ -69,12 +64,11 @@ type shown struct {
 	completeness Completeness
 }
 
-// shownOf works out what the list and the plan page show of p, from what the levels below report (f).
 func (s *Service) shownOf(ctx context.Context, p Plan, f Facts, l lookups, c converter) (shown, error) { //nolint:revive // argument-limit 5: the plan, what the levels below report, and the lookups and converter the list reads once
 	sh := shown{teams: []people.TeamRef{}, figures: figuresOf(p, f, c)}
 	for _, id := range p.TeamIDs {
 		team, found := l.teams[id]
-		if !found { // a team that no longer resolves is shown by its id (plan "API types")
+		if !found {
 			team = people.TeamRef{ID: id, Name: id, Colour: fallbackColour}
 		}
 		sh.teams = append(sh.teams, team)
@@ -88,7 +82,7 @@ func (s *Service) shownOf(ctx context.Context, p Plan, f Facts, l lookups, c con
 		}
 		sh.owner = &owner
 		if ownerOK = ownerEligible(p.OwnerID, p.TeamIDs, l.members); !ownerOK {
-			sh.ownerProblem = fmt.Sprintf(msgOwnerNotInTeams, owner.Name) // R1, FR-021
+			sh.ownerProblem = fmt.Sprintf(msgOwnerNotInTeams, owner.Name)
 		}
 	}
 	unitIDs, err := s.settings.BusinessUnit(ctx, p.Attributes)
@@ -106,8 +100,6 @@ func (s *Service) shownOf(ctx context.Context, p Plan, f Facts, l lookups, c con
 	return sh, nil
 }
 
-// optionRefs returns the Shell attribute options with the ids, in that order; an option that no longer
-// resolves is shown by its id, inactive. Never nil.
 func (s *Service) optionRefs(ctx context.Context, optionIDs []string) ([]OptionRef, error) {
 	refs := make([]OptionRef, 0, len(optionIDs))
 	for _, id := range optionIDs {
@@ -124,7 +116,6 @@ func (s *Service) optionRefs(ctx context.Context, optionIDs []string) ([]OptionR
 	return refs, nil
 }
 
-// sortedTeams returns teams sorted by name ignoring letter case, then by id.
 func sortedTeams(teams []people.TeamRef) []people.TeamRef {
 	slices.SortFunc(teams, func(x, y people.TeamRef) int {
 		return cmp.Or(strings.Compare(strings.ToLower(x.Name), strings.ToLower(y.Name)), strings.Compare(x.ID, y.ID))
@@ -132,9 +123,6 @@ func sortedTeams(teams []people.TeamRef) []people.TeamRef {
 	return teams
 }
 
-// view returns p as the API returns it, inside the caller's transaction: its references by name, its
-// figures, goals and completeness in a's display currency, its figures in the plan currency too (016
-// FR-013), and its contents, from one call per level below (FR-011 – FR-017, SC-009).
 func (s *Service) view(ctx context.Context, a actor.Actor, p Plan) (PlanView, error) { //nolint:gocyclo // 13: one view whose every read returns its error.
 	facts, err := s.facts(ctx, []string{p.ID})
 	if err != nil {
@@ -161,7 +149,7 @@ func (s *Service) view(ctx context.Context, a actor.Actor, p Plan) (PlanView, er
 	if err != nil {
 		return PlanView{}, err
 	}
-	if !found { // a model that no longer resolves is shown by its id, inactive, without rates
+	if !found {
 		m = settings.Model{ID: p.ModelID, Name: p.ModelID, AverageDealSize: money.USD(money.Amount{})}
 	}
 	view := PlanView{
@@ -174,7 +162,7 @@ func (s *Service) view(ctx context.Context, a actor.Actor, p Plan) (PlanView, er
 		DefaultSpread: p.DefaultSpread, BCPIR: p.BCPIR, GoalStage: p.GoalStage, Attributes: p.Attributes,
 		BusinessUnit: sh.businessUnit, Figures: sh.figures, Goals: goalsOf(p, m, f.ActivityGoals, c),
 		Completeness: sh.completeness, Contents: contentsOf(f), Meta: p.Meta,
-		Access:   authz.PlanAccessOf(ctx, AccessFacts(p)), // 014 FR-011
+		Access:   authz.PlanAccessOf(ctx, AccessFacts(p)),
 		Currency: p.Currency, PlanType: p.PlanType, BudgetPhasing: rollup.ViewOf(p.BudgetPhasing, p.Budget, p.Year, p.Currency),
 		PlanFigures: figuresOf(p, f, identity(p.Currency)), CurrencyLock: currencyLock(f),
 	}
@@ -192,14 +180,13 @@ func (s *Service) view(ctx context.Context, a actor.Actor, p Plan) (PlanView, er
 	if view.DefaultFinanceBudget, err = s.financeBudgetRef(ctx, p); err != nil {
 		return PlanView{}, err
 	}
-	if view.Allocation, err = s.allocationView(ctx, p); err != nil { // where the budget comes from (014 FR-031)
+	if view.Allocation, err = s.allocationView(ctx, p); err != nil {
 		return PlanView{}, err
 	}
+	view.Overspend = overspendControl(ctx, p, view.Allocation)
 	return view, nil
 }
 
-// financeBudgetRef is p's default finance budget, nil when it has none; one that no longer resolves is shown
-// by its id.
 func (s *Service) financeBudgetRef(ctx context.Context, p Plan) (*FinanceBudgetRef, error) {
 	if p.DefaultFinanceBudgetID == "" {
 		return nil, nil

@@ -6624,6 +6624,49 @@ paths:
           $ref: "#/components/responses/Conflict"
         default:
           $ref: "#/components/responses/Error"
+  /api/v1/overspend-configuration:
+    get:
+      tags: [Settings]
+      operationId: getOverspendConfiguration
+      summary: Settings › Overspend control — the setting new budgets start with (037 FR-006)
+      responses:
+        "200":
+          description: The setting, with whether the person may change it.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OverspendConfiguration"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+    put:
+      tags: [Settings]
+      operationId: saveOverspendConfiguration
+      summary: Change the setting new budgets start with (needs settings.manage); existing budgets keep theirs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OverspendConfigurationInput"
+      responses:
+        "200":
+          description: The setting as saved; logged when it changed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OverspendConfiguration"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
   /api/v1/simulated-gsap/purchase-requests/{purchaseRequestId}/purchase-order:
     parameters:
       - $ref: "#/components/parameters/PurchaseRequestId"
@@ -8250,6 +8293,55 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
   schemas:
+    # Feature 037 Overspend control
+    OverspendMode:
+      type: string
+      description: What happens when planned cost goes over a budget — warn (save and show it) or refuse the save.
+      enum: [warn, refuse]
+    OverspendControl:
+      type: object
+      additionalProperties: false
+      required: [mode, canChange]
+      properties:
+        mode:
+          $ref: "#/components/schemas/OverspendMode"
+        canChange:
+          $ref: "#/components/schemas/ActionAvailability"
+    OverspendLimit:
+      type: object
+      additionalProperties: false
+      required: [budget, leftToPlan]
+      properties:
+        budget:
+          $ref: "#/components/schemas/RecordRef"
+        leftToPlan:
+          $ref: "#/components/schemas/Money"
+    OverspendConfiguration:
+      type: object
+      additionalProperties: false
+      required: [defaultMode, version, updatedAt, updatedBy, canChange]
+      properties:
+        defaultMode:
+          $ref: "#/components/schemas/OverspendMode"
+        version:
+          type: integer
+          minimum: 1
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+        canChange:
+          $ref: "#/components/schemas/ActionAvailability"
+    OverspendConfigurationInput:
+      type: object
+      additionalProperties: false
+      required: [version, defaultMode]
+      properties:
+        version:
+          type: integer
+        defaultMode:
+          type: string
     # Features 032 and 033 Purchase requests and the simulated GSAP purchase order
     PurchaseRequestStatus:
       type: string
@@ -9193,6 +9285,7 @@ components:
             - not_allowed
             - not_ready
             - forbidden
+            - over_budget
         message:
           type: string
           description: Plain-language message for the user (never technical details).
@@ -11956,6 +12049,7 @@ components:
       additionalProperties: false
       description: A plan as stored (stored amounts in USD) with its calculated values (display currency).
       required:
+        - overspend
         - id
         - name
         - year
@@ -11984,6 +12078,8 @@ components:
         - updatedAt
         - updatedBy
       properties:
+        overspend:
+          $ref: "#/components/schemas/OverspendControl"
         id:
           type: string
           example: P-1001
@@ -12210,6 +12306,7 @@ components:
       type: object
       additionalProperties: false
       required:
+        - overspend
         - currentYear
         - years
         - year
@@ -12221,6 +12318,8 @@ components:
         - defaultSpread
         - goalStage
       properties:
+        overspend:
+          $ref: "#/components/schemas/OverspendMode"
         currentYear:
           type: integer
         years:
@@ -12278,6 +12377,10 @@ components:
         - goalAmount
         - attributes
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         name:
           type: string
         year:
@@ -12351,6 +12454,10 @@ components:
         - goalAmount
         - attributes
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         version:
           type: integer
           description: The version the person started editing from.
@@ -12733,6 +12840,7 @@ components:
       type: object
       additionalProperties: false
       required:
+        - overspend
         - id
         - planId
         - campaignId
@@ -12760,6 +12868,8 @@ components:
         - updatedAt
         - updatedBy
       properties:
+        overspend:
+          $ref: "#/components/schemas/OverspendControl"
         id:
           type: string
           example: I-1001
@@ -12856,6 +12966,7 @@ components:
       type: object
       additionalProperties: false
       required:
+        - overspend
         - id
         - planId
         - name
@@ -12883,6 +12994,8 @@ components:
         - updatedAt
         - updatedBy
       properties:
+        overspend:
+          $ref: "#/components/schemas/OverspendControl"
         id:
           type: string
           example: C-1001
@@ -13082,6 +13195,10 @@ components:
       required:
         - name
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         name:
           type: string
         description:
@@ -13121,6 +13238,10 @@ components:
         - attributes
         - version
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         name:
           type: string
         description:
@@ -13155,6 +13276,10 @@ components:
       required:
         - name
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         name:
           type: string
         description:
@@ -13194,6 +13319,10 @@ components:
         - attributes
         - version
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         name:
           type: string
         description:
@@ -14259,6 +14388,7 @@ components:
       type: object
       additionalProperties: false
       required:
+        - overspendLimits
         - context
         - activityTypes
         - approvalWorkflows
@@ -14266,6 +14396,11 @@ components:
         - existingNames
         - defaults
       properties:
+        overspendLimits:
+          type: array
+          description: Every budget above the activity set to Refuse, with what is left to plan in it (037 FR-014).
+          items:
+            $ref: "#/components/schemas/OverspendLimit"
         context:
           $ref: "#/components/schemas/ActivityFormContext"
         activityTypes:
@@ -19589,8 +19724,10 @@ components:
     BudgetAllocationRow:
       type: object
       additionalProperties: false
-      required: [id, plan, teams, owner, amount, amountUsd, plannedCost, leftToPlan, budgetUsedPercent, version, access]
+      required: [id, plan, teams, owner, amount, amountUsd, plannedCost, leftToPlan, budgetUsedPercent, version, access, overspend]
       properties:
+        overspend:
+          $ref: "#/components/schemas/OverspendMode"
         id:
           type: string
           example: BA-1001
@@ -19651,8 +19788,10 @@ components:
     AllocationOption:
       type: object
       additionalProperties: false
-      required: [plan, teams, owner, budget, canAllocate]
+      required: [plan, teams, owner, budget, canAllocate, overspend]
       properties:
+        overspend:
+          $ref: "#/components/schemas/OverspendMode"
         plan:
           $ref: "#/components/schemas/AllocationPlanRef"
         teams:
@@ -19685,6 +19824,7 @@ components:
       type: object
       additionalProperties: false
       required:
+        - overspend
         - id
         - name
         - year
@@ -19703,6 +19843,8 @@ components:
         - updatedAt
         - updatedBy
       properties:
+        overspend:
+          $ref: "#/components/schemas/OverspendControl"
         id:
           type: string
           example: GB-1001
@@ -19807,6 +19949,10 @@ components:
       additionalProperties: false
       required: [name, year, amount, ownerId]
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         name:
           type: string
         year:
@@ -19824,6 +19970,10 @@ components:
       description: Only the fields to change, and the version (D-203). The year cannot change.
       required: [version]
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         name:
           type: string
         amount:
@@ -19839,6 +19989,10 @@ components:
       additionalProperties: false
       required: [planId, amount, planVersion]
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         planId:
           type: string
         amount:
@@ -19854,6 +20008,10 @@ components:
       additionalProperties: false
       required: [amount, version, planVersion]
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         amount:
           $ref: "#/components/schemas/MoneyInput"
           description: In the plan's currency, as BudgetAllocationCreate.amount (D-303).

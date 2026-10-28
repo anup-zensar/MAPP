@@ -45,6 +45,7 @@ type LineItemFacts struct {
 	SwbsCode, SwbsStatus            string
 	CompanyCode, CostCentre, GLCode string
 	BusinessUnit                    []string
+	ActivityOverBy                  *money.Money // the activity's line items above its planned cost; nil when within
 }
 
 type PlanFacts struct {

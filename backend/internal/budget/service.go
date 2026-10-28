@@ -24,6 +24,7 @@ type Service struct {
 	directory Directory
 	rates     Rates
 	access    Access
+	overspend OverspendDefaults
 	now       clock.Clock
 }
 
@@ -35,7 +36,7 @@ func NewService(tools history.Tools, repo Store, deps Deps) *Service {
 	}
 	return &Service{
 		tx: tools.Tx, repo: repo, ids: tools.IDs, history: tools.Log, plans: deps.Plans, directory: deps.Directory,
-		rates: deps.Rates, access: access, now: tools.Now,
+		rates: deps.Rates, access: access, overspend: deps.Overspend, now: tools.Now,
 	}
 }
 
@@ -127,6 +128,11 @@ func (s *Service) Create(ctx context.Context, a actor.Actor, in GlobalBudgetInpu
 		if err := s.checkName(ctx, b.Name, "", &problems); err != nil {
 			return err
 		}
+		mode, err := s.defaultOverspend(ctx)
+		if err != nil {
+			return err
+		}
+		b.Overspend = checkOverspend(in.Overspend, mode, &problems)
 		b.Year = s.checkYear(in.Year, &problems)
 		b.Amount, _ = checkAmount(in.Amount, "USD", msgAmountInUSD, "amount", &problems)
 		if err := s.checkOwner(ctx, b.OwnerID, &problems); err != nil {
@@ -136,7 +142,6 @@ func (s *Service) Create(ctx context.Context, a actor.Actor, in GlobalBudgetInpu
 		if err := problems.Err(); err != nil {
 			return err
 		}
-		var err error
 		if b.ID, err = s.ids.Next(ctx, PrefixGlobalBudget); err != nil {
 			return err
 		}
@@ -193,6 +198,7 @@ func (s *Service) Update(ctx context.Context, a actor.Actor, id string, update G
 			changed.Description = strings.TrimSpace(*update.Description)
 			checkDescription(changed.Description, &problems)
 		}
+		changed.Overspend = checkOverspend(update.Overspend, stored.Overspend, &problems)
 		checkVersion(update.Version, "version", &problems)
 		if err := problems.Err(); err != nil {
 			return err
@@ -262,6 +268,7 @@ func (s *Service) stored(ctx context.Context, id string) (GlobalBudget, error) {
 	if !found {
 		return GlobalBudget{}, errs.NotFound(msgBudgetGone)
 	}
+	b.Overspend = b.Overspend.Normalised()
 	return b, nil
 }
 

@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"mapp/internal/overspend"
+
 	"mapp/internal/history"
 	"mapp/internal/people"
 	"mapp/internal/platform/actor"
@@ -42,6 +44,7 @@ func (c *testClock) Advance(d time.Duration) { c.now = c.now.Add(d) }
 type budgetCall struct {
 	planID, amount, comment string
 	version                 int
+	overspend               overspend.Mode
 }
 
 // fakePlans refuses an out-of-date version naming Priya, and gives a changed budget a new version, as plans does.
@@ -91,19 +94,24 @@ func (f *fakePlans) PlannedCosts(_ context.Context, planIDs []string) (map[strin
 	return costs, nil
 }
 
-func (f *fakePlans) SetBudgetFromAllocation(_ context.Context, _ actor.Actor, planID string, amount money.Amount, version int, comment string) error {
-	f.calls = append(f.calls, budgetCall{planID: planID, amount: amount.String(), comment: comment, version: version})
-	p, found := f.plans[planID]
+func (f *fakePlans) SetBudgetFromAllocation(_ context.Context, _ actor.Actor, in PlanBudget) error {
+	f.calls = append(f.calls, budgetCall{planID: in.PlanID, amount: in.Amount.String(), comment: in.Comment,
+		version: in.PlanVersion, overspend: in.Overspend})
+	p, found := f.plans[in.PlanID]
 	if !found {
 		return errs.NotFound("This plan no longer exists — someone may have deleted it.")
 	}
-	if version != p.Version {
+	if in.PlanVersion != p.Version {
 		return errs.VersionConflict("plan", "Priya Raman", start)
 	}
-	if p.Budget == nil || p.Budget.Cmp(amount) != 0 {
-		p.Budget, p.Version = &amount, p.Version+1
+	changed := in.Overspend != "" && in.Overspend != p.Overspend.Normalised()
+	if p.Budget == nil || p.Budget.Cmp(in.Amount) != 0 || changed {
+		p.Budget, p.Version = &in.Amount, p.Version+1
 	}
-	f.plans[planID] = p
+	if in.Overspend != "" {
+		p.Overspend = in.Overspend
+	}
+	f.plans[in.PlanID] = p
 	return nil
 }
 

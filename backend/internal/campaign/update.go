@@ -76,6 +76,10 @@ func (s *Service) checkCampaignUpdate(ctx context.Context, stored Campaign, plan
 	if err = s.checkInitiativesInside(ctx, &problems, stored, f); err != nil {
 		return Campaign{}, err
 	}
+	mode, err := changedOverspend(ctx, &problems, in.Overspend, ownedSetting{stored.Overspend, stored.OwnerID, plan})
+	if err != nil {
+		return Campaign{}, err
+	}
 	values, err := s.checkAttributes(ctx, &problems, attributesSent{settings.LevelCampaign, plan, in.Attributes, stored.Attributes})
 	if err != nil {
 		return Campaign{}, err
@@ -84,7 +88,9 @@ func (s *Service) checkCampaignUpdate(ctx context.Context, stored Campaign, plan
 	if err = problems.Err(); err != nil {
 		return Campaign{}, err
 	}
-	return updatedCampaign(stored, f, values), nil
+	updated := updatedCampaign(stored, f, values)
+	updated.Overspend = mode
+	return updated, nil
 }
 
 // checkInitiativesInside runs only when the form sets both dates to new ones: unchanged dates are not checked again.
@@ -216,6 +222,10 @@ func (s *Service) checkInitiativeUpdate(ctx context.Context, e initiativeEdit, i
 	if err = s.checkInitiativeDates(ctx, &problems, e, f); err != nil {
 		return Initiative{}, err
 	}
+	mode, err := changedOverspend(ctx, &problems, in.Overspend, ownedSetting{e.stored.Overspend, e.stored.OwnerID, e.plan})
+	if err != nil {
+		return Initiative{}, err
+	}
 	values, err := s.checkAttributes(ctx, &problems, attributesSent{settings.LevelInitiative, e.plan, in.Attributes, e.stored.Attributes})
 	if err != nil {
 		return Initiative{}, err
@@ -224,7 +234,9 @@ func (s *Service) checkInitiativeUpdate(ctx context.Context, e initiativeEdit, i
 	if err = problems.Err(); err != nil {
 		return Initiative{}, err
 	}
-	return updatedInitiative(e.stored, f, values), nil
+	updated := updatedInitiative(e.stored, f, values)
+	updated.Overspend = mode
+	return updated, nil
 }
 
 // checkInitiativeDates, like checkInitiativesInside, runs only when the form changes the dates.

@@ -11,11 +11,6 @@ import (
 	"mapp/internal/settings"
 )
 
-// NewForm returns everything the new-activity form under the initiative initiativeID needs, with its
-// defaults (FR-001, FR-002, FR-007 – FR-009, FR-012, FR-014, FR-015, D-104): the plan context, the active
-// activity types the plan's model allows, the active approval workflows, the activity-level Shell
-// attributes and the names already used in the initiative. A model without types gives an empty type list
-// (edge case).
 func (s *Service) NewForm(ctx context.Context, a actor.Actor, initiativeID string) (FormView, error) {
 	var form FormView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -39,9 +34,6 @@ func (s *Service) NewForm(ctx context.Context, a actor.Actor, initiativeID strin
 	return form, nil
 }
 
-// EditForm returns everything the edit form of the activity id needs (FR-013, FR-026): as NewForm, plus
-// its current type, workflow and attributes even when inactive or no longer allowed; the names exclude its
-// own; no defaults.
 func (s *Service) EditForm(ctx context.Context, a actor.Actor, id string) (FormView, error) {
 	var form FormView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -58,7 +50,6 @@ func (s *Service) EditForm(ctx context.Context, a actor.Actor, id string) (FormV
 	return form, nil
 }
 
-// form builds the form of a new activity (current nil) or of current.
 func (s *Service) form(ctx context.Context, a actor.Actor, pc planContext, current *Activity) (FormView, error) {
 	formContext, err := s.formContext(ctx, pc)
 	if err != nil {
@@ -120,10 +111,10 @@ func (s *Service) form(ctx context.Context, a actor.Actor, pc planContext, curre
 			form.ExistingNames = append(form.ExistingNames, sibling.Name)
 		}
 	}
-	return form, nil
+	form.OverspendLimits, err = s.overspendLimits(ctx, pc)
+	return form, err
 }
 
-// formContext is the plan context as the form shows it.
 func (s *Service) formContext(ctx context.Context, pc planContext) (FormContext, error) {
 	owner, err := s.personRef(ctx, deref(pc.initiative.OwnerID))
 	if err != nil {
@@ -131,7 +122,7 @@ func (s *Service) formContext(ctx context.Context, pc planContext) (FormContext,
 	}
 	dealSize := pc.model.AverageDealSize
 	if dealSize.Currency == "" {
-		dealSize = money.USD(dealSize.Amount) // a plan whose model is gone still answers in the contract's shape
+		dealSize = money.USD(dealSize.Amount)
 	}
 	units := []BusinessUnit{}
 	for _, id := range pc.businessUnit {
@@ -155,8 +146,6 @@ func (s *Service) formContext(ctx context.Context, pc planContext) (FormContext,
 	}, nil
 }
 
-// workflowOption is a workflow as the form offers it, with its levels and their approvers; a level
-// without a name is called "Level <n>".
 func (s *Service) workflowOption(ctx context.Context, w WorkflowFacts) (WorkflowOption, error) {
 	option := WorkflowOption{ID: w.ID, Name: w.Name, Active: w.Active, Levels: []WorkflowLevel{}}
 	for i, l := range w.Levels {
@@ -178,8 +167,6 @@ func (s *Service) workflowOption(ctx context.Context, w WorkflowFacts) (Workflow
 	return option, nil
 }
 
-// defaults are what a new activity starts with (FR-008, FR-009, FR-012): the initiative's owner when
-// active, the initiative's dates, and the approval workflow when exactly one is active.
 func (s *Service) defaults(ctx context.Context, pc planContext, active []WorkflowOption) (*Defaults, error) {
 	defaults := &Defaults{StartDate: pc.initiative.StartDate, EndDate: pc.initiative.EndDate}
 	owner, err := s.personRef(ctx, deref(pc.initiative.OwnerID))
@@ -195,8 +182,6 @@ func (s *Service) defaults(ctx context.Context, pc planContext, active []Workflo
 	return defaults, nil
 }
 
-// inPlanCurrency converts an activity type's USD default planned cost into the plan currency at the current
-// rate (016 FR-016): 5,000.00 USD → 3,950.00 GBP at 0.79. nil stays nil; a currency without a rate keeps USD.
 func inPlanCurrency(usd *money.Money, currency string, rates money.Rates) *money.Money {
 	if usd == nil {
 		return nil

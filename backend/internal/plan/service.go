@@ -26,7 +26,8 @@ type Service struct {
 	now       clock.Clock
 	levels    []Level // below the plan, top-down
 
-	allocations Allocations // nil: no plan is allocated
+	allocations       Allocations // nil: no plan is allocated
+	overspendDefaults OverspendDefaults
 }
 
 func NewService(tools history.Tools, repo Store, settings Settings, directory Directory) *Service {
@@ -53,7 +54,10 @@ func (s *Service) Defaults(ctx context.Context, a actor.Actor) (Defaults, error)
 		if len(defaults.TeamIDs) > 0 {
 			defaults.OwnerID = &a.ID
 		}
-		defaults.ModelID, err = s.onlyActiveModel(ctx)
+		if defaults.ModelID, err = s.onlyActiveModel(ctx); err != nil {
+			return err
+		}
+		defaults.Overspend, err = s.defaultOverspend(ctx)
 		return err
 	})
 	if err != nil {

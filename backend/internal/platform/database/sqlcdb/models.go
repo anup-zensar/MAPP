@@ -238,6 +238,7 @@ type Campaign struct {
 	UpdatedAt      time.Time
 	UpdatedByID    string
 	UpdatedByName  string
+	Overspend      string
 }
 
 type CampaignPhasingMonth struct {
@@ -393,6 +394,7 @@ type GlobalBudget struct {
 	UpdatedAt     time.Time
 	UpdatedByID   string
 	UpdatedByName string
+	Overspend     string
 }
 
 type Initiative struct {
@@ -414,6 +416,7 @@ type Initiative struct {
 	UpdatedAt      time.Time
 	UpdatedByID    string
 	UpdatedByName  string
+	Overspend      string
 }
 
 type InitiativePhasingMonth struct {
@@ -493,6 +496,18 @@ type Notification struct {
 	SubjectKind string
 }
 
+type OverspendConfiguration struct {
+	ID            string
+	DefaultMode   string
+	Version       int
+	CreatedAt     time.Time
+	CreatedByID   string
+	CreatedByName string
+	UpdatedAt     time.Time
+	UpdatedByID   string
+	UpdatedByName string
+}
+
 type Person struct {
 	ID            string
 	Name          string
@@ -535,6 +550,7 @@ type Plan struct {
 	UpdatedAt              time.Time
 	UpdatedByID            string
 	UpdatedByName          string
+	Overspend              string
 }
 
 type PlanPhasingMonth struct {

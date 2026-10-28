@@ -55,6 +55,7 @@ var routeRules = joinRules( //nolint:gochecknoglobals // the route table: built 
 	approvalRuleRoutes(),
 	simulatedGsapRoutes(),
 	purchaseRequestRoutes(),
+	overspendRoutes(),
 )
 
 func joinRules(areas ...map[string]Rule) map[string]Rule {

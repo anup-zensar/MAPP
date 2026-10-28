@@ -37,6 +37,7 @@ func (s *Service) gates(ctx context.Context, pr PurchaseRequest, facts map[strin
 		problems = append(problems, Problem{Field: fieldLines, Group: groupPurchaseRequest, RecordID: pr.ID, Message: msgAddLine})
 	}
 	problems = append(problems, activityGates(pr, facts)...)
+	problems = append(problems, overspentActivityGates(pr, facts)...)
 	problems = append(problems, companyCodeGates(pr, facts)...)
 	workflow, err := s.workflowGate(ctx, pr, kind)
 	if err != nil {
@@ -63,6 +64,22 @@ func activityGates(pr PurchaseRequest, facts map[string]LineItemFacts) []Problem
 		if f.SwbsCode == "" {
 			problems = append(problems, Problem{Group: groupLineItem, RecordID: l.LineItemID,
 				Message: fmt.Sprintf(msgNoSwbs, l.LineItemID, f.Name, swbsStatusWords[f.SwbsStatus])})
+		}
+	}
+	return problems
+}
+
+// overspentActivityGates stop a submission while an activity's line items cost more than its planned cost, whatever
+// its budgets' setting (037 FR-019, D-349), naming each activity once.
+func overspentActivityGates(pr PurchaseRequest, facts map[string]LineItemFacts) []Problem {
+	problems := []Problem{}
+	var named []string
+	for _, l := range pr.Lines {
+		f := facts[l.LineItemID]
+		if f.ActivityOverBy != nil && !slices.Contains(named, f.ActivityID) {
+			named = append(named, f.ActivityID)
+			problems = append(problems, Problem{Group: groupActivity, RecordID: f.ActivityID,
+				Message: fmt.Sprintf(msgLineItemsOverCost, f.ActivityName, f.ActivityOverBy.Format())})
 		}
 	}
 	return problems
