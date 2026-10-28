@@ -1,35 +1,12 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { DEMO_PASSWORD, expectNoAxeViolations, signInAs, uniqueName } from './fixtures';
+import { chooseMenuItem, tabTo } from './keyboard';
 
 // Feature 001 SC-006 against the real API: axe (WCAG 2.2 A/AA) on every state of the app shell in light
 // and dark mode, and the keyboard-only journeys of the plan's accessibility row (T080).
 
 const PRIYA = 'priya.raman@shell.com';
 const DEMO_PEOPLE = '**/api/v1/auth/demo-people';
-
-/** Presses Tab until `target` has the focus, as a keyboard user would; fails when it never gets it. */
-async function tabTo(page: Page, target: Locator): Promise<void> {
-  for (let presses = 0; presses < 120; presses++) {
-    if (await target.evaluate((element) => element === document.activeElement)) {
-      return;
-    }
-    await page.keyboard.press('Tab');
-  }
-  throw new Error('The keyboard never reached the element');
-}
-
-/** Moves through an open menu with the arrow keys and chooses the item called `name`. */
-async function chooseMenuItem(page: Page, name: string): Promise<void> {
-  const item = page.getByRole('menuitem', { name, exact: true });
-  for (let presses = 0; presses < 20; presses++) {
-    if (await item.evaluate((element) => element === document.activeElement)) {
-      await page.keyboard.press('Enter');
-      return;
-    }
-    await page.keyboard.press('ArrowDown');
-  }
-  throw new Error(`The menu item '${name}' never got the focus`);
-}
 
 async function openSignIn(page: Page): Promise<void> {
   await page.goto('/sign-in');

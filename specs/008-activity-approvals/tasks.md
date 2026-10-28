@@ -159,8 +159,17 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 
 ## Phase 4: End-to-end (needs Phases 2 and 3)
 
-- [ ] T055 Write `frontend/e2e/approvals.spec.ts` with the plan's six journeys as separate tests, in this order, each using different seeded activities and asserting only its own rows (never global counts): (1) US1 + US6 submit and bell, (2) US3 inbox approve, decline, Decided by me, Priya's bell, (3) US2 level 2 as Alex and on-behalf approval, (4) US4 workflows CRUD, open-rounds note, set inactive/active, (5) US5 recall and planned-cost restart, (6) axe light mode on Approvals with the preview, the decline dialog with its error, Approval workflows with the form errors, the bell popover, plus the keyboard-only approve; reuse `signInAs` and `expectNoAxeViolations` from `frontend/e2e/fixtures.ts`
-- [ ] T056 Run `npm run test:e2e` in `frontend/` until `approvals.spec.ts` and the existing `smoke.spec.ts` pass
+- [X] T055 Write `frontend/e2e/approvals.spec.ts` with the plan's six journeys as separate tests, in this order, each using different seeded activities and asserting only its own rows (never global counts): (1) US1 + US6 submit and bell, (2) US3 inbox approve, decline, Decided by me, Priya's bell, (3) US2 level 2 as Alex and on-behalf approval, (4) US4 workflows CRUD, open-rounds note, set inactive/active, (5) US5 recall and planned-cost restart, (6) axe light mode on Approvals with the preview, the decline dialog with its error, Approval workflows with the form errors, the bell popover, plus the keyboard-only approve; reuse `signInAs` and `expectNoAxeViolations` from `frontend/e2e/fixtures.ts`
+  - Done 2026-10-28 in `frontend/e2e/approvals.spec.ts` (journeys 1, 2, 3, 5, 6) and
+    `frontend/e2e/approval-workflows.spec.ts` (journey 4). Adapted to the data as it is since 017: each journey
+    makes its own Lubricants activities with the Standard marketing approval (level 1 Daniel Okoro, Priya's line
+    manager) instead of using seeded ones, and the workflow set inactive is the test's own. Not repeated here:
+    "Submitting needs … — view list" and level 2 by Alex (`core-flow-approval.spec.ts`), the restart of an
+    Approved activity (`approval-restart-and-profile.spec.ts`); journey 5 restarts a Submitted one.
+  - Bug found and fixed (component test first in `ApprovalPreviewPanel.test.tsx`): the preview's details scroll
+    but held nothing the keyboard could reach (axe `scrollable-region-focusable`, WCAG 2.1.1); they are now a
+    focusable group "Activity details", as the GSAP transaction panel already was.
+- [X] T056 Run `npm run test:e2e` in `frontend/` until `approvals.spec.ts` and the existing `smoke.spec.ts` pass
 
 ---
 
