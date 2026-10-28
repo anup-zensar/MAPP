@@ -29,9 +29,10 @@ ORDER BY length(id), id COLLATE "C";
 INSERT INTO line_items (
     id, activity_id, name, owner_id, description, currency, planned_cost_minor, spread_method, attributes,
     contracted_amount_minor, request_swbs, finance_budget_year, finance_budget_item_id, version, created_at,
-    created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+    created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name, swbs_code, swbs_requested_at,
+    swbs_received_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
 )
 ON CONFLICT (id) DO UPDATE SET
     activity_id = excluded.activity_id,
@@ -52,7 +53,10 @@ ON CONFLICT (id) DO UPDATE SET
     created_by_name = excluded.created_by_name,
     updated_at = excluded.updated_at,
     updated_by_id = excluded.updated_by_id,
-    updated_by_name = excluded.updated_by_name;
+    updated_by_name = excluded.updated_by_name,
+    swbs_code = excluded.swbs_code,
+    swbs_requested_at = excluded.swbs_requested_at,
+    swbs_received_at = excluded.swbs_received_at;
 
 -- name: DeleteLineItemSpreadMonths :exec
 DELETE FROM line_item_spread_months
@@ -72,9 +76,10 @@ WHERE id = $1;
 INSERT INTO line_items (
     id, activity_id, name, owner_id, description, currency, planned_cost_minor, spread_method, attributes,
     contracted_amount_minor, request_swbs, finance_budget_year, finance_budget_item_id, version, created_at,
-    created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+    created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name, swbs_code, swbs_requested_at,
+    swbs_received_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
 );
 
 -- name: AddLineItemSpreadMonths :copyfrom

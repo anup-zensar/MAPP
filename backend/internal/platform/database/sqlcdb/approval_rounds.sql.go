@@ -11,9 +11,9 @@ import (
 )
 
 const listOpenRounds = `-- name: ListOpenRounds :many
-SELECT id, activity_id, number, workflow_id, workflow_name, levels, current_level, outcome, submitted_at,
+SELECT id, subject_id, number, workflow_id, workflow_name, levels, current_level, outcome, submitted_at,
     submitted_by_id, submitted_by_name, comment, ended_at, facts, reminder_days, escalation_days, auto_approved,
-    version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+    version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name, subject_kind
 FROM approval_rounds
 WHERE outcome = 'open'
 ORDER BY length(id), id COLLATE "C"
@@ -30,7 +30,7 @@ func (q *Queries) ListOpenRounds(ctx context.Context) ([]ApprovalRound, error) {
 		var i ApprovalRound
 		if err := rows.Scan(
 			&i.ID,
-			&i.ActivityID,
+			&i.SubjectID,
 			&i.Number,
 			&i.WorkflowID,
 			&i.WorkflowName,
@@ -53,6 +53,7 @@ func (q *Queries) ListOpenRounds(ctx context.Context) ([]ApprovalRound, error) {
 			&i.UpdatedAt,
 			&i.UpdatedByID,
 			&i.UpdatedByName,
+			&i.SubjectKind,
 		); err != nil {
 			return nil, err
 		}
@@ -65,22 +66,22 @@ func (q *Queries) ListOpenRounds(ctx context.Context) ([]ApprovalRound, error) {
 }
 
 const listRounds = `-- name: ListRounds :many
-SELECT id, activity_id, number, workflow_id, workflow_name, levels, current_level, outcome, submitted_at,
+SELECT id, subject_id, number, workflow_id, workflow_name, levels, current_level, outcome, submitted_at,
     submitted_by_id, submitted_by_name, comment, ended_at, facts, reminder_days, escalation_days, auto_approved,
-    version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+    version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name, subject_kind
 FROM approval_rounds
 WHERE ($1::text IS NULL OR id = $1)
-    AND ($2::text IS NULL OR activity_id = $2)
+    AND ($2::text IS NULL OR subject_id = $2)
 ORDER BY CASE WHEN $2::text IS NULL THEN 0 ELSE number END, length(id), id COLLATE "C"
 `
 
 type ListRoundsParams struct {
-	ID         *string
-	ActivityID *string
+	ID        *string
+	SubjectID *string
 }
 
 func (q *Queries) ListRounds(ctx context.Context, arg ListRoundsParams) ([]ApprovalRound, error) {
-	rows, err := q.db.Query(ctx, listRounds, arg.ID, arg.ActivityID)
+	rows, err := q.db.Query(ctx, listRounds, arg.ID, arg.SubjectID)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +91,7 @@ func (q *Queries) ListRounds(ctx context.Context, arg ListRoundsParams) ([]Appro
 		var i ApprovalRound
 		if err := rows.Scan(
 			&i.ID,
-			&i.ActivityID,
+			&i.SubjectID,
 			&i.Number,
 			&i.WorkflowID,
 			&i.WorkflowName,
@@ -113,6 +114,7 @@ func (q *Queries) ListRounds(ctx context.Context, arg ListRoundsParams) ([]Appro
 			&i.UpdatedAt,
 			&i.UpdatedByID,
 			&i.UpdatedByName,
+			&i.SubjectKind,
 		); err != nil {
 			return nil, err
 		}
@@ -125,12 +127,13 @@ func (q *Queries) ListRounds(ctx context.Context, arg ListRoundsParams) ([]Appro
 }
 
 const listRoundsInScope = `-- name: ListRoundsInScope :many
-SELECT id, activity_id, number, workflow_id, workflow_name, levels, current_level, outcome, submitted_at,
+SELECT id, subject_id, number, workflow_id, workflow_name, levels, current_level, outcome, submitted_at,
     submitted_by_id, submitted_by_name, comment, ended_at, facts, reminder_days, escalation_days, auto_approved,
-    version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+    version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name, subject_kind
 FROM approval_rounds
 WHERE ($1::text IS NULL OR id = $1)
-    AND activity_in_scope(activity_id, $2::boolean, $3::text,
+    AND subject_kind = 'activity'
+    AND activity_in_scope(subject_id, $2::boolean, $3::text,
         $4::boolean, $5::text[])
 ORDER BY length(id), id COLLATE "C"
 `
@@ -160,7 +163,7 @@ func (q *Queries) ListRoundsInScope(ctx context.Context, arg ListRoundsInScopePa
 		var i ApprovalRound
 		if err := rows.Scan(
 			&i.ID,
-			&i.ActivityID,
+			&i.SubjectID,
 			&i.Number,
 			&i.WorkflowID,
 			&i.WorkflowName,
@@ -183,6 +186,7 @@ func (q *Queries) ListRoundsInScope(ctx context.Context, arg ListRoundsInScopePa
 			&i.UpdatedAt,
 			&i.UpdatedByID,
 			&i.UpdatedByName,
+			&i.SubjectKind,
 		); err != nil {
 			return nil, err
 		}
@@ -196,14 +200,15 @@ func (q *Queries) ListRoundsInScope(ctx context.Context, arg ListRoundsInScopePa
 
 const putRound = `-- name: PutRound :exec
 INSERT INTO approval_rounds (
-    id, activity_id, number, workflow_id, workflow_name, levels, current_level, outcome, submitted_at,
+    id, subject_id, number, workflow_id, workflow_name, levels, current_level, outcome, submitted_at,
     submitted_by_id, submitted_by_name, comment, ended_at, facts, reminder_days, escalation_days, auto_approved,
-    version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+    version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name, subject_kind
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25
 )
 ON CONFLICT (id) DO UPDATE SET
-    activity_id = excluded.activity_id,
+    subject_kind = excluded.subject_kind,
+    subject_id = excluded.subject_id,
     number = excluded.number,
     workflow_id = excluded.workflow_id,
     workflow_name = excluded.workflow_name,
@@ -230,7 +235,7 @@ ON CONFLICT (id) DO UPDATE SET
 
 type PutRoundParams struct {
 	ID              string
-	ActivityID      string
+	SubjectID       string
 	Number          int
 	WorkflowID      string
 	WorkflowName    string
@@ -253,12 +258,13 @@ type PutRoundParams struct {
 	UpdatedAt       time.Time
 	UpdatedByID     string
 	UpdatedByName   string
+	SubjectKind     string
 }
 
 func (q *Queries) PutRound(ctx context.Context, arg PutRoundParams) error {
 	_, err := q.db.Exec(ctx, putRound,
 		arg.ID,
-		arg.ActivityID,
+		arg.SubjectID,
 		arg.Number,
 		arg.WorkflowID,
 		arg.WorkflowName,
@@ -281,6 +287,7 @@ func (q *Queries) PutRound(ctx context.Context, arg PutRoundParams) error {
 		arg.UpdatedAt,
 		arg.UpdatedByID,
 		arg.UpdatedByName,
+		arg.SubjectKind,
 	)
 	return err
 }

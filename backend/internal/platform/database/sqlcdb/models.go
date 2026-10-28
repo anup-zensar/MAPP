@@ -98,7 +98,7 @@ type ApprovalAction struct {
 	ID               string
 	RoundID          string
 	RoundNumber      int
-	ActivityID       string
+	SubjectID        string
 	Action           string
 	Level            int
 	LevelName        string
@@ -116,6 +116,8 @@ type ApprovalAction struct {
 	EscalatedToID    *string
 	EscalatedToName  *string
 	WaitedDays       int
+	SubjectKind      string
+	SelfApproval     bool
 }
 
 type ApprovalDelegation struct {
@@ -139,7 +141,7 @@ type ApprovalDelegation struct {
 
 type ApprovalRound struct {
 	ID              string
-	ActivityID      string
+	SubjectID       string
 	Number          int
 	WorkflowID      string
 	WorkflowName    string
@@ -162,6 +164,7 @@ type ApprovalRound struct {
 	UpdatedAt       time.Time
 	UpdatedByID     string
 	UpdatedByName   string
+	SubjectKind     string
 }
 
 type ApprovalWorkflow struct {
@@ -178,6 +181,7 @@ type ApprovalWorkflow struct {
 	UpdatedAt      time.Time
 	UpdatedByID    string
 	UpdatedByName  string
+	ObjectType     string
 }
 
 type ApprovalWorkflowLevel struct {
@@ -190,6 +194,7 @@ type ApprovalWorkflowLevel struct {
 	AppliesWhen      []byte
 	AutoApproveWhen  []byte
 	BackupApproverID *string
+	RecordField      string
 }
 
 type ApprovalWorkflowLevelApprover struct {
@@ -438,6 +443,9 @@ type LineItem struct {
 	UpdatedAt             time.Time
 	UpdatedByID           string
 	UpdatedByName         string
+	SwbsCode              string
+	SwbsRequestedAt       *time.Time
+	SwbsReceivedAt        *time.Time
 }
 
 type LineItemSpreadMonth struct {
@@ -470,18 +478,19 @@ type ModelActivityType struct {
 }
 
 type Notification struct {
-	ID           string
-	RecipientID  string
-	Kind         string
-	Title        string
-	Text         string
-	ActivityID   string
-	ActivityName string
-	ActorID      string
-	ActorName    string
-	At           time.Time
-	Read         bool
-	ReadAt       *time.Time
+	ID          string
+	RecipientID string
+	Kind        string
+	Title       string
+	Text        string
+	SubjectID   string
+	SubjectName string
+	ActorID     string
+	ActorName   string
+	At          time.Time
+	Read        bool
+	ReadAt      *time.Time
+	SubjectKind string
 }
 
 type Person struct {
@@ -549,6 +558,84 @@ type Preference struct {
 	HomeScope            string
 	HistoryIncludeInside bool
 	PinnedPlanIds        []string
+}
+
+type PurchaseRequest struct {
+	ID                     string
+	PlanID                 string
+	Name                   string
+	Description            string
+	OwnerID                string
+	MoaApproverID          *string
+	ApprovalWorkflowID     string
+	ModificationWorkflowID string
+	Status                 string
+	ChangePending          bool
+	Attributes             []byte
+	Vendor                 string
+	ApprovedVersion        []byte
+	GsapPrNumber           string
+	GsapPrDate             *time.Time
+	GsapSource             string
+	ClosedAt               *time.Time
+	Version                int
+	CreatedAt              time.Time
+	CreatedByID            string
+	CreatedByName          string
+	UpdatedAt              time.Time
+	UpdatedByID            string
+	UpdatedByName          string
+}
+
+type PurchaseRequestConfiguration struct {
+	ID              string
+	PurchaseSupport bool
+	LinesOnApproved string
+	Version         int
+	CreatedAt       time.Time
+	CreatedByID     string
+	CreatedByName   string
+	UpdatedAt       time.Time
+	UpdatedByID     string
+	UpdatedByName   string
+}
+
+type PurchaseRequestLine struct {
+	ID                string
+	PurchaseRequestID string
+	Position          int
+	LineItemID        string
+	Currency          string
+	AmountMinor       int64
+	DeliveryDate      time.Time
+	OverallLimitMinor *int64
+	Description       string
+	Attributes        []byte
+	SentOn            *time.Time
+	PoNumber          string
+	PoLine            string
+	PoLineStatus      string
+	PoDate            *time.Time
+	PoValueMinor      *int64
+	PoCurrency        string
+	Version           int
+	CreatedAt         time.Time
+	CreatedByID       string
+	CreatedByName     string
+	UpdatedAt         time.Time
+	UpdatedByID       string
+	UpdatedByName     string
+}
+
+type PurchaseRequestRouting struct {
+	ID                string
+	PurchaseRequestID string
+	Type              string
+	RoutedAt          time.Time
+	RoutedByID        string
+	RoutedByName      string
+	Recipients        []byte
+	Form              []byte
 }
 
 type RateImport struct {
@@ -714,6 +801,27 @@ type ShellOptionParent struct {
 	OptionID       string
 	Position       int
 	ParentOptionID string
+}
+
+type SwbsRun struct {
+	ID            string
+	Source        string
+	Version       int
+	CreatedAt     time.Time
+	CreatedByID   string
+	CreatedByName string
+	UpdatedAt     time.Time
+	UpdatedByID   string
+	UpdatedByName string
+}
+
+type SwbsRunCode struct {
+	RunID        string
+	Position     int
+	LineItemID   string
+	LineItemName string
+	CompanyCode  string
+	SwbsCode     string
 }
 
 type Team struct {
