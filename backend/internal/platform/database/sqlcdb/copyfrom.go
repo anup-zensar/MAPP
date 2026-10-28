@@ -68,6 +68,40 @@ func (q *Queries) AddActivities(ctx context.Context, arg []AddActivitiesParams) 
 	return q.db.CopyFrom(ctx, []string{"activities"}, []string{"id", "initiative_id", "name", "external_name", "activity_type_id", "owner_id", "start_date", "end_date", "ongoing", "planned_cost_minor", "planned_cost_currency", "approval_workflow_id", "description", "attributes", "inq", "set_later_stages_myself", "mql", "revenue_minor", "revenue_currency", "status", "split_from_id", "version", "created_at", "created_by_id", "created_by_name", "updated_at", "updated_by_id", "updated_by_name"}, &iteratorForAddActivities{rows: arg})
 }
 
+// iteratorForAddBulkActionBinEntries implements pgx.CopyFromSource.
+type iteratorForAddBulkActionBinEntries struct {
+	rows                 []AddBulkActionBinEntriesParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForAddBulkActionBinEntries) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForAddBulkActionBinEntries) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].BulkActionID,
+		r.rows[0].Position,
+		r.rows[0].BinEntryID,
+	}, nil
+}
+
+func (r iteratorForAddBulkActionBinEntries) Err() error {
+	return nil
+}
+
+func (q *Queries) AddBulkActionBinEntries(ctx context.Context, arg []AddBulkActionBinEntriesParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"bulk_action_bin_entries"}, []string{"bulk_action_id", "position", "bin_entry_id"}, &iteratorForAddBulkActionBinEntries{rows: arg})
+}
+
 // iteratorForAddCampaignPhasingMonths implements pgx.CopyFromSource.
 type iteratorForAddCampaignPhasingMonths struct {
 	rows                 []AddCampaignPhasingMonthsParams
@@ -397,6 +431,82 @@ func (r iteratorForAddOptions) Err() error {
 
 func (q *Queries) AddOptions(ctx context.Context, arg []AddOptionsParams) (int64, error) {
 	return q.db.CopyFrom(ctx, []string{"shell_attribute_options"}, []string{"id", "attribute_id", "label", "position", "active", "version", "created_at", "created_by_id", "created_by_name", "updated_at", "updated_by_id", "updated_by_name"}, &iteratorForAddOptions{rows: arg})
+}
+
+// iteratorForAddPlanImportProblems implements pgx.CopyFromSource.
+type iteratorForAddPlanImportProblems struct {
+	rows                 []AddPlanImportProblemsParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForAddPlanImportProblems) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForAddPlanImportProblems) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].ImportID,
+		r.rows[0].Position,
+		r.rows[0].Sheet,
+		r.rows[0].RowNumber,
+		r.rows[0].ColumnHeading,
+		r.rows[0].Value,
+		r.rows[0].Reason,
+	}, nil
+}
+
+func (r iteratorForAddPlanImportProblems) Err() error {
+	return nil
+}
+
+func (q *Queries) AddPlanImportProblems(ctx context.Context, arg []AddPlanImportProblemsParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"plan_import_problems"}, []string{"import_id", "position", "sheet", "row_number", "column_heading", "value", "reason"}, &iteratorForAddPlanImportProblems{rows: arg})
+}
+
+// iteratorForAddPlanImportRecords implements pgx.CopyFromSource.
+type iteratorForAddPlanImportRecords struct {
+	rows                 []AddPlanImportRecordsParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForAddPlanImportRecords) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForAddPlanImportRecords) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].ImportID,
+		r.rows[0].Position,
+		r.rows[0].Level,
+		r.rows[0].RecordID,
+		r.rows[0].RecordName,
+		r.rows[0].ParentID,
+		r.rows[0].Action,
+	}, nil
+}
+
+func (r iteratorForAddPlanImportRecords) Err() error {
+	return nil
+}
+
+func (q *Queries) AddPlanImportRecords(ctx context.Context, arg []AddPlanImportRecordsParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"plan_import_records"}, []string{"import_id", "position", "level", "record_id", "record_name", "parent_id", "action"}, &iteratorForAddPlanImportRecords{rows: arg})
 }
 
 // iteratorForAddRates implements pgx.CopyFromSource.
