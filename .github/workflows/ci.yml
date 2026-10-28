@@ -117,19 +117,16 @@ jobs:
         with:
           fetch-depth: 0
       - *setup-go
-      - uses: golangci/golangci-lint-action@v9
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v2.15.0
-          install-only: true
-      # The configured linters without the formatters, which the Format step checks and which take most of the time
-      # here. New and changed lines only, diffed with git: GitHub's pull-request diff API stops at 300 files.
-      - name: Lint
-        env:
-          NEW: >-
+          working-directory: backend
+          # New and changed lines only, diffed with git: GitHub's pull-request diff API stops at 300 files.
+          args: >-
             ${{ github.event_name == 'pull_request'
                 && format('--new-from-merge-base=origin/{0}', github.base_ref)
                 || format('--new-from-rev={0}', github.event.before) }}
-        run: golangci-lint run --enable-only="$(golangci-lint linters --json | jq -r '[.Enabled[].name] | join(",")')" "$NEW"
       - name: Vulnerabilities
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 
