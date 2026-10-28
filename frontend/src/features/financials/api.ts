@@ -152,7 +152,7 @@ export function useLineItemPreview(lineItemId: string) {
 export function downloadSampleFile(): Promise<string> {
   return downloadFromApi(
     api.GET('/api/v1/financials/imports/template', { parseAs: 'blob' }),
-    'mapp-gsap-extract-sample.csv',
+    'spa-one-gsap-extract-sample.csv',
   );
 }
 

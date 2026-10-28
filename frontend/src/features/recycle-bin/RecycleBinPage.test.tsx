@@ -37,7 +37,7 @@ describe('RecycleBinPage', () => {
     ]);
 
     expect(screen.getByRole('heading', { level: 1, name: 'Recycle bin' })).toBeInTheDocument();
-    expect(document.title).toBe('Recycle bin · MAPP');
+    expect(document.title).toBe('Recycle bin · SP&A One');
     expect(await screen.findByText('2 of 2 items')).toBeInTheDocument();
     expect(rowNames()).toEqual(['Trade shows', 'Print ads']);
     // Destructive and rare: a menu item, never a red button on the page (design system §5.1).
@@ -128,7 +128,7 @@ describe('RecycleBinPage', () => {
     renderPage([reply('GET /api/v1/recycle-bin', { status: 500 })]);
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      "MAPP can't reach its server right now.",
+      "SP&A One can't reach its server right now.",
     );
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });

@@ -17,7 +17,7 @@ const (
 	FormatCSV       = "csv"
 	contentTypeXLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 	contentTypeCSV  = "text/csv"
-	noDocuments     = "Routed by MAPP — no supporting documents are attached"
+	noDocuments     = "Routed by SP&A One — no supporting documents are attached"
 )
 
 var formColumns = []string{ //nolint:gochecknoglobals // the PR form's columns, in the spec's order
@@ -67,7 +67,7 @@ func formFile(pr PurchaseRequest, r Routing, format string) (File, error) {
 		{"Note", noDocuments},
 	}
 	table := formTable(r)
-	file := File{Name: fmt.Sprintf("MAPP PR form – %s – %s – %s.%s", pr.ID, routingWords[r.Type],
+	file := File{Name: fmt.Sprintf("SP&A One PR form – %s – %s – %s.%s", pr.ID, routingWords[r.Type],
 		date.Format(date.Today(r.RoutedAt)), format)}
 	var body bytes.Buffer
 	if format == FormatCSV {

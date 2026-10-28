@@ -45,7 +45,7 @@ func TestCurrenciesAPI_ListCreateGet_FR028(t *testing.T) {
 	if euro.Rate != "0.92" || euro.InverseRate != "1.086957" || len(euro.Locks) != 1 || euro.Locks[0].Field != "code" {
 		t.Errorf("EUR = %+v", euro)
 	}
-	if len(dollar.Locks) != 4 || dollar.Locks[1].Reason != "USD is MAPP's base currency; its rate is always 1." {
+	if len(dollar.Locks) != 4 || dollar.Locks[1].Reason != "USD is SP&A One's base currency; its rate is always 1." {
 		t.Errorf("USD = %+v", dollar)
 	}
 	assertAnswer(t, gone, http.StatusNotFound, `{"error":{"code":"not_found","message":"This currency no longer exists — someone may have deleted it.","fields":[]}}`)

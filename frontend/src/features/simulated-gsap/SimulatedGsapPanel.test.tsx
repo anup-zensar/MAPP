@@ -100,7 +100,7 @@ describe('030 FR-013: the Simulated GSAP panel', () => {
       name: 'Send 1 SWBS request to simulated GSAP?',
     });
     expect(dialog).toHaveTextContent(
-      "The simulated GSAP returns one SWBS code per line item at once. Codes can't be changed or removed in MAPP.",
+      "The simulated GSAP returns one SWBS code per line item at once. Codes can't be changed or removed in SP&A One.",
     );
     await expectNoAxeViolations();
     await user.click(

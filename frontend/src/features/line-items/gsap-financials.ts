@@ -123,6 +123,6 @@ export function linkedTransactionsText(count: number): string | null {
     return null;
   }
   return count === 1
-    ? '1 GSAP transaction is linked to it. It stays in MAPP and leaves the figures until it is restored.'
-    : `${plural(count, 'GSAP transaction')} are linked to it. They stay in MAPP and leave the figures until it is restored.`;
+    ? '1 GSAP transaction is linked to it. It stays in SP&A One and leaves the figures until it is restored.'
+    : `${plural(count, 'GSAP transaction')} are linked to it. They stay in SP&A One and leave the figures until it is restored.`;
 }

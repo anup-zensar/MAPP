@@ -21,18 +21,11 @@ import styles from './SignInPage.module.css';
 type DemoPeople = components['schemas']['DemoPeople'];
 type DemoPerson = components['schemas']['DemoPerson'];
 
-/** The notice the page can be opened with, after a session ended (plan "Session"). */
 const NOTICES: Record<SessionEnd, string> = {
   signedOut: 'You have been signed out.',
   sessionLost: 'Please sign in again',
 };
 
-/**
- * The one sign-in page (US1, FR-001 – FR-004, FR-009, FR-028): one white card on the grey page
- * (design system §5.8) — type a demo e-mail and the demo password, or choose a demo person.
- * Afterwards people go on to the page they asked for (the `next` address), or Home. The brand is
- * shown once, in the bar above the card (UI audit S-01).
- */
 export function SignInPage() {
   usePageTitle('Sign in');
   const { status } = useSession();
@@ -49,7 +42,7 @@ export function SignInPage() {
     <PublicLayout>
       <div className={styles.card}>
         <div className={styles.heading}>
-          <h1 className={styles.title}>Sign in to MAPP</h1>
+          <h1 className={styles.title}>Sign in to SP&A One</h1>
           <p className={styles.subtitle}>Plan your marketing work, from plan to line item.</p>
         </div>
         <Notice />
@@ -59,7 +52,6 @@ export function SignInPage() {
   );
 }
 
-/** "You have been signed out." or "Please sign in again", when the page was opened with one. */
 function Notice() {
   const location = useLocation();
   const notice = noticeText(location.state);
@@ -79,22 +71,16 @@ function Notice() {
   );
 }
 
-/** The notice's text from the router state that endSession sends along ("" for none). */
 function noticeText(routerState: unknown): string {
   const notice = noticeOf(routerState);
   return notice ? NOTICES[notice] : '';
 }
 
-/**
- * Everything that depends on the demo people answer: the demo notice with the password, the
- * form and the demo people — or, when demo sign-in is off, only the sentence that says so.
- */
 function SignInChoices() {
   const { signIn } = useSession();
   const demoPeople = useDemoPeople();
   // While a sign-in is on its way, further clicks are ignored; nothing is greyed out.
   const [signingIn, setSigningIn] = useState(false);
-  // A failure shown above the form, such as "Incorrect e-mail or password.".
   const [failure, setFailure] = useState('');
 
   async function attemptSignIn(email: string, password: string): Promise<ApiError | null> {
@@ -157,12 +143,10 @@ function SignInChoices() {
 }
 
 interface DemoPeopleSectionProps {
-  /** The answer of GET /api/v1/auth/demo-people. */
   query: UseQueryResult<DemoPeople>;
   onChoose: (person: DemoPerson) => void;
 }
 
-/** "Explore as a demo person": one click signs in as that person (FR-001, FR-003). */
 function DemoPeopleSection({ query, onChoose }: DemoPeopleSectionProps) {
   const headingId = useId();
 
@@ -177,7 +161,6 @@ function DemoPeopleSection({ query, onChoose }: DemoPeopleSectionProps) {
   );
 }
 
-/** The section's content while loading, after a failure, without demo people, or the people. */
 function DemoPeopleContent({ query, onChoose }: DemoPeopleSectionProps) {
   if (query.isPending) {
     return <Skeleton lines={3} height="40px" />;
@@ -191,8 +174,8 @@ function DemoPeopleContent({ query, onChoose }: DemoPeopleSectionProps) {
       <div className={styles.box}>
         <p className={styles.strong}>No demo users found — load the demo data first</p>
         <p>
-          Stop MAPP's API, run <code>go run ./cmd/seed</code> in the backend folder, start the API
-          again with <code>go run ./cmd/api</code>, then reload this page.
+          Stop SP&A One's API, run <code>go run ./cmd/seed</code> in the backend folder, start the
+          API again with <code>go run ./cmd/api</code>, then reload this page.
         </p>
       </div>
     );

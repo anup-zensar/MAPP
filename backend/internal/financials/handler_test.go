@@ -221,13 +221,13 @@ func TestImportsAndTemplate_Contract_FR008(t *testing.T) {
 	page := get[financials.ImportPage](t, alex, "/api/v1/financials/imports")
 	want := financials.ImportCounts{Rows: 11, New: 11, NotLinked: 1}
 	if page.Total != 1 || page.Items[0].ID != "FIM-1001" || page.Items[0].Source != financials.SourceDemo ||
-		page.Items[0].Counts != want || page.Items[0].ImportedBy.Name != "MAPP" {
+		page.Items[0].Counts != want || page.Items[0].ImportedBy.Name != "SP&A One" {
 		t.Errorf("imports = %+v", page)
 	}
 
 	response := alex.Do(t, http.MethodGet, "/api/v1/financials/imports/template", nil)
 	if response.Status != http.StatusOK || response.Header.Get("Content-Type") != "text/csv" ||
-		response.Header.Get("Content-Disposition") != `attachment; filename="mapp-gsap-extract-sample.csv"` {
+		response.Header.Get("Content-Disposition") != `attachment; filename="spa-one-gsap-extract-sample.csv"` {
 		t.Fatalf("template = %d %v", response.Status, response.Header)
 	}
 	lines := strings.Split(strings.TrimSpace(string(response.Body)), "\r\n")

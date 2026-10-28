@@ -10,7 +10,7 @@ describe('FinancialsPage (015 US3, FR-020 – FR-021)', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Financials' }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Financials · MAPP');
+    expect(document.title).toBe('Financials · SP&A One');
     expect(
       screen.getByText('Purchase orders, invoices, payments and accruals from GSAP'),
     ).toBeInTheDocument();

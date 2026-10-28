@@ -58,7 +58,7 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
     expect(within(panel).getByRole('checkbox', { name: 'Shell Helix' })).toBeInTheDocument();
     expect(within(panel).getByRole('button', { name: 'Save' })).toBeEnabled();
     expect(within(panel).getByRole('button', { name: 'Save and add another' })).toBeEnabled();
-    expect(document.title).toBe('New campaign · MAPP');
+    expect(document.title).toBe('New campaign · SP&A One');
   });
 
   it('drops a default’s label once it is changed (FR-003)', async () => {

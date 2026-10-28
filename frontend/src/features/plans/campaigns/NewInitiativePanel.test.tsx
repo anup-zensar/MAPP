@@ -55,7 +55,7 @@ describe('NewInitiativePanel (feature 005, US2)', () => {
     expect(within(panel).getByLabelText('Start date')).toHaveValue('2026-03-01');
     expect(within(panel).getByLabelText('End date')).toHaveValue('2026-12-31');
     expect(within(panel).getByText("The campaign's dates")).toBeInTheDocument();
-    expect(document.title).toBe('New initiative · MAPP');
+    expect(document.title).toBe('New initiative · SP&A One');
   });
 
   it('keeps the dates inside the campaign’s and shows the API’s R3 message under them (US2#2, FR-006)', async () => {

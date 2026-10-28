@@ -9,7 +9,7 @@ import { ActivePeopleCount, ActiveTeamsCount } from './ActiveCounts';
 export const PEOPLE_SETTINGS_SECTIONS: SettingsSection[] = [
   {
     title: 'People',
-    description: 'Everyone who can sign in to MAPP.',
+    description: 'Everyone who can sign in to SP&A One.',
     path: '/settings/people',
     icon: Users,
     ActiveCount: ActivePeopleCount,

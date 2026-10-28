@@ -39,7 +39,7 @@ var showLevelsWords = map[string]string{
 
 // File is an exported file.
 type File struct {
-	Name        string // "MAPP All work – Grid – 2026 – 18 Oct 2026.xlsx"
+	Name        string // "SP&A One All work – Grid – 2026 – 18 Oct 2026.xlsx"
 	ContentType string
 	Body        []byte
 }
@@ -170,7 +170,7 @@ func writeFile(r Result, in input, notes [][2]string, table [][]sheet.Cell, form
 // fileName is "MAPP All work – <view> – <year> – <DD MMM YYYY>.<format>" (FR-034); over several years
 // "2026–2027" (016).
 func fileName(r Result, in input, format string) string {
-	return fmt.Sprintf("MAPP All work – %s – %s – %s.%s", viewNames[r.View], yearsText(r, "–"), date.Format(in.today), format)
+	return fmt.Sprintf("SP&A One All work – %s – %s – %s.%s", viewNames[r.View], yearsText(r, "–"), date.Format(in.today), format)
 }
 
 // yearsText is the year of a view, or its range "2026<sep>2027" (016 FR-034).

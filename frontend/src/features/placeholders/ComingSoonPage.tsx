@@ -37,7 +37,7 @@ export function ComingSoonPage({ section }: ComingSoonPageProps) {
     >
       <p>{section.comingSoon}</p>
       <p className={styles.soon}>Coming soon</p>
-      <p>This part of MAPP isn&apos;t built yet.</p>
+      <p>This part of SP&A One isn&apos;t built yet.</p>
     </CentredMessage>
   );
 }

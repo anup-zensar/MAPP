@@ -46,7 +46,7 @@ describe('Line item routes (feature 007)', () => {
     renderApp(path, answers);
 
     expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
-    await waitFor(() => expect(document.title).toBe(`${tab} · MAPP`));
+    await waitFor(() => expect(document.title).toBe(`${tab} · SP&A One`));
     expectCurrentSection('Plans');
   });
 });

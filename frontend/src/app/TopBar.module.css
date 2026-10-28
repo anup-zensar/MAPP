@@ -26,6 +26,14 @@
   text-decoration: none;
 }
 
+.name {
+  display: none;
+}
+
+.tile {
+  display: flex;
+}
+
 .end {
   display: flex;
   align-items: center;
@@ -34,7 +42,12 @@
 }
 
 @media (min-width: 960px) {
-  .menu {
+  .menu,
+  .tile {
     display: none;
+  }
+
+  .name {
+    display: flex;
   }
 }

@@ -13,7 +13,7 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'FY2026 Global marketing budget' }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('FY2026 Global marketing budget · MAPP');
+    expect(document.title).toBe('FY2026 Global marketing budget · SP&A One');
     expect(screen.getByRole('link', { name: 'Global budgets' })).toHaveAttribute(
       'href',
       '/budgets',

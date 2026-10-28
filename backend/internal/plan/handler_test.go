@@ -155,7 +155,7 @@ func TestGetPlan_ViewAnd404_FR011(t *testing.T) {
 	china := priya.Do(t, http.MethodGet, "/api/v1/plans/P-1002", nil)
 	gone := priya.Do(t, http.MethodGet, "/api/v1/plans/P-9999", nil)
 
-	system := map[string]any{"id": "system", "name": "MAPP"}
+	system := map[string]any{"id": "system", "name": "SP&A One"}
 	usdOf := func(amount string) map[string]any { return map[string]any{"amount": amount, "currency": "USD"} }
 	assertFields(t, europe, http.StatusOK, map[string]any{
 		"id": "P-1001", "name": "FY2026 Lubricants Europe", "year": 2026, "status": "published",

@@ -20,7 +20,7 @@ describe('ShellAttributeEditorPage: create (FR-016 – FR-019)', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'New Shell attribute' }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('New Shell attribute · MAPP');
+    expect(document.title).toBe('New Shell attribute · SP&A One');
     expect(screen.getByRole('combobox', { name: /Level/ })).toHaveValue('activity');
     expect(screen.getByRole('combobox', { name: /Section/ })).toHaveValue('Shell attributes');
 

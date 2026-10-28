@@ -183,14 +183,14 @@ func TestExport_XlsxAndCsvContentTypeAndDisposition_FR034(t *testing.T) {
 	refused := priya.Do(t, http.MethodGet, "/api/v1/all-work/export?format=pdf&unassigned=maybe", nil, apitest.SkipRequestValidation())
 
 	if xlsx.Status != http.StatusOK || xlsx.Header.Get("Content-Type") != "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
-		xlsx.Header.Get("Content-Disposition") != `attachment; filename="MAPP All work - Grid - 2026 - 12 Mar 2026.xlsx"; `+
-			`filename*=UTF-8''MAPP%20All%20work%20%E2%80%93%20Grid%20%E2%80%93%202026%20%E2%80%93%2012%20Mar%202026.xlsx` ||
+		xlsx.Header.Get("Content-Disposition") != `attachment; filename="SP&A One All work - Grid - 2026 - 12 Mar 2026.xlsx"; `+
+			`filename*=UTF-8''SP%26A%20One%20All%20work%20%E2%80%93%20Grid%20%E2%80%93%202026%20%E2%80%93%2012%20Mar%202026.xlsx` ||
 		!strings.HasPrefix(string(xlsx.Body), "PK") {
 		t.Errorf("xlsx = %d %v", xlsx.Status, xlsx.Header)
 	}
 	body := string(csv.Body)
 	if csv.Status != http.StatusOK || csv.Header.Get("Content-Type") != "text/csv" ||
-		!strings.Contains(csv.Header.Get("Content-Disposition"), `filename="MAPP All work - Budget & cost - 2026 - 12 Mar 2026.csv"`) ||
+		!strings.Contains(csv.Header.Get("Content-Disposition"), `filename="SP&A One All work - Budget & cost - 2026 - 12 Mar 2026.csv"`) ||
 		!strings.HasPrefix(body, "\xEF\xBB\xBFView,Budget & cost\nYear,2026\nFilters,None\n") ||
 		!strings.Contains(body, "Exported by,Priya Raman\n") || strings.Contains(body, "Unassigned planned cost (Sys_Gen_Balance)") ||
 		!strings.Contains(body, "Total · 10 activities") {

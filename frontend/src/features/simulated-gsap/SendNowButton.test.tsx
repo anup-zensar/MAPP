@@ -29,7 +29,7 @@ describe('030 FR-015: send one line item to the simulated GSAP now', () => {
       name: 'Send Stand build to simulated GSAP now?',
     });
     expect(dialog).toHaveTextContent(
-      "It receives its SWBS code at once. Codes can't be changed or removed in MAPP.",
+      "It receives its SWBS code at once. Codes can't be changed or removed in SP&A One.",
     );
     await expectNoAxeViolations();
     await user.click(within(dialog).getByRole('button', { name: 'Send to simulated GSAP now' }));

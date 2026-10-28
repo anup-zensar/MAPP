@@ -18,7 +18,7 @@ describe('Financials routes (015 FR-020, FR-022)', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Financials' }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Financials · MAPP');
+    expect(document.title).toBe('Financials · SP&A One');
     expectCurrentSection('Financials');
     const labels = within(screen.getByRole('navigation', { name: 'Main' }))
       .getAllByRole('link')
@@ -37,6 +37,6 @@ describe('Financials routes (015 FR-020, FR-022)', () => {
     ]);
 
     expect(await screen.findByRole('dialog', { name: 'PO 4500001003 / 10' })).toBeInTheDocument();
-    expect(document.title).toBe('Financials · MAPP');
+    expect(document.title).toBe('Financials · SP&A One');
   });
 });

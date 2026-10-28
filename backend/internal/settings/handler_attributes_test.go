@@ -24,7 +24,7 @@ func TestShellAttributesAPI_ListByLevel_FR019(t *testing.T) {
 	if len(all) != 56 || all[0].Label != "Business unit" || all[34].Label != "Contracted spend" || all[55].Label != "Material / service code" {
 		t.Errorf("%d attributes, first %+v", len(all), all[0])
 	}
-	assertAnswer(t, unknown, http.StatusBadRequest, `{"error":{"code":"bad_request","message":"MAPP couldn't read this request. Reload the page and try again.","fields":[]}}`)
+	assertAnswer(t, unknown, http.StatusBadRequest, `{"error":{"code":"bad_request","message":"SP\u0026A One couldn't read this request. Reload the page and try again.","fields":[]}}`)
 }
 
 type listedAttribute struct {

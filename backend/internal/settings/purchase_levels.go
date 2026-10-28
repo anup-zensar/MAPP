@@ -21,7 +21,7 @@ const (
 
 const (
 	prLineWords = "PR line"
-	roleLock    = "MAPP reads this attribute for purchase requests, so its level and type stay and it can't be deleted."
+	roleLock    = "SP&A One reads this attribute for purchase requests, so its level and type stay and it can't be deleted."
 )
 
 func AllLevels() []Level {

@@ -205,10 +205,10 @@ func TestApproval_HistoryRuleEntries_FR034(t *testing.T) {
 	}
 	want := []string{
 		"approved L3 Carlos Mendes as backup",
-		"escalated L3 MAPP waited 5 days to Carlos Mendes",
-		"reminded L3 MAPP waited 4 days",
-		"skipped L2 MAPP rule only when planned cost is at least $100,000.00",
-		"autoApproved L1 MAPP rule planned cost is below $10,000.00",
+		"escalated L3 SP&A One waited 5 days to Carlos Mendes",
+		"reminded L3 SP&A One waited 4 days",
+		"skipped L2 SP&A One rule only when planned cost is at least $100,000.00",
+		"autoApproved L1 SP&A One rule planned cost is below $10,000.00",
 		"submitted L3 Mei Lin",
 	}
 	if !slices.Equal(got, want) {

@@ -39,7 +39,7 @@ export const PLANS_CARD: Record<HomeScope, { label: string; tip: string }> = {
     label: "My teams' plans",
     tip: 'Plans that have at least one of your teams.',
   },
-  everything: { label: 'All plans', tip: 'Every plan in MAPP.' },
+  everything: { label: 'All plans', tip: 'Every plan in SP&A One.' },
 };
 
 /** "1 published · 0 draft" (card 1). */

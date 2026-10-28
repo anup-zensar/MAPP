@@ -8,7 +8,7 @@ import { ENVIRONMENT_LOCAL, ENVIRONMENT_PRODUCTION } from '@/testing/fixtures/en
 import { DevOnly } from './DevOnly';
 
 const UNREACHABLE =
-  "MAPP can't reach its server right now. Check that it is running and try again.";
+  "SP&A One can't reach its server right now. Check that it is running and try again.";
 
 /** A developer page behind DevOnly, named in its route's handle as in router.tsx. */
 function renderDeveloperPage() {
@@ -46,7 +46,7 @@ describe('DevOnly', () => {
       await screen.findByRole('heading', { level: 1, name: 'Page not found' }),
     ).toBeInTheDocument();
     expect(screen.queryByText('Example developer page')).not.toBeInTheDocument();
-    expect(document.title).toBe('Page not found · MAPP');
+    expect(document.title).toBe('Page not found · SP&A One');
   });
 
   it('shows a loading placeholder, with the page’s name in the tab, while it asks the API (FR-017)', async () => {
@@ -54,7 +54,7 @@ describe('DevOnly', () => {
     renderDeveloperPage();
 
     expect(await screen.findByRole('status')).toHaveTextContent('Loading…');
-    expect(document.title).toBe('Example · MAPP');
+    expect(document.title).toBe('Example · SP&A One');
   });
 
   it('says when the API cannot be reached, and shows the page after Try again (FR-020)', async () => {
@@ -69,7 +69,7 @@ describe('DevOnly', () => {
     const { user } = renderDeveloperPage();
 
     expect(await screen.findByRole('alert')).toHaveTextContent(UNREACHABLE);
-    expect(document.title).toBe('Example · MAPP');
+    expect(document.title).toBe('Example · SP&A One');
     await user.click(screen.getByRole('button', { name: 'Try again' }));
 
     expect(

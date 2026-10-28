@@ -87,7 +87,7 @@ describe('DeleteActivityDialog (feature 006, FR-031)', () => {
 
   it('says a GSAP transaction linked to it stays (015 FR-029)', () => {
     expect(ask({}, 1)).toHaveTextContent(
-      '1 GSAP transaction is linked to it. It stays in MAPP and leaves the figures until it is restored.',
+      '1 GSAP transaction is linked to it. It stays in SP&A One and leaves the figures until it is restored.',
     );
   });
 

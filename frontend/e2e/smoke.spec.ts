@@ -9,8 +9,8 @@ test('US1: a visitor is sent to sign in and comes back after choosing a demo per
   await page.goto('/plans');
 
   await expect(page).toHaveURL(/\/sign-in\?next=%2Fplans$/);
-  await expect(page).toHaveTitle('Sign in · MAPP');
-  await expect(page.getByRole('heading', { name: 'Sign in to MAPP' })).toBeVisible();
+  await expect(page).toHaveTitle('Sign in · SP&A One');
+  await expect(page.getByRole('heading', { name: 'Sign in to SP&A One' })).toBeVisible();
   await expect(
     page.getByText('Demo environment — sign-in and data are for demonstration only'),
   ).toBeVisible();
@@ -20,7 +20,7 @@ test('US1: a visitor is sent to sign in and comes back after choosing a demo per
   await page.getByRole('button', { name: /^Sign in as Priya Raman\s*,\s*Marketer$/ }).click();
 
   await expect(page).toHaveURL(/\/plans$/);
-  await expect(page).toHaveTitle('Plans · MAPP');
+  await expect(page).toHaveTitle('Plans · SP&A One');
   await expect(page.getByRole('heading', { name: 'Plans', level: 1 })).toBeVisible();
 });
 
@@ -76,10 +76,10 @@ test('US2: every navigation item opens its page with its tab title (FR-010, FR-0
   ];
   for (const { item, heading } of pages) {
     await nav.getByRole('link', { name: item }).click();
-    await expect(page).toHaveTitle(`${item} · MAPP`);
+    await expect(page).toHaveTitle(`${item} · SP&A One`);
     await expect(nav.getByRole('link', { name: item })).toHaveAttribute('aria-current', 'page');
     await expect(main.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
-    await expect(main.getByText("This part of MAPP isn't built yet.")).toHaveCount(0);
+    await expect(main.getByText("This part of SP&A One isn't built yet.")).toHaveCount(0);
   }
 
   await page.goto('/nowhere');
@@ -94,7 +94,7 @@ test('US4: sign out returns to the sign-in page and Back does not show the previ
   await expect(page.getByRole('heading', { name: 'Welcome back, Mei.' })).toBeVisible();
   // Open another page inside the app first, so that Back has a MAPP page to go back to.
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Plans' }).click();
-  await expect(page).toHaveTitle('Plans · MAPP');
+  await expect(page).toHaveTitle('Plans · SP&A One');
 
   await page.getByRole('button', { name: 'Mei — account menu' }).click();
   await expect(page.getByText('mei.lin@shell.com')).toBeVisible();
@@ -149,7 +149,7 @@ test('US5: create, rename, delete and Undo a sample folder; the activity log rec
 
 test('SC-006: the sign-in page and Home pass the automated WCAG 2.1 AA check', async ({ page }) => {
   await page.goto('/sign-in');
-  await expect(page.getByRole('heading', { name: 'Sign in to MAPP' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sign in to SP&A One' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Sign in as/ }).first()).toBeVisible();
   await expectNoAxeViolations(page);
 

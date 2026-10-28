@@ -42,7 +42,7 @@ describe('ApprovalHistory (feature 008, US2)', () => {
   });
 });
 
-const MAPP = { id: 'system', name: 'MAPP' };
+const SYSTEM = { id: 'system', name: 'SP&A One' };
 const ref = (person: { id: string; name: string }) => ({ id: person.id, name: person.name });
 
 describe('ApprovalHistory rules entries (feature 017, US7)', () => {
@@ -72,7 +72,7 @@ describe('ApprovalHistory rules entries (feature 017, US7)', () => {
           action: 'escalated',
           level: 2,
           levelLabel: 'Level 2',
-          actor: MAPP,
+          actor: SYSTEM,
           escalatedTo: ref(ALEX),
           waitedDays: 5,
           at: '2026-03-14T06:00:00Z',
@@ -84,7 +84,7 @@ describe('ApprovalHistory rules entries (feature 017, US7)', () => {
           action: 'reminded',
           level: 2,
           levelLabel: 'Level 2',
-          actor: MAPP,
+          actor: SYSTEM,
           waitedDays: 1,
           at: '2026-03-12T06:00:00Z',
           comment: '',
@@ -106,7 +106,7 @@ describe('ApprovalHistory rules entries (feature 017, US7)', () => {
           level: 3,
           levelLabel: 'Level 3',
           approvers: [],
-          actor: MAPP,
+          actor: SYSTEM,
           rule: 'planned cost is at least $100,000.00',
           comment: '',
         },
@@ -116,7 +116,7 @@ describe('ApprovalHistory rules entries (feature 017, US7)', () => {
           action: 'autoApproved',
           level: 1,
           approvers: [],
-          actor: MAPP,
+          actor: SYSTEM,
           rule: 'activity type is Event',
           comment: '',
         },
@@ -134,7 +134,7 @@ describe('ApprovalHistory rules entries (feature 017, US7)', () => {
     expect(items[0]).toHaveTextContent('Approved · Level 2');
     expect(items[0]).toHaveTextContent('Carlos Mendes as delegate of Daniel Okoro');
     expect(items[1]).toHaveTextContent('Escalated to Alex Morgan · Level 2');
-    expect(items[1]).toHaveTextContent('MAPP');
+    expect(items[1]).toHaveTextContent('SP&A One');
     expect(items[1]).toHaveTextContent('waited 5 days');
     expect(items[2]).toHaveTextContent('Reminder sent · Level 2');
     expect(items[2]).toHaveTextContent('waited 1 day');

@@ -28,7 +28,7 @@ describe('AllWorkPage (US1)', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'All work' })).toBeInTheDocument();
     expect(screen.getByText('Filter, compare and export all planned work.')).toBeInTheDocument();
-    expect(document.title).toBe('All work · MAPP');
+    expect(document.title).toBe('All work · SP&A One');
     // Nothing is created here: Views and Export are the page's only actions (FR-002).
     expect(await screen.findByRole('button', { name: 'Export' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Views' })).toBeInTheDocument();
@@ -85,7 +85,7 @@ describe('AllWorkPage (US1)', () => {
     ]);
 
     expect(screen.getAllByText('Loading…').length).toBeGreaterThan(0);
-    expect(await screen.findByRole('alert')).toHaveTextContent("MAPP can't reach its server");
+    expect(await screen.findByRole('alert')).toHaveTextContent("SP&A One can't reach its server");
     await user.click(screen.getByRole('button', { name: 'Try again' }));
 
     expect(await screen.findByRole('link', { name: 'Helix launch' })).toBeInTheDocument();

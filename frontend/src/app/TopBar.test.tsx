@@ -17,7 +17,7 @@ describe('TopBar', () => {
     renderWithProviders(<TopBar />, { user: PRIYA });
 
     const bar = screen.getByRole('banner');
-    expect(within(bar).getByRole('link', { name: 'MAPP home' })).toHaveAttribute('href', '/');
+    expect(within(bar).getByRole('link', { name: 'SP&A One home' })).toHaveAttribute('href', '/');
   });
 
   it('has the theme switch, the bell and the account button on the right (FR-010)', () => {

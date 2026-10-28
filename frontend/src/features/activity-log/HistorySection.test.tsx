@@ -137,7 +137,7 @@ describe('HistorySection', () => {
     renderSection([reply('GET /api/v1/activity-log', { status: 500 })]);
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      "MAPP can't reach its server right now.",
+      "SP&A One can't reach its server right now.",
     );
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });

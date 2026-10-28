@@ -66,7 +66,7 @@ describe('LineItemEditPage (US4, FR-027)', () => {
 
     expect(await screen.findByLabelText('Line item name')).toHaveValue('Agency fee');
     expect(screen.getByRole('heading', { level: 1, name: 'Edit line item' })).toBeInTheDocument();
-    expect(document.title).toBe('Edit Agency fee · MAPP');
+    expect(document.title).toBe('Edit Agency fee · SP&A One');
     expect(screen.getByLabelText('Planned cost')).toHaveValue('50,000.00');
     expect(screen.queryByText('Save and add another')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Activity summary')).toHaveTextContent(

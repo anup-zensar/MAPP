@@ -58,7 +58,7 @@ describe('NotificationList (feature 008, US6)', () => {
   });
 
   it('shows the kinds of approval rules: automatic, reminder, escalation (017 FR-032)', async () => {
-    const MAPP = { id: 'system', name: 'MAPP' };
+    const SYSTEM = { id: 'system', name: 'SP&A One' };
     renderList([
       reply('GET /api/v1/notifications', {
         body: pageOf([
@@ -67,21 +67,21 @@ describe('NotificationList (feature 008, US6)', () => {
             kind: 'autoApproved',
             title: 'Activity approved automatically',
             text: "'Launch film' (A-1042) was approved automatically: planned cost is below $10,000.00",
-            actor: MAPP,
+            actor: SYSTEM,
           }),
           notificationOf({
             id: 'NT-1011',
             kind: 'reminder',
             title: 'Reminder — approval waiting 3 days',
             text: "'Launch film' (A-1042) has waited 3 days for you at level 1",
-            actor: MAPP,
+            actor: SYSTEM,
           }),
           notificationOf({
             id: 'NT-1012',
             kind: 'escalated',
             title: 'Approval escalated to you',
             text: "'Launch film' (A-1042) waited 5 days at level 1. You can now approve it as backup approver.",
-            actor: MAPP,
+            actor: SYSTEM,
           }),
         ]),
       }),
@@ -248,7 +248,7 @@ describe('NotificationList (feature 008, US6)', () => {
 
     expect(
       await screen.findByText(
-        "MAPP can't reach its server right now. Check that it is running and try again.",
+        "SP&A One can't reach its server right now. Check that it is running and try again.",
       ),
     ).toBeInTheDocument();
     expect(screen.getByText('Unread')).toBeInTheDocument();

@@ -73,7 +73,7 @@ describe('routes', () => {
         'aria-current',
         'page',
       );
-      expect(document.title).toBe(`${label} · MAPP`);
+      expect(document.title).toBe(`${label} · SP&A One`);
     },
   );
 
@@ -101,7 +101,7 @@ describe('routes', () => {
       renderRoutes(routes, { route: path });
 
       await screen.findByRole('status');
-      expect(document.title).toBe(`${title} · MAPP`);
+      expect(document.title).toBe(`${title} · SP&A One`);
     },
   );
 
@@ -123,7 +123,7 @@ describe('routes', () => {
       expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
       const navigation = screen.getByRole('navigation', { name: 'Main' });
       expect(within(navigation).queryByRole('link', { name: title })).not.toBeInTheDocument();
-      expect(document.title).toBe(`${title} · MAPP`);
+      expect(document.title).toBe(`${title} · SP&A One`);
     },
   );
 

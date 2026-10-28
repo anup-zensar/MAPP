@@ -13,7 +13,7 @@ import (
 )
 
 // usdLocked is the reason of every USD lock (FR-028).
-const usdLocked = "USD is MAPP's base currency; its rate is always 1."
+const usdLocked = "USD is SP&A One's base currency; its rate is always 1."
 
 // jpy is the new currency of US4-1.
 func jpy() CurrencyInput {

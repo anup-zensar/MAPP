@@ -5,7 +5,7 @@ import { EUR, JPY, USD, validationFailed, versionConflict } from '@/testing/fixt
 import { chooseAction, renderCurrenciesPage } from '@/testing/fixtures/settings-pages';
 import { reply } from '@/testing/replies';
 
-const USD_LOCK = "USD is MAPP's base currency; its rate is always 1.";
+const USD_LOCK = "USD is SP&A One's base currency; its rate is always 1.";
 
 describe('CurrenciesPage: create and edit (US4 scenarios 1, 3, 4, 5)', () => {
   it('adds a currency, showing its rate both ways while it is typed (scenario 1)', async () => {

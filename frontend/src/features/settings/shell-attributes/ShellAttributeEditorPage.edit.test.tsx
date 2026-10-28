@@ -41,7 +41,7 @@ describe('ShellAttributeEditorPage: edit (FR-021)', () => {
         name: "Edit Shell attribute 'Media channel'",
       }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Edit Media channel · MAPP');
+    expect(document.title).toBe('Edit Media channel · SP&A One');
     expect(screen.queryByRole('combobox', { name: /Type/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: /Level/ })).not.toBeInTheDocument();
     expect(

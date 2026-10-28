@@ -4486,7 +4486,7 @@ paths:
         - $ref: "#/components/parameters/AllWorkThenBy"
       responses:
         "200":
-          description: The file. Its name is in Content-Disposition, e.g. MAPP All work – Grid – 2026 – 18 Oct 2026.xlsx.
+          description: The file. Its name is in Content-Disposition, e.g. SP&A One All work – Grid – 2026 – 18 Oct 2026.xlsx.
           headers:
             Content-Disposition:
               description: attachment with filename (ASCII) and filename* (UTF-8).
@@ -5035,7 +5035,7 @@ paths:
         - $ref: "#/components/parameters/PlanId"
       responses:
         "200":
-          description: The template. Its name is in Content-Disposition (MAPP import template – <plan>.xlsx).
+          description: The template. Its name is in Content-Disposition (SP&A One import template – <plan>.xlsx).
           headers:
             Content-Disposition:
               schema:
@@ -5905,7 +5905,7 @@ paths:
       summary: The sample GSAP extract file (header and three example rows, FR-009)
       responses:
         "200":
-          description: The file, named mapp-gsap-extract-sample.csv in Content-Disposition.
+          description: The file, named spa-one-gsap-extract-sample.csv in Content-Disposition.
           headers:
             Content-Disposition:
               description: attachment with filename.
@@ -6314,8 +6314,8 @@ paths:
       summary: The PR form of one routing, as routed (FR-031)
       description: |
         One row per line in the column order of the spec's Requisitioner Attachment, after notes (PR, routing
-        type and time, recipients, "Routed by MAPP — no supporting documents are attached"). File name
-        "MAPP PR form – PR-1001 – Original – 27 Oct 2026.xlsx". Text a spreadsheet would read as a formula is
+        type and time, recipients, "Routed by SP&A One — no supporting documents are attached"). File name
+        "SP&A One PR form – PR-1001 – Original – 27 Oct 2026.xlsx". Text a spreadsheet would read as a formula is
         written with a leading apostrophe (D-120).
       parameters:
         - name: format
@@ -7439,7 +7439,7 @@ paths:
       tags: [Approvals]
       operationId: runApprovalEscalations
       summary: Send due reminders and escalations now (needs workflows.manage; stands in for the nightly job) (FR-026 – FR-028)
-      description: Safe to call any number of times; each level gets at most one reminder and one escalation. Events are recorded as made by MAPP.
+      description: Safe to call any number of times; each level gets at most one reminder and one escalation. Events are recorded as made by SP&A One.
       responses:
         "200":
           description: What was sent, and what could not be escalated.
@@ -20440,7 +20440,7 @@ components:
           type: integer
         unusedColumns:
           type: array
-          description: Header names MAPP does not read.
+          description: Header names SP&A One does not read.
           items:
             type: string
     FinancialImport:

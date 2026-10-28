@@ -12,7 +12,7 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
       await screen.findByRole('heading', { level: 1, name: 'FY2026 Lubricants Europe' }),
       'header',
     );
-    expect(document.title).toBe('FY2026 Lubricants Europe · MAPP');
+    expect(document.title).toBe('FY2026 Lubricants Europe · SP&A One');
     expect(within(header).getByRole('link', { name: 'Plans' })).toHaveAttribute('href', '/plans');
     expect(within(header).getByText('PLAN')).toBeInTheDocument();
     expect(within(header).getByText('Draft')).toBeInTheDocument();

@@ -55,7 +55,7 @@ test('US2: the cards, filters, chips, details and record links of the activity l
   await signInAs(page, ALEX);
   await page.goto('/activity-log');
   await expect(page.getByRole('heading', { level: 1, name: 'Activity log' })).toBeVisible();
-  await expect(page).toHaveTitle('Activity log · MAPP');
+  await expect(page).toHaveTitle('Activity log · SP&A One');
   await expect(
     page.getByText("See who changed what, and when. Entries can't be edited or removed."),
   ).toBeVisible();

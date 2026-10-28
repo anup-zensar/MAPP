@@ -48,7 +48,7 @@ describe('ShellAttributePage (FR-020)', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Media channel' }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Media channel · Shell attributes · MAPP');
+    expect(document.title).toBe('Media channel · Shell attributes · SP&A One');
     const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
     expect(breadcrumb).toHaveTextContent('Settings›Shell attributes›Activity form›Media channel');
     expect(within(breadcrumb).getByRole('link', { name: 'Activity form' })).toHaveAttribute(

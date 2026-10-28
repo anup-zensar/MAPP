@@ -59,7 +59,7 @@ describe('ComponentGalleryPage', () => {
     expect(
       screen.getByText('Every shared component of design system §5 in all its variants.'),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Shared building blocks · MAPP');
+    expect(document.title).toBe('Shared building blocks · SP&A One');
     for (const title of COMPONENT_CARDS) {
       expect(screen.getByRole('region', { name: title })).toBeInTheDocument();
     }

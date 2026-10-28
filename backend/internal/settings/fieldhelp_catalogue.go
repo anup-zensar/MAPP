@@ -31,7 +31,7 @@ type helpDefinition struct {
 
 // helpCatalogue is the catalogue, in the order of the Settings page.
 var helpCatalogue = []helpDefinition{
-	{"plan.name", "Plan name", `A name everyone recognises, such as "FY2027 Lubricants UK & Ireland". It must be unique in MAPP.`, HelpPlan},
+	{"plan.name", "Plan name", `A name everyone recognises, such as "FY2027 Lubricants UK & Ireland". It must be unique in SP&A One.`, HelpPlan},
 	{"plan.year", "Year", "The fiscal year the plan covers, January to December. It can't change after the plan is saved.", HelpPlan},
 	{"plan.planType", "Plan type", "Operational: one business's or market's plan for the year. Strategic: sets direction for several years. Cross-market: campaigns that run across several markets.", HelpPlan},
 	{"plan.model", "Model", "The plan's rulebook: which activity types it allows and how inquiries turn into MQLs, deals and revenue.", HelpPlan},

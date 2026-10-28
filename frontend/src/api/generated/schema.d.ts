@@ -3301,8 +3301,8 @@ export interface paths {
         /**
          * The PR form of one routing, as routed (FR-031)
          * @description One row per line in the column order of the spec's Requisitioner Attachment, after notes (PR, routing
-         *     type and time, recipients, "Routed by MAPP — no supporting documents are attached"). File name
-         *     "MAPP PR form – PR-1001 – Original – 27 Oct 2026.xlsx". Text a spreadsheet would read as a formula is
+         *     type and time, recipients, "Routed by SP&A One — no supporting documents are attached"). File name
+         *     "SP&A One PR form – PR-1001 – Original – 27 Oct 2026.xlsx". Text a spreadsheet would read as a formula is
          *     written with a leading apostrophe (D-120).
          */
         get: operations["downloadPurchaseRequestForm"];
@@ -4056,7 +4056,7 @@ export interface paths {
         put?: never;
         /**
          * Send due reminders and escalations now (needs workflows.manage; stands in for the nightly job) (FR-026 – FR-028)
-         * @description Safe to call any number of times; each level gets at most one reminder and one escalation. Events are recorded as made by MAPP.
+         * @description Safe to call any number of times; each level gets at most one reminder and one escalation. Events are recorded as made by SP&A One.
          */
         post: operations["runApprovalEscalations"];
         delete?: never;
@@ -9006,7 +9006,7 @@ export interface components {
             problemsTotal: number;
             notLinked: components["schemas"]["FinancialImportNotLinkedRow"][];
             notLinkedTotal: number;
-            /** @description Header names MAPP does not read. */
+            /** @description Header names SP&A One does not read. */
             unusedColumns: string[];
         };
         FinancialImport: {
@@ -14402,7 +14402,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The file. Its name is in Content-Disposition, e.g. MAPP All work – Grid – 2026 – 18 Oct 2026.xlsx. */
+            /** @description The file. Its name is in Content-Disposition, e.g. SP&A One All work – Grid – 2026 – 18 Oct 2026.xlsx. */
             200: {
                 headers: {
                     /** @description attachment with filename (ASCII) and filename* (UTF-8). */
@@ -14963,7 +14963,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The template. Its name is in Content-Disposition (MAPP import template – <plan>.xlsx). */
+            /** @description The template. Its name is in Content-Disposition (SP&A One import template – <plan>.xlsx). */
             200: {
                 headers: {
                     "Content-Disposition"?: string;
@@ -15922,7 +15922,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The file, named mapp-gsap-extract-sample.csv in Content-Disposition. */
+            /** @description The file, named spa-one-gsap-extract-sample.csv in Content-Disposition. */
             200: {
                 headers: {
                     /** @description attachment with filename. */

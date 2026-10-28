@@ -26,7 +26,7 @@ export const GO_TO_PLANS = 'Go to Plans';
 export const CANCEL = 'Cancel';
 
 export const RESEND_TEXT =
-  "MAPP records a new routing with today's values. Sent dates do not change.";
+  "SP&A One records a new routing with today's values. Sent dates do not change.";
 export const CLOSE_INTRO =
   'Each line is reduced to what GSAP has invoiced; the rest returns to its line item.';
 export const CLOSE_FINAL = "A closed purchase request can't be changed or reopened.";

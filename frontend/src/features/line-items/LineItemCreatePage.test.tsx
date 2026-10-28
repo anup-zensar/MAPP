@@ -17,7 +17,7 @@ describe('LineItemCreatePage (US2)', () => {
     renderCreatePage();
 
     expect(await findNameField()).toHaveValue('Launch film – line item');
-    expect(document.title).toBe('New line item · MAPP');
+    expect(document.title).toBe('New line item · SP&A One');
     expect(screen.getByRole('heading', { level: 1, name: 'New line item' })).toBeInTheDocument();
     expect(
       within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByRole('link', {

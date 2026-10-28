@@ -39,7 +39,7 @@ describe('GlobalBudgetsPage (014 US6, FR-036)', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Global budgets' }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Global budgets · MAPP');
+    expect(document.title).toBe('Global budgets · SP&A One');
     const link = await screen.findByRole('link', { name: 'FY2026 Global marketing budget' });
     expect(link).toHaveAttribute('href', '/budgets/GB-1001');
     const card = closestTo(link, 'li');

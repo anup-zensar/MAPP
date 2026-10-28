@@ -39,7 +39,7 @@ test('026 FR-013: the sign-in page loads no other feature’s code (US3 scenario
   });
 
   await page.goto('/sign-in');
-  await expect(page.getByRole('heading', { name: 'Sign in to MAPP' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sign in to SP&A One' })).toBeVisible();
 
   expect(featuresIn(scripts)).toEqual(['sign-in']);
 });

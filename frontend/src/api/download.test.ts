@@ -5,8 +5,8 @@ import { api } from './client';
 import { ApiError } from './errors';
 import { downloadFromApi, fileNameFromDisposition, saveBlob } from './download';
 
-const NAME = 'MAPP All work – Grid – 2026 – 18 Oct 2026.csv';
-const DISPOSITION = `attachment; filename="MAPP All work - Grid - 2026 - 18 Oct 2026.csv"; filename*=UTF-8''${encodeURIComponent(NAME)}`;
+const NAME = 'SP&A One All work – Grid – 2026 – 18 Oct 2026.csv';
+const DISPOSITION = `attachment; filename="SP&A One All work - Grid - 2026 - 18 Oct 2026.csv"; filename*=UTF-8''${encodeURIComponent(NAME)}`;
 
 let clicked: { href: string; download: string }[];
 

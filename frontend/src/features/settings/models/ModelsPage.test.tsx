@@ -14,7 +14,7 @@ describe('ModelsPage: the list (FR-002)', () => {
 
     expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('Settings');
     expect(screen.getByRole('heading', { level: 1, name: 'Models' })).toBeInTheDocument();
-    expect(document.title).toBe('Models · MAPP');
+    expect(document.title).toBe('Models · SP&A One');
     expect(screen.getByRole('button', { name: 'New model' })).toBeInTheDocument();
 
     const lubricants = rowOf(

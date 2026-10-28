@@ -8,7 +8,7 @@ import (
 )
 
 // TemplateName is the name of the sample file (FR-009).
-const TemplateName = "mapp-gsap-extract-sample.csv"
+const TemplateName = "spa-one-gsap-extract-sample.csv"
 
 // sampleRows are the three example rows of the sample file (FR-009): a PO for the HX key HX1001, an invoice
 // for that PO, and an accrual of September 2026. Every value is fictitious.

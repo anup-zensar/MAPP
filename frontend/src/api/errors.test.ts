@@ -6,7 +6,7 @@ import { api, call } from './client';
 import { ApiError, conflictMessage, resolvedMessage } from './errors';
 
 const UNREACHABLE =
-  "MAPP can't reach its server right now. Check that it is running and try again.";
+  "SP&A One can't reach its server right now. Check that it is running and try again.";
 
 describe('call()', () => {
   it('returns the data of a successful answer', async () => {
@@ -103,7 +103,7 @@ describe('call()', () => {
     await expect(answer).rejects.toBe(abort);
   });
 
-  it('shows a general message for a failed answer that is not MAPP JSON (FR-020)', async () => {
+  it('shows a general message for a failed answer that is not SP&A One JSON (FR-020)', async () => {
     mockApi([reply('GET /api/v1/environment', () => new Response('Not here', { status: 404 }))]);
 
     await expect(call(api.GET('/api/v1/environment'))).rejects.toMatchObject({

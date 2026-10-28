@@ -215,6 +215,6 @@ export function exportAllWork(state: ViewState, format: 'xlsx' | 'csv'): Promise
       params: { query: { ...toQueryParams(state), format, unassigned: state.showUnassigned } },
       parseAs: 'blob',
     }),
-    `MAPP All work.${format}`,
+    `SP&A One All work.${format}`,
   );
 }

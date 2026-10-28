@@ -36,7 +36,7 @@ export const HX_COPY_FAILED = "Couldn't copy the HX key — select it and copy i
 export const SWBS_LATER =
   'Filled by the simulated GSAP once the activity is approved and the request is sent';
 export const SWBS_HELP =
-  'MAPP asks GSAP for an SWBS code once the activity is approved; until GSAP is connected, a simulated GSAP answers.';
+  'SP&A One asks GSAP for an SWBS code once the activity is approved; until GSAP is connected, a simulated GSAP answers.';
 export const SWBS_KEPT_ON =
   'This line item already has its SWBS code from the simulated GSAP, so the request stays on.';
 

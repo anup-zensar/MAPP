@@ -1,46 +1,37 @@
-/* MAPP's own mark (no Shell logo, which needs Shell's consent): a Surface-coloured star on a
-   Text Strong tile, and the name in the heading face. */
-.logo {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.tile {
-  display: grid;
-  flex: none;
-  place-items: center;
-  border-radius: var(--radius-control);
-  background: var(--brand-mark);
-}
-
-.tile svg {
-  width: 100%;
-  height: 100%;
-  fill: var(--surface);
-}
-
-.wordmark {
+.name {
   color: var(--ink);
   font-family: var(--font-heading);
   font-weight: var(--weight-heading);
   line-height: 1;
+  white-space: nowrap;
 }
 
-.md .tile {
+.md {
+  font-size: var(--text-lg);
+}
+
+.lg {
+  font-size: var(--text-xl);
+}
+
+.amp {
+  color: var(--brand-name-amp);
+}
+
+.one {
+  color: var(--brand-name-one);
+}
+
+.tile {
+  flex: none;
   width: 28px;
   height: 28px;
 }
 
-.md .wordmark {
-  font-size: var(--text-lg);
+.tile rect {
+  fill: var(--brand-tile);
 }
 
-.lg .tile {
-  width: 32px;
-  height: 32px;
-}
-
-.lg .wordmark {
-  font-size: var(--text-xl);
+.tile path {
+  fill: var(--on-brand-tile);
 }

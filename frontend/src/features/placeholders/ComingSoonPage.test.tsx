@@ -21,7 +21,7 @@ describe('ComingSoonPage', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'Later section' })).toBeInTheDocument();
     expect(screen.getByText('Do something useful that is not built yet.')).toBeInTheDocument();
-    expect(document.title).toBe('Later section · MAPP');
+    expect(document.title).toBe('Later section · SP&A One');
   });
 
   it('says that the section is coming soon, under the section name as the title (FR-015)', () => {
@@ -30,7 +30,7 @@ describe('ComingSoonPage', () => {
     // The eyebrow is the title itself, so it is shown once (Shell look).
     expect(screen.getAllByText('Later section')).toHaveLength(1);
     expect(screen.getByText('Coming soon')).toBeInTheDocument();
-    expect(screen.getByText("This part of MAPP isn't built yet.")).toBeInTheDocument();
+    expect(screen.getByText("This part of SP&A One isn't built yet.")).toBeInTheDocument();
   });
 
   it('offers a way back to Home (FR-015)', async () => {

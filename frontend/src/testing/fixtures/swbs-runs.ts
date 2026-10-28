@@ -7,7 +7,7 @@ export const DEMO_RUN: SwbsRun = {
   id: 'SWR-1001',
   source: 'demoData',
   ranAt: '2026-10-19T09:00:00Z',
-  ranBy: { id: 'system', name: 'MAPP' },
+  ranBy: { id: 'system', name: 'SP&A One' },
   sent: 1,
   codes: [
     {

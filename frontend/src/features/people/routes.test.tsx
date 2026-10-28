@@ -64,7 +64,7 @@ describe('People, teams and profile routes (feature 003)', () => {
     renderApp(path, answers);
 
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
-    expect(document.title).toBe(`${title} · MAPP`);
+    expect(document.title).toBe(`${title} · SP&A One`);
     expectCurrentSection('Settings');
   });
 
@@ -75,7 +75,7 @@ describe('People, teams and profile routes (feature 003)', () => {
     renderApp(path, answers);
 
     expect(await screen.findByRole('dialog', { name: record })).toBeInTheDocument();
-    expect(document.title).toBe(`${title} · MAPP`);
+    expect(document.title).toBe(`${title} · SP&A One`);
   });
 
   it('opens My profile, which is not in the sidebar (FR-012 of 001, FR-021)', async () => {
@@ -84,7 +84,7 @@ describe('People, teams and profile routes (feature 003)', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'My profile' }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('My profile · MAPP');
+    expect(document.title).toBe('My profile · SP&A One');
     expect(await screen.findByText('USD — US dollar')).toBeInTheDocument();
   });
 

@@ -55,7 +55,7 @@ test('030 US4: a finance person sends one line item to the simulated GSAP from i
   const confirm = page.getByRole('alertdialog', {
     name: 'Send Stand build to simulated GSAP now?',
   });
-  await expect(confirm).toContainText("Codes can't be changed or removed in MAPP.");
+  await expect(confirm).toContainText("Codes can't be changed or removed in SP&A One.");
   await confirm.getByRole('button', { name: 'Send to simulated GSAP now' }).click();
 
   const card = swbsCard(page);

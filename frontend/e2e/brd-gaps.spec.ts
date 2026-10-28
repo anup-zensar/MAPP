@@ -95,7 +95,7 @@ test('015: a planner sees an activity’s GSAP financials and the Financials pag
     .getByRole('navigation', { name: 'Main' })
     .getByRole('link', { name: 'Financials' })
     .click();
-  await expect(page).toHaveTitle('Financials · MAPP');
+  await expect(page).toHaveTitle('Financials · SP&A One');
   await expect(page.getByRole('heading', { name: 'Financials', level: 1 })).toBeVisible();
   await expect(page.getByRole('main').getByText(SOCIAL_PO).first()).toBeVisible();
 });

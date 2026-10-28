@@ -79,7 +79,7 @@ func TestFormFile_ColumnsAndFormulaSafety(t *testing.T) {
 	}
 
 	text := string(csv.Body)
-	if csv.Name != "MAPP PR form – PR-1002 – Original – 27 Oct 2026.csv" || csv.ContentType != "text/csv" {
+	if csv.Name != "SP&A One PR form – PR-1002 – Original – 27 Oct 2026.csv" || csv.ContentType != "text/csv" {
 		t.Errorf("032 FR-031 file %q %q", csv.Name, csv.ContentType)
 	}
 	if !strings.Contains(text, "PR ID,PR name,PR line ID,HX key,Short text,Vendor,Vendor code,Cost centre,SWBS code,GL code,Amount") ||

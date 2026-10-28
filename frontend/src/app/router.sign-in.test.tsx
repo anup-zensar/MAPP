@@ -56,7 +56,7 @@ describe('RequireSignIn', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('Loading…');
     expect(screen.getByText(BANNER)).toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Main' })).not.toBeInTheDocument();
-    expect(document.title).toBe('Plans · MAPP');
+    expect(document.title).toBe('Plans · SP&A One');
   });
 
   it('shows a full-page error when the API cannot be reached, without leaving the page (edge case, FR-020)', async () => {
@@ -64,11 +64,11 @@ describe('RequireSignIn', () => {
     const { router } = renderRoutes(routes, { route: '/approvals' });
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      "MAPP can't reach its server right now. Check that it is running and try again.",
+      "SP&A One can't reach its server right now. Check that it is running and try again.",
     );
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
     expect(screen.getByText(BANNER)).toBeInTheDocument();
-    expect(document.title).toBe('Approvals · MAPP');
+    expect(document.title).toBe('Approvals · SP&A One');
     expect(router.state.location.pathname).toBe('/approvals');
   });
 
@@ -100,7 +100,7 @@ describe('RequireSignIn', () => {
     // The protected address is replaced, so Back does not return to it.
     expect(router.state.historyAction).toBe('REPLACE');
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Sign in to MAPP' }),
+      await screen.findByRole('heading', { level: 1, name: 'Sign in to SP&A One' }),
     ).toBeInTheDocument();
   });
 
