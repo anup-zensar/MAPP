@@ -1,8 +1,4 @@
-/**
- * What the line-item screens ask the API (007 plan, "Data"). Every change refreshes the line
- * items, the activities and plans (balance, Ready to submit, completeness: FR-023), the recycle bin
- * and the activity log when it is done, also when it failed.
- */
+// What the line-item screens ask the API; every change, failed or not, refreshes what it shows in.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { QueryKey } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
@@ -20,12 +16,8 @@ export type LineItemCurrency = components['schemas']['LineItemCurrency'];
 export type FinanceBudgetItemRef = components['schemas']['FinanceBudgetItemRef'];
 export type Money = components['schemas']['Money'];
 
-/**
- * Everything a line-item change shows in; Undo refreshes them too: the line items, the activity's
- * page (its unassigned planned cost, completeness and, after a restart, status and approval —
- * features 006 and 008), the activity rows and roll-ups of the plan tree (004, 005, 006), the
- * recycle bin and the activity log.
- */
+// Everything a line-item change shows in, Undo included: the activity's balance, completeness and
+// Ready to submit, the plan tree's rows and roll-ups, the recycle bin and the activity log.
 export const LINE_ITEM_CHANGE_KEYS: QueryKey[] = [
   ['line-items'],
   ['activity'],
@@ -39,7 +31,6 @@ export const LINE_ITEM_CHANGE_KEYS: QueryKey[] = [
   ['activity-log'],
 ];
 
-/** The Line items section of an activity: rows, balance and grid (FR-001 – FR-004). */
 export function useLineItemSection(activityId: string, enabled = true) {
   return useQuery({
     queryKey: ['line-items', 'activity', activityId],
@@ -51,7 +42,6 @@ export function useLineItemSection(activityId: string, enabled = true) {
   });
 }
 
-/** Defaults and choices of a new or edited line item (FR-008, FR-011, FR-015). */
 export function useLineItemFormOptions(activityId: string, enabled = true) {
   return useQuery({
     queryKey: ['line-items', 'form-options', activityId],
@@ -68,7 +58,6 @@ export function useLineItemFormOptions(activityId: string, enabled = true) {
   });
 }
 
-/** One line item with its activity and the activity's balance (FR-026). */
 export function useLineItem(lineItemId: string) {
   return useQuery({
     queryKey: ['line-items', 'item', lineItemId],
@@ -77,7 +66,6 @@ export function useLineItem(lineItemId: string) {
   });
 }
 
-/** Creates a line item in an activity. */
 export function useCreateLineItem(activityId: string) {
   const refresh = useRefresh();
   return useMutation({
@@ -104,46 +92,25 @@ export function useUpdateLineItem(lineItemId: string) {
   });
 }
 
-/** Copies a line item in its activity; answers the copy (FR-029). */
 export function useDuplicateLineItem() {
   const refresh = useRefresh();
   return useMutation({
-    mutationFn: ({
-      lineItemId,
-      restartApproval,
-    }: {
-      lineItemId: string;
-      restartApproval: boolean;
-    }) =>
+    mutationFn: (lineItemId: string) =>
       call(
         api.POST('/api/v1/line-items/{lineItemId}/duplicate', {
           params: { path: { lineItemId } },
-          body: { restartApproval },
+          body: {},
         }),
       ),
     onSettled: refresh,
   });
 }
 
-/** Moves a line item to the recycle bin; answers the entry for Undo (FR-030). */
 export function useDeleteLineItem() {
   const refresh = useRefresh();
   return useMutation({
-    mutationFn: ({
-      lineItemId,
-      restartApproval,
-    }: {
-      lineItemId: string;
-      restartApproval: boolean;
-    }) =>
-      call(
-        api.DELETE('/api/v1/line-items/{lineItemId}', {
-          params: {
-            path: { lineItemId },
-            query: restartApproval ? { restartApproval: true } : undefined,
-          },
-        }),
-      ),
+    mutationFn: (lineItemId: string) =>
+      call(api.DELETE('/api/v1/line-items/{lineItemId}', { params: { path: { lineItemId } } })),
     // Not waited for: the page that deleted leaves at once, before its own record answers 404.
     onSettled: () => {
       void refresh();
@@ -151,7 +118,6 @@ export function useDeleteLineItem() {
   });
 }
 
-/** Refreshes what a change shows in; a change waits for it, so the pages are current. */
 function useRefresh() {
   const queryClient = useQueryClient();
   return () =>

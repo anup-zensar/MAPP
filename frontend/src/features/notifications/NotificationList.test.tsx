@@ -153,6 +153,64 @@ describe('NotificationList (feature 008, US6)', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/recycle-bin'));
   });
 
+  it('opens a purchase request notification on its page, and names a deleted one (031 FR-028)', async () => {
+    const approved = notificationOf({
+      kind: 'approved',
+      title: 'Purchase request approved',
+      read: true,
+      activity: null,
+      subject: {
+        kind: 'purchaseRequest',
+        label: 'Purchase request',
+        id: 'PR-1001',
+        name: 'Agency retainer',
+        exists: true,
+      },
+    });
+    const gone = notificationOf({
+      id: 'NT-1004',
+      title: 'Approval needed',
+      read: true,
+      activity: null,
+      subject: { ...approved.subject, id: 'PR-1002', exists: false },
+    });
+    const { user, router } = renderList([
+      reply('GET /api/v1/notifications', { body: pageOf([approved, gone]) }),
+    ]);
+
+    expect(await screen.findByRole('button', { name: /^Approval needed/ })).toHaveTextContent(
+      'This purchase request was deleted — find it in the recycle bin.',
+    );
+    await user.click(screen.getByRole('button', { name: /^Purchase request approved/ }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/purchase-requests/PR-1001'));
+    expect(router.state.location.hash).toBe('#approval');
+  });
+
+  it('032 FR-058: a declined change of a purchase request opens the PR at its Approval section', async () => {
+    const declined = notificationOf({
+      kind: 'declined',
+      title: 'Change declined',
+      read: true,
+      activity: null,
+      subject: {
+        kind: 'modifiedPurchaseRequest',
+        label: 'Modified purchase request',
+        id: 'PR-1002',
+        name: 'PR for Stand build',
+        exists: true,
+      },
+    });
+    const { user, router } = renderList([
+      reply('GET /api/v1/notifications', { body: pageOf([declined]) }),
+    ]);
+
+    await user.click(await screen.findByRole('button', { name: /^Change declined/ }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/purchase-requests/PR-1002'));
+    expect(router.state.location.hash).toBe('#approval');
+  });
+
   it('marks all as read: the count goes, the items stay (FR-034)', async () => {
     let allRead = false;
     const second = notificationOf({

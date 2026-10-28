@@ -7,8 +7,15 @@ import { RULE_OPTIONS } from '@/testing/fixtures/approval-workflows';
 import { emptyCondition } from './level-drafts';
 import type { ConditionDraft } from './level-drafts';
 import { RuleConditionFields } from './RuleConditionFields';
+import type { ObjectType } from './schemas';
 
-function Harness({ reason = '' }: { reason?: string }) {
+function Harness({
+  reason = '',
+  objectType = 'activity',
+}: {
+  reason?: string;
+  objectType?: ObjectType;
+}) {
   const [value, setValue] = useState<ConditionDraft>(emptyCondition());
   return (
     <>
@@ -19,6 +26,7 @@ function Harness({ reason = '' }: { reason?: string }) {
         onChange={setValue}
         options={reason ? undefined : RULE_OPTIONS.body}
         optionsReason={reason}
+        objectType={objectType}
       />
       <output>{JSON.stringify(value)}</output>
     </>
@@ -55,6 +63,16 @@ describe('RuleConditionFields (feature 017, US1)', () => {
       businessUnitIds: [],
       activityTypeIds: ['AT-1002'],
     });
+  });
+
+  it('compares the amount of a purchase request, with no activity conditions (031 FR-014)', () => {
+    renderWithProviders(<Harness objectType="purchaseRequest" />, { user: testUser() });
+
+    const group = screen.getByRole('group', { name: 'Level 1: only needed when' });
+    expect(within(group).getByRole('textbox', { name: /Amount at least \(USD\)/ })).toBeVisible();
+    expect(within(group).getByRole('textbox', { name: /Amount below \(USD\)/ })).toBeVisible();
+    expect(within(group).queryByRole('group', { name: /Business unit/ })).not.toBeInTheDocument();
+    expect(within(group).queryByRole('group', { name: /Activity type/ })).not.toBeInTheDocument();
   });
 
   it('says why the lists cannot be used while their choices load', () => {

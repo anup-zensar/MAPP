@@ -20,11 +20,7 @@ import { focusFieldOf } from './schemas';
 
 const LOADING_TITLE = 'Edit line item';
 
-/**
- * Edit a line item (US4, FR-027), at /line-items/:lineItemId/edit (?field=<field> focuses a field):
- * the form with the stored values; only a changed planned cost or currency of a submitted or
- * approved activity asks to restart its approval (FR-031, FR-032); a conflict keeps the values.
- */
+/** Edits a line item (?field= focuses a field); no change restarts the activity's approval (D-322). */
 export function LineItemEditPage() {
   const { lineItemId = '' } = useParams();
   const [search] = useSearchParams();

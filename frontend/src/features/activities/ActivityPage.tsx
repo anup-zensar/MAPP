@@ -6,6 +6,7 @@ import { HistorySection, showHistory } from '@/features/activity-log';
 import { ApprovalSection, useActivityApproval } from '@/features/approvals';
 import type { ApprovalActivity } from '@/features/approvals';
 import { ActivityFinancials, LineItemsSection, Notice } from '@/features/line-items';
+import { ActivityPurchaseRequests } from '@/features/purchase-requests';
 import { useAttributeForm } from '@/features/settings';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useActivity, useEditActivityForm } from './api';
@@ -27,15 +28,8 @@ import { useActivityActions } from './useActivityActions';
 const ACTIVITY_GONE = 'This activity no longer exists — someone may have deleted it.';
 
 /**
- * An activity's page (feature 006, US2, FR-019 – FR-025), at /plans/:planId/activities/:activityId,
- * on the record template of design system §2.4 B: the header, the notice of a declined or waiting
- * activity, the split links (016), the summary cards, then the tabs **Overview** (Ready to submit
- * while the activity can still be submitted, GSAP's Financials of feature 015 in #financials and
- * the line items of feature 007 in #line-items), **Details** (details,
- * Shell attributes, goals), **Approval** (feature 008, in #approval) and **History** (feature 011,
- * in #history). The tab is kept in the address (?tab=details); a #part opens its tab. An address
- * ending in #ready or #completeness (Home's "Show fields", feature 009) opens Ready to submit. An
- * address with another plan's ID is replaced by the right one.
+ * An activity's page (006 US2; design system §2.4 B): header, notices, summary, then the tabs
+ * Overview · Details · Approval · History, kept in ?tab=; a #part opens its tab.
  */
 export function ActivityPage() {
   const { planId = '', activityId = '' } = useParams();
@@ -83,14 +77,10 @@ export function ActivityPage() {
 
 interface ActivityViewProps {
   activity: Activity;
-  /**
-   * The address ends in #ready (a completeness chip of the plan tree) or #completeness (Home's
-   * Needs your attention): open the panel there.
-   */
+  /** The address ends in #ready or #completeness: Ready to submit opens first. */
   openReadyFirst: boolean;
 }
 
-/** The #parts that name a place on the page to scroll to once its tab shows. */
 const SCROLL_PARTS = new Set(['#line-items', '#financials', '#approval', '#history']);
 
 function ActivityView({ activity, openReadyFirst }: ActivityViewProps) {
@@ -208,6 +198,7 @@ function ActivityView({ activity, openReadyFirst }: ActivityViewProps) {
               <div id="line-items" className={styles.anchor}>
                 <LineItemsSection activityId={activity.id} />
               </div>
+              <ActivityPurchaseRequests activityId={activity.id} />
             </div>
           )}
           {tab === 'details' && (

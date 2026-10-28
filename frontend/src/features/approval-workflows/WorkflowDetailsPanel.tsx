@@ -8,14 +8,15 @@ import { SidePanel } from '@/ui/SidePanel/SidePanel';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { ApprovalAlert, ApprovalChain, timingsText } from '@/features/approvals';
-import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
+import { SubjectStatusChip } from '@/ui/SubjectStatusChip/SubjectStatusChip';
+import { subjectHref } from '@/ui/subject-links';
 import { localDate } from '@/format/intl';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
 import { CanChange } from '@/ui/CanChange/CanChange';
 import { workflowMoreItems } from './workflow-actions';
 import type { WorkflowActions } from './workflow-actions';
-import { usedByText, WORKFLOW_GONE } from './workflow-texts';
+import { recordsWord, usedByText, WORKFLOW_GONE } from './workflow-texts';
 import { useWorkflowDetails } from './api';
 import type { ApprovalWorkflowDetails } from './api';
 import styles from './WorkflowDetailsPanel.module.css';
@@ -26,12 +27,6 @@ export interface WorkflowDetailsPanelProps {
   onClose: () => void;
 }
 
-/**
- * One approval workflow (US4, FR-005), at /settings/approval-workflows/:workflowId: its status,
- * who uses it, its levels with their approvers, warnings (a level without active approver), the
- * activities that use it and who created and last changed it. The one panel footer of Settings:
- * **Edit** (primary) and ⋯ with Set inactive or Reactivate, and Delete.
- */
 export function WorkflowDetailsPanel({ workflowId, actions, onClose }: WorkflowDetailsPanelProps) {
   const details = useWorkflowDetails(workflowId);
   const gone = details.error instanceof ApiError && details.error.kind === 'notFound';
@@ -46,12 +41,9 @@ export function WorkflowDetailsPanel({ workflowId, actions, onClose }: WorkflowD
         }
       }}
       title={workflow?.name ?? 'Approval workflow'}
-      description={workflow ? usedByText(workflow.usedByCount, workflow.waitingCount) : undefined}
+      description={workflow ? usedByText(workflow) : undefined}
       footer={
         workflow ? (
-          // The one panel footer (design system §5.3): listed primary first, as the footer lines
-          // its buttons up from the right — Edit, Close, then ⋯ with Set inactive and Delete.
-          // People who may not change workflows only close it (feature 014, FR-011).
           <CanChange
             permission="workflows.manage"
             otherwise={<Button onClick={onClose}>Close</Button>}
@@ -83,6 +75,8 @@ function DetailsBody({ details }: { details: ApprovalWorkflowDetails }) {
   const format = useFormatters();
   const { workflow, activities } = details;
   const day = (timestamp: string) => format.date(localDate(timestamp));
+  const records = recordsWord(workflow.objectType);
+  const recordsTitle = `${records.charAt(0).toUpperCase()}${records.slice(1)}`;
 
   return (
     <div className={styles.body}>
@@ -94,10 +88,11 @@ function DetailsBody({ details }: { details: ApprovalWorkflowDetails }) {
         )}
         {!workflow.active && (
           <p className={styles.muted}>
-            Inactive — not offered on activities. Activities that use it keep it.
+            {`Inactive — not offered on ${records}. ${recordsTitle} that use it keep it.`}
           </p>
         )}
       </div>
+      <p className={styles.muted}>{`Approves ${records}`}</p>
       {workflow.description && <p className={styles.description}>{workflow.description}</p>}
 
       {workflow.warnings.length > 0 && (
@@ -116,10 +111,10 @@ function DetailsBody({ details }: { details: ApprovalWorkflowDetails }) {
         </p>
       </section>
 
-      <section className={styles.section} aria-label="Activities using it">
-        <h3 className={styles.heading}>Activities using it</h3>
+      <section className={styles.section} aria-label={`${recordsTitle} using it`}>
+        <h3 className={styles.heading}>{`${recordsTitle} using it`}</h3>
         {activities.length === 0 ? (
-          <p className={styles.muted}>No activities use it yet.</p>
+          <p className={styles.muted}>{`No ${records} use it yet.`}</p>
         ) : (
           <ul role="list" className={styles.activities}>
             {activities.map((usage) => {
@@ -127,7 +122,13 @@ function DetailsBody({ details }: { details: ApprovalWorkflowDetails }) {
               return (
                 <li key={usage.activity.id} className={styles.activity}>
                   <div className={styles.activityMain}>
-                    <Link to={recordHref('activity', usage.activity.id, planId)}>
+                    <Link
+                      to={
+                        usage.activity.type === 'activity'
+                          ? recordHref('activity', usage.activity.id, planId)
+                          : subjectHref('purchaseRequest', usage.activity.id)
+                      }
+                    >
                       {usage.activity.name}
                     </Link>
                     <span className={styles.secondary}>
@@ -138,7 +139,7 @@ function DetailsBody({ details }: { details: ApprovalWorkflowDetails }) {
                     </span>
                   </div>
                   <div className={styles.chips}>
-                    <ActivityStatusChip status={usage.displayStatus} />
+                    <SubjectStatusChip status={usage.displayStatus} />
                     {usage.waiting && <StatusChip tone="review">Waiting for approval</StatusChip>}
                   </div>
                 </li>

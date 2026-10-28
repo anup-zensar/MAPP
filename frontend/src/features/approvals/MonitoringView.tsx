@@ -4,6 +4,7 @@ import { EmptyState } from '@/ui/EmptyState/EmptyState';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
+import { subjectKindLabel } from '@/ui/subject-links';
 import { formatWaitingTime, localDate } from '@/format/intl';
 import { useFormatters } from '@/format/useFormatters';
 import { AgeingBars } from './AgeingBars';
@@ -15,17 +16,9 @@ import { useIsPhone } from './useIsPhone';
 import styles from './MonitoringView.module.css';
 
 export interface MonitoringViewProps {
-  /** Opens the preview of an overdue activity (the page's ?activity=). */
   onOpen: (activityId: string) => void;
 }
 
-/**
- * The Monitoring tab of the approvals page (017 US6, FR-029, FR-030): four cards — overdue,
- * escalated, the average time to decision and the automatic approvals of this month — how long
- * the open approvals have waited, the waiting by workflow level, and the overdue approvals, oldest
- * first, each opening the preview. **Run reminders and escalations** for someone who may change
- * approval workflows.
- */
 export function MonitoringView({ onOpen }: MonitoringViewProps) {
   const monitoring = useApprovalMonitoring();
 
@@ -117,10 +110,6 @@ function MonitoringBody({ data, onOpen }: { data: ApprovalMonitoring } & Monitor
   );
 }
 
-/**
- * Workflow · Level · Waiting · Overdue · Oldest waiting; the counts right-aligned. Below 600 px each
- * level is a stacked card instead, so nothing scrolls sideways on a phone (design system §5.4).
- */
 function WaitingByLevel({ data }: { data: ApprovalMonitoring }) {
   const format = useFormatters();
   const phone = useIsPhone();
@@ -140,6 +129,8 @@ function WaitingByLevel({ data }: { data: ApprovalMonitoring }) {
           <li key={`${row.workflow.id}-${row.level}`} className={styles.levelCard}>
             <p className={styles.levelName}>{`${row.workflow.name} · ${row.levelLabel}`}</p>
             <dl className={styles.facts}>
+              <dt>Approves</dt>
+              <dd>{subjectKindLabel(row.kind)}</dd>
               <dt>Waiting</dt>
               <dd>{row.waiting}</dd>
               <dt>Overdue</dt>
@@ -153,7 +144,6 @@ function WaitingByLevel({ data }: { data: ApprovalMonitoring }) {
     );
   }
   return (
-    // Focusable, so the keyboard can scroll it sideways when it is wider than the card.
     <div
       className={styles.scroll}
       role="region"
@@ -166,6 +156,7 @@ function WaitingByLevel({ data }: { data: ApprovalMonitoring }) {
             <th scope="col" className={styles.workflowCol}>
               Workflow
             </th>
+            <th scope="col">Approves</th>
             <th scope="col">Level</th>
             <th scope="col" className={styles.number}>
               Waiting
@@ -180,6 +171,7 @@ function WaitingByLevel({ data }: { data: ApprovalMonitoring }) {
           {data.byLevel.map((row) => (
             <tr key={`${row.workflow.id}-${row.level}`}>
               <th scope="row">{row.workflow.name}</th>
+              <td className={styles.nowrap}>{subjectKindLabel(row.kind)}</td>
               <td className={styles.nowrap}>{row.levelLabel}</td>
               <td className={styles.number}>{row.waiting}</td>
               <td className={styles.number}>{row.overdue}</td>

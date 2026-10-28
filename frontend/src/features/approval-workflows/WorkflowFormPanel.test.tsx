@@ -67,6 +67,7 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
     expect(api.bodiesOf(CREATE)).toEqual([
       {
         name: 'Lubricants Asia',
+        objectType: 'activity',
         description: '',
         levels: [sentLevel('', ['U-1005']), sentLevel('Global', [])],
         reminderDays: 3,

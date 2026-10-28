@@ -3,9 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { expectCurrentSection, renderApp } from '@/testing/app';
 import { transactionOf } from '@/testing/fixtures/financial-transactions';
 import { FT_1003, transactionPage } from '@/testing/fixtures/financials';
+import { runsPage } from '@/testing/fixtures/swbs-runs';
 import { reply } from '@/testing/replies';
 
-const LIST = [reply('GET /api/v1/financials/transactions', { body: transactionPage() })];
+const LIST = [
+  reply('GET /api/v1/financials/transactions', { body: transactionPage() }),
+  reply('GET /api/v1/simulated-gsap/swbs-runs', { body: runsPage() }),
+];
 
 describe('Financials routes (015 FR-020, FR-022)', () => {
   it('opens /financials: in the sidebar after All work, current, with its tab title', async () => {

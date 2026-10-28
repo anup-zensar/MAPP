@@ -46,15 +46,6 @@
   line-height: var(--leading-xs);
 }
 
-.swbs {
-  color: var(--ink);
-  font-size: var(--text-sm);
-}
-
-.swbsLabel {
-  font-weight: var(--weight-bold);
-}
-
 .block {
   display: flex;
   flex-direction: column;

@@ -16,40 +16,30 @@ import { planningLabel } from './log-text';
 import { HISTORY_ID, historyHref } from './show-history';
 import styles from './HistorySection.module.css';
 
-/** The include option of each level (FR-012): line items have nothing inside them. */
-const INCLUDE_LABELS: Record<PlanningLevel, string | undefined> = {
+type HistoryLevel = PlanningLevel | 'purchaseRequest';
+
+/** The include option of each level (FR-012); purchase requests (032) have nothing inside. */
+const INCLUDE_LABELS: Record<HistoryLevel, string | undefined> = {
   plan: 'Include items inside',
   campaign: 'Include items inside',
   initiative: 'Include items inside',
   activity: 'Include line items',
   lineItem: undefined,
+  purchaseRequest: undefined,
 };
 
 export interface HistorySectionProps {
-  /** The record's type as the activity log names it ("activity"). */
   recordType: string;
   recordId: string;
   recordName: string;
-  /** The planning level, which decides the include option. */
-  level: PlanningLevel;
-  /**
-   * The section's id, which showHistory() looks for: HISTORY_ID on a page, panelHistoryId() in a
-   * side panel that opens over a page with its own History section.
-   */
+  level: HistoryLevel;
+  /** What showHistory() looks for: HISTORY_ID on a page, panelHistoryId() in a side panel. */
   id?: string;
-  /**
-   * card: a card of its own with an h2 (the plan, activity and line item pages); panel: a part of
-   * a side panel's details with an h3, drawn like the panel's other parts (campaigns, initiatives).
-   */
+  /** card: its own card with an h2 (record pages); panel: a side panel's part with an h3. */
   variant?: 'card' | 'panel';
 }
 
-/**
- * The History section of a plan, campaign, initiative, activity or line item page (feature 011,
- * US3, FR-011 – FR-013): the record's activity-log entries, newest first, 20 at a time, with the
- * person's choice to include the items inside (remembered for them), and **Open in activity
- * log** with the same Record filter. **⋯ More › View history** jumps here with showHistory().
- */
+/** A record's History (011 FR-011 – FR-013): its log, newest first, and Open in activity log. */
 export function HistorySection({
   recordId,
   level,
@@ -61,7 +51,8 @@ export function HistorySection({
   const include = includeLabel ? (user?.preferences.historyIncludeInside ?? false) : false;
   const query = include ? { recordId, includeInside: true } : { recordId };
   const log = useLogEntries(historyKey(recordId, include), query, HISTORY_PAGE_SIZE);
-  const subtitle = `Every change to this ${planningLabel(level)}, newest first`;
+  const noun = level === 'purchaseRequest' ? 'purchase request' : planningLabel(level);
+  const subtitle = `Every change to this ${noun}, newest first`;
   const openInLog = (
     <LinkButton to={historyHref(recordId, include)} size="sm">
       Open in activity log
@@ -75,8 +66,7 @@ export function HistorySection({
           name="historyIncludeInside"
           label={includeLabel}
           checked={include}
-          // The screen changes at once; the choice is saved for the person in the background,
-          // and a failed save says "Your choice couldn't be saved." with Try again.
+          // Saved in the background; a failed save says so with Try again.
           onChange={(checked) => updatePreferences({ historyIncludeInside: checked })}
         />
       )}
@@ -99,7 +89,6 @@ export function HistorySection({
   );
 }
 
-/** The History part of a side panel: an h3 with its subtitle and action, over a hairline. */
 function PanelPart({
   subtitle,
   actions,

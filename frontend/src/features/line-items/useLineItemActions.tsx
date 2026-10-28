@@ -6,12 +6,9 @@ import { useToast } from '@/ui/Toast/useToast';
 import { recordHref } from '@/ui/record-links';
 import { useUndoableDelete } from '@/ui/useUndoableDelete';
 import { DeleteLineItemDialog } from './DeleteLineItemDialog';
-import { isRestartRefusal } from './line-item-requests';
-import { moneyText } from './line-item-math';
 import { LINE_ITEM_CHANGE_KEYS, useDeleteLineItem, useDuplicateLineItem } from './api';
 import type { LineItem, LineItemActivity } from './api';
-import { copyReason, createdToast } from './line-item-text';
-import { RestartApprovalDialog } from './RestartApprovalDialog';
+import { createdToast } from './line-item-text';
 
 interface Target {
   lineItem: LineItem;
@@ -19,20 +16,14 @@ interface Target {
 }
 
 export interface LineItemActions {
-  /** Duplicate (FR-029): the restart dialog first on a submitted or approved activity. */
   duplicate: (lineItem: LineItem, activity: LineItemActivity) => void;
-  /** Delete (FR-030): the delete dialog, then the message with Undo. */
   remove: (lineItem: LineItem, activity: LineItemActivity) => void;
   /** The dialogs; render them once, next to the actions. */
   dialogs: ReactElement;
 }
 
-/**
- * Duplicate and Delete of a line item, for its details page and the activity's Line items section
- * (FR-029 – FR-031): the copy opens after its message; a deleted line item can be brought back
- * with Undo. `onDeleted` runs after a delete, before the Undo message (the details page goes back
- * to the activity).
- */
+// Duplicate and Delete of a line item; neither changes the activity's approval (D-322). `onDeleted`
+// runs after a delete, before the Undo message.
 export function useLineItemActions(
   onDeleted?: (activity: LineItemActivity) => void,
 ): LineItemActions {
@@ -41,100 +32,50 @@ export function useLineItemActions(
   const duplicateLineItem = useDuplicateLineItem();
   const deleteLineItem = useDeleteLineItem();
   const afterDelete = useUndoableDelete({ invalidate: LINE_ITEM_CHANGE_KEYS });
-  const [copying, setCopying] = useState<Target | null>(null);
-  const [deleting, setDeleting] = useState<(Target & { restart: boolean }) | null>(null);
+  const [deleting, setDeleting] = useState<Target | null>(null);
 
   function showError(error: unknown) {
     show({ message: (error instanceof ApiError ? error : new ApiError('other')).message });
   }
 
-  async function copy(target: Target, restartApproval: boolean) {
+  async function copy(lineItem: LineItem) {
     try {
-      const copied = await duplicateLineItem.mutateAsync({
-        lineItemId: target.lineItem.id,
-        restartApproval,
-      });
-      setCopying(null);
+      const copied = await duplicateLineItem.mutateAsync(lineItem.id);
       show({ message: createdToast(copied.name) });
       void navigate(recordHref('lineItem', copied.id));
     } catch (error) {
-      if (isRestartRefusal(error)) {
-        // The activity was submitted meanwhile: the person confirms first (D-146).
-        setCopying(target);
-        return;
-      }
-      setCopying(null);
       showError(error);
     }
   }
 
-  async function remove(target: Target & { restart: boolean }) {
+  async function remove(target: Target) {
     try {
-      const result = await deleteLineItem.mutateAsync({
-        lineItemId: target.lineItem.id,
-        // Sent exactly when the dialog said so (007 plan, "Dialogs").
-        restartApproval: target.restart,
-      });
+      const result = await deleteLineItem.mutateAsync(target.lineItem.id);
       setDeleting(null);
       onDeleted?.(target.activity);
       afterDelete(result);
     } catch (error) {
-      if (isRestartRefusal(error)) {
-        setDeleting({ ...target, restart: true });
-        return;
-      }
       setDeleting(null);
       showError(error);
     }
   }
 
   const dialogs = (
-    <>
-      <RestartApprovalDialog
-        open={copying !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setCopying(null);
-          }
-        }}
-        activityName={copying?.activity.name ?? ''}
-        activityStatus={copying?.activity.status ?? 'created'}
-        reasons={
-          copying
-            ? [copyReason(copying.lineItem.name, moneyText(copying.lineItem.plannedCost))]
-            : []
+    <DeleteLineItemDialog
+      lineItem={deleting?.lineItem ?? null}
+      busy={deleteLineItem.isPending}
+      onCancel={() => setDeleting(null)}
+      onConfirm={() => {
+        if (deleting) {
+          void remove(deleting);
         }
-        busy={duplicateLineItem.isPending}
-        onConfirm={() => {
-          if (copying) {
-            void copy(copying, true);
-          }
-        }}
-      />
-      <DeleteLineItemDialog
-        lineItem={deleting?.lineItem ?? null}
-        restartsApproval={deleting?.restart ?? false}
-        busy={deleteLineItem.isPending}
-        onCancel={() => setDeleting(null)}
-        onConfirm={() => {
-          if (deleting) {
-            void remove(deleting);
-          }
-        }}
-      />
-    </>
+      }}
+    />
   );
 
   return {
-    duplicate: (lineItem, activity) => {
-      if (activity.restartsApproval) {
-        setCopying({ lineItem, activity });
-      } else {
-        void copy({ lineItem, activity }, false);
-      }
-    },
-    remove: (lineItem, activity) =>
-      setDeleting({ lineItem, activity, restart: activity.restartsApproval }),
+    duplicate: (lineItem) => void copy(lineItem),
+    remove: (lineItem, activity) => setDeleting({ lineItem, activity }),
     dialogs,
   };
 }

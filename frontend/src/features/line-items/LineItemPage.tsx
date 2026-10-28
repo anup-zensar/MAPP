@@ -7,6 +7,7 @@ import { LevelTag } from '@/ui/LevelTag/LevelTag';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
 import { HistorySection, showHistory } from '@/features/activity-log';
+import { LineItemPurchaseRequests } from '@/features/purchase-requests';
 import { allows, gateItem } from '@/session/gate-action';
 import { fieldHref, recordHref } from '@/ui/record-links';
 import { usePageTitle } from '@/ui/usePageTitle';
@@ -20,16 +21,14 @@ import { LineItemLoadFailed, LineItemLoading } from './LineItemPageStates';
 import { LineItemSpreadCard } from './LineItemSpreadCard';
 import { useLineItem } from './api';
 import { DELETE, DUPLICATE, EDIT, VIEW_HISTORY } from './line-item-text';
+import { SwbsCard } from './SwbsCard';
 import { SwbsChip } from './SwbsChip';
 import { useLineItemActions } from './useLineItemActions';
 
 /**
- * A line item's page (US4, FR-026), at /line-items/:lineItemId, on the record template of design
- * system §2.4 B and as wide as its activity's page (UI audit LI-01): the header with the level tag,
- * completeness and SWBS chips, ID and owner in the meta row, ⋯ (Duplicate, View history, Delete)
- * and Edit; the summary cards (planned cost, spread, the activity's unassigned planned cost); the
- * Details and Finance coding cards, each value in the one key–value layout ("—" when empty); GSAP's
- * Financials (feature 015); the spread; then its History (feature 011).
+ * A line item's page (US4, FR-026) on the record template of design system §2.4 B: header, summary
+ * cards, Details and Finance coding, the SWBS request (030), GSAP's Financials (015), its purchase
+ * requests (032), the spread and its History (011).
  */
 export function LineItemPage() {
   const { lineItemId = '' } = useParams();
@@ -77,7 +76,6 @@ export function LineItemPage() {
         }
         actions={
           <>
-            {/* ⋯ first, the primary last (design system §2.3, UI audit LI-02). */}
             <ActionsMenu
               label={lineItem.name}
               items={[
@@ -85,7 +83,6 @@ export function LineItemPage() {
                   { label: DUPLICATE, onSelect: () => actions.duplicate(lineItem, activity) },
                   access?.duplicate,
                 ),
-                // Brings the History section below into view and focuses it (feature 011).
                 { label: VIEW_HISTORY, onSelect: () => showHistory() },
                 ...gateItem(
                   {
@@ -113,8 +110,9 @@ export function LineItemPage() {
           <LineItemDetailsCard lineItem={lineItem} />
           <LineItemFinanceCard lineItem={lineItem} activity={activity} />
         </div>
-        {/* GSAP's money for this line item, open (015 FR-017). */}
+        <SwbsCard lineItem={lineItem} />
         <LineItemFinancials lineItemId={lineItem.id} />
+        <LineItemPurchaseRequests lineItemId={lineItem.id} />
         <LineItemSpreadCard lineItem={lineItem} />
         <HistorySection
           recordType="lineItem"

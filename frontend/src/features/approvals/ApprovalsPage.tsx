@@ -14,6 +14,7 @@ import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { Tabs } from '@/ui/Tabs/Tabs';
 import type { TabItem } from '@/ui/Tabs/Tabs';
 import type { components } from '@/api/generated/schema';
+import { isPurchaseRequestId } from '@/ui/record-links';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useFormatters } from '@/format/useFormatters';
 import {
@@ -34,6 +35,7 @@ import { DelegationBanner } from './DelegationBanner';
 import { DelegationPanel } from './DelegationPanel';
 import { activitiesCount } from './messages';
 import { MonitoringView } from './MonitoringView';
+import { PurchaseRequestPreviewPanel } from './PurchaseRequestPreviewPanel';
 import { approvalsAddressOf } from './schemas';
 import type { PageTab } from './schemas';
 import { useApprovalSummary } from './useApprovalSummary';
@@ -42,36 +44,22 @@ import styles from './ApprovalsPage.module.css';
 
 type ApprovalCounts = components['schemas']['ApprovalCounts'];
 
-/** What an empty tab says (plan, "User-visible messages"). */
 const EMPTY_TAB: Record<ApprovalTab, string> = {
   waiting: "Nothing is waiting for you. You're all caught up.",
   open: 'No activities are waiting for approval.',
   decided: "You haven't approved or declined any activities yet.",
 };
 
-/**
- * Approvals (008 US3, FR-027 – FR-032; 017 US4, US6), at /approvals: the delegations in force for
- * the person, the four summary cards, the tabs Waiting for me · All open · Decided by me ·
- * Monitoring (?tab=), search and filters with chips and a count, and the rows; a row opens the
- * preview (?activity=), where the approver decides without leaving the page. **Delegate my
- * approvals** opens the delegation panel (?panel=delegations). Monitoring has no search or filters.
- *
- * Without a chosen tab the page opens the first view that has something in it: Waiting for me
- * when anything waits for the person, otherwise All open (UI audit AP-03), so someone who only
- * sends activities never lands on a view that is always empty.
- */
 export function ApprovalsPage() {
   usePageTitle('Approvals');
   const [params, setParams] = useSearchParams();
   const { tab: chosenTab, previewId, delegationsOpen } = approvalsAddressOf(params);
-  // Search and filters stay when the tab changes (plan, "Approvals page").
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<ApprovalFilterValues>(NO_FILTERS);
   const summary = useApprovalSummary();
   const landingTab = landingTabOf(summary.data, summary.isError);
   const tab: PageTab = chosenTab ?? landingTab ?? 'waiting';
   const listTab: ApprovalTab = tab === 'monitoring' ? 'open' : tab;
-  // The rows wait for the counts when no tab is chosen, so the first view is the right one.
   const rows = useApprovalRows(
     listTab,
     tab !== 'monitoring' && (chosenTab !== null || landingTab !== null),
@@ -93,16 +81,14 @@ export function ApprovalsPage() {
     setParams(next, { replace });
   }
 
-  /** After a decision in the preview: the next row of the list as it was, or the first one. */
   function moveOn(decidedId: string, before: ApprovalRow[]) {
-    const index = before.findIndex((row) => row.activity.id === decidedId);
-    const others = before.filter((row) => row.activity.id !== decidedId);
-    const next = before[index + 1] ?? others[0];
-    changeParams({ activity: next ? next.activity.id : null }, true);
+    const ids = before.map((row) => row.subject.id);
+    const index = ids.indexOf(decidedId);
+    const next = ids[index + 1] ?? ids.find((id) => id !== decidedId);
+    changeParams({ activity: next ?? null }, true);
   }
 
   const counts = summary.data;
-  // Waiting for me is something to act on (a badge); All open is only counted (design system §5.2).
   const tabs: TabItem<PageTab>[] = [
     {
       value: 'waiting',
@@ -199,22 +185,25 @@ export function ApprovalsPage() {
         </div>
       </div>
 
-      {previewId && (
-        <ApprovalPreviewPanel
-          activityId={previewId}
-          onClose={() => changeParams({ activity: null })}
-          onDecided={() => moveOn(previewId, visible)}
-        />
-      )}
+      {previewId &&
+        (isPurchaseRequestId(previewId) ? (
+          <PurchaseRequestPreviewPanel
+            purchaseRequestId={previewId}
+            onClose={() => changeParams({ activity: null })}
+            onDecided={() => moveOn(previewId, visible)}
+          />
+        ) : (
+          <ApprovalPreviewPanel
+            activityId={previewId}
+            onClose={() => changeParams({ activity: null })}
+            onDecided={() => moveOn(previewId, visible)}
+          />
+        ))}
       {delegationsOpen && <DelegationPanel onClose={() => changeParams({ panel: null })} />}
     </>
   );
 }
 
-/**
- * The view to open when the address names none: Waiting for me when something waits for the
- * person, otherwise All open; null while the counts are still on their way.
- */
 function landingTabOf(counts: ApprovalCounts | undefined, failed: boolean): ApprovalTab | null {
   if (counts) {
     return counts.waitingForMe > 0 ? 'waiting' : 'open';
@@ -227,7 +216,6 @@ interface SummaryCardsProps {
   failed: boolean;
 }
 
-/** The four cards (FR-028); tabs and filters never change them. */
 function SummaryCards({ counts, failed }: SummaryCardsProps) {
   if (!counts && !failed) {
     return (
@@ -273,7 +261,6 @@ interface ChipsProps {
   onClearAll: () => void;
 }
 
-/** The filters in use as removable chips, and Clear filters. */
 function Chips({ filters, rows, onChange, onClearAll }: ChipsProps) {
   const { date } = useFormatters();
   if (filtersInUse(filters) === 0) {

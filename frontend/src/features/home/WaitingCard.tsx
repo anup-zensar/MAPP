@@ -4,7 +4,7 @@ import { LinkButton } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { EmptyState } from '@/ui/EmptyState/EmptyState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
-import { recordHref } from '@/ui/record-links';
+import { isPurchaseRequestId, purchaseRequestHref, recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
 import { useHomeWaiting } from './api';
 import { waitingForMeHref } from './home-links';
@@ -19,9 +19,9 @@ import { SectionError } from './SectionError';
 import styles from './WaitingCard.module.css';
 
 /**
- * Waiting for my approval (FR-013): the activities of 008's Waiting for me tab, oldest first, at
- * most 5, each with Review, which opens the Approvals page with its preview (SC-003: one step),
- * and "View all (n)" opening that tab.
+ * Waiting for my approval (FR-013): the records of 008's Waiting for me tab (purchase requests too,
+ * 032), oldest first, at most 5, each with Review, which opens the Approvals page with its preview
+ * (SC-003: one step), and "View all (n)" opening that tab.
  */
 export function WaitingCard() {
   const waiting = useHomeWaiting();
@@ -43,7 +43,11 @@ export function WaitingCard() {
                 <div className={styles.main}>
                   <div className={styles.head}>
                     <Link
-                      to={recordHref('activity', item.id, item.plan.id)}
+                      to={
+                        isPurchaseRequestId(item.id)
+                          ? purchaseRequestHref(item.id)
+                          : recordHref('activity', item.id, item.plan.id)
+                      }
                       className={styles.name}
                     >
                       {item.name}

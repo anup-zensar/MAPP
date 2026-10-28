@@ -1,9 +1,6 @@
 /**
- * The GSAP money of an activity or a line item (feature 015, US1): what the activity page's
- * Financials card, the Line items section's Committed and Invoiced columns and the line-item
- * page's Financials section ask the API, and how they word it (015 plan, "User-visible
- * messages"). The record view is one query per record and display currency, shared by the card and
- * the columns (015 plan, "Query keys"), so the page asks once.
+ * The GSAP money of an activity or a line item (015 US1) and its words; the record view is one query
+ * per record and display currency, shared by the card and the columns, so the page asks once.
  */
 import { useQuery } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
@@ -18,7 +15,6 @@ export type FinancialTransactionPage = components['schemas']['FinancialTransacti
 export type FinancialTransactionType = components['schemas']['FinancialTransactionType'];
 export type FinancialSource = components['schemas']['FinancialSource'];
 
-/** A record's figures, breakdown, latest transactions and SWBS codes (GET /api/v1/financials/records/{id}). */
 export function useFinancialRecord(recordId: string, enabled = true) {
   const { displayCurrency } = useFormatters();
   return useQuery({
@@ -29,10 +25,8 @@ export function useFinancialRecord(recordId: string, enabled = true) {
   });
 }
 
-/** Transactions shown per page on the line-item page (FR-017). */
 export const TRANSACTIONS_PAGE_SIZE = 50;
 
-/** One page of a record's transactions, newest first (GET /api/v1/financials/transactions). */
 export function useRecordTransactions(recordId: string, page: number) {
   const { displayCurrency } = useFormatters();
   return useQuery({
@@ -51,12 +45,10 @@ export function useRecordTransactions(recordId: string, page: number) {
   });
 }
 
-/** The Financials page filtered to one record (feature 015, FR-020). */
 export function financialsHref(recordId: string): string {
   return `/financials?recordId=${encodeURIComponent(recordId)}`;
 }
 
-// Texts (015 plan, "User-visible messages")
 export const FINANCIALS_TITLE = 'Financials';
 export type FinancialLevel = 'activity' | 'line item';
 
@@ -79,26 +71,22 @@ export const FIGURE_TIP = {
   notYetCommitted: 'Planned cost minus committed.',
 } as const;
 
-/** "Money owed for work received but not yet invoiced, as GSAP accrued it for Sep 2026." */
 export function accruedTip(month: string | null): string {
   return month
     ? `Money owed for work received but not yet invoiced, as GSAP accrued it for ${month}.`
     : 'Money owed for work received but not yet invoiced, as GSAP accrued it.';
 }
 
-/** "38% of planned cost committed" (design system §4.4: no space before %). */
 export function meterText(percent: number): string {
   return `${percent}% of planned cost committed`;
 }
 
 export const NO_PLANNED_COST = 'No planned cost yet';
 
-/** "Committed above planned cost by 652.17 USD". */
 export function aboveByText(amount: string): string {
   return `Committed above planned cost by ${amount}`;
 }
 
-/** "Committed above planned cost on 1 line item". */
 export function aboveOnText(count: number): string {
   return `Committed above planned cost on ${plural(count, 'line item')}`;
 }
@@ -110,7 +98,6 @@ export function emptyText(level: FinancialLevel): string {
 export const NO_DATA = 'No GSAP data loaded yet.';
 export const NO_ACCESS = 'You don’t have access to financial data — ask an administrator.';
 
-/** "GSAP data as of 19 Oct 2026, 09:00 · Demo data (simulated GSAP)". */
 export function sourceText(source: FinancialSource, dateTime: (at: string) => string): string {
   if (!source.dataAsOf) {
     return NO_DATA;
@@ -120,7 +107,6 @@ export function sourceText(source: FinancialSource, dateTime: (at: string) => st
   return `GSAP data as of ${dateTime(source.dataAsOf)} · ${feed}${file}`;
 }
 
-/** "View all 7 transactions in Financials". */
 export function viewAllText(count: number): string {
   return `View all ${plural(count, 'transaction')} in Financials`;
 }
@@ -132,12 +118,6 @@ export const TYPE_WORD: Record<FinancialTransactionType, string> = {
   accrual: 'Accrual',
 };
 
-/** "SWBS code: DE03-M26-0003 (from GSAP data)", or "Filled by GSAP later" without one. */
-export function swbsCodesText(codes: string[]): string {
-  return codes.length > 0 ? `${codes.join(', ')} (from GSAP data)` : 'Filled by GSAP later';
-}
-
-/** The delete dialogs' sentence (FR-029); null when nothing is linked. */
 export function linkedTransactionsText(count: number): string | null {
   if (count <= 0) {
     return null;

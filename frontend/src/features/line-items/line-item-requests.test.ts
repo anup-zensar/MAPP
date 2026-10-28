@@ -1,38 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '@/api/errors';
-import {
-  activity,
-  approvedActivity,
-  DIGITAL,
-  EUR,
-  GBP,
-  lineItem,
-  USD,
-} from '@/testing/fixtures/line-items';
 import { formOptions } from '@/testing/fixtures/line-item-forms';
 import {
-  changeCurrency,
   changeCustomMonth,
   changePlannedCost,
   changeSpreadMethod,
-  editFormState,
   newFormState,
   withField,
 } from './line-item-form-state';
-import {
-  formProblems,
-  isRestartRefusal,
-  needsRestartConfirmation,
-  restartReasons,
-  toCreateBody,
-  toUpdateBody,
-} from './line-item-requests';
+import { formProblems, toCreateBody, toUpdateBody } from './line-item-requests';
 
-const CURRENCIES = [USD, EUR, GBP];
 const MAR_MAY = { startDate: '2026-03-01', endDate: '2026-05-31', ongoing: false };
 
 describe('request bodies', () => {
-  it('sends empty amounts as null and months only for Custom', () => {
+  it('sends empty amounts as null and months only for Custom, and no restart flag (034 FR-001)', () => {
     const state = withField(changePlannedCost(newFormState(formOptions()), ''), 'ownerId', '');
     expect(toCreateBody(state)).toEqual({
       name: 'Launch film – line item',
@@ -46,7 +27,6 @@ describe('request bodies', () => {
       requestSwbs: true,
       financeBudgetYear: 2026,
       financeBudgetItemId: null,
-      restartApproval: false,
     });
   });
 
@@ -73,40 +53,11 @@ describe('request bodies', () => {
       fields: [
         { field: 'spread.months[1].amount', message: "Month amounts can't be negative." },
         { field: 'name', message: 'Enter a name for the line item.' },
-        { field: 'restartApproval', message: 'Confirm.' },
       ],
     });
     expect(formProblems(error, body)).toEqual([
       { field: 'spread.month.2026-04', message: "Month amounts can't be negative." },
       { field: 'name', message: 'Enter a name for the line item.' },
     ]);
-    expect(isRestartRefusal(error)).toBe(true);
-    expect(isRestartRefusal(new ApiError('validation'))).toBe(false);
-  });
-});
-
-describe('restart approval (FR-031, FR-032)', () => {
-  it('asks for every new line item of a submitted or approved activity', () => {
-    const state = newFormState(formOptions());
-    expect(needsRestartConfirmation(approvedActivity(), null, state)).toBe(true);
-    expect(needsRestartConfirmation(activity(), null, state)).toBe(false);
-    expect(restartReasons(null, state)).toEqual([
-      "New line item 'Launch film – line item': 20,000.00 USD",
-    ]);
-  });
-
-  it('asks only when the planned cost or currency changed', () => {
-    const stored = editFormState(lineItem());
-    const coding = withField(stored, 'financeBudgetItemId', DIGITAL.id);
-    expect(needsRestartConfirmation(approvedActivity(), stored, coding)).toBe(false);
-    const formatted = changePlannedCost(stored, '50000');
-    expect(needsRestartConfirmation(approvedActivity(), stored, formatted)).toBe(false);
-    const cost = changePlannedCost(stored, '55,000.00');
-    expect(needsRestartConfirmation(approvedActivity(), stored, cost)).toBe(true);
-    expect(restartReasons(stored, cost)).toEqual([
-      "Planned cost of 'Agency fee': 50,000.00 USD → 55,000.00 USD",
-    ]);
-    const currency = changeCurrency(stored, 'EUR', CURRENCIES);
-    expect(needsRestartConfirmation(approvedActivity(), stored, currency)).toBe(true);
   });
 });

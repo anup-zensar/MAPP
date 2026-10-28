@@ -1,5 +1,6 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { expectNoAxeViolations } from '@/testing/axe';
 import { renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mock-api';
 import { testUser } from '@/testing/fixtures/users';
@@ -17,6 +18,27 @@ const FILE_IMPORT = {
   importedBy: { id: 'U-1001', name: 'Alex Morgan' },
   counts: { rows: 4, new: 2, updated: 1, unchanged: 1, refused: 0, notLinked: 1, relinked: 2 },
 };
+
+describe('033 FR-011: simulated GSAP purchase-order import', () => {
+  it('names the source and the feed, with the purchase request as its file', async () => {
+    const simulated = {
+      ...FILE_IMPORT,
+      id: 'FIM-1003',
+      source: 'simulatedGsap' as const,
+      feedName: 'Simulated GSAP purchase order',
+      fileName: 'PR-1002',
+      counts: { rows: 1, new: 1, updated: 0, unchanged: 0, refused: 0, notLinked: 0, relinked: 0 },
+    };
+    mockApi([reply('GET /api/v1/financials/imports', { body: { items: [simulated], total: 1 } })]);
+    renderWithProviders(<ImportHistoryPanel onClose={vi.fn()} />, { user: testUser() });
+
+    const [item] = await screen.findAllByRole('listitem');
+    expect(item).toHaveTextContent('PR-1002');
+    expect(item).toHaveTextContent('Simulated GSAP · Simulated GSAP purchase order · FIM-1003');
+    expect(item).toHaveTextContent('1 row: 1 new');
+    await expectNoAxeViolations();
+  });
+});
 
 describe('ImportHistoryPanel (015 FR-008)', () => {
   it('lists every import newest first with its file, source, who, when and counts', async () => {

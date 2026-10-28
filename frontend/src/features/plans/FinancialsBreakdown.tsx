@@ -13,6 +13,8 @@ const BREAKDOWN_HEADING: Record<Level, string> = {
   initiative: 'By activity',
   activity: 'By line item',
   lineItem: '',
+  purchaseRequest: '',
+  purchaseRequestLine: '',
 };
 
 /** "By campaign" / "By initiative" / "By activity": each child with its four figures. */

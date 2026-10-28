@@ -4,7 +4,9 @@ import type { ApprovalWorkflow, WorkflowCreate, WorkflowUpdate } from './api';
 import { toDrafts, toInputs } from './level-drafts';
 import type { LevelDraft } from './level-drafts';
 
-/** New workflows start with a reminder after 3 days and escalation after 5 (017 FR-007). */
+export type ObjectType = ApprovalWorkflow['objectType'];
+
+/** New workflows start with a reminder after 3 days and escalation after 5. */
 const NEW_REMINDER_DAYS = 3;
 const NEW_ESCALATION_DAYS = 5;
 
@@ -12,6 +14,7 @@ const NEW_ESCALATION_DAYS = 5;
 export const workflowSchema = z
   .object({
     name: z.string(),
+    objectType: z.custom<ObjectType>(),
     description: z.string(),
     levels: z.array(z.custom<LevelDraft>()),
     sendReminder: z.boolean(),
@@ -43,6 +46,7 @@ export function workflowValuesOf(workflow: ApprovalWorkflow | undefined): Workfl
   const escalationDays = workflow ? workflow.escalationDays : NEW_ESCALATION_DAYS;
   return {
     name: workflow?.name ?? '',
+    objectType: workflow?.objectType ?? 'activity',
     description: workflow?.description ?? '',
     levels: toDrafts(workflow),
     sendReminder: Boolean(reminderDays),
@@ -56,6 +60,7 @@ export function workflowValuesOf(workflow: ApprovalWorkflow | undefined): Workfl
 export function isWorkflowChanged(values: WorkflowValues, start: WorkflowValues): boolean {
   return (
     values.name !== start.name ||
+    values.objectType !== start.objectType ||
     values.description !== start.description ||
     levelsChanged(values, start) ||
     values.sendReminder !== start.sendReminder ||
@@ -68,6 +73,7 @@ export function isWorkflowChanged(values: WorkflowValues, start: WorkflowValues)
 export function newWorkflow(values: WorkflowValues): WorkflowCreate {
   return {
     name: values.name,
+    objectType: values.objectType,
     description: values.description,
     levels: toInputs(values.levels),
     reminderDays: timingValue(values.sendReminder, values.reminderDays) ?? null,
@@ -83,6 +89,9 @@ export function workflowChanges(
   const changes: WorkflowUpdate = { version };
   if (values.name !== start.name) {
     changes.name = values.name;
+  }
+  if (values.objectType !== start.objectType) {
+    changes.objectType = values.objectType;
   }
   if (values.description !== start.description) {
     changes.description = values.description;

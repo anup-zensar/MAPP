@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
@@ -97,14 +97,13 @@ describe('LineItemEditPage (US4, FR-027)', () => {
     expect(api.bodiesOf(PATCH)[0]).toMatchObject({
       financeBudgetItemId: DIGITAL.id,
       spread: { method: 'lastMonth', months: [] },
-      restartApproval: false,
       version: 1,
     });
     expect(await screen.findByText("Line item 'Agency fee' saved")).toBeInTheDocument();
   });
 
-  it('asks before a cost change restarts approval (scenario 3, FR-031)', async () => {
-    const { user, api } = renderPage([
+  it('034 FR-001: saves a cost change of an approved activity at once, without asking (D-322)', async () => {
+    const { user, api, router } = renderPage([
       ...approved(),
       reply(
         'PATCH /api/v1/line-items/{lineItemId}',
@@ -120,38 +119,31 @@ describe('LineItemEditPage (US4, FR-027)', () => {
       'After saving15,000.00 USD',
     );
     await user.click(button('Save'));
-    let dialog = await screen.findByRole('alertdialog', {
-      name: 'This activity will need approval again',
-    });
-    expect(dialog).toHaveTextContent("Planned cost of 'Agency fee': 50,000.00 USD → 55,000.00 USD");
 
-    await user.click(within(dialog).getByRole('button', { name: 'Keep editing' }));
-    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
-    expect(screen.getByLabelText('Planned cost')).toHaveValue('55,000.00');
-    expect(api.bodiesOf(PATCH)).toHaveLength(0);
-
-    await user.click(button('Save'));
-    dialog = await screen.findByRole('alertdialog', {
-      name: 'This activity will need approval again',
-    });
-    await user.click(within(dialog).getByRole('button', { name: 'Save and restart approval' }));
-    await waitFor(() => expect(api.bodiesOf(PATCH)).toHaveLength(1));
-    expect(api.bodiesOf(PATCH)[0]).toMatchObject({
-      plannedCost: '55000.00',
-      restartApproval: true,
-    });
+    await waitFor(() => expect(router.state.location.pathname).toBe('/line-items/L-1001'));
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(api.bodiesOf(PATCH)).toHaveLength(1);
+    expect(api.bodiesOf(PATCH)[0]).toMatchObject({ plannedCost: '55000.00' });
+    expect(api.bodiesOf(PATCH)[0]).not.toHaveProperty('restartApproval');
   });
 
-  it('asks before a currency change restarts approval', async () => {
-    const { user } = renderPage(approved());
+  it('034 FR-001: saves a currency change of an approved activity at once, without asking', async () => {
+    const { user, api } = renderPage([
+      ...approved(),
+      reply(
+        'PATCH /api/v1/line-items/{lineItemId}',
+        { body: lineItem() },
+        { lineItemId: 'L-1001' },
+      ),
+    ]);
     await screen.findByLabelText('Line item name');
 
     await user.selectOptions(screen.getByLabelText('Currency'), 'EUR');
     await user.click(button('Save'));
 
-    expect(
-      await screen.findByRole('alertdialog', { name: 'This activity will need approval again' }),
-    ).toHaveTextContent("Planned cost of 'Agency fee': 50,000.00 USD → 50,000.00 EUR");
+    await waitFor(() => expect(api.bodiesOf(PATCH)).toHaveLength(1));
+    expect(api.bodiesOf(PATCH)[0]).toMatchObject({ currency: 'EUR' });
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
   });
 
   it('keeps the values after a conflict and saves with the new version next', async () => {

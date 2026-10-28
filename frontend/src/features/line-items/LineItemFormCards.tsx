@@ -34,10 +34,9 @@ import {
   SECTION_FINANCE_CODING,
   SECTION_GSAP,
   SECTION_SPREAD,
-  SWBS_HELP,
-  SWBS_LATER,
 } from './line-item-text';
 import { SpreadEditor } from './SpreadEditor';
+import { SWBS_HELP, SWBS_KEPT_ON, SWBS_LATER } from './swbs-text';
 
 type AttributeValues = components['schemas']['AttributeValues'];
 
@@ -54,6 +53,8 @@ export interface LineItemFormCardsProps {
   attributeForm: AttributeForm;
   businessUnit: string[];
   storedAttributes: AttributeValues;
+  /** The stored line item's SWBS code; "" for a new one or before GSAP answered (030 FR-004). */
+  storedSwbsCode: string;
 }
 
 /** The line-item form's six sections, in order (FR-007). */
@@ -197,12 +198,13 @@ export function LineItemFormCards(props: LineItemFormCardsProps) {
               onChange={(checked) => change('requestSwbs', checked)}
               hint={[SWBS_HELP, state.sources.requestSwbs].filter(Boolean).join(' ')}
               error={field.error}
+              disabledReason={props.storedSwbsCode ? SWBS_KEPT_ON : undefined}
             />
           )}
         />
         <div className={styles.readOnlyField}>
           <span className={styles.readOnlyLabel}>{LABEL.swbsCode}</span>
-          <span className={styles.note}>{SWBS_LATER}</span>
+          <span className={styles.note}>{props.storedSwbsCode || SWBS_LATER}</span>
         </div>
       </FormCard>
     </>

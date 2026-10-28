@@ -1,9 +1,3 @@
-/**
- * The levels of an approval workflow as its form edits them, and back to what the API takes
- * (008 FR-002, 017 FR-001 – FR-006). A level stored before feature 017 has none of its fields and
- * reads with the defaults of 017 data-model §10: named people, any one approves, no conditions,
- * no backup approver.
- */
 import { formatAmount, parseMoneyInput } from '@/format/decimal';
 import type {
   ApprovalCondition,
@@ -13,13 +7,10 @@ import type {
   WorkflowLevelInput,
 } from './api';
 
-/** Who approves a level (017 FR-001). */
-export type ApproverType = 'people' | 'manager' | 'role';
+export type ApproverType = 'people' | 'manager' | 'role' | 'owner' | 'recordField';
 
-/** When a level has several approvers: the first approval decides, or every approver must. */
 export type LevelMode = 'any' | 'all';
 
-/** A condition as its fields hold it; amounts as typed ("100,000.00"). */
 export interface ConditionDraft {
   plannedCostAtLeast: string;
   plannedCostBelow: string;
@@ -27,29 +18,27 @@ export interface ConditionDraft {
   activityTypeIds: string[];
 }
 
-/** One level as the form edits it; `key` keeps React's rows apart while levels move. */
 export interface LevelDraft {
   key: string;
   name: string;
   approverType: ApproverType;
   approverIds: string[];
   roleId: string;
+  recordField: string;
   mode: LevelMode;
-  /** "Only needed when" is ticked; its condition is kept while unticked, so ticking brings it back. */
   onlyWhen: boolean;
   appliesWhen: ConditionDraft;
-  /** "Approve automatically when" is ticked. */
   autoWhen: boolean;
   autoApproveWhen: ConditionDraft;
   backupApproverId: string;
 }
 
-/** The fields of a level that the API keys problems by ("levels.<n>.<field>"). */
 export type LevelField =
   | 'name'
   | 'approverType'
   | 'approverIds'
   | 'roleId'
+  | 'recordField'
   | 'mode'
   | 'appliesWhen'
   | 'autoApproveWhen'
@@ -57,18 +46,15 @@ export type LevelField =
 
 let lastKey = 0;
 
-/** A key no other level of this page has. */
 export function newLevelKey(): string {
   lastKey += 1;
   return `level-${lastKey}`;
 }
 
-/** A condition with nothing set. */
 export function emptyCondition(): ConditionDraft {
   return { plannedCostAtLeast: '', plannedCostBelow: '', businessUnitIds: [], activityTypeIds: [] };
 }
 
-/** An empty level: named people, any one approves, no conditions. */
 export function emptyLevel(): LevelDraft {
   return {
     key: newLevelKey(),
@@ -76,6 +62,7 @@ export function emptyLevel(): LevelDraft {
     approverType: 'people',
     approverIds: [],
     roleId: '',
+    recordField: '',
     mode: 'any',
     onlyWhen: false,
     appliesWhen: emptyCondition(),
@@ -85,7 +72,6 @@ export function emptyLevel(): LevelDraft {
   };
 }
 
-/** The stored levels as drafts; one empty level for a new workflow. */
 export function toDrafts(workflow?: ApprovalWorkflow): LevelDraft[] {
   if (!workflow) {
     return [emptyLevel()];
@@ -101,6 +87,7 @@ function toDraft(level: ApprovalWorkflowLevel): LevelDraft {
     approverType,
     approverIds: approverType === 'people' ? level.approvers.map((person) => person.id) : [],
     roleId: level.role?.id ?? '',
+    recordField: level.recordField?.id ?? '',
     mode: level.mode ?? 'any',
     onlyWhen: Boolean(level.appliesWhen),
     appliesWhen: conditionDraft(level.appliesWhen),
@@ -126,17 +113,13 @@ function conditionDraft(condition: ApprovalCondition | null | undefined): Condit
   };
 }
 
-/**
- * What the API takes: the levels in order, names trimmed, only the fields of the chosen source
- * (the line manager always "any one approves"), and a condition only while its box is ticked.
- */
 export function toInputs(levels: LevelDraft[]): WorkflowLevelInput[] {
   return levels.map((level) => {
     const input: WorkflowLevelInput = {
       name: level.name.trim(),
       approverType: level.approverType,
       approverIds: level.approverType === 'people' ? level.approverIds : [],
-      mode: level.approverType === 'manager' ? 'any' : level.mode,
+      mode: singlePerson(level.approverType) ? 'any' : level.mode,
       appliesWhen: level.onlyWhen ? conditionInput(level.appliesWhen) : null,
       autoApproveWhen: level.autoWhen ? conditionInput(level.autoApproveWhen) : null,
       backupApproverId: level.backupApproverId,
@@ -144,14 +127,18 @@ export function toInputs(levels: LevelDraft[]): WorkflowLevelInput[] {
     if (level.approverType === 'role') {
       input.roleId = level.roleId;
     }
+    if (level.approverType === 'recordField') {
+      input.recordField = level.recordField;
+    }
     return input;
   });
 }
 
-/**
- * A condition for the API: amounts as plain decimals ("100000.00"), or as typed when they are not
- * amounts, so the API names the problem; an empty amount is no part of the condition.
- */
+/** A manager, a record owner or a person named on the record is one person, so the level has no mode. */
+export function singlePerson(type: ApproverType): boolean {
+  return type === 'manager' || type === 'owner' || type === 'recordField';
+}
+
 function conditionInput(condition: ConditionDraft): ApprovalConditionInput {
   return {
     plannedCostAtLeast: amountInput(condition.plannedCostAtLeast),
@@ -169,10 +156,6 @@ function amountInput(text: string): string | null {
   return parseMoneyInput(trimmed)?.amount ?? trimmed;
 }
 
-/**
- * The input names (and ids) of level `number`'s fields, as the API keys their problems
- * ("levels.<n>.approverIds", n counted from 1 as in the messages; data-model §1).
- */
 export function levelFieldName(number: number, field: LevelField): string {
   return `levels.${number}.${field}`;
 }

@@ -29,7 +29,8 @@ describe('ApprovalsTable (feature 008, US3)', () => {
     renderTable();
 
     expect(headers()).toEqual([
-      'Activity',
+      'Record',
+      'Record type',
       'Plan › campaign',
       'Owner',
       'Planned cost',
@@ -46,6 +47,28 @@ describe('ApprovalsTable (feature 008, US3)', () => {
     expect(row).toHaveTextContent('Level 1 of 2 Carlos Mendes');
     expect(row).toHaveTextContent('10 Mar 2026 waiting 3 days');
     expect(row).not.toHaveTextContent('Start date passed');
+  });
+
+  it('names the record type and opens a purchase request in its preview (031 FR-026, 032 FR-029)', async () => {
+    const { user, onOpen } = renderTable([
+      rowOf({
+        activity: null,
+        subject: {
+          kind: 'modifiedPurchaseRequest',
+          label: 'Modified purchase request',
+          id: 'PR-1001',
+          name: 'Agency retainer',
+          status: 'inReview',
+          displayStatus: 'inReview',
+        },
+      }),
+    ]);
+
+    const row = screen.getByRole('row', { name: /Agency retainer/ });
+    expect(row).toHaveTextContent('Modified purchase request');
+    await user.click(within(row).getByRole('button', { name: 'Agency retainer' }));
+
+    expect(onOpen).toHaveBeenCalledWith('PR-1001');
   });
 
   it('marks a passed start date and an inactive workflow (edge case)', () => {
@@ -129,6 +152,7 @@ describe('ApprovalsTable (feature 008, US3)', () => {
       .getAllByRole('term')
       .map((term) => `${term.textContent}: ${visibleText(term.nextElementSibling)}`);
     expect(facts).toEqual([
+      'Record type: Activity',
       'Plan › campaign: FY2026 Lubricants Europe › Spring launch',
       'Owner: Priya Raman',
       'Planned cost: $50,000.00',

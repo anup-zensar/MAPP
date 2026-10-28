@@ -12,19 +12,11 @@ import { submitConflictMessage } from './decision-messages';
 import { SubmitDialog } from './SubmitDialog';
 
 export interface SubmitButtonProps {
-  /** A Created activity (Submit) or a Declined one (Re-submit). */
   activity: ApprovalActivity;
-  /** 006's function that shows "Submitting needs <n> things — view list" and lists them. */
   onShowProblems: ShowSubmitProblems;
   variant?: 'primary' | 'secondary';
 }
 
-/**
- * **Submit for approval** / **Re-submit for approval** and what follows (US1, FR-009 – FR-011,
- * FR-020): the API checks the activity afresh; with problems, 006's Ready to submit list shows
- * every one of them at once; otherwise the confirmation shows the workflow and its levels, and the
- * submit sends the version of the activity the person saw.
- */
 export function SubmitButton({ activity, onShowProblems, variant = 'primary' }: SubmitButtonProps) {
   const queryClient = useQueryClient();
   const { show } = useToast();
@@ -33,7 +25,7 @@ export function SubmitButton({ activity, onShowProblems, variant = 'primary' }: 
   const [checking, setChecking] = useState(false);
   const [submission, setSubmission] = useState<ApprovalSubmission | null>(null);
   const [commentError, setCommentError] = useState<string>();
-  const label = activity.status === 'declined' ? 'Re-submit for approval' : 'Submit for approval';
+  const label = activity.status === 'created' ? 'Submit for approval' : 'Re-submit for approval';
 
   function showFailure(error: unknown) {
     const failure = asApiError(error);
@@ -43,7 +35,6 @@ export function SubmitButton({ activity, onShowProblems, variant = 'primary' }: 
   }
 
   async function check() {
-    // One check at a time: another click while it is on its way is ignored.
     if (checking) {
       return;
     }
@@ -76,7 +67,6 @@ export function SubmitButton({ activity, onShowProblems, variant = 'primary' }: 
         comment,
       });
       const verb = submission.kind === 'resubmit' ? 're-submitted' : 'submitted';
-      // No level needed a decision: the rules approved it at once (017 FR-014).
       const automatic = submission.approvedAutomatically || result.status === 'approved';
       show({
         message: automatic
@@ -93,7 +83,6 @@ export function SubmitButton({ activity, onShowProblems, variant = 'primary' }: 
       }
       setSubmission(null);
       if (failure.kind === 'validation') {
-        // Something changed since the check: the list shows the problems as they are now.
         onShowProblems(failure.fields.length);
       } else if (failure.kind === 'conflict') {
         show({ message: submitConflictMessage(failure, dateFormat) });

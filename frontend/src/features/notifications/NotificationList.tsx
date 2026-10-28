@@ -15,17 +15,13 @@ import { Button } from '@/ui/Button/Button';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { useToast } from '@/ui/Toast/useToast';
 import { cx } from '@/ui/cx';
-import { recordHref } from '@/ui/record-links';
+import { subjectHref } from '@/ui/subject-links';
 import { useFormatters } from '@/format/useFormatters';
 import { asApiError, isSessionLost } from '@/api/errors';
 import { useMarkAllRead, useMarkRead, useNotifications } from './api';
 import type { AppNotification } from './api';
 import styles from './NotificationList.module.css';
 
-/**
- * The icon of each kind of notification (008 plan, "Notification bell"; 017 plan, "Notifications":
- * approved automatically, a reminder, an escalation).
- */
 const KIND_ICONS: Record<AppNotification['kind'], LucideIcon> = {
   approvalNeeded: Bell,
   levelApproved: CircleCheckBig,
@@ -39,18 +35,10 @@ const KIND_ICONS: Record<AppNotification['kind'], LucideIcon> = {
 };
 
 export interface NotificationListProps {
-  /** The id of the popover's heading, which names it. */
   titleId: string;
-  /** Closes the bell's popover (after choosing a notification). */
   onClose: () => void;
 }
 
-/**
- * The content of the notification bell's popover (US6, FR-033, FR-034): the heading, **Mark all
- * as read** while some are unread, and the newest 50 notifications, newest first. Choosing one
- * marks it read and opens the activity's Approval section — or the recycle bin when the activity
- * was deleted.
- */
 export function NotificationList({ titleId, onClose }: NotificationListProps) {
   const notifications = useNotifications();
   const markAllRead = useMarkAllRead();
@@ -78,10 +66,9 @@ export function NotificationList({ titleId, onClose }: NotificationListProps) {
       markRead.mutate(notification.id);
     }
     onClose();
+    const { subject } = notification;
     void navigate(
-      notification.activity.exists
-        ? `${recordHref('activity', notification.activity.id)}#approval`
-        : '/recycle-bin',
+      subject.exists ? `${subjectHref(subject.kind, subject.id)}#approval` : '/recycle-bin',
     );
   }
 
@@ -135,11 +122,6 @@ interface NotificationItemProps {
   onChoose: (notification: AppNotification) => void;
 }
 
-/**
- * One notification as a button: its icon, title, the line naming the activity and the actor, the
- * relative time (the full date and time on hover) and, while unread, a dot with the hidden word
- * "Unread". The spaces between the parts keep the words apart in the button's name.
- */
 function NotificationItem({ notification, onChoose }: NotificationItemProps) {
   const { dateTime, relativeTime } = useFormatters();
   const Icon = KIND_ICONS[notification.kind];
@@ -154,10 +136,10 @@ function NotificationItem({ notification, onChoose }: NotificationItemProps) {
       <span className={styles.main}>
         <span className={styles.itemTitle}>{notification.title}</span>{' '}
         <span className={styles.text}>{notification.text}</span>{' '}
-        {!notification.activity.exists && (
+        {!notification.subject.exists && (
           <>
             <span className={styles.deleted}>
-              This activity was deleted — find it in the recycle bin.
+              {`This ${notification.subject.label.toLowerCase()} was deleted — find it in the recycle bin.`}
             </span>{' '}
           </>
         )}

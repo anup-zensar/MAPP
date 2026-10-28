@@ -22,6 +22,8 @@ const LEVEL_WORD: Record<Level, string> = {
   initiative: 'initiative',
   activity: 'activity',
   lineItem: 'line item',
+  purchaseRequest: 'purchase request',
+  purchaseRequestLine: 'PR line',
 };
 
 const TIPS = {

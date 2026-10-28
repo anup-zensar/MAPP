@@ -1,8 +1,4 @@
-/**
- * The words of Shell attributes on screen (feature 002 plan, "User-visible messages": Attribute
- * list, Attribute words; data model §4) and the rules of FR-017 that decide what the editor
- * offers. The API stays the judge: these only shape what is offered.
- */
+// Shell attributes' words and the FR-017 rules of what the editor offers; the API stays the judge.
 import type { components } from '@/api/generated/schema';
 import { midSentence } from '@/format/text';
 
@@ -10,13 +6,14 @@ export type AttributeLevel = components['schemas']['AttributeLevel'];
 export type AttributeType = components['schemas']['AttributeType'];
 export type AttributeMarking = components['schemas']['AttributeMarking'];
 
-/** The levels in the order of the planning hierarchy. */
 export const LEVELS = [
   'plan',
   'campaign',
   'initiative',
   'activity',
   'lineItem',
+  'purchaseRequest',
+  'purchaseRequestLine',
 ] as const satisfies readonly AttributeLevel[];
 
 export const LEVEL_WORDS: Record<AttributeLevel, string> = {
@@ -25,6 +22,8 @@ export const LEVEL_WORDS: Record<AttributeLevel, string> = {
   initiative: 'Initiative',
   activity: 'Activity',
   lineItem: 'Line item',
+  purchaseRequest: 'Purchase request',
+  purchaseRequestLine: 'PR line',
 };
 
 export const TYPE_WORDS: Record<AttributeType, string> = {
@@ -43,7 +42,6 @@ export const MARKING_WORDS: Record<AttributeMarking, string> = {
   neededToSubmit: 'Needed to submit',
 };
 
-/** The types in the order the editor offers them. */
 const TYPES: AttributeType[] = [
   'singleChoice',
   'multipleChoice',
@@ -54,47 +52,41 @@ const TYPES: AttributeType[] = [
   'number',
 ];
 
-/** True for a level whose records carry cost: activities and line items (FR-017). */
 function carriesCost(level: AttributeLevel): boolean {
   return level === 'activity' || level === 'lineItem';
 }
 
-/** A level as it reads mid-sentence: "No line item attributes yet". */
 export function levelMidSentence(level: AttributeLevel): string {
   return LEVEL_WORDS[level].toLowerCase();
 }
 
-/** True when the value is one of the levels (a level from the address may be anything). */
 export function isLevel(value: string | null): value is AttributeLevel {
   return LEVELS.some((level) => level === value);
 }
 
-/** Choice types have options, at least one (FR-018). */
 export function isChoiceType(type: string): boolean {
   return type === 'singleChoice' || type === 'multipleChoice' || type === 'multipleChoiceSplit';
 }
 
-/** The types a level offers: "Multiple choice with % split" only where records carry cost. */
 export function typesFor(level: AttributeLevel): AttributeType[] {
   return TYPES.filter((type) => type !== 'multipleChoiceSplit' || carriesCost(level));
 }
 
-/** Optional and Needed to publish above activities; Optional and Needed to submit below (FR-017). */
+/** Needed to submit where records are submitted for approval (FR-017, 032 FR-006), else to publish. */
 export function markingsFor(level: AttributeLevel): AttributeMarking[] {
-  return ['optional', carriesCost(level) ? 'neededToSubmit' : 'neededToPublish'];
+  const submitted =
+    carriesCost(level) || level === 'purchaseRequest' || level === 'purchaseRequestLine';
+  return ['optional', submitted ? 'neededToSubmit' : 'neededToPublish'];
 }
 
 type ShellAttribute = components['schemas']['ShellAttribute'];
 
-/** "Lubricants or Mobility": the condition holds when the business unit includes any of them. */
 const OR_LIST = new Intl.ListFormat('en-GB', { type: 'disjunction' });
 
-/** "Depends on Cluster", or null when its options are not filtered by another attribute. */
 export function dependsOnText(attribute: ShellAttribute): string | null {
   return attribute.parentAttribute ? `Depends on ${attribute.parentAttribute.name}` : null;
 }
 
-/** The business units of the condition, "Lubricants or Mobility"; null when always shown. */
 export function conditionText(attribute: ShellAttribute): string | null {
   const names = attribute.condition.map((option) => option.name);
   return names.length > 0 ? OR_LIST.format(names) : null;
@@ -106,7 +98,6 @@ export function shownWhenText(attribute: ShellAttribute): string {
   return condition ? `Shown when the business unit includes ${condition}` : 'Always shown';
 }
 
-/** The reason a field or action of the attribute is locked (data model §4.1), if it is. */
 export function lockReason(attribute: ShellAttribute, field: string): string | undefined {
   return attribute.locks.find((lock) => lock.field === field)?.reason;
 }
@@ -114,7 +105,6 @@ export function lockReason(attribute: ShellAttribute, field: string): string | u
 export type FormAttribute = components['schemas']['FormAttribute'];
 type AttributeForm = components['schemas']['AttributeForm'];
 
-/** One attribute of a level's form (GET /api/v1/shell-attribute-forms/{level}), with its options. */
 export function findFormAttribute(form: AttributeForm, id: string): FormAttribute | undefined {
   return form.sections
     .flatMap((section) => section.attributes)
@@ -124,23 +114,15 @@ export function findFormAttribute(form: AttributeForm, id: string): FormAttribut
 /** The section of an attribute whose Section field is left empty (FR-019). */
 export const DEFAULT_SECTION = 'Shell attributes';
 
-/** "Link 'RETAIL – CHINA' to at least one cluster option." (FR-022, as the API says it.) */
 export function linkOptionText(optionLabel: string, parentLabel: string): string {
   return `Link '${optionLabel.trim()}' to at least one ${midSentence(parentLabel)} option.`;
 }
 
-/** "Shown when one of these cluster options is chosen." — the hint of Linked to. */
 export function linkedToHint(parentLabel: string): string {
   return `Shown when one of these ${midSentence(parentLabel)} options is chosen.`;
 }
 
-/**
- * The attributes an attribute may depend on (FR-022, data model §4.2): the single and multiple
- * choice attributes of `level` placed before it. An attribute that keeps its section keeps its
- * place; a new attribute, or one moved to another section, goes last in that section (or last on
- * the form when the section is new). `level` lists every attribute in display order. The API
- * checks again when saving.
- */
+/** Choice attributes before this one (FR-022); a new or moved one goes last in its section. */
 export function parentCandidates(
   all: ShellAttribute[],
   level: AttributeLevel,
