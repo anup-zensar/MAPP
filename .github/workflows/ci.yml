@@ -215,6 +215,12 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 24
+      # Corepack's copy of pnpm, which every job would otherwise download; that download stalls now and then.
+      - &corepack-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/node/corepack
+          key: corepack-${{ hashFiles('frontend/package.json') }}
       - &install
         name: Install
         env:
@@ -248,6 +254,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - *setup-node
+      - *corepack-cache
       - *install
       # A worker on every core: Vitest's default keeps one free for itself, which here only waits for the workers.
       - name: Test
@@ -272,6 +279,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - *setup-node
+      - *corepack-cache
       - *install
       - uses: actions/download-artifact@v8
         with:
@@ -308,6 +316,7 @@ jobs:
       - uses: actions/checkout@v7
       - *setup-go
       - *setup-node
+      - *corepack-cache
       - *install
       # The tests run headless, which needs only Chromium's headless shell.
       - name: Install browser
