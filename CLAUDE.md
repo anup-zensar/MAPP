@@ -1,6 +1,6 @@
 # CLAUDE.md — guidance for AI agents working on MAPP
 
-Read this with `.specify/memory/constitution.md` (the rules, version 4.4) before doing anything. Where
+Read this with `.specify/memory/constitution.md` (the rules, version 4.6) before doing anything. Where
 this file and the constitution disagree, the constitution wins and this file is corrected. Working in
 `backend/`? `backend/CLAUDE.md` loads the Go standards (`backend/docs/GO_STANDARDS.md`).
 
@@ -69,10 +69,12 @@ Software Design & Construction Policy and SEMS, which are mandatory.
     `tokens.css` and `docs/product/design-system.md` §3.1 carry these values (feature 020); on a grey
     background secondary text, links and red text switch to Text Strong (`--ink-2: var(--ink)`).
 13. **Out of scope:** the Finance budgets module, accrual calculation, invoice approval, supporting
-    documents on purchase requests, Measure, live GSAP integration, e-mail, real sign-in (SSO), AI. Do not
+    documents on purchase requests, Measure's performance reporting, live GSAP integration, e-mail and sharing
+    to Outlook or Teams, real sign-in (SSO), AI. Do not
     build them. GSAP rates and transactions come only from simulated feeds behind adapters (ADR-0009); SWBS
     codes, GSAP PR numbers and purchase orders come only from the simulated GSAP (ADR-0016). Purchase requests
-    on MAPP's side are in scope since constitution 4.4.0 (features 030–034, D-320).
+    on MAPP's side are in scope since constitution 4.4.0 (features 030–034, D-320); planning dashboards from
+    plan and finance data, PowerPoint/PDF export and overspend control since 4.6.0 (features 036–037, D-333).
 14. **Local only:** servers listen on `127.0.0.1`; no cloud services at run time; Docker or Podman only
     optionally, for PostgreSQL or for reviewers running the whole app from `compose.yaml` (ADR-0012);
     developing MAPP never needs them; no secrets in the repository.

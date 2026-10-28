@@ -45,6 +45,8 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
 | 033 | [033-simulated-gsap-pr-po](../../specs/033-simulated-gsap-pr-po/spec.md) | GSAP PR number and purchase order created by the simulated GSAP for a routed purchase request, shown on the purchase request and its lines, with Committed figures from the PO lines (D-321) | P1 | 032, 015 | Built — simulated GSAP PR and PO, booked as GSAP transactions, top-up; all gates and the whole PR→PO e2e green |
 | 034 | [034-planning-alignment](../../specs/034-planning-alignment/spec.md) | Planning rules aligned with Shell's process: line-item changes keep the activity's approval, Shell's finance lists and zero-based cost hierarchy, plan year current to +10 (D-322, D-325, D-326) | P1 | 006, 007, 002 | Built — line-item changes keep approval, Shell's lists, plan year current to +10; all gates and e2e green |
 | 035 | [035-product-name-spa-one](../../specs/035-product-name-spa-one/spec.md) | The product is shown as SP&A One: the coloured name is the logo (blue "&", yellow "One"), a "1" tile where the name does not fit and as the favicon, and every text, message and file name that names the product (D-332; constitution 4.5.0) | P1 | 001, 020 | In review — unit, contract and Go tests green; e2e in CI |
+| 036 | [036-planning-dashboards-and-export](../../specs/036-planning-dashboards-and-export/spec.md) | Executive and regional planning dashboards from plan and finance data (budget, planned, committed, actual by region, market, campaign and month; approvals, purchase requests, completeness), and export of plans and dashboards to PowerPoint and PDF (D-333) | P2 | 009, 010, 014, 015, 032 | Planned |
+| 037 | [037-overspend-control](../../specs/037-overspend-control/spec.md) | Overspend control: each budget owner chooses whether going over a plan, campaign or global budget warns (default) or is refused, enforced by the API (D-333) | P2 | 004, 005, 014, 016 | Planned |
 
 ## Scope boundaries
 
@@ -83,15 +85,17 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
    specs 015–017 name the permission each action needs.
 5. **Every change is logged** with the actor (mechanism from 001).
 6. **Out of scope:** Finance budgets module, accrual calculation, invoice approval, supporting documents on
-   purchase requests, Measure, live GSAP integration, e-mail, real sign-in (SSO), AI. Purchase requests on
+   purchase requests, Measure's performance reporting, live GSAP integration, e-mail and sharing to Outlook or
+   Teams, real sign-in (SSO), AI. Purchase requests on
    MAPP's side and a simulated GSAP for SWBS codes, GSAP PRs and POs are in scope since constitution 4.4.0
-   (features 030–034). GSAP transactions and daily rates come from simulated feeds
+   (features 030–034); planning dashboards, PowerPoint/PDF export and overspend control since 4.6.0 (036, 037).
+   GSAP transactions and daily rates come from simulated feeds
    behind adapters (015, 016; D-242, D-259, D-308). Mention the rest only as future integration points.
 
 ## Later (not in this phase)
 
 Finance module (finance budgets, accrual calculation, invoice approval, PR supporting documents), Measure
-dashboards, live GSAP integration (the real SWBS request/response, PR/PO/invoice sync and rate feed behind the
+performance dashboards (revenue, attribution, waterfall, ROI), live GSAP integration (the real SWBS request/response, PR/PO/invoice sync and rate feed behind the
 adapters the simulated GSAP uses), Microsoft Entra ID sign-in (roles from Entra),
 Azure hosting, templates, snapshots, related plans/activities, multi-year activity linking,
 custom goals, latest estimates, media codes, calendar feeds, AI assistant.
