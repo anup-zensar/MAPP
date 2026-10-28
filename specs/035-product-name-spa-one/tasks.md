@@ -99,6 +99,10 @@ text, `aria-label`s, expected strings in tests). Never in code comments, identif
 - [X] T016 [P] [US2] `frontend/src/features/dev/ComponentGalleryPage.tsx` Logo card: `<Logo />`,
   `<Logo size="lg" />`, `<LogoTile />`
 
+- [X] T026 [US2] Sign-in title: `ProductName` (the coloured name in the surrounding font) exported from
+  `frontend/src/ui/Logo/Logo.tsx` and used in `frontend/src/features/sign-in/SignInPage.tsx`; test in
+  `SignInPage.test.tsx` and `e2e/product-name.spec.ts` (US2 scenario 3)
+
 **Checkpoint**: US1 and US2 green — the MVP the client asked for.
 
 ## Phase 5: User Story 3 — Names the server writes (P2)

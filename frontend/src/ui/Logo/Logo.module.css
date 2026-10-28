@@ -3,6 +3,9 @@
   font-family: var(--font-heading);
   font-weight: var(--weight-heading);
   line-height: 1;
+}
+
+.productName {
   white-space: nowrap;
 }
 

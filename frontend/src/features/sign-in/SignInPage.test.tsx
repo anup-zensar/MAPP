@@ -19,13 +19,12 @@ afterEach(() => {
 });
 
 describe('SignInPage', () => {
-  it('welcomes people and says plainly that this is a demo sign-in with the shared password (FR-001, FR-002)', async () => {
+  it('welcomes people to SP&A One, its name in the logo colours, and says plainly that this is a demo sign-in with the shared password (FR-001, FR-002, 035 FR-003)', async () => {
     mockApi([reply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE })]);
     renderSignInPage();
 
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'Sign in to SP&A One' }),
-    ).toBeInTheDocument();
+    const title = screen.getByRole('heading', { level: 1, name: 'Sign in to SP&A One' });
+    expect(within(title).getByRole('img', { name: 'SP&A One' })).toBeInTheDocument();
     expect(
       screen.getByText('Plan your marketing work, from plan to line item.'),
     ).toBeInTheDocument();

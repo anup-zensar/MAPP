@@ -464,7 +464,8 @@ chevron crops).
   `lg`), no symbol beside it. "SP" and "A" `--ink`; "&" `--brand-name-amp` (`#003C88` light, 10.49 on
   Surface · `#6F9BD1` dark, 5.05); "One" `--brand-name-one` (`#AD8700` light — Primary Yellow's hue darkened,
   3.36 on Surface, 3.09 on Foundation Base · Primary Yellow `#FFC600` dark, 9.23). These are the only text
-  in yellow or a yellow shade; they never mean "act here". Screen readers hear one name, "SP&A One".
+  in yellow or a yellow shade; they never mean "act here". The sign-in title writes the name the same way
+  (`ProductName`, at the title's size). Screen readers hear one name, "SP&A One".
 - **`LogoTile`** where the name does not fit (the top bar below 960 px) and as the favicon: a 28 px tile,
   radius 8, `--brand-tile` (`#003C88`) with a "1" in `--on-brand-tile` (`#FFC600`, 6.65 on the tile), the
   same in both themes. No gradient. The star mark of versions 1–2.2 is retired.
@@ -924,7 +925,7 @@ of a dialog, panel or drawer (R14).
 ### 5.7 Brand
 
 **`Logo`** — §3.10: the name "SP&A One" in its colours (`md` 18 px; `lg` 20 px), one image named "SP&A One"
-for assistive technology. **`LogoTile`** — the 28 px blue tile with the yellow "1"; decoration, so the link
+for assistive technology. **`ProductName`** — the same coloured name in the surrounding font, for a title. **`LogoTile`** — the 28 px blue tile with the yellow "1"; decoration, so the link
 around it is named "SP&A One home".
 
 ### 5.8 App shell parts (`frontend/src/app/`)
@@ -937,7 +938,7 @@ around it is named "SP&A One home".
 | `AccountMenu` | Opened from the top bar's avatar button; a menu (§5.1 look) with name and role (not a link), My profile, Appearance (three choices, the current one ticked), a separator, Sign out |
 | `NotificationBell` | 40 px ghost icon button with `CountBadge`; opens a 360 wide popover (radius 8, `--shadow-md`) with the notices, **Mark all as read** (ghost) and links |
 | `ThemeToggle` | Becomes the Appearance choice inside `AccountMenu` |
-| `PublicLayout` (sign-in) | `--page-bg` canvas, one centred white card (max 400 wide, radius 16, padding 32) with the logo, the title "Sign in to SP&A One" (Jost 700 28), the fields (48 high) and **Sign in** (primary, `lg`, full width). The brand appears once (UI audit S-01); no gradient header (S-02). |
+| `PublicLayout` (sign-in) | `--page-bg` canvas, one centred white card (max 400 wide, radius 16, padding 32) with the logo, the title "Sign in to SP&A One" (Jost 700 28; the name in its colours through `ProductName`), the fields (48 high) and **Sign in** (primary, `lg`, full width). The brand appears once (UI audit S-01); no gradient header (S-02). |
 
 ---
 

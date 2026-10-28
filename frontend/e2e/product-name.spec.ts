@@ -59,6 +59,8 @@ test('035 US2: the name is the logo in Shell blue and yellow, with the "1" tile 
   await page.goto('/sign-in');
   const signInName = productName(page.getByRole('banner'));
   await expectNameColours(signInName, 'rgb(0, 60, 136)', 'rgb(173, 135, 0)');
+  const title = page.getByRole('heading', { name: 'Sign in to SP&A One', level: 1 });
+  await expectNameColours(productName(title), 'rgb(0, 60, 136)', 'rgb(173, 135, 0)');
   await expectNoAxeViolations(page);
 
   await page.emulateMedia({ colorScheme: 'dark' });

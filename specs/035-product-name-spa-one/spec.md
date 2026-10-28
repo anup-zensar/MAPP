@@ -26,6 +26,8 @@
 - Q: The star mark does not fit the theme — what replaces it? → A: no symbol: the coloured name is the
   logo. Where there is no room for the name (the narrow-screen top bar) and as the favicon, a small tile
   shows a Primary Yellow "1" on Shell dark blue (6.7:1), the same in both themes.
+- Q: The sign-in title "Sign in to SP&A One" looked unlike the logo — should it match? → A: yes: the name
+  inside the title takes the logo's colours, at the title's size and weight.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -81,10 +83,12 @@ favicon; read the name with a screen reader and copy it.
    stands next to it.
 2. **Given** the dark theme, **When** the name is shown, **Then** "SP" and "A" are Text Strong `#F5F5F5`,
    "&" is `#6F9BD1` and "One" is Primary Yellow `#FFC600`.
-3. **Given** a window narrower than 960 px, **When** the top bar is shown, **Then** its home link shows a
+3. **Given** the sign-in page, **When** its title is shown, **Then** "SP&A One" in "Sign in to SP&A One"
+   has the same colours as the logo, at the title's size.
+4. **Given** a window narrower than 960 px, **When** the top bar is shown, **Then** its home link shows a
    tile of Shell dark blue `#003C88` with a Primary Yellow "1", in both themes.
-4. **Given** the browser tab, **When** any page is open, **Then** the favicon is the same "1" tile.
-5. **Given** a screen reader, **When** it reaches the name, **Then** it reads "SP&A One" once, not letter
+5. **Given** the browser tab, **When** any page is open, **Then** the favicon is the same "1" tile.
+6. **Given** a screen reader, **When** it reaches the name, **Then** it reads "SP&A One" once, not letter
    by letter or in pieces.
 
 ---
@@ -136,7 +140,8 @@ log after re-seeding; trigger the currency lock and an unreadable request. Every
   or in any downloaded file name.
 - **FR-003**: In the wordmark, "SP" and "A" MUST be Text Strong, "&" MUST be Shell blue (`#003C88` light,
   `#6F9BD1` dark) and "One" MUST be Shell yellow (`#AD8700` light, `#FFC600` dark), each from a design
-  token. These two colours MUST NOT be used for anything but the product name and its tile.
+  token, in the logo and wherever a page title writes the name (the sign-in title). These two colours MUST
+  NOT be used for anything but the product name and its tile.
 - **FR-004**: The wordmark MUST be exposed to assistive technology and to copy as the single text
   "SP&A One"; the coloured parts MUST NOT change how it is read.
 - **FR-005**: The star mark MUST be removed everywhere: the name is the logo. Where the name does not fit

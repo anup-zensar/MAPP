@@ -12,6 +12,7 @@ import { Avatar } from '@/ui/Avatar/Avatar';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { safeNext } from '@/session/safe-next';
+import { ProductName } from '@/ui/Logo/Logo';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useDemoPeople } from './api';
 import { noticeOf } from './schemas';
@@ -42,7 +43,9 @@ export function SignInPage() {
     <PublicLayout>
       <div className={styles.card}>
         <div className={styles.heading}>
-          <h1 className={styles.title}>Sign in to SP&A One</h1>
+          <h1 className={styles.title}>
+            Sign in to <ProductName />
+          </h1>
           <p className={styles.subtitle}>Plan your marketing work, from plan to line item.</p>
         </div>
         <Notice />

@@ -460,11 +460,12 @@ changes.
   carrier of meaning.
 
 **Product name** (feature 035, D-332): the name **SP&A One** is the logo; no other symbol stands next to
-it. "SP" and "A" are Text Strong; "&" is Shell dark blue (`#003C88` light, `#6F9BD1` dark); "One" is Shell
-yellow — `#AD8700` in the light theme (Primary Yellow's hue darkened to 3.4:1 on Surface, because Primary
-Yellow text is 1.45:1) and Primary Yellow `#FFC600` in the dark theme (9.2:1). Where the name does not fit,
-and as the favicon, a Shell dark blue tile carries a Primary Yellow "1" (6.7:1). These are the only text in
-yellow or a shade of yellow and the only uses of these values; they never mean "act here". The name is a
+it. "SP" and "A" are Text Strong; "&" is Shell dark blue (`#003C88` light, `#6F9BD1` dark); "One" is
+Shell yellow — `#AD8700` in the light theme (Primary Yellow's hue darkened to 3.4:1 on Surface, because
+Primary Yellow text is 1.45:1) and Primary Yellow `#FFC600` in the dark theme (9.2:1). Where the name
+does not fit, and as the favicon, a Shell dark blue tile carries a Primary Yellow "1" (6.7:1). The name
+keeps these colours where a page title writes it (the sign-in page). These are the only text in yellow
+or a shade of yellow and the only uses of these values; they never mean "act here". The name is a
 logotype (WCAG 2.2 SC 1.4.3) and is exposed to assistive technology as the single text "SP&A One".
 
 **Rationale:** the palette is Shell's; using it exactly is what makes MAPP recognisably part
