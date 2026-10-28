@@ -13,12 +13,13 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# backend, frontend and e2e are the required checks (.github/rulesets). Each part's work is spread over jobs that run
+# side by side, and the job named after the part fails when any of them failed.
 jobs:
   # Which parts a pull request or push changes. Documentation is read by no job, so a docs-only change skips them
   # all; a skipped job counts as passed for required checks. A push compares with the branch's last successful run,
   # so it also covers a run it cancelled; with no such run, or no readable diff, everything runs.
   changes:
-    name: changes
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -60,39 +61,18 @@ jobs:
           echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
           echo "backend: $backend, frontend: $frontend"
 
-  backend:
-    name: backend
+  backend-vet:
     needs: changes
-    if: ${{ !cancelled() && (needs.changes.outputs.backend != 'false') }}
+    if: ${{ !cancelled() && needs.changes.outputs.backend != 'false' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read
-      pull-requests: read
-    defaults:
+    timeout-minutes: 15
+    defaults: &in-backend
       run:
         working-directory: backend
-    # The scope-isolation tests run on PostgreSQL 18 (constitution VI, B9). Trust authentication is safe here:
-    # the service is reachable only from this job, on the runner's loopback address, and holds only test data.
-    services:
-      postgres:
-        image: postgres:18
-        env:
-          POSTGRES_USER: mapp
-          POSTGRES_DB: mapp
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports:
-          - 127.0.0.1:5432:5432
-        options: >-
-          --health-cmd "pg_isready -U mapp"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
     steps:
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-go@v7
+      - &setup-go
+        uses: actions/setup-go@v7
         with:
           go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
@@ -106,16 +86,6 @@ jobs:
           fi
       - name: Vet
         run: go vet ./...
-      - name: Lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          version: v2.15.0
-          working-directory: backend
-          # New and changed lines only, diffed with git: GitHub's pull-request diff API stops at 300 files.
-          args: >-
-            ${{ github.event_name == 'pull_request'
-                && format('--new-from-merge-base=origin/{0}', github.base_ref)
-                || format('--new-from-rev={0}', github.event.before) }}
       - name: Generated queries
         run: |
           go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1 generate
@@ -126,87 +96,53 @@ jobs:
             echo "$stale"
             exit 1
           fi
-      - name: Test
-        env:
-          TEST_DATABASE_URL: postgres://mapp@127.0.0.1:5432/postgres?sslmode=disable
-        run: |
-          set -o pipefail
-          go test -race -covermode=atomic -coverprofile=coverage.out ./... | tee go-test.txt
       # The success criteria's timings, which the race detector would distort; under -race these tests skip.
       - name: Timing tests
         run: >-
           go test -count=1
           -run 'TestQueryLog_50000Entries_SC006|TestQuery_StressYear_SC004|TestImport_FiveThousandRows_SC004|TestTransactions_TwentyThousand_SC004|TestHome_LargeScope_SC004'
           ./internal/history/ ./internal/allwork/ ./internal/financials/ ./internal/home/
-      - name: Vulnerabilities
-        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: backend-test
-          path: |
-            backend/go-test.txt
-            backend/coverage.out
-          retention-days: 30
-          if-no-files-found: ignore
 
-  frontend:
-    name: frontend
+  backend-lint:
     needs: changes
-    if: ${{ !cancelled() && (needs.changes.outputs.frontend != 'false') }}
+    if: ${{ !cancelled() && needs.changes.outputs.backend != 'false' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: frontend
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read
+    defaults: *in-backend
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
         with:
-          node-version: 24
-      - name: Install
-        env:
-          COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
-        run: |
-          corepack enable
-          pnpm install --frozen-lockfile
-      - name: Format
-        run: pnpm run format:check
-      - name: Type check
-        run: pnpm run typecheck
+          fetch-depth: 0
+      - *setup-go
       - name: Lint
-        run: pnpm run lint
-      - name: API types
-        run: pnpm run api:check
-      - name: Test
-        run: pnpm run test:coverage
-      - name: Build
-        run: pnpm run build
-      - name: Audit
-        run: pnpm audit --prod --audit-level high
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v7
+        uses: golangci/golangci-lint-action@v9
         with:
-          name: frontend-test
-          path: |
-            frontend/coverage/lcov.info
-            frontend/test-results/junit.xml
-          retention-days: 30
-          if-no-files-found: ignore
+          version: v2.15.0
+          working-directory: backend
+          # New and changed lines only, diffed with git: GitHub's pull-request diff API stops at 300 files.
+          args: >-
+            ${{ github.event_name == 'pull_request'
+                && format('--new-from-merge-base=origin/{0}', github.base_ref)
+                || format('--new-from-rev={0}', github.event.before) }}
+      - name: Vulnerabilities
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 
-  e2e:
-    name: e2e
+  backend-test:
     needs: changes
-    if: ${{ !cancelled() && (needs.changes.outputs.backend != 'false' || needs.changes.outputs.frontend != 'false') }}
+    if: ${{ !cancelled() && needs.changes.outputs.backend != 'false' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    defaults:
-      run:
-        working-directory: frontend
-    # The end-to-end tests run the API on PostgreSQL 18, seeded afresh by the test set-up (constitution VI).
-    services:
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    defaults: *in-backend
+    # The scope-isolation tests run on PostgreSQL 18 (constitution VI, B9). Trust authentication is safe here:
+    # the service is reachable only from this job, on the runner's loopback address, and holds only test data.
+    services: &postgres
       postgres:
         image: postgres:18
         env:
@@ -222,27 +158,173 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
+      - *setup-go
+      # Each group of the slowest packages has a shard of its own, sized by CI time; the last shard tests every
+      # other package, so a new one is never left out.
+      - name: Test
+        env:
+          TEST_DATABASE_URL: postgres://mapp@127.0.0.1:5432/postgres?sslmode=disable
+          INDEX: ${{ strategy.job-index }}
+          TOTAL: ${{ strategy.job-total }}
+        run: |
+          set -o pipefail
+          groups=(
+            "app budget campaign people financials plan"
+            "allwork approval settings access"
+            "purchaserequest home activity lineitem"
+          )
+          [ "${#groups[@]}" -eq $((TOTAL - 1)) ] || { echo "Give the matrix one shard per group, plus one."; exit 1; }
+          if [ "$INDEX" -lt "${#groups[@]}" ]; then
+            packages="$(printf 'mapp/internal/%s\n' ${groups[INDEX]})"
+          else
+            packages="$(go list ./... | grep -vxF "$(printf 'mapp/internal/%s\n' ${groups[*]})")"
+          fi
+          go test -race -covermode=atomic -coverprofile=coverage.out $packages | tee go-test.txt
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
         with:
-          go-version-file: backend/go.mod
-          cache-dependency-path: backend/go.sum
-      - uses: actions/setup-node@v7
+          name: backend-test-${{ matrix.shard }}
+          path: |
+            backend/go-test.txt
+            backend/coverage.out
+          retention-days: 30
+          if-no-files-found: ignore
+
+  backend:
+    needs: [changes, backend-vet, backend-lint, backend-test]
+    if: ${{ !cancelled() && needs.changes.outputs.backend != 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - &fail-if-a-job-failed
+        name: Fail if a job it needs failed
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+
+  frontend-checks:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.frontend != 'false' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults: &in-frontend
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - &setup-node
+        uses: actions/setup-node@v7
         with:
           node-version: 24
-      - name: Install
+      - &install
+        name: Install
         env:
           COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
         run: |
           corepack enable
           pnpm install --frozen-lockfile
+      - name: Format
+        run: pnpm run format:check
+      - name: Type check
+        run: pnpm run typecheck
+      - name: Lint
+        run: pnpm run lint
+      - name: API types
+        run: pnpm run api:check
+      - name: Build
+        run: pnpm run build
+      - name: Audit
+        run: pnpm audit --prod --audit-level high
+
+  frontend-test:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.frontend != 'false' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    defaults: *in-frontend
+    steps:
+      - uses: actions/checkout@v7
+      - *setup-node
+      - *install
+      # A worker on every core: Vitest's default keeps one free for itself, which here only waits for the workers.
+      - name: Test
+        run: pnpm run test:coverage --shard=${{ matrix.shard }}/${{ strategy.job-total }} --maxWorkers=100% --reporter=blob
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-blob-${{ matrix.shard }}
+          path: frontend/.vitest/blob/
+          include-hidden-files: true
+          retention-days: 1
+          if-no-files-found: ignore
+
+  # Also merges the shards' results into one test report and one coverage report.
+  frontend:
+    needs: [changes, frontend-checks, frontend-test]
+    if: ${{ !cancelled() && needs.changes.outputs.frontend != 'false' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults: *in-frontend
+    steps:
+      - uses: actions/checkout@v7
+      - *setup-node
+      - *install
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: frontend-blob-*
+          path: frontend/.vitest/blob
+          merge-multiple: true
+      - name: Test results
+        run: pnpm run test:coverage --merge-reports
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-test
+          path: |
+            frontend/coverage/lcov.info
+            frontend/test-results/junit.xml
+          retention-days: 30
+          if-no-files-found: ignore
+      - *fail-if-a-job-failed
+
+  e2e-test:
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.outputs.backend != 'false' || needs.changes.outputs.frontend != 'false') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    defaults: *in-frontend
+    # The end-to-end tests run the API on PostgreSQL 18, seeded afresh by the test set-up (constitution VI).
+    services: *postgres
+    steps:
+      - uses: actions/checkout@v7
+      - *setup-go
+      - *setup-node
+      - *install
+      # The tests run headless, which needs only Chromium's headless shell.
       - name: Install browser
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps --only-shell chromium
       - name: End-to-end
-        run: pnpm run test:e2e
+        run: pnpm run test:e2e --shard=${{ matrix.shard }}/${{ strategy.job-total }}
       - name: Upload traces
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: e2e
+          name: e2e-${{ matrix.shard }}
           path: frontend/test-results/
           retention-days: 30
+
+  e2e:
+    needs: [changes, e2e-test]
+    if: ${{ !cancelled() && (needs.changes.outputs.backend != 'false' || needs.changes.outputs.frontend != 'false') }}
+    runs-on: ubuntu-latest
+    steps:
+      - *fail-if-a-job-failed
