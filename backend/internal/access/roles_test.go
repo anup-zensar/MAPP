@@ -11,7 +11,6 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// The role page groups the fixed permissions as Table A does (FR-001).
 func TestPermissions_GroupedAsTableA_FR001(t *testing.T) {
 	t.Parallel()
 	got := newFixture(t).service.Permissions()
@@ -22,8 +21,8 @@ func TestPermissions_GroupedAsTableA_FR001(t *testing.T) {
 		groups = append(groups, g.Name)
 		sizes = append(sizes, len(g.Permissions))
 	}
-	if !slices.Equal(groups, authz.Groups) || !slices.Equal(sizes, []int{11, 3, 2, 2, 7}) {
-		t.Errorf("groups = %q of sizes %v, want Table A's five groups of 11, 3, 2, 2 and 7", groups, sizes)
+	if !slices.Equal(groups, authz.Groups) || !slices.Equal(sizes, []int{11, 3, 4, 2, 2, 7}) {
+		t.Errorf("groups = %q of sizes %v, want Table A's six groups of 11, 3, 4, 2, 2 and 7 (032 FR-049)", groups, sizes)
 	}
 	first := got.Groups[0].Permissions[0]
 	if first != (PermissionInfo{Key: authz.PlansView, Label: "View plans and everything in them", Scoped: true}) {
@@ -50,7 +49,7 @@ func TestListRoles_AdministratorFirstWithLocks_FR018(t *testing.T) {
 		t.Errorf("roles = %q, want %q", names, want)
 	}
 	admin := roles[0]
-	if len(admin.Permissions) != 25 || len(admin.Locks) != 5 || admin.Locks[0].Reason != msgAdministratorLock ||
+	if len(admin.Permissions) != 29 || len(admin.Locks) != 5 || admin.Locks[0].Reason != msgAdministratorLock ||
 		len(admin.People) != 1 || admin.People[0].ID != alex.ID {
 		t.Errorf("Administrator = %+v", admin)
 	}
@@ -161,7 +160,6 @@ func TestUpdateRole_ChangedFieldsLogged_FR018_FR037(t *testing.T) {
 	}
 }
 
-// The Administrator role can't be changed or deleted (FR-018, message 11).
 func TestAdministratorRole_Locked_FR018(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -203,7 +201,7 @@ func TestDeleteRole_InUseThenBinAndUndo_FR018(t *testing.T) {
 		t.Errorf("bin entry %+v, rules %+v; want the role in the bin and no role for new people", entry, rules)
 	}
 	entries := f.log(t)
-	last := entries[len(entries)-2] // the rule change, then the delete
+	last := entries[len(entries)-2]
 	if last.RecordType != RulesKind || len(last.Changes) != 1 || last.Changes[0].OldText != "Viewer" || last.Changes[0].NewText != "No role" {
 		t.Errorf("last log entry = %+v, want the rule change Viewer → No role", last)
 	}

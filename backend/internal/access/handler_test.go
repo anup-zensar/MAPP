@@ -75,7 +75,7 @@ func TestAccessOperations_NeedAccessManage_FR009_FR017(t *testing.T) {
 		{http.MethodPost, "/api/v1/roles", map[string]any{"name": "Analyst", "permissions": []string{"plans.view"}, "defaultScope": "all"}},
 		{http.MethodGet, "/api/v1/roles/RL-1005", nil},
 		{http.MethodPatch, "/api/v1/roles/RL-1005", map[string]any{"description": "Sees plans.", "version": 1}},
-		{http.MethodDelete, "/api/v1/roles/RL-1006", nil},
+		{http.MethodDelete, "/api/v1/roles/RL-1007", nil},
 		{http.MethodGet, "/api/v1/people/U-1006/roles", nil},
 		{http.MethodPost, "/api/v1/people/U-1006/roles/impact", map[string]any{"roles": []any{}, "version": 1}},
 		{http.MethodPut, "/api/v1/people/U-1006/roles", map[string]any{"roles": []any{}, "version": 1}},
@@ -159,15 +159,15 @@ func TestRoles_CreateChangeDelete_FR018(t *testing.T) {
 	created := alex.Do(t, http.MethodPost, "/api/v1/roles", map[string]any{"name": "Analyst", "description": "Reads and exports.",
 		"permissions": []string{"data.export", "plans.view"}, "defaultScope": "myTeams"})
 	taken := alex.Do(t, http.MethodPost, "/api/v1/roles", map[string]any{"name": "analyst", "permissions": []string{"plans.view"}, "defaultScope": "all"})
-	changed := alex.Do(t, http.MethodPatch, "/api/v1/roles/RL-1006", map[string]any{"permissions": []string{"plans.view", "finance.view"}, "version": 1})
+	changed := alex.Do(t, http.MethodPatch, "/api/v1/roles/RL-1007", map[string]any{"permissions": []string{"plans.view", "finance.view"}, "version": 1})
 	adminChange := alex.Do(t, http.MethodPatch, "/api/v1/roles/RL-1001", map[string]any{"name": "Boss", "version": 1})
 	inUse := alex.Do(t, http.MethodDelete, "/api/v1/roles/RL-1003", nil)
-	deleted := alex.Do(t, http.MethodDelete, "/api/v1/roles/RL-1006", nil)
-	gone := alex.Do(t, http.MethodGet, "/api/v1/roles/RL-1006", nil)
+	deleted := alex.Do(t, http.MethodDelete, "/api/v1/roles/RL-1007", nil)
+	gone := alex.Do(t, http.MethodGet, "/api/v1/roles/RL-1007", nil)
 
 	var r role
 	created.Decode(t, &r)
-	if created.Status != http.StatusCreated || r.ID != "RL-1006" || !slices.Equal(r.Permissions, []string{"plans.view", "data.export"}) {
+	if created.Status != http.StatusCreated || r.ID != "RL-1007" || !slices.Equal(r.Permissions, []string{"plans.view", "data.export"}) {
 		t.Errorf("POST = %d %s", created.Status, created.Body)
 	}
 	assertError(t, taken, http.StatusBadRequest, "validation_failed", "")
@@ -187,7 +187,7 @@ func TestRoles_CreateChangeDelete_FR018(t *testing.T) {
 	assertError(t, gone, http.StatusNotFound, "not_found", "This role no longer exists — someone may have deleted it.")
 
 	undone := alex.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+result.RecycleBinEntry.ID+"/undo", nil)
-	back := alex.Do(t, http.MethodGet, "/api/v1/roles/RL-1006", nil)
+	back := alex.Do(t, http.MethodGet, "/api/v1/roles/RL-1007", nil)
 	if undone.Status != http.StatusOK || back.Status != http.StatusOK {
 		t.Errorf("Undo = %d %s; GET after = %d", undone.Status, undone.Body, back.Status)
 	}
@@ -197,7 +197,7 @@ func TestRoles_CreateChangeDelete_FR018(t *testing.T) {
 		Total int
 	}
 	alex.Do(t, http.MethodGet, "/api/v1/roles", nil).Decode(t, &page)
-	if page.Total != 6 || page.Items[0].Name != "Administrator" || len(page.Items[0].Locks) != 5 || len(page.Items[0].Permissions) != 25 {
+	if page.Total != 7 || page.Items[0].Name != "Administrator" || len(page.Items[0].Locks) != 5 || len(page.Items[0].Permissions) != 29 {
 		t.Errorf("roles = %d, first %+v", page.Total, page.Items[0])
 	}
 }

@@ -63,8 +63,12 @@ func New(tb testing.TB, data Data) *Server {
 	tb.Helper()
 	slog.SetDefault(slog.New(slog.DiscardHandler))
 	fill := loadDemo
-	if data == Volume {
+	switch data {
+	case Volume:
 		fill = loadVolume
+	case PurchaseRequests:
+		fill = loadPurchaseRequests
+	case Demo:
 	}
 	return serve(tb, dbtest.NewFilledDB(tb, string(data)+volumeVersion, func(db *database.DB) { fill(tb, db) }))
 }
