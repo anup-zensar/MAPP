@@ -26,8 +26,9 @@ async function colourOf(name: Locator, part: string): Promise<string> {
 
 async function expectNameColours(name: Locator, amp: string, one: string) {
   await expect(name).toBeVisible();
-  expect(await colourOf(name, '&')).toBe(amp);
-  expect(await colourOf(name, 'One')).toBe(one);
+  // The system theme reaches the page after emulateMedia, so the colours are awaited, not read once.
+  await expect.poll(() => colourOf(name, '&')).toBe(amp);
+  await expect.poll(() => colourOf(name, 'One')).toBe(one);
 }
 
 test('035 US1: the product is called SP&A One on sign-in and every page of the navigation (FR-001, FR-002)', async ({
