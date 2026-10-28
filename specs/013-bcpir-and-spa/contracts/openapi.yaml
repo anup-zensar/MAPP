@@ -1,0 +1,60 @@
+# Feature 013 — fragment merged into backend/api/openapi.yaml.
+# Merge rules: (1) the path block goes after /api/v1/plans/{planId}/budget-by-month; (2) the schema block goes
+# after the BudgetByMonth schemas; (3) the tag "SP&A" goes after "Budget phasing"; (4) the bcpir additions to
+# PlanSummary, GET /api/v1/plans, the All work query parameters, AllWorkRow and AllWorkFilters listed at the end.
+tags:
+  - name: SP&A
+    description: "The SP&A view of a plan or campaign (feature 013)"
+paths:
+  /api/v1/plans/{planId}/spa:
+    parameters:
+      - $ref: "#/components/parameters/PlanId"
+    get:
+      tags: [SP&A]
+      operationId: getSpaView
+      summary: The SP&A view of the plan, or of one of its campaigns
+      description: >-
+        Planned cost, committed, actual spend, remaining, utilisation and variance of the scope, by quarter and
+        month, by a chosen dimension and by activity, with the budget and procurement panels (013 FR-005 –
+        FR-022). Amounts are in the signed-in person's display currency. Financial figures are null without
+        finance.view in the plan.
+      parameters:
+        - name: campaignId
+          in: query
+          description: A campaign of the plan; the whole plan when not sent.
+          schema:
+            type: string
+            pattern: ^C-[0-9]+$
+        - name: dimension
+          in: query
+          description: A key of SpaView.dimensions; the default dimension when not sent.
+          schema:
+            type: string
+            maxLength: 80
+      responses:
+        "200":
+          description: The view (013 data-model §3).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpaView"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+# components.schemas: SpaRecordRef, SpaContribution, SpaPlan, SpaHeadline, SpaPeriod, SpaPeriods, SpaDimension,
+# SpaDimensionRow, SpaDimensionBreakdown, SpaLineItemRow, SpaActivityRow, SpaBudgetPanel, SpaPurchaseRequest,
+# SpaProcurementPanel, SpaView — as merged in backend/api/openapi.yaml (search "SpaView"); fields per
+# data-model.md §3.
+#
+# Additions (rule 4):
+# - PlanSummary: required property `bcpir: boolean` ("BCPIR plan", 013 FR-002).
+# - GET /api/v1/plans and the All work query (GET /api/v1/all-work, /export, /breakdown): query `bcpir` enum
+#   [include, only, exclude], default include (013 FR-003).
+# - AllWorkRow: optional `bcpir: boolean` (plans only). AllWorkFilters: `bcpir` with the same enum.
