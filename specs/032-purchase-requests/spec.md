@@ -508,6 +508,9 @@ amounts (no goods-receipt data exists).
   round about to start (approval, or approval for modification) is active and of the right type; and every field needed to submit (MoA approver, overall limits, attributes
   marked needed to submit) is filled. Every failure MUST be reported at once, naming the activities, line
   items and fields (013 FR-030, FR-007).
+  *Amended by [037 FR-019](../037-overspend-control/spec.md) (D-349): also refused while any line's activity
+  has line items exceeding its planned cost (negative unassigned planned cost), whatever its budgets'
+  overspend setting, naming each such activity and the overage with the other problems.*
 - **FR-022**: System MUST run a submission through the Approval workflow (approval rounds of type Purchase
   request) and Submit changes through the Approval workflow for modification (type Modified purchase
   request), using the approval engine of feature 031, and set the PR status exactly as the Status Model
