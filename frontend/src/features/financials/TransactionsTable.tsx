@@ -36,12 +36,7 @@ export interface TransactionsTableProps {
   narrow: boolean;
 }
 
-/**
- * The transactions (FR-021): transaction (a link that opens its details panel), type, posting
- * date, vendor, amount in its own currency with the display currency under it, the linked line
- * item and activity or a "Not linked" chip, and the SWBS code. Every heading but SWBS code sorts.
- * On a phone it becomes one card per transaction (US3 scenario 6).
- */
+/** Every heading but SWBS code sorts; on a phone, one card per transaction (US3 scenario 6). */
 export function TransactionsTable({
   rows,
   sort,
@@ -214,13 +209,14 @@ function Amount({ row }: { row: FinancialTransactionRow }) {
   );
 }
 
-/** The line item and activity, each a link; or the "Not linked" or recycle-bin chip. */
+/** The line item and activity, each a link; or the "Not linked" chip with its reason, or the recycle-bin chip. */
 function LinkedTo({ row }: { row: FinancialTransactionRow }) {
   const { link } = row;
   if (link.state === 'notLinked') {
     return (
       <span className={styles.linked}>
         <StatusChip tone="review">{NOT_LINKED}</StatusChip>
+        {link.reason && <span className={styles.secondary}>{link.reason}</span>}
       </span>
     );
   }

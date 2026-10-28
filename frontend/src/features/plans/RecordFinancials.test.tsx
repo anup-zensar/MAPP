@@ -82,7 +82,7 @@ describe('RecordFinancials (015 FR-018, FR-019)', () => {
     );
     expect(
       within(section).getByRole('link', { name: 'View all 12 transactions in Financials' }),
-    ).toHaveAttribute('href', '/financials?record=P-1001');
+    ).toHaveAttribute('href', '/financials?recordId=P-1001');
     expect(within(section).getByText(/GSAP data as of .* · GSAP demo feed/)).toBeInTheDocument();
   });
 
@@ -106,6 +106,33 @@ describe('RecordFinancials (015 FR-018, FR-019)', () => {
     expect(
       screen.getByRole('link', { name: 'Committed above planned cost on 2 line items' }),
     ).toHaveAttribute('href', '/line-items/L-1003');
+  });
+
+  it('marks a child with a line item committed above its planned cost (US2 scenario 3)', async () => {
+    renderSection({
+      body: view({
+        record: { type: 'initiative', id: 'I-1002', name: 'Print & outdoor' },
+        breakdownLevel: 'activity',
+        breakdown: [
+          {
+            record: { type: 'activity', id: 'A-1003', name: 'Billboard winter wave' },
+            figures: figures({ lineItemsAbovePlanned: 1 }),
+          },
+          {
+            record: { type: 'activity', id: 'A-1004', name: 'Trade magazine ads' },
+            figures: figures(),
+          },
+        ],
+      }),
+    });
+
+    const table = await screen.findByRole('table', { name: 'By activity' });
+    expect(within(table).getByRole('row', { name: /^Billboard winter wave/ })).toHaveTextContent(
+      'Billboard winter wave · Committed above planned cost on 1 line item',
+    );
+    expect(within(table).getByRole('row', { name: /^Trade magazine ads/ })).not.toHaveTextContent(
+      'Committed above',
+    );
   });
 
   it('says when there are no transactions yet (FR-014)', async () => {

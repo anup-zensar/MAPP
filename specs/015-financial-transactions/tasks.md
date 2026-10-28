@@ -9,7 +9,7 @@ description: "Task list for feature 015 Financial Transactions"
 > The web tasks were built by the UI lanes, partly under other names: `features/plans/RecordFinancials.tsx`
 > (plan, campaign and initiative), `features/line-items/GsapFigures.tsx` and `FinancialsSection.tsx` (activity
 > and line item), `features/home/FinancialsCard.tsx` (Home) and `features/financials/` (page, details panel,
-> import, import history, link). **Open:** T021, T025, T030, T035 (end-to-end journeys); T044 (the Home card has
+> import, import history, link). **Open:** T044 (the Home card has
 > no no-access state yet); T045 (the linked-transactions sentence is in the line-item and activity delete
 > dialogs only, not yet in the campaign, initiative and plan dialogs); T048 (product documents); T049, T050.
 
@@ -142,7 +142,9 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
   - delete `frontend/src/features/line-items/FromFinanceSection.tsx` and the three `FROM_FINANCE` texts
     in `lineItemText.ts`;
   - update `LineItemCreatePage.test.tsx`, `LineItemEditPage.test.tsx` and `LineItemPage.test.tsx`.
-- [ ] T021 [US1] (W) e2e journey 1 in `frontend/e2e/financials.spec.ts` (with axe on the activity page).
+- [x] T021 [US1] (W) e2e journey 1 in `frontend/e2e/financials.spec.ts` (with axe on the activity page).
+  - Done 2026-10-28. The line item's "SWBS code: …" line of scenario 6 is now 030's SWBS request card, so it is
+    not checked here (030's e2e covers it).
 
 **Checkpoint**: US1 works on the seed.
 
@@ -159,7 +161,13 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
   recordId={plan.id} variant="page" />` right after `PlanSummaryCards` (FR-018).
 - [x] T024 [P] [US2] (W) In `frontend/src/features/campaigns/CampaignPanel.tsx` and `InitiativePanel.tsx`
   (+ tests), add `<FinancialsCard variant="panel" />` after Budget and cost (FR-019).
-- [ ] T025 [US2] (W) e2e journey 2 in `frontend/e2e/financials.spec.ts`.
+- [x] T025 [US2] (W) e2e journey 2 in `frontend/e2e/financials.spec.ts`.
+  - Done 2026-10-28. Two bugs found and fixed, each with a component test that failed first
+    (`RecordFinancials.test.tsx`): **View all n transactions** on the plan, campaign and initiative linked to
+    `/financials?record=…`, which the Financials page ignores, so it showed every transaction (scenario 5) — it
+    now links to `?recordId=…`; and a breakdown row showed no marker when one of its line items was committed
+    above its planned cost (scenario 3) — it now says "Committed above planned cost on 1 line item" (on the
+    campaign and initiative rows too, as their line items include it).
 
 ---
 
@@ -183,7 +191,10 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
   - record chip, summary cards, sortable table, pager, phone card layout and empty result (FR-021).
 - [x] T029 [US3] (W) Write `frontend/src/features/financials/TransactionPanel.tsx` (+ test): fields,
   linked path, matched-by, import line and timestamps; actions hidden in this story (FR-022).
-- [ ] T030 [US3] (W) e2e journey 3, with axe on the Financials page and the panel.
+- [x] T030 [US3] (W) e2e journey 3, with axe on the Financials page and the panel (`frontend/e2e/financials-page.spec.ts`).
+  - Done 2026-10-28. Bug found and fixed (test first in `FinancialsPage.test.tsx`): a not-linked row showed the
+    chip but not its reason (scenario 4); `TransactionsTable` now shows the reason under the chip. The tab counts
+    of scenario 1 are left to the component test: other journeys add transactions to the shared demo data.
 
 **Checkpoint**: the three P1 stories are demonstrable; the MVP of BUS.FIN.080 is met.
 
@@ -210,7 +221,9 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
   - toast and invalidation.
   - Write `ImportHistoryPanel.tsx` (+ test).
   - Wire both from `FinancialsPage`.
-- [ ] T035 [US4] (W) e2e journey 4 (generated 3-row file), with axe on the dialog.
+- [x] T035 [US4] (W) e2e journey 4 (generated 3-row file), with axe on the dialog (`frontend/e2e/financials-page.spec.ts`).
+  - Done 2026-10-28: the file links to a line item the test creates (its HX key), not to Grand opening Shanghai,
+    so the demo figures the other journeys read stay as seeded.
 
 ---
 
