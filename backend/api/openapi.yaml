@@ -101,6 +101,8 @@ tags:
     description: "Help texts of built-in fields, maintained in Settings (feature 016)"
   - name: Budget phasing
     description: "Budget by month of plans, campaigns and initiatives (feature 016)"
+  - name: SP&A
+    description: "The SP&A view of a plan or campaign (feature 013)"
   - name: Split activity
     description: "Splitting one activity into two (feature 016)"
   - name: Approval delegations
@@ -2450,6 +2452,7 @@ paths:
           description: Part of the name or of the ID, ignoring letter case and surrounding spaces.
           schema:
             type: string
+        - $ref: "#/components/parameters/AllWorkBcpir"
         - $ref: "#/components/parameters/PlansYearFrom"
         - $ref: "#/components/parameters/PlansYearTo"
         - $ref: "#/components/parameters/PlansType"
@@ -4381,6 +4384,7 @@ paths:
         - $ref: "#/components/parameters/AllWorkBusinessUnit"
         - $ref: "#/components/parameters/AllWorkActivityType"
         - $ref: "#/components/parameters/AllWorkStrategic"
+        - $ref: "#/components/parameters/AllWorkBcpir"
         - $ref: "#/components/parameters/AllWorkFinance"
         - $ref: "#/components/parameters/AllWorkShowLevels"
         - $ref: "#/components/parameters/AllWorkSearch"
@@ -4470,6 +4474,7 @@ paths:
         - $ref: "#/components/parameters/AllWorkBusinessUnit"
         - $ref: "#/components/parameters/AllWorkActivityType"
         - $ref: "#/components/parameters/AllWorkStrategic"
+        - $ref: "#/components/parameters/AllWorkBcpir"
         - $ref: "#/components/parameters/AllWorkFinance"
         - $ref: "#/components/parameters/AllWorkShowLevels"
         - $ref: "#/components/parameters/AllWorkSearch"
@@ -7128,6 +7133,48 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
+  /api/v1/plans/{planId}/spa:
+    parameters:
+      - $ref: "#/components/parameters/PlanId"
+    get:
+      tags: [SP&A]
+      operationId: getSpaView
+      summary: The SP&A view of the plan, or of one of its campaigns
+      description: >-
+        Planned cost, committed, actual spend, remaining, utilisation and variance of the scope, by quarter and
+        month, by a chosen dimension and by activity, with the budget and procurement panels (013 FR-005 –
+        FR-022). Amounts are in the signed-in person's display currency. Financial figures are null without
+        finance.view in the plan.
+      parameters:
+        - name: campaignId
+          in: query
+          description: A campaign of the plan; the whole plan when not sent.
+          schema:
+            type: string
+            pattern: ^C-[0-9]+$
+        - name: dimension
+          in: query
+          description: A key of SpaView.dimensions; the default dimension when not sent.
+          schema:
+            type: string
+            maxLength: 80
+      responses:
+        "200":
+          description: The view (013 data-model §3).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpaView"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
   /api/v1/activities/{activityId}/split-options:
     parameters:
       - $ref: "#/components/parameters/ActivityId"
@@ -7234,6 +7281,7 @@ paths:
         - $ref: "#/components/parameters/AllWorkBusinessUnit"
         - $ref: "#/components/parameters/AllWorkActivityType"
         - $ref: "#/components/parameters/AllWorkStrategic"
+        - $ref: "#/components/parameters/AllWorkBcpir"
         - $ref: "#/components/parameters/AllWorkPlanType"
         - $ref: "#/components/parameters/AllWorkPlanCurrency"
         - $ref: "#/components/parameters/AllWorkAttr"
@@ -7862,6 +7910,17 @@ components:
       name: strategic
       in: query
       description: Strategic / AOP plans.
+      schema:
+        type: string
+        enum:
+          - include
+          - only
+          - exclude
+        default: include
+    AllWorkBcpir:
+      name: bcpir
+      in: query
+      description: BCPIR plans (013 FR-003).
       schema:
         type: string
         enum:
@@ -12117,6 +12176,9 @@ components:
         status:
           $ref: "#/components/schemas/PlanStatus"
         aop:
+          type: boolean
+        bcpir:
+          description: "013. BCPIR plan. Optional in the contract; always sent once its feature is built (D-298)."
           type: boolean
         owner:
           oneOf:
@@ -17168,6 +17230,9 @@ components:
         strategic:
           type: boolean
           description: Plans only - Strategic / AOP plan (the AOP tag).
+        bcpir:
+          type: boolean
+          description: Plans only - BCPIR plan (013 FR-002).
         status:
           oneOf:
             - $ref: "#/components/schemas/AllWorkStatus"
@@ -17740,6 +17805,13 @@ components:
           items:
             $ref: "#/components/schemas/AllWorkFilterValue"
         strategic:
+          type: string
+          enum:
+            - include
+            - only
+            - exclude
+        bcpir:
+          description: "013. Optional; a view saved before 013 reads as include."
           type: string
           enum:
             - include
@@ -21181,6 +21253,379 @@ components:
           description: The plan, then each campaign followed by its initiatives, in plan-tree order.
           items:
             $ref: "#/components/schemas/BudgetByMonthRow"
+    SpaRecordRef:
+      type: object
+      additionalProperties: false
+      required: [type, id, name]
+      properties:
+        type:
+          type: string
+          enum: [plan, campaign, initiative, activity, lineItem]
+        id:
+          type: string
+        name:
+          type: string
+    SpaContribution:
+      type: object
+      additionalProperties: false
+      description: One activity's part of a figure (013 FR-007); the parts of a figure sum to it.
+      required: [activityId, name, amount]
+      properties:
+        activityId:
+          type: string
+        name:
+          type: string
+        amount:
+          $ref: "#/components/schemas/Money"
+    SpaPlan:
+      type: object
+      additionalProperties: false
+      required: [id, name, year, status, bcpir]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        year:
+          type: integer
+        status:
+          $ref: "#/components/schemas/PlanStatus"
+        bcpir:
+          type: boolean
+    SpaHeadline:
+      type: object
+      additionalProperties: false
+      description: >-
+        013 FR-015, FR-016. Percentages have one decimal ("37.5", "-62.5"); null with noPlannedCostReason when
+        planned cost is 0.00. Financial figures are null without finance.view.
+      required: [plannedCost, committed, actualSpend, invoiced, remaining, utilisationPercent, variancePercent,
+        overspend, noPlannedCostReason, plannedCostTrace, committedTrace, actualSpendTrace]
+      properties:
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        committed:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        actualSpend:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        invoiced:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        remaining:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        utilisationPercent:
+          type: [string, "null"]
+        variancePercent:
+          type: [string, "null"]
+        overspend:
+          type: boolean
+        noPlannedCostReason:
+          type: [string, "null"]
+        plannedCostTrace:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaContribution"
+        committedTrace:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaContribution"
+        actualSpendTrace:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaContribution"
+    SpaPeriod:
+      type: object
+      additionalProperties: false
+      description: One quarter or month of the plan's year (013 FR-017); bars are 0–100, relative to the largest amount of the set.
+      required: [key, label, planned, actual, plannedBar, actualBar, plannedTrace, actualTrace]
+      properties:
+        key:
+          type: string
+          example: 2026-Q3
+        label:
+          type: string
+          example: Q3 2026
+        planned:
+          $ref: "#/components/schemas/Money"
+        actual:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        plannedBar:
+          type: integer
+          minimum: 0
+          maximum: 100
+        actualBar:
+          type: integer
+          minimum: 0
+          maximum: 100
+        plannedTrace:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaContribution"
+        actualTrace:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaContribution"
+    SpaPeriods:
+      type: object
+      additionalProperties: false
+      required: [quarters, months, notScheduled, notScheduledTrace]
+      properties:
+        quarters:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaPeriod"
+        months:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaPeriod"
+        notScheduled:
+          description: Planned cost not placed in a month (no dates, line items above planned cost); null when 0.00.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        notScheduledTrace:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaContribution"
+    SpaDimension:
+      type: object
+      additionalProperties: false
+      required: [key, label]
+      properties:
+        key:
+          type: string
+          example: activityType
+        label:
+          type: string
+    SpaDimensionRow:
+      type: object
+      additionalProperties: false
+      required: [key, label, amount, share, bar, trace]
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        amount:
+          $ref: "#/components/schemas/Money"
+        share:
+          type: string
+          description: Share of the scope's planned cost in per cent, two decimals.
+          example: "37.50"
+        bar:
+          type: integer
+          minimum: 0
+          maximum: 100
+        trace:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaContribution"
+    SpaDimensionBreakdown:
+      type: object
+      additionalProperties: false
+      required: [key, label, rows, total, countsInEach]
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaDimensionRow"
+        total:
+          $ref: "#/components/schemas/Money"
+        countsInEach:
+          type: boolean
+          description: Activities with several values without shares count in each row.
+    SpaLineItemRow:
+      type: object
+      additionalProperties: false
+      required: [id, name, plannedCost, committed, actualSpend]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        committed:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        actualSpend:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+    SpaActivityRow:
+      type: object
+      additionalProperties: false
+      required: [id, name, campaign, initiative, owner, activityType, channel, startQuarter, status, plannedCost,
+        committed, actualSpend, variancePercent, overspend, lineItems, raisePurchaseRequest]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        campaign:
+          $ref: "#/components/schemas/SpaRecordRef"
+        initiative:
+          $ref: "#/components/schemas/SpaRecordRef"
+        owner:
+          type: [string, "null"]
+        activityType:
+          type: [string, "null"]
+        channel:
+          type: [string, "null"]
+          description: The activity's Channel / audience values, comma separated.
+        startQuarter:
+          type: [string, "null"]
+          example: Q1 2026
+        status:
+          $ref: "#/components/schemas/ActivityDisplayStatus"
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        committed:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        actualSpend:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        variancePercent:
+          type: [string, "null"]
+        overspend:
+          type: boolean
+        lineItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaLineItemRow"
+        raisePurchaseRequest:
+          $ref: "#/components/schemas/ActionAvailability"
+    SpaBudgetPanel:
+      type: object
+      additionalProperties: false
+      description: 013 FR-020.
+      required: [budget, plannedCost, committed, plannedVsBudgetPercent, overBudget, noBudgetReason, linked, notLinked]
+      properties:
+        budget:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        committed:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        plannedVsBudgetPercent:
+          type: [string, "null"]
+        overBudget:
+          type: boolean
+        noBudgetReason:
+          type: [string, "null"]
+        linked:
+          $ref: "#/components/schemas/Money"
+        notLinked:
+          $ref: "#/components/schemas/Money"
+    SpaPurchaseRequest:
+      type: object
+      additionalProperties: false
+      required: [id, name, vendor, status, amount, counted]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        vendor:
+          type: string
+        status:
+          $ref: "#/components/schemas/PurchaseRequestStatus"
+        amount:
+          $ref: "#/components/schemas/Money"
+        counted:
+          type: boolean
+          description: False for a Declined request, which counts in none of the amounts.
+    SpaProcurementPanel:
+      type: object
+      additionalProperties: false
+      description: 013 FR-021 (D-335).
+      required: [count, approved, pendingApproval, draft, invoiced, items]
+      properties:
+        count:
+          type: integer
+        approved:
+          $ref: "#/components/schemas/Money"
+        pendingApproval:
+          $ref: "#/components/schemas/Money"
+        draft:
+          $ref: "#/components/schemas/Money"
+        invoiced:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaPurchaseRequest"
+    SpaView:
+      type: object
+      additionalProperties: false
+      description: The SP&A view of a plan or campaign (013 data-model §3).
+      required: [plan, scope, campaigns, currency, financeAccess, financeNote, financeDataAsOf, headline, periods,
+        dimension, dimensions, activities, budget, procurement, notes, emptyMessage]
+      properties:
+        plan:
+          $ref: "#/components/schemas/SpaPlan"
+        scope:
+          $ref: "#/components/schemas/SpaRecordRef"
+        campaigns:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaRecordRef"
+        currency:
+          type: string
+          pattern: ^[A-Z]{3}$
+        financeAccess:
+          type: boolean
+        financeNote:
+          type: [string, "null"]
+        financeDataAsOf:
+          type: [string, "null"]
+          format: date-time
+        headline:
+          $ref: "#/components/schemas/SpaHeadline"
+        periods:
+          $ref: "#/components/schemas/SpaPeriods"
+        dimension:
+          $ref: "#/components/schemas/SpaDimensionBreakdown"
+        dimensions:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaDimension"
+        activities:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaActivityRow"
+        budget:
+          $ref: "#/components/schemas/SpaBudgetPanel"
+        procurement:
+          $ref: "#/components/schemas/SpaProcurementPanel"
+        notes:
+          type: array
+          items:
+            type: string
+        emptyMessage:
+          type: [string, "null"]
     SplitLink:
       type: object
       additionalProperties: false

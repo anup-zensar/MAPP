@@ -30,6 +30,7 @@ func (w *wiring) areas() error {
 		}
 	}
 	w.views()
+	w.spaArea()
 	w.usesOfPeople()
 	w.usesInSettings()
 	return nil

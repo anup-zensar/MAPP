@@ -22,6 +22,7 @@ func (w *wiring) purchaseRequestsArea() error {
 	w.approvals.UsePurchaseRequests(prs)
 	prs.UseGSAP(w.simulatedOrders())
 	w.guardPurchaseRequests(prs)
+	w.purchases = prs
 	w.settings.AddReferenceSource(purchaseRequestReferences(s.PurchaseRequests, w.history))
 	mount(w.signedIn, purchaserequest.NewHandler(prs), purchaserequest.NewApprovalHandler(prs), w.simulatedOrdersHandler(prs))
 	return nil
