@@ -91,6 +91,10 @@ tags:
     description: "Global budgets and their allocations to plans (feature 014)"
   - name: Financials
     description: "GSAP purchase orders, invoices, payments and accruals (read-only) and their import"
+  - name: Simulated GSAP
+    description: "SWBS codes from the simulated GSAP that stands in for GSAP until live integration (feature 030, ADR-0016)"
+  - name: Purchase requests
+    description: "Purchase requests raised from line items, their approval, routing to the requisitioner, close-out and the simulated GSAP purchase order (features 032, 033)"
   - name: Exchange rates
     description: "Dated exchange rates and the simulated GSAP rate import (feature 016)"
   - name: Field help
@@ -2395,7 +2399,7 @@ paths:
       operationId: getPlanDefaults
       summary: The default values of a new plan for the signed-in person
       description: |
-        Year = the current year; years = current year - 1 to + 5; teams = the person's active teams;
+        Year = the current year; years = the current year to + 10, no past year (D-326); teams = the person's active teams;
         owner = the person when they have one; model = the only active model.
       responses:
         "200":
@@ -3498,10 +3502,8 @@ paths:
       operationId: createLineItem
       summary: Add a line item to an activity
       description: |
-        Only name, currency and planned cost are required to save (FR-009). On a Submitted or Approved
-        activity the request must confirm that the activity goes back for approval
-        (restartApproval true); otherwise nothing is saved and the answer is 400
-        validation_failed on restartApproval.
+        Only name, currency and planned cost are required to save (FR-009). Adding a line item never
+        changes the activity's status or approval, whatever its status (034 FR-001, D-322).
       parameters:
         - $ref: "#/components/parameters/ActivityId"
       requestBody:
@@ -3586,10 +3588,9 @@ paths:
       operationId: updateLineItem
       summary: Save a line item (the whole form and the version it started from)
       description: |
-        Every editable field is sent, with the version the person started editing from. Changing the
-        planned cost or the currency of a line item of a Submitted or Approved activity needs
-        restartApproval true (400 validation_failed on restartApproval otherwise); other changes never change
-        the activity's status (FR-032). A save that changes nothing creates no new version.
+        Every editable field is sent, with the version the person started editing from. No change of a
+        line item - its planned cost and currency included - changes the activity's status or approval
+        (034 FR-001, D-322). A save that changes nothing creates no new version.
       parameters:
         - $ref: "#/components/parameters/LineItemId"
       requestBody:
@@ -3623,8 +3624,8 @@ paths:
       operationId: deleteLineItem
       summary: Delete a line item (it goes to the recycle bin)
       description: >-
-        On a Submitted or Approved activity the query parameter restartApproval must be true (400 validation_failed on
-        restartApproval otherwise); the activity then returns to Created.
+        Moves the line item to the recycle bin; the activity's status and approval stay as they are (034 FR-001,
+        D-322). The query parameter restartApproval is deprecated and ignored.
       parameters:
         - $ref: "#/components/parameters/LineItemId"
         - $ref: "#/components/parameters/RestartApproval"
@@ -3654,8 +3655,8 @@ paths:
       operationId: duplicateLineItem
       summary: Duplicate a line item in the same activity
       description: >-
-        The copy has every value, a new ID and the name "<name> (copy)", "(copy 2)", … (FR-029). Counts as adding a line
-        item (restartApproval on a Submitted or Approved activity).
+        The copy has every value, a new ID and the name "<name> (copy)", "(copy 2)", … (FR-029). The activity's status
+        and approval stay as they are (034 FR-001, D-322).
       parameters:
         - $ref: "#/components/parameters/LineItemId"
       requestBody:
@@ -5920,7 +5921,756 @@ paths:
           $ref: "#/components/responses/Forbidden"
         default:
           $ref: "#/components/responses/Error"
+  # Feature 030 SWBS codes from a simulated GSAP
+  /api/v1/simulated-gsap/swbs-runs:
+    get:
+      tags: [Simulated GSAP]
+      operationId: listSwbsRuns
+      summary: The runs of the simulated GSAP, newest first, and how many line items are ready to send (030 FR-011)
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: At most this many runs (1–100, default 20).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: The runs.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwbsRunPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Simulated GSAP]
+      operationId: createSwbsRun
+      summary: Send the line items that are ready to the simulated GSAP and store the codes it returns (030 FR-006 – FR-010)
+      description: |
+        Sends every line item whose SWBS status is readyToSend within the person's finance.import scope, or
+        only lineItemIds, to the simulated GSAP, which answers each with SIM-<company code|0000>-<nnnn>. The
+        line items store their codes, one run is kept and one activity-log entry written. A named line item
+        that does not exist or is out of scope answers 404 not_found; one that is not ready answers 409
+        not_allowed and nothing is sent. A run with nothing ready is kept with no codes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SwbsRunRequest"
+      responses:
+        "201":
+          description: The run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwbsRun"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
   # Feature 016 Planning and currency extensions (merged 2026-10-20, D-298)
+  /api/v1/purchase-requests:
+    get:
+      tags: [Purchase requests]
+      operationId: listPurchaseRequests
+      summary: The Purchase requests page — PRs grouped by vendor, with their lines (FR-044 – FR-048)
+      description: |
+        PRs of the plans where the person holds purchaseRequests.list, ordered by vendor (case-insensitive;
+        an empty vendor last as "Not completed"), then by the sort. Each row carries its lines and their line
+        items. vendors gives each vendor on the page its number of matching PRs and totals over all matching
+        PRs (not only this page). Search matches PR ID, name, vendor, GSAP PR number, and the HX keys and PO
+        numbers of the lines. 409 not_allowed while Purchase Support is off.
+      parameters:
+        - $ref: "#/components/parameters/PurchaseRequestSearch"
+        - $ref: "#/components/parameters/PurchaseRequestStatusFilter"
+        - $ref: "#/components/parameters/PurchaseRequestTypeFilter"
+        - $ref: "#/components/parameters/PurchaseRequestTypeNotCompleted"
+        - $ref: "#/components/parameters/PurchaseRequestVendorFilter"
+        - $ref: "#/components/parameters/PurchaseRequestVendorNotCompleted"
+        - $ref: "#/components/parameters/PurchaseRequestOwnerFilter"
+        - $ref: "#/components/parameters/PurchaseRequestCreatedFrom"
+        - $ref: "#/components/parameters/PurchaseRequestCreatedTo"
+        - $ref: "#/components/parameters/PurchaseRequestWaitingForGsap"
+        - $ref: "#/components/parameters/PurchaseRequestSort"
+        - $ref: "#/components/parameters/PurchaseRequestPageNumber"
+        - $ref: "#/components/parameters/PurchaseRequestPageSize"
+      responses:
+        "200":
+          description: One page.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequestListPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Purchase requests]
+      operationId: createPurchaseRequest
+      summary: Raise a purchase request with at least one line (FR-001 – FR-017)
+      description: |
+        Saves a Created PR and reserves its lines (FR-017). then must be "save". Needs purchaseRequests.edit in
+        the plan of the lines (403 otherwise); a line item the person cannot see answers 400 on its field.
+        Every problem is answered at once (400 validation_failed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseRequestInput"
+      responses:
+        "201":
+          description: The new purchase request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequest"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/purchase-requests/new-defaults:
+    get:
+      tags: [Purchase requests]
+      operationId: getPurchaseRequestDefaults
+      summary: What a new PR from this line item is pre-filled with (FR-003)
+      parameters:
+        - name: lineItemId
+          in: query
+          required: true
+          schema:
+            type: string
+          example: L-1006
+      responses:
+        "200":
+          description: The pre-filled values; nothing is saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequestDefaults"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/purchase-requests/line-item-options:
+    get:
+      tags: [Purchase requests]
+      operationId: listPurchaseRequestLineItemOptions
+      summary: The Add line picker and the line-item step of New purchase request (FR-002, FR-010)
+      description: |
+        At most 50 live line items the person can see and raise PRs for, matching search (name, ID or HX key).
+        With purchaseRequestId: only that PR's plan; line items already on it, of another company code or with
+        nothing left are listed with available false and the reason. Without it: every plan where the person
+        holds purchaseRequests.edit.
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+            maxLength: 120
+        - name: purchaseRequestId
+          in: query
+          schema:
+            type: string
+        - name: companyCode
+          in: query
+          description: The company code of the lines already in the form of a PR not saved yet.
+          schema:
+            type: string
+        - name: planId
+          in: query
+          description: The plan of the lines already in the form of a PR not saved yet.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The options, by ID.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequestLineItemOptionPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/purchase-requests/{purchaseRequestId}:
+    parameters:
+      - $ref: "#/components/parameters/PurchaseRequestId"
+    get:
+      tags: [Purchase requests]
+      operationId: getPurchaseRequest
+      summary: A purchase request's details page (FR-005 – FR-011, FR-035, FR-043)
+      responses:
+        "200":
+          description: The purchase request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    put:
+      tags: [Purchase requests]
+      operationId: savePurchaseRequest
+      summary: Save the whole purchase request — Save, Save and re-submit, or Submit changes (FR-015, FR-023, FR-036, FR-039)
+      description: |
+        Replaces the header and the lines: a line with id is changed, a line without id is added, a stored line
+        left out is removed to the recycle bin (Created and Declined only). then must fit the status (data-model
+        §3.2): save (Created, Declined; Approved when only lines are added and Lines on approved purchase requests
+        is withoutApproval), resubmit (Submitted, In review), submitChanges (Approved). With resubmit and
+        submitChanges the person also needs purchaseRequests.submit and the gates must pass (409 not_ready;
+        error.missing groups every problem by record — purchaseRequest, purchaseRequestLine, activity, lineItem —
+        with MissingField.reason holding the message). An out-of-date version answers 409 version_conflict.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseRequestInput"
+      responses:
+        "200":
+          description: The purchase request as saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequest"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Purchase requests]
+      operationId: deletePurchaseRequest
+      summary: Delete a Created or Declined purchase request to the recycle bin (FR-040, FR-042)
+      responses:
+        "200":
+          description: Moved to the recycle bin with its lines; the reservations are released.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/purchase-requests/{purchaseRequestId}/close-preview:
+    parameters:
+      - $ref: "#/components/parameters/PurchaseRequestId"
+    get:
+      tags: [Purchase requests]
+      operationId: getPurchaseRequestClosePreview
+      summary: What Close purchase request would do, line by line (FR-041)
+      responses:
+        "200":
+          description: Per line the current, invoiced, closed and released amounts; nothing is saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequestClosePreview"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/purchase-requests/{purchaseRequestId}/close:
+    parameters:
+      - $ref: "#/components/parameters/PurchaseRequestId"
+    post:
+      tags: [Purchase requests]
+      operationId: closePurchaseRequest
+      summary: Close an Approved purchase request down to its invoiced amounts (FR-034, FR-041)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseRequestCloseRequest"
+      responses:
+        "200":
+          description: The Closed purchase request, routed with type close.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequest"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/purchase-requests/{purchaseRequestId}/resend:
+    parameters:
+      - $ref: "#/components/parameters/PurchaseRequestId"
+    post:
+      tags: [Purchase requests]
+      operationId: resendPurchaseRequestForm
+      summary: Route the PR form again (Resend PR form) on an Approved or Closed PR that was routed (FR-033)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseRequestResendRequest"
+      responses:
+        "200":
+          description: The purchase request with the new routing first in its routing history.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequest"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/purchase-requests/{purchaseRequestId}/routings/{routingId}/form:
+    parameters:
+      - $ref: "#/components/parameters/PurchaseRequestId"
+      - $ref: "#/components/parameters/RoutingId"
+    get:
+      tags: [Purchase requests]
+      operationId: downloadPurchaseRequestForm
+      summary: The PR form of one routing, as routed (FR-031)
+      description: |
+        One row per line in the column order of the spec's Requisitioner Attachment, after notes (PR, routing
+        type and time, recipients, "Routed by MAPP — no supporting documents are attached"). File name
+        "MAPP PR form – PR-1001 – Original – 27 Oct 2026.xlsx". Text a spreadsheet would read as a formula is
+        written with a leading apostrophe (D-120).
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [xlsx, csv]
+      responses:
+        "200":
+          description: The file, as an attachment.
+          headers:
+            Content-Disposition:
+              description: attachment with filename (ASCII) and filename* (UTF-8).
+              schema:
+                type: string
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/purchase-requests/{purchaseRequestId}/approval:
+    parameters:
+      - $ref: "#/components/parameters/PurchaseRequestId"
+    get:
+      tags: [Purchase requests]
+      operationId: getPurchaseRequestApproval
+      summary: The PR's Approval section — first approval and changes (FR-022 – FR-027)
+      responses:
+        "200":
+          description: The approval sections, the one in focus first.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequestApproval"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/purchase-requests/{purchaseRequestId}/approval/submission:
+    parameters:
+      - $ref: "#/components/parameters/PurchaseRequestId"
+    get:
+      tags: [Purchase requests]
+      operationId: getPurchaseRequestSubmission
+      summary: What Submit or Re-submit would do now — every gate problem and the levels (FR-021)
+      responses:
+        "200":
+          description: The check; nothing is saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequestSubmission"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/purchase-requests/{purchaseRequestId}/approval/submit:
+    parameters:
+      - $ref: "#/components/parameters/PurchaseRequestId"
+    post:
+      tags: [Purchase requests]
+      operationId: submitPurchaseRequest
+      summary: Submit (Created) or Re-submit (Submitted, In review, Declined) without changes (FR-021 – FR-023)
+      description: |
+        409 not_ready when a gate fails (error.missing groups every problem by record, as for PUT); 409
+        not_allowed for an Approved PR ("Edit the purchase request and choose Submit changes.") or a Closed one.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseRequestSubmitRequest"
+      responses:
+        "200":
+          description: The Approval section after the submission.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequestApproval"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/purchase-requests/{purchaseRequestId}/approval/approve:
+    parameters:
+      - $ref: "#/components/parameters/PurchaseRequestId"
+    post:
+      tags: [Purchase requests]
+      operationId: approvePurchaseRequest
+      summary: Approve the waiting level as one of its approvers (self-approval allowed, FR-027)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecisionRequest"
+      responses:
+        "200":
+          description: The Approval section after the decision (an approved PR is routed in the same step).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequestApproval"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/purchase-requests/{purchaseRequestId}/approval/decline:
+    parameters:
+      - $ref: "#/components/parameters/PurchaseRequestId"
+    post:
+      tags: [Purchase requests]
+      operationId: declinePurchaseRequest
+      summary: Decline the waiting level with a comment (FR-025)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecisionRequest"
+      responses:
+        "200":
+          description: The Approval section after the decision.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequestApproval"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/purchase-requests/{purchaseRequestId}/approval/recall:
+    parameters:
+      - $ref: "#/components/parameters/PurchaseRequestId"
+    post:
+      tags: [Purchase requests]
+      operationId: recallPurchaseRequest
+      summary: Recall the open round — owner or submitter (FR-024)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecallRequest"
+      responses:
+        "200":
+          description: The Approval section after the recall.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequestApproval"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/approvals/purchase-requests/{purchaseRequestId}:
+    parameters:
+      - $ref: "#/components/parameters/PurchaseRequestId"
+    get:
+      tags: [Purchase requests]
+      operationId: getPurchaseRequestApprovalPreview
+      summary: The Approvals page's preview of a PR (FR-029)
+      responses:
+        "200":
+          description: The PR's summary, lines and Approval section.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequestApprovalPreview"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/line-items/{lineItemId}/purchase-requests:
+    parameters:
+      - $ref: "#/components/parameters/LineItemId"
+    get:
+      tags: [Purchase requests]
+      operationId: getLineItemPurchaseRequests
+      summary: A line item's Purchase requests section — total requested, available, its PRs (FR-018)
+      responses:
+        "200":
+          description: The section.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LineItemPurchaseRequests"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/activities/{activityId}/purchase-requests:
+    parameters:
+      - $ref: "#/components/parameters/ActivityId"
+    get:
+      tags: [Purchase requests]
+      operationId: getActivityPurchaseRequests
+      summary: An activity's Purchase requests section — total requested in the plan currency, per line item (FR-018)
+      responses:
+        "200":
+          description: The section.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityPurchaseRequests"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/purchase-request-configuration:
+    get:
+      tags: [Purchase requests]
+      operationId: getPurchaseRequestConfiguration
+      summary: Settings › Purchase requests (FR-004)
+      responses:
+        "200":
+          description: The configuration, with whether the person may change it.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequestConfiguration"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+    put:
+      tags: [Purchase requests]
+      operationId: savePurchaseRequestConfiguration
+      summary: Change Purchase Support and Lines on approved purchase requests (needs settings.manage)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseRequestConfigurationInput"
+      responses:
+        "200":
+          description: The configuration as saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequestConfiguration"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/simulated-gsap/purchase-requests/{purchaseRequestId}/purchase-order:
+    parameters:
+      - $ref: "#/components/parameters/PurchaseRequestId"
+    post:
+      tags: [Purchase requests]
+      operationId: createSimulatedGsapPurchaseOrder
+      summary: The simulated GSAP creates the GSAP PR and the purchase order of an approved, routed PR (033)
+      description: |
+        For a PR that is Approved with no change In review, was routed to the requisitioner and is waiting for
+        GSAP, the simulated GSAP gives it a GSAP PR number (SIM-0010001001 …, once) and a purchase order
+        (SIM-4500001001 …, once) with one PO line per PR line (10, 20, …; status Released; dated today; value =
+        the line's amount). Lines whose PO line already matches are not sent; changed lines update their PO
+        line (top-up); new lines get new PO lines. The PO lines are booked as GSAP purchase-order transactions
+        in one import (source simulatedGsap, feed "Simulated GSAP purchase order", file name the PR's ID),
+        linked to their line items by the HX key. Everything is saved together or not at all.
+
+        Refusals: 404 not_found (no such PR or outside the person's access); 403 forbidden (no
+        finance.import); 409 version_conflict (the PR changed since it was opened); 409 not_allowed with
+        "The simulated GSAP processes approved purchase requests that were routed to the requisitioner.",
+        "Wait until the change of this purchase request is approved or declined.", "The simulated GSAP already
+        created the PO for this purchase request. Run it again after an approved change of its amounts or
+        lines." or "Purchase requests are switched off for your organisation."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SimulatedGsapOrderRequest"
+      responses:
+        "200":
+          description: The purchase request with GSAP's answer.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseRequest"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
   /api/v1/currencies/{code}/rates:
     parameters:
       - $ref: "#/components/parameters/CurrencyCode"
@@ -6713,6 +7463,119 @@ components:
       name: mapp_session
       description: HttpOnly session cookie set by sign-in.
   parameters:
+    # Feature 032 Purchase requests
+    PurchaseRequestId:
+      name: purchaseRequestId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: PR-1001
+    RoutingId:
+      name: routingId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: PRR-1001
+    PurchaseRequestSearch:
+      name: q
+      in: query
+      schema:
+        type: string
+        maxLength: 120
+    PurchaseRequestStatusFilter:
+      name: status
+      in: query
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          $ref: "#/components/schemas/PurchaseRequestStatus"
+    PurchaseRequestTypeFilter:
+      name: type
+      in: query
+      description: Option IDs of the attribute with role PR type; any of them matches.
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+    PurchaseRequestTypeNotCompleted:
+      name: typeNotCompleted
+      in: query
+      description: Also match PRs without a PR type ("Not completed").
+      schema:
+        type: boolean
+        default: false
+    PurchaseRequestVendorFilter:
+      name: vendor
+      in: query
+      description: Vendor texts, compared ignoring case.
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+    PurchaseRequestVendorNotCompleted:
+      name: vendorNotCompleted
+      in: query
+      schema:
+        type: boolean
+        default: false
+    PurchaseRequestOwnerFilter:
+      name: owner
+      in: query
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+    PurchaseRequestCreatedFrom:
+      name: createdFrom
+      in: query
+      schema:
+        type: string
+        format: date
+    PurchaseRequestCreatedTo:
+      name: createdTo
+      in: query
+      schema:
+        type: string
+        format: date
+    PurchaseRequestWaitingForGsap:
+      name: waitingForGsap
+      in: query
+      description: Only approved, routed PRs that GSAP has not answered yet (FR-032).
+      schema:
+        type: boolean
+        default: false
+    PurchaseRequestSort:
+      name: sort
+      in: query
+      description: Sort inside each vendor group; "-" sorts descending.
+      schema:
+        type: string
+        enum: [name, -name, id, -id, status, -status, amount, -amount, created, -created]
+        default: id
+    PurchaseRequestPageNumber:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PurchaseRequestPageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        enum: [50, 100, 200]
+        default: 50
     EntryId:
       name: entryId
       in: path
@@ -6853,9 +7716,8 @@ components:
       name: restartApproval
       in: query
       required: false
-      description: >-
-        True when the person confirmed "This activity will need approval again" (needed only while the activity is
-        Submitted or Approved).
+      deprecated: true
+      description: Ignored since feature 034 (D-322) - a line-item delete never sends the activity back for approval.
       schema:
         type: boolean
         default: false
@@ -7388,6 +8250,911 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
   schemas:
+    # Features 032 and 033 Purchase requests and the simulated GSAP purchase order
+    PurchaseRequestStatus:
+      type: string
+      enum: [created, submitted, inReview, declined, approved, closed]
+    PurchaseRequestRoundKind:
+      type: string
+      description: The approval engine's subject kind of a round (031).
+      enum: [purchaseRequest, modifiedPurchaseRequest]
+    LinesOnApprovedPurchaseRequests:
+      type: string
+      enum: [notAllowed, withModificationApproval, withoutApproval]
+    PurchaseRequestRoutingType:
+      type: string
+      enum: [original, modification, resend, close]
+    GsapSource:
+      type: string
+      description: Who filled the GSAP fields; empty until GSAP answered. Screens say "Simulated GSAP" or "GSAP".
+      enum: ["", simulatedGsap, gsap]
+    PurchaseRequestConfiguration:
+      type: object
+      additionalProperties: false
+      required: [purchaseSupport, linesOnApprovedPurchaseRequests, version, updatedAt, updatedBy, canChange]
+      properties:
+        purchaseSupport:
+          type: boolean
+        linesOnApprovedPurchaseRequests:
+          $ref: "#/components/schemas/LinesOnApprovedPurchaseRequests"
+        version:
+          type: integer
+          minimum: 1
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+        canChange:
+          $ref: "#/components/schemas/ActionAvailability"
+    PurchaseRequestConfigurationInput:
+      type: object
+      additionalProperties: false
+      required: [version, purchaseSupport, linesOnApprovedPurchaseRequests]
+      properties:
+        version:
+          type: integer
+        purchaseSupport:
+          type: boolean
+        linesOnApprovedPurchaseRequests:
+          $ref: "#/components/schemas/LinesOnApprovedPurchaseRequests"
+    PurchaseRequestLineItemRef:
+      type: object
+      additionalProperties: false
+      description: The line item a PR line draws on, as it is now.
+      required: [id, name, activityId, activityName, currency, plannedCost, swbsCode, swbsStatus, companyCode, costCentre, glCode]
+      properties:
+        id:
+          type: string
+          example: L-1006
+        name:
+          type: string
+          example: Stand build
+        activityId:
+          type: string
+        activityName:
+          type: string
+        currency:
+          type: string
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        swbsCode:
+          type: string
+          description: Empty until the line item received its code (030).
+        swbsStatus:
+          $ref: "#/components/schemas/SwbsStatus"
+        companyCode:
+          type: string
+        costCentre:
+          type: string
+        glCode:
+          type: string
+    PurchaseRequestLine:
+      type: object
+      additionalProperties: false
+      required: [id, position, lineItem, hxKey, currency, amount, deliveryDate, overallLimit, description, attributes, sentOn, poNumber, poLine, poLineStatus, poDate, poValue, invoiced, changed, missing, access, version, gsapPending]
+      properties:
+        id:
+          type: string
+          example: PRL-1001
+        position:
+          type: integer
+          minimum: 1
+        lineItem:
+          $ref: "#/components/schemas/PurchaseRequestLineItemRef"
+        hxKey:
+          type: string
+          example: HX1006
+        currency:
+          type: string
+        amount:
+          $ref: "#/components/schemas/Money"
+        deliveryDate:
+          type: string
+          format: date
+        overallLimit:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        description:
+          type: string
+        attributes:
+          $ref: "#/components/schemas/AttributeValues"
+        sentOn:
+          type: [string, "null"]
+          format: date
+        poNumber:
+          type: string
+        poLine:
+          type: string
+        poLineStatus:
+          type: string
+        poDate:
+          type: [string, "null"]
+          format: date
+        poValue:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        invoiced:
+          description: Invoices minus credit notes on the line's PO line, in the line's currency (0.00 without a PO).
+          $ref: "#/components/schemas/Money"
+        changed:
+          type: boolean
+          description: True while a change is In review and this line differs from the approved version or is new.
+        missing:
+          type: array
+          description: The line's empty needed-to-submit fields.
+          items:
+            $ref: "#/components/schemas/MissingField"
+        access:
+          $ref: "#/components/schemas/PurchaseRequestLineAccess"
+        version:
+          type: integer
+          minimum: 1
+        gsapPending:
+          type: boolean
+          description: >-
+            The line has no PO line yet, or its amount or currency differs from its PO value: the next run of
+            the simulated GSAP sends it (033 FR-003, FR-007).
+    PurchaseRequestLineAccess:
+      type: object
+      additionalProperties: false
+      required: [remove]
+      properties:
+        remove:
+          $ref: "#/components/schemas/ActionAvailability"
+    PurchaseRequestVersion:
+      type: object
+      additionalProperties: false
+      description: The PR's values at its last approval, shown as "Approved version" while a change is In review.
+      required: [name, description, owner, moaApprover, attributes, amountDisplay, lines, approvedAt]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        moaApprover:
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        attributes:
+          $ref: "#/components/schemas/AttributeValues"
+        amountDisplay:
+          $ref: "#/components/schemas/Money"
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/PurchaseRequestVersionLine"
+        approvedAt:
+          type: string
+          format: date-time
+    PurchaseRequestVersionLine:
+      type: object
+      additionalProperties: false
+      required: [id, lineItemId, hxKey, amount, deliveryDate, overallLimit, description]
+      properties:
+        id:
+          type: string
+        lineItemId:
+          type: string
+        hxKey:
+          type: string
+        amount:
+          $ref: "#/components/schemas/Money"
+        deliveryDate:
+          type: string
+          format: date
+        overallLimit:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        description:
+          type: string
+    PurchaseRequestRouting:
+      type: object
+      additionalProperties: false
+      required: [id, type, routedAt, routedBy, recipients, lineCount]
+      properties:
+        id:
+          type: string
+          example: PRR-1001
+        type:
+          $ref: "#/components/schemas/PurchaseRequestRoutingType"
+        routedAt:
+          type: string
+          format: date-time
+        routedBy:
+          $ref: "#/components/schemas/ActorRef"
+        recipients:
+          type: array
+          minItems: 1
+          items:
+            type: string
+          example: [DE_LUBES]
+        lineCount:
+          type: integer
+          minimum: 1
+    PurchaseRequestProblem:
+      type: object
+      additionalProperties: false
+      description: One thing that stops a submission (FR-021).
+      required: [field, group, recordId, message]
+      properties:
+        field:
+          type: string
+          description: The form field to go to, e.g. moaApproverId, attributes.SA-1101, lines[0].overallLimit; empty for a gate on another record.
+        group:
+          type: string
+          enum: [purchaseRequest, line, activity, lineItem]
+        recordId:
+          type: string
+          description: The PR, PR line, activity or line item concerned.
+        message:
+          type: string
+          example: Activity 'Trade magazine ads' must be approved before this purchase request can be submitted.
+    PurchaseRequestReadiness:
+      type: object
+      additionalProperties: false
+      required: [ready, problems]
+      properties:
+        ready:
+          type: boolean
+        problems:
+          type: array
+          items:
+            $ref: "#/components/schemas/PurchaseRequestProblem"
+    PurchaseRequestAccess:
+      type: object
+      additionalProperties: false
+      description: What the signed-in person may do with this PR now, and why not (FR-056).
+      required: [edit, delete, submit, resubmit, submitChanges, recall, close, resend, addLine, gsapOrder]
+      properties:
+        edit:
+          $ref: "#/components/schemas/ActionAvailability"
+        delete:
+          $ref: "#/components/schemas/ActionAvailability"
+        submit:
+          $ref: "#/components/schemas/ActionAvailability"
+        resubmit:
+          $ref: "#/components/schemas/ActionAvailability"
+        submitChanges:
+          $ref: "#/components/schemas/ActionAvailability"
+        recall:
+          $ref: "#/components/schemas/ActionAvailability"
+        close:
+          $ref: "#/components/schemas/ActionAvailability"
+        resend:
+          $ref: "#/components/schemas/ActionAvailability"
+        addLine:
+          $ref: "#/components/schemas/ActionAvailability"
+        gsapOrder:
+          description: >-
+            Create GSAP PR and PO (simulated): hidden (available false, reason empty) without finance.import;
+            otherwise available, or the reason it is not (033 FR-001).
+          $ref: "#/components/schemas/ActionAvailability"
+    PurchaseRequest:
+      type: object
+      additionalProperties: false
+      required: [id, name, description, owner, moaApprover, approvalWorkflow, modificationWorkflow, status, changePending, plan, path, companyCode, costCentres, hxKeys, attributes, vendor, amountDisplay, invoicedDisplay, gsapPrNumber, gsapPrDate, gsapSource, waitingForGsap, lines, approvedVersion, routings, readiness, missing, notice, access, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id:
+          type: string
+          example: PR-1001
+        name:
+          type: string
+        description:
+          type: string
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        moaApprover:
+          description: The MoA approver (needed to submit); null until chosen.
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        approvalWorkflow:
+          oneOf:
+            - $ref: "#/components/schemas/WorkflowRef"
+            - type: "null"
+        modificationWorkflow:
+          oneOf:
+            - $ref: "#/components/schemas/WorkflowRef"
+            - type: "null"
+        status:
+          $ref: "#/components/schemas/PurchaseRequestStatus"
+        changePending:
+          type: boolean
+          description: A change of the Approved PR is In review.
+        plan:
+          $ref: "#/components/schemas/RecordRef"
+        path:
+          type: array
+          description: Plan, campaign, initiative and activity of the first line.
+          items:
+            $ref: "#/components/schemas/RecordRef"
+        companyCode:
+          type: string
+          description: The company code of the lines' activities; empty when none is filled.
+        costCentres:
+          type: array
+          items:
+            type: string
+        hxKeys:
+          type: array
+          items:
+            type: string
+        attributes:
+          $ref: "#/components/schemas/AttributeValues"
+        vendor:
+          type: string
+        amountDisplay:
+          $ref: "#/components/schemas/Money"
+        invoicedDisplay:
+          $ref: "#/components/schemas/Money"
+        gsapPrNumber:
+          type: string
+          description: GSAP's PR number, read-only, "Filled by GSAP"; empty until GSAP answers (033).
+        gsapPrDate:
+          type: [string, "null"]
+          format: date
+        gsapSource:
+          $ref: "#/components/schemas/GsapSource"
+        waitingForGsap:
+          type: boolean
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/PurchaseRequestLine"
+        approvedVersion:
+          oneOf:
+            - $ref: "#/components/schemas/PurchaseRequestVersion"
+            - type: "null"
+        routings:
+          type: array
+          description: Newest first.
+          items:
+            $ref: "#/components/schemas/PurchaseRequestRouting"
+        readiness:
+          $ref: "#/components/schemas/PurchaseRequestReadiness"
+        missing:
+          type: array
+          description: The header's empty needed-to-submit fields (completeness chip).
+          items:
+            $ref: "#/components/schemas/MissingField"
+        notice:
+          type: string
+          description: |
+            One sentence the page shows above the details, or empty: "Awaiting approval — saving changes will
+            restart approval.", "Closed purchase requests cannot be changed.", "Purchase requests are switched
+            off for your organisation."
+        access:
+          $ref: "#/components/schemas/PurchaseRequestAccess"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+    PurchaseRequestInput:
+      type: object
+      additionalProperties: false
+      required: [name, ownerId, approvalWorkflowId, modificationWorkflowId, attributes, lines, then]
+      properties:
+        version:
+          type: integer
+          description: Required by PUT (the version the person started from); ignored by POST.
+        name:
+          type: string
+        description:
+          type: string
+        ownerId:
+          type: string
+        moaApproverId:
+          type: [string, "null"]
+        approvalWorkflowId:
+          type: string
+        modificationWorkflowId:
+          type: string
+        attributes:
+          $ref: "#/components/schemas/AttributeValues"
+        lines:
+          type: array
+          maxItems: 200
+          items:
+            $ref: "#/components/schemas/PurchaseRequestLineInput"
+        then:
+          type: string
+          enum: [save, resubmit, submitChanges]
+        comment:
+          type: string
+          description: The submission comment of resubmit and submitChanges; at most 2,000 characters.
+    PurchaseRequestLineInput:
+      type: object
+      additionalProperties: false
+      required: [lineItemId, currency, amount, deliveryDate]
+      properties:
+        id:
+          type: string
+          description: The stored line this row changes; absent for a new line.
+        lineItemId:
+          type: string
+        currency:
+          type: string
+        amount:
+          type: string
+          description: Decimal string, at most two decimals.
+          example: "9200.00"
+        deliveryDate:
+          type: string
+          format: date
+        overallLimit:
+          type: [string, "null"]
+          description: Decimal string; null when empty.
+        description:
+          type: string
+        attributes:
+          $ref: "#/components/schemas/AttributeValues"
+    PurchaseRequestDefaults:
+      type: object
+      additionalProperties: false
+      required: [name, owner, plan, companyCode, line]
+      properties:
+        name:
+          type: string
+          example: PR for Stand build
+        owner:
+          $ref: "#/components/schemas/PersonRef"
+        plan:
+          $ref: "#/components/schemas/RecordRef"
+        companyCode:
+          type: string
+        line:
+          type: object
+          additionalProperties: false
+          required: [lineItem, hxKey, currency, amount, overallLimit]
+          properties:
+            lineItem:
+              $ref: "#/components/schemas/PurchaseRequestLineItemRef"
+            hxKey:
+              type: string
+            currency:
+              type: string
+            amount:
+              $ref: "#/components/schemas/Money"
+            overallLimit:
+              $ref: "#/components/schemas/Money"
+    PurchaseRequestLineItemOption:
+      type: object
+      additionalProperties: false
+      required: [lineItem, plan, path, hxKey, availableToRequest, available, reason]
+      properties:
+        lineItem:
+          $ref: "#/components/schemas/PurchaseRequestLineItemRef"
+        plan:
+          $ref: "#/components/schemas/RecordRef"
+        path:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecordRef"
+        hxKey:
+          type: string
+        availableToRequest:
+          $ref: "#/components/schemas/Money"
+        available:
+          type: boolean
+        reason:
+          type: string
+          example: One purchase request cannot charge two company codes (GB01 and NL02).
+    PurchaseRequestLineItemOptionPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/PurchaseRequestLineItemOption"
+        total:
+          type: integer
+          minimum: 0
+    PurchaseRequestVendorGroup:
+      type: object
+      additionalProperties: false
+      required: [vendor, label, purchaseRequests, amountDisplay, invoicedDisplay]
+      properties:
+        vendor:
+          type: string
+          description: The vendor text; empty for "Not completed".
+        label:
+          type: string
+          example: Brightside Media BV
+        purchaseRequests:
+          type: integer
+          minimum: 0
+        amountDisplay:
+          $ref: "#/components/schemas/Money"
+        invoicedDisplay:
+          $ref: "#/components/schemas/Money"
+    PurchaseRequestRowLine:
+      type: object
+      additionalProperties: false
+      required: [id, lineItem, lineItemOwner, hxKey, amount, deliveryDate, sentOn, poNumber, poLine, poLineStatus, invoiced]
+      properties:
+        id:
+          type: string
+        lineItem:
+          $ref: "#/components/schemas/PurchaseRequestLineItemRef"
+        lineItemOwner:
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        hxKey:
+          type: string
+        amount:
+          $ref: "#/components/schemas/Money"
+        deliveryDate:
+          type: string
+          format: date
+        sentOn:
+          type: [string, "null"]
+          format: date
+        poNumber:
+          type: string
+        poLine:
+          type: string
+        poLineStatus:
+          type: string
+        invoiced:
+          $ref: "#/components/schemas/Money"
+    PurchaseRequestRow:
+      type: object
+      additionalProperties: false
+      required: [id, name, vendor, status, changePending, amountDisplay, invoicedDisplay, owner, createdAt, approvalWorkflow, gsapPrNumber, waitingForGsap, plan, lines]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        vendor:
+          type: string
+        status:
+          $ref: "#/components/schemas/PurchaseRequestStatus"
+        changePending:
+          type: boolean
+        amountDisplay:
+          $ref: "#/components/schemas/Money"
+        invoicedDisplay:
+          $ref: "#/components/schemas/Money"
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        createdAt:
+          type: string
+          format: date-time
+        approvalWorkflow:
+          oneOf:
+            - $ref: "#/components/schemas/WorkflowRef"
+            - type: "null"
+        gsapPrNumber:
+          type: string
+        waitingForGsap:
+          type: boolean
+        plan:
+          $ref: "#/components/schemas/RecordRef"
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/PurchaseRequestRowLine"
+    PurchaseRequestListPage:
+      type: object
+      additionalProperties: false
+      required: [items, total, page, pageSize, vendors, purchaseSupport]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PurchaseRequestRow"
+        total:
+          type: integer
+          minimum: 0
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+        vendors:
+          type: array
+          description: The vendors of this page's rows, in the page's order.
+          items:
+            $ref: "#/components/schemas/PurchaseRequestVendorGroup"
+        purchaseSupport:
+          type: boolean
+    PurchaseRequestCloseLine:
+      type: object
+      additionalProperties: false
+      required: [lineId, lineItemId, hxKey, amount, invoiced, closedAmount, released]
+      properties:
+        lineId:
+          type: string
+        lineItemId:
+          type: string
+        hxKey:
+          type: string
+        amount:
+          $ref: "#/components/schemas/Money"
+        invoiced:
+          $ref: "#/components/schemas/Money"
+        closedAmount:
+          $ref: "#/components/schemas/Money"
+        released:
+          $ref: "#/components/schemas/Money"
+    PurchaseRequestClosePreview:
+      type: object
+      additionalProperties: false
+      required: [purchaseRequestId, version, available, reason, lines, releasedDisplay]
+      properties:
+        purchaseRequestId:
+          type: string
+        version:
+          type: integer
+        available:
+          type: boolean
+        reason:
+          type: string
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/PurchaseRequestCloseLine"
+        releasedDisplay:
+          $ref: "#/components/schemas/Money"
+    PurchaseRequestCloseRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version:
+          type: integer
+    PurchaseRequestResendRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version:
+          type: integer
+    PurchaseRequestApprovalActions:
+      type: object
+      additionalProperties: false
+      required: [submit, resubmit, approve, decline, recall]
+      properties:
+        submit:
+          $ref: "#/components/schemas/ActionAvailability"
+        resubmit:
+          $ref: "#/components/schemas/ActionAvailability"
+        approve:
+          $ref: "#/components/schemas/ActionAvailability"
+        decline:
+          $ref: "#/components/schemas/ActionAvailability"
+        recall:
+          $ref: "#/components/schemas/ActionAvailability"
+    PurchaseRequestApprovalSection:
+      type: object
+      additionalProperties: false
+      description: The rounds of one kind, as the approval engine's SectionOf gives them (031).
+      required: [kind, workflow, upcomingLevels, rounds, latestDecline, viewer, actions]
+      properties:
+        kind:
+          $ref: "#/components/schemas/PurchaseRequestRoundKind"
+        workflow:
+          oneOf:
+            - $ref: "#/components/schemas/WorkflowRef"
+            - type: "null"
+        upcomingLevels:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalWorkflowLevel"
+        rounds:
+          type: array
+          description: Newest first.
+          items:
+            $ref: "#/components/schemas/ApprovalRound"
+        latestDecline:
+          oneOf:
+            - $ref: "#/components/schemas/DeclineNote"
+            - type: "null"
+        viewer:
+          $ref: "#/components/schemas/ApprovalViewer"
+        actions:
+          $ref: "#/components/schemas/PurchaseRequestApprovalActions"
+    PurchaseRequestApproval:
+      type: object
+      additionalProperties: false
+      required: [purchaseRequestId, purchaseRequestName, purchaseRequestVersion, status, changePending, owner, moaApprover, sections]
+      properties:
+        purchaseRequestId:
+          type: string
+        purchaseRequestName:
+          type: string
+        purchaseRequestVersion:
+          type: integer
+          minimum: 1
+        status:
+          $ref: "#/components/schemas/PurchaseRequestStatus"
+        changePending:
+          type: boolean
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/ApprovalPerson"
+            - type: "null"
+        moaApprover:
+          oneOf:
+            - $ref: "#/components/schemas/ApprovalPerson"
+            - type: "null"
+        sections:
+          type: array
+          description: The section in focus first (the open round's kind, else the kind a submission would start), then the other kind when it has rounds.
+          minItems: 1
+          maxItems: 2
+          items:
+            $ref: "#/components/schemas/PurchaseRequestApprovalSection"
+    PurchaseRequestSubmission:
+      type: object
+      additionalProperties: false
+      required: [purchaseRequestId, version, kind, roundKind, available, reason, ready, problems, workflow, levels]
+      properties:
+        purchaseRequestId:
+          type: string
+        version:
+          type: integer
+        kind:
+          type: string
+          enum: [submit, resubmit]
+        roundKind:
+          $ref: "#/components/schemas/PurchaseRequestRoundKind"
+        available:
+          type: boolean
+        reason:
+          type: string
+        ready:
+          type: boolean
+        problems:
+          type: array
+          items:
+            $ref: "#/components/schemas/PurchaseRequestProblem"
+        workflow:
+          oneOf:
+            - $ref: "#/components/schemas/WorkflowRef"
+            - type: "null"
+        levels:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalWorkflowLevel"
+    PurchaseRequestSubmitRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version:
+          type: integer
+        comment:
+          type: string
+          description: Optional, at most 2,000 characters.
+    PurchaseRequestApprovalPreview:
+      type: object
+      additionalProperties: false
+      required: [purchaseRequest, approval]
+      properties:
+        purchaseRequest:
+          $ref: "#/components/schemas/PurchaseRequestRow"
+        approval:
+          $ref: "#/components/schemas/PurchaseRequestApproval"
+    LineItemPurchaseRequestRow:
+      type: object
+      additionalProperties: false
+      required: [purchaseRequestId, name, status, changePending, lineId, amount, amountInLineItemCurrency, sentOn, poNumber, owner]
+      properties:
+        purchaseRequestId:
+          type: string
+        name:
+          type: string
+        status:
+          $ref: "#/components/schemas/PurchaseRequestStatus"
+        changePending:
+          type: boolean
+        lineId:
+          type: string
+        amount:
+          $ref: "#/components/schemas/Money"
+        amountInLineItemCurrency:
+          $ref: "#/components/schemas/Money"
+        sentOn:
+          type: [string, "null"]
+          format: date
+        poNumber:
+          type: string
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+    LineItemPurchaseRequests:
+      type: object
+      additionalProperties: false
+      required: [lineItemId, hxKey, plannedCost, requested, availableToRequest, purchaseRequests, create, notice]
+      properties:
+        lineItemId:
+          type: string
+        hxKey:
+          type: string
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        requested:
+          $ref: "#/components/schemas/Money"
+        availableToRequest:
+          description: Negative when rates moved PR lines in other currencies above the planned cost.
+          $ref: "#/components/schemas/Money"
+        purchaseRequests:
+          type: array
+          description: The PRs the person can see that draw on the line item, newest first.
+          items:
+            $ref: "#/components/schemas/LineItemPurchaseRequestRow"
+        create:
+          $ref: "#/components/schemas/ActionAvailability"
+        notice:
+          type: string
+    ActivityPurchaseRequestLineItem:
+      type: object
+      additionalProperties: false
+      required: [lineItemId, name, requested, availableToRequest, purchaseRequests]
+      properties:
+        lineItemId:
+          type: string
+        name:
+          type: string
+        requested:
+          $ref: "#/components/schemas/Money"
+        availableToRequest:
+          $ref: "#/components/schemas/Money"
+        purchaseRequests:
+          type: integer
+          minimum: 0
+    ActivityPurchaseRequests:
+      type: object
+      additionalProperties: false
+      required: [activityId, requested, lineItems]
+      properties:
+        activityId:
+          type: string
+        requested:
+          description: The activity's Total requested in the plan currency.
+          $ref: "#/components/schemas/Money"
+        lineItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityPurchaseRequestLineItem"
+    SimulatedGsapOrderRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version:
+          type: integer
+          minimum: 1
+          description: The purchase request's version the person saw.
     Error:
       type: object
       additionalProperties: false
@@ -8144,12 +9911,14 @@ components:
             - initiative
             - activity
             - lineItem
+            - purchaseRequest
+            - purchaseRequestLine
             - person
             - model
             - dependentAttribute
             - condition
             - linkedOption
-          description: What uses the record.
+          description: What uses the record (the purchase request levels since 032).
         text:
           type: string
           description: The part as people read it, for example Used by 12 activities (1 in the recycle bin).
@@ -8501,6 +10270,8 @@ components:
         - initiative
         - activity
         - lineItem
+        - purchaseRequest
+        - purchaseRequestLine
     AttributeType:
       type: string
       enum:
@@ -10454,7 +12225,7 @@ components:
           type: integer
         years:
           type: array
-          description: The years a new plan may have (current - 1 to current + 5).
+          description: The years a new plan may have (the current year to the current year + 10).
           items:
             type: integer
         year:
@@ -10652,7 +12423,7 @@ components:
           type: boolean
         reason:
           type: string
-          description: Why the next year can't be chosen; empty when it can.
+          description: Why the next year can't be chosen (it is after the current year + 10); empty when it can.
     PlanCopyOptions:
       type: object
       additionalProperties: false
@@ -12529,12 +14300,14 @@ components:
     SwbsStatus:
       type: string
       description: >-
-        notRequested when Request SWBS code from GSAP is off; waitingForApproval while the activity is not Approved;
-        readyToSend once it is Approved (domain model §2.4).
+        received when the line item has its SWBS code (it stays whatever happens to the activity); notRequested when
+        Request SWBS code from GSAP is off; readyToSend once the activity is Approved; waitingForApproval otherwise
+        (domain model §2.4, 030 FR-001).
       enum:
         - notRequested
         - waitingForApproval
         - readyToSend
+        - received
     LineItemCurrency:
       type: object
       additionalProperties: false
@@ -12708,6 +14481,10 @@ components:
         - contractedAmount
         - requestSwbs
         - swbsStatus
+        - swbsCode
+        - swbsRequestedAt
+        - swbsReceivedAt
+        - hxKey
         - financeBudgetYear
         - financeBudgetItem
         - missing
@@ -12761,6 +14538,26 @@ components:
           type: boolean
         swbsStatus:
           $ref: "#/components/schemas/SwbsStatus"
+        swbsCode:
+          type: string
+          description: The SWBS code GSAP returned, read-only; empty until received (030 FR-002).
+          example: SIM-GB01-0001
+        swbsRequestedAt:
+          description: When the SWBS request was sent; null until then.
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        swbsReceivedAt:
+          description: When the SWBS code was received; null until then.
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        hxKey:
+          type: string
+          description: '"HX" followed by the digits of the line item''s ID, the key GSAP data is matched on (030 FR-016).'
+          example: HX1006
         financeBudgetYear:
           oneOf:
             - type: integer
@@ -12821,9 +14618,10 @@ components:
           $ref: "#/components/schemas/ActivityStatus"
         restartsApproval:
           type: boolean
+          deprecated: true
           description: >-
-            True while the activity is Submitted or Approved — adding, duplicating or deleting a line item, or changing
-            its planned cost or currency, then sends it back to Created after confirmation.
+            Always false since feature 034 (D-322) - a line-item change never sends the activity back for approval.
+            Kept for older clients.
         startDate:
           oneOf:
             - type: string
@@ -13157,8 +14955,8 @@ components:
             - type: "null"
         restartApproval:
           type: boolean
-          default: false
-          description: True when the person confirmed "This activity will need approval again".
+          deprecated: true
+          description: Ignored since feature 034 (D-322).
     LineItemUpdate:
       type: object
       additionalProperties: false
@@ -13210,7 +15008,8 @@ components:
             - type: "null"
         restartApproval:
           type: boolean
-          default: false
+          deprecated: true
+          description: Ignored since feature 034 (D-322).
         version:
           type: integer
           description: The version the person started editing from.
@@ -13220,7 +15019,8 @@ components:
       properties:
         restartApproval:
           type: boolean
-          default: false
+          deprecated: true
+          description: Ignored since feature 034 (D-322).
     ApprovalPerson:
       type: object
       additionalProperties: false
@@ -13245,6 +15045,107 @@ components:
         canApprove:
           type: boolean
           description: "False when the person holds no role that approves (014 FR-028). Optional in the contract; always sent once its feature is built (D-298)."
+    ApprovalSubjectKind:
+      type: string
+      description: The record type an approval round or workflow is about (031 FR-001, FR-004).
+      enum: [activity, purchaseRequest, modifiedPurchaseRequest]
+    ApprovalSubjectStatus:
+      type: string
+      description: The record's status — an activity's stored or display status, or a purchase request's (032).
+      enum: [created, submitted, inReview, declined, approved, closed, inProgress, complete]
+    ApprovalSubject:
+      type: object
+      additionalProperties: false
+      description: The record of an approval row or section (031 FR-026).
+      required: [kind, label, id, name, status, displayStatus]
+      properties:
+        kind:
+          $ref: "#/components/schemas/ApprovalSubjectKind"
+        label:
+          type: string
+          description: The record type as screens name it.
+          example: Purchase request
+        id:
+          type: string
+          example: A-1042
+        name:
+          type: string
+        status:
+          $ref: "#/components/schemas/ApprovalSubjectStatus"
+        displayStatus:
+          $ref: "#/components/schemas/ApprovalSubjectStatus"
+        version:
+          type: integer
+          minimum: 1
+          description: Sent in an approval section; absent in rows.
+    ApprovalActionSet:
+      type: object
+      additionalProperties: false
+      required:
+        - submit
+        - resubmit
+        - approve
+        - decline
+        - recall
+      properties:
+        submit:
+          $ref: "#/components/schemas/ApprovalActionAvailability"
+        resubmit:
+          $ref: "#/components/schemas/ApprovalActionAvailability"
+        approve:
+          $ref: "#/components/schemas/ApprovalActionAvailability"
+        decline:
+          $ref: "#/components/schemas/ApprovalActionAvailability"
+        recall:
+          $ref: "#/components/schemas/ApprovalActionAvailability"
+    ApprovalSection:
+      type: object
+      additionalProperties: false
+      description: >-
+        A record's approval section (Go approval.Section) for the approval routes of other record types (feature
+        032): every round of the record, newest first, and the actions of the record type asked for.
+      required: [subject, ownerId, owner, workflow, upcomingLevels, rounds, latestDecline, viewer, actions]
+      properties:
+        subject:
+          $ref: "#/components/schemas/ApprovalSubject"
+        ownerId:
+          type: string
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/ApprovalPerson"
+            - type: "null"
+        workflow:
+          oneOf:
+            - $ref: "#/components/schemas/WorkflowRef"
+            - type: "null"
+        upcomingLevels:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalWorkflowLevel"
+        rounds:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalRound"
+        latestDecline:
+          oneOf:
+            - $ref: "#/components/schemas/DeclineNote"
+            - type: "null"
+        viewer:
+          $ref: "#/components/schemas/ApprovalViewer"
+        actions:
+          $ref: "#/components/schemas/ApprovalActionSet"
+    ApprovalRecordField:
+      type: object
+      additionalProperties: false
+      description: A field of a record that names a person, as a level's approver source (031 FR-011).
+      required: [id, label]
+      properties:
+        id:
+          type: string
+          example: moaApprover
+        label:
+          type: string
+          example: MoA approver
     WorkflowRef:
       type: object
       additionalProperties: false
@@ -13287,7 +15188,7 @@ components:
         approverType:
           description: "017. Optional in the contract; always sent once its feature is built (D-298)."
           type: string
-          enum: [people, manager, role]
+          enum: [people, manager, role, owner, recordField]
         role:
           description: The 014 role of a role level (RoleRef, consolidation D-300); null for other levels.
           oneOf:
@@ -13312,6 +15213,11 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ApprovalPerson"
             - type: "null"
+        recordField:
+          description: The record field of a recordField level (031 FR-011); null for other levels.
+          oneOf:
+            - $ref: "#/components/schemas/ApprovalRecordField"
+            - type: "null"
         summary:
           type: string
           description: This level's part of levelsText.
@@ -13325,6 +15231,8 @@ components:
         - description
         - active
         - levels
+        - objectType
+        - objectTypeFixed
         - levelsText
         - usedByCount
         - waitingCount
@@ -13344,6 +15252,11 @@ components:
           type: string
         active:
           type: boolean
+        objectType:
+          $ref: "#/components/schemas/ApprovalSubjectKind"
+        objectTypeFixed:
+          type: boolean
+          description: The workflow is used, so what it approves can no longer change (031 FR-005).
         levels:
           type: array
           minItems: 1
@@ -13355,11 +15268,12 @@ components:
         usedByCount:
           type: integer
           minimum: 0
-          description: Stored activities that have it in their Approval workflow field or have an approval round with it.
+          description: >-
+            Stored records that have it in their Approval workflow field or have an approval round with it (031 FR-009).
         waitingCount:
           type: integer
           minimum: 0
-          description: Stored activities with an open round of this workflow.
+          description: Stored records with an open round of this workflow.
         warnings:
           type: array
           description: For example "Level 2 has no active approver".
@@ -13407,14 +15321,16 @@ components:
         - waiting
       properties:
         activity:
-          $ref: "#/components/schemas/RecordRef"
+          description: The record; its type is activity or purchaseRequest (031 FR-009).
+          allOf:
+            - $ref: "#/components/schemas/RecordRef"
         path:
           type: array
-          description: Plan, campaign and initiative of the activity, top level first.
+          description: Plan, campaign and initiative of the record, top level first.
           items:
             $ref: "#/components/schemas/RecordRef"
         displayStatus:
-          $ref: "#/components/schemas/ActivityDisplayStatus"
+          $ref: "#/components/schemas/ApprovalSubjectStatus"
         waiting:
           type: boolean
           description: It has an open round of this workflow.
@@ -13470,6 +15386,9 @@ components:
         backupApproverId:
           type: string
           description: Empty for none.
+        recordField:
+          type: string
+          description: The record field of a recordField level (moaApprover); ignored for other sources.
     ApprovalWorkflowCreate:
       type: object
       additionalProperties: false
@@ -13479,6 +15398,10 @@ components:
       properties:
         name:
           type: string
+        objectType:
+          description: What the workflow approves; default activity (031 FR-004).
+          allOf:
+            - $ref: "#/components/schemas/ApprovalSubjectKind"
         description:
           type: string
         levels:
@@ -13504,6 +15427,10 @@ components:
       properties:
         name:
           type: string
+        objectType:
+          description: Changeable only while the workflow is unused (031 FR-005).
+          allOf:
+            - $ref: "#/components/schemas/ApprovalSubjectKind"
         description:
           type: string
         levels:
@@ -13566,6 +15493,9 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ActorRef"
             - type: "null"
+        selfApproval:
+          type: boolean
+          description: A decision on a purchase request by its owner or the round's submitter (031 FR-016).
     ApprovalChainLevel:
       type: object
       additionalProperties: false
@@ -13739,6 +15669,7 @@ components:
             - skipped
             - reminded
             - escalated
+            - superseded
         at:
           type: string
           format: date-time
@@ -13769,11 +15700,15 @@ components:
         waitedDays:
           description: "017. Optional in the contract; always sent once its feature is built (D-298)."
           type: integer
+        selfApproval:
+          type: boolean
+          description: A decision on a purchase request by its owner or the round's submitter (031 FR-016).
     ApprovalRound:
       type: object
       additionalProperties: false
       required:
         - id
+        - kind
         - number
         - outcome
         - workflow
@@ -13789,6 +15724,8 @@ components:
         id:
           type: string
           example: AR-1001
+        kind:
+          $ref: "#/components/schemas/ApprovalSubjectKind"
         number:
           type: integer
           minimum: 1
@@ -13801,6 +15738,7 @@ components:
             - recalled
             - restarted
             - cancelled
+            - superseded
         workflow:
           type: object
           additionalProperties: false
@@ -13996,25 +15934,7 @@ components:
         viewer:
           $ref: "#/components/schemas/ApprovalViewer"
         actions:
-          type: object
-          additionalProperties: false
-          required:
-            - submit
-            - resubmit
-            - approve
-            - decline
-            - recall
-          properties:
-            submit:
-              $ref: "#/components/schemas/ApprovalActionAvailability"
-            resubmit:
-              $ref: "#/components/schemas/ApprovalActionAvailability"
-            approve:
-              $ref: "#/components/schemas/ApprovalActionAvailability"
-            decline:
-              $ref: "#/components/schemas/ApprovalActionAvailability"
-            recall:
-              $ref: "#/components/schemas/ApprovalActionAvailability"
+          $ref: "#/components/schemas/ApprovalActionSet"
     SubmitProblem:
       type: object
       additionalProperties: false
@@ -14033,6 +15953,8 @@ components:
           enum:
             - activity
             - lineItem
+            - purchaseRequest
+            - purchaseRequestLine
         lineItemId:
           type: string
           description: The line item (L-…) for the lineItem group; empty otherwise.
@@ -14068,10 +15990,10 @@ components:
           enum:
             - submit
             - resubmit
-          description: resubmit when the activity is Declined.
+          description: resubmit when the activity is Declined or Submitted (031 FR-017).
         available:
           type: boolean
-          description: false when the activity is neither Created nor Declined.
+          description: false when the activity is Approved.
         reason:
           type: string
         roundNumber:
@@ -14109,6 +16031,22 @@ components:
         approvedAutomatically:
           type: boolean
           description: No level needs a decision; confirming approves the activity.
+        replaces:
+          description: The open round a re-submission ends, and the level it waits at (031 FR-018); null otherwise.
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required: [roundNumber, level, levelLabel]
+              properties:
+                roundNumber:
+                  type: integer
+                  minimum: 1
+                level:
+                  type: integer
+                  minimum: 1
+                levelLabel:
+                  type: string
+            - type: "null"
     SubmitRequest:
       type: object
       additionalProperties: false
@@ -14219,6 +16157,7 @@ components:
       type: object
       additionalProperties: false
       required:
+        - subject
         - activity
         - path
         - owner
@@ -14231,23 +16170,28 @@ components:
         - startDatePassed
         - myDecision
       properties:
+        subject:
+          $ref: "#/components/schemas/ApprovalSubject"
         activity:
-          type: object
-          additionalProperties: false
-          required:
-            - id
-            - name
-            - status
-            - displayStatus
-          properties:
-            id:
-              type: string
-            name:
-              type: string
-            status:
-              $ref: "#/components/schemas/ActivityStatus"
-            displayStatus:
-              $ref: "#/components/schemas/ActivityDisplayStatus"
+          description: The activity of an activity row; null for rows of other record types (use subject).
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required:
+                - id
+                - name
+                - status
+                - displayStatus
+              properties:
+                id:
+                  type: string
+                name:
+                  type: string
+                status:
+                  $ref: "#/components/schemas/ActivityStatus"
+                displayStatus:
+                  $ref: "#/components/schemas/ActivityDisplayStatus"
+            - type: "null"
         path:
           type: array
           description: Plan, campaign, initiative.
@@ -14478,6 +16422,7 @@ components:
         - kind
         - title
         - text
+        - subject
         - activity
         - actor
         - at
@@ -14504,14 +16449,16 @@ components:
         text:
           type: string
           example: Priya Raman submitted 'Launch film' (A-1042)
-        activity:
+        subject:
           type: object
           additionalProperties: false
-          required:
-            - id
-            - name
-            - exists
+          description: The record the notification is about (031 FR-028).
+          required: [kind, label, id, name, exists]
           properties:
+            kind:
+              $ref: "#/components/schemas/ApprovalSubjectKind"
+            label:
+              type: string
             id:
               type: string
             name:
@@ -14519,7 +16466,26 @@ components:
               description: The name at the time.
             exists:
               type: boolean
-              description: false when the activity is no longer stored (deleted).
+              description: false when the record is no longer stored (deleted) or visible.
+        activity:
+          description: The activity of an activity notification; null for other record types (use subject).
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required:
+                - id
+                - name
+                - exists
+              properties:
+                id:
+                  type: string
+                name:
+                  type: string
+                  description: The name at the time.
+                exists:
+                  type: boolean
+                  description: false when the activity is no longer stored (deleted).
+            - type: "null"
         actor:
           $ref: "#/components/schemas/ActorRef"
         at:
@@ -17054,6 +19020,10 @@ components:
         - finance.view
         - finance.link
         - finance.import
+        - purchaseRequests.edit
+        - purchaseRequests.delete
+        - purchaseRequests.submit
+        - purchaseRequests.list
         - approvals.decide
         - approvals.decideOnBehalf
         - globalBudgets.view
@@ -17085,7 +19055,7 @@ components:
       properties:
         name:
           type: string
-          enum: [Plans and planning, Financial data, Approvals, Global budgets, Administration]
+          enum: [Plans and planning, Financial data, Purchase requests, Approvals, Global budgets, Administration]
         permissions:
           type: array
           items:
@@ -18483,7 +20453,10 @@ components:
           example: FIM-1002
         source:
           type: string
-          enum: [file, demo]
+          description: >-
+            file and demo (015); simulatedGsap is booked by the simulated GSAP for a purchase request
+            (033), and fileName is the PR's ID.
+          enum: [file, demo, simulatedGsap]
         feedName:
           type: string
           example: Simulated GSAP extract
@@ -18528,6 +20501,76 @@ components:
             $ref: "#/components/schemas/FinancialImport"
         total:
           type: integer
+    SwbsRunRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        lineItemIds:
+          type: array
+          description: Only these line items; leave it out to send every line item that is ready.
+          minItems: 1
+          maxItems: 200
+          items:
+            type: string
+            minLength: 1
+            maxLength: 40
+    SwbsRunCode:
+      type: object
+      additionalProperties: false
+      required: [lineItemId, lineItemName, companyCode, swbsCode]
+      properties:
+        lineItemId:
+          type: string
+          example: L-1006
+        lineItemName:
+          type: string
+          example: Stand build
+        companyCode:
+          type: string
+          description: The activity's company code; empty when it has none (the code then uses 0000).
+          example: GB01
+        swbsCode:
+          type: string
+          example: SIM-GB01-0001
+    SwbsRun:
+      type: object
+      additionalProperties: false
+      required: [id, source, ranAt, ranBy, sent, codes]
+      properties:
+        id:
+          type: string
+          example: SWR-1002
+        source:
+          type: string
+          enum: [simulatedGsap, demoData]
+        ranAt:
+          type: string
+          format: date-time
+        ranBy:
+          $ref: "#/components/schemas/ActorRef"
+        sent:
+          type: integer
+          minimum: 0
+        codes:
+          type: array
+          items:
+            $ref: "#/components/schemas/SwbsRunCode"
+    SwbsRunPage:
+      type: object
+      additionalProperties: false
+      required: [items, total, readyToSend]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SwbsRun"
+        total:
+          type: integer
+          minimum: 0
+        readyToSend:
+          type: integer
+          minimum: 0
+          description: How many line items in the person's scope are ready to send now.
     FinancialOverview:
       type: object
       additionalProperties: false
@@ -19526,7 +21569,7 @@ components:
     ApprovalRuleOptions:
       type: object
       additionalProperties: false
-      required: [activityTypes, businessUnits, roles]
+      required: [activityTypes, businessUnits, roles, objectTypes, recordFields]
       properties:
         activityTypes:
           type: array
@@ -19541,6 +21584,32 @@ components:
           description: Feature 014's roles that include approvals.decide, sorted by name.
           items:
             $ref: "#/components/schemas/RoleRef"
+        objectTypes:
+          type: array
+          description: What a workflow can approve, in order (031 FR-004).
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, label]
+            properties:
+              id:
+                $ref: "#/components/schemas/ApprovalSubjectKind"
+              label:
+                type: string
+        recordFields:
+          type: array
+          description: The record fields a level may name, per object type (031 FR-011).
+          items:
+            type: object
+            additionalProperties: false
+            required: [objectType, id, label]
+            properties:
+              objectType:
+                $ref: "#/components/schemas/ApprovalSubjectKind"
+              id:
+                type: string
+              label:
+                type: string
     ApprovalExcludedPerson:
       type: object
       additionalProperties: false
@@ -19727,8 +21796,10 @@ components:
     ApprovalLevelWaiting:
       type: object
       additionalProperties: false
-      required: [workflow, level, levelLabel, waiting, overdue, oldestWaitingSince]
+      required: [kind, workflow, level, levelLabel, waiting, overdue, oldestWaitingSince]
       properties:
+        kind:
+          $ref: "#/components/schemas/ApprovalSubjectKind"
         workflow:
           type: object
           additionalProperties: false
@@ -19800,7 +21871,9 @@ components:
       required: [activity, roundNumber, level, action, to, waitedDays]
       properties:
         activity:
-          $ref: "#/components/schemas/RecordRef"
+          description: The record; its type is activity or purchaseRequest.
+          allOf:
+            - $ref: "#/components/schemas/RecordRef"
         roundNumber:
           type: integer
         level:
