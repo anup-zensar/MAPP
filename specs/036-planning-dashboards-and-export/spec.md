@@ -327,8 +327,9 @@ global budgets panels — the same figures as on screen. **Export › PDF** give
 
 **Experience**
 
-- **FR-028**: Every panel MUST show its own loading, empty and error states; a panel that fails never hides the
-  others' figures (the whole dashboard is one answer, so an error shows once with a retry).
+- **FR-028**: A dashboard MUST show a loading state in reserved space, an error with Retry, a no-access state and
+  an empty state (no plans to show); once shown, a panel with nothing to count says why ("No approvals yet",
+  "Purchase requests are switched off") instead of zeros.
 - **FR-029**: Every chart MUST have an equivalent table (a "Table" view) and a text summary for assistive
   technology; colours are never the only carrier of meaning (constitution F6).
 
