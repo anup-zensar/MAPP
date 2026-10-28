@@ -6,8 +6,9 @@ this file and the constitution disagree, the constitution wins and this file is 
 
 ## Project
 
-MAPP is Shell's marketing planning application replacing the Hive9 Plan module. This phase covers
-only the **Plan module**: demo sign-in, application shell, home dashboard, settings, people and teams,
+MAPP is Shell's marketing planning application replacing the Hive9 Plan module; people see it as
+**SP&A One** (feature 035, D-332) — write that name in anything shown on screen, MAPP everywhere else.
+This phase covers only the **Plan module**: demo sign-in, application shell, home dashboard, settings, people and teams,
 plans, campaigns, initiatives, activities, line items, approvals, planning views, activity log and
 recycle bin, and Shell's purchase-request process on MAPP's side up to the purchase order, with SWBS codes,
 GSAP PRs and POs from a simulated GSAP (features 030–034). Spec-driven development with GitHub Spec Kit. The

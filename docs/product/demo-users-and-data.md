@@ -1,6 +1,6 @@
 # Demo Users and Seed Data
 
-MAPP ships with a **fictitious** dataset so every feature can be demonstrated and tested. No real
+MAPP (shown as SP&A One) ships with a **fictitious** dataset so every feature can be demonstrated and tested. No real
 Shell person, figure or code is used; option lists are realistic samples until Shell supplies the real
 lists from a production data extract. The seed is loaded by an explicit command (defined in feature
 001's plan) and never in a production environment.
