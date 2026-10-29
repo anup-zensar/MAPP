@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-28
 
-**Status**: Draft
+**Status**: Built (2026-10-29)
 
 **Input**: RFP §8 and BRD BUS.BUD.030: "Tool to allow budget owners to restrict or block overspending against
 approved budgets, and to configure whether this is a hard stop or a warning." Brought into scope by D-333
