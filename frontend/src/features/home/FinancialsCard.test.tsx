@@ -13,10 +13,11 @@ import type { FinancialOverview, HomeScope } from './api';
 function renderCard(
   answer: Answer<'GET /api/v1/financials/overview'> = { body: overviewOf() },
   scope: HomeScope = 'myTeams',
+  user = testUser(),
 ) {
   const api = mockApi([reply('GET /api/v1/financials/overview', answer)]);
   const rendered = renderWithProviders(<FinancialsCard scope={scope} />, {
-    user: testUser(),
+    user,
     path: '/',
   });
   return { ...rendered, api };
@@ -93,6 +94,23 @@ describe('FinancialsCard (015 US6, FR-025)', () => {
 
     expect(
       await screen.findByRole('link', { name: '3 activities committed above planned cost' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /not linked/ })).not.toBeInTheDocument();
+  });
+
+  it('shows no "transactions not linked" line to a person who may not import (038 FR-004, H-4)', async () => {
+    const viewer = testUser({
+      access: {
+        roles: [],
+        permissions: [{ key: 'finance.view', all: true, teams: [] }],
+        administrators: [],
+        noSelfApproval: true,
+      },
+    });
+    renderCard({ body: overviewOf({ notLinked: 2 }) }, 'myTeams', viewer);
+
+    expect(
+      await screen.findByRole('link', { name: '1 activity committed above planned cost' }),
     ).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /not linked/ })).not.toBeInTheDocument();
   });
