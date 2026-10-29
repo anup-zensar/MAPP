@@ -155,7 +155,7 @@ func TestGetPlan_ViewAnd404_FR011(t *testing.T) {
 	china := priya.Do(t, http.MethodGet, "/api/v1/plans/P-1002", nil)
 	gone := priya.Do(t, http.MethodGet, "/api/v1/plans/P-9999", nil)
 
-	system := map[string]any{"id": "system", "name": "SP&A One"}
+	priyaRef := map[string]any{"id": "U-1002", "name": "Priya Raman"}
 	usdOf := func(amount string) map[string]any { return map[string]any{"amount": amount, "currency": "USD"} }
 	assertFields(t, europe, http.StatusOK, map[string]any{
 		"id": "P-1001", "name": "FY2026 Lubricants Europe", "year": 2026, "status": "published",
@@ -169,7 +169,7 @@ func TestGetPlan_ViewAnd404_FR011(t *testing.T) {
 		"defaultSpread":        "evenly", "bcpir": true, "goalStage": "inq", "goalAmount": "250000",
 		"attributes":   map[string]any{"SA-1001": []any{"SO-1002"}},
 		"businessUnit": []any{map[string]any{"id": "SO-1002", "label": "Lubricants", "active": true}},
-		"version":      1, "createdAt": "2026-03-12T09:00:00Z", "createdBy": system, "updatedAt": "2026-03-12T09:00:00Z", "updatedBy": system,
+		"version":      1, "createdAt": "2026-02-26T09:00:00Z", "createdBy": priyaRef, "updatedAt": "2026-02-26T09:00:00Z", "updatedBy": priyaRef, // 038 L-8
 	})
 	var p plan.PlanView
 	europe.Decode(t, &p)

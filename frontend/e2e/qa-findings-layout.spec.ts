@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './support/no-csp-violations';
-import { callApi, expectNoAxeViolations, signInAs } from './fixtures';
+import { expectNoAxeViolations, signInAs } from './fixtures';
 import { createPlan, createPlanningRecords } from './planning';
 import { xlsx } from './xlsx';
 
@@ -28,10 +28,8 @@ test('038 FR-036 (M-14, M-15): a 120-character name wraps; Plans and the SP&A vi
   page,
 }) => {
   await signInAs(page, MEI);
-  const plan = await createPlan(page, 'Layout');
-  const current = await callApi<{ version: number }>(page, 'GET', `/api/v1/plans/${plan.id}`);
   const name = longName();
-  await callApi(page, 'PATCH', `/api/v1/plans/${plan.id}`, { name, version: current.version });
+  const plan = await createPlan(page, 'Layout', undefined, name);
 
   for (const width of WIDTHS) {
     await page.setViewportSize({ width, height: 900 });
