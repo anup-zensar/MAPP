@@ -37,6 +37,7 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
         startDate: '2026-01-01',
         endDate: '2026-12-31',
         budget: { amount: '450000.00', currency: 'USD' },
+        overspend: 'warn',
         attributes: {},
         version: 3,
       },

@@ -34,7 +34,12 @@ describe('GlobalBudgetPage allocations (014 US6, FR-030, FR-034)', () => {
       (await screen.findAllByText("Allocation to 'FY2026 Lubricants Europe' saved"))[0],
     ).toBeInTheDocument();
     expect(api.bodiesOf('PATCH /api/v1/budget-allocations/BA-1001')).toEqual([
-      { amount: { amount: '1300000.00', currency: 'USD' }, version: 1, planVersion: 4 },
+      {
+        amount: { amount: '1300000.00', currency: 'USD' },
+        overspend: 'warn',
+        version: 1,
+        planVersion: 4,
+      },
     ]);
   });
 
@@ -58,7 +63,12 @@ describe('GlobalBudgetPage allocations (014 US6, FR-030, FR-034)', () => {
       (await screen.findAllByText("Allocation to 'FY2026 Brand Europe' saved"))[0],
     ).toBeInTheDocument();
     expect(api.bodiesOf('POST /api/v1/global-budgets/GB-1001/allocations')).toEqual([
-      { planId: 'P-1005', amount: { amount: '250000.00', currency: 'USD' }, planVersion: 1 },
+      {
+        planId: 'P-1005',
+        amount: { amount: '250000.00', currency: 'USD' },
+        overspend: 'warn',
+        planVersion: 1,
+      },
     ]);
   });
 

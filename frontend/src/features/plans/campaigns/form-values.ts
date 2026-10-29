@@ -1,7 +1,3 @@
-/**
- * The campaign and initiative forms' values (plan "Forms"): what the fields hold, what is sent,
- * and where each problem is shown.
- */
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { AttributeForm, AttributeValues } from '@/ui/ShellAttributeFields/rules';
 import { BUDGET_CURRENCY, budgetInput, budgetText } from './budget';
@@ -9,7 +5,6 @@ import type { Campaign, CampaignCreate, Initiative } from './api';
 import type { RecordFormValues } from './schemas';
 import type { RecordLevel } from './texts';
 
-/** The fields that show the API's problems under them, in the form's order. */
 export const RECORD_FIELDS = [
   'name',
   'ownerId',
@@ -19,10 +14,8 @@ export const RECORD_FIELDS = [
   'budget',
 ] as const;
 
-/** Every field of a create or update request but the version (CampaignCreate = InitiativeCreate). */
 export type RecordBody = Required<CampaignCreate>;
 
-/** A stored campaign or initiative as the edit form starts from it. */
 export function valuesOf(record: Campaign | Initiative): RecordFormValues {
   return {
     name: record.name,
@@ -31,15 +24,11 @@ export function valuesOf(record: Campaign | Initiative): RecordFormValues {
     endDate: record.endDate ?? '',
     description: record.description,
     budget: budgetText(record.budget),
+    overspend: record.overspend.mode,
     attributes: record.attributes,
   };
 }
 
-/**
- * The request body: the API stores exactly what it receives (Decision D); empty fields are sent
- * as null or "", and the name as typed (the API trims and checks it). The budget is in the plan
- * currency (016 FR-011).
- */
 export function bodyOf(values: RecordFormValues, currency = BUDGET_CURRENCY): RecordBody {
   return {
     name: values.name,
@@ -48,20 +37,15 @@ export function bodyOf(values: RecordFormValues, currency = BUDGET_CURRENCY): Re
     startDate: values.startDate || null,
     endDate: values.endDate || null,
     budget: budgetInput(values.budget, currency),
+    overspend: values.overspend,
     attributes: values.attributes,
   };
 }
 
-/**
- * The input id of a field the API names ("name", "startDate", "attributes.SA-1003"), for the error
- * summary and `?focus=`: "campaign-name", "campaign-startDate"; attributes keep the id
- * ShellAttributeFields gives them.
- */
 export function fieldId(level: RecordLevel, field: string): string {
   return field.startsWith('attributes.') ? field : `${level}-${field}`;
 }
 
-/** The problems with Shell attributes, by field name, for ShellAttributeFields. */
 export function attributeErrors(problems: FieldProblem[]): Record<string, string> {
   const errors: Record<string, string> = {};
   for (const problem of problems) {
@@ -72,7 +56,6 @@ export function attributeErrors(problems: FieldProblem[]): Record<string, string
   return errors;
 }
 
-/** FR-003: yes/no attributes start as No on a new record. */
 export function defaultAttributes(form: AttributeForm): AttributeValues {
   const values: AttributeValues = {};
   for (const section of form.sections) {
@@ -85,7 +68,6 @@ export function defaultAttributes(form: AttributeForm): AttributeValues {
   return values;
 }
 
-/** R4: dates that start before 1 January or end after 31 December of the plan's year. */
 export function outsideYear(startDate: string, endDate: string, year: number): boolean {
   return (
     (startDate !== '' && startDate < `${year}-01-01`) ||

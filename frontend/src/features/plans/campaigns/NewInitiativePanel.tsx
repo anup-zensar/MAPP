@@ -2,6 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate, useParams } from 'react-router';
+import { useOverspendConfiguration } from '@/features/overspend';
+import type { OverspendMode } from '@/features/overspend';
 import { useAttributeForm } from '@/features/settings';
 import { useToast } from '@/ui/Toast/useToast';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
@@ -33,9 +35,10 @@ export function NewInitiativePanel() {
   const parent = useCampaign(campaignId);
   const plan = usePlan(planId);
   const attributeForm = useAttributeForm('initiative');
+  const overspend = useOverspendConfiguration();
   const closeTo = `/plans/${planId}`;
 
-  const failed = [parent, plan, attributeForm].find((query) => query.isError);
+  const failed = [parent, plan, attributeForm, overspend].find((query) => query.isError);
   if (failed) {
     return (
       <StatePanel title={NEW_INITIATIVE} closeTo={closeTo}>
@@ -43,7 +46,7 @@ export function NewInitiativePanel() {
       </StatePanel>
     );
   }
-  if (!parent.data || !plan.data || !attributeForm.data) {
+  if (!parent.data || !plan.data || !attributeForm.data || !overspend.data) {
     return (
       <StatePanel title={NEW_INITIATIVE} closeTo={closeTo}>
         <PanelLoading />
@@ -59,6 +62,7 @@ export function NewInitiativePanel() {
       businessUnit={plan.data.businessUnit.map((option) => option.id)}
       attributeForm={attributeForm.data}
       currency={planCurrencyOf(plan.data)}
+      overspend={overspend.data.defaultMode}
     />
   );
 }
@@ -70,6 +74,7 @@ interface NewInitiativeFormProps {
   attributeForm: AttributeForm;
   /** The plan currency: the budget is typed and sent in it (016 FR-011). */
   currency: string;
+  overspend: OverspendMode;
 }
 
 function NewInitiativeForm({
@@ -78,6 +83,7 @@ function NewInitiativeForm({
   businessUnit,
   attributeForm,
   currency,
+  overspend,
 }: NewInitiativeFormProps) {
   const navigate = useNavigate();
   const { show } = useToast();
@@ -95,6 +101,7 @@ function NewInitiativeForm({
       name: '',
       description: '',
       budget: '',
+      overspend,
       ...defaults,
       attributes: defaultAttributes(attributeForm),
     },

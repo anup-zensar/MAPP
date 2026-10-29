@@ -12,6 +12,7 @@ const financials = () => import('@/features/financials');
 const globalBudgets = () => import('@/features/global-budgets');
 const home = () => import('@/features/home');
 const lineItems = () => import('@/features/line-items');
+const overspend = () => import('@/features/overspend');
 const people = () => import('@/features/people');
 const plans = () => import('@/features/plans');
 const purchaseRequests = () => import('@/features/purchase-requests');
@@ -147,6 +148,9 @@ export const PurchaseRequestCreatePage = lazy(() =>
 );
 export const PurchaseRequestEditPage = lazy(() =>
   purchaseRequests().then((feature) => ({ default: feature.PurchaseRequestEditPage })),
+);
+export const OverspendSettingsPage = lazy(() =>
+  overspend().then((feature) => ({ default: feature.OverspendSettingsPage })),
 );
 export const PurchaseRequestSettingsPage = lazy(() =>
   purchaseRequests().then((feature) => ({ default: feature.PurchaseRequestSettingsPage })),

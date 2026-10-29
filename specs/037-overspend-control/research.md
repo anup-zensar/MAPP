@@ -66,12 +66,13 @@ milliseconds; `apibench` shows the per-operation query count.
 
 **Decision**: 409 with the new error code `over_budget`, a message naming every budget ("Not saved — the
 planned cost of campaign 'Helix launch' would be 712,000.00 USD, over its budget of 700,000.00 USD by
-12,000.00 USD. Its owner refuses overspending.") and a list `overBudget` of `{budget: RecordRef, amount,
-plannedCost, overBy}` in the budget's currency. Money is formatted with two decimals and grouped thousands as
-everywhere else.
+12,000.00 USD. Its owner refuses overspending."), several budgets joined in one message. Money is formatted
+with two decimals and grouped thousands as everywhere else.
 
-**Rationale**: one error envelope (B6) extended with an optional property is backward compatible; the code
-lets the web app present it as a refusal rather than a field problem; the list lets screens name each budget.
+**Rationale**: one error envelope (B6) with one more code is backward compatible, and the code lets the web
+app present it as a refusal rather than a field problem. A structured `overBudget` list was considered and
+left out: the screens show the message, and adding it would have meant changing the shared `errs` package
+(over its comment budget) for no reader.
 
 ## R5 — Organisation default
 

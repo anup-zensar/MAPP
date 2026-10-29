@@ -122,6 +122,7 @@ describe('GlobalBudgetsPage (014 US6, FR-036)', () => {
         amount: { amount: '1500000.00', currency: 'USD' },
         ownerId: 'U-1005',
         description: '',
+        overspend: 'warn',
       },
     ]);
   });

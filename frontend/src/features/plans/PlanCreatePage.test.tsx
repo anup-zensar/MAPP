@@ -68,6 +68,7 @@ describe('PlanCreatePage (US1)', () => {
         bcpir: false,
         goalStage: 'inq',
         goalAmount: null,
+        overspend: 'warn',
         attributes: {},
       },
     ]);

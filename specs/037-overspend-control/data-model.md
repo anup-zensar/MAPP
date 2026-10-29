@@ -21,7 +21,7 @@ Existing rows get `'warn'` from the column default, so nothing changes for store
 | `Mode` | `"warn"` · `"refuse"` | `Normalised()` reads `""` (records written before 037 in fakes) as Warn |
 | `Control` | `Mode`, `CanChange authz.Availability` | how a record shows its setting (contract `OverspendControl`) |
 | `Budget` | `Kind` (plan · campaign · initiative · globalBudget), `ID`, `Name`, `Mode`, `Amount money.Money`, `Planned money.Money`, `PlanIDs` (a global budget's allocated plans) | one budget as the guard reads it; never stored |
-| `Overage` | `Budget errs.RecordRef`, `Amount`, `PlannedCost`, `OverBy money.Money` | part of a refusal (contract `BudgetOverage`) |
+| `Overage` | `Budget errs.RecordRef`, `Amount`, `PlannedCost`, `OverBy money.Money` | what a refusal names, in its message (409 `over_budget`) |
 | `Limit` | `Budget errs.RecordRef`, `LeftToPlan money.Money` | a Refuse budget above an activity (contract `OverspendLimit`) |
 | `Configuration` | `DefaultMode Mode`, `record.Meta` | Settings › Overspend control |
 

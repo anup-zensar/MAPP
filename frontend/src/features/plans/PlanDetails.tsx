@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
+import { RefusesOverspending } from '@/features/overspend';
 import { useAttributeForm } from '@/features/settings';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
@@ -102,6 +103,7 @@ export function PlanDetails({ plan, basicsExtra, budgetExtra, budgetValue }: Pla
                   inline
                 />
               )}
+              <RefusesOverspending mode={plan.overspend.mode} />
             </Field>
             {plan.allocation && (
               <Field label="Allocated from">

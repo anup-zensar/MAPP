@@ -148,6 +148,7 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
         startDate: '2026-01-01',
         endDate: '2026-12-31',
         budget: { amount: '12500.50', currency: 'USD' },
+        overspend: 'warn',
         attributes: { 'SA-SMP': false },
       },
     ]);

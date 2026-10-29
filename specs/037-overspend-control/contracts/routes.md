@@ -17,5 +17,5 @@ Changed operations (rules unchanged; scoped checks in the services):
 | `POST /api/v1/global-budgets`, `PATCH /api/v1/global-budgets/{globalBudgetId}` | optional `overspend` |
 | `POST /api/v1/global-budgets/{globalBudgetId}/allocations`, `PATCH /api/v1/budget-allocations/{allocationId}` | optional `overspend`, the allocated plan's |
 | `GET /api/v1/initiatives/{initiativeId}/activity-form`, `GET /api/v1/activities/{activityId}/form` | answer gains `overspendLimits` |
-| Every write that changes planned cost or a budget | may answer 409 `over_budget` with `overBudget` |
+| Every write that changes planned cost or a budget | may answer 409 `over_budget`, the message naming every budget |
 | Purchase-request submit operations | one more `not_ready`/submit problem (032 FR-021, 037 FR-019) |

@@ -2,6 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate, useParams } from 'react-router';
+import { useOverspendConfiguration } from '@/features/overspend';
+import type { OverspendMode } from '@/features/overspend';
 import { useAttributeForm } from '@/features/settings';
 import { useToast } from '@/ui/Toast/useToast';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
@@ -32,9 +34,10 @@ export function NewCampaignPanel() {
   const campaigns = usePlanCampaigns(planId);
   const plan = usePlan(planId);
   const attributeForm = useAttributeForm('campaign');
+  const overspend = useOverspendConfiguration();
   const closeTo = `/plans/${planId}`;
 
-  const failed = [campaigns, plan, attributeForm].find((query) => query.isError);
+  const failed = [campaigns, plan, attributeForm, overspend].find((query) => query.isError);
   if (failed) {
     return (
       <StatePanel title={NEW_CAMPAIGN} closeTo={closeTo}>
@@ -42,7 +45,7 @@ export function NewCampaignPanel() {
       </StatePanel>
     );
   }
-  if (!campaigns.data || !plan.data || !attributeForm.data) {
+  if (!campaigns.data || !plan.data || !attributeForm.data || !overspend.data) {
     return (
       <StatePanel title={NEW_CAMPAIGN} closeTo={closeTo}>
         <PanelLoading />
@@ -58,6 +61,7 @@ export function NewCampaignPanel() {
       businessUnit={plan.data.businessUnit.map((option) => option.id)}
       attributeForm={attributeForm.data}
       currency={planCurrencyOf(plan.data)}
+      overspend={overspend.data.defaultMode}
     />
   );
 }
@@ -69,6 +73,7 @@ interface NewCampaignFormProps {
   attributeForm: AttributeForm;
   /** The plan currency: the budget is typed and sent in it (016 FR-011). */
   currency: string;
+  overspend: OverspendMode;
 }
 
 function NewCampaignForm({
@@ -77,6 +82,7 @@ function NewCampaignForm({
   businessUnit,
   attributeForm,
   currency,
+  overspend,
 }: NewCampaignFormProps) {
   const navigate = useNavigate();
   const { show } = useToast();
@@ -95,6 +101,7 @@ function NewCampaignForm({
       name: '',
       description: '',
       budget: '',
+      overspend,
       ...defaults,
       attributes: defaultAttributes(attributeForm),
     },

@@ -18,6 +18,7 @@ import type { Campaign, Initiative } from './api';
 import { bodyOf, fieldId, RECORD_FIELDS, valuesOf } from './form-values';
 import { RecordFormPanel } from './PanelFrame';
 import { RecordForm } from './RecordForm';
+import { overspendRefusal } from './overspend-check';
 import { recordFormSchema } from './schemas';
 import type { RecordFormValues } from './schemas';
 import { CONFLICT_NEXT_STEP, EDIT_CAMPAIGN, EDIT_INITIATIVE, savedToast } from './texts';
@@ -30,16 +31,9 @@ export interface RecordEditProps {
   planId: string;
   attributeForm: AttributeForm;
   businessUnit: string[];
-  /** The plan currency: the budget is typed and sent in it (016 FR-011). */
   currency: string;
 }
 
-/**
- * A campaign's or initiative's edit form (US3, FR-018): it copies the record and its version once
- * (001's edit-form rule), lists the values a change will clear before saving, shows every problem
- * at once, keeps the typed values after a conflict and takes the new version, and asks before
- * typed changes are lost. `?focus=<field>` puts the focus on that field (completeness links).
- */
 export function RecordEdit({
   level,
   record,
@@ -54,7 +48,6 @@ export function RecordEdit({
   const { dateFormat } = useFormatters();
   const update = useUpdateRecord(level, record.id);
   const { leaving, leave } = useLeaveAfterSave();
-  // The record as the form opened it: later refreshes never change the form.
   const [opened] = useState(record);
   const start = valuesOf(opened);
   const form = useForm<RecordFormValues>({
@@ -74,6 +67,11 @@ export function RecordEdit({
   useFocusField(focus ? fieldId(level, focus) : null);
 
   const requestSave = form.handleSubmit((typed) => {
+    const refused = overspendRefusal(typed, opened);
+    if (refused) {
+      setFailure({ message: refused });
+      return;
+    }
     if (valuesToClear(attributeForm, typed.attributes, start.attributes).length > 0) {
       setAskingToClear(true);
     } else {
@@ -103,8 +101,6 @@ export function RecordEdit({
     }
     showServerProblems([]);
     if (apiError.kind === 'conflict') {
-      // The typed values stay; the form takes the version with the other person's change, so
-      // Save again replaces it on purpose.
       const latest = await fetchLatestRecord(queryClient, level, record.id).catch(() => undefined);
       if (latest) {
         setVersion(latest.version);
@@ -115,7 +111,10 @@ export function RecordEdit({
       });
       return;
     }
-    // Anything else: the message as a toast, the typed values kept (plan "States").
+    if (apiError.kind === 'overBudget') {
+      setFailure({ message: apiError.message });
+      return;
+    }
     setFailure(null);
     show({ message: apiError.message });
   }
@@ -158,15 +157,15 @@ export function RecordEdit({
         savedBudget={opened.budget}
         currency={currency}
         phased={!!opened.budgetPhasing && opened.budgetPhasing.method !== 'none'}
+        overspendLock={
+          opened.overspend.canChange.available ? '' : opened.overspend.canChange.reason
+        }
+        planned={opened.budgetAndCost.plannedCost}
       />
     </RecordFormPanel>
   );
 }
 
-/**
- * Puts the focus on the field with this input id once it is on screen (a person field appears
- * when the people are loaded), after the panel has placed its own first focus.
- */
 function useFocusField(id: string | null) {
   useEffect(() => {
     if (!id) {

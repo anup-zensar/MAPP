@@ -221,6 +221,15 @@ display and labelled with its currency.
 
 - Budgets are optional. When the parent has no budget, the child's remaining budget shows "—" ("No budget set on the campaign"). A remaining budget **may become negative** (Shell's as-is document); it is shown
   in red with "Over-allocated by X" and never blocks saving (decision D-015).
+- **Overspend control** (feature 037, D-346 – D-348): every plan, campaign, initiative and global budget says
+  what happens "When planned cost goes over this budget": **Warn** (the default, the rule above) or
+  **Refuse**. With Refuse, any save after which the planned cost under the budget (§4.2; for a global budget,
+  its allocated plans' planned cost in USD at the current rates) is above it, and that raised the planned
+  cost, lowered or newly set the budget, or created it (a copy), is refused naming the budget, its amount and
+  the overage. Saves that keep or lower the cost always pass, so Refuse may be chosen while already over.
+  Line items and exchange rates are never refused; over-allocation keeps warning. Only the record's owner or
+  someone who manages global budgets changes the setting; an allocated plan's is set with its allocation. New
+  budgets start with Settings › Overspend control (Warn as delivered); copies keep their source's.
 - Activities and line items have **no budget**; they have **planned cost**.
 
 ### 4.2 Cost flows up (planned cost)
@@ -245,7 +254,8 @@ cost exceeds the budget).
   planned cost (USD). It appears as a system row under the line items. The target is **0.00**.
   - Positive: "X not yet assigned to a line item".
   - Negative: shown in red, "Line items exceed the activity's planned cost by X". It warns but does not
-    block saving; it **does** block submitting (decision D-016).
+    block saving; it **does** block submitting (decision D-016) and submitting a purchase request that draws
+    on the activity's line items (decision D-349).
 - When adding a line item, its planned cost is pre-filled with the current unassigned balance.
 
 ### 4.4 Spreading a line item over time

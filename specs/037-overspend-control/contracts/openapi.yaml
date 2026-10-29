@@ -1,0 +1,99 @@
+# Feature 037 — the operations and schemas added to backend/api/openapi.yaml (the source of truth).
+# Also: property `overspend` (OverspendControl) on Plan, Campaign, Initiative and GlobalBudget;
+# `overspend` (OverspendMode) on BudgetAllocationRow, AllocationOption and PlanDefaults; optional
+# `overspend` on the create and update bodies of plans, campaigns, initiatives, global budgets and
+# allocations; `overspendLimits` on ActivityForm; error code `over_budget` in ErrorDetail.
+paths:
+  /api/v1/overspend-configuration:
+    get:
+      tags: [Settings]
+      operationId: getOverspendConfiguration
+      summary: Settings › Overspend control — the setting new budgets start with (037 FR-006)
+      responses:
+        "200":
+          description: The setting, with whether the person may change it.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OverspendConfiguration"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+    put:
+      tags: [Settings]
+      operationId: saveOverspendConfiguration
+      summary: Change the setting new budgets start with (needs settings.manage); existing budgets keep theirs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OverspendConfigurationInput"
+      responses:
+        "200":
+          description: The setting as saved; logged when it changed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OverspendConfiguration"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+components:
+  schemas:
+    OverspendMode:
+      type: string
+      description: What happens when planned cost goes over a budget — warn (save and show it) or refuse the save.
+      enum: [warn, refuse]
+    OverspendControl:
+      type: object
+      additionalProperties: false
+      required: [mode, canChange]
+      properties:
+        mode:
+          $ref: "#/components/schemas/OverspendMode"
+        canChange:
+          $ref: "#/components/schemas/ActionAvailability"
+    OverspendLimit:
+      type: object
+      additionalProperties: false
+      required: [budget, leftToPlan]
+      properties:
+        budget:
+          $ref: "#/components/schemas/RecordRef"
+        leftToPlan:
+          $ref: "#/components/schemas/Money"
+    OverspendConfiguration:
+      type: object
+      additionalProperties: false
+      required: [defaultMode, version, updatedAt, updatedBy, canChange]
+      properties:
+        defaultMode:
+          $ref: "#/components/schemas/OverspendMode"
+        version:
+          type: integer
+          minimum: 1
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+        canChange:
+          $ref: "#/components/schemas/ActionAvailability"
+    OverspendConfigurationInput:
+      type: object
+      additionalProperties: false
+      required: [version, defaultMode]
+      properties:
+        version:
+          type: integer
+        defaultMode:
+          type: string

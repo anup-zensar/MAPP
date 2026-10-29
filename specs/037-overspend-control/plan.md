@@ -98,7 +98,7 @@ decision log, feature map, domain model)
 |---|---|---|
 | `backend/internal/platform/database/migrations/00025_overspend.sql` | columns, table | FR-001, FR-006 |
 | `backend/internal/overspend` (new) | `model.go` (Mode, Control, Budget, Overage, Limit, Configuration), `rules.go` (refusal rule, overage, limits), `guard.go` (guarded transactor), `access.go` (ControlOf, RequireChange), `service.go` (configuration, DefaultMode, Limits), `kinds.go`, `handler.go`, `store.go`, `store_postgres.go`, `overspendtest/` (fake) | FR-001 – FR-016 |
-| `backend/internal/platform/errs` | `CodeOverBudget`, `Error.OverBudget`, `OverBudget(...)` | FR-010 |
+| `backend/internal/overspend/rules.go` | `CodeOverBudget` and `Refusal(...)`: a 409 `errs.Error` with the message (no change to `errs`) | FR-010 |
 | `backend/internal/plan` | `Plan.Overspend`, input, view, defaults, check, log label; allocation sets it (`BudgetFromAllocation`) | FR-001 – FR-005, FR-007 |
 | `backend/internal/campaign` | `Campaign/Initiative.Overspend`, inputs, views, check, copies keep it | FR-001 – FR-005, FR-007 |
 | `backend/internal/budget` | `GlobalBudget.Overspend`, allocation input/rows/options carry the plan's | FR-001, FR-004 |
@@ -106,7 +106,7 @@ decision log, feature map, domain model)
 | `backend/internal/purchaserequest` | `LineItemFacts.ActivityOverBy`, gate and message | FR-019 |
 | `backend/internal/app` | guarded transactor for the five services, ports, routes; PR facts from line-item summaries | all |
 | `backend/internal/access/routes_overspend.go` | two rules | FR-006 |
-| `backend/api/openapi.yaml` | schemas `OverspendMode`, `OverspendControl`, `OverspendLimit`, `BudgetOverage`, `OverspendConfiguration(Input)`; properties on plan, campaign, initiative, global budget, allocation, activity form; error code | all |
+| `backend/api/openapi.yaml` | schemas `OverspendMode`, `OverspendControl`, `OverspendLimit`, `OverspendConfiguration(Input)`; properties on plan, campaign, initiative, global budget, allocation, activity form; error code `over_budget` | all |
 | `frontend/src/features/overspend` (new) | `OverspendField`, `OverspendNote`, texts, the Settings page, API hooks | FR-002, FR-006, FR-015 |
 | `frontend/src/features/plans` and `plans/campaigns` | forms show the field and the before-save checks | FR-002, FR-015 |
 | `frontend/src/features/global-budgets` | form and allocation dialog | FR-004, FR-015 |
