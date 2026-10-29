@@ -72,7 +72,7 @@ None beyond Phase 1: every story below depends only on T001 – T003.
   `purchaserequest/store_postgres.go` `Claims` fills `Claim.Approved` and adds `RemovedByChange` claims from the
   approved version; `purchaserequest/balance.go` `requested` counts `max(convert(Amount), convert(Approved))`;
   mirror in `purchaserequest/purchaserequesttest/store.go` and `purchaserequest/store_fake_test.go`
-- [ ] T013 [US1] Frontend/E2E (F1) — `frontend/e2e/qa-findings-pr-reservation.spec.ts`: Priya lowers an approved PR
+- [x] T013 [US1] Frontend/E2E (F1) — `frontend/e2e/qa-findings-pr-reservation.spec.ts`: Priya lowers an approved PR
   and submits changes; a second PR is refused on the form; Daniel declines; line item shows Available 0.00; axe
   (after T012)
 
@@ -115,7 +115,7 @@ None beyond Phase 1: every story below depends only on T001 – T003.
   Not linked tab is filtered out in `FinancialsPage.tsx`; `financials-text.ts` belongs to F3 and is not changed here)
 - [x] T027 [P] [US2] F4 — Failing test then fix: `features/people/access/RolePages.test.tsx` shows the server's
   `permissions` problem on the role form; `RoleForm.tsx` places it on the permission list (FR-006)
-- [ ] T028 [US2] Frontend/E2E (F2) — `frontend/e2e/qa-findings-financials.spec.ts`: Mei sees no Not linked tab and
+- [x] T028 [US2] Frontend/E2E (F2) — `frontend/e2e/qa-findings-financials.spec.ts`: Mei sees no Not linked tab and
   gets "no longer exists" for FT-1004; request probes (link FT-1004, unlink out-of-scope, out-of-scope vs missing
   target) give identical answers; Alex links FT-1004 to L-1007 and unlinks it; axe (after T023, T024, T026)
 
@@ -158,7 +158,7 @@ None beyond Phase 1: every story below depends only on T001 – T003.
 - [x] T042 [P] [US4] F2 — Failing test `features/dashboards/DashboardsPage.test.tsx`: when the answer's filters
   differ from the address, the filter bar shows them and the address is replaced (no error state)
 - [x] T043 [US4] F2 — Fix (after T042): `DashboardsPage.tsx` replaces the search params with the filters used
-- [ ] T044 [US4] Frontend/E2E (F2) — `frontend/e2e/qa-findings-dashboards.spec.ts`: `?currency=XXX`, `?currency=JPY`,
+- [x] T044 [US4] Frontend/E2E (F2) — `frontend/e2e/qa-findings-dashboards.spec.ts`: `?currency=XXX`, `?currency=JPY`,
   `/regional?team=T-9999` show a dashboard with filters; axe (after T041, T043)
 
 ---
@@ -177,7 +177,7 @@ None beyond Phase 1: every story below depends only on T001 – T003.
   test: no request for the deleted record after delete — `038 FR-013 (L-3)`
 - [x] T053 [US5] F4 — Fix (after T052): `features/plans/api.ts`, `features/line-items/api.ts` remove the record's
   queries, navigate, then invalidate lists
-- [ ] T054 [US5] Frontend/E2E (F1) — `frontend/e2e/qa-findings-pr-delete.spec.ts`: delete PR → toast → Undo restores;
+- [x] T054 [US5] Frontend/E2E (F1) — `frontend/e2e/qa-findings-pr-delete.spec.ts`: delete PR → toast → Undo restores;
   no 404 for it in the console; axe (after T051)
 
 ---
@@ -252,7 +252,7 @@ None beyond Phase 1: every story below depends only on T001 – T003.
 - [x] T085 [US7] F1 — Fix (after T084): `features/overspend/OverspendSettingsPage.tsx`, `overspend-text.ts`,
   `api.ts`; `features/approvals/ApprovalSection.tsx`, `DecisionActions.tsx`, `ApprovalAlert.tsx`; the purchase-request
   approval section in `features/purchase-requests/`
-- [ ] T086 [US7] Frontend/E2E (F1) — `frontend/e2e/qa-findings-approval-overage.spec.ts`: Warn shows the warning
+- [x] T086 [US7] Frontend/E2E (F1) — `frontend/e2e/qa-findings-approval-overage.spec.ts`: Warn shows the warning
   and approves; Alex sets Refuse; Daniel's Approve disabled with reason; Decline works; axe (after T083, T085)
 
 ---
@@ -364,7 +364,7 @@ None beyond Phase 1: every story below depends only on T001 – T003.
 
 **Goal**: FR-036 – FR-038 (M-14 – M-17). **Independent Test**: spec US13.
 
-- [ ] T140 [US13] Frontend/E2E (F4) — Failing e2e `frontend/e2e/qa-findings-layout.spec.ts`: 120-character names;
+- [x] T140 [US13] Frontend/E2E (F4) — Failing e2e `frontend/e2e/qa-findings-layout.spec.ts`: 120-character names;
   Plans list at 390, 768, 1440 px and SP&A view at 390 px have `scrollWidth ≤ innerWidth`; axe (light, dark) on the
   import problems table, split links, Regional dashboard empty state and PR form at 390 px — `038 FR-036 – FR-038`
 - [x] T141 [P] [US13] F4 — Failing component test `features/workbook/ImportPage.test.tsx` (problems table is a focusable
