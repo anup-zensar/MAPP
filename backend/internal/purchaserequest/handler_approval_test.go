@@ -184,3 +184,22 @@ func TestSubmission_NamesRecordFieldApprover_038_FR027_M9(t *testing.T) {
 	}
 	same(t, "038 FR-027 the MoA approver is named", []string{"level 1: Daniel Okoro"}, got)
 }
+
+func TestApprovalSection_OnlyTheOpenRoundOffersDecisions_038_FR025(t *testing.T) {
+	t.Parallel()
+	s := apitest.New(t)
+	pr := approved(t, s)
+	priya, daniel := s.SignIn(t, priyasEmail), s.SignIn(t, danielsEmail)
+	decoded[purchaserequest.View](t, priya.Do(t, http.MethodPut, prs+"/"+pr.ID, saveBody(pr, "8000.00", "submitChanges")), http.StatusOK)
+
+	view := decoded[purchaserequest.ApprovalView](t, daniel.Do(t, http.MethodGet, prs+"/"+pr.ID+"/approval", nil), http.StatusOK)
+	var got []string
+	for _, sec := range view.Sections {
+		got = append(got, fmt.Sprint(sec.Kind, " approve ", sec.Actions.Approve.Available, " decline ", sec.Actions.Decline.Available,
+			" recall ", sec.Actions.Recall.Available))
+	}
+	same(t, "038 FR-025 the approved first round offers no decision", []string{
+		"modifiedPurchaseRequest approve true decline true recall false",
+		"purchaseRequest approve false decline false recall false",
+	}, got)
+}

@@ -1,4 +1,5 @@
 import { Card } from '@/ui/Card/Card';
+import { ScrollBox } from '@/features/financials';
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
 import type { Money, SpaContribution, SpaPeriod, SpaView } from './api';
@@ -34,37 +35,39 @@ export function SpaPeriods({ view, period, onPeriod, onTrace }: SpaPeriodsProps)
       }
     >
       <p className={styles.note}>{PERIODS.tip}</p>
-      <table className={styles.table}>
-        <caption className="visually-hidden">
-          {PERIODS.title} by {period}, {view.plan.year}
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Period</th>
-            <th scope="col">{PERIODS.planned}</th>
-            <th scope="col">{PERIODS.actual}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <PeriodRow key={row.key} row={row} onTrace={onTrace} />
-          ))}
-          <ExtraRow
-            label={PERIODS.notScheduled}
-            tip={PERIODS.notScheduledTip}
-            value={view.periods.notScheduled}
-            trace={view.periods.notScheduledTrace}
-            onTrace={onTrace}
-          />
-          <ExtraRow
-            label={PERIODS.linesAbove}
-            tip={PERIODS.linesAboveTip}
-            value={view.periods.linesAbovePlannedCost}
-            trace={view.periods.linesAbovePlannedCostTrace}
-            onTrace={onTrace}
-          />
-        </tbody>
-      </table>
+      <ScrollBox label={PERIODS.title} className={styles.scroll}>
+        <table className={styles.table}>
+          <caption className="visually-hidden">
+            {PERIODS.title} by {period}, {view.plan.year}
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Period</th>
+              <th scope="col">{PERIODS.planned}</th>
+              <th scope="col">{PERIODS.actual}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <PeriodRow key={row.key} row={row} onTrace={onTrace} />
+            ))}
+            <ExtraRow
+              label={PERIODS.notScheduled}
+              tip={PERIODS.notScheduledTip}
+              value={view.periods.notScheduled}
+              trace={view.periods.notScheduledTrace}
+              onTrace={onTrace}
+            />
+            <ExtraRow
+              label={PERIODS.linesAbove}
+              tip={PERIODS.linesAboveTip}
+              value={view.periods.linesAbovePlannedCost}
+              trace={view.periods.linesAbovePlannedCostTrace}
+              onTrace={onTrace}
+            />
+          </tbody>
+        </table>
+      </ScrollBox>
     </Card>
   );
 }

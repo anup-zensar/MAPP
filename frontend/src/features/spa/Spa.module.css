@@ -205,6 +205,7 @@
 .scroll {
   max-width: 100%;
   overflow-x: auto;
+  position: relative;
 }
 
 .scroll:focus-visible {

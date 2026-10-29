@@ -65,19 +65,10 @@ test('038 FR-001 (C-1): a change in review keeps the approved amount reserved', 
   await confirm.getByRole('button', { name: 'Submit changes', exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/purchase-requests/${prId}$`));
 
-  // While the change waits, 15,800.00 USD stay reserved: a second request for 3,800.00 is refused.
-  await page.goto(`/purchase-requests/new?lineItemId=${lineItem.id}`);
-  await expect(page.getByRole('heading', { name: 'New purchase request', level: 1 })).toBeVisible();
-  await amountField(page).fill('3800.00');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(
-    page
-      .getByRole('alert')
-      .filter({ hasText: /available/i })
-      .first(),
-  ).toBeVisible();
-  await expect(page).toHaveURL(/\/purchase-requests\/new/);
-  await expectNoAxeViolations(page);
+  // While the change waits, 15,800.00 USD stay reserved: nothing is left for a second request (032 rule).
+  const defaults = await page.request.get(`/api/v1/purchase-requests/new-defaults?lineItemId=${lineItem.id}`);
+  expect(defaults.status()).toBe(400);
+  expect(await defaults.text()).toContain('Nothing left to request');
 
   // Daniel declines the change: the approved 15,800.00 USD stay reserved, nothing is available.
   await signInAs(page, DANIEL);
