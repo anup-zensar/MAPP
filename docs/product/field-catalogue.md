@@ -38,7 +38,7 @@ code, spend category and contracted spend carry Shell's own values (D-325).
 | 5 | Owner | Owner | person | P | The signed-in user if eligible | Must belong to one of the plan's teams (R1) |
 | 6 | Strategic / AOP plan | Set plan as Strategic/AOP | yes/no | — | No | Shown with an "AOP" tag in lists |
 | 7 | Description | Description | long text (≤ 2,000) | — | — | |
-| 8 | Plan budget | Budget › Plan budget | money (USD) | — | — | Top of "budget flows down" |
+| 8 | Plan budget | Budget › Plan budget | money (plan currency) | — | — | Top of "budget flows down"; read-only while a global budget allocates it (014, D-303) |
 | 9 | Default finance budget | Default Finance Budget | reference (finance budget, plan year) | — | — | Default for line-item links |
 | 10 | Default line-item spread | Default Line-Item Allocation | single choice | — | Evenly | Evenly · All in first month · All in last month · Custom |
 | 11 | BCPIR plan | BCPIR Plan? | yes/no | — | No | Marks a BCPIR plan: marker and filter on the Plans list and in All work (013, D-334) |
@@ -49,6 +49,9 @@ code, spend category and contracted spend carry Shell's own values (D-325).
 | 16 | MQL, Revenue (goal) | MQL, Revenue | calc | calc | — | Domain model §4.5 |
 | 17 | Planned cost | (roll-up) | money | calc | — | Sum of campaigns |
 | 18 | Status | Status | Draft · Published | calc | Draft | Domain model §2.1 |
+| 19 | Plan type | Plan type | single choice | R | Operational | Operational · Strategic · Cross-market (016 FR-032); plans stay one year |
+| 20 | Plan currency | (new) | reference (active currencies) | R | USD | Every amount of the plan and its contents is typed in it; fixed once amounts exist (016 FR-011, FR-012) |
+| 21 | Budget by month | (new) | None · Evenly · Custom months | — | None | Phases the plan budget over its year; must add up to the budget (016 FR-020 – FR-022, domain model §4.8) |
 
 Dropped Shell fields: **ShellAllPlans** (greyed out and unused in Shell's form — decision D-018);
 **Related plans** and **Custom goals** (future, see feature map).
@@ -61,7 +64,8 @@ Dropped Shell fields: **ShellAllPlans** (greyed out and unused in Shell's form �
 | 2 | Owner | Owner | person | P | Plan owner | |
 | 3 | Start date / End date | Start date, End date | date range | P | Plan year 1 Jan – 31 Dec | Warning outside plan year (R4) |
 | 4 | Description | Description | long text | — | — | |
-| 5 | Campaign budget | Budget › Campaign Budget | money (USD) | — | — | |
+| 5 | Campaign budget | Budget › Campaign Budget | money (plan currency) | — | — | |
+| 5a | Budget by month | (new) | None · Evenly · Custom months | — | None | As the plan's (016 FR-023) |
 | 6 | Remaining plan budget | Remaining Plan Budget | money | calc | — | May be negative (shown red) |
 | 7 | Planned cost | Planned Cost | money | calc | — | Sum of initiatives |
 | 8 | Cluster | Cluster | Shell attribute, multiple choice | P | — | e.g. Retail-China, Lubricants-Europe |
@@ -81,7 +85,8 @@ Dropped Shell fields: **ShellAllPlans** (greyed out and unused in Shell's form �
 | 3 | Owner | Owner | person | P | Campaign owner | |
 | 4 | Start date / End date | Start date, End date | date range | P | Campaign dates | Inside campaign dates (R3) |
 | 5 | Description | Description | long text | — | — | |
-| 6 | Initiative budget | Budget › Initiative Budget | money (USD) | — | — | |
+| 6 | Initiative budget | Budget › Initiative Budget | money (plan currency) | — | — | |
+| 6a | Budget by month | (new) | None · Evenly · Custom months | — | None | As the plan's (016 FR-023) |
 | 7 | Remaining campaign budget | Remaining Campaign Budget | money | calc | — | May be negative |
 | 8 | Planned cost | Planned Cost | money | calc | — | Sum of activities |
 | 9 | Growth ambition | Growth Ambition | Shell attribute, multiple choice | — | — | Shell in-scope list |
@@ -104,10 +109,11 @@ Dropped Shell fields: **ShellAllPlans** (greyed out and unused in Shell's form �
 | 5 | Owner | Owner | person | S | Initiative owner | |
 | 6 | Start date / End date | Start Date, End Date | date range | S | Initiative dates | Inside initiative dates (R3, R5) |
 | 7 | Ongoing (no end date) | Ongoing Activity / Evergreen | yes/no | — | No | Irreversible once saved (R6) |
-| 8 | Planned cost | Planned Cost | money (USD) | S | Activity type default, if any | Re-approval when changed (§2.5) |
+| 8 | Planned cost | Planned Cost | money (plan currency) | S | Activity type default, converted at today's rate | Re-approval when changed (§2.5) |
 | 9 | Approval workflow | Approval Workflow | reference (workflows) | S | — | e.g. "China BC Approval Workflow" |
 | 10 | Description | Description | long text | — | — | |
 | 11 | Status | Status | Created · Submitted · Declined · Approved · In progress · Complete | calc | Created | Domain model §2.3 |
+| 12 | Split from / Split into | (new) | references (activities) | calc | — | Links between an activity and those split from it (016 FR-026 – FR-031); "(deleted)" when the other is in the recycle bin |
 
 ### 4.2 Shell attributes — always shown
 
@@ -169,7 +175,7 @@ Dropped Shell fields: **ShellAllPlans** (greyed out and unused in Shell's form �
 | 3 | Description | Description | long text | — | — | |
 | 4 | Currency | Local Currency | reference (active currencies) | R | USD | |
 | 5 | Planned cost | Planned Cost in Local Currency | money (local) | R | Current unassigned balance | |
-| 6 | Planned cost in USD | Planned Cost in Preferred Currency | money | calc | — | Domain model §4.3 |
+| 6 | Planned cost (plan currency) | Planned Cost in Preferred Currency | money | calc | — | Converted at the current rate (domain model §4.3, §4.7); the reader's display currency beside it |
 | 7 | Spread over time | (allocation C/E/F/L) | single choice + month amounts | — | Plan's default spread | Domain model §4.4 |
 | 8 | Spend type | Spend Type | Shell attribute, single choice | S | — | Shell's spend types, e.g. "ATL - Digital", "BTL - Event": the 25 the functional analysis names (of 57); the rest are added in Settings (D-325) |
 | 9 | GL code | GL Code | Shell attribute, single choice | S | — | Shell's 13 marketing GL codes, e.g. "7250080 - Advertising - Digital"; independent of spend type until Settings links them (R11, D-325) |

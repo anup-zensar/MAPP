@@ -1,5 +1,5 @@
 import { budgetCheck, OverspendField } from '@/features/overspend';
-import { useCurrencies } from '@/features/settings';
+import { useCurrencies, useFieldHelp } from '@/features/settings';
 import type { useFinanceBudgets } from '@/features/settings';
 import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
@@ -41,6 +41,7 @@ export function PlanBudgetSection({
   budgetNote,
   onFinanceBudgetChange,
 }: PlanBudgetSectionProps) {
+  const { help } = useFieldHelp();
   const budgets = financeBudgets.data?.items ?? [];
   const budgetOptions = [
     { id: NO_DEFAULT, label: 'No default', active: true },
@@ -68,6 +69,7 @@ export function PlanBudgetSection({
           render={(field) => (
             <CurrencyField
               initial={initial.currency}
+              tip={help('plan.currency')}
               hint={hint('currency', 'Default: USD')}
               lock={plan?.currencyLock ?? undefined}
               {...field}
@@ -79,6 +81,7 @@ export function PlanBudgetSection({
       {allocationLock ? (
         <ReadOnlyField
           label="Plan budget"
+          tip={help('plan.budget')}
           value={values.budget ? `${values.budget} ${values.currency}` : '—'}
         >
           {allocationLock}
@@ -90,6 +93,7 @@ export function PlanBudgetSection({
           render={(field) => (
             <MoneyField
               label="Plan budget"
+              tip={help('plan.budget')}
               currency={values.currency}
               note={budgetFieldNote(values, initial, plan) ?? undefined}
               {...field}
@@ -123,6 +127,7 @@ export function PlanBudgetSection({
         render={(field) => (
           <ChoiceField
             label="Default finance budget"
+            tip={help('plan.defaultFinanceBudget')}
             options={budgetOptions}
             note={
               [
@@ -150,6 +155,7 @@ export function PlanBudgetSection({
         render={(field) => (
           <ChoiceField
             label="Default line-item spread"
+            tip={help('plan.defaultSpread')}
             hint={hint('defaultSpread', 'Default: Evenly')}
             options={SPREAD_METHODS.map((id) => ({ id, label: SPREAD_LABELS[id], active: true }))}
             note={
@@ -171,6 +177,7 @@ export function PlanBudgetSection({
           <CheckboxField
             label="BCPIR plan"
             name={name}
+            tip={help('plan.bcpir')}
             hint={hint('bcpir', 'Default: No')}
             checked={value}
             onChange={onChange}
@@ -184,10 +191,12 @@ export function PlanBudgetSection({
 interface CurrencyFieldProps extends FieldBinding<string> {
   initial: string;
   hint?: string;
+  tip?: string;
   lock?: string;
 }
 
-function CurrencyField({ name, value, initial, hint, lock, error, onChange }: CurrencyFieldProps) {
+function CurrencyField(props: CurrencyFieldProps) {
+  const { name, value, initial, hint, tip, lock, error, onChange } = props;
   const currencies = useCurrencies();
   const options = (currencies.data?.items ?? [])
     .filter((currency) => currency.active || currency.code === initial)
@@ -205,6 +214,7 @@ function CurrencyField({ name, value, initial, hint, lock, error, onChange }: Cu
       name={name}
       marking="Required"
       hint={hint}
+      tip={tip}
       options={options}
       value={value}
       onChange={onChange}

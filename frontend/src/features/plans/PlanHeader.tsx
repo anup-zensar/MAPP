@@ -1,5 +1,6 @@
 import { TriangleAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { FieldHelpTip } from '@/features/settings';
 import { LinkButton } from '@/ui/Button/Button';
 import { LevelTag } from '@/ui/LevelTag/LevelTag';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
@@ -47,8 +48,10 @@ export function PlanHeader({ plan, statusAction, moreItems, extraFacts }: PlanHe
         <div className={styles.meta} aria-label="Plan facts" role="group">
           <LevelTag level="plan" />
           <PlanStatusChip status={plan.status} />
+          <FieldHelpTip helpKey="plan.status" label="Status" />
           <span id="completeness" className={styles.anchor}>
             <PlanCompleteness planId={plan.id} completeness={plan.completeness} />
+            <FieldHelpTip helpKey="common.completeness" label="Completeness" />
           </span>
           <span className={styles.fact}>{plan.id}</span>
           <span className={styles.fact}>

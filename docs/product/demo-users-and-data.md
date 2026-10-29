@@ -21,6 +21,12 @@ All demo users share the password **`mapp`**, shown on the sign-in page (decisio
 | Sara Novak | sara.novak@shell.com | Local finance advisor | Lubricants Europe, Mobility China | Reviews finance coding |
 | Lea Santos | lea.santos@shell.com | Requisitioner | Global Marketing Ops | Role *Requisitioner* (All markets): the Purchase requests page, PR forms and the simulated GSAP (feature 032) |
 
+**Roles** (feature 014; Settings › Roles and access): Alex Morgan — Administrator (All markets) · Carlos Mendes —
+Global planner (All markets) · Daniel Okoro — Planner and Approver (My teams) · Priya Raman and Mei Lin — Planner
+(My teams) · Sara Novak — Viewer (My teams) · Lea Santos — Requisitioner (All markets). New people get the Viewer
+role, and nobody approves an activity they own or submitted. Each persona therefore sees a different part of the
+data: Priya only Lubricants Europe, Mei only Mobility China, Sara both read-only, Carlos and Alex everything.
+
 ## Settings seed
 
 | Record | Seed values |
@@ -42,6 +48,10 @@ All demo users share the password **`mapp`**, shown on the sign-in page (decisio
 | **FY2026 Lubricants Europe** (Priya Raman, Lubricants Europe, Lubricants 1.0, budget 1,200,000 USD; the BCPIR plan, 013) | Published | 2 campaigns ("Helix launch", "Rimula fleet"), 4 initiatives, 7 activities in every status (Created, Submitted, Declined, Approved/In progress, Complete), line items in USD, EUR and GBP, one activity with a non-zero unassigned balance |
 | **FY2026 Mobility China** (Mei Lin, Mobility China, Mobility 1.0, budget 800,000 USD) | Draft | 1 campaign, 2 initiatives, 3 activities — deliberately incomplete (missing cluster/region, missing GL code, Country/OU split at 90 %) to demonstrate completeness |
 | **FY2027 Global Brand** (Alex Morgan, Global Marketing Ops, Lubricants 1.0) | Draft, Strategic / AOP | 1 campaign with an over-allocated initiative budget (negative remaining budget) |
+
+Global budgets (feature 014): **FY2026 Global marketing budget** (2026, 2,500,000.00 USD, owner Carlos Mendes)
+allocates 1,200,000.00 to FY2026 Lubricants Europe and 800,000.00 to FY2026 Mobility China, equal to their
+budgets, so those plan budgets are read-only for their owners.
 
 The recycle bin contains one deleted initiative (with its activity) and the activity log contains about
 two weeks of back-dated history, so those screens are not empty in a demo.

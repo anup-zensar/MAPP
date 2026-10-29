@@ -1,12 +1,14 @@
 import { ArrowDown, ArrowUp, GripVertical } from 'lucide-react';
 import { useId, useState } from 'react';
 import type { DragEvent } from 'react';
+import { useFieldHelp } from '@/features/settings';
 import { Button } from '@/ui/Button/Button';
 import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
 import { SearchField } from '@/ui/SearchField/SearchField';
 import { SidePanel } from '@/ui/SidePanel/SidePanel';
 import type { AllWorkColumnGroup } from './all-work-types';
 import styles from './ColumnChooser.module.css';
+import { columnHelpKey } from './column-help';
 import { dropColumn, moveColumn } from './view-columns';
 
 export interface ColumnChooserProps {
@@ -21,13 +23,11 @@ export interface ColumnChooserProps {
   onChange: (columns: string[]) => void;
 }
 
-/** Why the Name tick is locked (FR-019). */
 const NAME_LOCKED = 'The name column is always shown so you can tell rows apart';
 
 /**
- * The column chooser (US3, FR-018 – FR-021): searchable groups of columns to tick, Name locked
- * with its reason, the chosen columns in order — moved by dragging or with Move up and Move down
- * — and Reset to default columns. Shell attributes added in Settings appear here by themselves.
+ * Searchable groups of columns to tick, each with its Field help ⓘ, Name locked with its reason, the
+ * chosen columns in order (dragged or moved up and down) and Reset to default columns.
  */
 export function ColumnChooser({
   open,
@@ -41,6 +41,11 @@ export function ColumnChooser({
   const [search, setSearch] = useState('');
   const [dragged, setDragged] = useState<string | null>(null);
   const needle = search.trim().toLowerCase();
+  const { help } = useFieldHelp();
+  const tipOf = (key: string) => {
+    const helpKey = columnHelpKey(key);
+    return helpKey ? help(helpKey) : undefined;
+  };
   const labelOf = (key: string) =>
     groups.flatMap((group) => group.columns).find((column) => column.key === key)?.label ?? key;
 
@@ -97,6 +102,7 @@ export function ColumnChooser({
                 <CheckboxField
                   key={column.key}
                   label={column.inactive ? `${column.label} (inactive)` : column.label}
+                  tip={tipOf(column.key)}
                   name={`${id}-${column.key}`}
                   checked={columns.includes(column.key)}
                   onChange={(ticked) => tick(column.key, ticked)}

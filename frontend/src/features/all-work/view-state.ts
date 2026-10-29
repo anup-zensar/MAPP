@@ -1,4 +1,5 @@
 import { FILTER_LABELS, MAX_YEARS } from './all-work-text';
+import { attrParams, canonicalAttributes, knownAttributeFilters } from './attribute-filters';
 import type {
   AllWorkOptions,
   AllWorkPreferences,
@@ -95,6 +96,7 @@ export function toQueryParams(state: ViewState): AllWorkQuery {
   if (filters.planTypes?.length) query.planType = [...filters.planTypes];
   if (filters.planCurrencies?.length) query.planCurrency = [...filters.planCurrencies];
   if (filters.finance?.length) query.finance = [...filters.finance];
+  if (filters.attributes?.length) query.attr = attrParams(filters.attributes);
   const search = state.search.trim();
   if (search !== '') query.search = search;
   if (state.view === 'grid') query.column = [...state.columns];
@@ -119,30 +121,42 @@ function canonical(state: ViewState): string {
   const sortedIds = (values: FilterValue[]) => values.map((value) => value.id).sort();
   const sorted = (values: string[] | undefined) => [...(values ?? [])].sort();
   const { from, to } = yearRange(state);
-  return JSON.stringify({
-    ...state,
-    year: from,
-    yearFrom: undefined,
-    yearTo: to,
-    comparePhased: Boolean(state.comparePhased),
-    search: state.search.trim(),
-    filters: {
-      ...filters,
-      plans: sortedIds(filters.plans),
-      planStatuses: [...filters.planStatuses].sort(),
-      containerStatuses: [...filters.containerStatuses].sort(),
-      activityStatuses: [...filters.activityStatuses].sort(),
-      owners: sortedIds(filters.owners),
-      teams: sortedIds(filters.teams),
-      businessUnits: sortedIds(filters.businessUnits),
-      activityTypes: sortedIds(filters.activityTypes),
-      planTypes: sorted(filters.planTypes),
-      planCurrencies: sorted(filters.planCurrencies),
-      finance: sorted(filters.finance),
-      attributes: filters.attributes ?? [],
+  const { breakdown, ...rest } = state;
+  return JSON.stringify(
+    {
+      ...rest,
+      year: from,
+      yearFrom: undefined,
+      yearTo: to,
+      comparePhased: Boolean(state.comparePhased),
+      search: state.search.trim(),
+      filters: {
+        ...filters,
+        plans: sortedIds(filters.plans),
+        planStatuses: [...filters.planStatuses].sort(),
+        containerStatuses: [...filters.containerStatuses].sort(),
+        activityStatuses: [...filters.activityStatuses].sort(),
+        owners: sortedIds(filters.owners),
+        teams: sortedIds(filters.teams),
+        businessUnits: sortedIds(filters.businessUnits),
+        activityTypes: sortedIds(filters.activityTypes),
+        planTypes: sorted(filters.planTypes),
+        planCurrencies: sorted(filters.planCurrencies),
+        finance: sorted(filters.finance),
+        attributes: canonicalAttributes(filters.attributes),
+      },
+      breakdown: state.view === 'breakdown' ? (breakdown ?? null) : null,
+      expansion: { mode: state.expansion.mode, toggled: [...state.expansion.toggled].sort() },
     },
-    expansion: { mode: state.expansion.mode, toggled: [...state.expansion.toggled].sort() },
-  });
+    inKeyOrder,
+  );
+}
+
+// Keys in one order, so a part present in one state and missing in the other never reorders the rest.
+function inKeyOrder(_key: string, value: unknown): unknown {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)))
+    : value;
 }
 
 const PARAMETER_FILTERS = new Map<string, keyof Filters>([
@@ -160,34 +174,42 @@ const PARAMETER_FILTERS = new Map<string, keyof Filters>([
   ['planType', 'planTypes'],
   ['planCurrency', 'planCurrencies'],
   ['finance', 'finance'],
+  ['attr', 'attributes'],
 ]);
 
+type Reset = (state: ViewState, standard: ViewState) => ViewState;
+
+function standardYear(state: ViewState, standard: ViewState): ViewState {
+  const { yearFrom: _from, yearTo: _to, ...single } = state;
+  void _from;
+  void _to;
+  return { ...single, year: standard.year };
+}
+
+const noBreakdown: Reset = (state) => ({ ...state, breakdown: null });
+
+const RESETS: Record<string, Reset> = {
+  year: standardYear,
+  yearFrom: standardYear,
+  yearTo: standardYear,
+  comparePhased: (state) => ({ ...state, comparePhased: false }),
+  search: (state) => ({ ...state, search: '' }),
+  column: (state, standard) => ({ ...state, columns: standard.columns }),
+  sort: (state) => ({ ...state, sort: null }),
+  period: (state) => ({ ...state, period: 'month' }),
+  view: (state) => ({ ...state, view: 'grid' }),
+  by: noBreakdown,
+  thenBy: noBreakdown,
+};
+
 export function withoutRefused(state: ViewState, fields: string[], standard: ViewState): ViewState {
-  let next = state;
-  for (const field of fields) {
+  return fields.reduce((next, field) => {
     const filter = PARAMETER_FILTERS.get(field);
     if (filter) {
-      next = { ...next, filters: { ...next.filters, [filter]: NO_FILTERS[filter] } };
-    } else if (field === 'year' || field === 'yearFrom' || field === 'yearTo') {
-      const { yearFrom: _from, yearTo: _to, ...single } = next;
-      void _from;
-      void _to;
-      next = { ...single, year: standard.year };
-    } else if (field === 'comparePhased') {
-      next = { ...next, comparePhased: false };
-    } else if (field === 'search') {
-      next = { ...next, search: '' };
-    } else if (field === 'column') {
-      next = { ...next, columns: standard.columns };
-    } else if (field === 'sort') {
-      next = { ...next, sort: null };
-    } else if (field === 'period') {
-      next = { ...next, period: 'month' };
-    } else if (field === 'view') {
-      next = { ...next, view: 'grid' };
+      return { ...next, filters: { ...next.filters, [filter]: NO_FILTERS[filter] } };
     }
-  }
-  return next;
+    return RESETS[field]?.(next, standard) ?? next;
+  }, state);
 }
 
 export function leftOutOf(
@@ -217,7 +239,12 @@ export function leftOutOf(
     sort = null;
     names.push('the sort order');
   }
-  return { state: { ...state, filters, columns, sort }, names };
+  const attributes = knownAttributeFilters(filters.attributes, options.attributes);
+  names.push(...attributes.names);
+  return {
+    state: { ...state, filters: { ...filters, attributes: attributes.filters }, columns, sort },
+    names,
+  };
 }
 
 export function choicesOf(

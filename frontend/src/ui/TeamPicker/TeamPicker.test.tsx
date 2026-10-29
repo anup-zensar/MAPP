@@ -10,7 +10,7 @@ const TEAMS = [
   { id: 'T-1003', name: 'Fleet Americas', colour: 'gold', active: false },
 ] as const;
 
-function Example({ start = [] }: { start?: string[] }) {
+function Example({ start = [], offered }: { start?: string[]; offered?: string[] }) {
   const [value, setValue] = useState(start);
   return (
     <>
@@ -20,6 +20,7 @@ function Example({ start = [] }: { start?: string[] }) {
         teams={[...TEAMS]}
         value={value}
         onChange={setValue}
+        offered={offered}
       />
       <p>chosen: {value.join(',')}</p>
     </>
@@ -57,5 +58,21 @@ describe('TeamPicker', () => {
     await user.type(screen.getByRole('combobox', { name: 'Teams' }), 'zzz');
 
     expect(screen.getByText("No team matches 'zzz'.")).toBeInTheDocument();
+  });
+
+  it('offers only the person’s own teams and keeps the plan’s other teams (014 FR-013)', async () => {
+    const { user } = renderWithProviders(
+      <Example start={['T-1002', 'T-1001']} offered={['T-1001']} />,
+    );
+
+    expect(screen.getByText('Kept, outside your teams: Mobility China.')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Remove Mobility China' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('combobox', { name: 'Teams' }));
+    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
+      'Lubricants Europe',
+    ]);
+
+    await user.click(screen.getByRole('button', { name: 'Remove Lubricants Europe' }));
+    expect(screen.getByText('chosen: T-1002')).toBeInTheDocument();
   });
 });

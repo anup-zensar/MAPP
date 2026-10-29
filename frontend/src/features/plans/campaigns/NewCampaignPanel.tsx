@@ -5,6 +5,7 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 import { useOverspendConfiguration } from '@/features/overspend';
 import type { OverspendMode } from '@/features/overspend';
 import { useAttributeForm } from '@/features/settings';
+import { allows } from '@/session/gate-action';
 import { useToast } from '@/ui/Toast/useToast';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
@@ -16,6 +17,7 @@ import { useCreateCampaign, usePlan, usePlanCampaigns } from './api';
 import type { PlanCampaigns } from './api';
 import { PanelFailure, PanelLoading, RecordFormPanel, StatePanel } from './PanelFrame';
 import { RecordForm } from './RecordForm';
+import { RefusedPanel } from './RefusedPanel';
 import { bodyOf, defaultAttributes, fieldId, RECORD_FIELDS } from './form-values';
 import { recordFormSchema } from './schemas';
 import type { RecordFormValues } from './schemas';
@@ -51,6 +53,10 @@ export function NewCampaignPanel() {
         <PanelLoading />
       </StatePanel>
     );
+  }
+  const addCampaign = campaigns.data.access?.addCampaign;
+  if (!allows(addCampaign)) {
+    return <RefusedPanel title={NEW_CAMPAIGN} closeTo={closeTo} availability={addCampaign} />;
   }
   return (
     // A new address (Save and add another) starts a fresh form.

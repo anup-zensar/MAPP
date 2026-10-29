@@ -2,6 +2,7 @@
 import { http as msw, HttpResponse } from 'msw';
 import type { HttpHandler } from 'msw';
 import { setupServer } from 'msw/node';
+import { NO_BREAKDOWN } from './fixtures/all-work-breakdown';
 import { ORIGIN, reply } from './replies';
 
 export interface RecordedRequest {
@@ -30,6 +31,8 @@ export const FRAME_ANSWERS: HttpHandler[] = [
       canChange: { available: true, reason: '' },
     },
   }),
+  reply('GET /api/v1/field-help', { body: { items: [], total: 0, shellAttributesWithoutHelp: 0 } }),
+  ...NO_BREAKDOWN,
 ];
 
 const TEST_HEADER = 'X-Test-Run';

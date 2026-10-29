@@ -4,57 +4,38 @@ import { Fragment, useId, useRef } from 'react';
 import { cx } from '../cx';
 import { Button } from '../Button/Button';
 import { Tooltip } from '../Tooltip/Tooltip';
+import { useHidesUnavailable } from '../ViewOnlyNote/view-only-context';
 import styles from './ActionsMenu.module.css';
 
-/** One action of the menu. */
 export interface ActionsMenuItem {
   label: string;
   onSelect: () => void;
-  /** danger: shown in red, for actions that remove something (Delete). */
   tone?: 'danger';
-  /** Draws a line above the item; Delete comes last, after a line (design system §6.1). */
   separatorBefore?: boolean;
-  /**
-   * A second, smaller line under the label, read with it (feature 003): "People are never
-   * deleted, so the history keeps their name."
-   */
+  /** A second, smaller line under the label, read with it: the reason of a disabled item. */
   hint?: string;
-  /**
-   * An action the person may not take on this record now (feature 014, FR-011): shown, not chosen,
-   * with its reason as the hint — never greyed out without one (constitution III). See
-   * availabilityProps in @/session/access.
-   */
+  /** Shown, not chosen, with its reason as the hint; left out inside a ViewOnlyArea. */
   disabled?: boolean;
 }
 
 export interface ActionsMenuProps {
-  /** The record the actions are for; the ⋯ button is named "Actions for <label>". */
   label: string;
   items: ActionsMenuItem[];
-  /**
-   * The button that opens the menu: "icon" (default) is the ⋯ of a table row or card; "more" is
-   * the **More** button of a page header or panel footer (design system §6.3).
-   */
+  /** "icon": the ⋯ of a row or card; "more": the **More** button of a page header or panel. */
   trigger?: 'icon' | 'more';
 }
 
-/**
- * The "⋯" menu of a row, or the **More** menu of a page or panel: Edit, record-specific actions
- * and Delete, last after a line (design system §6.1, §6.3).
- *
- * The chosen action runs only after the menu has closed and given the focus back to "⋯".
- * A dialog opened by the action therefore starts from "⋯" and returns the focus there when it
- * closes, instead of losing it.
- */
+// The chosen action runs once the menu has given the focus back to its button, so a dialog it
+// opens returns the focus there.
 export function ActionsMenu({ label, items, trigger = 'icon' }: ActionsMenuProps) {
   const chosenAction = useRef<(() => void) | null>(null);
   const hintId = useId();
+  const hidesUnavailable = useHidesUnavailable();
+  const shown = hidesUnavailable ? items.filter((item) => !item.disabled) : items;
 
   return (
-    // Not modal, like every MAPP menu: the rest of the page stays usable while it is open.
     <DropdownMenu.Root modal={false}>
       {trigger === 'more' ? (
-        // A written label needs no tooltip: the button's name is the word on it.
         <DropdownMenu.Trigger asChild>
           <Button>
             More
@@ -79,13 +60,12 @@ export function ActionsMenu({ label, items, trigger = 'icon' }: ActionsMenuProps
           align="end"
           sideOffset={4}
           onCloseAutoFocus={() => {
-            // Radix puts the focus back on "⋯" right after this; then the action may open a dialog.
             const action = chosenAction.current;
             chosenAction.current = null;
             action?.();
           }}
         >
-          {items.map((item, index) => (
+          {shown.map((item, index) => (
             <Fragment key={item.label}>
               {item.separatorBefore && <DropdownMenu.Separator className={styles.separator} />}
               <DropdownMenu.Item
@@ -98,7 +78,6 @@ export function ActionsMenu({ label, items, trigger = 'icon' }: ActionsMenuProps
               >
                 {item.label}
                 {item.hint && (
-                  // Out of the item's name; aria-describedby reads it as its description.
                   <span id={`${hintId}-${index}`} className={styles.hint} aria-hidden="true">
                     {item.hint}
                   </span>

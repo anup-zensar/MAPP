@@ -3,6 +3,7 @@ import type { components } from '@/api/generated/schema';
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
 import { cx } from '@/ui/cx';
+import { FieldHelpTip } from '@/features/settings';
 import { formatAmount } from '@/format/decimal';
 import { monthColumns, quarterColumns } from './spread-grid-columns';
 import {
@@ -24,21 +25,14 @@ import styles from './SpreadGrid.module.css';
 type Grid = components['schemas']['SpreadGrid'];
 type Money = components['schemas']['Money'];
 
-/** Where the browser remembers Monthly or Quarterly (007 plan, "Line items section"). */
 const GRID_PERIOD_KEY = 'mapp.lineItemGrid';
 
 export interface SpreadGridProps {
   grid: Grid;
-  /** The activity has no dates yet: its line items are not spread (D-032). */
   noDates: boolean;
 }
 
-/**
- * The activity's line items by month, in USD (or the display currency), with a totals row (FR-003,
- * FR-020): Monthly or Quarterly (display only, remembered per browser), months outside the
- * activity's dates marked, the "No dates yet" column, and the line-item names kept in view while
- * the months scroll sideways inside the card.
- */
+/** The line items by month or quarter (remembered per browser), with a totals row. */
 export function SpreadGrid({ grid, noDates }: SpreadGridProps) {
   const [period, setPeriod] = useState<GridPeriod>(readPeriod);
   const shown = period === 'quarterly' ? quarterColumns(grid) : monthColumns(grid);
@@ -56,7 +50,10 @@ export function SpreadGrid({ grid, noDates }: SpreadGridProps) {
   return (
     <div className={styles.grid}>
       <div className={styles.head}>
-        <h3 className={styles.title}>{GRID_TITLE}</h3>
+        <h3 className={styles.title}>
+          {GRID_TITLE}
+          <FieldHelpTip helpKey="lineItem.spread" label={GRID_TITLE} />
+        </h3>
         <SegmentedFilter
           label="Show the spread by"
           options={[

@@ -1,0 +1,46 @@
+.pickers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.label {
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+}
+
+/* Drawn like every select (design system §5.5): the input's border and radius, a chevron. */
+.select {
+  max-width: 240px;
+  height: var(--control-sm);
+  padding: 0 var(--space-8) 0 var(--space-3);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  background:
+    linear-gradient(45deg, transparent 50%, var(--ink-2) 50%) no-repeat calc(100% - 17px) 50% / 5px
+      5px,
+    linear-gradient(135deg, var(--ink-2) 50%, transparent 50%) no-repeat calc(100% - 12px) 50% / 5px
+      5px,
+    var(--surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  appearance: none;
+  cursor: pointer;
+}
+
+.select:hover {
+  border-color: var(--control-border-hover);
+}
+
+.select:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 599px) {
+  .select {
+    font-size: var(--text-md);
+  }
+}

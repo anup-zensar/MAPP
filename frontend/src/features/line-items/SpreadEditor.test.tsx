@@ -1,8 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Tooltip } from 'radix-ui';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
+import { renderWithProviders } from '@/testing/render';
 import { EUR, eur, lineItem, spreadMonth, usd } from '@/testing/fixtures/line-items';
 import { formOptions } from '@/testing/fixtures/line-item-forms';
 import {
@@ -53,7 +54,7 @@ function preview() {
 describe('SpreadEditor (US3, FR-017 – FR-021)', () => {
   it('previews Evenly, All in first month and All in last month (scenario 1)', async () => {
     const user = userEvent.setup();
-    render(<Harness start={tenThousandEuros()} />);
+    renderWithProviders(<Harness start={tenThousandEuros()} />);
 
     expect(screen.getByRole('radio', { name: 'Evenly' })).toBeChecked();
     expect(screen.getByText('Mar 2026 · 3,333.33 EUR')).toBeInTheDocument();
@@ -68,7 +69,7 @@ describe('SpreadEditor (US3, FR-017 – FR-021)', () => {
 
   it('starts Custom from the spread, adds a month before and totals it (scenario 2, FR-018)', async () => {
     const user = userEvent.setup();
-    render(<Harness start={tenThousandEuros()} />);
+    renderWithProviders(<Harness start={tenThousandEuros()} />);
 
     await user.click(screen.getByRole('radio', { name: 'Custom' }));
     expect(screen.getByLabelText('Amount for Mar 2026')).toHaveValue('3,333.33');
@@ -100,7 +101,7 @@ describe('SpreadEditor (US3, FR-017 – FR-021)', () => {
   it('says that an ongoing activity puts everything in its first month (scenario 4, FR-021)', async () => {
     const user = userEvent.setup();
     const ongoing = { startDate: '2026-03-15', endDate: null, ongoing: true };
-    render(<Harness start={tenThousandEuros()} dates={ongoing} />);
+    renderWithProviders(<Harness start={tenThousandEuros()} dates={ongoing} />);
 
     expect(
       screen.getByText(
@@ -119,7 +120,7 @@ describe('SpreadEditor (US3, FR-017 – FR-021)', () => {
   });
 
   it('says when the activity has no dates yet (FR-017)', () => {
-    render(
+    renderWithProviders(
       <Harness
         start={tenThousandEuros()}
         dates={{ startDate: null, endDate: null, ongoing: false }}
@@ -146,7 +147,7 @@ describe('SpreadEditor (US3, FR-017 – FR-021)', () => {
         },
       }),
     );
-    render(<Harness start={custom} />);
+    renderWithProviders(<Harness start={custom} />);
 
     expect(
       screen.queryByText(

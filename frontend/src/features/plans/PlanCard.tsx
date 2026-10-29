@@ -4,11 +4,13 @@ import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
 import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
 import { TeamPills } from '@/ui/TeamPill/TeamPill';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
+import { ViewOnlyArea } from '@/ui/ViewOnlyNote/view-only-area';
 import { AmountPair } from './AmountPair';
 import { PinButton } from './PinButton';
 import styles from './PlanCard.module.css';
 import { BusinessUnitText, PlanCompleteness, PlanStatusChip } from './PlanFacts';
 import type { PlanSummary } from './api';
+import { changesNothingIn } from './plan-access';
 import { activitiesApprovedText } from './plan-text';
 import { PlanTypeTag } from './PlanTypeTag';
 import { BcpirTag } from './BcpirTag';
@@ -41,7 +43,9 @@ export function PlanCard({ plan, actions, pinned, onPinToggle }: PlanCardProps) 
         </div>
         <div className={styles.topActions}>
           <PinButton planName={plan.name} pinned={pinned} onToggle={onPinToggle} />
-          <ActionsMenu label={plan.name} items={actions} />
+          <ViewOnlyArea active={changesNothingIn(plan.access)}>
+            <ActionsMenu label={plan.name} items={actions} />
+          </ViewOnlyArea>
         </div>
       </div>
       <div className={styles.chips}>

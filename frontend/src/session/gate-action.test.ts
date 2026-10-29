@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allows, gateItem } from './gate-action';
+import { allows, gateItem, moreItemFor } from './gate-action';
 
 const item = { label: 'Edit', onSelect: () => undefined };
 
@@ -21,5 +21,13 @@ describe('gateItem and allows (014 FR-011)', () => {
 
   it('leaves out an unavailable action without a reason', () => {
     expect(gateItem(item, { available: false, reason: '' })).toEqual([]);
+  });
+
+  it('lists a header action in More only while its button is not shown, with the reason', () => {
+    const reason = "Publishing plans isn't part of your role (Editor).";
+    expect(moreItemFor(item, { available: true, reason: '' })).toEqual([]);
+    expect(moreItemFor(item, { available: false, reason })).toEqual([
+      { ...item, disabled: true, hint: reason },
+    ]);
   });
 });

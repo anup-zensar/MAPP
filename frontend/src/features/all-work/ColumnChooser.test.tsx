@@ -2,8 +2,10 @@ import { fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { nth } from '@/testing/dom';
+import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { allWorkOptions } from '@/testing/fixtures/all-work';
+import { fieldHelpReply, helpOf } from '@/testing/fixtures/field-help-texts';
 import { ColumnChooser } from './ColumnChooser';
 
 function Harness({ initial = ['id', 'status', 'owner'] }: { initial?: string[] }) {
@@ -119,5 +121,32 @@ describe('ColumnChooser (US3)', () => {
       'Line items',
       'Unassigned planned cost',
     ]);
+  });
+
+  it('016 FR-047: explains each built-in column with its Field help, not a Shell attribute', async () => {
+    mockApi([
+      fieldHelpReply(
+        helpOf([
+          'allWork.plannedCost',
+          'plan.description',
+          'activity.activityType',
+          'lineItem.plannedCost',
+        ]),
+      ),
+    ]);
+    renderWithProviders(<Harness />);
+    const panel = screen.getByRole('dialog', { name: 'Columns' });
+
+    for (const label of [
+      'Planned cost',
+      'Description',
+      'Activity type',
+      'Planned cost in local currency',
+    ]) {
+      expect(await within(panel).findAllByRole('button', { name: `About ${label}` })).toHaveLength(
+        1,
+      );
+    }
+    expect(within(panel).queryByRole('button', { name: 'About Cluster' })).toBeNull();
   });
 });

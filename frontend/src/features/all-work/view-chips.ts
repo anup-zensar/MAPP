@@ -9,8 +9,11 @@ import {
   STRATEGIC_LABELS,
 } from './all-work-text';
 import type { AllWorkOptions, FilterValue, Filters, ViewState } from './all-work-types';
+import { attributeChipLabel, withAttributeValues } from './attribute-filters';
 import { ID_FILTERS, NO_FILTERS, VALUE_FILTERS, choicesOf } from './view-state';
 import type { IdFilter } from './view-state';
+
+const ATTRIBUTE_CHIP = 'attributes:';
 
 export interface Chip {
   key: string;
@@ -53,6 +56,12 @@ export function chipsOf(state: ViewState, options?: AllWorkOptions): Chip[] {
   filters.planTypes?.forEach((value) => add('planTypes', value, PLAN_TYPE_LABELS[value]));
   filters.planCurrencies?.forEach((value) => add('planCurrencies', value, value));
   filters.finance?.forEach((value) => add('finance', value, FINANCE_LABELS[value]));
+  filters.attributes?.forEach((filter) =>
+    chips.push({
+      key: `${ATTRIBUTE_CHIP}${filter.attributeId}`,
+      label: attributeChipLabel(filter, options?.attributes),
+    }),
+  );
   return chips;
 }
 
@@ -94,6 +103,9 @@ function withoutValue(filters: Filters, filter: string, value: string): Filters 
   }
   if (filter === 'strategic' || filter === 'bcpir') {
     return { ...filters, [filter]: 'include' };
+  }
+  if (filter === 'attributes') {
+    return { ...filters, attributes: withAttributeValues(filters.attributes, value, []) };
   }
   return filter === 'showLevels' ? { ...filters, showLevels: 'everything' } : filters;
 }

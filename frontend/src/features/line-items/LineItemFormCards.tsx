@@ -10,6 +10,7 @@ import { TextField } from '@/ui/TextField/TextField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
 import { PersonField } from '@/features/people';
+import { FieldHelpTip, useFieldHelp } from '@/features/settings';
 import { recordHref } from '@/ui/record-links';
 import { CostFields } from './CostFields';
 import { FinanceBudgetFields } from './FinanceBudgetFields';
@@ -61,6 +62,8 @@ export interface LineItemFormCardsProps {
 export function LineItemFormCards(props: LineItemFormCardsProps) {
   const { form, state, update, problems, options, currencies, budgetItems } = props;
   const { activity } = options;
+  const { help } = useFieldHelp();
+  const tip = (field: keyof typeof LABEL) => help(`lineItem.${field}`);
   const planCode = options.balance.assigned.currency;
   const dates = {
     startDate: activity.startDate,
@@ -79,6 +82,7 @@ export function LineItemFormCards(props: LineItemFormCardsProps) {
           render={(field) => (
             <TextField
               label={LABEL.name}
+              tip={tip('name')}
               marking="Required"
               maxLength={120}
               {...field}
@@ -93,6 +97,7 @@ export function LineItemFormCards(props: LineItemFormCardsProps) {
           render={(field) => (
             <PersonField
               label={LABEL.owner}
+              tip={tip('owner')}
               marking="Needed to submit"
               {...field}
               onChange={(value) => change('ownerId', value)}
@@ -106,6 +111,7 @@ export function LineItemFormCards(props: LineItemFormCardsProps) {
           render={(field) => (
             <TextAreaField
               label={LABEL.description}
+              tip={tip('description')}
               maxLength={2000}
               {...field}
               onChange={(value) => change('description', value)}
@@ -166,6 +172,7 @@ export function LineItemFormCards(props: LineItemFormCardsProps) {
           render={(field) => (
             <MoneyField
               label={LABEL.contractedAmount}
+              tip={tip('contractedAmount')}
               currency={state.currency}
               {...field}
               onChange={(value) => change('contractedAmount', value)}
@@ -193,6 +200,7 @@ export function LineItemFormCards(props: LineItemFormCardsProps) {
           render={(field) => (
             <CheckboxField
               label={LABEL.requestSwbs}
+              tip={tip('requestSwbs')}
               name={field.name}
               checked={field.value}
               onChange={(checked) => change('requestSwbs', checked)}
@@ -203,7 +211,10 @@ export function LineItemFormCards(props: LineItemFormCardsProps) {
           )}
         />
         <div className={styles.readOnlyField}>
-          <span className={styles.readOnlyLabel}>{LABEL.swbsCode}</span>
+          <span className={styles.readOnlyLabel}>
+            {LABEL.swbsCode}
+            <FieldHelpTip helpKey="lineItem.swbsCode" label={LABEL.swbsCode} />
+          </span>
           <span className={styles.note}>{props.storedSwbsCode || SWBS_LATER}</span>
         </div>
       </FormCard>

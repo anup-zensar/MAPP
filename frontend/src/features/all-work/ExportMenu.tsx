@@ -1,6 +1,6 @@
 import { Download, LoaderCircle } from 'lucide-react';
 import { DropdownMenu } from 'radix-ui';
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { ApiError } from '@/api/errors';
 import { Button } from '@/ui/Button/Button';
 import { useToast } from '@/ui/Toast/useToast';
@@ -10,22 +10,27 @@ import { exportAllWork } from './api';
 
 type Format = 'xlsx' | 'csv';
 
+const FORMATS: { format: Format; label: string }[] = [
+  { format: 'xlsx', label: 'Spreadsheet (.xlsx)' },
+  { format: 'csv', label: 'CSV (.csv)' },
+];
+
 export interface ExportMenuProps {
-  /** The view on screen: the file holds its rows and columns as filtered (FR-032). */
   state: ViewState;
-  /** The answer on screen; undefined while it loads. */
   result: AllWorkResult | undefined;
+  /** Why the person may not export: both formats are shown disabled with it. */
+  refusal?: string;
 }
 
 /**
- * **Export** (US7, FR-032 – FR-034): the current view as a spreadsheet or a CSV file, written by
- * the API with every row (collapsed branches too), the totals and a note of every filter, and
- * saved under the name the API gives ("MAPP All work – Grid – 2026 – 18 Oct 2026.xlsx").
+ * The view on screen as a file the API writes with every row, the totals and a note of every
+ * filter, saved under the name the API gives.
  */
-export function ExportMenu({ state, result }: ExportMenuProps) {
+export function ExportMenu({ state, result, refusal }: ExportMenuProps) {
   const { show } = useToast();
   const [preparing, setPreparing] = useState(false);
   const chosen = useRef<Format | null>(null);
+  const hintId = useId();
 
   async function exportAs(format: Format) {
     if (result && result.rows.length === 0) {
@@ -69,24 +74,24 @@ export function ExportMenu({ state, result }: ExportMenuProps) {
             }
           }}
         >
-          <DropdownMenu.Item
-            className={styles.item}
-            disabled={preparing}
-            onSelect={() => {
-              chosen.current = 'xlsx';
-            }}
-          >
-            Spreadsheet (.xlsx)
-          </DropdownMenu.Item>
-          <DropdownMenu.Item
-            className={styles.item}
-            disabled={preparing}
-            onSelect={() => {
-              chosen.current = 'csv';
-            }}
-          >
-            CSV (.csv)
-          </DropdownMenu.Item>
+          {FORMATS.map(({ format, label }) => (
+            <DropdownMenu.Item
+              key={format}
+              className={styles.item}
+              disabled={preparing || refusal !== undefined}
+              aria-describedby={refusal ? hintId : undefined}
+              onSelect={() => {
+                chosen.current = format;
+              }}
+            >
+              {label}
+            </DropdownMenu.Item>
+          ))}
+          {refusal && (
+            <p id={hintId} className={styles.hint}>
+              {refusal}
+            </p>
+          )}
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>

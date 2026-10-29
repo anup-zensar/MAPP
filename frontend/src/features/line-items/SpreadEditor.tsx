@@ -5,6 +5,7 @@ import { problemOf } from '@/ui/FormPanel/problem-of';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { cx } from '@/ui/cx';
+import { FieldHelpTip } from '@/features/settings';
 import { monthFieldId } from './line-item-form-state';
 import type { CustomMonth } from './line-item-form-state';
 import {
@@ -56,9 +57,8 @@ export interface SpreadEditorProps {
 }
 
 /**
- * Spread over time (FR-017 – FR-021): Evenly, All in first month, All in last month or Custom. The
- * first three show a read-only preview of their months; Custom shows a month grid with Add month
- * before / after, months outside the activity's dates marked as allowed, and the running total.
+ * Spread over time: Evenly, All in first month, All in last month (each with a preview of its months)
+ * or Custom, a month grid with Add month before / after and the running total.
  */
 export function SpreadEditor({
   method,
@@ -94,6 +94,7 @@ export function SpreadEditor({
               {SPREAD_LABELS[option]}
             </label>
           ))}
+          <FieldHelpTip helpKey="lineItem.spread" label={LABEL.spread} />
         </div>
         {source && <p className={styles.note}>{source}</p>}
         {problemOf(problems, 'spread') && (

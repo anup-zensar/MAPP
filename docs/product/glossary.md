@@ -28,6 +28,13 @@ application use these definitions. Hive9 names are given in brackets where users
 | **Base currency** | USD — the currency all totals are calculated in. |
 | **Display currency** | The currency you choose to see amounts in; it does not change stored values. |
 | **Finance budget item** | A row of a finance budget (e.g. "2026 Lubricants Budget › Europe – Digital") that a line item is linked to. Managed by Finance; a simple list in Settings for now. |
+| **Plan currency** | The currency a plan's budgets and planned costs are typed in (feature 016); USD unless chosen otherwise, fixed once the plan has amounts. |
+| **Current rate** | The latest exchange rate of a currency dated today or earlier; every conversion uses it. |
+| **Rate history** | Every dated rate of a currency, newest first; a rate dated in the future changes nothing before its date. |
+| **GSAP rate import** | Adding the rates of a GSAP daily-rate file (simulated in this phase) after a review of what will be added, skipped or refused. |
+| **Budget by month** (phased budget) | A budget divided over the months of its year — evenly or by hand — so planned cost can be compared with it per period. |
+| **Global budget** | Money for a year owned centrally and shared out to market plans by allocations (feature 014). |
+| **Allocation** | The part of a global budget given to one plan; it becomes that plan's budget, which the plan's owner cannot change. |
 | **Finance budget** | Finance's budget for a year (e.g. "2026 Lubricants Budget"), made up of finance budget items. Only the list of items exists in this phase. |
 | **Actuals** | What was really spent: the payments GSAP has released (feature 015's **Paid**). The SP&A view calls it **Actual spend** (feature 013). |
 | **Committed** | The value of the GSAP purchase orders on a record's line items (feature 015). |
@@ -106,3 +113,12 @@ application use these definitions. Hive9 names are given in brackets where users
 | **Actor** | The signed-in person who performs an action; recorded on every change. |
 | **Shell attribute** (Hive9: custom attribute) | A Shell-specific field (e.g. Cluster, Country / OU, GL code) defined in Settings rather than built in, so administrators can change its options without a new release. |
 | **Inactive / Deactivate** | A Settings record or person that is no longer offered for new choices but is kept, so existing records still show it, labelled "(inactive)". Can be made active again. |
+| **Permission** | One thing a person may do, such as "Edit plan details" or "Export from All work" (the fixed list of feature 014). |
+| **Role** | A named set of permissions given to people, such as Planner or Viewer; administrators change roles in Settings › Roles and access. |
+| **Scope** | Where a role applies: All markets, My teams or Chosen teams. |
+| **Market** | A team, as roles and global budgets see it (e.g. Lubricants Europe). |
+| **View only** | The note on a page where the person may see but change nothing; it names their roles and whom to ask. |
+| **Split activity** | Dividing one activity into two inside the same plan, moving chosen line items or an amount to the new one (feature 016). |
+| **Plan type** | Operational, Strategic or Cross-market; plans stay one year, and views can cover up to five years. |
+| **Breakdown** | The All work view and plan card that add up planned cost by a Shell attribute or another grouping, optionally "then by" a second. |
+| **Field help** | The ⓘ text of a built-in field, kept in Settings › Field help so administrators can change it without a release. |

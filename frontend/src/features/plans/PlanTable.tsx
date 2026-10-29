@@ -5,10 +5,12 @@ import { TeamPill } from '@/ui/TeamPill/TeamPill';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import type { TeamRef } from '@/ui/TeamPill/TeamPill';
+import { ViewOnlyArea } from '@/ui/ViewOnlyNote/view-only-area';
 import { AmountPair } from './AmountPair';
 import { PinButton } from './PinButton';
 import { PlanCompleteness, PlanStatusChip } from './PlanFacts';
 import type { PlanSummary } from './api';
+import { changesNothingIn } from './plan-access';
 import styles from './PlanTable.module.css';
 import { PlanTypeTag } from './PlanTypeTag';
 import { BcpirTag } from './BcpirTag';
@@ -128,7 +130,9 @@ export function PlanTable({ plans, actionsFor, isPinned, onPinToggle }: PlanTabl
                   )}
                 </td>
                 <td className={styles.actions}>
-                  <ActionsMenu label={plan.name} items={actionsFor(plan)} />
+                  <ViewOnlyArea active={changesNothingIn(plan.access)}>
+                    <ActionsMenu label={plan.name} items={actionsFor(plan)} />
+                  </ViewOnlyArea>
                 </td>
               </tr>
             );

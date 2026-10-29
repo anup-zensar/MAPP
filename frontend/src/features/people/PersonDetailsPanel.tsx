@@ -20,6 +20,7 @@ import panel from './panels.module.css';
 import { personStatusItem } from './person-actions';
 import type { PersonActions } from './person-actions';
 import { RecordLine } from './RecordLine';
+import { LineManagerFacts } from './LineManagerFacts';
 import { approvesInText, ownsText } from './texts';
 
 /** Above this many teams, the details offer "Search teams". */
@@ -137,6 +138,7 @@ function PersonDetailsBody({ person }: { person: PersonDetails }) {
           <dt>Approves in</dt>
           <dd>{approvesInText(person.usage)}</dd>
         </div>
+        <LineManagerFacts person={person} />
         <PersonRolesFact personId={person.id} />
       </dl>
       <RecordLine record={person} />

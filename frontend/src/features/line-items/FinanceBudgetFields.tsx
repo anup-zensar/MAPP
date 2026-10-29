@@ -1,6 +1,7 @@
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
 import { problemOf } from '@/ui/FormPanel/problem-of';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { useFieldHelp } from '@/features/settings';
 import type { LineItemFormState } from './line-item-form-state';
 import type { FinanceBudgetItemRef, LineItemActivity } from './api';
 import {
@@ -12,30 +13,20 @@ import {
   noBudgetItemsText,
 } from './line-item-text';
 
-/** ChoiceField turns into a searchable list above this many options (design system §5). */
 const SEARCHABLE_ABOVE = 10;
 
 export interface FinanceBudgetFieldsProps {
   state: LineItemFormState;
   activity: LineItemActivity;
-  /** The plan's year and every year with active items (FR-015). */
   years: number[];
-  /**
-   * The active items of those years, the plan's default budget first, and on an edit form the
-   * linked item when it is inactive (FR-016).
-   */
+  /** The active items of those years, the plan's default budget first, and a linked inactive one. */
   items: FinanceBudgetItemRef[];
   problems: FieldProblem[];
   onYearChange: (year: number | null) => void;
   onItemChange: (id: string) => void;
 }
 
-/**
- * Link to finance budget (FR-015, FR-016): the year, then that year's items grouped by budget —
- * each labelled "<item> · <budget> · <code>", so they can be searched on any of them — with the
- * plan's default budget first; an inactive linked item kept and named as a problem; the item a
- * year change will clear.
- */
+/** The finance budget year, then that year's items labelled "<item> · <budget> · <code>". */
 export function FinanceBudgetFields({
   state,
   activity,
@@ -58,11 +49,13 @@ export function FinanceBudgetFields({
     state.clearedItem && itemClearedText(state.clearedItem.name, state.clearedItem.year),
     chosen && !chosen.active && inactiveItemText(chosen.name),
   ].filter(Boolean);
+  const { help } = useFieldHelp();
 
   return (
     <>
       <ChoiceField
         label={LABEL.financeBudgetYear}
+        tip={help('lineItem.financeBudgetYear')}
         name="financeBudgetYear"
         marking="Needed to submit"
         options={yearOptions.map((option) => ({
@@ -77,6 +70,7 @@ export function FinanceBudgetFields({
       />
       <ChoiceField
         label={LABEL.financeBudgetItem}
+        tip={help('lineItem.financeBudgetItem')}
         name="financeBudgetItemId"
         marking="Needed to submit"
         hint={
@@ -97,7 +91,6 @@ export function FinanceBudgetFields({
         value={state.financeBudgetItemId}
         onChange={onItemChange}
         disabledReason={
-          // The lock reason takes the note's place, so it carries the notes too.
           year !== null && ofYear.length === 0
             ? [noBudgetItemsText(year), ...notes].join(' ')
             : undefined

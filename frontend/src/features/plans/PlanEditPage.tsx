@@ -3,7 +3,9 @@ import { useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router';
 import { ApiError, conflictMessage } from '@/api/errors';
 import { budgetCheck } from '@/features/overspend';
+import { allows } from '@/session/gate-action';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { NoAccess } from '@/ui/NoAccess/NoAccess';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { useToast } from '@/ui/Toast/useToast';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
@@ -30,6 +32,10 @@ export function PlanEditPage() {
 
   if (plan.isError && plan.error instanceof ApiError && plan.error.kind === 'notFound') {
     return <PlanNotFound />;
+  }
+  const edit = plan.data?.access?.edit;
+  if (!allows(edit)) {
+    return <NoAccess message={edit?.reason || undefined} />;
   }
 
   return (

@@ -9,11 +9,15 @@ import type { TabItem } from '@/ui/Tabs/Tabs';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { BulkBar, useSelection } from '@/features/bulk';
 import { useAccess } from '@/session/access';
+import { refusalText } from '@/session/refusal-text';
 import { useAllWork, useAllWorkOptions, useAllWorkPreferences, usePreferencesSaver } from './api';
 import styles from './AllWorkPage.module.css';
 import { ALL_WORK_DESCRIPTION, VIEW_LABELS } from './all-work-text';
 import type { Sort, ViewState, ViewType } from './all-work-types';
 import { AllWorkGrid } from './AllWorkGrid';
+import { withBreakdownChoice } from './breakdown-state';
+import { BREAKDOWN } from './breakdown-text';
+import { BreakdownView } from './BreakdownView';
 import { BudgetView } from './BudgetView';
 import { CalendarView } from './CalendarView';
 import { ColumnChooser } from './ColumnChooser';
@@ -38,6 +42,7 @@ const TABS: TabItem<ViewType>[] = [
   { value: 'grid', label: VIEW_LABELS.grid },
   { value: 'calendar', label: VIEW_LABELS.calendar },
   { value: 'budget', label: VIEW_LABELS.budget },
+  { value: 'breakdown', label: BREAKDOWN },
 ];
 
 /**
@@ -45,7 +50,8 @@ const TABS: TabItem<ViewType>[] = [
  * that survives moving around (FR-009); the Grid's rows are ticked for bulk actions (feature 012).
  */
 export function AllWorkPage() {
-  const { has } = useAccess();
+  const access = useAccess();
+  const { has } = access;
   usePageTitle('All work');
   const session = useAllWorkSession();
   const { state, entry, setState } = session;
@@ -71,7 +77,6 @@ export function AllWorkPage() {
   const page = pageOf(visible, entry.page, entry.pageSize);
   const monthLayout = state?.view === 'calendar' && state.calendarLayout === 'month';
 
-  // Back from a record: the page scrolls to where it was (FR-016), once the rows are there.
   const scrollRestored = useRef(false);
   useEffect(() => {
     if (result && !scrollRestored.current) {
@@ -105,10 +110,7 @@ export function AllWorkPage() {
     setState(next, { keepPage: true });
   }
 
-  /**
-   * Shows other columns or another sort (FR-015, FR-018). They are remembered for the person
-   * while no saved view is applied; with one, they only make it "Modified" (FR-021, FR-030).
-   */
+  // Columns and sort are remembered for the person only while no saved view is applied.
   function changeColumns(columns: string[], sort: Sort | null) {
     setState((current) => ({ ...current, columns, sort }), { keepPage: true });
     if (!entry.appliedViewId) {
@@ -116,6 +118,7 @@ export function AllWorkPage() {
     }
   }
 
+  const shown = state && withBreakdownChoice(state, options.data?.attributes);
   const view = state && (
     <>
       <FilterBar
@@ -130,64 +133,74 @@ export function AllWorkPage() {
       />
       <SummaryCards summary={query.data?.summary ?? null} />
       <div aria-busy={query.isFetching} className={styles.card}>
-        <ViewToolbar
-          state={state}
-          generatedAt={result?.generatedAt}
-          onChange={changeExpansion}
-          onColumns={() => setChoosingColumns(true)}
-          onRefresh={() => void query.refetch()}
-        />
-        <ViewContent
-          state={state}
-          result={result}
-          error={query.isError ? query.error : null}
-          hasPlans={options.data ? options.data.plans.length > 0 : true}
-          onRetry={() => void query.refetch()}
-          onClearFilters={() => {
-            clearSelection();
-            setState(clearAll);
-          }}
-        >
-          {result && monthLayout && (
-            <MonthCalendar key={result.year} result={result} onOpen={(row) => void open(row)} />
-          )}
-          {result && state.view === 'calendar' && !monthLayout && (
-            <CalendarView
-              result={result}
-              rows={page.rows}
-              continued={continuedPath(page.rows, result.rows)}
-              search={state.search}
-              onToggle={(key) => changeExpansion(toggleRow(state, key))}
-              onOpen={(row) => void open(row)}
+        {state.view === 'breakdown' ? (
+          <BreakdownView
+            state={state}
+            attributes={options.data ? (options.data.attributes ?? []) : undefined}
+            onChange={(next) => setState(next)}
+          />
+        ) : (
+          <>
+            <ViewToolbar
+              state={state}
+              generatedAt={result?.generatedAt}
+              onChange={changeExpansion}
+              onColumns={() => setChoosingColumns(true)}
+              onRefresh={() => void query.refetch()}
             />
-          )}
-          {result && state.view === 'budget' && (
-            <BudgetView
+            <ViewContent
+              state={state}
               result={result}
-              rows={page.rows}
-              continued={continuedPath(page.rows, result.rows)}
-              search={state.search}
-              onToggle={(key) => changeExpansion(toggleRow(state, key))}
-              onOpen={(row) => void open(row)}
-            />
-          )}
-          {result && state.view === 'grid' && (
-            <AllWorkGrid
-              result={result}
-              rows={page.rows}
-              continued={continuedPath(page.rows, result.rows)}
-              search={state.search}
-              sort={state.sort}
-              onSort={(column) => changeColumns(state.columns, nextSort(state.sort, column))}
-              onToggle={(key) => changeExpansion(toggleRow(state, key))}
-              onOpen={(row) => void open(row)}
-              selection={gridSelection(
-                selection,
-                page.rows.map((visible) => visible.row),
+              error={query.isError ? query.error : null}
+              hasPlans={options.data ? options.data.plans.length > 0 : true}
+              onRetry={() => void query.refetch()}
+              onClearFilters={() => {
+                clearSelection();
+                setState(clearAll);
+              }}
+            >
+              {result && monthLayout && (
+                <MonthCalendar key={result.year} result={result} onOpen={(row) => void open(row)} />
               )}
-            />
-          )}
-        </ViewContent>
+              {result && state.view === 'calendar' && !monthLayout && (
+                <CalendarView
+                  result={result}
+                  rows={page.rows}
+                  continued={continuedPath(page.rows, result.rows)}
+                  search={state.search}
+                  onToggle={(key) => changeExpansion(toggleRow(state, key))}
+                  onOpen={(row) => void open(row)}
+                />
+              )}
+              {result && state.view === 'budget' && (
+                <BudgetView
+                  result={result}
+                  rows={page.rows}
+                  continued={continuedPath(page.rows, result.rows)}
+                  search={state.search}
+                  onToggle={(key) => changeExpansion(toggleRow(state, key))}
+                  onOpen={(row) => void open(row)}
+                />
+              )}
+              {result && state.view === 'grid' && (
+                <AllWorkGrid
+                  result={result}
+                  rows={page.rows}
+                  continued={continuedPath(page.rows, result.rows)}
+                  search={state.search}
+                  sort={state.sort}
+                  onSort={(column) => changeColumns(state.columns, nextSort(state.sort, column))}
+                  onToggle={(key) => changeExpansion(toggleRow(state, key))}
+                  onOpen={(row) => void open(row)}
+                  selection={gridSelection(
+                    selection,
+                    page.rows.map((visible) => visible.row),
+                  )}
+                />
+              )}
+            </ViewContent>
+          </>
+        )}
       </div>
       {result && state.view === 'grid' && (
         <BulkBar selection={selection} matching={matchingRecords(result.rows)} />
@@ -211,14 +224,19 @@ export function AllWorkPage() {
         actions={
           <>
             <ViewsControl
-              state={state}
+              state={shown}
               appliedViewId={entry.appliedViewId}
               onApply={(saved) => void session.applyView(saved)}
               onSaved={(saved) => session.setAppliedView(saved.id)}
               onStandard={session.applyStandard}
             />
-            {/* Export needs data.export (feature 014, FR-012); the server checks it too. */}
-            {state && has('data.export') && <ExportMenu state={state} result={result} />}
+            {shown && (
+              <ExportMenu
+                state={shown}
+                result={result}
+                refusal={has('data.export') ? undefined : refusalText('Exporting', access)}
+              />
+            )}
           </>
         }
       />

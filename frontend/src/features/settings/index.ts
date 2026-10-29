@@ -15,6 +15,9 @@ export type {
 } from './currencies/rates-api';
 export type { FieldHelpEntry, FieldHelpPage } from './field-help/api';
 export { FIELD_HELP_SETTINGS_SECTIONS } from './field-help/settings-sections';
+export { FieldHelpTip } from './field-help/FieldHelpTip';
+export { useFieldHelp } from './field-help/useFieldHelp';
+export type { FieldHelp } from './field-help/useFieldHelp';
 export { FinanceBudgetItemsPage } from './finance-budget-items/FinanceBudgetItemsPage';
 export { ModelsPage } from './models/ModelsPage';
 export { waterfall } from './models/waterfall';

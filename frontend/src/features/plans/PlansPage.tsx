@@ -15,6 +15,7 @@ import { useAccess } from '@/session/access';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { DEFAULT_FILTERS, readFilters, remember, toSearchParams } from './list-preferences';
 import type { PlanListFilters } from './list-preferences';
+import { NewPlanButton } from './NewPlanButton';
 import { PlanCard } from './PlanCard';
 import { PlansFilters } from './PlansFilters';
 import styles from './PlansPage.module.css';
@@ -166,13 +167,7 @@ export function PlansPage() {
       <PageHeader
         title="Plans"
         description="Every yearly marketing plan, its status, its budget and what's still missing."
-        actions={
-          canCreate && (
-            <LinkButton to="/plans/new" variant="primary" icon={<Plus />}>
-              New plan
-            </LinkButton>
-          )
-        }
+        actions={<NewPlanButton />}
       />
       <div className={styles.page}>
         <PlanListSummary summary={summary} />

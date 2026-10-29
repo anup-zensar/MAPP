@@ -1,6 +1,8 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
+import { fieldHelpReply } from '@/testing/fixtures/field-help-texts';
 import { budgetAndCost, usd } from '@/testing/fixtures/campaigns';
 import { budgetInput, remainingWhileTyping } from './budget';
 import { BudgetCostSection, GoalsSection, RemainingBudgetLine } from './BudgetCost';
@@ -23,11 +25,12 @@ describe('budget arithmetic (feature 005, FR-010)', () => {
 });
 
 describe('RemainingBudgetLine (feature 005, FR-010)', () => {
-  it('follows the typed budget and turns red below zero, with the reason', () => {
+  it('follows the typed budget and turns red below zero, with the reason', async () => {
+    mockApi([fieldHelpReply({ 'campaign.remainingPlanBudget': 'Plan budget minus campaigns.' })]);
     renderWithProviders(
       <RemainingBudgetLine
         label="Remaining plan budget"
-        tip="The plan's budget minus the budgets of all its campaigns, including this one."
+        helpKey="campaign.remainingPlanBudget"
         parentRemaining={usd('200000.00')}
         savedOwn={usd('100000.00')}
         typed="400,000"
@@ -36,14 +39,16 @@ describe('RemainingBudgetLine (feature 005, FR-010)', () => {
 
     expect(screen.getByText('-$100,000.00').className).toContain('negative');
     expect(screen.getByText('Over-allocated by $100,000.00')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'About Remaining plan budget' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: 'About Remaining plan budget' }),
+    ).toBeInTheDocument();
   });
 
   it('says "—" with the reason when the parent has no budget', () => {
     renderWithProviders(
       <RemainingBudgetLine
         label="Remaining campaign budget"
-        tip="The campaign's budget minus the budgets of all its initiatives, including this one."
+        helpKey="initiative.remainingCampaignBudget"
         parentRemaining={null}
         savedOwn={null}
         typed="150000"
@@ -56,7 +61,10 @@ describe('RemainingBudgetLine (feature 005, FR-010)', () => {
 });
 
 describe('BudgetCostSection and GoalsSection (feature 005, FR-011, FR-016)', () => {
-  it('shows planned cost as Calculated with its formula, and budget used in red over 100 %', async () => {
+  it('shows planned cost as Calculated with its Field help, and budget used in red over 100 %', async () => {
+    mockApi([
+      fieldHelpReply({ 'campaign.plannedCost': 'Sum of the planned costs of its initiatives.' }),
+    ]);
     const { user } = renderWithProviders(
       <BudgetCostSection
         level="campaign"
@@ -81,7 +89,7 @@ describe('BudgetCostSection and GoalsSection (feature 005, FR-011, FR-016)', () 
       '125 %',
     );
     expect(within(section).getByText('-$30,000.00')).toBeInTheDocument();
-    await user.click(within(section).getByRole('button', { name: 'About Planned cost' }));
+    await user.click(await within(section).findByRole('button', { name: 'About Planned cost' }));
     expect(
       await screen.findByText('Sum of the planned costs of its initiatives.'),
     ).toBeInTheDocument();
@@ -106,7 +114,7 @@ describe('BudgetCostSection and GoalsSection (feature 005, FR-011, FR-016)', () 
 
   it('sums the goals below, "—" for each without a value', () => {
     renderWithProviders(
-      <GoalsSection goals={{ inq: 1200, mql: null, revenue: usd('25000.00') }} />,
+      <GoalsSection level="campaign" goals={{ inq: 1200, mql: null, revenue: usd('25000.00') }} />,
     );
     const section = screen.getByRole('region', { name: /Goals/ });
 

@@ -1,5 +1,11 @@
-// All work (feature 010): the cross-plan grid, calendar, budget and cost views and saved views.
+// All work: the cross-plan Grid, Calendar, Budget & cost and Breakdown views and saved views.
 export { AllWorkPage } from './AllWorkPage';
+export { useAllWorkOptions } from './api';
+export { useAllWorkBreakdown } from './breakdown-api';
+export { defaultGrouping } from './breakdown-state';
+export { NO_PLANNED_COST, PLANNED_COST_BY } from './breakdown-text';
+export { BreakdownTable } from './BreakdownTable';
+export { GroupingPickers } from './GroupingPickers';
 export type {
   AllWorkCell,
   AllWorkColumn,
@@ -8,6 +14,7 @@ export type {
   AllWorkResult,
   AllWorkRow,
   AllWorkStatus,
+  BreakdownChoice,
   Money,
   SavedView,
   ViewState,

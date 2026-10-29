@@ -25,6 +25,7 @@ import type {
   Filters,
   ViewState,
 } from './all-work-types';
+import { AttributeFilterMenu } from './AttributeFilterMenu';
 import { FilterMenu } from './FilterMenu';
 import type { FilterChoice } from './FilterMenu';
 import { chipsOf, clearAll, hasFilters, removeChip } from './view-chips';
@@ -207,6 +208,7 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
   }
 
   const chips = chipsOf(state, options);
+  const hasAttributes = Boolean(options?.attributes?.length) || Boolean(filters.attributes?.length);
 
   return (
     <div className={styles.bar}>
@@ -249,6 +251,13 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
         {menus.map((menu) => (
           <FilterMenu key={menu.label} {...menu} />
         ))}
+        {hasAttributes && (
+          <AttributeFilterMenu
+            attributes={options?.attributes ?? []}
+            selected={filters.attributes ?? []}
+            onChange={(attributes) => setFilters({ attributes })}
+          />
+        )}
       </div>
       {hasFilters(state) && (
         <div className={styles.results}>

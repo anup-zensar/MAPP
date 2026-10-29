@@ -1,10 +1,8 @@
 # Tasks: Access Control and Global Budgets
 
-> **Build state after the final merge** (`plan-module` at `a1ae8fe`, 21 October 2026): the backend, Settings ›
-> Roles and access (routed in `25ea214`, only with `access.manage`), Your access, Global budgets and allocations,
-> the filtered sidebar and Home's no-role state are built and ticked. **Open:** T043 (record pages do not yet show
-> `NoAccess` on a 403), T044–T051 (pages still show actions the reader's role does not allow; the API refuses
-> them), T061 (end-to-end journeys), T063 (product documents), T064 (full check run).
+> **Build state** (2026-10-29): every task is done and ticked. The screens hide or explain the actions a role
+> does not allow (T043 – T051, D-352), `frontend/e2e/access-control.spec.ts` runs the access journeys (T061), the
+> product documents carry 014's rules (T063) and every check passes (T064).
 
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [data-model.md](data-model.md),
 [contracts/openapi.yaml](contracts/openapi.yaml)
@@ -193,26 +191,42 @@ built with 012.
 
 ## Phase 5: Frontend by user story
 
-- [ ] T043 [US1] Record pages of 004–007 and 011 render `NoAccess` on a 403 page load; Home shows the no-role state
+- [x] T043 [US1] Record pages of 004–007 and 011 render `NoAccess` on a 403 page load; Home shows the no-role state
   (text 36) when `access.roles` is empty; tests (FR-008, Edge cases).
-- [ ] T044 [P] [US2] `frontend/src/features/plans/`: New plan (`plans.create`, no-team hint 22), `PlanCard` menu from
+- [x] T044 [P] [US2] `frontend/src/features/plans/`: New plan (`plans.create`, no-team hint 22), `PlanCard` menu from
   `PlanSummary.access`, plan header and tree toolbar from `Plan.access`/`PlanCampaigns.access`, `ViewOnlyNote`,
   `PlanForm` team options limited to the permission's teams with other teams fixed; tests (FR-011, FR-013).
-- [ ] T045 [P] [US2] `frontend/src/features/campaigns/`: row menus, Add buttons, record pages from `access`; tests
+- [x] T045 [P] [US2] `frontend/src/features/campaigns/`: row menus, Add buttons, record pages from `access`; tests
   (FR-011, FR-014).
-- [ ] T046 [P] [US2] `frontend/src/features/activities/`: rows from `ActivitySummaryPage.access`, page actions from
+- [x] T046 [P] [US2] `frontend/src/features/activities/`: rows from `ActivitySummaryPage.access`, page actions from
   `Activity.access`, "From finance" only with `seeFinance`; tests (FR-011, FR-015).
-- [ ] T047 [P] [US2] `frontend/src/features/line-items/`: section and page actions from `access`,
+- [x] T047 [P] [US2] `frontend/src/features/line-items/`: section and page actions from `access`,
   `FromFinanceSection` only with `seeFinance`; tests (FR-011, FR-015).
-- [ ] T048 [P] [US2] `frontend/src/features/settings/` pages: `ViewOnlyNote area="settings"` and hidden change actions
+- [x] T048 [P] [US2] `frontend/src/features/settings/` pages: `ViewOnlyNote area="settings"` and hidden change actions
   without `settings.manage` (currencies: `exchangeRates.manage`); tests US2 scenario 5 (FR-011, FR-012).
-- [ ] T049 [P] [US2] `frontend/src/features/people/` and `features/approval-workflows/`: same with `people.manage` and
+- [x] T049 [P] [US2] `frontend/src/features/people/` and `features/approval-workflows/`: same with `people.manage` and
   `workflows.manage`; tests (FR-011).
-- [ ] T050 [P] [US2] `frontend/src/features/all-work/`: Export disabled with its reason without `data.export`; tests
+- [x] T050 [P] [US2] `frontend/src/features/all-work/`: Export disabled with its reason without `data.export`; tests
   (FR-016).
-- [ ] T051 [P] [US2] `frontend/src/features/recycle-bin/` and `features/activity-log/`: Restore and Delete
+- [x] T051 [P] [US2] `frontend/src/features/recycle-bin/` and `features/activity-log/`: Restore and Delete
   permanently from `RecycleBinListItem.access`, Empty only with `recycleBin.purge`, record-type filter gains Role,
   Access rules, Global budget, Budget allocation; tests (FR-007, FR-011).
+  *Built (D-352), with feature 022's rule that a record outside the person's access answers 404 (so a 403 page load
+  now comes only from a form the person may not use):* `ui/ViewOnlyNote/view-only-area.tsx` (menus leave out what the
+  person may not do where they may change nothing), `session/gate-action.ts` `moreItemFor` (a header action listed in
+  More, disabled with its reason), `session/refusal-text.ts`; plans: `plan-access.ts`, `NewPlanButton.tsx` (message 22),
+  `useOfferedTeams.ts` + `ui/TeamPicker` `offered` (FR-013), `PlanPage`, `PlanCard`, `PlanTable`, `PlanCreatePage`,
+  `PlanEditPage`; campaigns: `RefusedPanel.tsx`, `NewCampaignPanel`, `NewInitiativePanel`, `RecordPanel`,
+  `RecordDetails`; activities: `activity-access.ts`, `plan-facts-api.ts` (fix: a Viewer's Details no longer need the
+  edit form), `ActivityPage`, `ActivityHeader`, `ActivityFormPage`; line items: `line-item-access.ts`, `LineItemPage`,
+  `LineItemPageStates`; Settings: `RateHistorySection` and Field help gated, `app/route-helpers.tsx` `gated` on the
+  change-only routes; All work: `ExportMenu` `refusal`. "From finance" no longer exists (015 replaced it with Financials,
+  which shows its own no-access note); the log's and the bin's record types come from the API, so Role, Access rules,
+  Global budget and Budget allocation appear with their entries. Tests: `PlanPage.access.test.tsx`,
+  `PlansPage.access.test.tsx`, `CampaignPanel.access.test.tsx`, `ActivityPage.access.test.tsx`,
+  `LineItemPage.access.test.tsx`, `features/settings/view-only.test.tsx`, `app/view-only.admin-lists.test.tsx`, cases in
+  `ActionsMenu.test.tsx`, `gate-action.test.ts`, `TeamPicker.test.tsx`, `ExportMenu.test.tsx`, `refusal-text.test.ts`,
+  `BinRow.test.tsx`, `RecycleBinPage.test.tsx`; Home's no-role state was built and tested before (`HomePage.test.tsx`).
 - [x] T052 [US3] `frontend/src/features/access/`: `accessApi.ts`, `AccessPage` (tabs), People tab, `PersonRolesPanel`
   (scope choice, live summary, impact warnings, save), `settingsSections.ts`; tests US3 scenarios 1–2, 4–5 (FR-017,
   FR-021, FR-022).
@@ -234,14 +248,18 @@ built with 012.
 
 ## Phase 6: End-to-end (needs Phases 3 and 5)
 
-- [ ] T061 New `frontend/e2e/access-control.spec.ts`: journeys 1–5 of plan *Tests* with an axe check on every page
+- [x] T061 New `frontend/e2e/access-control.spec.ts`: journeys 1–5 of plan *Tests* with an axe check on every page
   (US1–US3, US5, US6; SC-002, SC-003, SC-007).
+  *Built:* six journeys, axe on every page; US3 puts Sara's roles back afterwards; US5 uses the Lubricants EU
+  workflow, whose level 1 falls to the backup Alex Morgan when Daniel owns the activity (017 D-283). Found on the way:
+  `/budgets` showed the refusal text instead of the no-access page, so the Global budgets routes are now gated
+  (`app/routes.tsx`, test in `app/view-only.admin-lists.test.tsx`).
 - [x] T062 Update `frontend/e2e/core-flow.spec.ts`, `module-rest.spec.ts`, `smoke.spec.ts`: each step signs in as the
   persona whose seeded roles allow it (plan *Tests*); only actor names in expected texts change.
 
 ## Phase 7: Documents and checks
 
-- [ ] T063 [P] Prepare, for the consolidation step (do not edit `docs/sdd/decision-log.md`): ADR-0008 "Role-based
+- [x] T063 [P] Prepare, for the consolidation step (do not edit `docs/sdd/decision-log.md`): ADR-0008 "Role-based
   access with team scopes" (`docs/architecture/adr/0008-role-based-access.md`); constitution 1.1.0 wording
   (D-239, done once by D-308); `docs/product/domain-model.md` §8 rewritten as current rules and §6 rows Role, Global budget;
   `docs/product/demo-users-and-data.md` Roles column and the global budget; `docs/product/glossary.md` (Permission,
@@ -249,7 +267,12 @@ built with 012.
   no-access page); one sentence pointing to 014 in 002 FR-008, 003 FR-026–FR-027, 004 FR-004 and FR-032, 005
   FR-031, 006 and 007 Assumptions, 008 FR-017 and FR-021, 009 and 011 Assumptions (FR-041);
   `docs/sdd/plan-module-build.md` rows for 014.
-- [ ] T064 Checks: backend `gofmt -l .` prints nothing, `go vet ./...`, `go test ./...`; frontend `npm run check`;
+  *Done 2026-10-29:* ADR-0008 was already in `docs/architecture/adr/`; domain model §4.9, §6 (Role, Access rules),
+  §7 (Global budget and allocation) and §8 rewritten as current rules; demo-users-and-data (roles, global budget);
+  glossary (Permission, Role, Scope, Market, Global budget, Allocation, View only); design system §5.6 (ViewOnlyNote,
+  NoAccess); the 014 pointer in 002 FR-008, 003 FR-026/FR-027, 004 FR-004/FR-032, 005 FR-031, 008 FR-017/FR-021 and
+  the Assumptions of 006, 007, 009 and 011; build guide rows for 014.
+- [x] T064 Checks: backend `gofmt -l .` prints nothing, `go vet ./...`, `go test ./...`; frontend `npm run check`;
   Playwright suite (all journeys) green; tick the tasks.
 
 ## Requirement coverage
