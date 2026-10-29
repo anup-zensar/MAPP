@@ -29,7 +29,7 @@ func TestRequisitionerReason_038_FR025_M7(t *testing.T) {
 
 			got := f.submit(ctx)
 
-			permission := authz.Available(ctx, authz.PurchaseRequestsSubmit, plan)
+			permission := authz.Available(ctx, authz.PurchaseRequestsEdit, plan)
 			if got.Available || (got.Reason == msgEditToChange) != tt.editToo ||
 				(!tt.editToo && got.Reason != permission.Reason) {
 				t.Errorf("submit = %+v, want the permission reason %q first", got, permission.Reason)

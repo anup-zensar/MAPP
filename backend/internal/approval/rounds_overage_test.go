@@ -2,9 +2,8 @@ package approval
 
 import (
 	"context"
+	"reflect"
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
 
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/money"
@@ -16,7 +15,7 @@ func (r fixedOverspend) RefusesOverPlannedCost(context.Context) (bool, error) {
 	return bool(r), nil
 }
 
-const overageRefusal = "Line items of activity 'Fleet card launch' are 25,000.00 USD above its planned cost — " +
+const fleetCardRefusal = "Line items of activity 'Fleet card launch' are 25,000.00 USD above its planned cost — " +
 	"ask the owner to lower them, or decline."
 
 // overspentActivity is A-1009 on Daniel's workflow, submitted by Mei, its line items 25,000.00 USD above its cost.
@@ -49,8 +48,8 @@ func TestApprove_WarnsOverPlannedCost_038_FR019_FR021_M18(t *testing.T) {
 
 	f.approve(t, daniel, "A-1009", "")
 
-	if diff := cmp.Diff(fleetCardOverage(t), before.OverPlannedCost); diff != "" || !before.Actions.Approve.Available {
-		t.Errorf("038 FR-019 section before approving: approve %+v, overages (-want +got):\n%s", before.Actions.Approve, diff)
+	if !reflect.DeepEqual(fleetCardOverage(t), before.OverPlannedCost) || !before.Actions.Approve.Available {
+		t.Errorf("038 FR-019 section before approving: approve %+v, overages %+v", before.Actions.Approve, before.OverPlannedCost)
 	}
 	want := "Daniel Okoro approved activity 'Fleet card launch' [submitted → approved] " +
 		"(Round 1 · level 1 of 1 · while line items were 25,000.00 USD above planned cost)"
@@ -70,11 +69,11 @@ func TestApprove_RefusedOverPlannedCost_038_FR020_M18(t *testing.T) {
 
 	_, refused := f.service.Approve(t.Context(), daniel, "A-1009", DecisionInput{RoundID: round.ID, Level: version(1)})
 
-	assertError(t, refused, errs.NotAllowed(overageRefusal))
+	assertError(t, refused, errs.NotAllowed(fleetCardRefusal))
 	if after := f.openRound(t, "A-1009"); after.Version != round.Version || f.activities.facts["A-1009"].Status != StatusSubmitted {
 		t.Errorf("038 FR-020 something changed: round %+v", after)
 	}
-	if view.Actions.Approve != (ActionAvailability{Reason: overageRefusal}) || !view.Actions.Decline.Available {
+	if view.Actions.Approve != (ActionAvailability{Reason: fleetCardRefusal}) || !view.Actions.Decline.Available {
 		t.Errorf("038 FR-020 actions = %+v, want Approve refused with the reason, Decline offered", view.Actions)
 	}
 	if declined := f.decline(t, daniel, "A-1009", "Lower the line items"); declined.Status != StatusDeclined {
@@ -101,7 +100,7 @@ func TestDecideSubject_RefusedOverPlannedCost_038_FR020_M18(t *testing.T) {
 
 			_, refused := f.decideSubject(t, daniel, ActionApproved, "")
 
-			assertError(t, refused, errs.NotAllowed(overageRefusal))
+			assertError(t, refused, errs.NotAllowed(fleetCardRefusal))
 			f.mustDecide(t, daniel, ActionDeclined, "Lower the line items")
 		})
 	}
