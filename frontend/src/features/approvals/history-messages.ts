@@ -63,7 +63,7 @@ export function historyEntryNote(entry: ApprovalHistoryEntry): string {
     return 'Self-approval';
   }
   if ((entry.action === 'autoApproved' || entry.action === 'skipped') && entry.rule) {
-    return entry.action === 'skipped' ? `Only when ${entry.rule}` : capitalise(entry.rule);
+    return capitalise(entry.rule);
   }
   if ((entry.action === 'reminded' || entry.action === 'escalated') && entry.waitedDays) {
     return `waited ${daysText(entry.waitedDays)}`;

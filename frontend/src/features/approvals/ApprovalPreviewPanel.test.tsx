@@ -69,6 +69,15 @@ describe('ApprovalPreviewPanel (feature 008, US3)', () => {
     );
   });
 
+  it('lets the keyboard reach and scroll the details, which hold no link (WCAG 2.1.1)', async () => {
+    renderPanel([answerPreview({ body: previewOf() })]);
+
+    const panel = await screen.findByRole('dialog', { name: 'Launch film' });
+    const details = await within(panel).findByRole('group', { name: 'Activity details' });
+    details.focus();
+    expect(details).toHaveFocus();
+  });
+
   it('shows each line item as a stacked card on a phone, so nothing scrolls sideways (design system §5.4)', async () => {
     vi.stubGlobal('matchMedia', (query: string) => ({
       matches: query === '(max-width: 599px)',

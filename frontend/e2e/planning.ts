@@ -171,7 +171,7 @@ export async function createInitiative(
 export async function createPlanningRecords(
   page: Page,
   label: string,
-  activity: { withWorkflow: boolean; leaveEmpty: readonly ActivityAttribute[] },
+  activity: { withWorkflow: boolean; leaveEmpty: readonly ActivityAttribute[]; workflow?: string },
 ): Promise<PlanningRecords> {
   const plan = await createPlan(page, label);
   const { year } = plan;
@@ -194,9 +194,10 @@ export async function createPlanningRecords(
     `/api/v1/initiatives/${initiative.id}/activity-form`,
   );
   const type = form.activityTypes.find((t) => t.name === 'Content production');
-  const workflow = form.approvalWorkflows.find((w) => w.name === CHINA_WORKFLOW);
+  const workflowName = activity.workflow ?? CHINA_WORKFLOW;
+  const workflow = form.approvalWorkflows.find((w) => w.name === workflowName);
   if (!type || !workflow) {
-    throw new Error(`The activity form offers no 'Content production' or '${CHINA_WORKFLOW}'`);
+    throw new Error(`The activity form offers no 'Content production' or '${workflowName}'`);
   }
   const activityName = uniqueName(`${label} activity`);
   const created = await callApi<Named & { version: number }>(
