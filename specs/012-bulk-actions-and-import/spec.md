@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-18 · **Re-baselined**: 2026-10-28 (constitution 4.6.0, D-333)
 
-**Status**: Clarified (documented assumptions, see Clarifications) — building
+**Status**: Built (documented assumptions, see Clarifications; Q-020 and Q-021 open with Shell)
 
 **Input**: Baseline: "Select many rows: change owner/status fields, copy, move, delete; import activities from a
 template" (P3, depends on 010). Re-baselined on Shell's spec 008 (*plan bulk import and export*, US1 and US3)

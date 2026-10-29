@@ -8,6 +8,7 @@ import { AppLayout } from './AppLayout';
 import { DevOnly } from './DevOnly';
 import { COMING_SOON_SECTIONS } from './navigation';
 import { NotFoundRoute } from './NotFoundRoute';
+import { WORKBOOK_ROUTES } from './routes-workbook';
 import {
   AccessPage,
   ActivityFormPage,
@@ -226,10 +227,8 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
     element: <PurchaseRequestSettingsPage />,
     ...titled('Purchase requests'),
   },
-  // 011 Activity log and Recycle bin (under MORE in the sidebar)
   { path: '/activity-log', element: <ActivityLogPage />, ...titled('Activity log') },
   { path: '/recycle-bin', element: <RecycleBinPage />, ...titled('Recycle bin') },
-  // 016 Settings › Import GSAP rates and Field help
   {
     path: '/settings/currencies/import',
     element: <ImportRatesPage />,
@@ -271,6 +270,7 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <HomePage />, ...titled('Home') },
           ...PLAN_MODULE_ROUTES,
+          ...WORKBOOK_ROUTES,
           ...COMING_SOON_SECTIONS.map((section) => ({
             path: section.path,
             element: <ComingSoonPage section={section} />,

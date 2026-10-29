@@ -11,6 +11,7 @@ import type { TabItem } from '@/ui/Tabs/Tabs';
 import { HistorySection, showHistory } from '@/features/activity-log';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { allows } from '@/session/gate-action';
+import { useWorkbookMenu } from '@/features/workbook';
 import { BudgetByMonthCard } from './phasing/BudgetByMonthCard';
 import { useCampaignTreeContent } from './campaigns/useCampaignTreeContent';
 import { PlanDetails } from './PlanDetails';
@@ -53,6 +54,7 @@ export function PlanPage() {
   const focusHistory = useRef(false);
   usePageTitle(panel ? null : (plan.data?.name ?? 'Plan'));
   const actions = usePlanActions({ onDeleted: () => void navigate('/plans') });
+  const workbookItems = useWorkbookMenu(planId, allows(plan.data?.access?.content.editActivities));
 
   useEffect(() => {
     if (tab === 'history' && focusHistory.current) {
@@ -133,7 +135,7 @@ export function PlanPage() {
     const data = plan.data;
     const moreItems: ActionsMenuItem[] = [
       ...actions.copyItem(data),
-      // Opens the History tab and focuses its heading (feature 011, FR-011).
+      ...workbookItems,
       { label: 'View history', onSelect: viewHistory },
       ...actions.deleteItem(data),
     ];

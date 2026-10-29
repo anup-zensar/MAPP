@@ -55,6 +55,16 @@ The All work grid already pages, filters and searches every plan of a year and s
 filtered to it; the plan page's tree is a separate component. Putting checkboxes in both doubles the work for
 the same records; the plan tree is left for later (Q-021).
 
+## R7. Implementation notes (recorded while building)
+
+- The access middleware checks a route's plan scope only for the record its path names; bulk actions and
+  imports name records in the body, so the app adapters check, for each record, what the route table would:
+  visible (else not_found), and the single operation's permission in the record's plan (else forbidden).
+- The reasons of records an Undo import could not delete are returned by the undo; reading the import later
+  lists them with a general reason (the reasons are not stored).
+- A CSV upload is read as the Activities sheet; the e2e tests build .xlsx files with a small stored-zip
+  writer (`frontend/e2e/xlsx.ts`), since the web app needs no spreadsheet library.
+
 ## Decisions for the log
 
 D-338 (bulk actions), D-339 (the plan workbook), D-340 (import semantics), D-341 (storage, access and limits);

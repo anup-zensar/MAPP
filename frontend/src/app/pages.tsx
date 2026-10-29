@@ -14,6 +14,7 @@ const home = () => import('@/features/home');
 const lineItems = () => import('@/features/line-items');
 const people = () => import('@/features/people');
 const plans = () => import('@/features/plans');
+const workbook = () => import('@/features/workbook');
 const purchaseRequests = () => import('@/features/purchase-requests');
 const recycleBin = () => import('@/features/recycle-bin');
 const settings = () => import('@/features/settings');
@@ -150,4 +151,10 @@ export const PurchaseRequestEditPage = lazy(() =>
 );
 export const PurchaseRequestSettingsPage = lazy(() =>
   purchaseRequests().then((feature) => ({ default: feature.PurchaseRequestSettingsPage })),
+);
+export const ImportPage = lazy(() =>
+  workbook().then((feature) => ({ default: feature.ImportPage })),
+);
+export const ImportResultPage = lazy(() =>
+  workbook().then((feature) => ({ default: feature.ImportResultPage })),
 );

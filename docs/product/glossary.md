@@ -92,6 +92,7 @@ application use these definitions. Hive9 names are given in brackets where users
 | **SP&A One** | The product's name on every screen, in messages and in downloaded file names (feature 035). MAPP is the project's name in code and documents. Changes the product makes by itself are shown as made by "SP&A One". |
 | **Details** (Hive9: Inspection Window) | The view of one record, in a side panel or a full page. |
 | **Select** (Hive9: Honeycomb) | Tick several rows to act on them together. |
+| **Plan workbook** | The Excel layout of one plan (feature 012): sheets Campaigns, Initiatives, Activities and Line items, then Allowed values and Instructions. Downloaded empty (*Download template*) or with the plan's records (*Export to Excel*); a row without an ID creates a record, a row with an ID updates it (*Import from Excel*). |
 | **Summary cards** (Hive9: HUD) | The row of totals at the top of a page. |
 | **All work** | The cross-plan view of every campaign, initiative and activity with filters, calendar and budget views. |
 | **Activity log** (Hive9: Plan Log) | The history of who changed what and when. |
