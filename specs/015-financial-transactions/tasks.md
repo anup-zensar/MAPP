@@ -310,7 +310,7 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
   amounts from every figure and restoring brings them back (FR-012).
 - [x] T047 [P] (B) Stress tests (SC-004) in `backend/internal/financials/stress_test.go`: a 5,000-row
   import under 5 s and a 20,000-transaction list under 1 s, skipped by default as in 010.
-- [ ] T048 [P] Documentation (no decision-log edits; the decisions are D-242–D-257):
+- [x] T048 [P] Documentation (no decision-log edits; the decisions are D-242–D-257):
   - `docs/product/domain-model.md`: rewrite §4.6 as "Financial figures from GSAP" (data-model §5) and add
     the two records to §7;
   - `docs/product/field-catalogue.md` §4.6 and §5 #16–17;
@@ -319,6 +319,12 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
   - `docs/sdd/feature-map.md` (015) and `docs/sdd/plan-module-build.md` §2, §4 and §5 rows for 015;
   - `docs/product/vision-and-scope.md` scope line.
   - Hand the constitution 1.1.0 amendment text of plan *Constitution Check* to the product owner.
+  - Done 2026-10-29: domain model §4.6 "Financial figures from GSAP (feature 015)" and the two records in §7;
+    field catalogue §4.6 (now "Financials") and §5 #17 (#16, the SWBS code, stays with 030's card); glossary
+    (Committed, Not yet committed, Invoiced, Paid, Accrued, Purchase order, Invoice, Accrual, GSAP transaction,
+    GSAP extract, Not linked; HX key was already there); plan-module-build §2, §4 and §5 rows for 015;
+    vision-and-scope's in-scope row and out-of-scope line. `docs/sdd/feature-map.md` is left to the lead. The
+    amendment is already in the constitution (Current Phase & Scope lists 015, D-308), so nothing is handed over.
 - [ ] T049 Run every check: backend `gofmt -l .` (prints nothing), `go vet ./...`, `go test ./...`;
   frontend `npm run check`. Check that `notYetServed` no longer lists the 10 operations. Run the e2e
   files `financials.spec.ts`, `core-flow.spec.ts`, `module-rest.spec.ts` and `smoke.spec.ts`. Update

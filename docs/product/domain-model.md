@@ -304,16 +304,38 @@ revenue 2,500,000 USD.
   (Hive9: *Override model*) lets the user type all three.
 - Campaign, initiative and plan show the **sum of their activities' goals** next to the plan goal.
 
-### 4.6 Values that come from Finance or GSAP later
+### 4.6 Financial figures from GSAP (feature 015)
 
-Shell's forms show several read-only fields fed by finance and GSAP (actuals, invoiced amount, purchase
-request amount, SWBS code, actuals at monthly rate, % of actual cost). In this phase they are shown in a
-collapsed **"From finance (coming later)"** section with "—" and the explanation "Filled when the
-Finance module and GSAP are connected". They are never typed by users. The SWBS code is the exception
-since feature 030: the line item stores the code the simulated GSAP returned and shows it on its SWBS
-request card with its dates, its source and the HX key (§2.4). The purchase-request totals of a line item
-and an activity are live since feature 032 (§2.4a), and the simulated GSAP's purchase orders count as
-Committed since feature 033.
+GSAP's **financial transactions** — purchase-order lines, invoices (credit notes negative), payments and
+accruals — come from a simulated GSAP extract (a CSV file or the demo data) and are read-only, except that
+a person may link one GSAP could not match. Each transaction keeps its amount in its own currency, links to
+at most one line item, and is matched in this order: line-item ID, HX key, PO number, SWBS code; the first
+rule that gives exactly one line item wins, otherwise it stays **Not linked** with the reason. A manual link
+is kept by later imports. Transactions are never deleted, copied (R13) or moved to the recycle bin.
+
+Every figure is calculated when read, never stored:
+
+| Figure | Rule |
+|---|---|
+| Committed | Sum of the purchase-order lines |
+| Invoiced | Sum of the invoices, less credit notes |
+| Paid (actuals) | Sum of the payments |
+| Accrued | Sum of the accruals of the latest accrual month in the data |
+| Not yet committed | Planned cost − Committed; "—" without a planned cost |
+| % committed | Committed × 100 ÷ planned cost, whole per cent half up; "—" without a planned cost or when it is 0.00; may exceed 100 |
+
+- Each transaction converts to USD at its currency's current rate (§4.7), half up to the cent; sums are
+  taken in USD and converted once to the reader's display currency.
+- A line item's figures are its transactions'; an activity's, initiative's, campaign's and plan's are the
+  sums over their **live** line items, so moving an activity moves its figures and a line item in the
+  recycle bin leaves them until it is restored.
+- A record whose Committed is above its planned cost shows "Committed above planned cost by X" in red words;
+  an activity is **committed above planned cost** when it or one of its line items is.
+- The simulated GSAP's purchase orders (feature 033) are transactions like any other and count as Committed.
+
+The figures are shown on the activity, line-item and plan pages and the campaign and initiative panels, on
+the Financials page, in All work's Financials columns and filter, and on Home's Financials card. Only people
+with "See financial data" see them, for the plans they may see (014).
 
 ### 4.7 Plan currency and dated exchange rates (feature 016)
 
@@ -400,6 +422,8 @@ for new choices, existing values kept and labelled "(inactive)").
 | **Exchange rate** (feature 016) | One rate of a currency per 1 USD, valid from a date, with its source (typed or a GSAP rate import) and who recorded it. |
 | **Rate import** (feature 016) | One import of the simulated GSAP rate file: file name, who, when, and how many rates were added, skipped or refused. Log only. |
 | **Global budget** and **Budget allocation** (feature 014) | Money for a year and the parts of it given to plans (§4.9); deleted to the recycle bin like any record. |
+| **Financial transaction** (feature 015) | One GSAP purchase-order line, invoice, payment or accrual as GSAP sent it (FT-…): type, document and line number, PO reference, posting date, accrual month, amount in its own currency, vendor, SWBS code, HX key and line-item ID as sent, and its link to at most one line item with how it was matched or why not (§4.6). Unique by type, document number and line number; read-only except a manual link; never deleted. |
+| **Financial import** (feature 015) | One delivery of the simulated GSAP extract or the demo data (FIM-…): file name, who, when, and how many rows were new, updated, unchanged, refused or left not linked, and how many earlier transactions it linked. Its time is "GSAP data as of". |
 
 ---
 

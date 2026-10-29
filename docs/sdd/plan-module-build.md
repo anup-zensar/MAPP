@@ -38,6 +38,7 @@ Per feature, one **backend** agent and one **frontend** agent work in parallel f
 | 011 Activity log and recycle bin | `history` (query, bin, purge, preview) | `features/activity-log/`, `features/recycle-bin/` | `activity_log`, `recycle_bin` (001); preference `historyIncludeInside` | ActivityLog…, RecycleBinListItem, RestorePreview…, PurgeResult, EmptyRecycleBin…; extends 001 schemas (optional fields, D-191) |
 | 012 Bulk actions and import | `bulk`, `imports`; `history` (`WithNote`), `platform/web` (`ReadJSONUpTo`), `platform/sheet` (readers) | `features/bulk/`, `features/imports/` | `bulk_actions` BLK, `imports` IMP | Bulk…, Import…, BulkActionId, ImportId |
 | 014 Access control and global budgets | `platform/authz` (permissions, grants, checks, messages), `access` (roles, assignments, rules, route table, middleware), `budget` (global budgets, allocations); hooks in `plan`, `campaign`, `activity`, `lineitem`, `approval`, `history`, `people` | `session/access.ts`, `session/gate-action.ts`, `session/refusal-text.ts`, `session/RequirePermission.tsx`, `ui/ViewOnlyNote/` (+ `view-only-area.tsx`), `ui/NoAccess/`, `features/people/access/`, `features/global-budgets/` | `roles` RL, `role_assignments` RA, `access_rules`, `global_budgets` GB, `budget_allocations` BA | Permission…, Role…, MyAccess, ActionAvailability, PlanAccess, ContainerAccess, ActivityAccess, LineItemAccess, BinEntryAccess, GlobalBudget…, Allocation…; error code `forbidden` |
+| 015 Financial transactions | `financials` (feed, CSV extract, matching, figures, imports, links, overview; ports `Planning`, `Rates`, `Displays`, `Access`); adapters `app/financials*.go`; `allwork` (Financials columns and filter) | `features/financials/` (page, transaction panel, import, import history, link), `features/plans/RecordFinancials.tsx`, `features/line-items/FinancialsSection.tsx` + `GsapFigures.tsx`, `features/home/FinancialsCard.tsx` | `financial_transactions` FT, `financial_imports` FIM | Financial… (record view, figures, transactions, imports, overview) and the Financial* parameters |
 | 016 Planning and currency extensions | `platform/money` (`Convert`), `rollup` (phasing), `settings` (rates, rate import, field help), `allwork` (attribute filters, breakdown); plan currency, plan type, phasing and split in `plan`, `campaign`, `activity`, `lineitem` | `features/settings/currencies/` (rate history, Import GSAP rates), `features/settings/field-help/`, `features/plans/phasing/`, `features/plans/PlannedCostByCard.tsx`, `features/activities/SplitActivityDialog.tsx`, `features/all-work/` (Breakdown, More filters, year range) | `exchange_rates` XR, `rate_imports` RI, `field_help` | ExchangeRate…, RateImport…, FieldHelp…, PlanType, Phasing…, Split…, AllWorkBreakdown… |
 
 Error codes added once in the merged contract and in `frontend/src/api/errors.ts`: `in_use`, `cannot_restore` (002),
@@ -84,6 +85,7 @@ of the earlier features when they are built.
 | 011 | HistorySection (`features/activity-log/`) |
 | 012 | SelectionBar; selection props on TreeTable and AllWorkGrid |
 | 014 | ViewOnlyNote + ViewOnlyArea, NoAccess, RequirePermission, `useAccess`, `gateItem` / `allows` / `moreItemFor`, `refusalText`, `TeamPicker.offered` |
+| 015 | `useFinancialRecord` and `linkedTransactionsText` (`features/line-items/`, read by the delete dialogs of every level), `financialsHref` |
 | 016 | AmountPair (`features/plans/`), RateTip, MoneyPair and `rates.ts` (`features/line-items/`), YearRangeMenu (`features/all-work/`), `useFieldHelp` and FieldHelpTip (`features/settings/field-help/`, exported by `features/settings`), BudgetByMonthCard (`features/plans/phasing/`), BreakdownTable and GroupingPickers (`features/all-work/`) |
 
 Not built (draft duplicates): FilterPills, PillFilter, SegmentedControl → SegmentedFilter · PageHeader breadcrumbs →
@@ -103,6 +105,7 @@ MoneyField · AttributeFields, AttributeValueList/View → ShellAttributeFields,
 | 008 | `/approvals` (`?tab=`, `?activity=`), `/settings/approval-workflows`, `/settings/approval-workflows/:workflowId` |
 | 009 · 010 · 011 · 012 | `/` (Home) · `/all-work` · `/activity-log`, `/recycle-bin` · `/plans/:planId/import`, `/plans/:planId/imports/:importId` |
 | 014 | `/settings/access` (`?tab=`, `?person=`), `/settings/access/roles/new`, `/settings/access/roles/:roleId`, `…/edit` (need `access.manage`); `/budgets`, `/budgets/:globalBudgetId` (need `globalBudgets.view`) |
+| 015 | `/financials` (`?type=`, `?link=`, `?recordId=`, …), `/financials/transactions/:transactionId` (need `finance.view`) |
 | 016 | `/settings/currencies/import` (needs `exchangeRates.manage`), `/settings/field-help`; All work's Breakdown tab and the plan page's Planned cost by card use `/all-work` and `/plans/:planId` |
 
 Sections leave `COMING_SOON_SECTIONS` in `app/navigation.ts` when built: Settings (002), Plans (004), Approvals (008),
@@ -116,6 +119,7 @@ All work (010), Activity log and Recycle bin (011); My profile (003) is in the a
 | SettingsPage (002, `sections.ts`) | People, Teams cards (003); Approval workflows card (008) |
 | NotificationBell, Sidebar (001) | notifications list and badges (008) |
 | AllWorkGrid (010) | selection and SelectionBar (012) |
+| PlanPage, CampaignPanel, InitiativePanel, ActivityPage, LineItemPage, HomePage | the Financials card or section (015): after the summary cards on the plan page, after Budget and cost in the panels, second on the activity page, on the line-item page, after the summary cards on Home (D-305); Committed and Invoiced columns in LineItemsSection |
 
 ## 6. Demo data (D-202)
 

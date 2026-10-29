@@ -47,13 +47,14 @@ can do everything.
 | Approvals | Submit, approve, decline and re-submit activities through named approval workflows; approvals inbox; notifications |
 | All work views | Grid with roll-ups and filters, calendar, budget & cost by month, saved views, export |
 | History and safety | Activity log for every record; recycle bin with restore |
+| Financials (feature 015) | See GSAP's purchase orders, invoices, payments and accruals — read-only, from a simulated GSAP extract — as Committed, Invoiced, Paid and Accrued on every level, on the Financials page, in All work and on Home; import the extract; link a transaction GSAP could not match |
 | Bulk and import (later in phase) | Select many rows to change owner/status, copy or move; import activities from a template |
 | BCPIR & SP&A (to be clarified) | Shell's BCPIR and SP&A plan views |
 
 ## Out of scope now
 
-- Finance module: finance budgets (beyond a simple list of budget items), transactions/actuals, purchase
-  requests, accrual requests.
+- Finance module: finance budgets (beyond a simple list of budget items), purchase requests, accrual
+  requests and calculation. GSAP transactions are only read (feature 015).
 - Measure reporting dashboards.
 - GSAP integration (SWBS requests are only recorded), e-mail, Microsoft Entra ID sign-in, role-based
   access, Azure hosting, PostgreSQL (all planned).
