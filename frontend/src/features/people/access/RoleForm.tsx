@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
-import { ApiError, conflictMessage } from '@/api/errors';
+import { ApiError, CONFLICT_NEXT_STEP, conflictMessage } from '@/api/errors';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
@@ -255,8 +255,7 @@ function roleFailure(error: unknown, dateFormat: DateFormat): RoleFailure {
   if (apiError.kind === 'conflict') {
     const failure = {
       message: conflictMessage(apiError, 'role', dateFormat),
-      nextStep:
-        'Your changes are still here. Save again to replace their changes, or Cancel to see theirs.',
+      nextStep: CONFLICT_NEXT_STEP,
     };
     return { problems: [], failure, conflict: true };
   }
