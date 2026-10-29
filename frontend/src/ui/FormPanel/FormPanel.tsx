@@ -45,7 +45,7 @@ export function FormPanel({
   saveLabel = 'Save',
   children,
 }: FormPanelProps) {
-  const { dialog, confirmDiscard } = useUnsavedChanges(isDirty);
+  const { dialog, confirmDiscard } = useUnsavedChanges(isDirty, title);
   // Save sits in the panel's footer, outside the form; the form attribute connects them.
   const formId = useId();
 

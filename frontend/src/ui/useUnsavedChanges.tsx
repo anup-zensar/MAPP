@@ -3,6 +3,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useBlocker } from 'react-router';
+import { markUnsaved } from '@/session/lost-changes';
 import { SESSION_KEY } from '@/session/useSession';
 import type { CurrentUser } from '@/session/useSession';
 import { ConfirmDialog } from './ConfirmDialog/ConfirmDialog';
@@ -26,9 +27,11 @@ export interface UnsavedChanges {
  * - a reload or closing the tab makes the browser ask its own question;
  * - confirmDiscard asks the same question before the form closes.
  *
+ * - a lost session names the form on the sign-in page: `title`, else the page's title (038 FR-031).
+ *
  *   const { dialog, confirmDiscard } = useUnsavedChanges(name !== folder.name);
  */
-export function useUnsavedChanges(isDirty: boolean): UnsavedChanges {
+export function useUnsavedChanges(isDirty: boolean, title?: string): UnsavedChanges {
   const queryClient = useQueryClient();
   // The person who opened the form: the typed changes are theirs.
   const [author] = useState(() => signedInPersonId(queryClient));
@@ -44,6 +47,11 @@ export function useUnsavedChanges(isDirty: boolean): UnsavedChanges {
     [isDirty, queryClient, author],
   );
   const blocker = useBlocker(shouldBlock);
+
+  useEffect(
+    () => (isDirty ? markUnsaved(() => title ?? pageTitle()) : undefined),
+    [isDirty, title],
+  );
 
   // The browser shows its own question; it does not let pages choose the words.
   useEffect(() => {
@@ -99,6 +107,11 @@ export function useUnsavedChanges(isDirty: boolean): UnsavedChanges {
   );
 
   return { dialog, confirmDiscard };
+}
+
+/** "New plan" from the browser tab's "New plan · SP&A One" (usePageTitle). */
+function pageTitle(): string {
+  return document.title.replace(/ · SP&A One$/, '');
 }
 
 /** Who is signed in right now, from the session in TanStack Query's cache; null for nobody. */
