@@ -56,8 +56,8 @@ export function MoneyField({
   const notes = [roundingNote, note].filter(Boolean).join(' · ') || undefined;
 
   return (
-    <FieldShell id={name} error={error} note={notes} {...frame}>
-      {(describedBy) => (
+    <FieldShell id={name} error={error} note={notes} reserveNote {...frame}>
+      {(describedBy, required) => (
         <div className={inputs.withUnit}>
           <input
             id={name}
@@ -71,6 +71,7 @@ export function MoneyField({
             aria-invalid={error ? true : undefined}
             // Screen readers hear the currency with the field, before its hint and problem.
             aria-describedby={[`${name}-currency`, describedBy].filter(Boolean).join(' ')}
+            aria-required={required}
             className={cx(inputs.input, inputs.numeric, error && inputs.invalid)}
           />
           <span id={`${name}-currency`} className={inputs.unit}>

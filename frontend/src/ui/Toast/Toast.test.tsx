@@ -139,6 +139,20 @@ describe('ToastProvider and useToast', () => {
     );
   });
 
+  it('038 FR-049: a message with an action reads "<message> — <action>"', async () => {
+    const user = userEvent.setup();
+    renderWithToasts({
+      message: "Plan 'FY2026 Lubricants' restored",
+      action: { label: 'View', altText: 'Open the plan', onClick: vi.fn() },
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Show message' }));
+
+    await waitFor(() =>
+      expect(messages()).toHaveTextContent("Plan 'FY2026 Lubricants' restored — View"),
+    );
+  });
+
   it('lets the caller close its message early, for example when a newer one replaces it', async () => {
     const user = userEvent.setup();
     function ReplaceablePage() {

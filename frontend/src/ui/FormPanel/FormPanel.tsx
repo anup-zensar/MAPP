@@ -1,6 +1,6 @@
 import { CircleAlert } from 'lucide-react';
 import { useId } from 'react';
-import type { FormEvent, ReactNode } from 'react';
+import type { FormEvent, KeyboardEvent, ReactNode } from 'react';
 import { useUnsavedChanges } from '../useUnsavedChanges';
 import { Button } from '../Button/Button';
 import { FormErrorSummary } from '../FormErrorSummary/FormErrorSummary';
@@ -77,7 +77,15 @@ export function FormPanel({
           </>
         }
       >
-        <form id={formId} noValidate aria-busy={saving} className={styles.form} onSubmit={submit}>
+        {/* eslint-disable-next-line jsx-a11y-x/no-noninteractive-element-interactions -- Enter from a select inside saves the form; the controls stay the interactive elements */}
+        <form
+          id={formId}
+          noValidate
+          aria-busy={saving}
+          className={styles.form}
+          onSubmit={submit}
+          onKeyDown={submitOnEnterInSelect}
+        >
           {failure && <FailureMessage failure={failure} />}
           <FormErrorSummary errors={problems} />
           {children}
@@ -86,6 +94,14 @@ export function FormPanel({
       {dialog}
     </>
   );
+}
+
+/** Enter saves from a choice list too, as browsers do only from text fields (038 FR-047). */
+function submitOnEnterInSelect(event: KeyboardEvent<HTMLFormElement>) {
+  if (event.key === 'Enter' && event.target instanceof HTMLSelectElement) {
+    event.preventDefault();
+    event.currentTarget.requestSubmit();
+  }
 }
 
 /** A failure that is not about one field, such as a conflict; screen readers hear it at once. */
