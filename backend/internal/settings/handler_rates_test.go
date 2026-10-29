@@ -164,7 +164,8 @@ func TestRatesAPI_ImportCheckAndImport_FR006_FR007(t *testing.T) {
 	}
 	assertAnswer(t, again, http.StatusBadRequest,
 		validationBody(`{"field":"content","message":"Nothing to import: every rate is already present or not used."}`))
-	assertAnswer(t, unreadable, http.StatusBadRequest, validationBody(`{"field":"content","message":"The file needs the column 'from_currency'."}`))
+	assertAnswer(t, unreadable, http.StatusBadRequest, validationBody(`{"field":"content","message":"The file needs the column 'from_currency'."},`+
+		`{"field":"content","message":"The file needs the column 'to_currency'."},{"field":"content","message":"The file needs the column 'valid_from'."}`)) // every missing column (038 FR-034)
 	if recent.Total != 2 || recent.Items[0].ID != "RI-1002" || recent.Items[1].ID != "RI-1001" {
 		t.Errorf("recent imports = %+v", recent)
 	}
