@@ -132,8 +132,7 @@ export function GlobalBudgetPage() {
           open
           onOpenChange={(open) => !open && setDialog(null)}
           title={`Can't delete '${budget.name}'`}
-          confirmLabel="Close"
-          onConfirm={() => setDialog(null)}
+          acknowledgeOnly
         >
           {dialog.reason}
         </ConfirmDialog>

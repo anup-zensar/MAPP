@@ -59,9 +59,9 @@ export const toasts = {
   removed: (plan: string) => `Allocation to '${plan}' removed`,
 };
 
-/** "62.50 %" of the budget used; "—" when the allocation is 0.00. */
+/** "63%" of the budget used, a whole percent (038 FR-044); "—" when the allocation is 0.00. */
 export function budgetUsedText(percent: string | null): string {
-  return percent === null ? '—' : `${percent} %`;
+  return percent === null ? '—' : `${Math.round(Number(percent))}%`;
 }
 
 /** The years a new global budget can have: the current year −1 to +5 (FR-029). */

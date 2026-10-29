@@ -205,8 +205,14 @@ describe('ApprovalWorkflowsPage set inactive, reactivate and delete (feature 008
       }),
     );
 
+    const cantDelete = await screen.findByRole('alertdialog', {
+      name: "Can't delete 'China BC approval workflow'",
+    });
+    // 038 FR-044 (L-12): a dialog that only informs has one Close.
     expect(
-      await screen.findByRole('alertdialog', { name: "Can't delete 'China BC approval workflow'" }),
-    ).toBeInTheDocument();
+      within(cantDelete)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['Close']);
   });
 });

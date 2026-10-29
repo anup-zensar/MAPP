@@ -35,7 +35,7 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
     expect(lubricants).toHaveTextContent('$1,200,000.00');
     expect(lubricants).toHaveTextContent('$460,000.00');
     expect(lubricants).toHaveTextContent('$740,000.00');
-    expect(lubricants).toHaveTextContent('38.33 %');
+    expect(lubricants).toHaveTextContent('38%');
     expect(
       within(lubricants).getByRole('progressbar', { name: 'Budget used' }),
     ).toBeInTheDocument();
@@ -118,6 +118,12 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
       name: "Can't delete 'FY2026 Global marketing budget'",
     });
     expect(dialog).toHaveTextContent(reason);
+    // 038 FR-044 (L-12): a dialog that only informs has one Close.
+    expect(
+      within(dialog)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['Close']);
   });
 
   it('deletes a global budget without allocations and goes back to the list', async () => {
