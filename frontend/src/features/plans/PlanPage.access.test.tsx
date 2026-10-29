@@ -1,10 +1,11 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { CurrentUser } from '@/session/useSession';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { planForm } from '@/testing/fixtures/attribute-forms';
 import { NOTHING_INSIDE } from '@/testing/fixtures/plan-page';
 import { financialsNotServed, plan } from '@/testing/fixtures/plans';
+import { budgetByMonth, phasing } from '@/testing/fixtures/phasing';
 import { testUser } from '@/testing/fixtures/users';
 import {
   ALLOWED,
@@ -85,6 +86,32 @@ describe('014 FR-011: the plan page follows the reader’s access', () => {
       'aria-disabled',
       'true',
     );
+  });
+
+  it('038 FR-029 (M-6): offers a Viewer no Edit budget by month', async () => {
+    const answer = budgetByMonth({ planId: 'P-1001' });
+    const [planRow, ...rest] = answer.rows;
+    mockApi([
+      ...HISTORY_ANSWERS,
+      ...NOTHING_INSIDE,
+      ...financialsNotServed('P-1001'),
+      reply('GET /api/v1/plans/{planId}', {
+        body: plan({ access: VIEWER_PLAN_ACCESS, budgetPhasing: phasing() }),
+      }),
+      reply('GET /api/v1/plans/{planId}/budget-by-month', {
+        body: { ...answer, rows: [{ ...planRow!, recordId: 'P-1001' }, ...rest] },
+      }),
+      reply('GET /api/v1/shell-attribute-forms/{level}', { body: planForm() }),
+    ]);
+    renderWithProviders(<PlanPage />, {
+      user: VIEWER,
+      route: '/plans/P-1001',
+      path: '/plans/:planId',
+    });
+
+    const card = await screen.findByRole('region', { name: 'Budget by month' });
+    await within(card).findByRole('table');
+    expect(within(card).queryByRole('button', { name: 'Edit budget by month' })).toBeNull();
   });
 });
 

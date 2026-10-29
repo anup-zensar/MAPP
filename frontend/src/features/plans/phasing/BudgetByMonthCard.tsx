@@ -2,6 +2,8 @@ import { TriangleAlert } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useLocation } from 'react-router';
 import { FieldHelpTip } from '@/features/settings';
+import type { Availability } from '@/session/access';
+import { allows } from '@/session/gate-action';
 import { Button } from '@/ui/Button/Button';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
@@ -31,6 +33,8 @@ export interface BudgetByMonthCardProps {
   year: number;
   /** The plan currency: every amount of the card is in it (016 FR-013). */
   currency: string;
+  /** Whether the reader may edit the record: Edit is offered only then (038 FR-029). */
+  access?: Availability;
   /** 'page' on the plan page (a card, h2), 'panel' in a campaign or initiative panel (h3). */
   variant?: 'page' | 'panel';
 }
@@ -51,6 +55,7 @@ export function BudgetByMonthCard({
   record,
   year,
   currency,
+  access,
   variant = 'page',
 }: BudgetByMonthCardProps) {
   const headingId = useId();
@@ -190,7 +195,7 @@ export function BudgetByMonthCard({
             value={view}
             onChange={setView}
           />
-          {record.budget && (
+          {record.budget && allows(access) && (
             <Button size="sm" aria-label="Edit budget by month" onClick={() => setEditing(true)}>
               Edit
             </Button>
@@ -212,6 +217,9 @@ export function BudgetByMonthCard({
             : `${notPhased} ${children} are not phased`}
         </p>
       )}
+      {row && row.negativeBalanceCount > 0 && (
+        <p className={styles.note}>{aboveCostNote(row.negativeBalanceCount)}</p>
+      )}
       {editing && row && (
         <PhasingEditor
           open
@@ -227,4 +235,11 @@ export function BudgetByMonthCard({
       )}
     </section>
   );
+}
+
+/** Why the months add up to more than the planned cost (038 FR-024). */
+function aboveCostNote(count: number): string {
+  return count === 1
+    ? '1 activity has line items above its planned cost, so its months add up to more than its planned cost.'
+    : `${count} activities have line items above their planned cost, so their months add up to more than their planned cost.`;
 }

@@ -5,6 +5,7 @@ import { parseMoneyInput } from '@/format/decimal';
 import type { LineItemCreate } from './api';
 import { monthFieldId } from './line-item-form-state';
 import type { LineItemFormState } from './line-item-form-state';
+import { formatMonth } from './line-item-math';
 
 type AttributeValue = components['schemas']['AttributeValue'];
 type AttributeValues = components['schemas']['AttributeValues'];
@@ -47,7 +48,7 @@ export function toUpdateBody(
   return { ...toCreateBody(state, attributes), version };
 }
 
-/** "spread.months[1].amount" goes to that month's input. */
+/** "spread.months[1].amount" goes to that month's input, its message naming the month (038 FR-040). */
 export function formProblems(
   error: ApiError,
   body: LineItemCreate,
@@ -55,7 +56,12 @@ export function formProblems(
   return error.fields.map((problem) => {
     const month = /^spread\.months\[(\d+)\]/.exec(problem.field);
     const sent = month ? body.spread.months[Number(month[1])] : undefined;
-    return sent ? { ...problem, field: monthFieldId(sent.month) } : problem;
+    return sent
+      ? {
+          field: monthFieldId(sent.month),
+          message: `${formatMonth(sent.month)}: ${problem.message}`,
+        }
+      : problem;
   });
 }
 

@@ -23,7 +23,7 @@ import {
   readAmount,
   splitEvenly,
 } from './phasing-math';
-import { phasingSchema } from './schemas';
+import { monthProblems, namedProblems, phasingSchema } from './schemas';
 import type { PhasingValues } from './schemas';
 
 type Money = { amount: string; currency: string };
@@ -97,18 +97,15 @@ export function PhasingEditor({
 
   async function submit({ method, months }: PhasingValues) {
     const amounts = months.map((text) => readAmount(text) ?? 0n);
+    const sent =
+      method === 'custom'
+        ? keys.flatMap((month, index) => {
+            const amount = amounts[index] ?? 0n;
+            return amount === 0n ? [] : [{ month, amount: formatCents(amount) }];
+          })
+        : [];
     try {
-      await save.mutateAsync({
-        method,
-        months:
-          method === 'custom'
-            ? keys.flatMap((month, index) => {
-                const amount = amounts[index] ?? 0n;
-                return amount === 0n ? [] : [{ month, amount: formatCents(amount) }];
-              })
-            : [],
-        version: record.version,
-      });
+      await save.mutateAsync({ method, months: sent, version: record.version });
       show({ message: `Budget by month of '${record.name}' saved` });
       onOpenChange(false);
     } catch (error) {
@@ -123,7 +120,7 @@ export function PhasingEditor({
       setFailure({
         message:
           apiError.kind === 'validation' && apiError.fields.length > 0
-            ? apiError.fields.map((field) => field.message).join(' ')
+            ? namedProblems(apiError.fields, sent)
             : apiError.message,
       });
     }
@@ -140,8 +137,8 @@ export function PhasingEditor({
       title={`Budget by month — ${record.name}`}
       submitLabel="Save budget by month"
       onSubmit={() =>
-        void form.handleSubmit(submit, (errors) =>
-          setFailure({ message: errors.months?.message ?? '' }),
+        void form.handleSubmit(submit, () =>
+          setFailure({ message: monthProblems(form.getValues('months'), keys) }),
         )()
       }
       busy={save.isPending}
