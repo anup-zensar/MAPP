@@ -1,5 +1,4 @@
-// Package web is the API's HTTP transport on Gin: the engine and its middleware, strict JSON decoding, and
-// the one place where errors become answers in the error envelope.
+// Package web is the API's HTTP transport on Gin: middleware, strict JSON decoding and the error envelope.
 package web
 
 import (
@@ -30,7 +29,7 @@ type errorEnvelope struct {
 	Error *errs.Error `json:"error"`
 }
 
-// readBody refuses, with bad_request, anything but one strict JSON value; the reason goes only to the log.
+// readBody scans for control characters before decoding, because the decoder hides unpaired surrogates.
 func readBody(r *http.Request, body io.Reader, dst any) error {
 	raw, err := io.ReadAll(body)
 	if tooLarge, isTooLarge := errors.AsType[*http.MaxBytesError](err); isTooLarge {

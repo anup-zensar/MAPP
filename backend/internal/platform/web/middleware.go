@@ -41,7 +41,6 @@ func LogRequest() gin.HandlerFunc {
 	}
 }
 
-// countStatements gives the request a statement counter and returns the context that holds it.
 func countStatements(c *gin.Context) context.Context {
 	counted := querycount.With(c.Request.Context())
 	c.Request = c.Request.WithContext(counted)
@@ -99,12 +98,10 @@ func isSafeMethod(method string) bool {
 	return method == http.MethodGet || method == http.MethodHead || method == http.MethodOptions
 }
 
-// RejectControlInPath answers not_found when a path parameter holds a control character; Gin has
-// matched the route by then, so the parameters are known.
 func RejectControlInPath() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		for _, param := range c.Params {
-			if hasControl(param.Value) {
+			if strings.ContainsFunc(param.Value, isAnyControl) {
 				RespondError(c, errs.NotFound(notFoundMessage))
 				return
 			}
@@ -113,7 +110,10 @@ func RejectControlInPath() gin.HandlerFunc {
 	}
 }
 
-// LimitBody caps every body at defaultMax bytes, or at the limit byOperation gives its operation.
+func isAnyControl(r rune) bool {
+	return r < 0x20 || r == 0x7f
+}
+
 func LimitBody(defaultMax int64, byOperation map[string]int64) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		limit, found := byOperation[Operation(c)]

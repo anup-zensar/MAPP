@@ -41,6 +41,19 @@ func TestImpossibleDateIsAFieldProblem_038_FR054_L5(t *testing.T) {
 	}
 }
 
+func TestCampaignAndInitiativeNamesAreOneLine_038_FR055_L11(t *testing.T) {
+	t.Parallel()
+	server := apitest.New(t)
+	priya := server.SignIn(t, priyasEmail)
+	want := validationBody(`{"field":"name","message":"Names can't contain tabs, line breaks or text-direction characters."}`)
+	for _, name := range []string{"Helix\tlaunch", "Helix\nlaunch", "Helix ‮launch"} {
+		assertBody(t, priya.Do(t, http.MethodPost, "/api/v1/plans/P-1001/campaigns", map[string]any{"name": name}),
+			http.StatusBadRequest, want)
+		assertBody(t, priya.Do(t, http.MethodPost, "/api/v1/campaigns/C-1001/initiatives", map[string]any{"name": name}),
+			http.StatusBadRequest, want)
+	}
+}
+
 func TestDateThatIsNotTextIsUnreadable_038_FR054(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)

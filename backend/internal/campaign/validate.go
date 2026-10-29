@@ -27,7 +27,8 @@ const (
 	initiativeNameTakenMessage = "'%s' already has an initiative called '%s'." // campaign name, other initiative's name
 	descriptionTooLongMessage  = "Use 2,000 characters or fewer."
 	chooseActivePersonMessage  = "Choose an active person."
-	enterEndDateMessage        = "Enter an end date too, or clear the start date."
+	invalidDateMessage         = "Enter a valid date."
+	enterEndDateMessage        ="Enter an end date too, or clear the start date."
 	enterStartDateMessage      = "Enter a start date too, or clear the end date."
 	endBeforeStartMessage      = "End date must be on or after the start date (%s)."
 	outsideCampaignMessage     = "Dates must be inside the campaign's dates (%s)."
@@ -81,17 +82,33 @@ func checkForm(problems *errs.Problems, f form, currency string, nameTaken func(
 		problems.Add("description", descriptionTooLongMessage)
 	}
 
-	switch {
-	case c.StartDate != nil && c.EndDate == nil:
-		problems.Add("endDate", enterEndDateMessage)
-	case c.StartDate == nil && c.EndDate != nil:
-		problems.Add("startDate", enterStartDateMessage)
-	case c.StartDate != nil && c.EndDate.Before(*c.StartDate):
-		problems.Add("endDate", fmt.Sprintf(endBeforeStartMessage, date.Format(*c.StartDate)))
-	}
-
+	c.StartDate, c.EndDate = checkDates(problems, c.StartDate, c.EndDate)
 	c.Budget = checkBudget(problems, f.Budget, currency)
 	return c
+}
+
+func checkDates(problems *errs.Problems, start, end *date.Date) (*date.Date, *date.Date) {
+	startValid, endValid := validDate(problems, "startDate", start), validDate(problems, "endDate", end)
+	if !startValid || !endValid {
+		return nil, nil
+	}
+	switch {
+	case start != nil && end == nil:
+		problems.Add("endDate", enterEndDateMessage)
+	case start == nil && end != nil:
+		problems.Add("startDate", enterStartDateMessage)
+	case start != nil && end.Before(*start):
+		problems.Add("endDate", fmt.Sprintf(endBeforeStartMessage, date.Format(*start)))
+	}
+	return start, end
+}
+
+func validDate(problems *errs.Problems, field string, d *date.Date) bool {
+	if d != nil && d.IsZero() {
+		problems.Add(field, invalidDateMessage)
+		return false
+	}
+	return true
 }
 
 // checkName checks a name of a form or a copy (FR-005, FR-026), adding its problem to problems: required, at
@@ -104,6 +121,8 @@ func checkName(problems *errs.Problems, name string, nameTaken func(name string)
 		problems.Add("name", enterNameMessage)
 	case utf8.RuneCountInString(name) > maxNameLength:
 		problems.Add("name", nameTooLongMessage)
+	case record.CheckSingleLine(name) != "":
+		problems.Add("name", record.CheckSingleLine(name))
 	default:
 		if message := nameTaken(name); message != "" {
 			problems.Add("name", message)
