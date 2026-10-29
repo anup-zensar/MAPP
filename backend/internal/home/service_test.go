@@ -78,9 +78,10 @@ func TestSummary_Counts_FR005(t *testing.T) {
 	published.Status = "published"
 	f.plans = []Plan{published, newPlan("P-1002", "FY2026 Mobility China", 2026, mobilityChina),
 		newPlan("P-1003", "FY2027 Global Brand", 2027, globalMarketingOps)}
+	plan := errs.RecordRef{Type: "plan", ID: "P-1001"} // 038 FR-032: the card counts by plan year
 	f.activities[priya.ID] = []Activity{
-		{ID: "A-1001", Status: "created"}, {ID: "A-1004", Status: "submitted"}, {ID: "A-1005", Status: "declined"},
-		{ID: "A-1002", Status: "approved", DisplayStatus: "inProgress"},
+		{ID: "A-1001", Plan: plan, Status: "created"}, {ID: "A-1004", Plan: plan, Status: "submitted"},
+		{ID: "A-1005", Plan: plan, Status: "declined"}, {ID: "A-1002", Plan: plan, Status: "approved", DisplayStatus: "inProgress"},
 	}
 	f.waiting[priya.ID] = []Waiting{
 		{ActivityID: "A-1009", WaitingSince: now.Add(-2 * time.Hour)}, // submitted first, but reached its level later
@@ -100,8 +101,8 @@ func TestSummary_Counts_FR005(t *testing.T) {
 	if all.Scope != ScopeEverything || all.Plans != (PlanCounts{Count: 3, Published: 1, Draft: 2}) {
 		t.Errorf("Everything: scope %q, plans %+v; want 1 published, 2 draft", all.Scope, all.Plans)
 	}
-	if mine.ActivitiesOwned != (ActivityCounts{Count: 4, Declined: 1, Submitted: 1}) {
-		t.Errorf("activities owned = %+v, want 4 with 1 declined and 1 submitted", mine.ActivitiesOwned)
+	if c := countsText(mine.ActivitiesOwned); c != "4 (1 declined, 1 submitted) in 2026–2026" {
+		t.Errorf("activities owned = %s, want 4 with 1 declined and 1 submitted", c)
 	}
 	if w := mine.WaitingForMe; w.Count != 2 || w.OldestWaitingSince == nil || !w.OldestWaitingSince.Equal(now.Add(-50*time.Hour)) {
 		t.Errorf("waiting for me = %+v, want 2, the oldest waiting for 50 hours", w)
