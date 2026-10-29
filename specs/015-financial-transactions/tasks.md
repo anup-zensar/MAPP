@@ -9,9 +9,7 @@ description: "Task list for feature 015 Financial Transactions"
 > The web tasks were built by the UI lanes, partly under other names: `features/plans/RecordFinancials.tsx`
 > (plan, campaign and initiative), `features/line-items/GsapFigures.tsx` and `FinancialsSection.tsx` (activity
 > and line item), `features/home/FinancialsCard.tsx` (Home) and `features/financials/` (page, details panel,
-> import, import history, link). **Open:** T044 (the Home card has
-> no no-access state yet); T045 (the linked-transactions sentence is in the line-item and activity delete
-> dialogs only, not yet in the campaign, initiative and plan dialogs); T048 (product documents); T049, T050.
+> import, import history, link). T044, T045 and T048–T050 were finished on 29 October 2026; every task is done.
 
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [data-model.md](data-model.md),
 [contracts/openapi.yaml](contracts/openapi.yaml)
@@ -325,12 +323,34 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
     GSAP extract, Not linked; HX key was already there); plan-module-build §2, §4 and §5 rows for 015;
     vision-and-scope's in-scope row and out-of-scope line. `docs/sdd/feature-map.md` is left to the lead. The
     amendment is already in the constitution (Current Phase & Scope lists 015, D-308), so nothing is handed over.
-- [ ] T049 Run every check: backend `gofmt -l .` (prints nothing), `go vet ./...`, `go test ./...`;
+- [x] T049 Run every check: backend `gofmt -l .` (prints nothing), `go vet ./...`, `go test ./...`;
   frontend `npm run check`. Check that `notYetServed` no longer lists the 10 operations. Run the e2e
   files `financials.spec.ts`, `core-flow.spec.ts`, `module-rest.spec.ts` and `smoke.spec.ts`. Update
   existing expectations only where 015 changes them: the activity page sections, the line-item form
   sections, All work default columns and the sidebar order.
-- [ ] T050 Demonstrate with the seed: the US1–US7 independent tests. Tick the tasks.
+  - Done 2026-10-29 with today's tooling: `golangci-lint fmt ./...` (no diff), `golangci-lint run
+    --new-from-rev=9a3e1ebd ./...` (0 issues), `go vet ./...` (clean), `go test -race ./internal/financials/...
+    ./internal/app/...` with `TEST_DATABASE_URL` (ok); `pnpm run check` (contract types current, typecheck, lint,
+    format, 421 test files / 2,541 tests passed). `notYetServed` is empty. E2E `financials.spec.ts`,
+    `financials-page.spec.ts`, `core-flow.spec.ts` and `smoke.spec.ts` (`module-rest.spec.ts` no longer exists):
+    12 passed. No expectation needed changing.
+- [x] T050 Demonstrate with the seed: the US1–US7 independent tests. Tick the tasks.
+  - Done 2026-10-29 against the API on freshly seeded demo data (signed in as Priya Raman and Alex Morgan), in
+    the order US1, US2, US3, US5, US6, US7, US4 so the import does not change the figures the others read:
+    - US1: A-1002 committed 25,000.00, invoiced 22,500.00, paid 20,000.00, accrued 2,500.00, not yet committed
+      55,000.00, 31 %, rows L-1003 and L-1004; L-1004 has its 4 transactions.
+    - US2: P-1001 committed 35,652.17 (8 %); Helix launch equals the sum of its activities to the cent.
+    - US3: searching 4500001003 finds PO 4500001003 / 10, linked by HX key to Stand build (L-1006).
+    - US4: the sample file with one amount changed checks and imports with the same counts (3 rows, 3 new); the
+      activity of L-1001 goes from 0.00 to 12,000.00 committed.
+    - US5: All work 2026 shows Committed 35,652.17 for FY2026 Lubricants Europe; "Committed above planned cost"
+      keeps Billboard winter wave, and the export keeps the filter.
+    - US6: Priya, My teams: 35,652.17 of 460,000.00 (8 %), 1 activity above planned cost. Her card shows no
+      not-linked link: since 014, not-linked transactions show only to people who may import (Priya may not);
+      Alex sees "1 transaction not linked".
+    - US7: PO 4500001004 / 10 linked by hand to L-1007 counts 12,000.00 in Grand opening Shanghai; unlinking takes
+      it out again.
+    The browser journeys of US1–US4 passed in T049's e2e run.
 
 ---
 
