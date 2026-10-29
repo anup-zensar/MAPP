@@ -3,6 +3,7 @@ import { toCents } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
+import { monthsAboveText } from '@/features/all-work';
 import type { DashboardMonths, Money } from './api';
 import { FINANCE_HIDDEN, monthLabel } from './dashboard-text';
 import styles from './Dashboards.module.css';
@@ -25,6 +26,7 @@ export function MonthlyChart({ months }: MonthlyChartProps) {
     months.otherYears && `Spread into other years: ${money(months.otherYears)}`,
     months.paidOutsideYear && `Paid outside the year: ${money(months.paidOutsideYear)}`,
     !showsActual && `Actual: ${FINANCE_HIDDEN}`,
+    months.negativeBalanceCount > 0 && monthsAboveText(months.negativeBalanceCount),
   ].filter((note) => typeof note === 'string');
   const switcher = (
     <div className={styles.switch} role="group" aria-label="Show as">
