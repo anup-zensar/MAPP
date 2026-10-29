@@ -3,7 +3,7 @@ import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { Avatar } from '@/ui/Avatar/Avatar';
 import { Button } from '@/ui/Button/Button';
 import { LevelTag } from '@/ui/LevelTag/LevelTag';
-import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import type { LevelTagProps } from '@/ui/LevelTag/LevelTag';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import { isPlanningType } from '@/ui/record-links';
@@ -81,14 +81,17 @@ export function BinRow({
     }
   }, [highlighted]);
 
+  const level = levelOf(item.recordType);
+
   return (
     <li className={styles.row} data-highlighted={highlighted || undefined}>
       <div className={styles.main}>
         <div className={styles.title}>
-          {isPlanningType(item.recordType) ? (
-            <LevelTag level={item.recordType} />
+          {/* One tag style for every record type (038 FR-049). */}
+          {level ? (
+            <LevelTag level={level} />
           ) : (
-            <StatusChip tone="neutral">{capitalise(item.recordTypeLabel)}</StatusChip>
+            <span className={styles.tag}>{item.recordTypeLabel.toUpperCase()}</span>
           )}
           <h2 ref={heading} tabIndex={-1} className={styles.name}>
             {item.recordName}
@@ -158,4 +161,14 @@ function ContentsTree({ records, parentId }: { records: BinRecord[]; parentId: s
       ))}
     </ul>
   );
+}
+
+/** The LevelTag of a planning or purchase-request record; null for other record types. */
+function levelOf(recordType: string): LevelTagProps['level'] | null {
+  if (isPlanningType(recordType)) {
+    return recordType;
+  }
+  return recordType === 'purchaseRequest' || recordType === 'purchaseRequestLine'
+    ? recordType
+    : null;
 }

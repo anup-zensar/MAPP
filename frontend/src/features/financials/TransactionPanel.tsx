@@ -36,8 +36,8 @@ import styles from './TransactionPanel.module.css';
  * /financials/transactions/<id> over the Financials page: every field as GSAP sent it, its USD and
  * display amounts, the linked path with a link per level, how it was matched or why it is not
  * linked, the import it came from, and when it was added and last updated. A not-linked
- * transaction offers Link to a line item; a manual link offers Unlink; a link made by GSAP data
- * says where to correct it.
+ * transaction offers Link to a line item and a manual link Unlink, when the server says the person
+ * may (038 FR-005); a link made by GSAP data says where to correct it.
  */
 export function TransactionPanel() {
   const { transactionId = '' } = useParams();
@@ -70,13 +70,13 @@ export function TransactionPanel() {
 
   const footer = data ? (
     <>
-      {data.link.state === 'notLinked' && (
+      {data.link.state === 'notLinked' && data.canLink && (
         <Button ref={linkButton} variant="primary" onClick={() => setDialog('link')}>
           Link to a line item
         </Button>
       )}
       <Button onClick={close}>Close</Button>
-      {data.link.matchedBy === 'manual' && (
+      {data.link.matchedBy === 'manual' && data.canUnlink && (
         <Button ref={unlinkButton} onClick={() => setDialog('unlink')}>
           Unlink
         </Button>

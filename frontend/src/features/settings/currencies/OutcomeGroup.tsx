@@ -1,3 +1,4 @@
+import { ChevronRight } from 'lucide-react';
 import { formatRate, formatWhole } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
 import settingsStyles from '@/ui/settings-table.module.css';
@@ -23,7 +24,11 @@ export function OutcomeGroup({ outcome, rows }: OutcomeGroupProps) {
 
   return (
     <details className={styles.group} open={OPEN_AT_FIRST.includes(outcome)}>
-      <summary>{`${OUTCOME_WORDS[outcome]} (${formatWhole(rows.length)})`}</summary>
+      <summary>
+        {/* The open/closed marker the flex summary loses (038 FR-048); it turns when open. */}
+        <ChevronRight aria-hidden="true" className={styles.marker} />
+        {`${OUTCOME_WORDS[outcome]} (${formatWhole(rows.length)})`}
+      </summary>
       <div className={styles.groupBody}>
         {/* Nothing in the table takes the focus: the scrolling area does, for the keyboard. */}
         <div

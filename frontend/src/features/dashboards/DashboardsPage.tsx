@@ -1,4 +1,5 @@
 import { LayoutDashboard } from 'lucide-react';
+import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { ApiError } from '@/api/errors';
 import { useFormatters } from '@/format/useFormatters';
@@ -14,7 +15,7 @@ import type { PlanningDashboard } from './api';
 import { ApprovalsPanel } from './ApprovalsPanel';
 import { CampaignLists } from './CampaignLists';
 import { CompletenessPanel } from './CompletenessPanel';
-import { dashboardHref, writeFilters } from './dashboard-links';
+import { correctedFilters, dashboardHref, writeFilters } from './dashboard-links';
 import type { DashboardFilters as Filters, DashboardKind } from './dashboard-links';
 import { emptyText, financeCoverage } from './dashboard-text';
 import { DashboardFilters } from './DashboardFilters';
@@ -48,6 +49,19 @@ export function DashboardsPage({ kind }: DashboardsPageProps) {
   const filters = readFilters(params);
   const dashboard = useDashboard(kind, filters);
   const forbidden = dashboard.error instanceof ApiError && dashboard.error.kind === 'forbidden';
+  const corrected =
+    dashboard.data && !dashboard.isPlaceholderData
+      ? correctedFilters(filters, dashboard.data.filters)
+      : null;
+  const correctedSearch = corrected ? writeFilters(corrected).toString() : null;
+
+  // 038 FR-012: the address shows the filters the dashboard was made with.
+  useEffect(() => {
+    if (correctedSearch !== null) {
+      setParams(correctedSearch, { replace: true });
+    }
+  }, [correctedSearch, setParams]);
+
   if (forbidden) {
     return <NoAccess />;
   }
@@ -108,11 +122,13 @@ function Dashboard({ kind, dashboard, filters, onChange }: DashboardProps) {
     return (
       <>
         {filtersBar}
-        <EmptyState
-          icon={<LayoutDashboard />}
-          title={emptyText(dashboard.filters.year, dashboard.team?.name ?? null)}
-          text="Choose another year, market or plan type."
-        />
+        <div className={styles.onGrey}>
+          <EmptyState
+            icon={<LayoutDashboard />}
+            title={emptyText(dashboard.filters.year, dashboard.team?.name ?? null)}
+            text="Choose another year, market or plan type."
+          />
+        </div>
       </>
     );
   }

@@ -175,7 +175,7 @@ func TestCells_StandardColumnsPerLevel_FR011_FR017(t *testing.T) {
 		{"P-1001", "timing", ""},
 		{"P-1002", "completeness", "1 field needed/problem"},
 		{"P-1001", "completeness", "All filled in/positive"},
-		{"C-1001", "status", "In progress/review"},
+		{"C-1001", "status", "Partly approved/review"},
 		{"C-1001", "timing", "Running/active"},
 		{"I-1003", "status", "All approved/positive"},
 		{"I-1006", "timing", "—"},

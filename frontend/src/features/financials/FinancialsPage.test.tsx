@@ -118,6 +118,20 @@ describe('FinancialsPage (015 US3, FR-020 – FR-021)', () => {
     expect((await screen.findAllByText('No GSAP data loaded yet.')).length).toBe(2);
   });
 
+  it('shows no Not linked tab or count when the answer has no notLinked count (038 FR-004, H-4)', async () => {
+    const counts = { ...transactionPage().counts };
+    delete counts.notLinked;
+    renderFinancialsPage('/financials', { body: transactionPage({ counts }) });
+
+    const tabs = await screen.findByRole('tablist', { name: 'Transaction type' });
+    await within(tabs).findByRole('tab', { name: 'All (11)' });
+    expect(
+      within(tabs)
+        .getAllByRole('tab')
+        .map((tab) => tab.textContent),
+    ).toEqual(['All (11)', 'Purchase orders (4)', 'Invoices (3)', 'Payments (2)', 'Accruals (2)']);
+  });
+
   it('shows one card per transaction on a phone (US3 scenario 6)', async () => {
     vi.stubGlobal('matchMedia', (query: string) => ({
       matches: query === '(max-width: 639px)',

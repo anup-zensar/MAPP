@@ -176,3 +176,35 @@ describe('RoleFormPage (feature 014, US4)', () => {
     ]);
   });
 });
+
+describe('038 FR-006 (H-4): link without import on the role form', () => {
+  const NEEDS_IMPORT =
+    'Linking financial transactions needs Import GSAP extracts too — only people who import see transactions that are not linked.';
+
+  it("places the server's permissions problem on the permission list", async () => {
+    const { user } = renderForm(`/settings/access/roles/${PLANNER.id}/edit`, [
+      reply(
+        'PATCH /api/v1/roles/{roleId}',
+        {
+          status: 400,
+          body: {
+            error: {
+              code: 'validation_failed',
+              message: 'Check the highlighted fields.',
+              fields: [{ field: 'permissions', message: NEEDS_IMPORT }],
+            },
+          },
+        },
+        { roleId: PLANNER.id },
+      ),
+    ]);
+
+    await user.click(await screen.findByRole('checkbox', { name: /^Link financial transactions/ }));
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await user.click(await screen.findByRole('link', { name: NEEDS_IMPORT }));
+
+    const list = screen.getByRole('group', { name: 'Permissions' });
+    expect(list).toHaveFocus();
+    expect(list).toHaveAccessibleDescription(NEEDS_IMPORT);
+  });
+});

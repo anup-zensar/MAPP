@@ -18,7 +18,7 @@ var planStatuses = map[string]chip{
 
 var progressStatuses = map[string]chip{
 	"noActivities": {"No activities", ToneNeutral, 0},
-	"inProgress":   {"In progress", ToneReview, 1},
+	"inProgress":   {"Partly approved", ToneReview, 1},
 	"allApproved":  {"All approved", TonePositive, 2},
 }
 
