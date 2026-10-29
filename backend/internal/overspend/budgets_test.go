@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"mapp/internal/budget"
+	"mapp/internal/campaign"
 	"mapp/internal/overspend"
 	"mapp/internal/plan"
 	"mapp/internal/platform/apitest"
@@ -108,5 +109,26 @@ func TestPlanCopyOverARefuseBudget_Contract_037_US2(t *testing.T) {
 	refusedNaming(t, copied, "plan 'UK copy'")
 	if empty.Status != http.StatusCreated {
 		t.Errorf("037 FR-009 a copy without contents has no cost: %d %s", empty.Status, empty.Body)
+	}
+}
+
+func TestOverAllocationUnderARefusePlan_KeepsWarning_Contract_037_FR013(t *testing.T) {
+	t.Parallel()
+	server := apitest.New(t)
+	priya, alex := server.SignIn(t, priyasEmail), server.SignIn(t, alexsEmail)
+	europe := getPlan(t, priya, lubricantsEurope)
+	decoded[budget.GlobalBudgetView](t, alex.Do(t, http.MethodPatch, "/api/v1/budget-allocations/BA-1001", map[string]any{
+		"amount": money2(europe.PlanFigures.PlannedCost.Amount.String()), "overspend": "refuse", "version": 1,
+		"planVersion": europe.Version}), http.StatusOK)
+	refusing := getPlan(t, priya, lubricantsEurope)
+	helixView := decoded[campaign.CampaignView](t, priya.Do(t, http.MethodGet, "/api/v1/campaigns/"+helix, nil), http.StatusOK)
+	aboveThePlan := refusing.Budget.Amount.Add(money.FromCents(10_000_000))
+
+	r := priya.Do(t, http.MethodPatch, "/api/v1/campaigns/"+helix, helixForm(helixView.Version, aboveThePlan.String(), "warn"))
+
+	saved := decoded[campaign.CampaignView](t, r, http.StatusOK)
+	if refusing.Overspend.Mode != overspend.Refuse || saved.Budget.Amount.Cmp(aboveThePlan) != 0 {
+		t.Errorf("037 FR-013 campaign budget %s above the Refuse plan budget %s: saved %+v, plan %+v",
+			aboveThePlan, refusing.Budget.Amount, saved.Budget, refusing.Overspend)
 	}
 }

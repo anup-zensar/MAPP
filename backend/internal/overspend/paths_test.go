@@ -5,13 +5,17 @@ import (
 	"testing"
 
 	"mapp/internal/activity"
+	"mapp/internal/budget"
+	"mapp/internal/campaign"
 	"mapp/internal/history"
 	"mapp/internal/platform/apitest"
+	"mapp/internal/platform/money"
 )
 
 const (
-	events       = "I-1003" // Rimula fleet, outside Helix launch
-	helixRefused = "campaign 'Helix launch'"
+	events        = "I-1003" // Rimula fleet, outside Helix launch
+	helixRefused  = "campaign 'Helix launch'"
+	mobilityChina = "P-1002"
 )
 
 // rimulaActivity is an activity of 500.00 USD outside Helix launch, saved before Helix refuses overspending.
@@ -101,5 +105,39 @@ func TestRefuse_LineItemsAreNeverRefused_Contract_037_FR012(t *testing.T) {
 
 	if r.Status != http.StatusCreated {
 		t.Errorf("037 FR-012 line item = %d %s, want it saved", r.Status, r.Body)
+	}
+}
+
+// allocateMobility sets FY2026 Mobility China's allocation (BA-1002) to Refuse, with room above its planned cost.
+func allocateMobility(t *testing.T, alex *apitest.Client, room money.Amount, version int) {
+	t.Helper()
+	mobility := getPlan(t, alex, mobilityChina)
+	amount := mobility.PlanFigures.PlannedCost.Amount.Add(room)
+	decoded[budget.GlobalBudgetView](t, alex.Do(t, http.MethodPatch, "/api/v1/budget-allocations/BA-1002", map[string]any{
+		"amount": money2(amount.String()), "overspend": "refuse", "version": version, "planVersion": mobility.Version}),
+		http.StatusOK)
+}
+
+func TestRefuse_CampaignMoveIntoARefusePlan_Contract_037_US2(t *testing.T) {
+	t.Parallel()
+	server := apitest.New(t)
+	priya, alex := server.SignIn(t, priyasEmail), server.SignIn(t, alexsEmail)
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all")
+	helixCost := decoded[campaign.CampaignView](t, priya.Do(t, http.MethodGet, "/api/v1/campaigns/"+helix, nil),
+		http.StatusOK).BudgetAndCost.PlannedCost.Amount
+	move := map[string]any{"planId": mobilityChina, "version": 1}
+
+	allocateMobility(t, alex, helixCost.Sub(money.FromCents(1)), 1)
+	refused := priya.Do(t, http.MethodPost, "/api/v1/campaigns/"+helix+"/move", move)
+	stayed := decoded[campaign.CampaignView](t, priya.Do(t, http.MethodGet, "/api/v1/campaigns/"+helix, nil), http.StatusOK)
+	allocateMobility(t, alex, helixCost, 2)
+	moved := priya.Do(t, http.MethodPost, "/api/v1/campaigns/"+helix+"/move", move)
+
+	refusedNaming(t, refused, "plan 'FY2026 Mobility China'")
+	if stayed.PlanID != lubricantsEurope || stayed.Version != 1 {
+		t.Errorf("037 FR-010 a refused campaign move changes nothing: plan %s, version %d", stayed.PlanID, stayed.Version)
+	}
+	if got := decoded[campaign.CampaignView](t, moved, http.StatusOK); got.PlanID != mobilityChina {
+		t.Errorf("037 FR-011 a move that fits the Refuse plan budget = plan %s, want %s", got.PlanID, mobilityChina)
 	}
 }
