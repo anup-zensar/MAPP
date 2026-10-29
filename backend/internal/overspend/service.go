@@ -15,6 +15,7 @@ const (
 	configurationKind = "overspendConfiguration"
 	settingsName      = "Overspend control"
 	fieldDefaultMode  = "defaultMode"
+	fieldApprovalMode = "approvalOverPlannedCost"
 	configurationNoun = "setting"
 )
 
@@ -46,14 +47,13 @@ func (s *Service) Configuration(ctx context.Context, _ actor.Actor) (Configurati
 	return view, err
 }
 
-// SaveConfiguration changes the setting new budgets start with (FR-006); it needs settings.manage.
+// SaveConfiguration needs settings.manage.
 func (s *Service) SaveConfiguration(ctx context.Context, a actor.Actor, in ConfigurationInput) (ConfigurationView, error) {
 	if err := authz.Require(ctx, authz.SettingsManage); err != nil {
 		return ConfigurationView{}, err
 	}
-	mode, ok := ParseMode(in.DefaultMode)
-	if !ok {
-		return ConfigurationView{}, errs.Validation(errs.FieldError{Field: fieldDefaultMode, Message: MsgChooseMode})
+	if err := in.problems(); err != nil {
+		return ConfigurationView{}, err
 	}
 	var view ConfigurationView
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -64,9 +64,9 @@ func (s *Service) SaveConfiguration(ctx context.Context, a actor.Actor, in Confi
 		if err = before.CheckVersion(in.Version, configurationNoun); err != nil {
 			return err
 		}
-		after := before
-		after.DefaultMode = mode
-		if after.DefaultMode == before.DefaultMode.Normalised() {
+		before = before.normalised()
+		after := in.applied(before)
+		if after == before {
 			view = configurationView(ctx, before)
 			return nil
 		}
@@ -74,6 +74,28 @@ func (s *Service) SaveConfiguration(ctx context.Context, a actor.Actor, in Confi
 		return err
 	})
 	return view, err
+}
+
+func (in ConfigurationInput) problems() error {
+	var problems errs.Problems
+	if _, ok := ParseMode(in.DefaultMode); !ok {
+		problems.Add(fieldDefaultMode, MsgChooseMode)
+	}
+	if in.ApprovalOverPlannedCost != nil {
+		if _, ok := ParseMode(*in.ApprovalOverPlannedCost); !ok {
+			problems.Add(fieldApprovalMode, MsgChooseMode)
+		}
+	}
+	return problems.Err()
+}
+
+func (in ConfigurationInput) applied(before Configuration) Configuration {
+	after := before
+	after.DefaultMode, _ = ParseMode(in.DefaultMode)
+	if in.ApprovalOverPlannedCost != nil {
+		after.ApprovalOverPlannedCost, _ = ParseMode(*in.ApprovalOverPlannedCost)
+	}
+	return after
 }
 
 func (s *Service) saveChange(ctx context.Context, a actor.Actor, before, after Configuration) (ConfigurationView, error) {
@@ -91,9 +113,20 @@ func (s *Service) saveChange(ctx context.Context, a actor.Actor, before, after C
 }
 
 func configurationView(ctx context.Context, c Configuration) ConfigurationView {
-	return ConfigurationView{DefaultMode: c.DefaultMode.Normalised(), ApprovalOverPlannedCost: Warn,
-		Version: c.Version, UpdatedAt: c.UpdatedAt, UpdatedBy: c.UpdatedBy,
+	view := ConfigurationView{DefaultMode: c.DefaultMode.Normalised(),
+		ApprovalOverPlannedCost: c.ApprovalOverPlannedCost.Normalised(), Version: c.Version,
 		CanChange: authz.AvailableAnywhere(ctx, authz.SettingsManage)}
+	if !c.UpdatedAt.IsZero() && c.UpdatedBy.ID != actor.System.ID {
+		at, by := c.UpdatedAt, c.UpdatedBy
+		view.UpdatedAt, view.UpdatedBy = &at, &by
+	}
+	return view
+}
+
+// RefusesOverPlannedCost joins the caller's transaction.
+func (s *Service) RefusesOverPlannedCost(ctx context.Context) (bool, error) {
+	c, err := s.repo.Configuration(ctx)
+	return c.ApprovalOverPlannedCost.Refuses(), err
 }
 
 // DefaultMode is the setting a new budget starts with (FR-007); it joins the caller's transaction.

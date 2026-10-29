@@ -94,24 +94,33 @@ type Path struct {
 }
 
 type Configuration struct {
-	DefaultMode Mode `json:"defaultMode"`
+	DefaultMode             Mode `json:"defaultMode"`
+	ApprovalOverPlannedCost Mode `json:"approvalOverPlannedCost"`
 	record.Meta
 }
 
 func DefaultConfiguration() Configuration {
-	return Configuration{DefaultMode: Warn, Meta: record.Meta{Version: 1, CreatedBy: actor.System, UpdatedBy: actor.System}}
+	return Configuration{DefaultMode: Warn, ApprovalOverPlannedCost: Warn,
+		Meta: record.Meta{Version: 1, CreatedBy: actor.System, UpdatedBy: actor.System}}
+}
+
+// normalised reads a configuration stored before either setting existed as Warn.
+func (c Configuration) normalised() Configuration {
+	c.DefaultMode, c.ApprovalOverPlannedCost = c.DefaultMode.Normalised(), c.ApprovalOverPlannedCost.Normalised()
+	return c
 }
 
 type ConfigurationView struct {
 	DefaultMode             Mode               `json:"defaultMode"`
 	ApprovalOverPlannedCost Mode               `json:"approvalOverPlannedCost"`
 	Version                 int                `json:"version"`
-	UpdatedAt               time.Time          `json:"updatedAt"`
-	UpdatedBy               actor.Actor        `json:"updatedBy"`
+	UpdatedAt               *time.Time         `json:"updatedAt"`
+	UpdatedBy               *actor.Actor       `json:"updatedBy"`
 	CanChange               authz.Availability `json:"canChange"`
 }
 
 type ConfigurationInput struct {
-	Version     int    `json:"version"`
-	DefaultMode string `json:"defaultMode"`
+	Version                 int     `json:"version"`
+	DefaultMode             string  `json:"defaultMode"`
+	ApprovalOverPlannedCost *string `json:"approvalOverPlannedCost"`
 }
