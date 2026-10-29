@@ -41,7 +41,7 @@ application use these definitions. Hive9 names are given in brackets where users
 | **Invoiced** | The supplier invoices GSAP has received against a record's line items, less credit notes (feature 015). |
 | **Paid** | The payments GSAP has released on a record's line items — Shell's **actuals** (feature 015). |
 | **Accrued** | Money owed for work received but not yet invoiced, as GSAP accrued it for the latest accrual month in the data, e.g. "Accrued (Sep 2026)" (feature 015). |
-| **Actual (paid)** | What GSAP reports as paid on a record's line items — Shell's actuals (features 015, 036). |
+| **Actual (paid)** | What GSAP reports as paid on a record's line items — Shell's actuals (features 015, 036). The dashboards, like the SP&A view's Actual spend, count only the payments posted in the plan's year (D-357). |
 | **Unspent budget** | Budget minus actual: how much of a budget is not yet paid out (feature 036). |
 | **Budget spent** | Actual as a percentage of the budget (feature 036; Hive9's burn rate). |
 | **Dashboard** | A read-only page that adds up the plans you may see — Executive for every market, Regional for one (feature 036). |

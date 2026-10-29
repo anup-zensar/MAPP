@@ -62,7 +62,7 @@ func (s *Service) read(ctx context.Context, a actor.Actor, r request) (*input, e
 		return nil, err
 	}
 	in.board = newBoard(in.data.Nodes, in.keeps, work.SeesFinance, work.FinancePlans)
-	if err = s.readPanels(ctx, a, in); err != nil {
+	if err = s.readPanels(ctx, in); err != nil {
 		return nil, err
 	}
 	in.teams, err = s.deps.Directory.TeamRefs(ctx, in.board.teamIDs())
@@ -95,17 +95,20 @@ func (s *Service) readChoices(ctx context.Context, a actor.Actor, in *input, wor
 	return err
 }
 
-func (s *Service) readPanels(ctx context.Context, a actor.Actor, in *input) error {
+// readPanels reads, one statement each, what the board's records need: their payments, purchase requests and
+// approval rounds, and the year's global budgets for a person who may see them.
+func (s *Service) readPanels(ctx context.Context, in *input) error {
 	var err error
-	if in.board.financeCount() > 0 {
-		if in.paid, err = s.deps.Payments.PaidByMonth(ctx); err != nil {
+	if ids := in.board.financeLineItemIDs(); len(ids) > 0 {
+		if in.paid, err = s.deps.Payments.PaidByMonth(ctx, ids); err != nil {
 			return err
 		}
 	}
+	in.board.countPaid(in.paid, in.query.Year)
 	if in.purchases, err = s.deps.Purchases.Summaries(ctx, in.board.lineItemIDs()); err != nil {
 		return err
 	}
-	if in.rounds, err = s.deps.Rounds.RoundSummaries(ctx); err != nil {
+	if in.rounds, err = s.deps.Rounds.RoundSummaries(ctx, in.board.subjectIDs(in.purchases.Items)); err != nil {
 		return err
 	}
 	grants, signedIn := authz.From(ctx)
@@ -113,8 +116,8 @@ func (s *Service) readPanels(ctx context.Context, a actor.Actor, in *input) erro
 	if signedIn && !grants.Has(authz.GlobalBudgetsView) {
 		return nil
 	}
-	page, err := s.deps.GlobalBudgets.List(ctx, a, &in.query.Year)
-	in.global = globalBudgets(page, in.display)
+	year, err := s.deps.GlobalBudgets.YearFigures(ctx, in.query.Year)
+	in.global = globalBudgets(year, in.display)
 	return err
 }
 

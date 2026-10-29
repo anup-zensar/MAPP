@@ -17,6 +17,7 @@ type Store interface {
 	GetAllocation(ctx context.Context, id string) (Allocation, bool, error)
 	ListAllocations(ctx context.Context) ([]Allocation, error)
 	AllocationsOf(ctx context.Context, globalBudgetID string) ([]Allocation, error)
+	AllocationsOfBudgets(ctx context.Context, globalBudgetIDs []string) ([]Allocation, error)
 	AllocationOfPlan(ctx context.Context, planID string) (Allocation, bool, error)
 	PutAllocation(ctx context.Context, a Allocation) error
 	DeleteAllocation(ctx context.Context, id string) error

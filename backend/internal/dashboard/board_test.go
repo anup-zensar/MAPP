@@ -55,12 +55,22 @@ func sampleNodes(t *testing.T) []allwork.Node {
 	}
 }
 
+func samplePaid(t *testing.T) map[string]map[string]money.Amount {
+	t.Helper()
+	return map[string]map[string]money.Amount{
+		"L-1": {"2026-03": amount(t, "150.00"), "2025-12": amount(t, "50.00")},
+		"L-3": {"2026-03": amount(t, "5.00")},
+	}
+}
+
 func sampleBoard(t *testing.T, keep func(*allwork.Node) bool) *board {
 	t.Helper()
 	if keep == nil {
 		keep = func(*allwork.Node) bool { return true }
 	}
-	return newBoard(sampleNodes(t), keep, true, []string{"P-1"})
+	b := newBoard(sampleNodes(t), keep, true, []string{"P-1"})
+	b.countPaid(samplePaid(t), 2026)
+	return b
 }
 
 func text(m *money.Money) string {
@@ -102,12 +112,22 @@ func TestFigures_FR008_FR011(t *testing.T) {
 	alpha := b.own["P-2"].figures(money.DisplayIn("EUR", "0.92"))
 	over := b.own["C-1"].figures(money.DisplayUSD)
 
-	same(t, "totals", texts("1000.00", "850.00", "300.00", "200.00", "150.00", "800.00", 85, 20, false),
+	same(t, "totals", texts("1000.00", "850.00", "300.00", "150.00", "150.00", "850.00", 85, 15, false),
 		texts(text(total.Budget), text(total.PlannedCost), text(total.Committed), text(total.Actual), text(total.LeftToPlan),
 			text(total.UnspentBudget), percent(total.BudgetUsedPercent), percent(total.BudgetSpentPercent), total.OverBudget))
 	same(t, "Alpha in euros", texts("—", "—", -1, "—", "46.00", "EUR"), texts(text(alpha.Budget), text(alpha.Committed),
 		percent(alpha.BudgetUsedPercent), text(alpha.LeftToPlan), text(alpha.PlannedCost), alpha.PlannedCost.Currency))
 	same(t, "campaign over budget", texts(true, "-100.00"), texts(over.OverBudget, text(over.LeftToPlan)))
+}
+
+// Actual is what was paid in the plan's year (013's Actual spend): L-1's payment of 2025 counts nowhere (D-357).
+func TestActual_PaidInThePlansYearOnly_D357(t *testing.T) {
+	t.Parallel()
+	b := sampleBoard(t, nil)
+
+	activity := b.activityFinance()["A-1"]
+	same(t, "actuals", texts("150.00", "150.00", "150.00", "—"), texts(text(usd(b.own["P-1"].actual)),
+		text(usd(b.own["C-1"].actual)), text(usd(activity.actual)), text(usd(b.own["P-2"].actual))))
 }
 
 func TestPlans_ByNameWithTheirFinance_FR013(t *testing.T) {

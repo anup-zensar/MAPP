@@ -74,7 +74,7 @@ describe('Dashboard panels (036 FR-010, FR-014, FR-016, FR-017, edge cases)', ()
     expect(screen.getByText('No global budgets for this year.')).toBeInTheDocument();
   });
 
-  it('notes amounts outside the months and hidden actuals under the chart (FR-014, FR-003)', () => {
+  it('notes amounts outside the months, not counted, and hidden actuals under the chart (FR-014, FR-003, D-357)', () => {
     const months = dashboard().months;
     renderWithProviders(
       <MonthlyChart
@@ -89,7 +89,7 @@ describe('Dashboard panels (036 FR-010, FR-014, FR-016, FR-017, edge cases)', ()
     );
 
     expect(screen.getByText('Spread into other years: $700.00')).toBeInTheDocument();
-    expect(screen.getByText('Paid outside the year: $50.00')).toBeInTheDocument();
+    expect(screen.getByText('Paid outside the year (not counted): $50.00')).toBeInTheDocument();
     expect(screen.getByText("Actual: You can't see financial data")).toBeInTheDocument();
     expect(within(screen.getByRole('img')).queryAllByText('Mar')).toHaveLength(1);
   });

@@ -27,7 +27,7 @@ func (b *board) months(planned map[string]allwork.Months, paid map[string]map[st
 			continue
 		}
 		for month, amount := range paid[li.ID] {
-			if month[:4] == fmt.Sprint(year) {
+			if inYear(month, year) {
 				actualBy[month] = actualBy[month].Add(amount)
 			} else {
 				outside = addNonZero(outside, amount)

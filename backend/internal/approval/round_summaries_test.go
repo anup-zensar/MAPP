@@ -5,22 +5,28 @@ import (
 	"time"
 )
 
-// An open round waits since its current level began; a decided round keeps its submission and end (036 FR-016).
+// An open round waits since its current level began; a decided round keeps its submission and end; a record not
+// asked for is not read (036 FR-016, D-356).
 func TestRoundSummaries_036_FR016(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1", "Fleet card launch", mei.ID, chinaFlow)
 	f.addActivity(t, "A-2", "Trade magazine ads", priya.ID, lubricantsFlow)
+	f.addActivity(t, "A-3", "Not asked for", priya.ID, lubricantsFlow)
 	f.submit(t, mei, "A-1", "")
 	f.clock.Advance(24 * time.Hour)
 	f.approve(t, carlos, "A-1", "")
 	f.submit(t, priya, "A-2", "")
+	f.submit(t, priya, "A-3", "")
 	f.clock.Advance(36 * time.Hour)
 	f.approve(t, daniel, "A-2", "")
 
-	list, err := f.service.RoundSummaries(t.Context())
+	list, err := f.service.RoundSummaries(t.Context(), []string{"A-1", "A-2"})
 	if err != nil {
 		t.Fatalf("RoundSummaries: %v", err)
+	}
+	if len(list) != 2 {
+		t.Errorf("RoundSummaries = %d rounds, want those of A-1 and A-2 only", len(list))
 	}
 	got := map[string]RoundSummary{}
 	for _, s := range list {

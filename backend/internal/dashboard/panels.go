@@ -24,22 +24,30 @@ var (
 // approvals counts the rounds of the activities and purchase requests on the board as the monitoring does (017).
 func (b *board) approvals(rounds []approval.RoundSummary, purchases []purchaserequest.Summary) Approvals {
 	subjects := map[string]bool{}
-	for _, a := range b.byLevel[allwork.LevelActivity] {
-		subjects[a.ID] = true
-	}
-	for _, pr := range purchases {
-		subjects[pr.ID] = true
+	for _, id := range b.subjectIDs(purchases) {
+		subjects[id] = true
 	}
 	out := Approvals{ActivitiesByStatus: b.activitiesByStatus()}
 	var seconds int64
 	for _, r := range rounds {
-		if !subjects[r.SubjectID] {
-			continue
+		if subjects[r.SubjectID] {
+			seconds += out.count(r)
 		}
-		seconds += out.count(r)
 	}
 	out.AverageDecisionDays = approval.AverageDecisionDays(int64(out.Approved+out.Declined), seconds)
 	return out
+}
+
+// subjectIDs are the records whose approval rounds count: the board's activities and its purchase requests.
+func (b *board) subjectIDs(purchases []purchaserequest.Summary) []string {
+	ids := make([]string, 0, len(b.byLevel[allwork.LevelActivity])+len(purchases))
+	for _, a := range b.byLevel[allwork.LevelActivity] {
+		ids = append(ids, a.ID)
+	}
+	for _, pr := range purchases {
+		ids = append(ids, pr.ID)
+	}
+	return ids
 }
 
 // count counts one round and returns the seconds it took when it was decided by a person.
@@ -118,9 +126,9 @@ func (b *board) completeness() []Completeness {
 	return out
 }
 
-func globalBudgets(page budget.Page, d money.Display) []GlobalBudget {
-	out := make([]GlobalBudget, 0, len(page.Items))
-	for _, g := range page.Items {
+func globalBudgets(year []budget.Summary, d money.Display) []GlobalBudget {
+	out := make([]GlobalBudget, 0, len(year))
+	for _, g := range year {
 		f := g.Figures
 		out = append(out, GlobalBudget{ID: g.ID, Name: g.Name, Amount: d.Money(f.Amount), Allocated: d.Money(f.Allocated),
 			Unallocated: d.Money(f.Unallocated), PlannedCost: d.Money(f.PlannedCost), OverAllocated: f.OverAllocated})

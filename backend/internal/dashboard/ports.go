@@ -7,7 +7,6 @@ import (
 	"mapp/internal/approval"
 	"mapp/internal/budget"
 	"mapp/internal/people"
-	"mapp/internal/platform/actor"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/money"
 	"mapp/internal/purchaserequest"
@@ -28,12 +27,13 @@ type Plans interface {
 	YearOf(ctx context.Context, planID string) (int, bool, error)
 }
 
+// Payments, Rounds and Purchases read only the records asked for, which come from the plans in scope (B5, D-356).
 type Payments interface {
-	PaidByMonth(ctx context.Context) (map[string]map[string]money.Amount, error)
+	PaidByMonth(ctx context.Context, lineItemIDs []string) (map[string]map[string]money.Amount, error)
 }
 
 type Rounds interface {
-	RoundSummaries(ctx context.Context) ([]approval.RoundSummary, error)
+	RoundSummaries(ctx context.Context, subjectIDs []string) ([]approval.RoundSummary, error)
 }
 
 type Purchases interface {
@@ -41,7 +41,7 @@ type Purchases interface {
 }
 
 type GlobalBudgets interface {
-	List(ctx context.Context, a actor.Actor, year *int) (budget.Page, error)
+	YearFigures(ctx context.Context, year int) ([]budget.Summary, error)
 }
 
 type Directory interface {

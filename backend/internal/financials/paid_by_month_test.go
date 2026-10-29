@@ -10,8 +10,8 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// Only linked payments count, by posting month, at the current rate; a currency no longer in Settings is left
-// out, as Paid leaves it out (036 FR-014, D-257).
+// Only payments of the line items asked for count, by posting month, at the current rate; a currency no longer in
+// Settings is left out, as Paid leaves it out (036 FR-014, D-257, D-356).
 func TestPaidByMonth_036_FR014(t *testing.T) {
 	t.Parallel()
 	f := newEmptyFixture(t)
@@ -27,10 +27,11 @@ func TestPaidByMonth_036_FR014(t *testing.T) {
 			transaction("FT-4", TypeInvoice, "L-1003", "2026-03-06", "500.00", "USD"),
 			transaction("FT-5", TypePayment, "", "2026-03-06", "700.00", "USD"),
 			transaction("FT-6", TypePayment, "L-1004", "2026-03-06", "9.00", "XYZ"),
+			transaction("FT-7", TypePayment, "L-1005", "2026-03-06", "40.00", "USD"),
 		})
 	})
 
-	got, err := f.service.PaidByMonth(t.Context())
+	got, err := f.service.PaidByMonth(t.Context(), []string{"L-1003", "L-1004"})
 
 	if err != nil {
 		t.Fatalf("PaidByMonth: %v", err)

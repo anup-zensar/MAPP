@@ -22893,7 +22893,7 @@ components:
             - $ref: "#/components/schemas/Money"
             - type: "null"
         actual:
-          description: Paid, Shell's actuals (015).
+          description: Paid, Shell's actuals (015), posted in the plan's year as 013's Actual spend (D-357).
           oneOf:
             - $ref: "#/components/schemas/Money"
             - type: "null"
@@ -23009,7 +23009,7 @@ components:
             - $ref: "#/components/schemas/Money"
             - type: "null"
         paidOutsideYear:
-          description: Payments posted outside the year; null when none or when financial data is hidden.
+          description: Payments posted outside the year, not counted in Actual (D-357); null when none or when financial data is hidden.
           oneOf:
             - $ref: "#/components/schemas/Money"
             - type: "null"

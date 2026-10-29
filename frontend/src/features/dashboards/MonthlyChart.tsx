@@ -23,7 +23,8 @@ export function MonthlyChart({ months }: MonthlyChartProps) {
   const notes = [
     months.noDates && `Not yet spread (activities without dates): ${money(months.noDates)}`,
     months.otherYears && `Spread into other years: ${money(months.otherYears)}`,
-    months.paidOutsideYear && `Paid outside the year: ${money(months.paidOutsideYear)}`,
+    months.paidOutsideYear &&
+      `Paid outside the year (not counted): ${money(months.paidOutsideYear)}`,
     !showsActual && `Actual: ${FINANCE_HIDDEN}`,
   ].filter((note) => typeof note === 'string');
   const switcher = (

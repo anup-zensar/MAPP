@@ -198,6 +198,61 @@ func (q *Queries) ListRoundsInScope(ctx context.Context, arg ListRoundsInScopePa
 	return items, nil
 }
 
+const listRoundsOfSubjects = `-- name: ListRoundsOfSubjects :many
+SELECT id, subject_id, number, workflow_id, workflow_name, levels, current_level, outcome, submitted_at,
+    submitted_by_id, submitted_by_name, comment, ended_at, facts, reminder_days, escalation_days, auto_approved,
+    version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name, subject_kind
+FROM approval_rounds
+WHERE subject_id = ANY($1::text[])
+ORDER BY length(id), id COLLATE "C"
+`
+
+func (q *Queries) ListRoundsOfSubjects(ctx context.Context, subjectIds []string) ([]ApprovalRound, error) {
+	rows, err := q.db.Query(ctx, listRoundsOfSubjects, subjectIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ApprovalRound{}
+	for rows.Next() {
+		var i ApprovalRound
+		if err := rows.Scan(
+			&i.ID,
+			&i.SubjectID,
+			&i.Number,
+			&i.WorkflowID,
+			&i.WorkflowName,
+			&i.Levels,
+			&i.CurrentLevel,
+			&i.Outcome,
+			&i.SubmittedAt,
+			&i.SubmittedByID,
+			&i.SubmittedByName,
+			&i.Comment,
+			&i.EndedAt,
+			&i.Facts,
+			&i.ReminderDays,
+			&i.EscalationDays,
+			&i.AutoApproved,
+			&i.Version,
+			&i.CreatedAt,
+			&i.CreatedByID,
+			&i.CreatedByName,
+			&i.UpdatedAt,
+			&i.UpdatedByID,
+			&i.UpdatedByName,
+			&i.SubjectKind,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const putRound = `-- name: PutRound :exec
 INSERT INTO approval_rounds (
     id, subject_id, number, workflow_id, workflow_name, levels, current_level, outcome, submitted_at,

@@ -19,15 +19,15 @@ type RoundSummary struct {
 	WaitingSince *time.Time
 }
 
-// RoundSummaries returns every round of every record and checks no access: the caller keeps those it may show.
-func (s *Service) RoundSummaries(ctx context.Context) ([]RoundSummary, error) {
+// RoundSummaries returns the rounds of the records subjectIDs only, which the caller may see (D-356).
+func (s *Service) RoundSummaries(ctx context.Context, subjectIDs []string) ([]RoundSummary, error) {
 	var list []RoundSummary
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		rounds, err := s.repo.ListRounds(ctx)
+		rounds, err := s.repo.RoundsOfSubjects(ctx, subjectIDs)
 		if err != nil {
 			return err
 		}
-		actions, err := s.repo.ListActions(ctx)
+		actions, err := s.repo.ActionsOfSubjects(ctx, subjectIDs)
 		if err != nil {
 			return err
 		}

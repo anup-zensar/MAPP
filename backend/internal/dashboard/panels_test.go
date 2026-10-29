@@ -23,10 +23,7 @@ func TestMonths_FR014(t *testing.T) {
 		"A-3": {ByMonth: map[string]money.Amount{}, NoDates: amount(t, "100.00")},
 		"A-4": {ByMonth: map[string]money.Amount{"2026-03": amount(t, "50.00")}, OtherYears: amount(t, "0.00")},
 	}
-	paid := map[string]map[string]money.Amount{
-		"L-1": {"2026-03": amount(t, "150.00"), "2025-12": amount(t, "50.00")},
-		"L-3": {"2026-03": amount(t, "5.00")},
-	}
+	paid := samplePaid(t)
 
 	got := sampleBoard(t, nil).months(planned, paid, 2026, money.DisplayUSD)
 
@@ -88,10 +85,10 @@ func TestPurchaseRequests_FR017(t *testing.T) {
 func TestGlobalBudgets_ShownInTheCurrency_FR004(t *testing.T) {
 	t.Parallel()
 	usd := func(text string) money.Money { return money.USD(amount(t, text)) }
-	page := budget.Page{Items: []budget.Summary{{ID: "GB-1", Name: "Global", Figures: budget.Figures{
-		Amount: usd("100.00"), Allocated: usd("120.00"), Unallocated: usd("-20.00"), PlannedCost: usd("50.00"), OverAllocated: true}}}}
+	year := []budget.Summary{{ID: "GB-1", Name: "Global", Figures: budget.Figures{
+		Amount: usd("100.00"), Allocated: usd("120.00"), Unallocated: usd("-20.00"), PlannedCost: usd("50.00"), OverAllocated: true}}}
 
-	got := globalBudgets(page, money.DisplayIn("EUR", "0.50"))
+	got := globalBudgets(year, money.DisplayIn("EUR", "0.50"))
 
 	if len(got) != 1 || got[0].Amount.Format() != "50.00 EUR" || got[0].Unallocated.Format() != "-10.00 EUR" || !got[0].OverAllocated {
 		t.Errorf("global budgets = %+v", got)

@@ -194,3 +194,56 @@ func (q *Queries) ListActionsInScope(ctx context.Context, arg ListActionsInScope
 	}
 	return items, nil
 }
+
+const listActionsOfSubjects = `-- name: ListActionsOfSubjects :many
+SELECT id, round_id, round_number, subject_id, action, level, level_name, approvers, actor_id, actor_name,
+    on_behalf_of, at, comment, changes, capacity, as_delegate_of_id, as_delegate_of_name, rule, escalated_to_id,
+    escalated_to_name, waited_days, subject_kind, self_approval
+FROM approval_actions
+WHERE subject_id = ANY($1::text[])
+ORDER BY length(id), id COLLATE "C"
+`
+
+func (q *Queries) ListActionsOfSubjects(ctx context.Context, subjectIds []string) ([]ApprovalAction, error) {
+	rows, err := q.db.Query(ctx, listActionsOfSubjects, subjectIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ApprovalAction{}
+	for rows.Next() {
+		var i ApprovalAction
+		if err := rows.Scan(
+			&i.ID,
+			&i.RoundID,
+			&i.RoundNumber,
+			&i.SubjectID,
+			&i.Action,
+			&i.Level,
+			&i.LevelName,
+			&i.Approvers,
+			&i.ActorID,
+			&i.ActorName,
+			&i.OnBehalfOf,
+			&i.At,
+			&i.Comment,
+			&i.Changes,
+			&i.Capacity,
+			&i.AsDelegateOfID,
+			&i.AsDelegateOfName,
+			&i.Rule,
+			&i.EscalatedToID,
+			&i.EscalatedToName,
+			&i.WaitedDays,
+			&i.SubjectKind,
+			&i.SelfApproval,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

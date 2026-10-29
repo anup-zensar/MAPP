@@ -8,8 +8,8 @@ Each section states the decision, why, and what was rejected.
 `internal/app/allWorkSource`): plans in the actor's scope (`PlanStore.ListInScope`), with every campaign,
 initiative, activity and line item, their USD budgets and planned costs (016 conversion), line-item spreads in
 USD (007), 015's GSAP facts per line item, completeness (`Missing`), plan type and teams. Sums follow the
-domain model: plan budget (§4.1), planned cost = Σ activities (§4.2), committed and paid = Σ line items' facts
-(015). The monthly planned cost uses All work's Budget & cost rule, exported from `allwork` as
+domain model: plan budget (§4.1), planned cost = Σ activities (§4.2), committed = Σ line items' facts
+(015), actual = Σ line items' payments posted in the plan's year (R2, D-357). The monthly planned cost uses All work's Budget & cost rule, exported from `allwork` as
 `PlannedByActivity(nodes, year)` (line-item spreads, the positive unassigned balance spread evenly, No dates and
 Other years apart — 010 FR-023), so the dashboard's months equal the Budget & cost view.
 
@@ -18,19 +18,23 @@ from the record pages); calling the plan, campaign and activity services per pla
 
 ## R2 — Actuals by month
 
-**Decision**: a new `financials.Service.PaidByMonth(ctx)` returns, per linked line item, the payments' USD
-amounts by posting month (`YYYY-MM`), converted with `usdOf` at the current rate and skipping currencies no
-longer in Settings (D-257), exactly as `FactsByLineItem` sums Paid. The dashboard keeps the line items of the
-plans whose financial data the person may see; payments posted outside the chosen year count in Actual and
-appear as "Paid outside <year>".
+**Decision**: a new `financials.Service.PaidByMonth(ctx, lineItemIDs)` returns, for the line items of the plans
+whose financial data the person may see, the payments' USD amounts by posting month (`YYYY-MM`), converted
+with `usdOf` at the current rate and skipping currencies no longer in Settings (D-257), exactly as
+`FactsByLineItem` sums Paid. It reads them in one statement, `financials.Store.PaymentsOnLineItems` (R9).
+A plan's Actual — in the totals, the rows, the campaigns and a plan export's activities — is its payments
+posted in the plan's year, as 013's Actual spend (013 FR-010, D-335), so one plan never shows two actuals
+(D-357, superseding D-342 there); payments posted outside the year count nowhere and appear under the monthly
+chart as "Paid outside the year (not counted)". Committed stays 015's Committed.
 
 **Rejected**: invoices as actuals (Shell: actuals are payments released); monthly exchange rates (Q-023).
 
 ## R3 — Approvals panel
 
-**Decision**: a new `approval.Service.RoundSummaries(ctx)` returns every round's subject, outcome, submitted and
-ended times, auto-approval and — for an open round — since when its current level waits (the existing
-`waitingSince`). The dashboard keeps the rounds of the activities and purchase requests of the plans in view.
+**Decision**: a new `approval.Service.RoundSummaries(ctx, subjectIDs)` returns, for the activities and purchase
+requests of the plans in view, each round's subject, outcome, submitted and ended times, auto-approval and —
+for an open round — since when its current level waits (the existing `waitingSince`). It reads the rounds and
+their history in one statement each (`RoundsOfSubjects`, `ActionsOfSubjects`, R9).
 The average days to decide reuses the monitoring rule, extracted as `approval.AverageDecisionDays(decided,
 seconds)` (half-up to one decimal); monitoring calls it too, so both screens agree.
 
@@ -93,13 +97,42 @@ library, and a table equivalent is required anyway.
 
 ## R9 — Statements per request and scope tests
 
-The dashboard reads in one read transaction: the year (All work's Year — its statements do not grow with
-records, 028), the person's choices, the transactions (one statement), the rounds and actions (two), the
-purchase requests (one scoped statement plus their lines), the global budgets and allocations (one per budget,
-as the Global budgets page). No new store method is added, so no new scope-isolation test is due; the scoped
-reads it relies on keep their PostgreSQL tests (`plan` store `ListInScope`/`GetInScope`, purchase requests
-`OnLineItems`). Contract tests on the in-memory demo data prove the dashboard counts nothing outside the
-person's scope (SC-002).
+The dashboard reads in one read-only snapshot, and no read loads data outside the scope to filter it in Go
+(constitution B5, D-356): the year (All work's Year over `PlanStore.ListInScope` — its statements do not grow
+with records, 028), the person's choices, then for the records of the plans in view only:
+
+| Read | Statement | Limited to |
+|---|---|---|
+| Payments | `financials.Store.PaymentsOnLineItems` — `type = 'payment' AND line_item_id = ANY(…)` | the line items of the plans whose financial data the person may see |
+| Approval rounds and history | `approval.Store.RoundsOfSubjects`, `ActionsOfSubjects` — `subject_id = ANY(…)` | the plans' activities and the purchase requests below |
+| Purchase requests | 032's `OnLineItems(viewScope, …)` plus their lines | the plans' line items and 032's view scope |
+| Global budgets | `ListBudgets`, then `budget.Store.AllocationsOfBudgets` — `global_budget_id = ANY(…)` | the year's budgets; no plan scope by 014's rule (exception, plan Complexity Tracking) |
+
+The record IDs come from the scoped plan read in the same snapshot, so each statement returns nothing outside
+the scope, whatever the data; one statement per read, never one per budget or per record (the Global budgets
+page's `List` reads one per budget and is not used). The new scoped reads have PostgreSQL scope-isolation
+tests (`TestPostgresStorePaymentsOnLineItemsScopeIsolation_036_FR002`,
+`TestPostgresStoreRoundsOfSubjectsScopeIsolation_036_FR002`), as the plan and purchase-request reads already
+do; contract tests on the in-memory demo data prove the dashboard counts nothing outside the person's scope
+(SC-002). A scope function in each statement (`activity_in_scope`, `plan_in_permission_scope`) was rejected:
+the IDs already carry the scope, and the in-memory fakes would have to resolve every record's plan.
+
+**SC-003** is measured by `BenchmarkDashboards` in `internal/platform/apibench` on 028's volume (Priya's team:
+50 plans of 2026, 5,000 activities, 20,000 line items; 5,000 GSAP rows):
+
+```sh
+cd backend
+export TEST_DATABASE_URL='postgres://mapp@127.0.0.1:5432/postgres?sslmode=disable'
+go test -run '^$' -bench 'BenchmarkDashboards/demo/' -benchtime 20x ./internal/platform/apibench/
+go test -run '^$' -bench 'BenchmarkDashboards/volume/' -benchtime 5x -timeout 3h ./internal/platform/apibench/
+```
+
+**Measured on the demo data** (2026-10-29, Apple M5, PostgreSQL 18 local, 20 runs each): Executive dashboard
+17 ms, 47 statements; Executive of one market (Priya) 16 ms, 45; Regional 15 ms, 45; Executive export .pptx
+21 ms, 47; plan export .pptx 18 ms and .pdf 18 ms, 51 each. **The volume half is still to run**: its template
+database was being built by another benchmark on the shared server and did not finish within the ten minutes
+given to this change, so SC-003's 3 s and 5 s at 028's volume are not yet measured; run the second command
+above and record the result here (task T034).
 
 ## R10 — Threat and risk model
 

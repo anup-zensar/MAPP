@@ -81,6 +81,11 @@ func (s *PostgresStore) AllocationsOf(ctx context.Context, globalBudgetID string
 	return s.allocations(ctx, sqlcdb.ListAllocationsParams{GlobalBudgetID: &globalBudgetID})
 }
 
+func (s *PostgresStore) AllocationsOfBudgets(ctx context.Context, globalBudgetIDs []string) ([]Allocation, error) {
+	rows, err := s.db.Queries(ctx).ListAllocationsOfBudgets(ctx, globalBudgetIDs)
+	return allocationsFromRows(rows, err)
+}
+
 func (s *PostgresStore) AllocationOfPlan(ctx context.Context, planID string) (Allocation, bool, error) {
 	return firstAllocation(s.allocations(ctx, sqlcdb.ListAllocationsParams{PlanID: &planID}))
 }

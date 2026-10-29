@@ -60,6 +60,10 @@ func (s Store) RoundsOf(_ context.Context, subjectID string) ([]approval.Round, 
 	return rounds, err
 }
 
+func (s Store) RoundsOfSubjects(_ context.Context, subjectIDs []string) ([]approval.Round, error) {
+	return s.rounds.Where(func(r approval.Round) bool { return slices.Contains(subjectIDs, r.SubjectID) })
+}
+
 func (s Store) OpenRounds(context.Context) ([]approval.Round, error) {
 	return s.rounds.Where(func(r approval.Round) bool { return r.Outcome == approval.OutcomeOpen })
 }
@@ -79,6 +83,10 @@ func (s Store) ListActions(context.Context) ([]approval.Action, error) {
 
 func (s Store) ActionsOf(_ context.Context, subjectID string) ([]approval.Action, error) {
 	return s.actions.Where(func(a approval.Action) bool { return a.SubjectID == subjectID })
+}
+
+func (s Store) ActionsOfSubjects(_ context.Context, subjectIDs []string) ([]approval.Action, error) {
+	return s.actions.Where(func(a approval.Action) bool { return slices.Contains(subjectIDs, a.SubjectID) })
 }
 
 func (s Store) GetNotification(_ context.Context, id string) (approval.Notification, bool, error) {
