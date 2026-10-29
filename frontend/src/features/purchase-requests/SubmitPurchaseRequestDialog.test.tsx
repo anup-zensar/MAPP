@@ -4,6 +4,7 @@ import type { HttpHandler } from 'msw';
 import type { components } from '@/api/generated/schema';
 import { expectNoAxeViolations } from '@/testing/axe';
 import {
+  APPROVAL_LEVEL,
   HIDDEN,
   PR_ACCESS,
   YES,
@@ -236,5 +237,34 @@ describe('032 FR-021: submit', () => {
     renderButton({ body: submission() }, viewer);
 
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+});
+
+describe('038 FR-027 (M-9): the submission check names the approver of each level', () => {
+  it('names the MoA approver of a level whose approver comes from a field of the record', async () => {
+    const daniel = { id: 'U-1003', name: 'Daniel Okoro', initials: 'DO', active: true };
+    const check = submission({
+      levels: [{ ...APPROVAL_LEVEL, approvers: [] }],
+      outcomes: [
+        {
+          number: 1,
+          label: 'Level 1',
+          outcome: 'decide',
+          approvers: [daniel],
+          source: 'MoA approver',
+          mode: 'any',
+          ruleText: '',
+          excluded: [],
+          backupUsed: false,
+          noApprover: false,
+          advice: '',
+        },
+      ],
+    });
+    const { user } = renderButton({ body: check });
+
+    const dialog = await openDialog(user, 'Submit for approval');
+
+    expect(await within(dialog).findByText('Level 1 · Daniel Okoro (MoA approver)')).toBeVisible();
   });
 });

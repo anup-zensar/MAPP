@@ -25,6 +25,7 @@ import {
   CONFIG_SAVED,
   LINES_ON_APPROVED,
   LINES_ON_APPROVED_HINT,
+  NEVER_CHANGED,
   OFF,
   ON,
   PURCHASE_SUPPORT,
@@ -82,12 +83,11 @@ export function PurchaseRequestSettingsPage() {
 
 function LastChanged({ config }: { config: PurchaseRequestConfiguration }) {
   const { date } = useFormatters();
-  if (!config.updatedBy || !config.updatedAt) {
-    return null;
-  }
   return (
     <p className={styles.meta}>
-      {lastChangedText(config.updatedBy.name, date(localDate(config.updatedAt)))}
+      {config.updatedBy && config.updatedAt
+        ? lastChangedText(config.updatedBy.name, date(localDate(config.updatedAt)))
+        : NEVER_CHANGED}
     </p>
   );
 }

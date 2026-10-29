@@ -59,7 +59,7 @@ describe('032 FR-040/FR-042/FR-055/FR-056: delete', () => {
     );
   });
 
-  it('moves it to the recycle bin with Undo and opens its line item', async () => {
+  it('moves it to the recycle bin with Undo and opens Purchase requests (038 FR-013, H-3)', async () => {
     const { api, user, router } = renderDialog(purchaseRequest(), [
       reply(DELETE, { body: { recycleBinEntry: BIN_ENTRY } }),
     ]);
@@ -72,7 +72,7 @@ describe('032 FR-040/FR-042/FR-055/FR-056: delete', () => {
       "Purchase request 'PR for Stand build' moved to the recycle bin",
     );
     expect(within(messages).getByRole('button', { name: 'Undo' })).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe('/line-items/L-1006');
+    expect(router.state.location.pathname).toBe('/purchase-requests');
     expect(api.requests.some((request) => request.method === 'DELETE')).toBe(true);
   });
 

@@ -1,5 +1,5 @@
 import { formatMoneyText } from '@/format/decimal';
-import type { Money, OverspendMode } from './api';
+import type { Money, OverspendApprovalMode, OverspendMode } from './api';
 
 export const OVERSPEND_LABEL = 'When planned cost goes over this budget';
 export const REFUSES_OVERSPENDING = 'Refuses overspending';
@@ -26,6 +26,23 @@ const LEVEL_WORDS: Record<string, string> = {
   initiative: 'initiative',
   globalBudget: 'global budget',
 };
+
+export const APPROVAL_LABEL =
+  "When an activity's line items exceed its planned cost, approving it or its purchase requests";
+
+export const APPROVAL_MODES: readonly OverspendApprovalMode[] = ['warn', 'refuse'];
+
+export const APPROVAL_WORDS: Record<OverspendApprovalMode, string> = {
+  warn: 'Warn the approver',
+  refuse: 'Refuse approval',
+};
+
+export const APPROVAL_HINTS: Record<OverspendApprovalMode, string> = {
+  warn: 'Show each such activity and its overage before approving',
+  refuse: 'Refuse approval until the line items are back within the planned cost; Decline stays',
+};
+
+export const NEVER_CHANGED = 'Not changed since SP&A One was set up';
 
 export function levelWord(type: string): string {
   return LEVEL_WORDS[type] ?? type;

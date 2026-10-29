@@ -1,18 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import type { components } from '@/api/generated/schema';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { FormField } from '@/ui/FormField/FormField';
 import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { CHECK_ON_SAVE } from '@/ui/useFormProblems';
 import { useFormatters } from '@/format/useFormatters';
 import type { ApprovalSubmission } from './api';
-import { leftOutText } from './chain-messages';
 import { names } from './messages';
 import { commentSchema } from './schemas';
+import { SubmissionOutcomes } from './SubmissionOutcomes';
 import styles from './approval-dialogs.module.css';
-
-type SubmissionLevel = components['schemas']['ApprovalSubmissionLevel'];
 
 const COMMENT_MAX = 2000;
 
@@ -57,11 +54,7 @@ export function SubmitDialog({
       <div className={styles.body}>
         {submission.workflow && <p>{`Approval workflow: ${submission.workflow.name}`}</p>}
         {outcomes.length > 0 ? (
-          <ol role="list" className={styles.levels}>
-            {outcomes.map((level) => (
-              <OutcomeItem key={level.number} level={level} />
-            ))}
-          </ol>
+          <SubmissionOutcomes outcomes={outcomes} />
         ) : (
           submission.levels.length > 0 && (
             <ol role="list" className={styles.levels}>
@@ -112,40 +105,4 @@ function replacesText(submission: ApprovalSubmission): string {
     return '';
   }
   return `Round ${replaced.roundNumber}, waiting at ${replaced.levelLabel}, ends and round ${submission.roundNumber} starts at the first level that needs a decision.`;
-}
-
-function OutcomeItem({ level }: { level: SubmissionLevel }) {
-  const backup = level.backupUsed ? level.approvers[0] : undefined;
-  const notes = [
-    ...level.excluded.map(leftOutText),
-    backup ? `The backup approver ${backup.name} approves this level.` : '',
-    level.noApprover ? level.advice : '',
-  ].filter(Boolean);
-
-  return (
-    <li className={styles.outcome}>
-      <span>{outcomeText(level)}</span>
-      {notes.map((note) => (
-        <span key={note} className={styles.outcomeNote}>
-          {note}
-        </span>
-      ))}
-    </li>
-  );
-}
-
-function outcomeText(level: SubmissionLevel): string {
-  switch (level.outcome) {
-    case 'skipped':
-      return `${level.label} · Not needed — ${level.ruleText}`;
-    case 'autoApproved':
-      return `${level.label} · Approved automatically — ${level.ruleText}`;
-    case 'decide': {
-      if (level.approvers.length === 0) {
-        return `${level.label} · No approver`;
-      }
-      const source = level.source && !level.backupUsed ? ` (${level.source})` : '';
-      return `${level.label} · ${names(level.approvers)}${source}`;
-    }
-  }
 }

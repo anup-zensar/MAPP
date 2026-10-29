@@ -2,6 +2,7 @@ import { Send } from 'lucide-react';
 import { useId, useState } from 'react';
 import { isShown } from '@/session/access';
 import { Button } from '@/ui/Button/Button';
+import { useHidesUnavailable } from '@/ui/ViewOnlyNote/view-only-context';
 import type { PurchaseRequest } from './api';
 import { GSAP_ORDER } from './gsap-order-text';
 import { GsapOrderDialog } from './GsapOrderDialog';
@@ -11,8 +12,9 @@ import styles from './PurchaseRequestPage.module.css';
 export function GsapOrderButton({ purchaseRequest }: { purchaseRequest: PurchaseRequest }) {
   const [open, setOpen] = useState(false);
   const reasonId = useId();
+  const hidesUnavailable = useHidesUnavailable();
   const { gsapOrder } = purchaseRequest.access;
-  if (!isShown(gsapOrder)) {
+  if (!isShown(gsapOrder) || (hidesUnavailable && !gsapOrder.available)) {
     return null;
   }
   const unavailable = !gsapOrder.available;
