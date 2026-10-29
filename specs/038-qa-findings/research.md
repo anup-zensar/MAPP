@@ -122,12 +122,18 @@ times are high):
 |---|---|---|---|---|---|
 | Before (develop) | 169 | 1,429 | 1,260 (14/row) | 14,006 | 6 min 14 s |
 | After (T032) | — | — | ≤ 360 (test passes) | 2,152 | 23 s (machine under load) |
+| After (T034 run) | — | — | ≤ 360 (test passes) | 2,152 | 8.7 s (machine under load) |
+
+| | 5,000 rows | 5,000 rows time |
+|---|---|---|
+| Before (QA) | 78,325 | canceled |
+| After (`BenchmarkWorkbookCheck/5000_rows`, T034) | 10,552 | 34.2 s (machine under load) |
 
 After T032 activities and line items are checked by `activity.Importer` / `lineitem.Importer`, which read each
 parent once and store each sheet with `AddMany`, one `NextIDs` and one read-back; each row costs its log entry
 (2 statements). No store read was added (only existing `ListByInitiative`, `ListByIDs`, `ListByActivity(ies)`,
-`AddMany`), so T033 has no new scoped read to isolate. The 5,000-row run and the 5 s check on an idle machine
-are still to be recorded.
+`AddMany`), so T033 has no new scoped read to isolate. 5,000 rows send ≈ 2.1 statements per row, linear with
+1,000 rows. The 5 s (1,000 rows) and 20 s (5,000 rows, T034) budgets are still to be confirmed on an idle machine.
 
 ## R4 — H-1: unknown dashboard currency or market
 
