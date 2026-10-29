@@ -161,16 +161,27 @@ describe('032 FR-003/FR-053/FR-054: new purchase request', () => {
     ]);
   });
 
-  it('asks before leaving with unsaved changes', async () => {
+  it('032 FR-054: leaving with unsaved changes asks Keep editing or Discard changes (design system §2.5)', async () => {
     const { user, router } = renderCreate({ body: defaults() });
     await user.type(await screen.findByLabelText(/^Name/), ' 2');
 
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
     const dialog = await screen.findByRole('alertdialog', { name: 'Discard changes?' });
-    await user.click(within(dialog).getByRole('button', { name: 'Keep editing' }));
+    const answers = within(dialog).getAllByRole('button');
+    expect(answers.map((answer) => answer.textContent)).toEqual([
+      'Keep editing',
+      'Discard changes',
+    ]);
+    expect(answers[0]).toHaveFocus();
+    await user.click(answers[0]);
     expect(router.state.location.pathname).toBe('/purchase-requests/new');
     expect(field('name')).toHaveValue('PR for Stand build 2');
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    const again = await screen.findByRole('alertdialog', { name: 'Discard changes?' });
+    await user.click(within(again).getByRole('button', { name: 'Discard changes' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/line-items/L-1006'));
   });
 
   it('shows no access when the person may not raise purchase requests in the plan (403)', async () => {
