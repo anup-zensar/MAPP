@@ -93,3 +93,24 @@ func holds(start, end, from, to *date.Date) bool {
 func (s *Server) Set() stores.Set {
 	return s.set
 }
+
+func (s *Server) ActivityIDs(tb testing.TB, planID string) []string {
+	tb.Helper()
+	v := &volume{tb: tb, ctx: tb.Context(), set: s.set}
+	list := v.activitiesOf(planID)
+	activityIDs := make([]string, 0, len(list))
+	for _, a := range list {
+		activityIDs = append(activityIDs, a.ID)
+	}
+	return activityIDs
+}
+
+func (s *Server) CampaignIDs(tb testing.TB, planID string) []string {
+	tb.Helper()
+	v := &volume{tb: tb, ctx: tb.Context(), set: s.set}
+	var campaignIDs []string
+	for _, c := range v.campaignsOf(planID) {
+		campaignIDs = append(campaignIDs, c.ID)
+	}
+	return campaignIDs
+}
