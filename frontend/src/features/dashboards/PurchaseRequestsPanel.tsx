@@ -17,6 +17,13 @@ export function PurchaseRequestsPanel({ purchaseRequests }: PurchaseRequestsPane
       </Card>
     );
   }
+  if (purchaseRequests.count === 0) {
+    return (
+      <Card title="Purchase requests">
+        <p className={styles.note}>No purchase requests on these plans yet.</p>
+      </Card>
+    );
+  }
   return (
     <Card
       title="Purchase requests"

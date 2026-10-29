@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { formatWhole } from '@/format/decimal';
+import { plural } from '@/format/text';
 import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { BulkDialog } from './BulkDialog';
 import type { BulkActionDialogProps } from './ChangeOwnerDialog';
@@ -15,13 +17,18 @@ export function SubmitDialog({ records, onClose, onDone }: BulkActionDialogProps
       title="Submit for approval"
       request={{ action: 'submit', recordIds }}
       withChoices={(request) => ({ ...request, comment })}
-      submitLabel={(preview) => (preview ? `Submit ${preview.counts.done} activities` : 'Submit')}
-      describe={(preview) => (
-        <p>
-          {preview.counts.done} will be submitted · {preview.counts.skipped + preview.counts.failed}{' '}
-          are not ready
-        </p>
-      )}
+      submitLabel={(preview) =>
+        preview ? `Submit ${plural(preview.counts.done, 'activity', 'activities')}` : 'Submit'
+      }
+      describe={(preview) => {
+        const notReady = preview.counts.skipped + preview.counts.failed;
+        return (
+          <p>
+            {formatWhole(preview.counts.done)} will be submitted · {formatWhole(notReady)}{' '}
+            {notReady === 1 ? 'is' : 'are'} not ready
+          </p>
+        );
+      }}
       onClose={onClose}
       onDone={onDone}
     >

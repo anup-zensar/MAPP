@@ -13,6 +13,7 @@ import type { components } from '@/api/generated/schema';
 export type SampleFolder = components['schemas']['SampleFolder'];
 export type SampleNote = components['schemas']['SampleNote'];
 export type RecycleBinEntry = components['schemas']['RecycleBinEntry'];
+export type RecycleBinListItem = components['schemas']['RecycleBinListItem'];
 export type ActivityLogEntry = components['schemas']['ActivityLogEntry'];
 
 /** How many activity-log entries the page shows (plan "Developer pages"). */

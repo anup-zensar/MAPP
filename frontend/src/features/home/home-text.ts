@@ -52,6 +52,14 @@ export function activityCountsText(declined: number, submitted: number): string 
   return `${formatWhole(declined)} declined · ${formatWhole(submitted)} submitted`;
 }
 
+/** "in 2026–2027" or "in 2026": the plan years card 2 counts (038 FR-032); "" without any. */
+export function ownedYearsText(yearFrom: number | null, yearTo: number | null): string {
+  if (yearFrom === null) {
+    return '';
+  }
+  return yearTo !== null && yearTo > yearFrom ? `in ${yearFrom}–${yearTo}` : `in ${yearFrom}`;
+}
+
 /** "oldest waiting 3 days", or "Nothing waiting" when nothing waits (card 3). */
 export function oldestWaitingText(since: string | null, now: Date = new Date()): string {
   return since ? `oldest waiting ${formatWaitingTime(since, now)}` : 'Nothing waiting';

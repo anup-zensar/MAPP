@@ -47,6 +47,14 @@ export const PERMISSIONS: PermissionWords[] = [
   { key: 'finance.view', label: 'See financial data', scoped: true },
   { key: 'finance.link', label: 'Link financial transactions to line items', scoped: true },
   { key: 'finance.import', label: 'Import GSAP extracts', scoped: false },
+  { key: 'purchaseRequests.edit', label: 'Raise and edit purchase requests', scoped: true },
+  { key: 'purchaseRequests.delete', label: 'Delete purchase requests', scoped: true },
+  {
+    key: 'purchaseRequests.submit',
+    label: 'Submit purchase requests for approval and recall them',
+    scoped: true,
+  },
+  { key: 'purchaseRequests.list', label: 'See the Purchase requests page', scoped: true },
   { key: 'approvals.decide', label: 'Approve or decline when named as an approver', scoped: false },
   {
     key: 'approvals.decideOnBehalf',
