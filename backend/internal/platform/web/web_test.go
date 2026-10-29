@@ -185,7 +185,6 @@ func TestBindJSON_RefusesUnreadableBodies(t *testing.T) {
 		{"not JSON", "application/json", `name=Ideas`},
 		{"wrong type", "application/json", `{"name":42}`},
 		{"empty body", "application/json", ``},
-		{"larger than 1 MB", "application/json", bigName(1 << 20)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

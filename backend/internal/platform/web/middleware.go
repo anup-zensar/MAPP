@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/url"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -64,6 +65,9 @@ func SecurityHeaders() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("Cache-Control", "no-store")
 		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("Referrer-Policy", "no-referrer")
 		c.Next()
 	}
 }
@@ -72,9 +76,38 @@ func SecurityHeaders() gin.HandlerFunc {
 func SameOrigin() gin.HandlerFunc {
 	crossOrigin := http.NewCrossOriginProtection()
 	return func(c *gin.Context) {
-		if !isLocalHost(c.Request.Host) || crossOrigin.Check(c.Request) != nil {
+		r := c.Request
+		if !isLocalHost(r.Host) || crossOrigin.Check(r) != nil || foreignReferer(r) {
 			RespondError(c, errs.BadRequest(otherSiteMessage))
 			return
+		}
+		c.Next()
+	}
+}
+
+// foreignReferer covers clients that send neither Origin nor Sec-Fetch-Site, which the standard check lets through.
+func foreignReferer(r *http.Request) bool {
+	referer := r.Header.Get("Referer")
+	if isSafeMethod(r.Method) || referer == "" || r.Header.Get("Origin") != "" || r.Header.Get("Sec-Fetch-Site") != "" {
+		return false
+	}
+	parsed, err := url.Parse(referer)
+	return err != nil || !strings.EqualFold(parsed.Host, r.Host)
+}
+
+func isSafeMethod(method string) bool {
+	return method == http.MethodGet || method == http.MethodHead || method == http.MethodOptions
+}
+
+// RejectControlInPath answers not_found when a path parameter holds a control character; Gin has
+// matched the route by then, so the parameters are known.
+func RejectControlInPath() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		for _, param := range c.Params {
+			if hasControl(param.Value) {
+				RespondError(c, errs.NotFound(notFoundMessage))
+				return
+			}
 		}
 		c.Next()
 	}

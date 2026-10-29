@@ -48,7 +48,7 @@ func newFixture(t *testing.T) *fixture {
 
 func (f *fixture) signIn(t *testing.T, email, oldToken string) string {
 	t.Helper()
-	token, _, err := f.service.SignIn(t.Context(), email, demoPassword, oldToken)
+	token, _, err := f.service.SignIn(t.Context(), SignInAttempt{Email: email, Password: demoPassword, OldToken: oldToken})
 	if err != nil {
 		t.Fatalf("SignIn(%s): %v", email, err)
 	}
