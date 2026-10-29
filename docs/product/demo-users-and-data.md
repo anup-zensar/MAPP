@@ -68,3 +68,21 @@ request's MoA approver, backup Alex Morgan, reminder after 3 days and escalation
 Agency fee (Ireland)" waits as Created on the UK plan's line item L-1010 for 23,000.00 EUR, delivery
 30 Apr 2027, owner Priya Raman, MoA approver Daniel Okoro, vendor Brightside Media BV, Email group
 G_GB_RETAIL. The Email group options include **DE_LUBES**, the recipient the walkthroughs route to.
+
+## Showcase plans (optional)
+
+`go run ./cmd/seed -reset -showcase` loads the demo data above and then two complete 2026 plans that look like
+Shell's own (D-354). They come after the demo story, so every demo ID above stays the same; the tests load
+without them.
+
+| Plan | Owner · team | Budget | Campaigns → initiatives |
+|---|---|---|---|
+| **FY2026 Mobility China – V-Power & Recharge** (P-1005, Published) | Mei Lin · Mobility China | 1,600,000.00 USD | **V-Power Nitro+ relaunch** → Forecourt experience, Digital & loyalty; **Shell Recharge fleet electrification** → Fleet EV partnerships, Charging hub launches |
+| **FY2026 Lubricants B2B Europe – Rimula & Tellus** (P-1006, Published) | Daniel Okoro · Lubricants Europe | 1,100,000.00 USD | **Rimula heavy-duty fleet 2026** → Fleet operator events, Digital lead generation; **Tellus & Spirax industrial uptime** → Hannover Messe 2026, Mining & construction accounts |
+
+Their 12 activities have every field needed to submit filled, and each has one or two line items — 23 in USD,
+EUR, GBP and CNY, linked to the 2026 finance budget items. Six are Approved with their approval history:
+Forecourt POS refresh, Nitro+ racing heritage film and Fleet EV charging contracts (Carlos Mendes, then Alex
+Morgan), and Rimula R6 fleet roadshow, Fleet operator breakfast series and Hannover Messe stand (Daniel
+Okoro). The other six are Created, ready to submit. Their line items ask for SWBS codes but have none yet, so
+a demonstration can send them to the simulated GSAP.

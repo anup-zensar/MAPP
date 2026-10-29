@@ -134,8 +134,9 @@ text, `aria-label`s, expected strings in tests). Never in code comments, identif
   `docs/product/demo-users-and-data.md` System name
 - [X] T023 Backend gates: `go vet ./...`, `golangci-lint run ./...`, `go test -short ./...` (vet, gofmt and tests green
   locally; golangci-lint is not installed on this machine and runs in CI)
-- [ ] T024 Frontend gates: `pnpm run check`, `pnpm run test:e2e` (product-name and the changed specs) — check green
-  locally (api types, typecheck, lint, format, 2348 unit tests); end-to-end left to CI (product owner, 2026-10-28)
+- [X] T024 Frontend gates: `pnpm run check`, `pnpm run test:e2e` (product-name and the changed specs) — check green
+  locally (api types, typecheck, lint, format, 2348 unit tests); end-to-end left to CI (product owner, 2026-10-28).
+  2026-10-29 on develop: CI green, and locally `pnpm run check` (2,536 tests) and the full e2e suite (96/96)
 - [X] T025 Check: `grep -rn MAPP frontend/src backend/internal` shows only comments, identifiers, logs and the
   contract title; comment budget of the redesigned files (R1) within 5%
 
