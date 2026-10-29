@@ -76,8 +76,9 @@ MAPP/
 Rules:
 
 - A feature touches only its own package/folder plus the shared files it is allowed to extend (OpenAPI
-  file, `internal/app/app.go`, `seed/seed.go`, `src/app/routes.tsx`, `src/app/pages.tsx`,
-  `src/app/navigation.ts`). The plan of each feature lists those shared files.
+  file, `internal/app/app.go`, `seed/seed.go`, `src/app/routes.tsx` (with `settings-routes.tsx`,
+  `dashboard-routes.tsx` and `routes-workbook.tsx` beside it, so each stays within 300 lines),
+  `src/app/pages.tsx`, `src/app/navigation.ts`). The plan of each feature lists those shared files.
 - In the web app, dependencies point inward (`app` → `features` → `ui`, `api`, `session`, `format`),
   a feature reaches another only through its `index.ts`, and there are no import cycles;
   `frontend/eslint.config.js` enforces all three (feature 026).

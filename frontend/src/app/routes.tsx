@@ -9,34 +9,24 @@ import { COMING_SOON_SECTIONS } from './navigation';
 import { NotFoundRoute } from './NotFoundRoute';
 import { WORKBOOK_ROUTES } from './routes-workbook';
 import {
-  AccessPage,
   ActivityFormPage,
   ActivityLogPage,
   ActivityPage,
   ActivityShortLink,
-  ActivityTypesPage,
   AllWorkPage,
-  ApprovalWorkflowsPage,
   ApprovalsPage,
   CampaignPanel,
   ComponentGalleryPage,
-  CurrenciesPage,
-  FieldHelpSettingsPage,
-  FinanceBudgetItemsPage,
   FinancialsPage,
   GlobalBudgetPage,
   GlobalBudgetsPage,
   HomePage,
-  ImportRatesPage,
   InitiativePanel,
   LineItemCreatePage,
   LineItemEditPage,
   LineItemPage,
-  ModelsPage,
   NewCampaignPanel,
   NewInitiativePanel,
-  OverspendSettingsPage,
-  PeoplePage,
   PlanCreatePage,
   PlanEditPage,
   PlanPage,
@@ -45,59 +35,20 @@ import {
   PurchaseRequestCreatePage,
   PurchaseRequestEditPage,
   PurchaseRequestPage,
-  PurchaseRequestSettingsPage,
   PurchaseRequestsPage,
   RecycleBinPage,
-  RoleFormPage,
-  RolePage,
   SampleRecordsPage,
-  SettingsPage,
-  ShellAttributeEditorPage,
-  ShellAttributePage,
-  ShellAttributesPage,
   SignInPage,
   SpaPage,
-  TeamsPage,
   TransactionPanel,
 } from './pages';
 import { RootLayout } from './RootLayout';
 import { gated, titled } from './route-helpers';
 import { RouteErrorPage } from './RouteErrorPage';
+import { SETTINGS_ROUTES } from './settings-routes';
 
 /** Every page of the Plan module (features 002–016; docs/sdd/plan-module-build.md §5). */
 const PLAN_MODULE_ROUTES: RouteObject[] = [
-  // 002 Settings
-  { path: '/settings', element: <SettingsPage />, ...titled('Settings') },
-  { path: '/settings/models', element: <ModelsPage />, ...titled('Models') },
-  { path: '/settings/activity-types', element: <ActivityTypesPage />, ...titled('Activity types') },
-  {
-    path: '/settings/shell-attributes',
-    element: <ShellAttributesPage />,
-    ...titled('Shell attributes'),
-  },
-  {
-    path: '/settings/shell-attributes/new',
-    element: gated('settings.manage', <ShellAttributeEditorPage mode="create" />),
-    ...titled('New Shell attribute'),
-  },
-  {
-    path: '/settings/shell-attributes/:attributeId',
-    element: <ShellAttributePage />,
-    ...titled('Shell attribute'),
-  },
-  {
-    path: '/settings/shell-attributes/:attributeId/edit',
-    element: gated('settings.manage', <ShellAttributeEditorPage mode="edit" />),
-    ...titled('Edit Shell attribute'),
-  },
-  { path: '/settings/currencies', element: <CurrenciesPage />, ...titled('Currencies') },
-  {
-    path: '/settings/finance-budget-items',
-    element: <FinanceBudgetItemsPage />,
-    ...titled('Finance budget items'),
-  },
-  { path: '/settings/people/:personId?', element: <PeoplePage />, ...titled('People') },
-  { path: '/settings/teams/:teamId?', element: <TeamsPage />, ...titled('Teams') },
   { path: '/profile', element: <ProfilePage />, ...titled('My profile') },
   // 004 Plans; the plan page holds 005's campaign and initiative panels (child routes)
   { path: '/plans', element: <PlansPage />, ...titled('Plans') },
@@ -165,13 +116,8 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
     element: <LineItemEditPage />,
     ...titled('Edit line item'),
   },
-  // 008 Approvals and Settings › Approval workflows (with an id the details panel is open)
+  // 008 Approvals
   { path: '/approvals', element: <ApprovalsPage />, ...titled('Approvals') },
-  {
-    path: '/settings/approval-workflows/:workflowId?',
-    element: <ApprovalWorkflowsPage />,
-    ...titled('Approval workflows'),
-  },
   { path: '/all-work', element: <AllWorkPage />, ...titled('All work') },
   {
     path: '/budgets',
@@ -217,39 +163,10 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
     element: <PurchaseRequestEditPage />,
     ...titled('Edit purchase request'),
   },
-  {
-    path: '/settings/purchase-requests',
-    element: <PurchaseRequestSettingsPage />,
-    ...titled('Purchase requests'),
-  },
-  {
-    path: '/settings/overspend-control',
-    element: <OverspendSettingsPage />,
-    ...titled('Overspend control'),
-  },
   { path: '/activity-log', element: <ActivityLogPage />, ...titled('Activity log') },
   { path: '/recycle-bin', element: <RecycleBinPage />, ...titled('Recycle bin') },
-  {
-    path: '/settings/currencies/import',
-    element: gated('exchangeRates.manage', <ImportRatesPage />),
-    ...titled('Import GSAP rates'),
-  },
-  { path: '/settings/field-help', element: <FieldHelpSettingsPage />, ...titled('Field help') },
-  // 014 Settings › Roles and access, for people whose role includes access.manage (FR-012)
-  ...[
-    { path: '/settings/access', element: <AccessPage />, ...titled('Roles and access') },
-    { path: '/settings/access/roles/new', element: <RoleFormPage />, ...titled('New role') },
-    { path: '/settings/access/roles/:roleId', element: <RolePage />, ...titled('Role') },
-    {
-      path: '/settings/access/roles/:roleId/edit',
-      element: <RoleFormPage />,
-      ...titled('Edit role'),
-    },
-  ].map((route) => ({
-    ...route,
-    element: gated('access.manage', route.element),
-  })),
   ...DASHBOARD_ROUTES,
+  ...SETTINGS_ROUTES,
 ];
 
 /** Every page and its address (F1): a data router without loaders; pages load their own data. */
