@@ -3,6 +3,8 @@ package web
 import (
 	"errors"
 	"log/slog"
+	"math"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -30,6 +32,9 @@ func RespondError(c *gin.Context, err error) {
 		slog.ErrorContext(c.Request.Context(), "request failed", "method", c.Request.Method,
 			"path", c.Request.URL.Path, "error", err)
 		apiErr = errs.Internal()
+	}
+	if apiErr.RetryAfter > 0 {
+		c.Header("Retry-After", strconv.Itoa(int(math.Ceil(apiErr.RetryAfter.Seconds()))))
 	}
 	Respond(c, apiErr.Status, errorEnvelope{Error: apiErr})
 	c.Abort()

@@ -36,7 +36,7 @@ with `frontend/`.
   `TooManyAttempts` (with `Retry-After`) on `signIn` and `TooLarge`; codes `too_many_attempts`, `too_large`; the
   behaviour notes, including dropping the 400 for unknown dashboard currency/team); run `pnpm run api:types` to
   regenerate `frontend/src/api/generated/schema.d.ts`
-- [ ] T002 Backend — `platform/errs`: constructors `TooManyAttempts(message, retryAfter)` (429) and
+- [x] T002 Backend — `platform/errs`: constructors `TooManyAttempts(message, retryAfter)` (429) and
   `TooLarge(message)` (413) with codes `too_many_attempts` and `too_large`, and their status mapping in
   `platform/web/respond.go`; unit test `TestErrorCodes_038_FR014_FR054` in `platform/errs` (write it first)
 - [ ] T003 Frontend — `api/errors.ts`: export `CONFLICT_NEXT_STEP = "Your changes are still here. Save again to

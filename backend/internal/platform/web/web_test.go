@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	metricnoop "go.opentelemetry.io/otel/metric/noop"
@@ -224,6 +225,19 @@ func TestRespondError_UnexpectedErrorHidesDetails_FR020(t *testing.T) {
 	w := serve(t, failWith(errors.New("open data/people.json: access is denied")), newRequest(http.MethodGet, testPath, ""))
 
 	assertAnswer(t, w, http.StatusInternalServerError, internalBody)
+}
+
+func TestRespondError_RetryAfterInWholeSeconds_038_FR014(t *testing.T) {
+	t.Parallel()
+	err := errs.TooManyAttempts("Too many sign-in attempts. Try again in 15 minutes.", 14*time.Minute+500*time.Millisecond)
+
+	w := serve(t, failWith(err), newRequest(http.MethodPost, testPath, ""))
+
+	assertAnswer(t, w, http.StatusTooManyRequests,
+		`{"error":{"code":"too_many_attempts","message":"Too many sign-in attempts. Try again in 15 minutes.","fields":[]}}`)
+	if got := w.Header().Get("Retry-After"); got != "841" {
+		t.Errorf("Retry-After = %q, want 841", got)
+	}
 }
 
 func newRequest(method, path, body string) *http.Request {
