@@ -6,13 +6,13 @@ import { offered, renderAttributeEditor } from '@/testing/fixtures/shell-attribu
 import { reply } from '@/testing/replies';
 
 describe('ShellAttributeEditorPage: create (FR-016 – FR-019)', () => {
-  it('creates "Media channel" with four options and opens it (US2-1)', async () => {
+  it('creates "Media reach" with four options and opens it (US2-1)', async () => {
     const { user, api, router } = renderAttributeEditor(
       '/settings/shell-attributes/new?level=activity',
       [
         reply('POST /api/v1/shell-attributes', {
           status: 201,
-          body: { ...MEDIA_CHANNEL, id: 'SA-1020' },
+          body: { ...MEDIA_CHANNEL, id: 'SA-1020', label: 'Media reach' },
         }),
       ],
     );
@@ -24,7 +24,7 @@ describe('ShellAttributeEditorPage: create (FR-016 – FR-019)', () => {
     expect(screen.getByRole('combobox', { name: /Level/ })).toHaveValue('activity');
     expect(screen.getByRole('combobox', { name: /Section/ })).toHaveValue('Shell attributes');
 
-    await user.type(screen.getByRole('textbox', { name: /^Label/ }), 'Media channel');
+    await user.type(screen.getByRole('textbox', { name: /^Label/ }), 'Media reach');
     await user.selectOptions(screen.getByRole('combobox', { name: /Type/ }), 'singleChoice');
     await user.selectOptions(screen.getByRole('combobox', { name: /Marking/ }), 'neededToSubmit');
     for (const label of ['TV', 'Radio', 'Print', 'Online']) {
@@ -40,10 +40,10 @@ describe('ShellAttributeEditorPage: create (FR-016 – FR-019)', () => {
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/settings/shell-attributes/SA-1020'),
     );
-    expect(await findMessages()).toHaveTextContent("Shell attribute 'Media channel' created");
+    expect(await findMessages()).toHaveTextContent("Shell attribute 'Media reach' created");
     expect(api.bodiesOf('POST /api/v1/shell-attributes')).toEqual([
       {
-        label: 'Media channel',
+        label: 'Media reach',
         helpText: '',
         level: 'activity',
         type: 'singleChoice',
@@ -117,7 +117,7 @@ describe('ShellAttributeEditorPage: create (FR-016 – FR-019)', () => {
             fields: [
               {
                 field: 'label',
-                message: "The Activity form already has a Shell attribute called 'PIR'.",
+                message: "The Activity form already has a Shell attribute called 'Reach'.",
               },
               { field: 'options[0].label', message: 'Use 120 characters or fewer.' },
             ],
@@ -126,7 +126,7 @@ describe('ShellAttributeEditorPage: create (FR-016 – FR-019)', () => {
       }),
     ]);
 
-    await user.type(await screen.findByRole('textbox', { name: /^Label/ }), 'PIR');
+    await user.type(await screen.findByRole('textbox', { name: /^Label/ }), 'Reach');
     await user.selectOptions(screen.getByRole('combobox', { name: /Type/ }), 'singleChoice');
     await user.click(screen.getByRole('button', { name: 'Add option' }));
     await user.keyboard('Yes');
@@ -134,7 +134,7 @@ describe('ShellAttributeEditorPage: create (FR-016 – FR-019)', () => {
 
     expect(await screen.findByText('2 problems need your attention')).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: /^Label/ })).toHaveAccessibleDescription(
-      expect.stringContaining("The Activity form already has a Shell attribute called 'PIR'."),
+      expect.stringContaining("The Activity form already has a Shell attribute called 'Reach'."),
     );
     expect(screen.getByRole('textbox', { name: 'Option 1' })).toHaveAccessibleDescription(
       'Use 120 characters or fewer.',

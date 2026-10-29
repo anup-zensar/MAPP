@@ -59,6 +59,22 @@ describe('012 FR-025 – FR-034: Import from Excel', () => {
     expect(router.state.location.pathname).toBe('/imports/IMP-1001');
   });
 
+  it('038 FR-037 (M-16): the problems and levels tables scroll sideways by keyboard', async () => {
+    const { user } = renderPage([
+      reply('GET /api/v1/plans/{planId}/imports', { body: { items: [], total: 0 } }),
+      reply('POST /api/v1/plans/{planId}/imports/check', { body: importCheck() }),
+    ]);
+    await screen.findByRole('heading', { name: 'Import from Excel' });
+    await user.upload(screen.getByLabelText('Choose a file'), XLSX);
+    await user.click(screen.getByRole('button', { name: 'Check file' }));
+
+    for (const name of ['Problems, scrolls sideways', 'What the import does, scrolls sideways']) {
+      const region = await screen.findByRole('region', { name });
+      expect(region).toHaveAttribute('tabindex', '0');
+      expect(within(region).getByRole('table')).toBeInTheDocument();
+    }
+  });
+
   it('shows the API refusal of a file (FR-028)', async () => {
     const { user } = renderPage([
       reply('GET /api/v1/plans/{planId}/imports', { body: { items: [], total: 0 } }),
