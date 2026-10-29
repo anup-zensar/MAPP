@@ -205,8 +205,21 @@ function PermissionGroups({ catalogue, value, onChange, error }: PermissionGroup
     );
   }
 
+  // The summary's link focuses the list, which reads out its problem first (038 FR-006).
   return (
-    <div className={styles.groups} id="permissions">
+    <div
+      className={styles.groups}
+      id="permissions"
+      role="group"
+      aria-label="Permissions"
+      aria-describedby={error ? 'permissions-problem' : undefined}
+      tabIndex={-1}
+    >
+      {error && (
+        <p className={styles.problem} id="permissions-problem">
+          {error}
+        </p>
+      )}
       {catalogue.groups.map((group) => (
         <fieldset key={group.name} className={styles.group}>
           <legend className={styles.groupTitle}>{group.name}</legend>
@@ -222,7 +235,6 @@ function PermissionGroups({ catalogue, value, onChange, error }: PermissionGroup
           ))}
         </fieldset>
       ))}
-      {error && <p className={styles.problem}>{error}</p>}
     </div>
   );
 }
