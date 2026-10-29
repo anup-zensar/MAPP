@@ -92,9 +92,9 @@
   font-weight: var(--weight-bold);
 }
 
-/* Below 1280 px the overall count is one line above the form. */
+/* Below 1280 px the overall count is one line above the form, on the page grey: --ink (038 FR-038). */
 .progress {
-  color: var(--ink-2);
+  color: var(--ink);
   font-size: var(--text-sm);
 }
 
