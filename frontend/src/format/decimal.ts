@@ -11,6 +11,9 @@ const MAX_CENTS = 99_999_999_999_999_999n;
 /** "1234", "1,234" or "-1,234.5": an optional minus, digits (grouped by commas or not), decimals. */
 const NUMBER = /^(-)?(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d+))?$/;
 
+/** A leading currency people paste with an amount: "$", "€ ", "USD ", "-$" (038 FR-042). */
+const CURRENCY = /^(-?)(?:\p{Sc}|[a-z]{3}(?![a-z]))\s*/iu;
+
 const grouped = new Intl.NumberFormat('en-US');
 const twoDecimals = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
@@ -30,14 +33,16 @@ export interface ParsedAmount {
 }
 
 /**
- * Reads a typed amount: "12500", "12,500.00", "12.5k" (thousand), "1.2m" (million), "-250".
+ * Reads a typed amount: "12500", "12,500.00", "12.5k" (thousand), "1.2m" (million), "-250", also
+ * after a currency symbol or code ("$1,234", "USD 1,000", "-€250").
  * More than two decimals are rounded half-up to the cent (half away from zero below 0) and marked
  * `rounded` (D-190). Anything else, or an amount beyond the API's limit, gives null.
  */
-export function parseMoneyInput(text: string): ParsedAmount | null {
-  const suffix = /\s*([km])$/i.exec(text.trim());
+export function parseMoneyInput(typed: string): ParsedAmount | null {
+  const text = withoutCurrency(typed.trim());
+  const suffix = /\s*([km])$/i.exec(text);
   const multiplier = !suffix ? 1n : suffix[1]?.toLowerCase() === 'k' ? 1_000n : 1_000_000n;
-  const number = readNumber(suffix ? text.trim().slice(0, suffix.index) : text);
+  const number = readNumber(suffix ? text.slice(0, suffix.index) : text);
   if (!number) {
     return null;
   }
@@ -50,6 +55,12 @@ export function parseMoneyInput(text: string): ParsedAmount | null {
   }
   const signed = number.negative ? -cents : cents;
   return { amount: formatCents(signed), rounded: exact % divisor !== 0n };
+}
+
+/** "-$250" → "-250", "USD 1,000" → "1,000"; other text unchanged. */
+function withoutCurrency(text: string): string {
+  const currency = CURRENCY.exec(text);
+  return currency ? `${currency[1] ?? ''}${text.slice(currency[0].length)}` : text;
 }
 
 /**
