@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { ApiError } from '@/api/errors';
+import { forbiddenMessage } from '@/session/access';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { NoAccess } from '@/ui/NoAccess/NoAccess';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { useToast } from '@/ui/Toast/useToast';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
@@ -12,10 +14,7 @@ import { answers016, toCreateBody, valuesFromDefaults } from './plan-form-values
 import { useCreatePlan, usePlanDefaults } from './api';
 import type { PlanFormValues } from './schemas';
 
-/**
- * New plan (US1, FR-005 – FR-010): the plan form filled in with the person's defaults. Saving
- * creates a Draft plan and opens its page with "Plan '<name>' created — add campaigns next."
- */
+// The plan form filled in with the person's defaults; saving opens the new Draft plan's page.
 export function PlanCreatePage() {
   usePageTitle('New plan');
   const defaults = usePlanDefaults();
@@ -35,10 +34,13 @@ export function PlanCreatePage() {
     }
   }
 
+  const refused = forbiddenMessage(defaults.error);
+  if (refused) {
+    return <NoAccess message={refused} />;
+  }
+
   return (
     <>
-      {/* Form template (design system §2.4 C): the breadcrumb names where the plan goes; the form
-          says how far it is in its rail. */}
       <PageHeader
         breadcrumb={[{ label: 'Plans', to: '/plans' }, { label: 'New plan' }]}
         title="New plan"

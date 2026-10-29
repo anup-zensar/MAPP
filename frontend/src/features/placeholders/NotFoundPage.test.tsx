@@ -25,7 +25,7 @@ describe('NotFoundPage', () => {
     expect(
       screen.getByText("There's no page at this address. Check the address, or go back to Home."),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Page not found · MAPP');
+    expect(document.title).toBe('Page not found · SP&A One');
 
     await user.click(screen.getByRole('link', { name: 'Go to Home' }));
     expect(router.state.location.pathname).toBe('/');
@@ -68,6 +68,6 @@ describe('NotFoundPage', () => {
     renderAppRoutes({ route: '/nowhere' });
 
     expect(await screen.findByRole('status')).toHaveTextContent('Loading…');
-    expect(document.title).toBe('Page not found · MAPP');
+    expect(document.title).toBe('Page not found · SP&A One');
   });
 });

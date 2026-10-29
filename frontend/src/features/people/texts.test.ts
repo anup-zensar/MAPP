@@ -5,6 +5,7 @@ import {
   membersText,
   peopleCountText,
   plansText,
+  reportsText,
   teamInUseText,
   teamsCountText,
   usageText,
@@ -111,5 +112,14 @@ describe('feature 003 texts', () => {
         plans: [{ id: 'P-1002', name: 'FY2026 Mobility China', inRecycleBin: false }],
       }),
     ).toMatch(/^It is used by 1 plan: FY2026 Mobility China\. /);
+  });
+
+  it('says whom a person is line manager of, and so does Deactivate (017 FR-016)', () => {
+    const manager = [use('owner', 1, 'plan'), use('manager', 2, 'people')];
+    expect(reportsText(manager)).toBe('2 people');
+    expect(reportsText([use('owner', 1, 'plan')])).toBe('');
+    expect(deactivateSentences({ name: 'Daniel Okoro', usage: manager })[1]).toBe(
+      "Daniel owns 1 plan and is line manager of 2 people; these keep the name, shown as 'Daniel Okoro (inactive)'.",
+    );
   });
 });

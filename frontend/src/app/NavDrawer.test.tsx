@@ -45,7 +45,7 @@ describe('NavDrawer', () => {
     const { drawer } = await openDrawer();
 
     const navigation = within(drawer).getByRole('navigation', { name: 'Main' });
-    expect(within(navigation).getAllByRole('link')).toHaveLength(10);
+    expect(within(navigation).getAllByRole('link')).toHaveLength(11);
     // Always the expanded sidebar, even for a person who collapsed it on a wide screen.
     expect(within(navigation).getByText('Plans')).not.toHaveClass('visually-hidden');
     expect(within(drawer).queryByRole('button', { name: 'Collapse' })).not.toBeInTheDocument();
@@ -55,7 +55,10 @@ describe('NavDrawer', () => {
   it('shows the logo, which leads Home, above the sections (plan "Layout")', async () => {
     const { drawer } = await openDrawer();
 
-    expect(within(drawer).getByRole('link', { name: 'MAPP home' })).toHaveAttribute('href', '/');
+    expect(within(drawer).getByRole('link', { name: 'SP&A One home' })).toHaveAttribute(
+      'href',
+      '/',
+    );
   });
 
   it('closes with one Escape, also with the focus on a section link (US2 scenario 4)', async () => {

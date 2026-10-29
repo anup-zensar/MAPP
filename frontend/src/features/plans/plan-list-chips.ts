@@ -4,6 +4,8 @@ import type { PlanListFilters } from './list-preferences';
 import { PLAN_TYPE_LABELS } from './plan-currency';
 import { STATUS } from './plan-text';
 
+const BCPIR_CHIPS = { only: 'BCPIR plans: Only', exclude: 'BCPIR plans: Exclude' } as const;
+
 /** The removable chips of the filters that differ from the defaults (FR-003). */
 export function filterChips(filters: PlanListFilters): FilterChip[] {
   const years = yearRangeLabel(filters);
@@ -26,6 +28,7 @@ export function filterChips(filters: PlanListFilters): FilterChip[] {
         ]
       : []),
     ...(filters.scope === 'myTeams' ? [{ key: 'scope', label: 'My teams’ plans' }] : []),
+    ...(filters.bcpir !== 'include' ? [{ key: 'bcpir', label: BCPIR_CHIPS[filters.bcpir] }] : []),
     ...(filters.q.trim() ? [{ key: 'q', label: `Search: ${filters.q.trim()}` }] : []),
   ];
 }
@@ -41,6 +44,8 @@ export function chipReset(key: string): Partial<PlanListFilters> {
       return { types: DEFAULT_FILTERS.types };
     case 'scope':
       return { scope: DEFAULT_FILTERS.scope };
+    case 'bcpir':
+      return { bcpir: DEFAULT_FILTERS.bcpir };
     case 'q':
       return { q: DEFAULT_FILTERS.q };
     default:

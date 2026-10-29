@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"mapp/internal/overspend"
+
 	"mapp/internal/platform/database"
 	"mapp/internal/platform/database/sqlcdb"
 )
@@ -97,6 +99,7 @@ func campaignParams(c Campaign) (sqlcdb.PutCampaignParams, error) {
 		BudgetCurrency: currency, Attributes: attributes, PhasingMethod: string(c.BudgetPhasing.Normalised().Method),
 		Version: c.Version, CreatedAt: c.CreatedAt, CreatedByID: c.CreatedBy.ID, CreatedByName: c.CreatedBy.Name,
 		UpdatedAt: c.UpdatedAt, UpdatedByID: c.UpdatedBy.ID, UpdatedByName: c.UpdatedBy.Name,
+		Overspend: overspend.Stored(c.Overspend),
 	}, nil
 }
 
@@ -112,5 +115,6 @@ func initiativeParams(i Initiative) (sqlcdb.PutInitiativeParams, error) {
 		BudgetCurrency: currency, Attributes: attributes, PhasingMethod: string(i.BudgetPhasing.Normalised().Method),
 		Version: i.Version, CreatedAt: i.CreatedAt, CreatedByID: i.CreatedBy.ID, CreatedByName: i.CreatedBy.Name,
 		UpdatedAt: i.UpdatedAt, UpdatedByID: i.UpdatedBy.ID, UpdatedByName: i.UpdatedBy.Name,
+		Overspend: overspend.Stored(i.Overspend),
 	}, nil
 }

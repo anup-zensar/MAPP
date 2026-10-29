@@ -1,9 +1,6 @@
-/*
- * The pager under a view (design system §5): "Rows 1–50 of 236" on the left, Previous and Next in
- * the middle, Rows per page on the right; every control 32 px high, the select drawn like every
- * select (§5.5). Below 600 px the three parts stack.
- */
+/* The pager lies on the grey page, so its secondary text is Text Strong (constitution X). */
 .pager {
+  --ink-2: var(--ink);
   display: flex;
   flex-wrap: wrap;
   align-items: center;

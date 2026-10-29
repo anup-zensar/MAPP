@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"slices"
 
+	"mapp/internal/overspend"
+
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/database"
@@ -143,7 +145,7 @@ func planParams(p Plan) (sqlcdb.PutPlanParams, error) {
 		Description: p.Description, DefaultFinanceBudgetID: database.NullIfEmpty(p.DefaultFinanceBudgetID),
 		DefaultSpread: string(p.DefaultSpread), Bcpir: p.BCPIR, GoalStage: string(p.GoalStage), GoalAmount: p.GoalAmount,
 		Attributes: encoded, Status: string(p.Status), Currency: p.Currency, PlanType: string(p.PlanType),
-		PhasingMethod: string(p.BudgetPhasing.Method), Version: p.Version, CreatedAt: p.CreatedAt,
+		PhasingMethod: string(p.BudgetPhasing.Method), Version: p.Version, CreatedAt: p.CreatedAt, Overspend: overspend.Stored(p.Overspend),
 		CreatedByID: p.CreatedBy.ID, CreatedByName: p.CreatedBy.Name, UpdatedAt: p.UpdatedAt,
 		UpdatedByID: p.UpdatedBy.ID, UpdatedByName: p.UpdatedBy.Name,
 	}
@@ -163,7 +165,7 @@ func plansFromRows(rows []sqlcdb.ListPlansRow) ([]Plan, error) {
 			OwnerID: database.EmptyIfNull(r.OwnerID), AOP: r.Aop, Description: r.Description,
 			DefaultFinanceBudgetID: database.EmptyIfNull(r.DefaultFinanceBudgetID), DefaultSpread: Spread(r.DefaultSpread),
 			BCPIR: r.Bcpir, GoalStage: GoalStage(r.GoalStage), GoalAmount: r.GoalAmount, Status: Status(r.Status),
-			Currency: r.Currency, PlanType: PlanType(r.PlanType),
+			Currency: r.Currency, PlanType: PlanType(r.PlanType), Overspend: overspend.Mode(r.Overspend),
 			BudgetPhasing: rollup.PhasingOf(r.PhasingMethod, row.PhasingMonths, row.PhasingAmounts),
 			Meta: record.Meta{
 				Version:   r.Version,

@@ -16,7 +16,7 @@ describe('All work route (feature 010)', () => {
     ]);
 
     expect(await screen.findByRole('heading', { level: 1, name: 'All work' })).toBeInTheDocument();
-    await vi.waitFor(() => expect(document.title).toBe('All work · MAPP'));
+    await vi.waitFor(() => expect(document.title).toBe('All work · SP&A One'));
     expectCurrentSection('All work');
     expect(screen.queryByText('Coming soon')).not.toBeInTheDocument();
   });

@@ -109,10 +109,11 @@ describe('SettingsPage, the cards of other features (FR-001)', () => {
       'Teams',
       'Approval workflows',
       'Purchase requests',
+      'Overspend control',
       'Roles and access',
     ]);
     const people = card('People');
-    expect(within(people).getByText('Everyone who can sign in to MAPP.')).toBeInTheDocument();
+    expect(within(people).getByText('Everyone who can sign in to SP&A One.')).toBeInTheDocument();
     expect(await within(people).findByText('6 active')).toBeInTheDocument();
     const teams = card('Teams');
     expect(within(teams).getByText('The teams plans belong to.')).toBeInTheDocument();

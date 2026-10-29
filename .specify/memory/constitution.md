@@ -1,21 +1,16 @@
 <!--
 Sync Impact Report
-- Version change: 4.3.0 → 4.4.0 (MINOR: scope materially expanded; no principle removed or
-  redefined)
-- Modified principles: II Shell Business, Plain Language — "GSAP owns the money" now names the
-  simulated GSAP that answers SWBS requests and creates GSAP PRs and POs until live GSAP; IV Two
-  Parts — the "Now" adapters include that simulated GSAP
-- Modified sections: Current Phase & Scope (purchase requests on MAPP's side and approval of any
-  record type come in; e-mail, supporting documents, invoice approval, the Finance budgets module
-  and accrual calculation stay out), the Shell integrations row of the scope table, Amendment
-  History
+- Version change: 4.5.0 → 4.6.0 (MINOR: scope materially expanded; no principle removed or redefined)
+- Modified principles: none
+- Modified sections: Current Phase & Scope — in scope: bulk actions and Excel import of plans (012), the
+  SP&A plan view and the BCPIR marker of Shell's spec 006 (013), executive and regional planning dashboards
+  built only from plan and finance data MAPP holds, with export of plans and dashboards to PowerPoint and PDF
+  files (036), and overspend control, a hard stop or a warning chosen per budget owner (037); out of scope
+  narrowed from "Measure reporting" to Measure's performance reporting; Amendment History
 - Added sections: none
 - Removed sections: none
-- Impact on existing code: none becomes non-compliant; features 030–034 (feature map) deliver the
-  new scope; D-255 (line items store no SWBS code) and D-243 (no purchase requests) are superseded
-  by D-321 and D-320
-- Templates: no change needed (plan-template.md reads its gates from this file); the PowerShell
-  template resolver could not run on this machine, so the amendment edits the current file in place
+- Impact on existing code: none until features 012, 013, 036 and 037 are built (D-333)
+- Templates: no change needed (plan-template.md reads its gates from this file)
 - Follow-up TODOs:
   - TODO(DARK_TOKENS): dark-theme values for Disabled Text, Link Hover and an error-text red
 -->
@@ -23,7 +18,8 @@ Sync Impact Report
 
 # MAPP Constitution
 
-MAPP is Shell's marketing planning application that replaces Hive9. This constitution sets the
+MAPP is Shell's marketing planning application that replaces Hive9; people see it as **SP&A One**
+(feature 035, D-332), and MAPP stays the project's name in code and documents. This constitution sets the
 rules everyone — people and AI agents — follows when specifying, designing, building and testing
 it, in the Go API (`backend/`) and the web app (`frontend/`) alike. It applies Shell's Software
 Design & Construction Policy (the "Policy") and the compliance points of the Software Engineering
@@ -291,7 +287,8 @@ In addition:
   and sqlc's `-- name:` annotations).
 - **Files over the budget today** are brought within it one at a time: a change that touches a file
   brings the whole file's comments within the budget, not only the lines it changed. Features 025
-  (backend layout), 027 (test hygiene) and 028 (query efficiency) are exempt: they change many files
+  (backend layout), 027 (test hygiene), 028 (query efficiency) and 035 (product name; except the files
+  whose design it changes) are exempt: they change many files
   for another purpose and leave the comments of those files to the next change of each file.
 - **What a comment says.** Names, types and small functions carry the meaning. A comment is
   written only for what the code cannot say: why a choice was made, a constraint, a non-obvious
@@ -435,7 +432,7 @@ changes.
 - **Yellow** means "act here" or "you are here": the one primary action per page or dialog, and
   the current-place marker. It is a fill only. Text and icons on yellow use Text Strong of the
   light theme (`#292929`, 7.8:1 or more at rest, hover and press). Yellow is never text, an icon
-  or a thin line on a light surface (1.45:1).
+  or a thin line on a light surface (1.45:1), except in the product name (below).
 - **Red** means danger or error, nothing else. A destructive button is a red fill with white text
   (4.9:1). In the light theme, error text may be red (4.9:1 on Surface, 4.5:1 on Foundation Base).
   In the dark theme red is a fill carrying white text or a white icon only, never text or a thin
@@ -460,6 +457,15 @@ changes.
   Yellow or Secondary Red, MUST meet the WCAG contrast for its use, and MUST NOT be the only
   carrier of meaning.
 
+**Product name** (feature 035, D-332): the name **SP&A One** is the logo; no other symbol stands next to
+it. "SP" and "A" are Text Strong; "&" is Shell dark blue (`#003C88` light, `#6F9BD1` dark); "One" is
+Shell yellow — `#AD8700` in the light theme (Primary Yellow's hue darkened to 3.4:1 on Surface, because
+Primary Yellow text is 1.45:1) and Primary Yellow `#FFC600` in the dark theme (9.2:1). Where the name
+does not fit, and as the favicon, a Shell dark blue tile carries a Primary Yellow "1" (6.7:1). The name
+keeps these colours where a page title writes it (the sign-in page). These are the only text in yellow
+or a shade of yellow and the only uses of these values; they never mean "act here". The name is a
+logotype (WCAG 2.2 SC 1.4.3) and is exposed to assistive technology as the single text "SP&A One".
+
 **Rationale:** the palette is Shell's; using it exactly is what makes MAPP recognisably part
 of Shell's estate, and stating the contrast limits next to it lets the palette and accessibility
 both be non-negotiable without conflict.
@@ -479,9 +485,14 @@ both be non-negotiable without conflict.
   modification approval, routing to the requisitioner inside MAPP with a downloadable PR form, and
   close-out, following Shell's process (032); the GSAP PR number and purchase order created by the
   simulated GSAP and shown on the purchase request (033); and planning rules aligned with Shell's
-  process (034). The feature list and build order are in `docs/sdd/feature-map.md`.
+  process (034). Since 4.6.0 also: bulk actions and Excel import of plans (012); the SP&A plan view and
+  the BCPIR marker defined by Shell's spec 006 (013); **executive and regional planning dashboards** built
+  only from the plan and finance data MAPP holds, and export of plans and dashboards to **PowerPoint and PDF
+  files** (036); and **overspend control** — each budget owner chooses whether going over a budget warns or
+  is refused (037). The feature list and build order are in `docs/sdd/feature-map.md`.
 - **Out of scope for now:** the Finance budgets module, accrual calculation, invoice approval,
-  supporting documents on purchase requests, Measure reporting, live GSAP integration, real
+  supporting documents on purchase requests, Measure's performance reporting (revenue, attribution, funnel
+  and ROI from external performance data), sharing to e-mail, Outlook or Teams, live GSAP integration, real
   sign-in (Microsoft Entra ID single sign-on), e-mail (purchase requests are routed inside MAPP),
   AI features. Specs may mention these only as future integration points.
 - **Running locally:** the application runs on a developer laptop: the Go API, a local PostgreSQL
@@ -1147,4 +1158,7 @@ amended to match.
 | 4.3.0 | 2026-10-27 | F1 and VII: pnpm replaces npm as the web app's package manager (pinned through Corepack, `pnpm-lock.yaml`, `pnpm install --frozen-lockfile`); the 24-hour release age is pnpm's `minimumReleaseAge`, and dependency install scripts run only when allowed (ADR-0015) | Product owner instruction of 2026-10-27 |
 | 4.4.0 | 2026-10-27 | II and IV: a simulated GSAP receives MAPP's SWBS requests and returns SWBS codes, and creates the GSAP PR number and purchase order for a routed purchase request, behind the adapters a live feed will implement. Current Phase & Scope: purchase requests on MAPP's side, approval of any record type the engine serves, and planning rules aligned with Shell's process come in (features 030–034); e-mail, supporting documents, invoice approval, the Finance budgets module and accrual calculation stay out | D-320–D-326; ADR-0016; product owner instruction of 2026-10-27 |
 
-**Version**: 4.4.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-27
+| 4.5.0 | 2026-10-28 | X: the product name SP&A One is the logo, "&" in Shell dark blue and "One" in Shell yellow (a darker shade, `#AD8700`, on light surfaces), with a blue tile and a yellow "1" where the name does not fit; the only yellow text. VIII: feature 035 is exempt from the file-wide comment rule except in the files it redesigns. Opening: people see the product as SP&A One; MAPP stays the project's name | D-332; client requirement of 2026-10-28 |
+| 4.6.0 | 2026-10-28 | Current Phase & Scope: bulk actions and Excel import (012), the SP&A view and BCPIR marker of Shell's spec 006 (013), executive and regional planning dashboards from plan and finance data with PowerPoint and PDF export (036), and overspend control per budget owner (037) come into scope; out of scope narrowed to Measure's performance reporting | D-333; product owner instruction of 2026-10-28 (sandbox readiness) |
+
+**Version**: 4.6.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-28

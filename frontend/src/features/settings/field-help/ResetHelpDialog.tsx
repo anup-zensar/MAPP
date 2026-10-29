@@ -50,7 +50,9 @@ export function ResetHelpDialog({ entry, version, onDone, onCancel }: ResetHelpD
       busy={update.isPending}
       onConfirm={() => void reset()}
     >
-      <p>The default text written by MAPP comes back. The edited text stays in the activity log.</p>
+      <p>
+        The default text written by SP&A One comes back. The edited text stays in the activity log.
+      </p>
     </ConfirmDialog>
   );
 }

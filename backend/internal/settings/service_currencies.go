@@ -25,7 +25,7 @@ const (
 const (
 	currencyGoneMessage = "This currency no longer exists — someone may have deleted it."
 	codeLockedMessage   = "The code can't change once the currency is saved."
-	usdLockedMessage    = "USD is MAPP's base currency; its rate is always 1."
+	usdLockedMessage    = "USD is SP&A One's base currency; its rate is always 1."
 	codeMessage         = "Enter a three-letter code such as JPY."
 	codeTakenMessage    = "A currency with the code '%s' already exists."
 	currencyNameTaken   = "A currency called '%s' already exists."

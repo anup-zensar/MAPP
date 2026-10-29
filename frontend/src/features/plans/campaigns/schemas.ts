@@ -11,6 +11,7 @@ export const recordFormSchema = z.object({
   endDate: z.string(),
   description: z.string(),
   budget: z.string(),
+  overspend: z.enum(['warn', 'refuse']),
   attributes: z.custom<AttributeValues>(),
 });
 

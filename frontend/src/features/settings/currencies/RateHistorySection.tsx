@@ -2,6 +2,7 @@ import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { ApiError } from '@/api/errors';
 import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { CanChange } from '@/ui/CanChange/CanChange';
 import { Button } from '@/ui/Button/Button';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
@@ -19,20 +20,14 @@ import { lastRateReason, sourceOf } from './rate-words';
 import styles from './rates.module.css';
 
 export interface RateHistorySectionProps {
-  /** The currency, such as "EUR"; USD has no history (it is always 1). */
   code: string;
 }
 
-/** The dialog that is open: a new rate, or one being changed. */
 type OpenDialog = { kind: 'add' } | { kind: 'edit'; rate: ExchangeRateRecord };
 
 /**
- * A currency's **Rate history** in its details (016 FR-001, FR-003): newest first, each rate with
- * its date, its source (with the file of an import) and who recorded it when, and the rate both
- * ways — three columns, so it fits the side panel without wrapping a name; "Current" on the rate
- * conversions use today and "From <date>" on future rates. **Add rate**, and per row **Edit** (the
- * rate only) and **Delete** (to the recycle bin, with Undo). The last rate dated today or earlier
- * can't be deleted, and the menu says why.
+ * A currency's rates, newest first, in three columns so it fits the side panel; changing them needs
+ * exchangeRates.manage. The last rate dated today or earlier can't be deleted, and the menu says why.
  */
 export function RateHistorySection({ code }: RateHistorySectionProps) {
   const history = useRateHistory(code);
@@ -62,9 +57,11 @@ export function RateHistorySection({ code }: RateHistorySectionProps) {
     <section aria-labelledby={headingId}>
       <div className={styles.sectionHead}>
         <h3 id={headingId}>Rate history</h3>
-        <Button size="sm" icon={<Plus />} onClick={() => setOpen({ kind: 'add' })}>
-          Add rate
-        </Button>
+        <CanChange permission="exchangeRates.manage">
+          <Button size="sm" icon={<Plus />} onClick={() => setOpen({ kind: 'add' })}>
+            Add rate
+          </Button>
+        </CanChange>
       </div>
       {!history.data ? (
         history.isError ? (
@@ -112,20 +109,22 @@ export function RateHistorySection({ code }: RateHistorySectionProps) {
                       </span>
                     </td>
                     <td className={settingsStyles.actionsCell}>
-                      <ActionsMenu
-                        label={`the rate of ${date(rate.date)}`}
-                        items={[
-                          { label: 'Edit', onSelect: () => setOpen({ kind: 'edit', rate }) },
-                          {
-                            label: 'Delete',
-                            tone: 'danger',
-                            separatorBefore: true,
-                            hint: locked,
-                            onSelect: () =>
-                              locked ? show({ message: locked }) : void remove(rate),
-                          },
-                        ]}
-                      />
+                      <CanChange permission="exchangeRates.manage">
+                        <ActionsMenu
+                          label={`the rate of ${date(rate.date)}`}
+                          items={[
+                            { label: 'Edit', onSelect: () => setOpen({ kind: 'edit', rate }) },
+                            {
+                              label: 'Delete',
+                              tone: 'danger',
+                              separatorBefore: true,
+                              hint: locked,
+                              onSelect: () =>
+                                locked ? show({ message: locked }) : void remove(rate),
+                            },
+                          ]}
+                        />
+                      </CanChange>
                     </td>
                   </tr>
                 );

@@ -16,7 +16,7 @@ type Actor struct {
 }
 
 // System is the actor for work MAPP does by itself, such as loading the demo data.
-var System = Actor{ID: "system", Name: "MAPP"}
+var System = Actor{ID: "system", Name: "SP&A One"} //nolint:gochecknoglobals // a fixed, read-only actor used by 75 callers
 
 // contextKey is private, so no other package can overwrite the actor by accident.
 type contextKey struct{}

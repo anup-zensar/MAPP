@@ -162,7 +162,7 @@ export function ImportDialog({ onClose }: ImportDialogProps) {
       open
       onOpenChange={(open) => !open && !importExtract.isPending && onClose()}
       title="Import GSAP extract"
-      description="MAPP checks the file first and tells you what it will change. Nothing is saved until you import."
+      description="SP&A One checks the file first and tells you what it will change. Nothing is saved until you import."
       submitLabel={submitLabel}
       busy={busy}
       onSubmit={submit}

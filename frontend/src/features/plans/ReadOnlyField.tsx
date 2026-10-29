@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { LockedNote } from '@/ui/LockedNote/LockedNote';
 import styles from './PlanForm.module.css';
 
@@ -6,18 +7,21 @@ import styles from './PlanForm.module.css';
 export function ReadOnlyField({
   label,
   marking,
+  tip,
   value,
   children,
 }: {
   label: string;
   marking?: string;
+  tip?: string;
   value: string;
   children: ReactNode;
 }) {
   return (
     <div className={styles.readOnly}>
       <p className={styles.readOnlyLabel}>
-        {label} {marking && <span className={styles.marking}>{marking}</span>}
+        {label} {tip && <InfoTip label={label} text={tip} />}
+        {marking && <span className={styles.marking}>{marking}</span>}
       </p>
       <p className={styles.readOnlyValue}>{value}</p>
       <LockedNote>{children}</LockedNote>

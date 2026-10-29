@@ -73,7 +73,7 @@ describe('ApprovalsPage (feature 008, US3)', () => {
     renderPage();
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Approvals' })).toBeInTheDocument();
-    expect(document.title).toBe('Approvals · MAPP');
+    expect(document.title).toBe('Approvals · SP&A One');
     await screen.findByText('Approved this month');
     for (const label of [
       'Waiting for me',

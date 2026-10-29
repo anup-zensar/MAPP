@@ -9,26 +9,14 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// The amounts campaigns and initiatives show — the budget, the parent's remaining budget, budget and cost
-// and the goals' revenue — and the plan tree's totals are answered a second time in the reader's display
-// currency (D-061, D-220): `display` on each campaign and initiative and `displayTotals` on the tree. Each is
-// worked out in USD and converted once, half up to the cent. The USD fields stay as they are, because the
-// forms type and compare budgets in USD (FR-010) and the web app never converts. The destinations of a move
-// or copy only show their amounts, so theirs are converted in place.
-
-// DisplayRates gives the display currency a person shows amounts in, with its rate in units per 1 USD
-// (feature 003). internal/app hands people's service to UseDisplayRates; without it amounts stay in USD.
 type DisplayRates interface {
 	DisplayRateOf(ctx context.Context, personID string) (people.DisplayRate, error)
 }
 
-// UseDisplayRates sets where the display currency of the reader is read (D-220).
 func (s *Service) UseDisplayRates(rates DisplayRates) {
 	s.displayRates = rates
 }
 
-// DisplayAmounts are a campaign's or an initiative's amounts in the reader's display currency
-// (ContainerDisplay).
 type DisplayAmounts struct {
 	Budget                *money.Money  `json:"budget"`
 	ParentRemainingBudget *money.Money  `json:"parentRemainingBudget"`
@@ -36,8 +24,6 @@ type DisplayAmounts struct {
 	Goals                 GoalSums      `json:"goals"`
 }
 
-// displayFor returns the display currency of the person a, read in a transaction of its own, converting the
-// plan currencies' amounts with the current rates (016 FR-013): each amount once, from its own currency.
 func (s *Service) displayFor(ctx context.Context, a actor.Actor) (money.Display, error) {
 	d := money.DisplayUSD
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -58,7 +44,6 @@ func (s *Service) displayFor(ctx context.Context, a actor.Actor) (money.Display,
 	return d, err
 }
 
-// shownTree returns the tree with its amounts also in a's display currency.
 func (s *Service) shownTree(ctx context.Context, a actor.Actor, tree PlanCampaigns) (PlanCampaigns, error) {
 	d, err := s.displayFor(ctx, a)
 	if err != nil {
@@ -71,34 +56,35 @@ func (s *Service) shownTree(ctx context.Context, a actor.Actor, tree PlanCampaig
 	tree.Items = items
 	tree.DisplayTotals = displayTotals(d, tree.Totals)
 	facts, err := s.planAccess(ctx, tree.Plan.ID)
-	tree.Access = authz.ContentAccessOf(ctx, facts) // 014 FR-011
+	tree.Access = authz.ContentAccessOf(ctx, facts)
+	for i, c := range tree.Items {
+		tree.Items[i] = withOverspendAccess(ctx, c, facts)
+	}
 	return tree, err
 }
 
-// shownCampaign returns the campaign with its amounts also in a's display currency.
 func (s *Service) shownCampaign(ctx context.Context, a actor.Actor, view CampaignView) (CampaignView, error) {
 	d, err := s.displayFor(ctx, a)
 	if err != nil {
 		return CampaignView{}, err
 	}
 	facts, err := s.planAccess(ctx, view.PlanID)
-	view.Access = authz.CampaignAccessOf(ctx, facts) // 014 FR-011
+	view.Access = authz.CampaignAccessOf(ctx, facts)
+	view = withOverspendAccess(ctx, view, facts)
 	return displayCampaign(d, view), err
 }
 
-// shownInitiative returns the initiative with its amounts also in a's display currency.
 func (s *Service) shownInitiative(ctx context.Context, a actor.Actor, view InitiativeView) (InitiativeView, error) {
 	d, err := s.displayFor(ctx, a)
 	if err != nil {
 		return InitiativeView{}, err
 	}
 	facts, err := s.planAccess(ctx, view.PlanID)
-	view.Access = authz.InitiativeAccessOf(ctx, facts) // 014 FR-011
+	view.Access = authz.InitiativeAccessOf(ctx, facts)
+	view = withInitiativeAccess(ctx, view, facts)
 	return displayInitiative(d, view), err
 }
 
-// planAccess returns the access facts of the plan planID, read in a transaction of its own (feature 014);
-// zero facts when the plan is gone.
 func (s *Service) planAccess(ctx context.Context, planID string) (authz.PlanFacts, error) {
 	var facts authz.PlanFacts
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -109,8 +95,6 @@ func (s *Service) planAccess(ctx context.Context, planID string) (authz.PlanFact
 	return facts, err
 }
 
-// shownDestinations returns the destinations with what the budget would leave there in a's display
-// currency.
 func (s *Service) shownDestinations(ctx context.Context, a actor.Actor, list DestinationList) (DestinationList, error) {
 	d, err := s.displayFor(ctx, a)
 	if err != nil {
@@ -126,7 +110,6 @@ func (s *Service) shownDestinations(ctx context.Context, a actor.Actor, list Des
 	return list, nil
 }
 
-// displayCampaign fills the campaign's and its initiatives' display amounts from their USD amounts.
 func displayCampaign(d money.Display, c CampaignView) CampaignView {
 	c.Display = displayAmounts(d, c.Budget, c.ParentRemainingBudget, c.BudgetAndCost, c.Goals)
 	initiatives := make([]InitiativeView, len(c.Initiatives))
@@ -137,13 +120,11 @@ func displayCampaign(d money.Display, c CampaignView) CampaignView {
 	return c
 }
 
-// displayInitiative fills the initiative's display amounts from its USD amounts.
 func displayInitiative(d money.Display, i InitiativeView) InitiativeView {
 	i.Display = displayAmounts(d, i.Budget, i.ParentRemainingBudget, i.BudgetAndCost, i.Goals)
 	return i
 }
 
-// displayAmounts converts a record's USD amounts.
 func displayAmounts(d money.Display, budget, parentRemaining *money.Money, bc BudgetAndCost, goals GoalSums) DisplayAmounts {
 	return DisplayAmounts{
 		Budget:                d.Optional(budget),
@@ -153,7 +134,7 @@ func displayAmounts(d money.Display, budget, parentRemaining *money.Money, bc Bu
 			RemainingForChildren: d.Optional(bc.RemainingForChildren),
 			OverAllocatedBy:      d.Optional(bc.OverAllocatedBy),
 			PlannedCost:          d.Optional(bc.PlannedCost),
-			BudgetUsedPercent:    bc.BudgetUsedPercent, // worked out in the plan currency
+			BudgetUsedPercent:    bc.BudgetUsedPercent,
 			OverBudget:           bc.OverBudget,
 			LeftToPlan:           d.Optional(bc.LeftToPlan),
 		},
@@ -161,7 +142,6 @@ func displayAmounts(d money.Display, budget, parentRemaining *money.Money, bc Bu
 	}
 }
 
-// displayTotals converts the totals row's USD amounts.
 func displayTotals(d money.Display, t PlanCampaignTotals) PlanCampaignTotals {
 	t.AllocatedToCampaigns = d.Money(t.AllocatedToCampaigns)
 	t.PlanBudget = d.Optional(t.PlanBudget)

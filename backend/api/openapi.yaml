@@ -101,10 +101,14 @@ tags:
     description: "Help texts of built-in fields, maintained in Settings (feature 016)"
   - name: Budget phasing
     description: "Budget by month of plans, campaigns and initiatives (feature 016)"
+  - name: SP&A
+    description: "The SP&A view of a plan or campaign (feature 013)"
   - name: Split activity
     description: "Splitting one activity into two (feature 016)"
   - name: Approval delegations
     description: "Delegation of approval authority for a date range (feature 017)"
+  - name: Dashboards
+    description: "Executive and regional planning dashboards and the export of plans and dashboards to PowerPoint and PDF (feature 036)"
 paths:
   /healthz:
     get:
@@ -2450,6 +2454,7 @@ paths:
           description: Part of the name or of the ID, ignoring letter case and surrounding spaces.
           schema:
             type: string
+        - $ref: "#/components/parameters/AllWorkBcpir"
         - $ref: "#/components/parameters/PlansYearFrom"
         - $ref: "#/components/parameters/PlansYearTo"
         - $ref: "#/components/parameters/PlansType"
@@ -4381,6 +4386,7 @@ paths:
         - $ref: "#/components/parameters/AllWorkBusinessUnit"
         - $ref: "#/components/parameters/AllWorkActivityType"
         - $ref: "#/components/parameters/AllWorkStrategic"
+        - $ref: "#/components/parameters/AllWorkBcpir"
         - $ref: "#/components/parameters/AllWorkFinance"
         - $ref: "#/components/parameters/AllWorkShowLevels"
         - $ref: "#/components/parameters/AllWorkSearch"
@@ -4470,6 +4476,7 @@ paths:
         - $ref: "#/components/parameters/AllWorkBusinessUnit"
         - $ref: "#/components/parameters/AllWorkActivityType"
         - $ref: "#/components/parameters/AllWorkStrategic"
+        - $ref: "#/components/parameters/AllWorkBcpir"
         - $ref: "#/components/parameters/AllWorkFinance"
         - $ref: "#/components/parameters/AllWorkShowLevels"
         - $ref: "#/components/parameters/AllWorkSearch"
@@ -4486,7 +4493,7 @@ paths:
         - $ref: "#/components/parameters/AllWorkThenBy"
       responses:
         "200":
-          description: The file. Its name is in Content-Disposition, e.g. MAPP All work – Grid – 2026 – 18 Oct 2026.xlsx.
+          description: The file. Its name is in Content-Disposition, e.g. SP&A One All work – Grid – 2026 – 18 Oct 2026.xlsx.
           headers:
             Content-Disposition:
               description: attachment with filename (ASCII) and filename* (UTF-8).
@@ -4945,7 +4952,7 @@ paths:
       tags:
         - Imports
       operationId: listPlanImports
-      summary: The plan's imports, newest first, and whether it can take an import now
+      summary: The plan's imports, newest first
       parameters:
         - $ref: "#/components/parameters/PlanId"
       responses:
@@ -4966,8 +4973,12 @@ paths:
     post:
       tags:
         - Imports
-      operationId: importActivities
-      summary: Import the confirmed rows of a file as Created activities
+      operationId: importPlanWorkbook
+      summary: Import the ready rows of a plan workbook in one step - create rows without ID, update rows with one
+      description: >-
+        Runs the same check as imports/check and applies its ready rows; rows with problems, and the rows below
+        them in the file, are left out and listed. Every record created or updated gets an activity-log entry with
+        the note "Imported from '<file>' (IMP-…)".
       parameters:
         - $ref: "#/components/parameters/PlanId"
       requestBody:
@@ -4975,7 +4986,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ImportRun"
+              $ref: "#/components/schemas/ImportUpload"
       responses:
         "201":
           description: Imported.
@@ -4998,7 +5009,7 @@ paths:
       tags:
         - Imports
       operationId: checkImportFile
-      summary: Check a filled template - every problem of every row at once; nothing is created
+      summary: Check a plan workbook - every problem of every row at once, what would be created and updated; nothing changes
       parameters:
         - $ref: "#/components/parameters/PlanId"
       requestBody:
@@ -5029,13 +5040,12 @@ paths:
       tags:
         - Imports
       operationId: getImportTemplate
-      summary: The import template made for this plan (.xlsx)
-      description: Refused with validation_failed until the plan has a campaign and an initiative.
+      summary: The plan workbook template made for this plan (.xlsx) - the level sheets without rows, allowed values, instructions
       parameters:
         - $ref: "#/components/parameters/PlanId"
       responses:
         "200":
-          description: The template. Its name is in Content-Disposition (MAPP import template – <plan>.xlsx).
+          description: The template. Its name is in Content-Disposition (SP&A One import template – <plan>.xlsx).
           headers:
             Content-Disposition:
               schema:
@@ -5047,6 +5057,34 @@ paths:
                 format: binary
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/plans/{planId}/workbook:
+    get:
+      tags:
+        - Imports
+      operationId: exportPlanWorkbook
+      summary: The plan as a plan workbook (.xlsx) - every campaign, initiative, activity and line item, ready to edit and import
+      parameters:
+        - $ref: "#/components/parameters/PlanId"
+      responses:
+        "200":
+          description: The workbook. Its name is in Content-Disposition (<plan> – SP&A One.xlsx).
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -5905,7 +5943,7 @@ paths:
       summary: The sample GSAP extract file (header and three example rows, FR-009)
       responses:
         "200":
-          description: The file, named mapp-gsap-extract-sample.csv in Content-Disposition.
+          description: The file, named spa-one-gsap-extract-sample.csv in Content-Disposition.
           headers:
             Content-Disposition:
               description: attachment with filename.
@@ -6314,8 +6352,8 @@ paths:
       summary: The PR form of one routing, as routed (FR-031)
       description: |
         One row per line in the column order of the spec's Requisitioner Attachment, after notes (PR, routing
-        type and time, recipients, "Routed by MAPP — no supporting documents are attached"). File name
-        "MAPP PR form – PR-1001 – Original – 27 Oct 2026.xlsx". Text a spreadsheet would read as a formula is
+        type and time, recipients, "Routed by SP&A One — no supporting documents are attached"). File name
+        "SP&A One PR form – PR-1001 – Original – 27 Oct 2026.xlsx". Text a spreadsheet would read as a formula is
         written with a leading apostrophe (D-120).
       parameters:
         - name: format
@@ -6614,6 +6652,49 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PurchaseRequestConfiguration"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/overspend-configuration:
+    get:
+      tags: [Settings]
+      operationId: getOverspendConfiguration
+      summary: Settings › Overspend control — the setting new budgets start with (037 FR-006)
+      responses:
+        "200":
+          description: The setting, with whether the person may change it.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OverspendConfiguration"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+    put:
+      tags: [Settings]
+      operationId: saveOverspendConfiguration
+      summary: Change the setting new budgets start with (needs settings.manage); existing budgets keep theirs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OverspendConfigurationInput"
+      responses:
+        "200":
+          description: The setting as saved; logged when it changed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OverspendConfiguration"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7128,6 +7209,48 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
+  /api/v1/plans/{planId}/spa:
+    parameters:
+      - $ref: "#/components/parameters/PlanId"
+    get:
+      tags: [SP&A]
+      operationId: getSpaView
+      summary: The SP&A view of the plan, or of one of its campaigns
+      description: >-
+        Planned cost, committed, actual spend, remaining, utilisation and variance of the scope, by quarter and
+        month, by a chosen dimension and by activity, with the budget and procurement panels (013 FR-005 –
+        FR-022). Amounts are in the signed-in person's display currency. Financial figures are null without
+        finance.view in the plan.
+      parameters:
+        - name: campaignId
+          in: query
+          description: A campaign of the plan; the whole plan when not sent.
+          schema:
+            type: string
+            pattern: ^C-[0-9]+$
+        - name: dimension
+          in: query
+          description: A key of SpaView.dimensions; the default dimension when not sent.
+          schema:
+            type: string
+            maxLength: 80
+      responses:
+        "200":
+          description: The view (013 data-model §3).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpaView"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
   /api/v1/activities/{activityId}/split-options:
     parameters:
       - $ref: "#/components/parameters/ActivityId"
@@ -7234,6 +7357,7 @@ paths:
         - $ref: "#/components/parameters/AllWorkBusinessUnit"
         - $ref: "#/components/parameters/AllWorkActivityType"
         - $ref: "#/components/parameters/AllWorkStrategic"
+        - $ref: "#/components/parameters/AllWorkBcpir"
         - $ref: "#/components/parameters/AllWorkPlanType"
         - $ref: "#/components/parameters/AllWorkPlanCurrency"
         - $ref: "#/components/parameters/AllWorkAttr"
@@ -7439,7 +7563,7 @@ paths:
       tags: [Approvals]
       operationId: runApprovalEscalations
       summary: Send due reminders and escalations now (needs workflows.manage; stands in for the nightly job) (FR-026 – FR-028)
-      description: Safe to call any number of times; each level gets at most one reminder and one escalation. Events are recorded as made by MAPP.
+      description: Safe to call any number of times; each level gets at most one reminder and one escalation. Events are recorded as made by SP&A One.
       responses:
         "200":
           description: What was sent, and what could not be escalated.
@@ -7453,6 +7577,131 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/dashboards/executive:
+    get:
+      tags:
+        - Dashboards
+      operationId: getExecutiveDashboard
+      summary: The Executive dashboard of every market the person may see (feature 036, FR-001 – FR-019)
+      description: |
+        Every figure covers only the plans of the year the person may see; committed and actual cover only the
+        plans whose financial data they may see; global budgets appear only to holders of globalBudgets.view.
+        Amounts are in the chosen currency (default the person's display currency).
+      parameters:
+        - $ref: "#/components/parameters/DashboardYear"
+        - $ref: "#/components/parameters/DashboardPlanType"
+        - $ref: "#/components/parameters/DashboardCurrency"
+      responses:
+        "200":
+          description: The dashboard.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanningDashboard"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/dashboards/regional:
+    get:
+      tags:
+        - Dashboards
+      operationId: getRegionalDashboard
+      summary: The Regional dashboard of one market (team), with a plan's campaigns (feature 036, FR-020 – FR-022)
+      parameters:
+        - $ref: "#/components/parameters/DashboardYear"
+        - $ref: "#/components/parameters/DashboardPlanType"
+        - $ref: "#/components/parameters/DashboardCurrency"
+        - $ref: "#/components/parameters/DashboardTeam"
+        - $ref: "#/components/parameters/DashboardPlan"
+      responses:
+        "200":
+          description: The dashboard of the market.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanningDashboard"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/dashboards/executive/export:
+    get:
+      tags:
+        - Dashboards
+      operationId: exportExecutiveDashboard
+      summary: The Executive dashboard as a PowerPoint or PDF file (feature 036, FR-024)
+      parameters:
+        - $ref: "#/components/parameters/ExportFormat"
+        - $ref: "#/components/parameters/DashboardYear"
+        - $ref: "#/components/parameters/DashboardPlanType"
+        - $ref: "#/components/parameters/DashboardCurrency"
+      responses:
+        "200":
+          $ref: "#/components/responses/OfficeFile"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/dashboards/regional/export:
+    get:
+      tags:
+        - Dashboards
+      operationId: exportRegionalDashboard
+      summary: The Regional dashboard as a PowerPoint or PDF file (feature 036, FR-024)
+      parameters:
+        - $ref: "#/components/parameters/ExportFormat"
+        - $ref: "#/components/parameters/DashboardYear"
+        - $ref: "#/components/parameters/DashboardPlanType"
+        - $ref: "#/components/parameters/DashboardCurrency"
+        - $ref: "#/components/parameters/DashboardTeam"
+        - $ref: "#/components/parameters/DashboardPlan"
+      responses:
+        "200":
+          $ref: "#/components/responses/OfficeFile"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/plans/{planId}/export:
+    get:
+      tags:
+        - Dashboards
+      operationId: exportPlan
+      summary: A plan as a PowerPoint or PDF file — summary, campaigns, budget against planned and actual, activities (feature 036, FR-023)
+      parameters:
+        - $ref: "#/components/parameters/PlanId"
+        - $ref: "#/components/parameters/ExportFormat"
+        - $ref: "#/components/parameters/DashboardCurrency"
+      responses:
+        "200":
+          $ref: "#/components/responses/OfficeFile"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
 components:
@@ -7869,6 +8118,17 @@ components:
           - only
           - exclude
         default: include
+    AllWorkBcpir:
+      name: bcpir
+      in: query
+      description: BCPIR plans (013 FR-003).
+      schema:
+        type: string
+        enum:
+          - include
+          - only
+          - exclude
+        default: include
     AllWorkShowLevels:
       name: showLevels
       in: query
@@ -8201,6 +8461,48 @@ components:
       schema:
         type: string
       example: DLG-1001
+    DashboardYear:
+      name: year
+      in: query
+      description: The plan year; default the current year (feature 036).
+      schema:
+        type: integer
+        minimum: 2000
+        maximum: 2100
+    DashboardPlanType:
+      name: planType
+      in: query
+      description: Only plans of this type; all types when absent.
+      schema:
+        $ref: "#/components/schemas/PlanType"
+    DashboardCurrency:
+      name: currency
+      in: query
+      description: An active currency of Settings to show amounts in; default the person's display currency.
+      schema:
+        type: string
+        pattern: ^[A-Z]{3}$
+    DashboardTeam:
+      name: teamId
+      in: query
+      description: The market (team) of the Regional dashboard; default the person's first team by name, else the first team.
+      schema:
+        type: string
+        maxLength: 40
+    DashboardPlan:
+      name: planId
+      in: query
+      description: A plan of the dashboard whose campaigns to show; ignored when the plan is not on the dashboard.
+      schema:
+        type: string
+        maxLength: 40
+    ExportFormat:
+      name: format
+      in: query
+      required: true
+      schema:
+        type: string
+        enum: [pptx, pdf]
   responses:
     BadRequest:
       description: >-
@@ -8249,7 +8551,72 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+    OfficeFile:
+      description: The file, named in Content-Disposition, e.g. "SP&A One – FY2026 Lubricants Europe – 28 Oct 2026.pptx" (feature 036).
+      headers:
+        Content-Disposition:
+          description: attachment with filename (ASCII) and filename* (UTF-8).
+          schema:
+            type: string
+      content:
+        application/vnd.openxmlformats-officedocument.presentationml.presentation:
+          schema:
+            type: string
+            format: binary
+        application/pdf:
+          schema:
+            type: string
+            format: binary
   schemas:
+    # Feature 037 Overspend control
+    OverspendMode:
+      type: string
+      description: What happens when planned cost goes over a budget — warn (save and show it) or refuse the save.
+      enum: [warn, refuse]
+    OverspendControl:
+      type: object
+      additionalProperties: false
+      required: [mode, canChange]
+      properties:
+        mode:
+          $ref: "#/components/schemas/OverspendMode"
+        canChange:
+          $ref: "#/components/schemas/ActionAvailability"
+    OverspendLimit:
+      type: object
+      additionalProperties: false
+      required: [budget, leftToPlan]
+      properties:
+        budget:
+          $ref: "#/components/schemas/RecordRef"
+        leftToPlan:
+          $ref: "#/components/schemas/Money"
+    OverspendConfiguration:
+      type: object
+      additionalProperties: false
+      required: [defaultMode, version, updatedAt, updatedBy, canChange]
+      properties:
+        defaultMode:
+          $ref: "#/components/schemas/OverspendMode"
+        version:
+          type: integer
+          minimum: 1
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+        canChange:
+          $ref: "#/components/schemas/ActionAvailability"
+    OverspendConfigurationInput:
+      type: object
+      additionalProperties: false
+      required: [version, defaultMode]
+      properties:
+        version:
+          type: integer
+        defaultMode:
+          type: string
     # Features 032 and 033 Purchase requests and the simulated GSAP purchase order
     PurchaseRequestStatus:
       type: string
@@ -9193,6 +9560,7 @@ components:
             - not_allowed
             - not_ready
             - forbidden
+            - over_budget
         message:
           type: string
           description: Plain-language message for the user (never technical details).
@@ -11956,6 +12324,7 @@ components:
       additionalProperties: false
       description: A plan as stored (stored amounts in USD) with its calculated values (display currency).
       required:
+        - overspend
         - id
         - name
         - year
@@ -11984,6 +12353,8 @@ components:
         - updatedAt
         - updatedBy
       properties:
+        overspend:
+          $ref: "#/components/schemas/OverspendControl"
         id:
           type: string
           example: P-1001
@@ -12118,6 +12489,9 @@ components:
           $ref: "#/components/schemas/PlanStatus"
         aop:
           type: boolean
+        bcpir:
+          description: "013. BCPIR plan. Optional in the contract; always sent once its feature is built (D-298)."
+          type: boolean
         owner:
           oneOf:
             - $ref: "#/components/schemas/PersonRef"
@@ -12210,6 +12584,7 @@ components:
       type: object
       additionalProperties: false
       required:
+        - overspend
         - currentYear
         - years
         - year
@@ -12221,6 +12596,8 @@ components:
         - defaultSpread
         - goalStage
       properties:
+        overspend:
+          $ref: "#/components/schemas/OverspendMode"
         currentYear:
           type: integer
         years:
@@ -12278,6 +12655,10 @@ components:
         - goalAmount
         - attributes
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         name:
           type: string
         year:
@@ -12351,6 +12732,10 @@ components:
         - goalAmount
         - attributes
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         version:
           type: integer
           description: The version the person started editing from.
@@ -12733,6 +13118,7 @@ components:
       type: object
       additionalProperties: false
       required:
+        - overspend
         - id
         - planId
         - campaignId
@@ -12760,6 +13146,8 @@ components:
         - updatedAt
         - updatedBy
       properties:
+        overspend:
+          $ref: "#/components/schemas/OverspendControl"
         id:
           type: string
           example: I-1001
@@ -12856,6 +13244,7 @@ components:
       type: object
       additionalProperties: false
       required:
+        - overspend
         - id
         - planId
         - name
@@ -12883,6 +13272,8 @@ components:
         - updatedAt
         - updatedBy
       properties:
+        overspend:
+          $ref: "#/components/schemas/OverspendControl"
         id:
           type: string
           example: C-1001
@@ -13082,6 +13473,10 @@ components:
       required:
         - name
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         name:
           type: string
         description:
@@ -13121,6 +13516,10 @@ components:
         - attributes
         - version
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         name:
           type: string
         description:
@@ -13155,6 +13554,10 @@ components:
       required:
         - name
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         name:
           type: string
         description:
@@ -13194,6 +13597,10 @@ components:
         - attributes
         - version
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         name:
           type: string
         description:
@@ -14259,6 +14666,7 @@ components:
       type: object
       additionalProperties: false
       required:
+        - overspendLimits
         - context
         - activityTypes
         - approvalWorkflows
@@ -14266,6 +14674,11 @@ components:
         - existingNames
         - defaults
       properties:
+        overspendLimits:
+          type: array
+          description: Every budget above the activity set to Refuse, with what is left to plan in it (037 FR-014).
+          items:
+            $ref: "#/components/schemas/OverspendLimit"
         context:
           $ref: "#/components/schemas/ActivityFormContext"
         activityTypes:
@@ -17168,6 +17581,9 @@ components:
         strategic:
           type: boolean
           description: Plans only - Strategic / AOP plan (the AOP tag).
+        bcpir:
+          type: boolean
+          description: Plans only - BCPIR plan (013 FR-002).
         status:
           oneOf:
             - $ref: "#/components/schemas/AllWorkStatus"
@@ -17740,6 +18156,13 @@ components:
           items:
             $ref: "#/components/schemas/AllWorkFilterValue"
         strategic:
+          type: string
+          enum:
+            - include
+            - only
+            - exclude
+        bcpir:
+          description: "013. Optional; a view saved before 013 reads as include."
           type: string
           enum:
             - include
@@ -18724,51 +19147,40 @@ components:
       required:
         - fileName
         - content
-        - createMissing
       properties:
         fileName:
           type: string
-          example: mobility-china.xlsx
+          minLength: 1
+          maxLength: 255
+          example: fy2026-lubricants-europe.xlsx
         content:
           type: string
           contentEncoding: base64
-          description: The file, base64-encoded (at most 5 MB before encoding).
-        createMissing:
-          type: boolean
-          description: Create missing campaigns and initiatives.
-    ImportRun:
-      type: object
-      additionalProperties: false
-      required:
-        - fileName
-        - content
-        - createMissing
-        - rows
-      properties:
-        fileName:
-          type: string
-        content:
-          type: string
-          contentEncoding: base64
-        createMissing:
-          type: boolean
-        rows:
-          type: array
-          description: The row numbers the user confirmed (the ready rows of the check).
-          items:
-            type: integer
+          description: The plan workbook (.xlsx) or an Activities sheet (.csv), base64-encoded (at most 5 MB before encoding).
+    ImportLevel:
+      type: string
+      enum:
+        - campaign
+        - initiative
+        - activity
+        - lineItem
     ImportProblem:
       type: object
       additionalProperties: false
       required:
+        - sheet
         - row
         - column
         - value
         - reason
       properties:
+        sheet:
+          type: string
+          description: The sheet's name ("" for a problem of the whole file).
+          example: Activities
         row:
           type: integer
-          description: The spreadsheet's own row number.
+          description: The spreadsheet's own row number (0 for a problem of the whole sheet).
         column:
           type: string
           description: The column heading ("" for a problem of the whole row).
@@ -18777,38 +19189,26 @@ components:
           description: The value found.
         reason:
           type: string
-        outcome:
-          type: string
-          enum:
-            - leftOut
-            - failed
-          description: Import results only.
-    ImportNewInitiative:
+    ImportLevelCounts:
       type: object
       additionalProperties: false
       required:
-        - campaign
-        - name
+        - level
+        - create
+        - update
+        - unchanged
+        - leftOut
       properties:
-        campaign:
-          type: string
-        name:
-          type: string
-    ImportWillCreate:
-      type: object
-      additionalProperties: false
-      required:
-        - campaigns
-        - initiatives
-      properties:
-        campaigns:
-          type: array
-          items:
-            type: string
-        initiatives:
-          type: array
-          items:
-            $ref: "#/components/schemas/ImportNewInitiative"
+        level:
+          $ref: "#/components/schemas/ImportLevel"
+        create:
+          type: integer
+        update:
+          type: integer
+        unchanged:
+          type: integer
+        leftOut:
+          type: integer
     ImportCheck:
       type: object
       additionalProperties: false
@@ -18817,50 +19217,80 @@ components:
         - rows
         - ready
         - withProblems
-        - readyRows
+        - levels
         - problems
         - ignoredColumns
-        - willCreate
         - needMoreFields
+        - nothingToChange
       properties:
         fileName:
           type: string
         rows:
           type: integer
+          description: Data rows read, every sheet together.
         ready:
           type: integer
+          description: Rows that Import applies (to create, to update or unchanged).
         withProblems:
           type: integer
-        readyRows:
+          description: Rows left out, with a problem of their own or of the row they belong under.
+        levels:
           type: array
-          description: Row numbers of the ready rows (sent back by Import N activities).
+          description: Per level, campaigns first.
           items:
-            type: integer
+            $ref: "#/components/schemas/ImportLevelCounts"
         problems:
           type: array
           items:
             $ref: "#/components/schemas/ImportProblem"
         ignoredColumns:
           type: array
+          description: Headings no column matches, each as the sheet, a colon and the heading.
           items:
             type: string
-        willCreate:
-          $ref: "#/components/schemas/ImportWillCreate"
         needMoreFields:
           type: integer
-          description: Ready rows whose activity will still miss a needed-to-submit field.
+          description: Rows to create or update that leave a needed-to-publish or needed-to-submit column empty.
+        nothingToChange:
+          type: boolean
+    ImportLevelTotals:
+      type: object
+      additionalProperties: false
+      required:
+        - campaigns
+        - initiatives
+        - activities
+        - lineItems
+      properties:
+        campaigns:
+          type: integer
+        initiatives:
+          type: integer
+        activities:
+          type: integer
+        lineItems:
+          type: integer
     ImportRecordRef:
       type: object
       additionalProperties: false
       required:
         - id
+        - level
         - name
+        - action
         - exists
       properties:
         id:
           type: string
+        level:
+          $ref: "#/components/schemas/ImportLevel"
         name:
           type: string
+        action:
+          type: string
+          enum:
+            - created
+            - updated
         exists:
           type: boolean
           description: false when it has been deleted since.
@@ -18868,25 +19298,40 @@ components:
       type: object
       additionalProperties: false
       required:
-        - activities
         - campaigns
         - initiatives
-        - changedSinceImport
-        - addedSinceImport
+        - activities
+        - lineItems
         - alreadyDeleted
       properties:
-        activities:
-          type: integer
         campaigns:
           type: integer
+          description: Created campaigns still there, which Undo import moves to the recycle bin.
         initiatives:
           type: integer
-        changedSinceImport:
+        activities:
           type: integer
-        addedSinceImport:
+        lineItems:
           type: integer
         alreadyDeleted:
           type: integer
+    ImportKept:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - level
+        - name
+        - reason
+      properties:
+        id:
+          type: string
+        level:
+          $ref: "#/components/schemas/ImportLevel"
+        name:
+          type: string
+        reason:
+          type: string
     ImportSummary:
       type: object
       additionalProperties: false
@@ -18898,11 +19343,9 @@ components:
         - importedAt
         - importedBy
         - rowsRead
-        - activitiesImported
-        - campaignsCreated
-        - initiativesCreated
         - rowsLeftOut
-        - rowsFailed
+        - created
+        - updated
         - undoneAt
         - undoneBy
       properties:
@@ -18925,16 +19368,12 @@ components:
           $ref: "#/components/schemas/ActorRef"
         rowsRead:
           type: integer
-        activitiesImported:
-          type: integer
-        campaignsCreated:
-          type: integer
-        initiativesCreated:
-          type: integer
         rowsLeftOut:
           type: integer
-        rowsFailed:
-          type: integer
+        created:
+          $ref: "#/components/schemas/ImportLevelTotals"
+        updated:
+          $ref: "#/components/schemas/ImportLevelTotals"
         undoneAt:
           oneOf:
             - type: string
@@ -18950,28 +19389,20 @@ components:
       required:
         - import
         - problems
-        - activities
-        - campaigns
-        - initiatives
+        - records
         - undo
+        - kept
       properties:
         import:
           $ref: "#/components/schemas/ImportSummary"
         problems:
           type: array
-          description: Rows left out and rows that failed, with their reasons.
+          description: The rows left out, with their reasons.
           items:
             $ref: "#/components/schemas/ImportProblem"
-        activities:
+        records:
           type: array
-          items:
-            $ref: "#/components/schemas/ImportRecordRef"
-        campaigns:
-          type: array
-          items:
-            $ref: "#/components/schemas/ImportRecordRef"
-        initiatives:
-          type: array
+          description: The records the import created and updated, in the file's order.
           items:
             $ref: "#/components/schemas/ImportRecordRef"
         undo:
@@ -18979,14 +19410,17 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ImportUndoPreview"
             - type: "null"
+        kept:
+          type: array
+          description: After Undo import, the created records that could not be deleted, with the reason.
+          items:
+            $ref: "#/components/schemas/ImportKept"
     PlanImportPage:
       type: object
       additionalProperties: false
       required:
         - items
         - total
-        - canImport
-        - cannotImportReason
       properties:
         items:
           type: array
@@ -18994,13 +19428,6 @@ components:
             $ref: "#/components/schemas/ImportSummary"
         total:
           type: integer
-        canImport:
-          type: boolean
-        cannotImportReason:
-          oneOf:
-            - type: string
-            - type: "null"
-          example: Add at least one campaign and one initiative to this plan before importing activities
     # Feature 014 Access control and global budgets (merged 2026-10-20, D-298)
     PermissionKey:
       type: string
@@ -19589,8 +20016,10 @@ components:
     BudgetAllocationRow:
       type: object
       additionalProperties: false
-      required: [id, plan, teams, owner, amount, amountUsd, plannedCost, leftToPlan, budgetUsedPercent, version, access]
+      required: [id, plan, teams, owner, amount, amountUsd, plannedCost, leftToPlan, budgetUsedPercent, version, access, overspend]
       properties:
+        overspend:
+          $ref: "#/components/schemas/OverspendMode"
         id:
           type: string
           example: BA-1001
@@ -19651,8 +20080,10 @@ components:
     AllocationOption:
       type: object
       additionalProperties: false
-      required: [plan, teams, owner, budget, canAllocate]
+      required: [plan, teams, owner, budget, canAllocate, overspend]
       properties:
+        overspend:
+          $ref: "#/components/schemas/OverspendMode"
         plan:
           $ref: "#/components/schemas/AllocationPlanRef"
         teams:
@@ -19685,6 +20116,7 @@ components:
       type: object
       additionalProperties: false
       required:
+        - overspend
         - id
         - name
         - year
@@ -19703,6 +20135,8 @@ components:
         - updatedAt
         - updatedBy
       properties:
+        overspend:
+          $ref: "#/components/schemas/OverspendControl"
         id:
           type: string
           example: GB-1001
@@ -19807,6 +20241,10 @@ components:
       additionalProperties: false
       required: [name, year, amount, ownerId]
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         name:
           type: string
         year:
@@ -19824,6 +20262,10 @@ components:
       description: Only the fields to change, and the version (D-203). The year cannot change.
       required: [version]
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         name:
           type: string
         amount:
@@ -19839,6 +20281,10 @@ components:
       additionalProperties: false
       required: [planId, amount, planVersion]
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         planId:
           type: string
         amount:
@@ -19854,6 +20300,10 @@ components:
       additionalProperties: false
       required: [amount, version, planVersion]
       properties:
+        overspend:
+          description: Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+          type: string
+          enum: [warn, refuse]
         amount:
           $ref: "#/components/schemas/MoneyInput"
           description: In the plan's currency, as BudgetAllocationCreate.amount (D-303).
@@ -20440,7 +20890,7 @@ components:
           type: integer
         unusedColumns:
           type: array
-          description: Header names MAPP does not read.
+          description: Header names SP&A One does not read.
           items:
             type: string
     FinancialImport:
@@ -21181,6 +21631,379 @@ components:
           description: The plan, then each campaign followed by its initiatives, in plan-tree order.
           items:
             $ref: "#/components/schemas/BudgetByMonthRow"
+    SpaRecordRef:
+      type: object
+      additionalProperties: false
+      required: [type, id, name]
+      properties:
+        type:
+          type: string
+          enum: [plan, campaign, initiative, activity, lineItem]
+        id:
+          type: string
+        name:
+          type: string
+    SpaContribution:
+      type: object
+      additionalProperties: false
+      description: One activity's part of a figure (013 FR-007); the parts of a figure sum to it.
+      required: [activityId, name, amount]
+      properties:
+        activityId:
+          type: string
+        name:
+          type: string
+        amount:
+          $ref: "#/components/schemas/Money"
+    SpaPlan:
+      type: object
+      additionalProperties: false
+      required: [id, name, year, status, bcpir]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        year:
+          type: integer
+        status:
+          $ref: "#/components/schemas/PlanStatus"
+        bcpir:
+          type: boolean
+    SpaHeadline:
+      type: object
+      additionalProperties: false
+      description: >-
+        013 FR-015, FR-016. Percentages have one decimal ("37.5", "-62.5"); null with noPlannedCostReason when
+        planned cost is 0.00. Financial figures are null without finance.view.
+      required: [plannedCost, committed, actualSpend, invoiced, remaining, utilisationPercent, variancePercent,
+        overspend, noPlannedCostReason, plannedCostTrace, committedTrace, actualSpendTrace]
+      properties:
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        committed:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        actualSpend:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        invoiced:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        remaining:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        utilisationPercent:
+          type: [string, "null"]
+        variancePercent:
+          type: [string, "null"]
+        overspend:
+          type: boolean
+        noPlannedCostReason:
+          type: [string, "null"]
+        plannedCostTrace:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaContribution"
+        committedTrace:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaContribution"
+        actualSpendTrace:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaContribution"
+    SpaPeriod:
+      type: object
+      additionalProperties: false
+      description: One quarter or month of the plan's year (013 FR-017); bars are 0–100, relative to the largest amount of the set.
+      required: [key, label, planned, actual, plannedBar, actualBar, plannedTrace, actualTrace]
+      properties:
+        key:
+          type: string
+          example: 2026-Q3
+        label:
+          type: string
+          example: Q3 2026
+        planned:
+          $ref: "#/components/schemas/Money"
+        actual:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        plannedBar:
+          type: integer
+          minimum: 0
+          maximum: 100
+        actualBar:
+          type: integer
+          minimum: 0
+          maximum: 100
+        plannedTrace:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaContribution"
+        actualTrace:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaContribution"
+    SpaPeriods:
+      type: object
+      additionalProperties: false
+      required: [quarters, months, notScheduled, notScheduledTrace]
+      properties:
+        quarters:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaPeriod"
+        months:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaPeriod"
+        notScheduled:
+          description: Planned cost not placed in a month (no dates, line items above planned cost); null when 0.00.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        notScheduledTrace:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaContribution"
+    SpaDimension:
+      type: object
+      additionalProperties: false
+      required: [key, label]
+      properties:
+        key:
+          type: string
+          example: activityType
+        label:
+          type: string
+    SpaDimensionRow:
+      type: object
+      additionalProperties: false
+      required: [key, label, amount, share, bar, trace]
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        amount:
+          $ref: "#/components/schemas/Money"
+        share:
+          type: string
+          description: Share of the scope's planned cost in per cent, two decimals.
+          example: "37.50"
+        bar:
+          type: integer
+          minimum: 0
+          maximum: 100
+        trace:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaContribution"
+    SpaDimensionBreakdown:
+      type: object
+      additionalProperties: false
+      required: [key, label, rows, total, countsInEach]
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaDimensionRow"
+        total:
+          $ref: "#/components/schemas/Money"
+        countsInEach:
+          type: boolean
+          description: Activities with several values without shares count in each row.
+    SpaLineItemRow:
+      type: object
+      additionalProperties: false
+      required: [id, name, plannedCost, committed, actualSpend]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        committed:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        actualSpend:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+    SpaActivityRow:
+      type: object
+      additionalProperties: false
+      required: [id, name, campaign, initiative, owner, activityType, channel, startQuarter, status, plannedCost,
+        committed, actualSpend, variancePercent, overspend, lineItems, raisePurchaseRequest]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        campaign:
+          $ref: "#/components/schemas/SpaRecordRef"
+        initiative:
+          $ref: "#/components/schemas/SpaRecordRef"
+        owner:
+          type: [string, "null"]
+        activityType:
+          type: [string, "null"]
+        channel:
+          type: [string, "null"]
+          description: The activity's Channel / audience values, comma separated.
+        startQuarter:
+          type: [string, "null"]
+          example: Q1 2026
+        status:
+          $ref: "#/components/schemas/ActivityDisplayStatus"
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        committed:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        actualSpend:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        variancePercent:
+          type: [string, "null"]
+        overspend:
+          type: boolean
+        lineItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaLineItemRow"
+        raisePurchaseRequest:
+          $ref: "#/components/schemas/ActionAvailability"
+    SpaBudgetPanel:
+      type: object
+      additionalProperties: false
+      description: 013 FR-020.
+      required: [budget, plannedCost, committed, plannedVsBudgetPercent, overBudget, noBudgetReason, linked, notLinked]
+      properties:
+        budget:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        committed:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        plannedVsBudgetPercent:
+          type: [string, "null"]
+        overBudget:
+          type: boolean
+        noBudgetReason:
+          type: [string, "null"]
+        linked:
+          $ref: "#/components/schemas/Money"
+        notLinked:
+          $ref: "#/components/schemas/Money"
+    SpaPurchaseRequest:
+      type: object
+      additionalProperties: false
+      required: [id, name, vendor, status, amount, counted]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        vendor:
+          type: string
+        status:
+          $ref: "#/components/schemas/PurchaseRequestStatus"
+        amount:
+          $ref: "#/components/schemas/Money"
+        counted:
+          type: boolean
+          description: False for a Declined request, which counts in none of the amounts.
+    SpaProcurementPanel:
+      type: object
+      additionalProperties: false
+      description: 013 FR-021 (D-335).
+      required: [count, approved, pendingApproval, draft, invoiced, items]
+      properties:
+        count:
+          type: integer
+        approved:
+          $ref: "#/components/schemas/Money"
+        pendingApproval:
+          $ref: "#/components/schemas/Money"
+        draft:
+          $ref: "#/components/schemas/Money"
+        invoiced:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaPurchaseRequest"
+    SpaView:
+      type: object
+      additionalProperties: false
+      description: The SP&A view of a plan or campaign (013 data-model §3).
+      required: [plan, scope, campaigns, currency, financeAccess, financeNote, financeDataAsOf, headline, periods,
+        dimension, dimensions, activities, budget, procurement, notes, emptyMessage]
+      properties:
+        plan:
+          $ref: "#/components/schemas/SpaPlan"
+        scope:
+          $ref: "#/components/schemas/SpaRecordRef"
+        campaigns:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaRecordRef"
+        currency:
+          type: string
+          pattern: ^[A-Z]{3}$
+        financeAccess:
+          type: boolean
+        financeNote:
+          type: [string, "null"]
+        financeDataAsOf:
+          type: [string, "null"]
+          format: date-time
+        headline:
+          $ref: "#/components/schemas/SpaHeadline"
+        periods:
+          $ref: "#/components/schemas/SpaPeriods"
+        dimension:
+          $ref: "#/components/schemas/SpaDimensionBreakdown"
+        dimensions:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaDimension"
+        activities:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaActivityRow"
+        budget:
+          $ref: "#/components/schemas/SpaBudgetPanel"
+        procurement:
+          $ref: "#/components/schemas/SpaProcurementPanel"
+        notes:
+          type: array
+          items:
+            type: string
+        emptyMessage:
+          type: [string, "null"]
     SplitLink:
       type: object
       additionalProperties: false
@@ -21906,3 +22729,401 @@ components:
           description: Levels due for escalation that no backup approver could take.
           items:
             $ref: "#/components/schemas/EscalationEvent"
+    PlanningDashboard:
+      type: object
+      additionalProperties: false
+      description: >-
+        An Executive or Regional dashboard (feature 036). Every amount is in filters.currency; null means "—"
+        (nothing to add up, no budget, or financial data the person may not see).
+      required: [kind, filters, choices, team, planCount, plansWithoutBudget, finance, financeAsOf, totals, markets,
+        plans, overBudget, leftToPlan, planCampaigns, months, approvals, purchaseRequests, completeness, globalBudgets,
+        canExport]
+      properties:
+        kind:
+          type: string
+          enum: [executive, regional]
+        filters:
+          $ref: "#/components/schemas/DashboardFilters"
+        choices:
+          $ref: "#/components/schemas/DashboardChoices"
+        team:
+          description: The market of the Regional dashboard; null on the Executive dashboard.
+          oneOf:
+            - $ref: "#/components/schemas/TeamRef"
+            - type: "null"
+        planCount:
+          type: integer
+        plansWithoutBudget:
+          type: integer
+        finance:
+          $ref: "#/components/schemas/DashboardFinance"
+        financeAsOf:
+          description: When GSAP data was last received; null when none ever was.
+          type: [string, "null"]
+          format: date-time
+        totals:
+          $ref: "#/components/schemas/DashboardFigures"
+        markets:
+          description: Each team with plans on the dashboard (Executive only; empty on the Regional dashboard).
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardMarketRow"
+        plans:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardPlanRow"
+        overBudget:
+          description: Up to five campaigns with planned cost above budget, largest overspend first.
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardCampaignRow"
+        leftToPlan:
+          description: Up to five campaigns with budget above planned cost, most left to plan first.
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardCampaignRow"
+        planCampaigns:
+          oneOf:
+            - $ref: "#/components/schemas/DashboardPlanCampaigns"
+            - type: "null"
+        months:
+          $ref: "#/components/schemas/DashboardMonths"
+        approvals:
+          $ref: "#/components/schemas/DashboardApprovals"
+        purchaseRequests:
+          $ref: "#/components/schemas/DashboardPurchaseRequests"
+        completeness:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardCompleteness"
+        globalBudgets:
+          description: The year's global budgets; null when the person may not see global budgets.
+          oneOf:
+            - type: array
+              items:
+                $ref: "#/components/schemas/DashboardGlobalBudget"
+            - type: "null"
+        canExport:
+          type: boolean
+    DashboardFilters:
+      type: object
+      additionalProperties: false
+      required: [year, planType, currency, teamId, planId]
+      properties:
+        year:
+          type: integer
+        planType:
+          oneOf:
+            - $ref: "#/components/schemas/PlanType"
+            - type: "null"
+        currency:
+          type: string
+          pattern: ^[A-Z]{3}$
+        teamId:
+          type: [string, "null"]
+        planId:
+          type: [string, "null"]
+    DashboardChoices:
+      type: object
+      additionalProperties: false
+      required: [years, teams, currencies]
+      properties:
+        years:
+          description: The years with plans the person may see, and the current year, newest first.
+          type: array
+          items:
+            type: integer
+        teams:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardTeamChoice"
+        currencies:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardCurrencyChoice"
+    DashboardTeamChoice:
+      type: object
+      additionalProperties: false
+      required: [id, name, active, mine]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        active:
+          type: boolean
+        mine:
+          type: boolean
+    DashboardCurrencyChoice:
+      type: object
+      additionalProperties: false
+      required: [code, name]
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+    DashboardFinance:
+      type: object
+      additionalProperties: false
+      required: [visible, planCount]
+      properties:
+        visible:
+          description: The person may see financial data in at least one plan on the dashboard.
+          type: boolean
+        planCount:
+          description: The plans whose committed and actual figures are counted.
+          type: integer
+    DashboardFigures:
+      type: object
+      additionalProperties: false
+      required: [budget, plannedCost, committed, actual, budgetUsedPercent, budgetSpentPercent, leftToPlan,
+        unspentBudget, overBudget]
+      properties:
+        budget:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        plannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        committed:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        actual:
+          description: Paid, Shell's actuals (015).
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        budgetUsedPercent:
+          description: Planned cost ÷ budget, a whole percent.
+          type: [integer, "null"]
+        budgetSpentPercent:
+          description: Actual ÷ budget, a whole percent.
+          type: [integer, "null"]
+        leftToPlan:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        unspentBudget:
+          description: Budget − actual.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        overBudget:
+          type: boolean
+    DashboardMarketRow:
+      type: object
+      additionalProperties: false
+      required: [team, planCount, figures]
+      properties:
+        team:
+          $ref: "#/components/schemas/TeamRef"
+        planCount:
+          type: integer
+        figures:
+          $ref: "#/components/schemas/DashboardFigures"
+    DashboardPlanRef:
+      type: object
+      additionalProperties: false
+      required: [id, name, status, planType]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        status:
+          $ref: "#/components/schemas/PlanStatus"
+        planType:
+          $ref: "#/components/schemas/PlanType"
+    DashboardPlanRow:
+      type: object
+      additionalProperties: false
+      required: [plan, teams, figures, financeShown]
+      properties:
+        plan:
+          $ref: "#/components/schemas/DashboardPlanRef"
+        teams:
+          type: array
+          items:
+            $ref: "#/components/schemas/TeamRef"
+        figures:
+          $ref: "#/components/schemas/DashboardFigures"
+        financeShown:
+          type: boolean
+    DashboardCampaignRow:
+      type: object
+      additionalProperties: false
+      required: [campaign, plan, figures, difference]
+      properties:
+        campaign:
+          $ref: "#/components/schemas/DashboardRecordRef"
+        plan:
+          $ref: "#/components/schemas/DashboardRecordRef"
+        figures:
+          $ref: "#/components/schemas/DashboardFigures"
+        difference:
+          description: Over budget, planned − budget; in Left to plan, budget − planned; null in a plan's campaigns.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+    DashboardRecordRef:
+      type: object
+      additionalProperties: false
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    DashboardPlanCampaigns:
+      type: object
+      additionalProperties: false
+      required: [plan, items]
+      properties:
+        plan:
+          $ref: "#/components/schemas/DashboardRecordRef"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardCampaignRow"
+    DashboardMonths:
+      type: object
+      additionalProperties: false
+      required: [items, noDates, otherYears, paidOutsideYear]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardMonth"
+        noDates:
+          description: Planned cost not yet spread (activities without dates); null when none.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        otherYears:
+          description: Planned cost spread into months of other years; null when none.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        paidOutsideYear:
+          description: Payments posted outside the year; null when none or when financial data is hidden.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+    DashboardMonth:
+      type: object
+      additionalProperties: false
+      required: [month, planned, actual, plannedToDate, actualToDate]
+      properties:
+        month:
+          type: string
+          pattern: ^[0-9]{4}-[0-9]{2}$
+        planned:
+          $ref: "#/components/schemas/Money"
+        actual:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        plannedToDate:
+          $ref: "#/components/schemas/Money"
+        actualToDate:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+    DashboardApprovals:
+      type: object
+      additionalProperties: false
+      required: [waiting, oldestWaitingSince, approved, declined, autoApproved, averageDecisionDays, activitiesByStatus]
+      properties:
+        waiting:
+          type: integer
+        oldestWaitingSince:
+          type: [string, "null"]
+          format: date-time
+        approved:
+          type: integer
+        declined:
+          type: integer
+        autoApproved:
+          type: integer
+        averageDecisionDays:
+          description: Days from submission to decision, one decimal ("2.5"); null when nothing was decided.
+          type: [string, "null"]
+        activitiesByStatus:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardStatusCount"
+    DashboardStatusCount:
+      type: object
+      additionalProperties: false
+      required: [status, count]
+      properties:
+        status:
+          $ref: "#/components/schemas/ActivityDisplayStatus"
+        count:
+          type: integer
+    DashboardPurchaseRequests:
+      type: object
+      additionalProperties: false
+      required: [available, byStatus, count, amount, waitingForGsap]
+      properties:
+        available:
+          description: Purchase Support is switched on.
+          type: boolean
+        byStatus:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardPurchaseRequestStatus"
+        count:
+          type: integer
+        amount:
+          $ref: "#/components/schemas/Money"
+        waitingForGsap:
+          type: integer
+    DashboardPurchaseRequestStatus:
+      type: object
+      additionalProperties: false
+      required: [status, count, amount]
+      properties:
+        status:
+          $ref: "#/components/schemas/PurchaseRequestStatus"
+        count:
+          type: integer
+        amount:
+          $ref: "#/components/schemas/Money"
+    DashboardCompleteness:
+      type: object
+      additionalProperties: false
+      required: [level, total, complete, percent]
+      properties:
+        level:
+          type: string
+          enum: [plan, campaign, initiative, activity, lineItem]
+        total:
+          type: integer
+        complete:
+          type: integer
+        percent:
+          type: [integer, "null"]
+    DashboardGlobalBudget:
+      type: object
+      additionalProperties: false
+      required: [id, name, amount, allocated, unallocated, plannedCost, overAllocated]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        amount:
+          $ref: "#/components/schemas/Money"
+        allocated:
+          $ref: "#/components/schemas/Money"
+        unallocated:
+          $ref: "#/components/schemas/Money"
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        overAllocated:
+          type: boolean

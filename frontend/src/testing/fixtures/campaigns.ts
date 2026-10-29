@@ -1,7 +1,3 @@
-/**
- * Campaigns and initiatives for the tests of feature 005, typed with the API schema so a contract
- * change shows here first.
- */
 import type { components } from '@/api/generated/schema';
 import type { Plan } from '@/features/plans';
 import { plan } from './plans';
@@ -59,10 +55,6 @@ export function budgetAndCost(overrides: Partial<BudgetAndCost> = {}): BudgetAnd
   };
 }
 
-/**
- * A record's amounts as the API answers them to a reader whose display currency is USD: the same
- * amounts again (D-220). Tests of another display currency pass `display` themselves.
- */
 function inUsd(
   record: Pick<Initiative, 'budget' | 'parentRemainingBudget' | 'budgetAndCost' | 'goals'>,
 ) {
@@ -101,6 +93,7 @@ export function initiative(overrides: Partial<Initiative> = {}): Initiative {
     completeness: { missing: [], itemsBelowNeedingAttention: 0 },
     goals: { inq: null, mql: null, revenue: null },
     counts: { activities: 0, approvedActivities: 0, lineItems: 0 },
+    overspend: { mode: 'warn', canChange: { available: true, reason: '' } },
     ...META,
     ...overrides,
   };
@@ -133,6 +126,7 @@ export function campaign(overrides: Partial<Campaign> = {}): Campaign {
     goals: { inq: null, mql: null, revenue: null },
     counts: { initiatives: 1, activities: 0, approvedActivities: 0, lineItems: 0 },
     initiatives: [initiative()],
+    overspend: { mode: 'warn', canChange: { available: true, reason: '' } },
     ...META,
     ...overrides,
   };
@@ -161,12 +155,10 @@ export function planCampaigns(
     items,
     total: items.length,
     totals: usdTotals,
-    // A reader in USD gets the same totals again (D-220).
     displayTotals: { ...usdTotals, ...displayTotals },
   };
 }
 
-/** The plan of these campaigns (GET /api/v1/plans/{planId}); the forms read its business unit. */
 export function planAnswer(businessUnit: OptionRef[] = [], overrides: Partial<Plan> = {}): Plan {
   const attributes: Plan['attributes'] =
     businessUnit.length > 0 ? { 'SA-BU': businessUnit.map((unit) => unit.id) } : {};
@@ -181,7 +173,6 @@ const PERSON_META = {
   updatedBy: { id: 'U-1001', name: 'Alex Morgan' },
 };
 
-/** GET /api/v1/people: Alex Morgan and Priya Raman. */
 export const PEOPLE = {
   total: 2,
   items: [ALEX, PRIYA].map((person) => ({
@@ -192,7 +183,6 @@ export const PEOPLE = {
   })),
 };
 
-/** A campaign to move or copy an initiative to (GET …/destinations); available, no warnings. */
 export function destination(overrides: Partial<Destination> = {}): Destination {
   return {
     id: 'C-1002',
@@ -211,7 +201,6 @@ export function destination(overrides: Partial<Destination> = {}): Destination {
   };
 }
 
-/** A plan to move or copy a campaign to. */
 export function planDestination(overrides: Partial<Destination> = {}): Destination {
   return destination({
     id: 'P-1002',

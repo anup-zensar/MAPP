@@ -15,19 +15,17 @@ import (
 	"mapp/internal/settings"
 )
 
-// demoLineItem is one line item of 007 data model §8. plannedCost and custom may be worked out from the
-// seeded activity, so the stated balances hold whatever the activity's planned cost is.
 type demoLineItem struct {
 	plan, activity, name string
 	currency             string
-	plannedCost          string                                                           // in the currency; "" when computed
-	computeCost          func(a activity.Activity, rate money.Rate) (money.Amount, error) // when plannedCost is ""
+	plannedCost          string
+	computeCost          func(a activity.Activity, rate money.Rate) (money.Amount, error)
 	method               lineitem.SpreadMethod
-	custom               func(a activity.Activity) ([]lineitem.MonthAmount, error) // custom spreads only
-	spendType, glCode    string                                                    // "" when empty
-	budget, item         string                                                    // finance budget and item names; "" when empty
+	custom               func(a activity.Activity) ([]lineitem.MonthAmount, error)
+	spendType, glCode    string
+	budget, item         string
 	requestSwbs          bool
-	budgetYear           int // the finance budget year; 0 for demoBudgetYear (016: the 2027 plan's are 2027)
+	budgetYear           int
 }
 
 // demoLineItems are L-1001 … L-1010, in ID order (L-1009 and L-1010 are the GBP plan's of 016: 15,000.00 GBP and
@@ -72,13 +70,14 @@ var demoLineItems = []demoLineItem{
 		requestSwbs: true, budgetYear: 2027},
 }
 
-// addLineItems creates the demo line items through the line-items repository, looking up their activities
-// by plan and name, currencies by code, finance budget items by year, budget and name, and Shell attribute
-// options by label.
 func (d *demo) addLineItems(ctx context.Context) error {
+	return d.putLineItems(ctx, demoLineItems)
+}
+
+func (d *demo) putLineItems(ctx context.Context, list []demoLineItem) error {
 	repo := d.stores.LineItems
 	activityRepo := d.stores.Activities
-	for _, l := range demoLineItems {
+	for _, l := range list {
 		activityID, err := find(d.activities, "activity", l.plan+"/"+l.activity)
 		if err != nil {
 			return err
@@ -105,7 +104,6 @@ func (d *demo) addLineItems(ctx context.Context) error {
 	return nil
 }
 
-// lineItemFields builds the stored line item of l under activity, whose currency has rate.
 func (d *demo) lineItemFields(l demoLineItem, act activity.Activity, rate money.Rate) (lineitem.LineItem, error) {
 	year := cmp.Or(l.budgetYear, demoBudgetYear)
 	item := lineitem.LineItem{
@@ -150,8 +148,7 @@ func (d *demo) lineItemAttributes(l demoLineItem) (settings.AttributeValues, err
 	return values.done()
 }
 
-// depositThenEvenly puts deposit in the month before the activity's start month and spreads rest evenly
-// over the activity's months.
+// depositThenEvenly puts deposit in the month before the activity's start, outside its dates.
 func depositThenEvenly(deposit, rest string) func(a activity.Activity) ([]lineitem.MonthAmount, error) {
 	return func(a activity.Activity) ([]lineitem.MonthAmount, error) {
 		months, err := activityMonths(a)
@@ -175,7 +172,6 @@ func depositThenEvenly(deposit, rest string) func(a activity.Activity) ([]lineit
 	}
 }
 
-// firstMonths puts the amounts in the activity's first months, one each.
 func firstMonths(amounts ...string) func(a activity.Activity) ([]lineitem.MonthAmount, error) {
 	return func(a activity.Activity) ([]lineitem.MonthAmount, error) {
 		months, err := activityMonths(a)
@@ -221,7 +217,6 @@ func exceedBy(over, others string) func(a activity.Activity, rate money.Rate) (m
 	}
 }
 
-// activityMonths returns the calendar months (YYYY-MM) of an activity with a start and an end date.
 func activityMonths(a activity.Activity) ([]string, error) {
 	if a.StartDate == nil || a.EndDate == nil {
 		return nil, fmt.Errorf("activity %s has no dates", a.ID)
@@ -233,12 +228,10 @@ func activityMonths(a activity.Activity) ([]string, error) {
 	return months, nil
 }
 
-// firstOfMonth returns the first day of d's month.
 func firstOfMonth(d date.Date) time.Time {
 	return time.Date(d.Year(), d.Month(), 1, 0, 0, 0, 0, time.UTC)
 }
 
-// cmpErr returns err when it is set, otherwise missing.
 func cmpErr(err, missing error) error {
 	if err != nil {
 		return err

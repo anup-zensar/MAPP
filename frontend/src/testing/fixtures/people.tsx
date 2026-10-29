@@ -81,8 +81,8 @@ const ROLES_FORBIDDEN = {
     error: { code: 'forbidden' as const, message: "You don't have access to this.", fields: [] },
   },
 };
-const ROLES_OF_EVERYONE = ['U-1001', 'U-1002', 'U-1004', 'U-1006', 'U-1007'].map((personId) =>
-  reply('GET /api/v1/people/{personId}/roles', ROLES_FORBIDDEN, { personId }),
+const ROLES_OF_EVERYONE = ['U-1001', 'U-1002', 'U-1003', 'U-1004', 'U-1006', 'U-1007'].map(
+  (personId) => reply('GET /api/v1/people/{personId}/roles', ROLES_FORBIDDEN, { personId }),
 );
 
 /** A 400 with the field problems the API found. */

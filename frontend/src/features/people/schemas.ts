@@ -1,5 +1,13 @@
 import { z } from 'zod';
-import type { Person, PersonDetails, PersonUpdate, Team, TeamCreate, TeamUpdate } from './api';
+import type {
+  Person,
+  PersonCreate,
+  PersonDetails,
+  PersonUpdate,
+  Team,
+  TeamCreate,
+  TeamUpdate,
+} from './api';
 
 // The API checks every field of these forms and says what is wrong; nothing is checked first.
 export const personSchema = z.object({
@@ -7,6 +15,7 @@ export const personSchema = z.object({
   email: z.string(),
   jobTitle: z.string(),
   teamIds: z.array(z.string()),
+  managerId: z.string(),
 });
 
 export type PersonValues = z.infer<typeof personSchema>;
@@ -28,13 +37,24 @@ export const preferencesSchema = z.object({ displayCurrency: z.string(), dateFor
 
 export type PreferencesValues = z.infer<typeof preferencesSchema>;
 
-export function personValuesOf(person?: Person | PersonDetails): PersonValues {
+export function personValuesOf(person?: Person | PersonDetails, managerId = ''): PersonValues {
   return {
     name: person?.name ?? '',
     email: person?.email ?? '',
     jobTitle: person?.jobTitle ?? '',
     teamIds: person?.teams.map((team) => team.id) ?? [],
+    managerId,
   };
+}
+
+export function newPerson({ managerId, ...person }: PersonValues): PersonCreate {
+  return managerId ? { ...person, managerId } : person;
+}
+
+// The details answer has no manager: it is read from the people list.
+export function managerIdOf(person: Person | PersonDetails | undefined, people: Person[]): string {
+  const listed = people.find((candidate) => candidate.id === person?.id);
+  return listed?.manager?.id ?? '';
 }
 
 /** Only the changed fields and the version (D-210): after a conflict, Save replaces only these. */
@@ -48,6 +68,7 @@ export function personChanges(
     ...(values.email !== start.email ? { email: values.email } : {}),
     ...(values.jobTitle !== start.jobTitle ? { jobTitle: values.jobTitle } : {}),
     ...(values.teamIds.join() !== start.teamIds.join() ? { teamIds: values.teamIds } : {}),
+    ...(values.managerId !== start.managerId ? { managerId: values.managerId } : {}),
     version,
   };
 }

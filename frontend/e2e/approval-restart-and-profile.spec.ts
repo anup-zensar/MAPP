@@ -139,7 +139,9 @@ test('My profile: the display currency and date format follow on the Plans list 
   await expect(page).toHaveURL(/\/profile$/);
   await expect(page.getByRole('heading', { name: 'My profile', level: 1 })).toBeVisible();
   await expect(
-    page.getByText('Your details, teams and access, and how MAPP shows dates and money to you.'),
+    page.getByText(
+      'Your details, teams and access, and how SP&A One shows dates and money to you.',
+    ),
   ).toBeVisible();
   const preferences = page.getByRole('region', { name: 'Display preferences' });
   await expect(preferences).toContainText('USD — US dollar');

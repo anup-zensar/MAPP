@@ -37,7 +37,7 @@ describe('LinkSummaryCard', () => {
         icon={<ClipboardList />}
         tint="var(--blue)"
         label="All plans"
-        tip="Every plan in MAPP."
+        tip="Every plan in SP&A One."
         value="5"
         to="/plans?scope=all"
         linkLabel="open the Plans list"
@@ -48,7 +48,7 @@ describe('LinkSummaryCard', () => {
     await user.click(screen.getByRole('button', { name: 'About All plans' }));
 
     expect(screen.getByRole('dialog', { name: 'About All plans' })).toHaveTextContent(
-      'Every plan in MAPP.',
+      'Every plan in SP&A One.',
     );
     expect(router.state.location.pathname).toBe('/');
   });

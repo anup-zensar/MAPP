@@ -1,0 +1,687 @@
+{
+  "presets": {
+    "vPower": {
+      "choices": {"Channel / audience": ["External"], "Global campaign": ["Go Well integrated campaign"], "Growth ambition": ["MOBILITY – Convenience retail"]},
+      "split": {"Country / OU": ["China", "100.00"]},
+      "choice": {
+        "Company code": "CN04",
+        "Cost centre": "CN04000220",
+        "PIR": "Yes",
+        "FIT4 initiative": "Not FIT4",
+        "Function (Retail)": "Marketing",
+        "Focus area (Retail)": "Fuel"
+      }
+    },
+    "recharge": {
+      "choices": {
+        "Channel / audience": ["External", "Partners"],
+        "Global campaign": ["Shell Recharge launch"],
+        "Growth ambition": ["MOBILITY – Integrated offer"]
+      },
+      "split": {"Country / OU": ["China", "100.00"]},
+      "choice": {
+        "Company code": "CN04",
+        "Cost centre": "CN04000231",
+        "PIR": "Yes",
+        "FIT4 initiative": "Not FIT4",
+        "Function (Mobility)": "Fleet sales",
+        "Focus area (Mobility)": "EV charging"
+      }
+    },
+    "rimula": {
+      "choices": {
+        "Channel / audience": ["External"],
+        "Global campaign": ["Helix Ultra global platform"],
+        "Growth ambition": ["LUBRICANTS – B2B expansion"],
+        "Global key accounts": ["Account C – Logistics"],
+        "Sector": ["Automotive"],
+        "Sub-sector": ["Heavy duty"],
+        "Zero-based cost hierarchy": ["LUBES - Protecting the core"]
+      },
+      "split": {"Country / OU": ["Netherlands", "100.00"], "Brands": ["Rimula", "100.00"]},
+      "choice": {"Company code": "NL02", "Cost centre": "NL02000340", "PIR": "Yes", "FIT4 initiative": "Not FIT4", "Product launch": "No"}
+    },
+    "tellus": {
+      "choices": {
+        "Channel / audience": ["External", "Partners"],
+        "Global campaign": ["Helix Ultra global platform"],
+        "Growth ambition": ["LUBRICANTS – B2B expansion"],
+        "Global key accounts": ["Account B – Mining"],
+        "Sector": ["Mining", "Construction"],
+        "Sub-sector": ["Off-highway"],
+        "Zero-based cost hierarchy": ["LUBES - Growth drivers"]
+      },
+      "split": {"Country / OU": ["Germany", "100.00"], "Brands": ["Tellus", "70.00", "Spirax", "30.00"]},
+      "choice": {"Company code": "DE03", "Cost centre": "DE03000150", "PIR": "Yes", "FIT4 initiative": "Not FIT4", "Product launch": "Yes – relaunch"}
+    }
+  },
+  "plans": [
+    {
+      "name": "FY2026 Mobility China – V-Power & Recharge",
+      "year": 2026,
+      "model": "Mobility 1.0",
+      "team": "Mobility China",
+      "owner": "Mei Lin",
+      "budget": "1600000.00",
+      "status": "published",
+      "businessUnits": ["Mobility"],
+      "smp": true,
+      "goalStage": "inq",
+      "goalAmount": "300000",
+      "financeBudget": "2026 Mobility Budget",
+      "description": "Premium fuels and EV charging in China: the V-Power Nitro+ relaunch on the forecourt and in digital, and Shell Recharge for fleets.",
+      "campaigns": [
+        {
+          "name": "V-Power Nitro+ relaunch",
+          "owner": "Mei Lin",
+          "start": "2026-02-01",
+          "end": "2026-12-31",
+          "budget": "950000.00",
+          "attributes": {
+            "choices": {"Cluster": ["Retail – China"], "Region": ["RETAIL – CHINA"]},
+            "yesNo": {"Insight session completed": true, "Workshop completed": true, "Global GM sign-off completed": true}
+          },
+          "initiatives": [
+            {
+              "name": "Forecourt experience",
+              "owner": "Mei Lin",
+              "start": "2026-02-01",
+              "end": "2026-09-30",
+              "budget": "520000.00",
+              "attributes": {
+                "choices": {"Growth ambition": ["MOBILITY – Convenience retail"]},
+                "choice": {"Function": "Marketing", "Focus area": "Product launch"},
+                "yesNo": {"FIT4 initiative": false}
+              },
+              "activities": [
+                {
+                  "name": "Forecourt POS refresh – Shanghai & Beijing",
+                  "type": "Content production",
+                  "status": "approved",
+                  "owner": "Mei Lin",
+                  "start": "2026-03-01",
+                  "end": "2026-05-31",
+                  "plannedCost": "240000.00",
+                  "workflow": "China BC approval workflow",
+                  "preset": "vPower",
+                  "inq": 30000,
+                  "lineItems": [
+                    {
+                      "name": "POS print & installation",
+                      "currency": "CNY",
+                      "plannedCost": "852000.00",
+                      "spread": "evenly",
+                      "spendType": "BTL - Branded Shop",
+                      "glCode": "7250310 - Promotions & POP - Agency/Print/Logistics",
+                      "budget": "2026 Mobility Budget",
+                      "item": "China – Retail"
+                    },
+                    {
+                      "name": "Creative adaptation agency",
+                      "currency": "USD",
+                      "plannedCost": "90000.00",
+                      "spread": "firstMonth",
+                      "spendType": "ATL - Agency Fees - Creative",
+                      "glCode": "7250060 - Advertising - Corp/Agency/Production",
+                      "budget": "2026 Mobility Budget",
+                      "item": "China – Retail"
+                    }
+                  ],
+                  "attributes": {"text": {"FIT4 ID": "FIT4-0201"}},
+                  "approval": {"submittedBy": "Mei Lin", "daysAgo": 30, "approvers": ["Carlos Mendes", "Alex Morgan"]}
+                },
+                {
+                  "name": "Nitro+ racing heritage film",
+                  "type": "Agency fees – Creative",
+                  "status": "approved",
+                  "owner": "Mei Lin",
+                  "start": "2026-04-01",
+                  "end": "2026-07-31",
+                  "plannedCost": "180000.00",
+                  "workflow": "China BC approval workflow",
+                  "preset": "vPower",
+                  "inq": 50000,
+                  "lineItems": [
+                    {
+                      "name": "Film production",
+                      "currency": "USD",
+                      "plannedCost": "120000.00",
+                      "spread": "evenly",
+                      "spendType": "ATL - Agency Fees - Creative",
+                      "glCode": "7250060 - Advertising - Corp/Agency/Production",
+                      "budget": "2026 Mobility Budget",
+                      "item": "China – Retail"
+                    },
+                    {
+                      "name": "Media rights & music",
+                      "currency": "USD",
+                      "plannedCost": "35000.00",
+                      "spread": "firstMonth",
+                      "spendType": "ATL - Paid Media Strategy and Planning",
+                      "glCode": "7250070 - Advertising - Media Buying",
+                      "budget": "2026 Mobility Budget",
+                      "item": "China – Retail"
+                    }
+                  ],
+                  "attributes": {"text": {"FIT4 ID": "FIT4-0202"}},
+                  "approval": {"submittedBy": "Mei Lin", "daysAgo": 24, "approvers": ["Carlos Mendes", "Alex Morgan"]}
+                }
+              ]
+            },
+            {
+              "name": "Digital & loyalty",
+              "owner": "Mei Lin",
+              "start": "2026-03-01",
+              "end": "2026-12-31",
+              "budget": "400000.00",
+              "attributes": {
+                "choices": {"Growth ambition": ["MOBILITY – Integrated offer"]},
+                "choice": {"Function": "Digital", "Focus area": "Loyalty"},
+                "yesNo": {"FIT4 initiative": false}
+              },
+              "activities": [
+                {
+                  "name": "Douyin & WeChat always-on",
+                  "type": "Digital media",
+                  "status": "created",
+                  "owner": "Mei Lin",
+                  "start": "2026-03-01",
+                  "end": "2026-12-31",
+                  "plannedCost": "220000.00",
+                  "workflow": "China BC approval workflow",
+                  "preset": "vPower",
+                  "inq": 120000,
+                  "lineItems": [
+                    {
+                      "name": "Paid social media buy",
+                      "currency": "CNY",
+                      "plannedCost": "994000.00",
+                      "spread": "evenly",
+                      "spendType": "ATL - Paid Media Campaign Activation",
+                      "glCode": "7250070 - Advertising - Media Buying",
+                      "budget": "2026 Mobility Budget",
+                      "item": "China – Retail"
+                    },
+                    {
+                      "name": "KOL partnerships",
+                      "currency": "USD",
+                      "plannedCost": "60000.00",
+                      "spread": "evenly",
+                      "spendType": "ATL - Digital",
+                      "glCode": "7250080 - Advertising - Digital",
+                      "budget": "2026 Mobility Budget",
+                      "item": "China – Retail"
+                    }
+                  ],
+                  "attributes": {"text": {"FIT4 ID": "FIT4-0203"}}
+                },
+                {
+                  "name": "Shell Go+ double points summer",
+                  "type": "Digital media",
+                  "status": "created",
+                  "owner": "Mei Lin",
+                  "start": "2026-06-01",
+                  "end": "2026-08-31",
+                  "plannedCost": "150000.00",
+                  "workflow": "China BC approval workflow",
+                  "preset": "vPower",
+                  "inq": 40000,
+                  "lineItems": [
+                    {
+                      "name": "Loyalty points funding",
+                      "currency": "USD",
+                      "plannedCost": "100000.00",
+                      "spread": "evenly",
+                      "spendType": "BTL - Loyalty Operations Costs",
+                      "glCode": "7250200 - Loyalty Programmes - Services",
+                      "budget": "2026 Mobility Budget",
+                      "item": "China – Retail"
+                    },
+                    {
+                      "name": "CRM agency fee",
+                      "currency": "USD",
+                      "plannedCost": "30000.00",
+                      "spread": "evenly",
+                      "spendType": "CRM - Agency Fee",
+                      "glCode": "7250060 - Advertising - Corp/Agency/Production",
+                      "budget": "2026 Mobility Budget",
+                      "item": "China – Retail"
+                    }
+                  ],
+                  "attributes": {"text": {"FIT4 ID": "FIT4-0204"}, "choice": {"Focus area (Retail)": "Convenience"}}
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Shell Recharge fleet electrification",
+          "owner": "Mei Lin",
+          "start": "2026-04-01",
+          "end": "2026-12-31",
+          "budget": "600000.00",
+          "attributes": {
+            "choices": {"Cluster": ["Fleet – China"], "Region": ["FLEET – SOUTH CHINA"]},
+            "yesNo": {"Insight session completed": true, "Workshop completed": true, "Global GM sign-off completed": true}
+          },
+          "initiatives": [
+            {
+              "name": "Fleet EV partnerships",
+              "owner": "Mei Lin",
+              "start": "2026-04-01",
+              "end": "2026-12-31",
+              "budget": "350000.00",
+              "attributes": {
+                "choices": {"Growth ambition": ["MOBILITY – Integrated offer"]},
+                "choice": {"Function": "Sales", "Focus area": "Customer acquisition"},
+                "yesNo": {"FIT4 initiative": false}
+              },
+              "activities": [
+                {
+                  "name": "Fleet EV charging contracts",
+                  "type": "MOBILITY – Long-term contract",
+                  "status": "approved",
+                  "owner": "Mei Lin",
+                  "start": "2026-04-01",
+                  "end": "2026-12-31",
+                  "plannedCost": "250000.00",
+                  "workflow": "China BC approval workflow",
+                  "preset": "recharge",
+                  "inq": 5000,
+                  "lineItems": [
+                    {
+                      "name": "Fleet partner incentives",
+                      "currency": "USD",
+                      "plannedCost": "150000.00",
+                      "spread": "evenly",
+                      "spendType": "BTL - Incentive Scheme",
+                      "glCode": "7250300 - Promotions & POP - Incentives/Reimbursement",
+                      "budget": "2026 Mobility Budget",
+                      "item": "China – Fleet"
+                    },
+                    {
+                      "name": "Account management agency",
+                      "currency": "USD",
+                      "plannedCost": "60000.00",
+                      "spread": "evenly",
+                      "spendType": "BTL - Agency Fees",
+                      "glCode": "7250060 - Advertising - Corp/Agency/Production",
+                      "budget": "2026 Mobility Budget",
+                      "item": "China – Fleet"
+                    }
+                  ],
+                  "attributes": {"text": {"FIT4 ID": "FIT4-0205"}},
+                  "approval": {"submittedBy": "Mei Lin", "daysAgo": 20, "approvers": ["Carlos Mendes", "Alex Morgan"]},
+                  "mql": 600,
+                  "revenue": "1500000.00"
+                }
+              ]
+            },
+            {
+              "name": "Charging hub launches",
+              "owner": "Mei Lin",
+              "start": "2026-08-01",
+              "end": "2026-10-31",
+              "budget": "220000.00",
+              "attributes": {
+                "choices": {"Growth ambition": ["MOBILITY – Integrated offer"]},
+                "choice": {"Function": "Marketing", "Focus area": "Brand"},
+                "yesNo": {"FIT4 initiative": false}
+              },
+              "activities": [
+                {
+                  "name": "Shenzhen super-hub opening",
+                  "type": "Event",
+                  "status": "created",
+                  "owner": "Mei Lin",
+                  "start": "2026-09-01",
+                  "end": "2026-09-30",
+                  "plannedCost": "120000.00",
+                  "workflow": "China BC approval workflow",
+                  "preset": "recharge",
+                  "inq": 15000,
+                  "lineItems": [
+                    {
+                      "name": "Venue & staging",
+                      "currency": "CNY",
+                      "plannedCost": "497000.00",
+                      "spread": "firstMonth",
+                      "spendType": "BTL - Event",
+                      "glCode": "7250150 - Sponsorship programmes",
+                      "budget": "2026 Mobility Budget",
+                      "item": "China – Fleet"
+                    },
+                    {
+                      "name": "Launch PR",
+                      "currency": "USD",
+                      "plannedCost": "25000.00",
+                      "spread": "firstMonth",
+                      "spendType": "ATL - Public Relations",
+                      "glCode": "7250100 - Public Relations",
+                      "budget": "2026 Mobility Budget",
+                      "item": "China – Fleet"
+                    }
+                  ],
+                  "attributes": {"text": {"FIT4 ID": "FIT4-0206"}, "choice": {"Function (Mobility)": "E-mobility"}}
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "FY2026 Lubricants B2B Europe – Rimula & Tellus",
+      "year": 2026,
+      "model": "Lubricants 1.0",
+      "team": "Lubricants Europe",
+      "owner": "Daniel Okoro",
+      "budget": "1100000.00",
+      "status": "published",
+      "businessUnits": ["Lubricants"],
+      "goalStage": "inq",
+      "goalAmount": "180000",
+      "financeBudget": "2026 Lubricants Budget",
+      "description": "Business-to-business lubricants in Europe: Rimula for heavy-duty fleets, Tellus and Spirax for industry, mining and construction.",
+      "campaigns": [
+        {
+          "name": "Rimula heavy-duty fleet 2026",
+          "owner": "Priya Raman",
+          "start": "2026-02-01",
+          "end": "2026-11-30",
+          "budget": "600000.00",
+          "attributes": {
+            "choices": {"Cluster": ["Lubricants – Europe"], "Region": ["LUBES – BENELUX"]},
+            "yesNo": {"Insight session completed": true, "Workshop completed": true, "Global GM sign-off completed": true}
+          },
+          "initiatives": [
+            {
+              "name": "Fleet operator events",
+              "owner": "Priya Raman",
+              "start": "2026-04-01",
+              "end": "2026-10-31",
+              "budget": "260000.00",
+              "attributes": {
+                "choices": {"Growth ambition": ["LUBRICANTS – B2B expansion"]},
+                "choice": {"Function": "Sales", "Focus area": "Customer acquisition"},
+                "yesNo": {"FIT4 initiative": false}
+              },
+              "activities": [
+                {
+                  "name": "Rimula R6 fleet roadshow – Rotterdam",
+                  "type": "Event",
+                  "status": "approved",
+                  "owner": "Priya Raman",
+                  "start": "2026-04-13",
+                  "end": "2026-04-24",
+                  "plannedCost": "140000.00",
+                  "workflow": "Lubricants EU approval",
+                  "preset": "rimula",
+                  "inq": 3000,
+                  "lineItems": [
+                    {
+                      "name": "Venue & logistics",
+                      "currency": "EUR",
+                      "plannedCost": "64400.00",
+                      "spread": "firstMonth",
+                      "spendType": "BTL - Event",
+                      "glCode": "7250150 - Sponsorship programmes",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Events"
+                    },
+                    {
+                      "name": "Demo truck hire",
+                      "currency": "EUR",
+                      "plannedCost": "27600.00",
+                      "spread": "firstMonth",
+                      "spendType": "BTL - Event",
+                      "glCode": "7250150 - Sponsorship programmes",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Events"
+                    }
+                  ],
+                  "attributes": {"text": {"FIT4 ID": "FIT4-0301"}},
+                  "approval": {"submittedBy": "Priya Raman", "daysAgo": 28, "approvers": ["Daniel Okoro"]}
+                },
+                {
+                  "name": "Fleet operator breakfast series",
+                  "type": "Event",
+                  "status": "approved",
+                  "owner": "Priya Raman",
+                  "start": "2026-05-01",
+                  "end": "2026-10-31",
+                  "plannedCost": "70000.00",
+                  "workflow": "Lubricants EU approval",
+                  "preset": "rimula",
+                  "inq": 1200,
+                  "lineItems": [
+                    {
+                      "name": "Catering & venues",
+                      "currency": "GBP",
+                      "plannedCost": "31600.00",
+                      "spread": "evenly",
+                      "spendType": "BTL - Customer Meetings/Conference",
+                      "glCode": "7250150 - Sponsorship programmes",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Events"
+                    },
+                    {
+                      "name": "Speaker fees",
+                      "currency": "USD",
+                      "plannedCost": "15000.00",
+                      "spread": "evenly",
+                      "spendType": "BTL - Customer Meetings/Conference",
+                      "glCode": "7250150 - Sponsorship programmes",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Events"
+                    }
+                  ],
+                  "attributes": {
+                    "text": {"FIT4 ID": "FIT4-0302"},
+                    "split": {"Country / OU": ["United Kingdom", "60.00", "Netherlands", "40.00"]},
+                    "choice": {"Company code": "GB01", "Cost centre": "GB01000118"}
+                  },
+                  "approval": {"submittedBy": "Priya Raman", "daysAgo": 21, "approvers": ["Daniel Okoro"]}
+                }
+              ]
+            },
+            {
+              "name": "Digital lead generation",
+              "owner": "Priya Raman",
+              "start": "2026-03-01",
+              "end": "2026-11-30",
+              "budget": "300000.00",
+              "attributes": {
+                "choices": {"Growth ambition": ["LUBRICANTS – B2B expansion"]},
+                "choice": {"Function": "Digital", "Focus area": "Customer acquisition"},
+                "yesNo": {"FIT4 initiative": false}
+              },
+              "activities": [
+                {
+                  "name": "LinkedIn ABM – fleet managers",
+                  "type": "Digital media",
+                  "status": "created",
+                  "owner": "Priya Raman",
+                  "start": "2026-03-01",
+                  "end": "2026-11-30",
+                  "plannedCost": "160000.00",
+                  "workflow": "Lubricants EU approval",
+                  "preset": "rimula",
+                  "inq": 8000,
+                  "lineItems": [
+                    {
+                      "name": "Paid LinkedIn media",
+                      "currency": "USD",
+                      "plannedCost": "110000.00",
+                      "spread": "evenly",
+                      "spendType": "ATL - Digital",
+                      "glCode": "7250080 - Advertising - Digital",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Digital"
+                    },
+                    {
+                      "name": "ABM agency fee",
+                      "currency": "USD",
+                      "plannedCost": "40000.00",
+                      "spread": "evenly",
+                      "spendType": "BTL - Agency Fees",
+                      "glCode": "7250060 - Advertising - Corp/Agency/Production",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Digital"
+                    }
+                  ],
+                  "attributes": {"text": {"FIT4 ID": "FIT4-0303"}}
+                },
+                {
+                  "name": "Rimula oil-analysis webinars",
+                  "type": "Content production",
+                  "status": "created",
+                  "owner": "Priya Raman",
+                  "start": "2026-06-01",
+                  "end": "2026-11-30",
+                  "plannedCost": "45000.00",
+                  "workflow": "Lubricants EU approval",
+                  "preset": "rimula",
+                  "inq": 2500,
+                  "lineItems": [
+                    {
+                      "name": "Webinar platform & production",
+                      "currency": "USD",
+                      "plannedCost": "30000.00",
+                      "spread": "evenly",
+                      "spendType": "ATL - Digital",
+                      "glCode": "7250080 - Advertising - Digital",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Digital"
+                    }
+                  ],
+                  "attributes": {
+                    "text": {"FIT4 ID": "FIT4-0304"},
+                    "split": {"Country / OU": ["Germany", "100.00"]},
+                    "choice": {"Company code": "DE03", "Cost centre": "DE03000150"}
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Tellus & Spirax industrial uptime",
+          "owner": "Priya Raman",
+          "start": "2026-03-01",
+          "end": "2026-12-31",
+          "budget": "420000.00",
+          "attributes": {
+            "choices": {"Cluster": ["Lubricants – Europe"], "Region": ["LUBES – DACH"]},
+            "yesNo": {"Insight session completed": true, "Workshop completed": true, "Global GM sign-off completed": true}
+          },
+          "initiatives": [
+            {
+              "name": "Hannover Messe 2026",
+              "owner": "Priya Raman",
+              "start": "2026-03-01",
+              "end": "2026-04-30",
+              "budget": "220000.00",
+              "attributes": {
+                "choices": {"Growth ambition": ["LUBRICANTS – Premium growth"]},
+                "choice": {"Function": "Marketing", "Focus area": "Brand"},
+                "yesNo": {"FIT4 initiative": false}
+              },
+              "activities": [
+                {
+                  "name": "Hannover Messe stand",
+                  "type": "Sponsorship",
+                  "status": "approved",
+                  "owner": "Priya Raman",
+                  "start": "2026-04-20",
+                  "end": "2026-04-24",
+                  "plannedCost": "200000.00",
+                  "workflow": "Lubricants EU approval",
+                  "preset": "tellus",
+                  "inq": 4000,
+                  "lineItems": [
+                    {
+                      "name": "Stand build",
+                      "currency": "EUR",
+                      "plannedCost": "110400.00",
+                      "spread": "firstMonth",
+                      "spendType": "BTL - Event",
+                      "glCode": "7250150 - Sponsorship programmes",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Brand"
+                    },
+                    {
+                      "name": "Stand staffing & hospitality",
+                      "currency": "EUR",
+                      "plannedCost": "46000.00",
+                      "spread": "firstMonth",
+                      "spendType": "BTL - Customer Meetings/Conference",
+                      "glCode": "7250150 - Sponsorship programmes",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Brand"
+                    }
+                  ],
+                  "attributes": {"text": {"FIT4 ID": "FIT4-0305"}},
+                  "approval": {"submittedBy": "Priya Raman", "daysAgo": 35, "approvers": ["Daniel Okoro"]}
+                }
+              ]
+            },
+            {
+              "name": "Mining & construction accounts",
+              "owner": "Priya Raman",
+              "start": "2026-05-01",
+              "end": "2026-12-31",
+              "budget": "160000.00",
+              "attributes": {
+                "choices": {"Growth ambition": ["LUBRICANTS – B2B expansion"]},
+                "choice": {"Function": "Sales", "Focus area": "Loyalty"},
+                "yesNo": {"FIT4 initiative": false}
+              },
+              "activities": [
+                {
+                  "name": "Mining key-account programme",
+                  "type": "Agency fees – Creative",
+                  "status": "created",
+                  "owner": "Priya Raman",
+                  "start": "2026-05-01",
+                  "end": "2026-12-31",
+                  "plannedCost": "140000.00",
+                  "workflow": "Lubricants EU approval",
+                  "preset": "tellus",
+                  "inq": 0,
+                  "lineItems": [
+                    {
+                      "name": "Case-study film production",
+                      "currency": "USD",
+                      "plannedCost": "60000.00",
+                      "spread": "evenly",
+                      "spendType": "ATL - Agency Fees - Creative",
+                      "glCode": "7250060 - Advertising - Corp/Agency/Production",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Brand"
+                    },
+                    {
+                      "name": "Customer uptime workshops",
+                      "currency": "GBP",
+                      "plannedCost": "31600.00",
+                      "spread": "evenly",
+                      "spendType": "BTL - Capability building Training",
+                      "glCode": "7250350 - Brand Development & Coordination",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Brand"
+                    }
+                  ],
+                  "attributes": {
+                    "text": {"FIT4 ID": "FIT4-0306"},
+                    "split": {"Country / OU": ["United Kingdom", "100.00"]},
+                    "choice": {"Company code": "GB01", "Cost centre": "GB01000105"}
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

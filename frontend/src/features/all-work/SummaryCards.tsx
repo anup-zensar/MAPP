@@ -1,3 +1,4 @@
+import { useFieldHelp } from '@/features/settings';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { formatWhole } from '@/format/decimal';
@@ -6,31 +7,17 @@ import { negativeBalanceText } from './all-work-text';
 import type { AllWorkSummary } from './all-work-types';
 import styles from './SummaryCards.module.css';
 
-/** The cards' tips (plan "User-visible messages"). */
-const TIPS = {
-  campaigns: 'Campaigns that match the filters. Campaigns shown only for context are not counted.',
-  initiatives:
-    'Initiatives that match the filters. Initiatives shown only for context are not counted.',
-  activities: 'Activities that match the filters and search.',
-  plannedCost:
-    "The sum of the matching activities' planned cost. An activity without a planned cost counts as zero.",
-  planBudget: 'The sum of the budgets of the matching plans.',
-  unassigned:
-    "Planned cost not yet split into line items: the sum of the matching activities' positive balances.",
-};
-
 export interface SummaryCardsProps {
-  /** null while the first answer loads. */
   summary: AllWorkSummary | null;
 }
 
 /**
- * The six summary cards of All work (FR-003), which follow every filter and search: counts, and
- * money in compact form with the full value on hover and focus. The Unassigned planned cost card
- * says in red how many activities have line items above their planned cost.
+ * The six summary cards of All work, which follow every filter and search: counts, and money in
+ * compact form with the full value on hover and focus.
  */
 export function SummaryCards({ summary }: SummaryCardsProps) {
   const { money, moneyCompact } = useFormatters();
+  const { help } = useFieldHelp();
 
   if (!summary) {
     return (
@@ -47,34 +34,38 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
 
   return (
     <section className={styles.cards} aria-label="Summary">
-      <SummaryCard label="Campaigns" value={formatWhole(summary.campaigns)} tip={TIPS.campaigns} />
+      <SummaryCard
+        label="Campaigns"
+        value={formatWhole(summary.campaigns)}
+        tip={help('allWork.campaigns')}
+      />
       <SummaryCard
         label="Initiatives"
         value={formatWhole(summary.initiatives)}
-        tip={TIPS.initiatives}
+        tip={help('allWork.initiatives')}
       />
       <SummaryCard
         label="Activities"
         value={formatWhole(summary.activities)}
-        tip={TIPS.activities}
+        tip={help('allWork.activities')}
       />
       <SummaryCard
         label="Planned cost"
         value={moneyCompact(summary.plannedCost)}
         fullValue={money(summary.plannedCost)}
-        tip={TIPS.plannedCost}
+        tip={help('allWork.plannedCost')}
       />
       <SummaryCard
         label="Plan budget"
         value={moneyCompact(summary.planBudget)}
         fullValue={money(summary.planBudget)}
-        tip={TIPS.planBudget}
+        tip={help('allWork.planBudget')}
       />
       <SummaryCard
         label="Unassigned planned cost"
         value={moneyCompact(summary.unassignedPlannedCost)}
         fullValue={money(summary.unassignedPlannedCost)}
-        tip={TIPS.unassigned}
+        tip={help('allWork.unassignedPlannedCost')}
         detail={
           summary.negativeBalanceCount > 0 && (
             <span className={styles.problem}>

@@ -34,7 +34,7 @@ describe('Settings routes (feature 002)', () => {
     renderApp(path, PAGE_ANSWERS);
 
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
-    expect(document.title).toBe(`${title} · MAPP`);
+    expect(document.title).toBe(`${title} · SP&A One`);
     expectCurrentSection('Settings');
   });
 });

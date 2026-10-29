@@ -219,6 +219,24 @@ type BudgetAllocation struct {
 	UpdatedByName  string
 }
 
+type BulkAction struct {
+	ID           string
+	Action       string
+	Note         string
+	ActorID      string
+	ActorName    string
+	RanAt        time.Time
+	UndoneAt     *time.Time
+	UndoneByID   *string
+	UndoneByName *string
+}
+
+type BulkActionBinEntry struct {
+	BulkActionID string
+	Position     int
+	BinEntryID   string
+}
+
 type Campaign struct {
 	ID             string
 	PlanID         string
@@ -238,6 +256,7 @@ type Campaign struct {
 	UpdatedAt      time.Time
 	UpdatedByID    string
 	UpdatedByName  string
+	Overspend      string
 }
 
 type CampaignPhasingMonth struct {
@@ -393,6 +412,7 @@ type GlobalBudget struct {
 	UpdatedAt     time.Time
 	UpdatedByID   string
 	UpdatedByName string
+	Overspend     string
 }
 
 type Initiative struct {
@@ -414,6 +434,7 @@ type Initiative struct {
 	UpdatedAt      time.Time
 	UpdatedByID    string
 	UpdatedByName  string
+	Overspend      string
 }
 
 type InitiativePhasingMonth struct {
@@ -493,6 +514,18 @@ type Notification struct {
 	SubjectKind string
 }
 
+type OverspendConfiguration struct {
+	ID            string
+	DefaultMode   string
+	Version       int
+	CreatedAt     time.Time
+	CreatedByID   string
+	CreatedByName string
+	UpdatedAt     time.Time
+	UpdatedByID   string
+	UpdatedByName string
+}
+
 type Person struct {
 	ID            string
 	Name          string
@@ -535,6 +568,41 @@ type Plan struct {
 	UpdatedAt              time.Time
 	UpdatedByID            string
 	UpdatedByName          string
+	Overspend              string
+}
+
+type PlanImport struct {
+	ID             string
+	PlanID         string
+	FileName       string
+	ImportedAt     time.Time
+	ImportedByID   string
+	ImportedByName string
+	RowsRead       int
+	RowsLeftOut    int
+	UndoneAt       *time.Time
+	UndoneByID     *string
+	UndoneByName   *string
+}
+
+type PlanImportProblem struct {
+	ImportID      string
+	Position      int
+	Sheet         string
+	RowNumber     int
+	ColumnHeading string
+	Value         string
+	Reason        string
+}
+
+type PlanImportRecord struct {
+	ImportID   string
+	Position   int
+	Level      string
+	RecordID   string
+	RecordName string
+	ParentID   string
+	Action     string
 }
 
 type PlanPhasingMonth struct {

@@ -43,7 +43,7 @@ func TestPlanDefaults_FR006(t *testing.T) {
 
 	assertAnswer(t, response, http.StatusOK, `{"currentYear":2026,"years":[2026,2027,2028,2029,2030,2031,2032,2033,2034,2035,2036],`+
 		`"year":2026,"teamIds":["T-1001"],"ownerId":"U-1002","modelId":null,"aop":false,"bcpir":false,`+
-		`"defaultSpread":"evenly","goalStage":"inq","currency":"USD","planType":"operational"}`)
+		`"defaultSpread":"evenly","goalStage":"inq","currency":"USD","planType":"operational","overspend":"warn"}`)
 }
 
 // The new plan is P-1005, after the seed's four; a form without name, year and model gets every problem at once.
@@ -155,7 +155,7 @@ func TestGetPlan_ViewAnd404_FR011(t *testing.T) {
 	china := priya.Do(t, http.MethodGet, "/api/v1/plans/P-1002", nil)
 	gone := priya.Do(t, http.MethodGet, "/api/v1/plans/P-9999", nil)
 
-	system := map[string]any{"id": "system", "name": "MAPP"}
+	system := map[string]any{"id": "system", "name": "SP&A One"}
 	usdOf := func(amount string) map[string]any { return map[string]any{"amount": amount, "currency": "USD"} }
 	assertFields(t, europe, http.StatusOK, map[string]any{
 		"id": "P-1001", "name": "FY2026 Lubricants Europe", "year": 2026, "status": "published",
@@ -166,7 +166,7 @@ func TestGetPlan_ViewAnd404_FR011(t *testing.T) {
 		"ownerProblem": "", "aop": false, "description": "Lubricants marketing in Europe for 2026.",
 		"budget":               usdOf("1200000.00"),
 		"defaultFinanceBudget": map[string]any{"id": "FB-1001", "year": 2026, "name": "2026 Lubricants Budget"},
-		"defaultSpread":        "evenly", "bcpir": false, "goalStage": "inq", "goalAmount": "250000",
+		"defaultSpread":        "evenly", "bcpir": true, "goalStage": "inq", "goalAmount": "250000",
 		"attributes":   map[string]any{"SA-1001": []any{"SO-1002"}},
 		"businessUnit": []any{map[string]any{"id": "SO-1002", "label": "Lubricants", "active": true}},
 		"version":      1, "createdAt": "2026-03-12T09:00:00Z", "createdBy": system, "updatedAt": "2026-03-12T09:00:00Z", "updatedBy": system,

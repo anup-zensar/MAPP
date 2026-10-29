@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Version** | 2.2 · 28 October 2026 |
+| **Version** | 2.3 · 28 October 2026 |
 | **Status** | Binding for every screen of the web app. Code that disagrees with this document is a defect. |
 | **Replaces** | Version 1 (Apple-inspired look: Apple blue `#0071e3`, blue-to-purple gradient, system font stack, pill shapes) |
 | **Decided by** | Product owner, 20 October 2026: Shell yellow primary button with dark text, at most one per page or dialog (D-310); light-grey canvas with white cards (D-311); Jost headings and Arial body, no Shell logo (D-312); WCAG 2.2 AA (D-313); red only for danger and errors (D-314) — decision log D-310–D-314 |
@@ -39,7 +39,7 @@ Section numbers §1–§10 are kept from version 1, so references in specs and c
 6. **Calm.** White cards on a light grey canvas, grey ink text, one accent (Shell yellow) used only where
    you act and where you are, colour otherwise used only for meaning (status, level, money problems).
 7. **Looks like Shell, behaves like MAPP.** Shell's colours, type pairing, grid, radii and wayfinding;
-   MAPP's own name mark, plain words and CRUD pattern. No Shell logo, typeface or trade dress until
+   its own name — SP&A One — as the logo, plain words and CRUD pattern. No Shell logo, typeface or trade dress until
    Shell grants them (§3.10, §12).
 8. **One of everything.** One ink colour, one accent, one height per control size, one radius per kind of
    object, one spacing scale, one page header, one panel footer, one table style, one key–value layout,
@@ -80,7 +80,7 @@ Section numbers §1–§10 are kept from version 1, so references in specs and c
 |---|---|
 | **Skip link** | First focusable element: "Skip to main content". Hidden until focused, then shown top-left: `--brand-yellow` fill, `--on-brand-yellow` text, 14 px bold, padding 16, radius 8. |
 | **Environment banner** | `DemoBanner`. 32 px, full width, Text Strong `--banner-bg` with `--banner-text` (Surface) 12 px text, one line, centred. Below 600 px the shorter text "Demo environment — demonstration data only". Not sticky. |
-| **Top bar** | 56 px, `--surface`, 1 px `--hairline` bottom border, full width, sticky at the top. **Left:** at ≥ 960 px the logo zone is 240 px wide, aligned with the sidebar (`Logo` + "MAPP"); below 960 px a 40 px **Open menu** icon button, then the logo mark. **Centre-left:** the global search slot (360–480 px), empty until a search feature is specified; never a fake control. **Right**, 8 px apart: notifications bell (40 px icon button with `CountBadge`), the account button (32 px avatar + first name at ≥ 960 px; avatar only below). The account menu holds the name and role, **My profile**, **Appearance** (Follow the computer · Light · Dark; D-038) and **Sign out**. A help button joins the right group, always in the same place (WCAG 3.2.6), when a help feature exists. |
+| **Top bar** | 56 px, `--surface`, 1 px `--hairline` bottom border, full width, sticky at the top. **Left:** at ≥ 960 px the logo zone is 240 px wide, aligned with the sidebar (`Logo`, the name "SP&A One"); below 960 px a 40 px **Open menu** icon button, then `LogoTile`. The home link is named "SP&A One home". **Centre-left:** the global search slot (360–480 px), empty until a search feature is specified; never a fake control. **Right**, 8 px apart: notifications bell (40 px icon button with `CountBadge`), the account button (32 px avatar + first name at ≥ 960 px; avatar only below). The account menu holds the name and role, **My profile**, **Appearance** (Follow the computer · Light · Dark; D-038) and **Sign out**. A help button joins the right group, always in the same place (WCAG 3.2.6), when a help feature exists. |
 | **Sidebar** | 240 px, `--surface`, 1 px `--hairline` right border, sticky under the top bar, scrolls on its own. Items 40 px high, padding 0 16 0 20, 20 px icon + 12 px gap + 14 px label in `--ink`. Hover `--hover`, no movement. **Current section: a 4 px `--brand-yellow` bar on the start edge (full item height), `--hover` fill, bold label, `aria-current="page"`.** Group label "More" 12 px bold `--ink-2`, sentence case, 24 px above and 8 px below. Count badges sit at the end of the item. At the bottom: **Collapse sidebar** (40 px, ghost). |
 | **Collapsed rail** | 64 px; icons centred; tooltips on the right; the yellow bar stays on the current item; badges become a small count at the icon's top end. Chosen by the person (saved, D-038) at ≥ 960 px; automatic between 600 and 959 px. |
 | **Drawer** | Below 600 px the sidebar is hidden. **Open menu** opens a 280 px drawer from the left with `--overlay`, focus kept inside, Escape and the close button close it and return the focus. It shows the same items with labels, no tooltips. Bell and account stay in the top bar. |
@@ -239,6 +239,20 @@ money reserved on line items L-1006 and L-1011 will be released. You can restore
 the line item will be released."; Close lists each line's current, invoiced and released amount before it
 asks; "The simulated GSAP will create a GSAP PR and a purchase order with 1 line (10,000.00 USD) for PR-1002."
 
+### 2.7 SP&A view (feature 013)
+
+`/plans/<id>/spa`, reached by **SP&A view** (secondary) in the plan page's header. A read-only page: breadcrumb
+Plans › plan › SP&A view, title "SP&A view", meta row with the plan's status chip, its **BCPIR** tag and year,
+and **Open in All work** (secondary; no primary button). Under the header, on the grey page: **Scope** (Whole
+plan or one campaign) and "Finance data as of …". Then a figures card (Planned cost, Committed, Actual spend,
+Remaining, Utilisation with its bar, Variance; overspend red with the word "Overspend"); *Spend by period*
+(Quarters · Months, planned and actual with bars, Not yet scheduled) beside *Spend by dimension* (Group by,
+share with a bar, totals row); *Activities* (sortable table, ▸ opens the line items, ⋯ Raise purchase request
+for each line item or its reason); *Budget* beside *Purchase requests*. Every underlined amount opens a side
+panel "What makes up …" with the activities and their total. Scope, dimension, period and sort are in the
+address, so Back keeps them. The BCPIR tag (outlined, like the plan type) also marks BCPIR plans on the Plans
+list, the plan header and All work's plan rows.
+
 ---
 
 ## 3. Visual tokens
@@ -260,6 +274,9 @@ changes. Contrast ratios use the WCAG 2.x formula. AA needs **4.5:1** for text, 
 | `--brand-yellow` | `#FFC600` Primary Yellow | 1.45 on white: **fill only** | The primary button, the 4 px "you are here" bar (current sidebar item, selected tab, highlighted row), the skip link |
 | `--brand-yellow-hover` / `-pressed` | `#FFCB14` / `#EBB600` | ink on them 9.56 / 7.78 | Primary hover and pressed |
 | `--on-brand-yellow` | `#292929` (light Text Strong, both themes) | **9.23 on yellow** | Text and icons on yellow (never white) |
+| `--brand-name-amp` | `#003C88` · dark `#6F9BD1` | 10.49 · 5.05 on Surface | The "&" of the product name only (§3.10) |
+| `--brand-name-one` | `#AD8700` · dark `#FFC600` | 3.36 · 9.23 on Surface | "One" of the product name only: the only yellow text (§3.10) |
+| `--brand-tile` / `--on-brand-tile` | `#003C88` / `#FFC600`, both themes | 6.65 | `LogoTile` and the favicon only |
 | `--danger-bg` | `#DD1D21` Secondary Red | white text 4.92 | The destructive confirm button, problem chips, a highlighted destructive menu item. Hover underlines the label: red has no hover shade |
 | `--on-accent` | `#FFFFFF` | – | Text and icons on red |
 | `--button-primary-bg`, `-bg-hover`, `-bg-pressed`, `-text` | aliases of the yellow tokens | – | The primary button |
@@ -291,7 +308,7 @@ changes. Contrast ratios use the WCAG 2.x formula. AA needs **4.5:1** for text, 
 | Token | Value | Use |
 |---|---|---|
 | `--focus-ring` | `--ink` (Text Strong of the active theme) | The 2 px focus ring with a 2 px offset (a 2 px inset inside scrolling boxes): 9:1 or more against every surface and against yellow |
-| `--brand-mark`, `--avatar-bg`, `--banner-bg`, `--tooltip-bg` | `--ink` | The MAPP mark's tile, initials circles, the environment banner, tooltips; what sits on them is `--surface` (`--banner-text`, `--tooltip-text`) |
+| `--avatar-bg`, `--banner-bg`, `--tooltip-bg` | `--ink` | Initials circles, the environment banner, tooltips; what sits on them is `--surface` (`--banner-text`, `--tooltip-text`) |
 | `--overlay` | `rgba(0,0,0,.45)` / dark `rgba(0,0,0,.6)` | Behind dialogs, side panels and the drawer (elevation, like the shadows of §3.5) |
 
 **Where text may sit** (constitution X). Text Subtle, links and red text reach 4.5:1 only on some
@@ -331,7 +348,7 @@ colour (§4.2).
 
 | Colour | Use it for | Never use it for |
 |---|---|---|
-| Primary Yellow | The one primary button of a page or dialog; the 4 px current-place bar on the current sidebar item, the selected tab and the highlighted row; the skip link | Text, icons or thin lines on light surfaces (1.45:1); a focus ring; tints; warnings (amber is used); pins or favourites; large areas; chart series; a second yellow button |
+| Primary Yellow | The one primary button of a page or dialog; the 4 px current-place bar on the current sidebar item, the selected tab and the highlighted row; the skip link | Text, icons or thin lines on light surfaces (1.45:1) — the product name's "One" is the only yellow text, in its own token (§3.10); a focus ring; tints; warnings (amber is used); pins or favourites; large areas; chart series; a second yellow button |
 | Secondary Red | The destructive confirm button; problem chips; a highlighted destructive menu item; error messages and icons in the light theme, on Surface, Raised or Foundation Base | Tints or shades (hover underlines instead); text on any grey; text or thin lines in the dark theme (until TODO(DARK_TOKENS)); headings, decoration, main actions; red with yellow in stripes, gradients or shell shapes (Shell trade dress) |
 | Link blue | Links; checked check boxes, radios and switches (`--blue`) | Buttons, headings, tints, large areas |
 | Text Strong | All text and icons; inverse fills: the mark, avatars, the banner, tooltips, count badges, the chosen segment, today in calendars | – |
@@ -457,9 +474,15 @@ chevron crops).
 
 ### 3.10 Logo and brand assets
 
-- **MAPP's own mark** in the logo slot: a 28 px tile, radius 8, filled `--brand-mark` (Text Strong),
-  with a four-point star in `--surface`, and the word "MAPP" in Jost 600 18 px `--ink`. The favicon is
-  the same tile (`#292929` with a white star). No gradient.
+- **The name is the logo** (feature 035, D-332, constitution X): "SP&A One" in Jost 600 (18 px `md`, 20 px
+  `lg`), no symbol beside it. "SP" and "A" `--ink`; "&" `--brand-name-amp` (`#003C88` light, 10.49 on
+  Surface · `#6F9BD1` dark, 5.05); "One" `--brand-name-one` (`#AD8700` light — Primary Yellow's hue darkened,
+  3.36 on Surface, 3.09 on Foundation Base · Primary Yellow `#FFC600` dark, 9.23). These are the only text
+  in yellow or a yellow shade; they never mean "act here". The sign-in title writes the name the same way
+  (`ProductName`, at the title's size). Screen readers hear one name, "SP&A One".
+- **`LogoTile`** where the name does not fit (the top bar below 960 px) and as the favicon: a 28 px tile,
+  radius 8, `--brand-tile` (`#003C88`) with a "1" in `--on-brand-tile` (`#FFC600`, 6.65 on the tile), the
+  same in both themes. No gradient. The star mark of versions 1–2.2 is retired.
 - **No Shell pecten, no "Shell" wordmark, no Shell typeface, no red-and-yellow shell shapes or stripes**
   until Shell gives trade-mark consent and artwork approval (§12). The word "Shell" may appear as plain
   text where it describes the business ("Shell attributes").
@@ -555,6 +578,9 @@ next to the written name, it has no contrast requirement.
   "$0.00"; a short reason may follow in `--ink-2` ("— · Nothing planned yet").
 - Percentages without a space: "38%" (UK style); shares in the split editor "33.33%".
 - Whole numbers grouped: "1,250".
+- **An amount in another currency than the reader's** (feature 016) shows as an `AmountPair`: the amount in
+  its own currency in full, then a muted "≈ 6,645.57 USD" in the display currency with a `RateTip` ⓘ ("1 USD =
+  0.79 GBP · rate of 19 Oct 2026 · GSAP import"); one amount only when both currencies are the same.
 
 ### 4.5 Dates and times
 
@@ -569,6 +595,24 @@ next to the written name, it has no contrast requirement.
 8 px high, radius pill, track `--chip`, fill `--info`; fill `--danger` above 100 % (the fill stops at the
 end, the real percentage is written and announced). The value is always written next to the bar
 ("38% used").
+
+### 4.7 Charts (feature 036)
+
+Charts are bars drawn from the API's figures (ADR-0017), each with a legend in words, a text summary for
+screen readers and a **Table** view that lists the same figures. Series colours are tokens outside the
+palette, never yellow or red, each ≥ 3:1 on its surface:
+
+| Token | Series | Light | Dark |
+|---|---|---|---|
+| `--chart-budget` | Budget | `#5B6B7A` | `#8696A6` |
+| `--chart-planned` | Planned cost | `#336094` | `#6F9BD1` |
+| `--chart-committed` | Committed | `#008192` | `#3FB6C5` |
+| `--chart-actual` | Actual (paid) | `#008557` | `#3DBB8C` |
+
+The Dashboards page (`/dashboards/executive`, `/dashboards/regional`) is a list template (§2.4): page header
+with **Export** (PowerPoint, PDF) as a secondary menu, Executive and Regional tabs, the filters in a row,
+then summary figures, tables, the monthly chart and the panels in cards. Exported files use the same tokens'
+light values with Text Strong text on white.
 
 ---
 
@@ -781,7 +825,7 @@ a visually hidden label ("4 waiting for you"); nothing for 0.
 **`ProgressBar`** — §4.6; `role="progressbar"` with the real percentage as `aria-valuetext`.
 
 **`PersonLabel` and `Avatar`** — avatar 24 (`sm`, tables and pickers) or 32 (`md`, top bar and panels),
-radius pill, `--brand-mark` fill with `--on-accent` initials 12/18 bold (14.74 light, 11.58 dark), hidden
+radius pill, `--avatar-bg` fill with `--on-accent` initials 12/18 bold (14.74 light, 11.58 dark), hidden
 from screen readers; then the full name 14 `--ink`, " (you)" and " (inactive)" written out; an optional
 second line 12 `--ink-2`. In tables the name never wraps (ellipsis with a tooltip).
 
@@ -851,6 +895,14 @@ date input, which shows "12/31/2026" in US-English browsers (UI audit X-15, C-04
 "%" unit); under it the running total in 14 bold: "100.00% — complete" (`--success-text`), "90.00% — 10.00%
 left" (`--ink-2`), "110.00% — 10.00% too much" (`--danger-text`); **Split evenly** as a secondary `sm` button.
 
+**`YearRangeField`** (feature 016) — two selects, **From** and **To**, that keep From ≤ To, at most five years
+apart on All work ("Choose at most 5 years."), with **All years** where a list allows it (Plans).
+
+**Budget by month card** (feature 016) — on the plan page and the campaign and initiative panels: the phasing
+(None · Evenly · Custom months) with a period table and the running total ("100,000.00 of 600,000.00
+phased — 500,000.00 left"); **Edit** opens the phasing editor in a side panel; a mismatch is a warning, not
+a block.
+
 **`ShellAttributeFields`** — the attribute sections in the order of the form definition, each field by the
 choice rules above; dependent fields stay visible but locked with a reason until their parent is set; the
 Settings preview highlights one attribute with `--hover`, its secondary text in Text Strong (was a
@@ -898,6 +950,16 @@ sits on the grey page without a card, §3.1); the action. **The action is a seco
 page header already holds the same primary action** ("New plan"), and the primary only when the page has
 no other (§11, rule 1).
 
+**`ViewOnlyNote`** (feature 014) — an info `InlineAlert` with a lock under the page header, once per page,
+where the person may change nothing: "View only — your role (Viewer) lets you see this plan but not change
+it. Ask an administrator (Alex Morgan) if you need to change it." (Settings: "View only — only
+administrators change Settings. Ask … if something needs to change."). Menus on that page leave out what the
+person may not do; elsewhere such an action stays, disabled with the server's reason (D-352).
+
+**`NoAccess`** (feature 014) — the no-access page at the address of a page or form the person's roles do
+not open: a shield icon, "No access" as the title, the server's sentence and **Go to Home**. A record
+outside the person's access shows the not-found page instead, so nothing of it is revealed.
+
 **`ErrorState`** — the same layout with a white alert icon on a 48 px `--danger-bg` circle (a cloud icon when offline),
 the plain-language message as `role="alert"` and **Try again** (secondary, with a refresh icon). No
 technical details on screen.
@@ -915,8 +977,9 @@ of a dialog, panel or drawer (R14).
 
 ### 5.7 Brand
 
-**`Logo`** — §3.10: the 28 px Text Strong tile with the Surface-coloured star (`md`; `lg` 32 on the sign-in page), optional
-wordmark "MAPP" Jost 600 18. The tile is decoration; the link around it is named "MAPP home".
+**`Logo`** — §3.10: the name "SP&A One" in its colours (`md` 18 px; `lg` 20 px), one image named "SP&A One"
+for assistive technology. **`ProductName`** — the same coloured name in the surrounding font, for a title. **`LogoTile`** — the 28 px blue tile with the yellow "1"; decoration, so the link
+around it is named "SP&A One home".
 
 ### 5.8 App shell parts (`frontend/src/app/`)
 
@@ -928,7 +991,7 @@ wordmark "MAPP" Jost 600 18. The tile is decoration; the link around it is named
 | `AccountMenu` | Opened from the top bar's avatar button; a menu (§5.1 look) with name and role (not a link), My profile, Appearance (three choices, the current one ticked), a separator, Sign out |
 | `NotificationBell` | 40 px ghost icon button with `CountBadge`; opens a 360 wide popover (radius 8, `--shadow-md`) with the notices, **Mark all as read** (ghost) and links |
 | `ThemeToggle` | Becomes the Appearance choice inside `AccountMenu` |
-| `PublicLayout` (sign-in) | `--page-bg` canvas, one centred white card (max 400 wide, radius 16, padding 32) with the logo, the title "Sign in to MAPP" (Jost 700 28), the fields (48 high) and **Sign in** (primary, `lg`, full width). The brand appears once (UI audit S-01); no gradient header (S-02). |
+| `PublicLayout` (sign-in) | `--page-bg` canvas, one centred white card (max 400 wide, radius 16, padding 32) with the logo, the title "Sign in to SP&A One" (Jost 700 28; the name in its colours through `ProductName`), the fields (48 high) and **Sign in** (primary, `lg`, full width). The brand appears once (UI audit S-01); no gradient header (S-02). |
 
 ---
 
@@ -1170,7 +1233,7 @@ or one component (see the recommendations report for the questions to Shell).
 | Item | Now | When Shell supplies it |
 |---|---|---|
 | Heading typeface (Shell Heavy / Bold / Book, URW, proprietary) | Jost 600/700 (OFL) in `--font-heading` | Change `--font-heading` (and possibly `--font`) and self-host Shell's files under its licence |
-| Pecten and trade-mark consent | MAPP's Text Strong tile and star | Replace `Logo` and the favicon, following Shell's placement and clear-space rules |
+| Pecten and trade-mark consent | The name SP&A One and the "1" tile | Place the pecten as Shell requires beside the name and in `LogoTile` and the favicon, following Shell's placement and clear-space rules |
 | Dark-theme values marked TODO(DARK_TOKENS) in constitution X | Earlier dark values: Link Hover `#8CB4E6`, Disabled Text `#B0B8C1`, error red `#FF5C5F` / `#FF7B7E` | Update §3.1 and `tokens.css` and re-run the contrast checks |
 | Shell's internal design system ("Shell DS") | This document | If mandatory for internal tools, its tokens and components replace ours where they differ |
 | Icon set | lucide outline icons | Swap the icon imports |
@@ -1186,3 +1249,4 @@ or one component (see the recommendations report for the questions to Shell).
 | 2 | 20 Oct 2026 | Shell visual language per the product-owner decisions of 20 Oct 2026 (D-310–D-314): Shell tokens light and dark with contrast values, Jost + Arial type scale, spacing, radius, elevation, control heights, breakpoints and widths; top bar and white sidebar with the yellow bar; one page header and five page templates; specs for every shared component; WCAG 2.2 AA; consistency checklist. §6–§8 and §10 kept, with §6.3 (one primary by role), §6.7 (set inactive) and §7 (rail, progress) added. |
 | 2.1 | 26 Oct 2026 | Feature 020, Shell palette (constitution X): Primary Yellow `#FFC600` (hover `#FFCB14`, press `#EBB600`), Secondary Red `#DD1D21` and every theme colour exactly, light and dark; `--raised`, link states and Disabled tokens added; `--brand-yellow-tint` and `--danger-bg-hover` retired, red and yellow never tinted or shaded; where Text Subtle, links and red text may sit, with Text Strong elsewhere; Text Strong focus ring; problem chips a red fill; the navy and dark-blue roles moved to palette tokens (§3.1, §3.10, §3.11, §4.1, §4.3, §5, §9, §12). |
 | 2.2 | 28 Oct 2026 | Features 032 and 033: the purchase-request screens, their words and confirmations (§2.6); level tags PURCHASE REQUEST and PR LINE in the line items' grey (§4.2). |
+| 2.3 | 28 Oct 2026 | Feature 035, constitution 4.5.0: the product is shown as SP&A One; the name is the logo with "&" Shell dark blue and "One" Shell yellow (`#AD8700` on light surfaces); `LogoTile` with a yellow "1" below 960 px and as the favicon; tokens `--brand-name-amp`, `--brand-name-one`, `--brand-tile`, `--on-brand-tile`; `--brand-mark` and the star retired (§1, §2, §3.1, §3.10, §5.7, §6, §12). |

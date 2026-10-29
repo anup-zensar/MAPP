@@ -18,7 +18,7 @@ describe('FinanceBudgetItemsPage: the list (FR-014, FR-015)', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Finance budget items' }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Finance budget items · MAPP');
+    expect(document.title).toBe('Finance budget items · SP&A One');
     expect(
       screen.getByText(
         'The finance budget items line items link to. A simple list until the Finance module arrives.',

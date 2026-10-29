@@ -5,14 +5,11 @@ description: "Task list for feature 016 — Planning and Currency Extensions"
 
 # Tasks: Planning and Currency Extensions
 
-> **Build state after the final merge** (`plan-module` at `a1ae8fe`, 21 October 2026): the backend is complete.
-> Shared web parts were built under other names: `RateTip`, `MoneyPair` and `rates.ts` in `features/line-items/`,
-> `AmountPair` in `features/plans/`, `YearRangeMenu` in `features/all-work/`, `useFieldHelp` and `FieldHelpTip`
-> in `features/settings/field-help/`. **Open:** T028 (the Import GSAP rates page is built, but
-> `/settings/currencies/import` is not in `frontend/src/app/router.tsx` — `SETTINGS_016_ROUTES` is unused — so
-> the Currencies page's **Import GSAP rates** button opens Not found); T074–T077 (attribute filters, Breakdown,
-> Planned cost by, saved views and export of them); T084–T088 (record screens do not read Field help yet);
-> T089 (end-to-end journeys); T090–T093 (product documents); T094, T095.
+> **Build state** (2026-10-29): every task is done and ticked. Since the final merge: the Import GSAP rates route
+> (T028, routed by feature 026), attribute filters, Breakdown and Planned cost by (T074 – T077, D-350), Field help on
+> the record screens (T084 – T088, D-351), the end-to-end journeys (T089), the product documents (T090 – T093), the
+> checks (T094) and the success criteria (T095, `checklists/requirements.md`; SC-003 needs a usability session with
+> Shell planners).
 
 **Input**: Design documents from `specs/016-planning-and-currency-extensions/`
 
@@ -90,7 +87,7 @@ and multi-year · US6 categories · US7 field help.
 
 - [x] T026 [P] [US1] Currency details in `frontend/src/features/settings/currencies/`: current rate line with date and source, `RateHistorySection` (table, "Current", "From <date>", Add rate, row menu Edit/Delete with `useUndoableDelete`); tests
 - [x] T027 [P] [US1] `RateDialog` (add/edit, date + rate, impact confirmation via the two impact operations, "Keep editing" / "Save rate"); invalidate `useCurrentRates`; tests
-- [ ] T028 [P] [US1] `ImportRatesPage` at `/settings/currencies/import` (upload, review grouped by outcome with counts and row numbers, Import n rates, Cancel, sample link) and `RecentImports` on the Currencies list; route in `frontend/src/app/router.tsx`; tests with `mockApi`
+- [x] T028 [P] [US1] `ImportRatesPage` at `/settings/currencies/import` (upload, review grouped by outcome with counts and row numbers, Import n rates, Cancel, sample link) and `RecentImports` on the Currencies list; route in `frontend/src/app/router.tsx`; tests with `mockApi` *(routed since feature 026 in `frontend/src/app/routes.tsx`; `ImportRatesPage.test.tsx`, `CurrenciesPage.test.tsx`)*
 
 **Checkpoint**: US1 works alone (spec US1 scenarios).
 
@@ -206,10 +203,16 @@ and multi-year · US6 categories · US7 field help.
 
 ### Frontend
 
-- [ ] T074 [P] [US6] `AttributeFilterMenu.tsx` under **More filters** (attributes by level, searchable options, Not filled in, Yes/No) and chips "Brands: Helix, Not filled in"; tests (FR-039)
-- [ ] T075 [P] [US6] `BreakdownView.tsx` and the **Breakdown** pill tab: "Break down by" / "then by" pickers, table with expandable groups, notes, totals row, rows open the Grid filtered; tests (FR-040, FR-041)
-- [ ] T076 [P] [US6] `frontend/src/features/plans/PlannedCostByCard.tsx` on `PlanPage` (Spend type default, picker, plan currency); tests (FR-042)
-- [ ] T077 [US6] Saved views and export menu carry the Breakdown, attribute filters and range (`SaveViewDialog`, `ViewsMenu`, `ExportMenu`); tests (FR-043) (depends on T066, T075)
+- [x] T074 [P] [US6] `AttributeFilterMenu.tsx` under **More filters** (attributes by level, searchable options, Not filled in, Yes/No) and chips "Brands: Helix, Not filled in"; tests (FR-039)
+- [x] T075 [P] [US6] `BreakdownView.tsx` and the **Breakdown** pill tab: "Break down by" / "then by" pickers, table with expandable groups, notes, totals row, rows open the Grid filtered; tests (FR-040, FR-041)
+- [x] T076 [P] [US6] `frontend/src/features/plans/PlannedCostByCard.tsx` on `PlanPage` (Spend type default, picker, plan currency); tests (FR-042)
+- [x] T077 [US6] Saved views and export menu carry the Breakdown, attribute filters and range (`SaveViewDialog`, `ViewsMenu`, `ExportMenu`); tests (FR-043) (depends on T066, T075)
+  *Built (D-350):* `features/all-work/` `AttributeFilterMenu.tsx`, `attribute-filters.ts`, `BreakdownView.tsx`,
+  `BreakdownTable.tsx`, `GroupingPickers.tsx`, `breakdown-state.ts`, `breakdown-api.ts`, `breakdown-text.ts`; the view
+  state (`view-state.ts`) carries `attr`, `by`, `thenBy` into saved views and exports; `features/plans/PlannedCostByCard.tsx`.
+  Tests `AllWorkPage.breakdown.test.tsx`, `AllWorkPage.breakdown-views.test.tsx`, `attribute-filters.test.ts`,
+  `breakdown-state.test.ts` (fast-check), `PlannedCostByCard.test.tsx`. Fixed on the way: a saved view no longer reads
+  as Modified when its state's keys come back in another order.
 
 **Checkpoint**: US6 works alone.
 
@@ -230,11 +233,22 @@ and multi-year · US6 categories · US7 field help.
 
 - [x] T082 [P] [US7] `frontend/src/features/settings/field-help/FieldHelpPage.tsx` and `FieldHelpPanel.tsx` (search, level tabs, chips, Edit with counter, Reset to default with confirmation, version conflict message, note with the Shell-attribute link); route `/settings/field-help`; Settings card in `sections.ts`; tests (FR-045, FR-046, FR-048)
 - [x] T083 [P] [US7] Shell attributes list: "No help yet" chip and `?help=missing` filter in `features/settings/shell-attributes/`; tests (FR-048)
-- [ ] T084 [P] [US7] Tips on plan form, details, header and summary cards (`PlanForm`, `PlanDetails`, `PlanFacts`, `PlanSummaryCards`, `GoalFields`, `PlanGoals`) from `help()`; fixed tip literals removed; tests assert one ⓘ per labelled field (FR-047)
-- [ ] T085 [P] [US7] Tips on campaign and initiative forms, panels and rows (`RecordForm`, `RecordDetails`, `BudgetCost`, `StatusChips`); tests (FR-047)
-- [ ] T086 [P] [US7] Tips on the activity form, page and sections (`ActivityForm`, `ActivityHeader`, `ActivitySections`, `GoalsFields`, `SplitLinks`); tests (FR-047)
-- [ ] T087 [P] [US7] Tips on line-item form, page and section (`LineItemForm`, `CostFields`, `FinanceBudgetFields`, `SpreadEditor`, `UnassignedBalanceRow`, `SpreadGrid`, `LineItemPage`); tests (FR-047)
-- [ ] T088 [P] [US7] Tips on Budget by month (`phasing.*` keys) and All work: `SummaryCards`, `ColumnChooser` via new `frontend/src/features/all-work/columnHelp.ts`, Breakdown share; tests (FR-047)
+- [x] T084 [P] [US7] Tips on plan form, details, header and summary cards (`PlanForm`, `PlanDetails`, `PlanFacts`, `PlanSummaryCards`, `GoalFields`, `PlanGoals`) from `help()`; fixed tip literals removed; tests assert one ⓘ per labelled field (FR-047)
+- [x] T085 [P] [US7] Tips on campaign and initiative forms, panels and rows (`RecordForm`, `RecordDetails`, `BudgetCost`, `StatusChips`); tests (FR-047)
+- [x] T086 [P] [US7] Tips on the activity form, page and sections (`ActivityForm`, `ActivityHeader`, `ActivitySections`, `GoalsFields`, `SplitLinks`); tests (FR-047)
+- [x] T087 [P] [US7] Tips on line-item form, page and section (`LineItemForm`, `CostFields`, `FinanceBudgetFields`, `SpreadEditor`, `UnassignedBalanceRow`, `SpreadGrid`, `LineItemPage`); tests (FR-047)
+- [x] T088 [P] [US7] Tips on Budget by month (`phasing.*` keys) and All work: `SummaryCards`, `ColumnChooser` via new `frontend/src/features/all-work/columnHelp.ts`, Breakdown share; tests (FR-047)
+  *Built (D-351) under today's names:* `useFieldHelp`/`FieldHelpTip` exported from `features/settings`; forms pass
+  `tip={help(key)}` (`PlanBasicsSection`, `PlanBudgetSection`, `GoalFields`, `RecordForm`, `ActivityBasicsCard`,
+  `ActivityDatesCard`, `ActivityForm`, `GoalsFields`, `LineItemFormCards`, `CostFields`, `FinanceBudgetFields`,
+  `SpreadEditor`); details and cards use `FieldHelpTip` (`PlanDetails`, `PlanSummaryCards`, `PlanGoals`, `PlanHeader`,
+  `RecordDetails`, `BudgetCost`, `ActivityHeader`, `ActivitySections`, `SplitLinks`, `ActivityFigures`,
+  `LineItemDetailsCard`, `LineItemFinanceCard`, `SwbsCard`, `LineItemFigures`, `LineItemSummaryBar`, `SpreadGrid`,
+  `UnassignedBalanceRow`, `PeriodRows`, `BudgetByMonthCard`, All work `SummaryCards`, `ColumnChooser` through
+  `column-help.ts`, the Breakdown's Share). `PlanFacts` and `StatusChips` have no labelled value of their own. The
+  "From finance" keys have no screen since 015 replaced those sections. Tests `PlanFieldHelp.test.tsx`,
+  `RecordFieldHelp.test.tsx`, `ActivityFieldHelp.test.tsx`, `LineItemFieldHelp.test.tsx`, cases in
+  `BudgetByMonthCard.test.tsx`, `ColumnChooser.test.tsx`, `SummaryCards.test.tsx`, `AllWorkPage.breakdown.test.tsx`.
 
 **Checkpoint**: US7 works alone; SC-008.
 
@@ -242,13 +256,25 @@ and multi-year · US6 categories · US7 field help.
 
 ## Phase 10: End-to-end, documentation and checks
 
-- [ ] T089 Write `frontend/e2e/planning-currency.spec.ts` (journeys of plan *Tests* › End-to-end, records prepared through the API as `e2e/planning.ts` does, axe on Currencies with rate history, Import rates, Field help, plan page with Budget by month, Split dialog, All work Breakdown and Budget & cost Yearly); existing `core-flow`, `module-rest`, `smoke` stay green (depends on Phases 3–9)
-- [ ] T090 [P] Update `docs/product/domain-model.md`: §4 money rules (plan currency, dated rates, `Convert`, unassigned in the plan currency), §4.1 Budget by month, §2.5 split as a re-approval change, §6 Currency (rate history), §7 records (exchange rate, rate import, field help)
-- [ ] T091 [P] Update `docs/product/field-catalogue.md`: §1 Plan type, Plan currency, Budget by month; §1 #8, §2 #5, §3 #6, §4.1 #8 "money (plan currency)"; §2–§3 Budget by month; §4 Split from / Split into; §5 #6 "Planned cost (plan currency)"
-- [ ] T092 [P] Update `docs/product/glossary.md` (Plan currency, Current rate, Rate history, GSAP rate import, Budget by month, Phased budget, Split activity, Plan type, Breakdown, Field help) and `docs/product/design-system.md` §4–§5 (AmountPair, RateTip, YearRangeField, Budget by month card)
-- [ ] T093 [P] Update `docs/sdd/plan-module-build.md` (016 row in §2, owners of the new shared parts in §4, routes in §5, seed order note in §6) and `docs/sdd/feature-map.md` (016 row and scope boundaries)
-- [ ] T094 Run the backend checks (`gofmt -l .` prints nothing, `go vet ./...`, `go test ./...`) and the web checks (`npm.cmd run check`); `notYetServed` holds none of 016's operations (depends on T089)
-- [ ] T095 Check SC-001 – SC-009 (timed runs for SC-002, SC-003, SC-006; axe for SC-009) and record the results in `specs/016-planning-and-currency-extensions/checklists/requirements.md`; tick the tasks (depends on T094)
+- [x] T089 Write `frontend/e2e/planning-currency.spec.ts` (journeys of plan *Tests* › End-to-end, records prepared through the API as `e2e/planning.ts` does, axe on Currencies with rate history, Import rates, Field help, plan page with Budget by month, Split dialog, All work Breakdown and Budget & cost Yearly); existing `core-flow`, `module-rest`, `smoke` stay green (depends on Phases 3–9)
+  - Done 2026-10-29 for the screens built today: the GSAP rate import with its review (axe on Import rates and on
+    Currencies › EUR with its rate history), a GBP plan made on the plan form with USD beside its amounts, its
+    budget by month evenly and then custom by quarter (axe on the editor and the plan page), a GBP activity
+    with a EUR line item split off into a new activity (axe on the Split dialog), and All work over two years
+    in Budget & cost Yearly with Compare with phased budget (axe). Every journey uses records of its own. Not
+    covered here because another feature lane is finishing them: attribute filters, Breakdown and Field help
+    (T074–T077, T084–T088). The plan form shows "≈ … USD" only after saving, as T039 decided, so the journey
+    checks it on the plan page.
+  - Bug found and fixed: All work's pager ("Rows 1–50 of …", shown from 51 rows) lies on the grey page in
+    Text Subtle, which fails WCAG 1.4.3 contrast (axe `color-contrast`); it is now Text Strong, as constitution X
+    asks on grey. The journey's axe check found it once the full suite had added enough rows; no component test
+    can see it, because jsdom computes no colours.
+- [x] T090 [P] Update `docs/product/domain-model.md`: §4 money rules (plan currency, dated rates, `Convert`, unassigned in the plan currency), §4.1 Budget by month, §2.5 split as a re-approval change, §6 Currency (rate history), §7 records (exchange rate, rate import, field help)
+- [x] T091 [P] Update `docs/product/field-catalogue.md`: §1 Plan type, Plan currency, Budget by month; §1 #8, §2 #5, §3 #6, §4.1 #8 "money (plan currency)"; §2–§3 Budget by month; §4 Split from / Split into; §5 #6 "Planned cost (plan currency)"
+- [x] T092 [P] Update `docs/product/glossary.md` (Plan currency, Current rate, Rate history, GSAP rate import, Budget by month, Phased budget, Split activity, Plan type, Breakdown, Field help) and `docs/product/design-system.md` §4–§5 (AmountPair, RateTip, YearRangeField, Budget by month card)
+- [x] T093 [P] Update `docs/sdd/plan-module-build.md` (016 row in §2, owners of the new shared parts in §4, routes in §5, seed order note in §6) and `docs/sdd/feature-map.md` (016 row and scope boundaries)
+- [x] T094 Run the backend checks (`gofmt -l .` prints nothing, `go vet ./...`, `go test ./...`) and the web checks (`npm.cmd run check`); `notYetServed` holds none of 016's operations (depends on T089)
+- [x] T095 Check SC-001 – SC-009 (timed runs for SC-002, SC-003, SC-006; axe for SC-009) and record the results in `specs/016-planning-and-currency-extensions/checklists/requirements.md`; tick the tasks (depends on T094)
 
 ---
 

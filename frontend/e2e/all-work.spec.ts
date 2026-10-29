@@ -145,7 +145,7 @@ test('All work: filter and search the grid, the calendar, budget and cost by mon
   await page.getByRole('menuitem', { name: 'CSV (.csv)' }).click();
   const download = await downloading;
   const fileName = download.suggestedFilename();
-  expect(fileName).toMatch(new RegExp(`^MAPP All work – Grid – ${SEED_YEAR} – .+\\.csv$`));
+  expect(fileName).toMatch(new RegExp(`^SP&A One All work – Grid – ${SEED_YEAR} – .+\\.csv$`));
   await expectToast(page, `Exported '${fileName}'`);
   const csv = await readFile(await download.path(), 'utf8');
   expect(csv).toContain('View,Grid');

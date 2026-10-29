@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"mapp/internal/overspend"
+
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/database"
@@ -113,6 +115,7 @@ func campaignsFromRows(rows []sqlcdb.ListCampaignsRow, err error) ([]Campaign, e
 			StartDate: database.DateOf(r.StartDate), EndDate: database.DateOf(r.EndDate),
 			Budget: database.MoneyOf(r.BudgetMinor, r.BudgetCurrency), Attributes: attributes,
 			BudgetPhasing: rollup.PhasingOf(r.PhasingMethod, row.PhasingMonths, row.PhasingAmounts).Normalised(),
+			Overspend:     overspend.Mode(r.Overspend),
 			Meta: record.Meta{
 				Version:   r.Version,
 				CreatedAt: r.CreatedAt,

@@ -43,7 +43,7 @@ describe('FieldHelpPage: the list (016 FR-045, FR-048)', () => {
     renderHelp();
 
     expect(screen.getByRole('heading', { level: 1, name: 'Field help' })).toBeInTheDocument();
-    expect(document.title).toBe('Field help · MAPP');
+    expect(document.title).toBe('Field help · SP&A One');
     await screen.findByRole('table');
 
     expect(fieldNames()).toEqual(['Plan budget', 'Planned cost', 'BCPIR plan']);

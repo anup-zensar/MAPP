@@ -40,6 +40,9 @@ type Planning struct {
 	LineItems  LineItemStore
 	Approvals  ApprovalStore
 	AllWork    AllWorkStore
+	Overspend  OverspendStore
+	Bulk       BulkStore
+	Workbook   WorkbookStore
 }
 
 type Finance struct {

@@ -1,11 +1,13 @@
 import { Link } from 'react-router';
 import type { components } from '@/api/generated/schema';
+import { plural } from '@/format/text';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
 import styles from './RecordFinancials.module.css';
 
 type FinancialRecordView = components['schemas']['FinancialRecordView'];
 type Level = components['schemas']['AttributeLevel'];
+type Figures = components['schemas']['FinancialFigures'];
 
 const BREAKDOWN_HEADING: Record<Level, string> = {
   plan: 'By campaign',
@@ -53,9 +55,7 @@ export function FinancialsBreakdown({
             <tr key={record.id}>
               <th scope="row">
                 <Link to={recordHref(record.type, record.id, planId)}>{record.name}</Link>
-                {figures.committedAbovePlanned && (
-                  <span className={styles.rowProblem}> · Committed above planned cost</span>
-                )}
+                <AboveMarker figures={figures} />
               </th>
               <td className={styles.number}>{money(figures.committed)}</td>
               <td className={styles.number}>{money(figures.invoiced)}</td>
@@ -67,4 +67,14 @@ export function FinancialsBreakdown({
       </table>
     </div>
   );
+}
+
+/** A row's red marker: "Committed above planned cost on 1 line item", or above its own planned cost. */
+function AboveMarker({ figures }: { figures: Figures }) {
+  const count = figures.lineItemsAbovePlanned;
+  const text =
+    count > 0
+      ? `Committed above planned cost on ${plural(count, 'line item')}`
+      : figures.committedAbovePlanned && 'Committed above planned cost';
+  return text ? <span className={styles.rowProblem}>{` · ${text}`}</span> : null;
 }

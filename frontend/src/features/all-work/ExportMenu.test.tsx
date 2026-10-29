@@ -10,7 +10,7 @@ import { reply } from '@/testing/replies';
 import type { AllWorkResult, ViewState } from './all-work-types';
 import { ExportMenu } from './ExportMenu';
 
-const XLSX_NAME = 'MAPP All work – Grid – 2026 – 18 Oct 2026.xlsx';
+const XLSX_NAME = 'SP&A One All work – Grid – 2026 – 18 Oct 2026.xlsx';
 
 /** The API's file answer, named in Content-Disposition as the contract says. */
 function fileAnswer(name: string, type: string): Response {
@@ -85,7 +85,7 @@ describe('ExportMenu (US7)', () => {
   });
 
   it('exports a CSV of Budget & cost with its period (US7 scenario 2, FR-032)', async () => {
-    const name = 'MAPP All work – Budget & cost – 2026 – 18 Oct 2026.csv';
+    const name = 'SP&A One All work – Budget & cost – 2026 – 18 Oct 2026.csv';
     const { api, user } = renderExport(
       { ...standard2026(), view: 'budget', period: 'quarter' },
       undefined,
@@ -153,5 +153,22 @@ describe('ExportMenu (US7)', () => {
     const messages = await findMessages();
     expect(within(messages).getByText('Choose a year from 2000 to 2100.')).toBeInTheDocument();
     expect(saved).toEqual([]);
+  });
+
+  it('shows both formats disabled with the reason to someone who may not export (014 FR-016)', async () => {
+    const reason =
+      "Exporting isn't part of your role (Editor). Ask an administrator if you need it.";
+    const api = mockApi([]);
+    const { user } = renderWithProviders(
+      <ExportMenu state={standard2026()} result={gridResult()} refusal={reason} />,
+      { user: testUser() },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+    const item = await screen.findByRole('menuitem', { name: 'Spreadsheet (.xlsx)' });
+    expect(item).toHaveAttribute('aria-disabled', 'true');
+    expect(item).toHaveAccessibleDescription(reason);
+    await user.click(item);
+    expect(api.requests).toEqual([]);
   });
 });

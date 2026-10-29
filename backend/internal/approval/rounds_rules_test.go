@@ -90,7 +90,7 @@ func TestSubmit_PartlyAutomatic_FR010_FR014(t *testing.T) {
 	entries := f.actions(t, "A-1009")
 	if len(entries) != 2 || entries[0].Action != ActionSubmitted || entries[0].Level != 1 || entries[1].Action != ActionSkipped ||
 		entries[1].Level != 2 || entries[1].Actor != actor.System || entries[1].Rule != "only when planned cost is at least $100,000.00" {
-		t.Errorf("history = %+v, want submitted at level 1, then level 2 not needed by MAPP", entries)
+		t.Errorf("history = %+v, want submitted at level 1, then level 2 not needed by SP&A One", entries)
 	}
 	assertLog(t, f, "A-1009", []string{
 		"Mei Lin submitted activity 'Fleet card launch' [created → submitted] (Round 1 · Standard marketing approval · " +
@@ -139,20 +139,20 @@ func TestSubmit_ApprovedAtSubmission_FR014_017P4(t *testing.T) {
 	for _, e := range f.actions(t, "A-1001") {
 		got = append(got, string(e.Action)+" "+e.Actor.Name+" "+e.Rule)
 	}
-	want := []string{"submitted Mei Lin ", "autoApproved MAPP planned cost is below $10,000.00",
-		"skipped MAPP only when planned cost is at least $100,000.00", "skipped MAPP only when business unit is Mobility"}
+	want := []string{"submitted Mei Lin ", "autoApproved SP&A One planned cost is below $10,000.00",
+		"skipped SP&A One only when planned cost is at least $100,000.00", "skipped SP&A One only when business unit is Mobility"}
 	if !slices.Equal(got, want) {
 		t.Errorf("history = %q, want %q", got, want)
 	}
 	assertLog(t, f, "A-1001", []string{
-		"MAPP approved automatically activity 'Launch film' [submitted → approved] (Round 1 · level 1 approved automatically " +
+		"SP&A One approved automatically activity 'Launch film' [submitted → approved] (Round 1 · level 1 approved automatically " +
 			"(planned cost is below $10,000.00); level 2 not needed (only when planned cost is at least $100,000.00); " +
 			"level 3 not needed (only when business unit is Mobility))",
 		"Mei Lin submitted activity 'Launch film' [created → submitted] (Round 1 · Standard marketing approval)",
 	})
 	assertNotified(t, f, priya, "autoApproved: Activity approved automatically — 'Launch film' (A-1001) was approved automatically: planned cost is below $10,000.00")
 	if n := f.notifications(t, priya.ID); n[0].Actor != actor.System {
-		t.Errorf("notification by %v, want MAPP", n[0].Actor)
+		t.Errorf("notification by %v, want SP&A One", n[0].Actor)
 	}
 	if states := chainStates(approval.Rounds[0]); states != "L1 autoApproved, L2 skipped, L3 skipped" {
 		t.Errorf("chain = %s", states)
@@ -162,7 +162,7 @@ func TestSubmit_ApprovedAtSubmission_FR014_017P4(t *testing.T) {
 	f.putWorkflow(t, "WF-1004", "Mobility only", nil, nil, Level{ApproverIDs: []string{daniel.ID}, AppliesWhen: &Condition{BusinessUnitIDs: []string{mobilityUnit}}})
 	f.addActivity(t, "A-1003", "Billboard winter wave", priya.ID, "WF-1004")
 	f.submit(t, mei, "A-1003", "")
-	if log := f.log(t, "A-1003"); logLine(log[0]) != "MAPP approved automatically activity 'Billboard winter wave' [submitted → approved] (Round 1 · no level applies)" {
+	if log := f.log(t, "A-1003"); logLine(log[0]) != "SP&A One approved automatically activity 'Billboard winter wave' [submitted → approved] (Round 1 · no level applies)" {
 		t.Errorf("log = %s", logLine(log[0]))
 	}
 }

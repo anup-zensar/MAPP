@@ -1,3 +1,4 @@
+import { FieldHelpTip } from '@/features/settings';
 import { formatAmount, toCents } from '@/format/decimal';
 import styles from './BudgetByMonth.module.css';
 import type { BudgetByMonthPeriods } from './api';
@@ -19,14 +20,25 @@ function totalOf(values: (Money | null)[]): string | null {
   return amountText(set.reduce((total, value) => total + toCents(value.amount), 0n));
 }
 
+function RowHead({ label, helpKey }: { label: string; helpKey?: string }) {
+  return (
+    <th scope="row">
+      {label}
+      {helpKey && <FieldHelpTip helpKey={helpKey} label={label} />}
+    </th>
+  );
+}
+
 export function PeriodRow({
   label,
+  helpKey,
   values,
   extra,
   extraCount = 0,
   empty,
 }: {
   label: string;
+  helpKey?: string;
   values: (Money | null)[];
   extra?: Money[];
   extraCount?: number;
@@ -37,7 +49,7 @@ export function PeriodRow({
   if (empty) {
     return (
       <tr>
-        <th scope="row">{label}</th>
+        <RowHead label={label} helpKey={helpKey} />
         <td colSpan={values.length + columns + 1} className={styles.muted}>
           {empty}
         </td>
@@ -47,7 +59,7 @@ export function PeriodRow({
   const total = totalOf([...values, ...(extra ?? [])]);
   return (
     <tr>
-      <th scope="row">{label}</th>
+      <RowHead label={label} helpKey={helpKey} />
       {values.map((value, index) => (
         <td key={index} className={styles.number}>
           {amount(value)}
@@ -79,7 +91,7 @@ export function DifferenceRow({
 }) {
   return (
     <tr>
-      <th scope="row">Difference</th>
+      <RowHead label="Difference" helpKey="phasing.difference" />
       {periods.difference.map((value, index) => {
         const over = periods.over[index];
         const by = over

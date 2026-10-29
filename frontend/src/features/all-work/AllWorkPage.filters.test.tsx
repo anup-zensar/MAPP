@@ -100,7 +100,7 @@ describe('AllWorkPage filters and search (US2)', () => {
     ]);
   });
 
-  it('keeps the filters and the search while the person moves around MAPP (FR-009)', async () => {
+  it('keeps the filters and the search while the person moves around SP&A One (FR-009)', async () => {
     const { api, user, router } = renderAllWorkPage([
       reply('GET /api/v1/all-work', (request) =>
         new URL(request.url).searchParams.has('activityStatus')

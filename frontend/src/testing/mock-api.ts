@@ -1,42 +1,38 @@
+/** The fake MAPP API of component and page tests, on Mock Service Worker (research R19, 026 R9). */
 import { http as msw, HttpResponse } from 'msw';
 import type { HttpHandler } from 'msw';
 import { setupServer } from 'msw/node';
+import { NO_BREAKDOWN } from './fixtures/all-work-breakdown';
 import { ORIGIN, reply } from './replies';
 
-/**
- * The fake MAPP API of component and page tests (research R19, 026 R9), on Mock Service Worker.
- * A request no handler answers gets a 501 and fails the test afterwards (testing/setup.ts).
- *
- *   const api = mockApi([reply('GET /api/v1/me', { body: priya })]);
- */
-
-/** One request the code under test made. */
 export interface RecordedRequest {
   method: string;
   path: string;
-  /** The query string, for example "?limit=20" ("" when there is none). */
   search: string;
-  /** The JSON body, parsed (undefined when there is no body). */
   body: unknown;
 }
 
-/** The fake API of one test. */
 export interface MockedApi {
-  /** Every request, in the order they were made. */
   requests: RecordedRequest[];
-  /** The bodies sent to one "METHOD /path" (the path as sent, with its IDs), in order. */
   bodiesOf(key: string): unknown[];
 }
 
-/**
- * The app frame's background requests (feature 008: the sidebar's Approvals count and the bell's
- * notifications, asked on every signed-in page), answered "nothing waiting" unless a test answers.
- */
 export const FRAME_ANSWERS: HttpHandler[] = [
   reply('GET /api/v1/approvals/summary', {
     body: { waitingForMe: 0, allOpen: 0, approvedThisMonth: 0, declinedThisMonth: 0 },
   }),
   reply('GET /api/v1/notifications', { body: { items: [], total: 0, unread: 0 } }),
+  reply('GET /api/v1/overspend-configuration', {
+    body: {
+      defaultMode: 'warn',
+      version: 1,
+      updatedAt: '2026-03-12T09:00:00Z',
+      updatedBy: { id: 'system', name: 'SP&A One' },
+      canChange: { available: true, reason: '' },
+    },
+  }),
+  reply('GET /api/v1/field-help', { body: { items: [], total: 0, shellAttributesWithoutHelp: 0 } }),
+  ...NO_BREAKDOWN,
 ];
 
 const TEST_HEADER = 'X-Test-Run';
@@ -44,7 +40,6 @@ let run = 0;
 let recorded: RecordedRequest[] = [];
 const unanswered: string[] = [];
 
-/** A request a finished test left behind fails as a network error, unseen by the current test. */
 const leftover = msw.all(`${ORIGIN}/*`, ({ request }) =>
   request.headers.get(TEST_HEADER) === String(run) ? undefined : HttpResponse.error(),
 );
@@ -59,13 +54,8 @@ const lastResort = msw.all(`${ORIGIN}/*`, ({ request }) => {
   return HttpResponse.json({ message: `mockApi has no answer for ${key}` }, { status: 501 });
 });
 
-/** The fake network of every test; testing/setup.ts starts and stops it. */
 export const server = setupServer(lastResort);
 
-/**
- * Marks every request with the test that sends it. MSW answers a request a few ticks later, when
- * the next test may have begun; the mark keeps each answer and record with its own test.
- */
 export function markRequests(): void {
   const intercepted = globalThis.fetch;
   globalThis.fetch = (input, init) => {
@@ -75,7 +65,6 @@ export function markRequests(): void {
   };
 }
 
-/** Answers this test's requests with `handlers` (a later one wins) and records every request. */
 export function mockApi(handlers: HttpHandler[]): MockedApi {
   run += 1;
   recorded = [];
@@ -90,7 +79,6 @@ export function mockApi(handlers: HttpHandler[]): MockedApi {
   };
 }
 
-/** Returns the requests that had no answer since the last call, and forgets them. */
 export function takeUnmockedRequests(): string[] {
   return unanswered.splice(0);
 }

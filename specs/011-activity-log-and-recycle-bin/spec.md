@@ -350,3 +350,4 @@ result and the activity-log entries.
 - No permissions (decision D-004): every user can restore, delete permanently and empty the bin. When
   roles arrive, emptying the bin is expected to be limited to administrators.
 - Sign-in, sign-out and saved views (feature 010) are not business records and do not appear in the log.
+- Since feature 014, who may see and change these records follows roles and team scopes (014 Table A and Table C; 014 FR-041).

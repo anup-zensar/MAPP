@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
 import type { components } from '@/api/generated/schema';
+import { useFieldHelp } from '@/features/settings';
 import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
 import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { formatMoneyText } from '@/format/decimal';
@@ -16,18 +17,11 @@ export interface PlanSummaryCardsProps {
   plan: Plan;
 }
 
-/**
- * The plan's money and progress at a glance (FR-012, design system §2.4 B: four cards): the plan
- * budget with what remains for campaigns (red "Over-allocated by …" below zero) and, for an
- * allocated plan, where it comes from (014 FR-031); the planned cost; the budget used (red above
- * 100 %); the activities approved — each with its formula in a tip and "—" with the reason when it
- * can't be shown. Amounts are in the plan currency with the display currency beneath when it
- * differs (016 FR-013).
- */
+/** The plan's four summary cards, in the plan currency with the display currency beneath. */
 export function PlanSummaryCards({ plan }: PlanSummaryCardsProps) {
   const { money, moneyCompact } = useFormatters();
+  const { help } = useFieldHelp();
   const { figures } = plan;
-  // The plan currency's figures; the display currency's until 016's API sends them.
   const own = plan.planFigures ?? figures;
   const noBudget = <span>No plan budget set</span>;
 
@@ -38,7 +32,7 @@ export function PlanSummaryCards({ plan }: PlanSummaryCardsProps) {
         label="Plan budget"
         value={moneyCompact(own.budget)}
         fullValue={money(own.budget)}
-        tip="The money this plan may spend in its year. Remaining for campaigns = plan budget − the budgets given to campaigns; it can go below zero."
+        tip={help('plan.budget')}
         detail={
           <span className={styles.details}>
             <Beside own={own.budget} display={figures.budget} />
@@ -57,7 +51,7 @@ export function PlanSummaryCards({ plan }: PlanSummaryCardsProps) {
         label="Planned cost"
         value={moneyCompact(own.plannedCost)}
         fullValue={money(own.plannedCost)}
-        tip="The planned cost of every activity in the plan, added up."
+        tip={help('plan.plannedCost')}
         detail={
           own.plannedCost ? (
             <Beside own={own.plannedCost} display={figures.plannedCost} />
@@ -69,7 +63,7 @@ export function PlanSummaryCards({ plan }: PlanSummaryCardsProps) {
       <SummaryCard
         label="Budget used"
         value={figures.budgetUsedPercent === null ? '—' : `${figures.budgetUsedPercent}%`}
-        tip="Planned cost ÷ plan budget."
+        tip={help('plan.budgetUsed')}
         tone={figures.overBudget ? 'problem' : undefined}
         detail={
           figures.budgetUsedPercent !== null ? (
@@ -90,14 +84,13 @@ export function PlanSummaryCards({ plan }: PlanSummaryCardsProps) {
         value={
           figures.activities === 0 ? '—' : `${figures.activitiesApproved} of ${figures.activities}`
         }
-        tip="Activities that are Approved, In progress or Complete, out of all activities in the plan."
+        tip={help('plan.activitiesApproved')}
         detail={<span>{APPROVAL_PROGRESS[figures.approvalProgress].word}</span>}
       />
     </section>
   );
 }
 
-/** "≈ 759,493.67 USD" under a plan-currency amount when the reader's currency differs (016). */
 function Beside({ own, display }: { own: Money | null; display: Money | null }) {
   if (!differentCurrency(own, display) || !display) {
     return null;
@@ -105,10 +98,6 @@ function Beside({ own, display }: { own: Money | null; display: Money | null }) 
   return <span className={styles.beside}>≈ {formatMoneyText(display)}</span>;
 }
 
-/**
- * "Allocated from 'FY2026 Global marketing budget' — Carlos Mendes" (014 FR-031): where the
- * budget comes from, the global budget a link for those who may open it.
- */
 function AllocationNote({ allocation }: { allocation: PlanAllocation }) {
   const name = `'${allocation.globalBudget.name}'`;
   return (

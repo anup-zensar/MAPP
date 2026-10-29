@@ -1,6 +1,6 @@
 # Glossary
 
-Plain-English meaning of every term used on MAPP's screens and in its specs. The ⓘ tips in the
+Plain-English meaning of every term used on SP&A One's screens (the project MAPP) and in its specs. The ⓘ tips in the
 application use these definitions. Hive9 names are given in brackets where users may know them.
 
 ## Planning levels
@@ -28,8 +28,20 @@ application use these definitions. Hive9 names are given in brackets where users
 | **Base currency** | USD — the currency all totals are calculated in. |
 | **Display currency** | The currency you choose to see amounts in; it does not change stored values. |
 | **Finance budget item** | A row of a finance budget (e.g. "2026 Lubricants Budget › Europe – Digital") that a line item is linked to. Managed by Finance; a simple list in Settings for now. |
+| **Plan currency** | The currency a plan's budgets and planned costs are typed in (feature 016); USD unless chosen otherwise, fixed once the plan has amounts. |
+| **Current rate** | The latest exchange rate of a currency dated today or earlier; every conversion uses it. |
+| **Rate history** | Every dated rate of a currency, newest first; a rate dated in the future changes nothing before its date. |
+| **GSAP rate import** | Adding the rates of a GSAP daily-rate file (simulated in this phase) after a review of what will be added, skipped or refused. |
+| **Budget by month** (phased budget) | A budget divided over the months of its year — evenly or by hand — so planned cost can be compared with it per period. |
+| **Global budget** | Money for a year owned centrally and shared out to market plans by allocations (feature 014). |
+| **Allocation** | The part of a global budget given to one plan; it becomes that plan's budget, which the plan's owner cannot change. |
 | **Finance budget** | Finance's budget for a year (e.g. "2026 Lubricants Budget"), made up of finance budget items. Only the list of items exists in this phase. |
-| **Actuals** | What was really spent, reported by finance. Coming in a later phase. |
+| **Actuals** | What was really spent: the payments GSAP has released (feature 015's **Paid**). The SP&A view calls it **Actual spend** (feature 013). |
+| **Committed** | The value of the GSAP purchase orders on a record's line items (feature 015). |
+| **Actual (paid)** | What GSAP reports as paid on a record's line items — Shell's actuals (features 015, 036). |
+| **Unspent budget** | Budget minus actual: how much of a budget is not yet paid out (feature 036). |
+| **Budget spent** | Actual as a percentage of the budget (feature 036; Hive9's burn rate). |
+| **Dashboard** | A read-only page that adds up the plans you may see — Executive for every market, Regional for one (feature 036). |
 
 ## Goals
 
@@ -63,8 +75,8 @@ application use these definitions. Hive9 names are given in brackets where users
 |---|---|
 | **AOP** | Annual operating plan. A plan marked "Strategic / AOP" is a high-level strategic plan, shown with an AOP tag. |
 | **SMP** | Strategic Marketing Plan — a Shell flag on Mobility plans. |
-| **BCPIR** | Business Case & Post-Investment Review — a flag on a plan; its full use is defined in feature 013. |
-| **SP&A** | Shell's spend view of marketing plans (feature 013). The expansion "Sales, Promotion & Advertising" is an assumption still to be confirmed with Shell (Q-001). |
+| **BCPIR** | Business Case & Post-Investment Review — a yes/no on a plan ("BCPIR plan"); a BCPIR plan carries a BCPIR marker and can be filtered on the Plans list and in All work (feature 013, D-334). The BCPIR return view waits for performance data. |
+| **SP&A** | Sales, Promotion & Advertising: the **SP&A view** of a plan or campaign shows planned cost against committed and actual spend, by period, by dimension and by activity, with the budget and the purchase requests (feature 013, Shell spec 006). |
 | **Business unit** | Lubricants or Mobility. Decides which extra Shell attributes an activity shows. |
 | **Cluster / Region** | Where a campaign runs, e.g. cluster "Retail – China", region "RETAIL – CHINA". |
 | **Country / OU** | Countries or operating units an activity covers, with a percentage share each. |
@@ -89,8 +101,10 @@ application use these definitions. Hive9 names are given in brackets where users
 
 | Term | Meaning |
 |---|---|
+| **SP&A One** | The product's name on every screen, in messages and in downloaded file names (feature 035). MAPP is the project's name in code and documents. Changes the product makes by itself are shown as made by "SP&A One". |
 | **Details** (Hive9: Inspection Window) | The view of one record, in a side panel or a full page. |
 | **Select** (Hive9: Honeycomb) | Tick several rows to act on them together. |
+| **Plan workbook** | The Excel layout of one plan (feature 012): sheets Campaigns, Initiatives, Activities and Line items, then Allowed values and Instructions. Downloaded empty (*Download template*) or with the plan's records (*Export to Excel*); a row without an ID creates a record, a row with an ID updates it (*Import from Excel*). |
 | **Summary cards** (Hive9: HUD) | The row of totals at the top of a page. |
 | **All work** | The cross-plan view of every campaign, initiative and activity with filters, calendar and budget views. |
 | **Activity log** (Hive9: Plan Log) | The history of who changed what and when. |
@@ -99,3 +113,12 @@ application use these definitions. Hive9 names are given in brackets where users
 | **Actor** | The signed-in person who performs an action; recorded on every change. |
 | **Shell attribute** (Hive9: custom attribute) | A Shell-specific field (e.g. Cluster, Country / OU, GL code) defined in Settings rather than built in, so administrators can change its options without a new release. |
 | **Inactive / Deactivate** | A Settings record or person that is no longer offered for new choices but is kept, so existing records still show it, labelled "(inactive)". Can be made active again. |
+| **Permission** | One thing a person may do, such as "Edit plan details" or "Export from All work" (the fixed list of feature 014). |
+| **Role** | A named set of permissions given to people, such as Planner or Viewer; administrators change roles in Settings › Roles and access. |
+| **Scope** | Where a role applies: All markets, My teams or Chosen teams. |
+| **Market** | A team, as roles and global budgets see it (e.g. Lubricants Europe). |
+| **View only** | The note on a page where the person may see but change nothing; it names their roles and whom to ask. |
+| **Split activity** | Dividing one activity into two inside the same plan, moving chosen line items or an amount to the new one (feature 016). |
+| **Plan type** | Operational, Strategic or Cross-market; plans stay one year, and views can cover up to five years. |
+| **Breakdown** | The All work view and plan card that add up planned cost by a Shell attribute or another grouping, optionally "then by" a second. |
+| **Field help** | The ⓘ text of a built-in field, kept in Settings › Field help so administrators can change it without a release. |

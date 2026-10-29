@@ -2,7 +2,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate, useParams } from 'react-router';
+import { useOverspendConfiguration } from '@/features/overspend';
+import type { OverspendMode } from '@/features/overspend';
 import { useAttributeForm } from '@/features/settings';
+import { allows } from '@/session/gate-action';
 import { useToast } from '@/ui/Toast/useToast';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
@@ -15,6 +18,7 @@ import type { Campaign } from './api';
 import { bodyOf, defaultAttributes, fieldId, RECORD_FIELDS } from './form-values';
 import { PanelFailure, PanelLoading, RecordFormPanel, StatePanel } from './PanelFrame';
 import { RecordForm } from './RecordForm';
+import { RefusedPanel } from './RefusedPanel';
 import { recordFormSchema } from './schemas';
 import type { RecordFormValues } from './schemas';
 import { createdToast, insideCampaign, NEW_INITIATIVE, openName, VIEW } from './texts';
@@ -33,9 +37,10 @@ export function NewInitiativePanel() {
   const parent = useCampaign(campaignId);
   const plan = usePlan(planId);
   const attributeForm = useAttributeForm('initiative');
+  const overspend = useOverspendConfiguration();
   const closeTo = `/plans/${planId}`;
 
-  const failed = [parent, plan, attributeForm].find((query) => query.isError);
+  const failed = [parent, plan, attributeForm, overspend].find((query) => query.isError);
   if (failed) {
     return (
       <StatePanel title={NEW_INITIATIVE} closeTo={closeTo}>
@@ -43,15 +48,18 @@ export function NewInitiativePanel() {
       </StatePanel>
     );
   }
-  if (!parent.data || !plan.data || !attributeForm.data) {
+  if (!parent.data || !plan.data || !attributeForm.data || !overspend.data) {
     return (
       <StatePanel title={NEW_INITIATIVE} closeTo={closeTo}>
         <PanelLoading />
       </StatePanel>
     );
   }
+  const addInitiative = parent.data.access?.addChild;
+  if (!allows(addInitiative)) {
+    return <RefusedPanel title={NEW_INITIATIVE} closeTo={closeTo} availability={addInitiative} />;
+  }
   return (
-    // A new address (Save and add another) starts a fresh form.
     <NewInitiativeForm
       key={location.key}
       planId={planId}
@@ -59,6 +67,7 @@ export function NewInitiativePanel() {
       businessUnit={plan.data.businessUnit.map((option) => option.id)}
       attributeForm={attributeForm.data}
       currency={planCurrencyOf(plan.data)}
+      overspend={overspend.data.defaultMode}
     />
   );
 }
@@ -70,6 +79,7 @@ interface NewInitiativeFormProps {
   attributeForm: AttributeForm;
   /** The plan currency: the budget is typed and sent in it (016 FR-011). */
   currency: string;
+  overspend: OverspendMode;
 }
 
 function NewInitiativeForm({
@@ -78,6 +88,7 @@ function NewInitiativeForm({
   businessUnit,
   attributeForm,
   currency,
+  overspend,
 }: NewInitiativeFormProps) {
   const navigate = useNavigate();
   const { show } = useToast();
@@ -95,6 +106,7 @@ function NewInitiativeForm({
       name: '',
       description: '',
       budget: '',
+      overspend,
       ...defaults,
       attributes: defaultAttributes(attributeForm),
     },

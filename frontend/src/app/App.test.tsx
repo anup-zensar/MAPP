@@ -25,7 +25,7 @@ describe('App', () => {
     render(<App />);
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Sign in to MAPP' }),
+      await screen.findByRole('heading', { level: 1, name: 'Sign in to SP&A One' }),
     ).toBeInTheDocument();
     expect(
       screen.getByText('Demo environment — sign-in and data are for demonstration only'),

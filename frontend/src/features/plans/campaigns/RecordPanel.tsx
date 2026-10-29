@@ -1,6 +1,7 @@
 import type { UseQueryResult } from '@tanstack/react-query';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 import { useAttributeForm } from '@/features/settings';
+import { allows } from '@/session/gate-action';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { planCurrencyOf } from '../plan-currency';
 import { usePlan } from './api';
@@ -9,6 +10,7 @@ import { PanelFailure, PanelLoading, StatePanel } from './PanelFrame';
 import { targetOf } from './record-target';
 import { RecordDetails } from './RecordDetails';
 import { RecordEdit } from './RecordEdit';
+import { RefusedPanel } from './RefusedPanel';
 import { EDIT_CAMPAIGN, EDIT_INITIATIVE, LEVEL_WORD } from './texts';
 import type { RecordLevel } from './texts';
 import { useRecordActions } from './useRecordActions';
@@ -16,15 +18,13 @@ import { useRecordActions } from './useRecordActions';
 export interface RecordPanelProps {
   level: RecordLevel;
   mode: 'details' | 'edit';
-  /** The plan in the address. */
   planId: string;
   query: UseQueryResult<Campaign | Initiative>;
 }
 
 /**
- * A campaign's or initiative's own address (FR-017): its details or edit panel over the plan
- * page, a loading or failure state, "no longer exists" with **Back to the plan**, and the same
- * panel under the right plan when the record has moved since the address was made.
+ * A campaign's or initiative's details or edit panel over the plan page; a record that has moved
+ * since the address was made opens under its new plan.
  */
 export function RecordPanel({ level, mode, planId, query }: RecordPanelProps) {
   const location = useLocation();
@@ -59,10 +59,6 @@ export function RecordPanel({ level, mode, planId, query }: RecordPanelProps) {
   return <EditWhenReady level={level} record={record} planId={planId} title={title} />;
 }
 
-/**
- * The details with **Copy**, **Move to…** and **Delete** under More; after a delete the panel
- * closes (FR-029), after a move or copy the plan page opens with the record highlighted.
- */
 function DetailsPanel({
   level,
   record,
@@ -87,7 +83,6 @@ function DetailsPanel({
   );
 }
 
-/** The edit form, once the Shell attributes and the plan's business unit are known. */
 function EditWhenReady({
   level,
   record,
@@ -103,6 +98,9 @@ function EditWhenReady({
   const plan = usePlan(planId);
   const closeTo = `/plans/${planId}`;
   const failed = [attributeForm, plan].find((part) => part.isError);
+  if (!allows(record.access?.edit)) {
+    return <RefusedPanel title={title} closeTo={closeTo} availability={record.access?.edit} />;
+  }
   if (failed) {
     return (
       <StatePanel title={title} closeTo={closeTo}>

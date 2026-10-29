@@ -9,6 +9,7 @@ import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { useToast } from '@/ui/Toast/useToast';
 import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
+import { budgetCheck, OverspendField } from '@/features/overspend';
 import { formatAmount } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
 import { useAllocate, useAllocationOptions, useUpdateAllocation } from './api';
@@ -53,6 +54,8 @@ export function AllocationDialog({ budget, target, onClose }: AllocationDialogPr
     defaultValues: {
       planId: target.kind === 'new' ? (target.option?.plan.id ?? '') : '',
       amount: target.kind === 'change' ? formatAmount(target.row.amount.amount) : '',
+      overspend:
+        target.kind === 'change' ? target.row.overspend : (target.option?.overspend ?? 'warn'),
     },
     ...CHECK_ON_SAVE,
   });
@@ -60,6 +63,15 @@ export function AllocationDialog({ budget, target, onClose }: AllocationDialogPr
   const [failure, setFailure] = useState<string | null>(null);
   const busy = allocate.isPending || change.isPending;
   const option = optionOf(useWatch({ control: form.control, name: 'planId' }));
+  const typedAmount = useWatch({ control: form.control, name: 'amount' });
+  const check = (mode: AllocationValues['overspend'], typed: string) =>
+    budgetCheck({
+      mode,
+      typed,
+      stored:
+        target.kind === 'change' ? target.row.amount.amount : (option?.budget?.amount ?? null),
+      planned: target.kind === 'change' ? target.row.plannedCost : null,
+    });
   const planName = target.kind === 'change' ? target.row.plan.name : option?.plan.name;
   const currency =
     target.kind === 'change' ? target.row.amount.currency : (option?.budget?.currency ?? 'USD');
@@ -73,12 +85,17 @@ export function AllocationDialog({ budget, target, onClose }: AllocationDialogPr
   function submit() {
     if (!busy) {
       setFailure(null);
-      void form.handleSubmit(({ amount }) => save(amountOf(amount)))();
+      void form.handleSubmit((values) => save(amountOf(values.amount), values.overspend))();
     }
   }
 
-  async function save(amount: string | null) {
+  async function save(amount: string | null, overspend: AllocationValues['overspend']) {
     if (amount === null) {
+      return;
+    }
+    const refused = check(overspend, amount).error;
+    if (refused) {
+      setFailure(refused);
       return;
     }
     const allocated: MoneyInput = { amount, currency };
@@ -87,6 +104,7 @@ export function AllocationDialog({ budget, target, onClose }: AllocationDialogPr
         await change.mutateAsync({
           allocationId: target.row.id,
           amount: allocated,
+          overspend,
           version: target.row.version,
           planVersion: target.row.plan.version,
         });
@@ -95,6 +113,7 @@ export function AllocationDialog({ budget, target, onClose }: AllocationDialogPr
           globalBudgetId: budget.id,
           planId: option.plan.id,
           amount: allocated,
+          overspend,
           planVersion: option.plan.version,
         });
       }
@@ -150,6 +169,11 @@ export function AllocationDialog({ budget, target, onClose }: AllocationDialogPr
                   hint={`Plans of ${budget.year} without an allocation.`}
                   options={planChoices}
                   {...field}
+                  onChange={(id) => {
+                    field.onChange(id);
+                    const chosen = options.data.items.find((item) => item.plan.id === id);
+                    form.setValue('overspend', chosen?.overspend ?? 'warn');
+                  }}
                 />
               )}
             />
@@ -177,6 +201,18 @@ export function AllocationDialog({ budget, target, onClose }: AllocationDialogPr
           name="amount"
           render={(field) => (
             <MoneyField label="Amount" marking="Required" currency={currency} {...field} />
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="overspend"
+          render={(field) => (
+            <OverspendField
+              name="overspend"
+              value={field.value}
+              onChange={field.onChange}
+              check={check(field.value, typedAmount)}
+            />
           )}
         />
       </div>

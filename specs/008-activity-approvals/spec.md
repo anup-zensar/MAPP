@@ -238,6 +238,7 @@ own action.
   designated approver of the current level, the confirmation MUST say the decision will be recorded as
   made on behalf of the level's approvers (named), and the history MUST show "<actor> on behalf of
   <approver names>".
+  *Since feature 014 this rule follows roles: every action needs its permission of 014 Table A in the plan's scope (014 FR-041).*
 - **FR-018**: Only the first decision on a level MUST count; if the level was decided or the round ended
   after the user opened the activity, the action MUST change nothing and say what happened ("Level 1 was
   already approved by Daniel Okoro at 10:42.").
@@ -253,6 +254,7 @@ own action.
   it and MUST explain that the changes of domain model §2.5 need approval again. Anyone may recall in
   this phase (only the owner once roles arrive). *Amended by 034 FR-005: the explanation names only the
   activity's planned cost and dates.*
+  *Since feature 014 this rule follows roles: every action needs its permission of 014 Table A in the plan's scope (014 FR-041).*
 - **FR-022**: When a change listed in domain model §2.5 is saved on a Submitted or Approved activity
   (after the confirmation provided by features 006 and 007), MAPP MUST end any open round as
   "Approval restarted", set the activity to **Created** and record the changed values (old → new) in the

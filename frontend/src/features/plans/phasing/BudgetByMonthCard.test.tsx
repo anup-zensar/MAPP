@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
+import { fieldHelpReply, helpOf } from '@/testing/fixtures/field-help-texts';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { nth } from '@/testing/dom';
@@ -253,5 +254,23 @@ describe('BudgetByMonthCard (016 FR-024)', () => {
     const card = screen.getByRole('region', { name: 'Budget by month' });
     expect(card).toHaveAttribute('id', 'budget-by-month-P-1004');
     await waitFor(() => expect(card).toHaveFocus());
+  });
+
+  it('016 FR-047: explains the card and each of its rows with their Field help', async () => {
+    const keys = [
+      'plan.budgetPhasing',
+      'phasing.budget',
+      'phasing.plannedCost',
+      'phasing.difference',
+    ];
+    renderCard(undefined, [fieldHelpReply({ ...helpOf(keys), 'phasing.allocated': '' })]);
+    const card = screen.getByRole('region', { name: 'Budget by month' });
+
+    for (const label of ['Budget by month', 'Budget', 'Planned cost', 'Difference']) {
+      expect(await within(card).findAllByRole('button', { name: `About ${label}` })).toHaveLength(
+        1,
+      );
+    }
+    expect(within(card).queryByRole('button', { name: /^About Allocated/ })).toBeNull();
   });
 });

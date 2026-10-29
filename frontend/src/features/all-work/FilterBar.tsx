@@ -25,6 +25,7 @@ import type {
   Filters,
   ViewState,
 } from './all-work-types';
+import { AttributeFilterMenu } from './AttributeFilterMenu';
 import { FilterMenu } from './FilterMenu';
 import type { FilterChoice } from './FilterMenu';
 import { chipsOf, clearAll, hasFilters, removeChip } from './view-chips';
@@ -32,32 +33,18 @@ import { choicesOf, withYears, yearRange } from './view-state';
 import type { IdFilter, ValueFilter } from './view-state';
 import { YearRangeMenu } from './YearRangeMenu';
 
-/** How long the search waits after the last key before the view follows (plan "Page layout"). */
 const SEARCH_DELAY_MS = 300;
 
-/** Approval progress and Timing, the two groups of the campaign / initiative status (FR-004). */
 const APPROVAL_PROGRESS = ['noActivities', 'inProgress', 'allApproved'];
 
 export interface FilterBarProps {
   state: ViewState;
-  /** The choices of the year; undefined while they load. */
   options: AllWorkOptions | undefined;
-  /** "Showing N of M activities"; undefined while the first answer loads. */
   count: AllWorkResult['count'] | undefined;
-  /** A new answer is on its way ("Updating…"). */
   updating: boolean;
-  /** Changes the state; the change is a function of the state as it is then. */
   onChange: (change: (current: ViewState) => ViewState) => void;
 }
 
-/**
- * The one filter bar of the three views (US2, FR-004 – FR-010): the search box with the count at
- * the row's end, the filters of FR-004 — Years as a range (016 FR-034), Plan type and Plan currency
- * (016 FR-037) and Financials (015 FR-024) added — which apply as soon as they change, and a
- * removable chip per value with Clear all. Below 600 px
- * the filter buttons fold into a Filters (n) drawer, so the data starts higher (UI audit AW-03,
- * PH-04).
- */
 export function FilterBar({ state, options, count, updating, onChange }: FilterBarProps) {
   const menusId = useId();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -66,7 +53,6 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
   const timer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
-  // The search changed elsewhere (Clear all, a saved view): the box follows.
   if (state.search !== searchShown) {
     setSearchShown(state.search);
     setTyped(state.search);
@@ -85,7 +71,6 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
   const setFilters = (change: Partial<Filters>) =>
     onChange((current) => ({ ...current, filters: { ...current.filters, ...change } }));
 
-  /** The menu of a filter that holds IDs; a chosen value keeps the name it had. */
   function idMenu(filter: IdFilter) {
     const choices = choicesOf(filter, options);
     const chosen = filters[filter];
@@ -112,7 +97,6 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
     };
   }
 
-  /** The menu of a filter that holds fixed values. */
   function valueMenu(
     filter: ValueFilter,
     labels: Record<string, string>,
@@ -136,7 +120,6 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
 
   const years = options ? options.years : [];
   const range = yearRange(state);
-  // The plan currencies of the range, once the API names them (016 FR-037).
   const currencies = options?.planCurrencies ?? [];
   const menus = [
     idMenu('plans'),
@@ -168,7 +151,6 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
     idMenu('owners'),
     {
       ...idMenu('teams'),
-      // My teams first (FR-004): it ticks the person's teams.
       quickChoice: {
         label: 'My teams',
         values: (options?.teams ?? []).filter((team) => team.mine).map((team) => team.id),
@@ -188,6 +170,19 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
       onChange: ([value = '']: string[]) => {
         if (isLabelled(STRATEGIC_LABELS)(value)) {
           setFilters({ strategic: value });
+        }
+      },
+    },
+    {
+      label: FILTER_LABELS.bcpir,
+      multiple: false,
+      choices: Object.entries(STRATEGIC_LABELS).map(([value, label]) => ({ value, label })),
+      selected: [filters.bcpir ?? 'include'],
+      summary:
+        filters.bcpir && filters.bcpir !== 'include' ? STRATEGIC_LABELS[filters.bcpir] : undefined,
+      onChange: ([value = '']: string[]) => {
+        if (isLabelled(STRATEGIC_LABELS)(value)) {
+          setFilters({ bcpir: value });
         }
       },
     },
@@ -213,6 +208,7 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
   }
 
   const chips = chipsOf(state, options);
+  const hasAttributes = Boolean(options?.attributes?.length) || Boolean(filters.attributes?.length);
 
   return (
     <div className={styles.bar}>
@@ -246,7 +242,6 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
         role="group"
         aria-label="Filters"
       >
-        {/* Another year range: the plans of other years cannot be chosen any more. */}
         <YearRangeMenu
           years={years}
           from={range.from}
@@ -256,6 +251,13 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
         {menus.map((menu) => (
           <FilterMenu key={menu.label} {...menu} />
         ))}
+        {hasAttributes && (
+          <AttributeFilterMenu
+            attributes={options?.attributes ?? []}
+            selected={filters.attributes ?? []}
+            onChange={(attributes) => setFilters({ attributes })}
+          />
+        )}
       </div>
       {hasFilters(state) && (
         <div className={styles.results}>

@@ -34,8 +34,10 @@ export function uniqueName(prefix: string): string {
 
 /** Checks the page against WCAG 2.2 A and AA with axe and expects no violations (SC-006). */
 export async function expectNoAxeViolations(page: Page): Promise<void> {
+  // The product name is a logotype, exempt from text contrast (WCAG 1.4.3, constitution X); axe cannot tell.
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .exclude('[role="img"][aria-label="SP&A One"] > span')
     .analyze();
   const summary = results.violations.map(
     (v) => `${v.id}: ${v.nodes.map((node) => node.target.join(' ')).join(', ')}`,

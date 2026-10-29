@@ -12,7 +12,7 @@ import (
 )
 
 // unreadableMessage answers a path or query value the API cannot read, such as an unknown level.
-const unreadableMessage = "MAPP couldn't read this request. Reload the page and try again."
+const unreadableMessage = "SP&A One couldn't read this request. Reload the page and try again."
 
 type Handler struct {
 	service *Service

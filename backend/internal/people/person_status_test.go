@@ -99,6 +99,6 @@ func TestSetPersonStatus_MissingActiveAndVersion(t *testing.T) {
 		errs.FieldError{Field: "active", Message: "Choose active or inactive."},
 		errs.FieldError{Field: "version", Message: "Reload the page and try again."},
 	))
-	assertError(t, conflict, errs.VersionConflict("person", "MAPP", start))
+	assertError(t, conflict, errs.VersionConflict("person", "SP&A One", start))
 	assertError(t, gone, errs.NotFound("This person doesn't exist."))
 }

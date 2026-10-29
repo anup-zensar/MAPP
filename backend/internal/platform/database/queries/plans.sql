@@ -29,10 +29,10 @@ ORDER BY length(id), id COLLATE "C";
 INSERT INTO plans (
     id, name, year, model_id, owner_id, aop, description, budget_minor, default_finance_budget_id, default_spread,
     bcpir, goal_stage, goal_amount, attributes, status, currency, plan_type, phasing_method, version, created_at,
-    created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+    created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name, overspend
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24,
-    $25
+    $25, $26
 )
 ON CONFLICT (id) DO UPDATE SET
     name = excluded.name,
@@ -58,7 +58,8 @@ ON CONFLICT (id) DO UPDATE SET
     created_by_name = excluded.created_by_name,
     updated_at = excluded.updated_at,
     updated_by_id = excluded.updated_by_id,
-    updated_by_name = excluded.updated_by_name;
+    updated_by_name = excluded.updated_by_name,
+    overspend = excluded.overspend;
 
 -- name: DeletePlanTeams :exec
 DELETE FROM plan_teams

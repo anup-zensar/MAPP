@@ -59,6 +59,7 @@ type Service struct {
 	hooks     ApprovalHooks
 	// displayRates reads the reader's display currency; nil shows USD.
 	displayRates DisplayRates
+	overspend    Overspend
 }
 
 // NewService gives activities no line items and no approval hooks until UseLineItems and UseApprovalHooks.

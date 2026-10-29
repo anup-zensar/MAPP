@@ -2570,11 +2570,14 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The plan's imports, newest first, and whether it can take an import now */
+        /** The plan's imports, newest first */
         get: operations["listPlanImports"];
         put?: never;
-        /** Import the confirmed rows of a file as Created activities */
-        post: operations["importActivities"];
+        /**
+         * Import the ready rows of a plan workbook in one step - create rows without ID, update rows with one
+         * @description Runs the same check as imports/check and applies its ready rows; rows with problems, and the rows below them in the file, are left out and listed. Every record created or updated gets an activity-log entry with the note "Imported from '<file>' (IMP-…)".
+         */
+        post: operations["importPlanWorkbook"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2590,7 +2593,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Check a filled template - every problem of every row at once; nothing is created */
+        /** Check a plan workbook - every problem of every row at once, what would be created and updated; nothing changes */
         post: operations["checkImportFile"];
         delete?: never;
         options?: never;
@@ -2605,11 +2608,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * The import template made for this plan (.xlsx)
-         * @description Refused with validation_failed until the plan has a campaign and an initiative.
-         */
+        /** The plan workbook template made for this plan (.xlsx) - the level sheets without rows, allowed values, instructions */
         get: operations["getImportTemplate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plans/{planId}/workbook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The plan as a plan workbook (.xlsx) - every campaign, initiative, activity and line item, ready to edit and import */
+        get: operations["exportPlanWorkbook"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3301,8 +3318,8 @@ export interface paths {
         /**
          * The PR form of one routing, as routed (FR-031)
          * @description One row per line in the column order of the spec's Requisitioner Attachment, after notes (PR, routing
-         *     type and time, recipients, "Routed by MAPP — no supporting documents are attached"). File name
-         *     "MAPP PR form – PR-1001 – Original – 27 Oct 2026.xlsx". Text a spreadsheet would read as a formula is
+         *     type and time, recipients, "Routed by SP&A One — no supporting documents are attached"). File name
+         *     "SP&A One PR form – PR-1001 – Original – 27 Oct 2026.xlsx". Text a spreadsheet would read as a formula is
          *     written with a leading apostrophe (D-120).
          */
         get: operations["downloadPurchaseRequestForm"];
@@ -3509,6 +3526,24 @@ export interface paths {
         get: operations["getPurchaseRequestConfiguration"];
         /** Change Purchase Support and Lines on approved purchase requests (needs settings.manage) */
         put: operations["savePurchaseRequestConfiguration"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/overspend-configuration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Settings › Overspend control — the setting new budgets start with (037 FR-006) */
+        get: operations["getOverspendConfiguration"];
+        /** Change the setting new budgets start with (needs settings.manage); existing budgets keep theirs */
+        put: operations["saveOverspendConfiguration"];
         post?: never;
         delete?: never;
         options?: never;
@@ -3862,6 +3897,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/plans/{planId}/spa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * The SP&A view of the plan, or of one of its campaigns
+         * @description Planned cost, committed, actual spend, remaining, utilisation and variance of the scope, by quarter and month, by a chosen dimension and by activity, with the budget and procurement panels (013 FR-005 – FR-022). Amounts are in the signed-in person's display currency. Financial figures are null without finance.view in the plan.
+         */
+        get: operations["getSpaView"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/activities/{activityId}/split-options": {
         parameters: {
             query?: never;
@@ -4056,9 +4114,99 @@ export interface paths {
         put?: never;
         /**
          * Send due reminders and escalations now (needs workflows.manage; stands in for the nightly job) (FR-026 – FR-028)
-         * @description Safe to call any number of times; each level gets at most one reminder and one escalation. Events are recorded as made by MAPP.
+         * @description Safe to call any number of times; each level gets at most one reminder and one escalation. Events are recorded as made by SP&A One.
          */
         post: operations["runApprovalEscalations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboards/executive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Executive dashboard of every market the person may see (feature 036, FR-001 – FR-019)
+         * @description Every figure covers only the plans of the year the person may see; committed and actual cover only the
+         *     plans whose financial data they may see; global budgets appear only to holders of globalBudgets.view.
+         *     Amounts are in the chosen currency (default the person's display currency).
+         */
+        get: operations["getExecutiveDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboards/regional": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The Regional dashboard of one market (team), with a plan's campaigns (feature 036, FR-020 – FR-022) */
+        get: operations["getRegionalDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboards/executive/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The Executive dashboard as a PowerPoint or PDF file (feature 036, FR-024) */
+        get: operations["exportExecutiveDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboards/regional/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The Regional dashboard as a PowerPoint or PDF file (feature 036, FR-024) */
+        get: operations["exportRegionalDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plans/{planId}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A plan as a PowerPoint or PDF file — summary, campaigns, budget against planned and actual, activities (feature 036, FR-023) */
+        get: operations["exportPlan"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4069,6 +4217,31 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * @description What happens when planned cost goes over a budget — warn (save and show it) or refuse the save.
+         * @enum {string}
+         */
+        OverspendMode: "warn" | "refuse";
+        OverspendControl: {
+            mode: components["schemas"]["OverspendMode"];
+            canChange: components["schemas"]["ActionAvailability"];
+        };
+        OverspendLimit: {
+            budget: components["schemas"]["RecordRef"];
+            leftToPlan: components["schemas"]["Money"];
+        };
+        OverspendConfiguration: {
+            defaultMode: components["schemas"]["OverspendMode"];
+            version: number;
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+            canChange: components["schemas"]["ActionAvailability"];
+        };
+        OverspendConfigurationInput: {
+            version: number;
+            defaultMode: string;
+        };
         /** @enum {string} */
         PurchaseRequestStatus: "created" | "submitted" | "inReview" | "declined" | "approved" | "closed";
         /**
@@ -4504,7 +4677,7 @@ export interface components {
         /** @description Every failure. Codes added by 002-014: in_use, cannot_restore (002), not_allowed (003), not_ready with missing (004), parent_deleted_permanently (011), forbidden (014: 403, refused by permission or scope; D-299). A record outside the person's access answers 404 not_found, like a missing one (022). */
         ErrorDetail: {
             /** @enum {string} */
-            code: "validation_failed" | "bad_request" | "sign_in_required" | "session_expired" | "incorrect_credentials" | "not_found" | "version_conflict" | "restore_parent_first" | "undo_expired" | "already_resolved" | "name_taken" | "internal_error" | "parent_deleted_permanently" | "in_use" | "cannot_restore" | "not_allowed" | "not_ready" | "forbidden";
+            code: "validation_failed" | "bad_request" | "sign_in_required" | "session_expired" | "incorrect_credentials" | "not_found" | "version_conflict" | "restore_parent_first" | "undo_expired" | "already_resolved" | "name_taken" | "internal_error" | "parent_deleted_permanently" | "in_use" | "cannot_restore" | "not_allowed" | "not_ready" | "forbidden" | "over_budget";
             /** @description Plain-language message for the user (never technical details). */
             message: string;
             /** @description Every field problem (validation_failed); always present, empty otherwise. */
@@ -5641,6 +5814,7 @@ export interface components {
         };
         /** @description A plan as stored (stored amounts in USD) with its calculated values (display currency). */
         Plan: {
+            overspend: components["schemas"]["OverspendControl"];
             /** @example P-1001 */
             id: string;
             /** @example FY2026 Lubricants Europe */
@@ -5708,6 +5882,8 @@ export interface components {
             year: number;
             status: components["schemas"]["PlanStatus"];
             aop: boolean;
+            /** @description 013. BCPIR plan. Optional in the contract; always sent once its feature is built (D-298). */
+            bcpir?: boolean;
             owner: components["schemas"]["PersonRef"] | null;
             teams: components["schemas"]["TeamRef"][];
             businessUnit: components["schemas"]["OptionRef"][];
@@ -5743,6 +5919,7 @@ export interface components {
             years: number[];
         };
         PlanDefaults: {
+            overspend: components["schemas"]["OverspendMode"];
             currentYear: number;
             /** @description The years a new plan may have (the current year to the current year + 10). */
             years: number[];
@@ -5765,6 +5942,11 @@ export interface components {
         };
         /** @description The whole plan form. Empty values are sent as null (or "" for text, [] and {} for lists). */
         PlanCreate: {
+            /**
+             * @description Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+             * @enum {string}
+             */
+            overspend?: "warn" | "refuse";
             name: string;
             year: number | null;
             modelId: string | null;
@@ -5791,6 +5973,11 @@ export interface components {
         };
         /** @description The whole plan form (the year is not part of it) and the version the person started from. */
         PlanUpdate: {
+            /**
+             * @description Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+             * @enum {string}
+             */
+            overspend?: "warn" | "refuse";
             /** @description The version the person started editing from. */
             version: number;
             name: string;
@@ -5932,6 +6119,7 @@ export interface components {
             lineItems: number;
         };
         Initiative: {
+            overspend: components["schemas"]["OverspendControl"];
             /** @example I-1001 */
             id: string;
             /** @description The plan of its campaign (derived, not stored). */
@@ -5979,6 +6167,7 @@ export interface components {
             budgetPhasing?: components["schemas"]["BudgetPhasing"];
         };
         Campaign: {
+            overspend: components["schemas"]["OverspendControl"];
             /** @example C-1001 */
             id: string;
             planId: string;
@@ -6058,6 +6247,11 @@ export interface components {
             access?: components["schemas"]["PlanContentAccess"];
         };
         CampaignCreate: {
+            /**
+             * @description Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+             * @enum {string}
+             */
+            overspend?: "warn" | "refuse";
             name: string;
             description?: string;
             ownerId?: string | null;
@@ -6071,6 +6265,11 @@ export interface components {
         };
         /** @description The whole form, every field sent; null or "" clears a field. */
         CampaignUpdate: {
+            /**
+             * @description Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+             * @enum {string}
+             */
+            overspend?: "warn" | "refuse";
             name: string;
             description: string;
             ownerId: string | null;
@@ -6085,6 +6284,11 @@ export interface components {
             version: number;
         };
         InitiativeCreate: {
+            /**
+             * @description Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+             * @enum {string}
+             */
+            overspend?: "warn" | "refuse";
             name: string;
             description?: string;
             ownerId?: string | null;
@@ -6098,6 +6302,11 @@ export interface components {
         };
         /** @description The whole form, every field sent; the campaign changes only with Move. */
         InitiativeUpdate: {
+            /**
+             * @description Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+             * @enum {string}
+             */
+            overspend?: "warn" | "refuse";
             name: string;
             description: string;
             ownerId: string | null;
@@ -6516,6 +6725,8 @@ export interface components {
             approvalWorkflowId: string | null;
         };
         ActivityForm: {
+            /** @description Every budget above the activity set to Refuse, with what is left to plan in it (037 FR-014). */
+            overspendLimits: components["schemas"]["OverspendLimit"][];
             context: components["schemas"]["ActivityFormContext"];
             /** @description The active types the plan's model allows, sorted by name; for an edit also the current type when inactive or not allowed. */
             activityTypes: components["schemas"]["ActivityTypeOption"][];
@@ -7724,6 +7935,8 @@ export interface components {
             searchHit?: components["schemas"]["AllWorkSearchHit"];
             /** @description Plans only - Strategic / AOP plan (the AOP tag). */
             strategic?: boolean;
+            /** @description Plans only - BCPIR plan (013 FR-002). */
+            bcpir?: boolean;
             status: components["schemas"]["AllWorkStatus"] | null;
             timing?: components["schemas"]["AllWorkStatus"];
             /** Format: date */
@@ -7917,6 +8130,11 @@ export interface components {
             activityTypes: components["schemas"]["AllWorkFilterValue"][];
             /** @enum {string} */
             strategic: "include" | "only" | "exclude";
+            /**
+             * @description 013. Optional; a view saved before 013 reads as include.
+             * @enum {string}
+             */
+            bcpir?: "include" | "only" | "exclude";
             /** @enum {string} */
             showLevels: "everything" | "completeBranches" | "campaignsWithoutInitiatives" | "initiativesWithoutActivities";
             /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
@@ -8289,68 +8507,79 @@ export interface components {
             note: string | null;
         };
         ImportUpload: {
-            /** @example mobility-china.xlsx */
+            /** @example fy2026-lubricants-europe.xlsx */
             fileName: string;
-            /** @description The file, base64-encoded (at most 5 MB before encoding). */
+            /** @description The plan workbook (.xlsx) or an Activities sheet (.csv), base64-encoded (at most 5 MB before encoding). */
             content: string;
-            /** @description Create missing campaigns and initiatives. */
-            createMissing: boolean;
         };
-        ImportRun: {
-            fileName: string;
-            content: string;
-            createMissing: boolean;
-            /** @description The row numbers the user confirmed (the ready rows of the check). */
-            rows: number[];
-        };
+        /** @enum {string} */
+        ImportLevel: "campaign" | "initiative" | "activity" | "lineItem";
         ImportProblem: {
-            /** @description The spreadsheet's own row number. */
+            /**
+             * @description The sheet's name ("" for a problem of the whole file).
+             * @example Activities
+             */
+            sheet: string;
+            /** @description The spreadsheet's own row number (0 for a problem of the whole sheet). */
             row: number;
             /** @description The column heading ("" for a problem of the whole row). */
             column: string;
             /** @description The value found. */
             value: string;
             reason: string;
-            /**
-             * @description Import results only.
-             * @enum {string}
-             */
-            outcome?: "leftOut" | "failed";
         };
-        ImportNewInitiative: {
-            campaign: string;
-            name: string;
-        };
-        ImportWillCreate: {
-            campaigns: string[];
-            initiatives: components["schemas"]["ImportNewInitiative"][];
+        ImportLevelCounts: {
+            level: components["schemas"]["ImportLevel"];
+            create: number;
+            update: number;
+            unchanged: number;
+            leftOut: number;
         };
         ImportCheck: {
             fileName: string;
+            /** @description Data rows read, every sheet together. */
             rows: number;
+            /** @description Rows that Import applies (to create, to update or unchanged). */
             ready: number;
+            /** @description Rows left out, with a problem of their own or of the row they belong under. */
             withProblems: number;
-            /** @description Row numbers of the ready rows (sent back by Import N activities). */
-            readyRows: number[];
+            /** @description Per level, campaigns first. */
+            levels: components["schemas"]["ImportLevelCounts"][];
             problems: components["schemas"]["ImportProblem"][];
+            /** @description Headings no column matches, each as the sheet, a colon and the heading. */
             ignoredColumns: string[];
-            willCreate: components["schemas"]["ImportWillCreate"];
-            /** @description Ready rows whose activity will still miss a needed-to-submit field. */
+            /** @description Rows to create or update that leave a needed-to-publish or needed-to-submit column empty. */
             needMoreFields: number;
+            nothingToChange: boolean;
+        };
+        ImportLevelTotals: {
+            campaigns: number;
+            initiatives: number;
+            activities: number;
+            lineItems: number;
         };
         ImportRecordRef: {
             id: string;
+            level: components["schemas"]["ImportLevel"];
             name: string;
+            /** @enum {string} */
+            action: "created" | "updated";
             /** @description false when it has been deleted since. */
             exists: boolean;
         };
         ImportUndoPreview: {
-            activities: number;
+            /** @description Created campaigns still there, which Undo import moves to the recycle bin. */
             campaigns: number;
             initiatives: number;
-            changedSinceImport: number;
-            addedSinceImport: number;
+            activities: number;
+            lineItems: number;
             alreadyDeleted: number;
+        };
+        ImportKept: {
+            id: string;
+            level: components["schemas"]["ImportLevel"];
+            name: string;
+            reason: string;
         };
         ImportSummary: {
             /** @example IMP-1001 */
@@ -8363,30 +8592,26 @@ export interface components {
             importedAt: string;
             importedBy: components["schemas"]["ActorRef"];
             rowsRead: number;
-            activitiesImported: number;
-            campaignsCreated: number;
-            initiativesCreated: number;
             rowsLeftOut: number;
-            rowsFailed: number;
+            created: components["schemas"]["ImportLevelTotals"];
+            updated: components["schemas"]["ImportLevelTotals"];
             undoneAt: string | null;
             undoneBy: components["schemas"]["ActorRef"] | null;
         };
         ImportDetail: {
             import: components["schemas"]["ImportSummary"];
-            /** @description Rows left out and rows that failed, with their reasons. */
+            /** @description The rows left out, with their reasons. */
             problems: components["schemas"]["ImportProblem"][];
-            activities: components["schemas"]["ImportRecordRef"][];
-            campaigns: components["schemas"]["ImportRecordRef"][];
-            initiatives: components["schemas"]["ImportRecordRef"][];
+            /** @description The records the import created and updated, in the file's order. */
+            records: components["schemas"]["ImportRecordRef"][];
             /** @description What Undo import would do; null once undone. */
             undo: components["schemas"]["ImportUndoPreview"] | null;
+            /** @description After Undo import, the created records that could not be deleted, with the reason. */
+            kept: components["schemas"]["ImportKept"][];
         };
         PlanImportPage: {
             items: components["schemas"]["ImportSummary"][];
             total: number;
-            canImport: boolean;
-            /** @example Add at least one campaign and one initiative to this plan before importing activities */
-            cannotImportReason: string | null;
         };
         /**
          * @description A permission of spec Table A.
@@ -8651,6 +8876,7 @@ export interface components {
             overAllocated: boolean;
         };
         BudgetAllocationRow: {
+            overspend: components["schemas"]["OverspendMode"];
             /** @example BA-1001 */
             id: string;
             plan: components["schemas"]["AllocationPlanRef"];
@@ -8678,6 +8904,7 @@ export interface components {
             plannedCost: components["schemas"]["Money"];
         };
         AllocationOption: {
+            overspend: components["schemas"]["OverspendMode"];
             plan: components["schemas"]["AllocationPlanRef"];
             teams: components["schemas"]["TeamRef"][];
             owner: components["schemas"]["PersonRef"] | null;
@@ -8690,6 +8917,7 @@ export interface components {
             total: number;
         };
         GlobalBudget: {
+            overspend: components["schemas"]["OverspendControl"];
             /** @example GB-1001 */
             id: string;
             name: string;
@@ -8736,6 +8964,11 @@ export interface components {
             create: components["schemas"]["ActionAvailability"];
         };
         GlobalBudgetCreate: {
+            /**
+             * @description Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+             * @enum {string}
+             */
+            overspend?: "warn" | "refuse";
             name: string;
             year: number;
             /** @description currency must be USD. */
@@ -8745,6 +8978,11 @@ export interface components {
         };
         /** @description Only the fields to change, and the version (D-203). The year cannot change. */
         GlobalBudgetUpdate: {
+            /**
+             * @description Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+             * @enum {string}
+             */
+            overspend?: "warn" | "refuse";
             name?: string;
             amount?: components["schemas"]["MoneyInput"];
             ownerId?: string;
@@ -8752,6 +8990,11 @@ export interface components {
             version: number;
         };
         BudgetAllocationCreate: {
+            /**
+             * @description Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+             * @enum {string}
+             */
+            overspend?: "warn" | "refuse";
             planId: string;
             /** @description In the plan's currency (016; USD until 016 is built), 0 or more; another currency is a field problem "Enter the amount in <code>, the plan's currency." (consolidation D-303). */
             amount: components["schemas"]["MoneyInput"];
@@ -8759,6 +9002,11 @@ export interface components {
             planVersion: number;
         };
         BudgetAllocationUpdate: {
+            /**
+             * @description Warn or Refuse (037); left out keeps the stored setting, or the organisation default on a new record.
+             * @enum {string}
+             */
+            overspend?: "warn" | "refuse";
             /** @description In the plan's currency, as BudgetAllocationCreate.amount (D-303). */
             amount: components["schemas"]["MoneyInput"];
             /** @description The allocation's version. */
@@ -9006,7 +9254,7 @@ export interface components {
             problemsTotal: number;
             notLinked: components["schemas"]["FinancialImportNotLinkedRow"][];
             notLinkedTotal: number;
-            /** @description Header names MAPP does not read. */
+            /** @description Header names SP&A One does not read. */
             unusedColumns: string[];
         };
         FinancialImport: {
@@ -9306,6 +9554,161 @@ export interface components {
             months: string[];
             /** @description The plan, then each campaign followed by its initiatives, in plan-tree order. */
             rows: components["schemas"]["BudgetByMonthRow"][];
+        };
+        SpaRecordRef: {
+            /** @enum {string} */
+            type: "plan" | "campaign" | "initiative" | "activity" | "lineItem";
+            id: string;
+            name: string;
+        };
+        /** @description One activity's part of a figure (013 FR-007); the parts of a figure sum to it. */
+        SpaContribution: {
+            activityId: string;
+            name: string;
+            amount: components["schemas"]["Money"];
+        };
+        SpaPlan: {
+            id: string;
+            name: string;
+            year: number;
+            status: components["schemas"]["PlanStatus"];
+            bcpir: boolean;
+        };
+        /** @description 013 FR-015, FR-016. Percentages have one decimal ("37.5", "-62.5"); null with noPlannedCostReason when planned cost is 0.00. Financial figures are null without finance.view. */
+        SpaHeadline: {
+            plannedCost: components["schemas"]["Money"];
+            committed: components["schemas"]["Money"] | null;
+            actualSpend: components["schemas"]["Money"] | null;
+            invoiced: components["schemas"]["Money"] | null;
+            remaining: components["schemas"]["Money"] | null;
+            utilisationPercent: string | null;
+            variancePercent: string | null;
+            overspend: boolean;
+            noPlannedCostReason: string | null;
+            plannedCostTrace: components["schemas"]["SpaContribution"][];
+            committedTrace: components["schemas"]["SpaContribution"][];
+            actualSpendTrace: components["schemas"]["SpaContribution"][];
+        };
+        /** @description One quarter or month of the plan's year (013 FR-017); bars are 0–100, relative to the largest amount of the set. */
+        SpaPeriod: {
+            /** @example 2026-Q3 */
+            key: string;
+            /** @example Q3 2026 */
+            label: string;
+            planned: components["schemas"]["Money"];
+            actual: components["schemas"]["Money"] | null;
+            plannedBar: number;
+            actualBar: number;
+            plannedTrace: components["schemas"]["SpaContribution"][];
+            actualTrace: components["schemas"]["SpaContribution"][];
+        };
+        SpaPeriods: {
+            quarters: components["schemas"]["SpaPeriod"][];
+            months: components["schemas"]["SpaPeriod"][];
+            /** @description Planned cost not placed in a month (no dates, line items above planned cost); null when 0.00. */
+            notScheduled: components["schemas"]["Money"] | null;
+            notScheduledTrace: components["schemas"]["SpaContribution"][];
+        };
+        SpaDimension: {
+            /** @example activityType */
+            key: string;
+            label: string;
+        };
+        SpaDimensionRow: {
+            key: string;
+            label: string;
+            amount: components["schemas"]["Money"];
+            /**
+             * @description Share of the scope's planned cost in per cent, two decimals.
+             * @example 37.50
+             */
+            share: string;
+            bar: number;
+            trace: components["schemas"]["SpaContribution"][];
+        };
+        SpaDimensionBreakdown: {
+            key: string;
+            label: string;
+            rows: components["schemas"]["SpaDimensionRow"][];
+            total: components["schemas"]["Money"];
+            /** @description Activities with several values without shares count in each row. */
+            countsInEach: boolean;
+        };
+        SpaLineItemRow: {
+            id: string;
+            name: string;
+            plannedCost: components["schemas"]["Money"];
+            committed: components["schemas"]["Money"] | null;
+            actualSpend: components["schemas"]["Money"] | null;
+        };
+        SpaActivityRow: {
+            id: string;
+            name: string;
+            campaign: components["schemas"]["SpaRecordRef"];
+            initiative: components["schemas"]["SpaRecordRef"];
+            owner: string | null;
+            activityType: string | null;
+            /** @description The activity's Channel / audience values, comma separated. */
+            channel: string | null;
+            /** @example Q1 2026 */
+            startQuarter: string | null;
+            status: components["schemas"]["ActivityDisplayStatus"];
+            plannedCost: components["schemas"]["Money"];
+            committed: components["schemas"]["Money"] | null;
+            actualSpend: components["schemas"]["Money"] | null;
+            variancePercent: string | null;
+            overspend: boolean;
+            lineItems: components["schemas"]["SpaLineItemRow"][];
+            raisePurchaseRequest: components["schemas"]["ActionAvailability"];
+        };
+        /** @description 013 FR-020. */
+        SpaBudgetPanel: {
+            budget: components["schemas"]["Money"] | null;
+            plannedCost: components["schemas"]["Money"];
+            committed: components["schemas"]["Money"] | null;
+            plannedVsBudgetPercent: string | null;
+            overBudget: boolean;
+            noBudgetReason: string | null;
+            linked: components["schemas"]["Money"];
+            notLinked: components["schemas"]["Money"];
+        };
+        SpaPurchaseRequest: {
+            id: string;
+            name: string;
+            vendor: string;
+            status: components["schemas"]["PurchaseRequestStatus"];
+            amount: components["schemas"]["Money"];
+            /** @description False for a Declined request, which counts in none of the amounts. */
+            counted: boolean;
+        };
+        /** @description 013 FR-021 (D-335). */
+        SpaProcurementPanel: {
+            count: number;
+            approved: components["schemas"]["Money"];
+            pendingApproval: components["schemas"]["Money"];
+            draft: components["schemas"]["Money"];
+            invoiced: components["schemas"]["Money"] | null;
+            items: components["schemas"]["SpaPurchaseRequest"][];
+        };
+        /** @description The SP&A view of a plan or campaign (013 data-model §3). */
+        SpaView: {
+            plan: components["schemas"]["SpaPlan"];
+            scope: components["schemas"]["SpaRecordRef"];
+            campaigns: components["schemas"]["SpaRecordRef"][];
+            currency: string;
+            financeAccess: boolean;
+            financeNote: string | null;
+            /** Format: date-time */
+            financeDataAsOf: string | null;
+            headline: components["schemas"]["SpaHeadline"];
+            periods: components["schemas"]["SpaPeriods"];
+            dimension: components["schemas"]["SpaDimensionBreakdown"];
+            dimensions: components["schemas"]["SpaDimension"][];
+            activities: components["schemas"]["SpaActivityRow"][];
+            budget: components["schemas"]["SpaBudgetPanel"];
+            procurement: components["schemas"]["SpaProcurementPanel"];
+            notes: string[];
+            emptyMessage: string | null;
         };
         SplitLink: {
             /** @example A-1012 */
@@ -9617,6 +10020,175 @@ export interface components {
             /** @description Levels due for escalation that no backup approver could take. */
             notEscalated: components["schemas"]["EscalationEvent"][];
         };
+        /** @description An Executive or Regional dashboard (feature 036). Every amount is in filters.currency; null means "—" (nothing to add up, no budget, or financial data the person may not see). */
+        PlanningDashboard: {
+            /** @enum {string} */
+            kind: "executive" | "regional";
+            filters: components["schemas"]["DashboardFilters"];
+            choices: components["schemas"]["DashboardChoices"];
+            /** @description The market of the Regional dashboard; null on the Executive dashboard. */
+            team: components["schemas"]["TeamRef"] | null;
+            planCount: number;
+            plansWithoutBudget: number;
+            finance: components["schemas"]["DashboardFinance"];
+            /**
+             * Format: date-time
+             * @description When GSAP data was last received; null when none ever was.
+             */
+            financeAsOf: string | null;
+            totals: components["schemas"]["DashboardFigures"];
+            /** @description Each team with plans on the dashboard (Executive only; empty on the Regional dashboard). */
+            markets: components["schemas"]["DashboardMarketRow"][];
+            plans: components["schemas"]["DashboardPlanRow"][];
+            /** @description Up to five campaigns with planned cost above budget, largest overspend first. */
+            overBudget: components["schemas"]["DashboardCampaignRow"][];
+            /** @description Up to five campaigns with budget above planned cost, most left to plan first. */
+            leftToPlan: components["schemas"]["DashboardCampaignRow"][];
+            planCampaigns: components["schemas"]["DashboardPlanCampaigns"] | null;
+            months: components["schemas"]["DashboardMonths"];
+            approvals: components["schemas"]["DashboardApprovals"];
+            purchaseRequests: components["schemas"]["DashboardPurchaseRequests"];
+            completeness: components["schemas"]["DashboardCompleteness"][];
+            /** @description The year's global budgets; null when the person may not see global budgets. */
+            globalBudgets: components["schemas"]["DashboardGlobalBudget"][] | null;
+            canExport: boolean;
+        };
+        DashboardFilters: {
+            year: number;
+            planType: components["schemas"]["PlanType"] | null;
+            currency: string;
+            teamId: string | null;
+            planId: string | null;
+        };
+        DashboardChoices: {
+            /** @description The years with plans the person may see, and the current year, newest first. */
+            years: number[];
+            teams: components["schemas"]["DashboardTeamChoice"][];
+            currencies: components["schemas"]["DashboardCurrencyChoice"][];
+        };
+        DashboardTeamChoice: {
+            id: string;
+            name: string;
+            active: boolean;
+            mine: boolean;
+        };
+        DashboardCurrencyChoice: {
+            code: string;
+            name: string;
+        };
+        DashboardFinance: {
+            /** @description The person may see financial data in at least one plan on the dashboard. */
+            visible: boolean;
+            /** @description The plans whose committed and actual figures are counted. */
+            planCount: number;
+        };
+        DashboardFigures: {
+            budget: components["schemas"]["Money"] | null;
+            plannedCost: components["schemas"]["Money"] | null;
+            committed: components["schemas"]["Money"] | null;
+            /** @description Paid, Shell's actuals (015). */
+            actual: components["schemas"]["Money"] | null;
+            /** @description Planned cost ÷ budget, a whole percent. */
+            budgetUsedPercent: number | null;
+            /** @description Actual ÷ budget, a whole percent. */
+            budgetSpentPercent: number | null;
+            leftToPlan: components["schemas"]["Money"] | null;
+            /** @description Budget − actual. */
+            unspentBudget: components["schemas"]["Money"] | null;
+            overBudget: boolean;
+        };
+        DashboardMarketRow: {
+            team: components["schemas"]["TeamRef"];
+            planCount: number;
+            figures: components["schemas"]["DashboardFigures"];
+        };
+        DashboardPlanRef: {
+            id: string;
+            name: string;
+            status: components["schemas"]["PlanStatus"];
+            planType: components["schemas"]["PlanType"];
+        };
+        DashboardPlanRow: {
+            plan: components["schemas"]["DashboardPlanRef"];
+            teams: components["schemas"]["TeamRef"][];
+            figures: components["schemas"]["DashboardFigures"];
+            financeShown: boolean;
+        };
+        DashboardCampaignRow: {
+            campaign: components["schemas"]["DashboardRecordRef"];
+            plan: components["schemas"]["DashboardRecordRef"];
+            figures: components["schemas"]["DashboardFigures"];
+            /** @description Over budget, planned − budget; in Left to plan, budget − planned; null in a plan's campaigns. */
+            difference: components["schemas"]["Money"] | null;
+        };
+        DashboardRecordRef: {
+            id: string;
+            name: string;
+        };
+        DashboardPlanCampaigns: {
+            plan: components["schemas"]["DashboardRecordRef"];
+            items: components["schemas"]["DashboardCampaignRow"][];
+        };
+        DashboardMonths: {
+            items: components["schemas"]["DashboardMonth"][];
+            /** @description Planned cost not yet spread (activities without dates); null when none. */
+            noDates: components["schemas"]["Money"] | null;
+            /** @description Planned cost spread into months of other years; null when none. */
+            otherYears: components["schemas"]["Money"] | null;
+            /** @description Payments posted outside the year; null when none or when financial data is hidden. */
+            paidOutsideYear: components["schemas"]["Money"] | null;
+        };
+        DashboardMonth: {
+            month: string;
+            planned: components["schemas"]["Money"];
+            actual: components["schemas"]["Money"] | null;
+            plannedToDate: components["schemas"]["Money"];
+            actualToDate: components["schemas"]["Money"] | null;
+        };
+        DashboardApprovals: {
+            waiting: number;
+            /** Format: date-time */
+            oldestWaitingSince: string | null;
+            approved: number;
+            declined: number;
+            autoApproved: number;
+            /** @description Days from submission to decision, one decimal ("2.5"); null when nothing was decided. */
+            averageDecisionDays: string | null;
+            activitiesByStatus: components["schemas"]["DashboardStatusCount"][];
+        };
+        DashboardStatusCount: {
+            status: components["schemas"]["ActivityDisplayStatus"];
+            count: number;
+        };
+        DashboardPurchaseRequests: {
+            /** @description Purchase Support is switched on. */
+            available: boolean;
+            byStatus: components["schemas"]["DashboardPurchaseRequestStatus"][];
+            count: number;
+            amount: components["schemas"]["Money"];
+            waitingForGsap: number;
+        };
+        DashboardPurchaseRequestStatus: {
+            status: components["schemas"]["PurchaseRequestStatus"];
+            count: number;
+            amount: components["schemas"]["Money"];
+        };
+        DashboardCompleteness: {
+            /** @enum {string} */
+            level: "plan" | "campaign" | "initiative" | "activity" | "lineItem";
+            total: number;
+            complete: number;
+            percent: number | null;
+        };
+        DashboardGlobalBudget: {
+            id: string;
+            name: string;
+            amount: components["schemas"]["Money"];
+            allocated: components["schemas"]["Money"];
+            unallocated: components["schemas"]["Money"];
+            plannedCost: components["schemas"]["Money"];
+            overAllocated: boolean;
+        };
     };
     responses: {
         /** @description The request is not valid (validation_failed lists every field problem; bad_request when the body cannot be read). */
@@ -9671,6 +10243,18 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description The file, named in Content-Disposition, e.g. "SP&A One – FY2026 Lubricants Europe – 28 Oct 2026.pptx" (feature 036). */
+        OfficeFile: {
+            headers: {
+                /** @description attachment with filename (ASCII) and filename* (UTF-8). */
+                "Content-Disposition"?: string;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation": string;
+                "application/pdf": string;
             };
         };
     };
@@ -9767,6 +10351,8 @@ export interface components {
         AllWorkActivityType: string[];
         /** @description Strategic / AOP plans. */
         AllWorkStrategic: "include" | "only" | "exclude";
+        /** @description BCPIR plans (013 FR-003). */
+        AllWorkBcpir: "include" | "only" | "exclude";
         AllWorkShowLevels: "everything" | "completeBranches" | "campaignsWithoutInitiatives" | "initiativesWithoutActivities";
         /** @description Text searched in name, ID, external name and description at every level, ignoring letter case (at most 200 characters). */
         AllWorkSearch: string;
@@ -9852,6 +10438,17 @@ export interface components {
         AllWorkAmountsIn: "display" | "plan";
         /** @example DLG-1001 */
         DelegationId: string;
+        /** @description The plan year; default the current year (feature 036). */
+        DashboardYear: number;
+        /** @description Only plans of this type; all types when absent. */
+        DashboardPlanType: components["schemas"]["PlanType"];
+        /** @description An active currency of Settings to show amounts in; default the person's display currency. */
+        DashboardCurrency: string;
+        /** @description The market (team) of the Regional dashboard; default the person's first team by name, else the first team. */
+        DashboardTeam: string;
+        /** @description A plan of the dashboard whose campaigns to show; ignored when the plan is not on the dashboard. */
+        DashboardPlan: string;
+        ExportFormat: "pptx" | "pdf";
     };
     requestBodies: never;
     headers: never;
@@ -12272,6 +12869,8 @@ export interface operations {
                 year?: number;
                 /** @description Part of the name or of the ID, ignoring letter case and surrounding spaces. */
                 q?: string;
+                /** @description BCPIR plans (013 FR-003). */
+                bcpir?: components["parameters"]["AllWorkBcpir"];
                 /** @description First year of the range (inclusive). With yearTo; year is an alias for yearFrom = yearTo. */
                 yearFrom?: components["parameters"]["PlansYearFrom"];
                 /** @description Last year of the range (inclusive); not before yearFrom. */
@@ -14252,6 +14851,8 @@ export interface operations {
                 activityType?: components["parameters"]["AllWorkActivityType"];
                 /** @description Strategic / AOP plans. */
                 strategic?: components["parameters"]["AllWorkStrategic"];
+                /** @description BCPIR plans (013 FR-003). */
+                bcpir?: components["parameters"]["AllWorkBcpir"];
                 /** @description Financials filter (FR-024), tested on activities; values combine with OR. committedAbovePlanned holds when the activity or one of its line items is committed above its planned cost. */
                 finance?: components["parameters"]["AllWorkFinance"];
                 showLevels?: components["parameters"]["AllWorkShowLevels"];
@@ -14359,6 +14960,8 @@ export interface operations {
                 activityType?: components["parameters"]["AllWorkActivityType"];
                 /** @description Strategic / AOP plans. */
                 strategic?: components["parameters"]["AllWorkStrategic"];
+                /** @description BCPIR plans (013 FR-003). */
+                bcpir?: components["parameters"]["AllWorkBcpir"];
                 /** @description Financials filter (FR-024), tested on activities; values combine with OR. committedAbovePlanned holds when the activity or one of its line items is committed above its planned cost. */
                 finance?: components["parameters"]["AllWorkFinance"];
                 showLevels?: components["parameters"]["AllWorkShowLevels"];
@@ -14402,7 +15005,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The file. Its name is in Content-Disposition, e.g. MAPP All work – Grid – 2026 – 18 Oct 2026.xlsx. */
+            /** @description The file. Its name is in Content-Disposition, e.g. SP&A One All work – Grid – 2026 – 18 Oct 2026.xlsx. */
             200: {
                 headers: {
                     /** @description attachment with filename (ASCII) and filename* (UTF-8). */
@@ -14887,7 +15490,7 @@ export interface operations {
             default: components["responses"]["Error"];
         };
     };
-    importActivities: {
+    importPlanWorkbook: {
         parameters: {
             query?: never;
             header?: never;
@@ -14899,7 +15502,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportRun"];
+                "application/json": components["schemas"]["ImportUpload"];
             };
         };
         responses: {
@@ -14963,7 +15566,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The template. Its name is in Content-Disposition (MAPP import template – <plan>.xlsx). */
+            /** @description The template. Its name is in Content-Disposition (SP&A One import template – <plan>.xlsx). */
             200: {
                 headers: {
                     "Content-Disposition"?: string;
@@ -14974,6 +15577,34 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    exportPlanWorkbook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The workbook. Its name is in Content-Disposition (<plan> – SP&A One.xlsx). */
+            200: {
+                headers: {
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
@@ -15922,7 +16553,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The file, named mapp-gsap-extract-sample.csv in Content-Disposition. */
+            /** @description The file, named spa-one-gsap-extract-sample.csv in Content-Disposition. */
             200: {
                 headers: {
                     /** @description attachment with filename. */
@@ -16658,6 +17289,57 @@ export interface operations {
             default: components["responses"]["Error"];
         };
     };
+    getOverspendConfiguration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The setting, with whether the person may change it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverspendConfiguration"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    saveOverspendConfiguration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OverspendConfigurationInput"];
+            };
+        };
+        responses: {
+            /** @description The setting as saved; logged when it changed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverspendConfiguration"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
     createSimulatedGsapPurchaseOrder: {
         parameters: {
             query?: never;
@@ -17196,6 +17878,39 @@ export interface operations {
             default: components["responses"]["Error"];
         };
     };
+    getSpaView: {
+        parameters: {
+            query?: {
+                /** @description A campaign of the plan; the whole plan when not sent. */
+                campaignId?: string;
+                /** @description A key of SpaView.dimensions; the default dimension when not sent. */
+                dimension?: string;
+            };
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The view (013 data-model §3). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpaView"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
     getActivitySplitOptions: {
         parameters: {
             query?: never;
@@ -17311,6 +18026,8 @@ export interface operations {
                 activityType?: components["parameters"]["AllWorkActivityType"];
                 /** @description Strategic / AOP plans. */
                 strategic?: components["parameters"]["AllWorkStrategic"];
+                /** @description BCPIR plans (013 FR-003). */
+                bcpir?: components["parameters"]["AllWorkBcpir"];
                 /** @description Plans of these types (tested on plans). */
                 planType?: components["parameters"]["AllWorkPlanType"];
                 /** @description Plans planned in these currencies (tested on plans). */
@@ -17550,6 +18267,148 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getExecutiveDashboard: {
+        parameters: {
+            query?: {
+                /** @description The plan year; default the current year (feature 036). */
+                year?: components["parameters"]["DashboardYear"];
+                /** @description Only plans of this type; all types when absent. */
+                planType?: components["parameters"]["DashboardPlanType"];
+                /** @description An active currency of Settings to show amounts in; default the person's display currency. */
+                currency?: components["parameters"]["DashboardCurrency"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The dashboard. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningDashboard"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getRegionalDashboard: {
+        parameters: {
+            query?: {
+                /** @description The plan year; default the current year (feature 036). */
+                year?: components["parameters"]["DashboardYear"];
+                /** @description Only plans of this type; all types when absent. */
+                planType?: components["parameters"]["DashboardPlanType"];
+                /** @description An active currency of Settings to show amounts in; default the person's display currency. */
+                currency?: components["parameters"]["DashboardCurrency"];
+                /** @description The market (team) of the Regional dashboard; default the person's first team by name, else the first team. */
+                teamId?: components["parameters"]["DashboardTeam"];
+                /** @description A plan of the dashboard whose campaigns to show; ignored when the plan is not on the dashboard. */
+                planId?: components["parameters"]["DashboardPlan"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The dashboard of the market. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningDashboard"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    exportExecutiveDashboard: {
+        parameters: {
+            query: {
+                format: components["parameters"]["ExportFormat"];
+                /** @description The plan year; default the current year (feature 036). */
+                year?: components["parameters"]["DashboardYear"];
+                /** @description Only plans of this type; all types when absent. */
+                planType?: components["parameters"]["DashboardPlanType"];
+                /** @description An active currency of Settings to show amounts in; default the person's display currency. */
+                currency?: components["parameters"]["DashboardCurrency"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OfficeFile"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    exportRegionalDashboard: {
+        parameters: {
+            query: {
+                format: components["parameters"]["ExportFormat"];
+                /** @description The plan year; default the current year (feature 036). */
+                year?: components["parameters"]["DashboardYear"];
+                /** @description Only plans of this type; all types when absent. */
+                planType?: components["parameters"]["DashboardPlanType"];
+                /** @description An active currency of Settings to show amounts in; default the person's display currency. */
+                currency?: components["parameters"]["DashboardCurrency"];
+                /** @description The market (team) of the Regional dashboard; default the person's first team by name, else the first team. */
+                teamId?: components["parameters"]["DashboardTeam"];
+                /** @description A plan of the dashboard whose campaigns to show; ignored when the plan is not on the dashboard. */
+                planId?: components["parameters"]["DashboardPlan"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OfficeFile"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    exportPlan: {
+        parameters: {
+            query: {
+                format: components["parameters"]["ExportFormat"];
+                /** @description An active currency of Settings to show amounts in; default the person's display currency. */
+                currency?: components["parameters"]["DashboardCurrency"];
+            };
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OfficeFile"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
     };

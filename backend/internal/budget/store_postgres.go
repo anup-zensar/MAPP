@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"mapp/internal/overspend"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/database"
@@ -53,7 +54,7 @@ func (s *PostgresStore) PutBudget(ctx context.Context, b GlobalBudget) error {
 		ID: b.ID, Name: b.Name, Year: b.Year, AmountMinor: b.Amount.Cents(), OwnerID: b.OwnerID,
 		Description: b.Description, Version: b.Version, CreatedAt: b.CreatedAt, CreatedByID: b.CreatedBy.ID,
 		CreatedByName: b.CreatedBy.Name, UpdatedAt: b.UpdatedAt, UpdatedByID: b.UpdatedBy.ID,
-		UpdatedByName: b.UpdatedBy.Name,
+		UpdatedByName: b.UpdatedBy.Name, Overspend: overspend.Stored(b.Overspend),
 	})
 	if err != nil {
 		return fmt.Errorf("save global budget %s: %w", b.ID, err)
@@ -150,7 +151,7 @@ func allocationsFromRows(rows []sqlcdb.BudgetAllocation, err error) ([]Allocatio
 func budgetFromRow(row sqlcdb.GlobalBudget) GlobalBudget {
 	return GlobalBudget{
 		ID: row.ID, Name: row.Name, Year: row.Year, Amount: money.FromCents(row.AmountMinor), OwnerID: row.OwnerID,
-		Description: row.Description,
+		Description: row.Description, Overspend: overspend.Mode(row.Overspend),
 		Meta: record.Meta{
 			Version:   row.Version,
 			CreatedAt: row.CreatedAt,

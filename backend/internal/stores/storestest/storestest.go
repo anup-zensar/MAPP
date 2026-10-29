@@ -11,10 +11,12 @@ import (
 	"mapp/internal/approval/approvaltest"
 	"mapp/internal/auth/authtest"
 	"mapp/internal/budget/budgettest"
+	"mapp/internal/bulk/bulktest"
 	"mapp/internal/campaign/campaigntest"
 	"mapp/internal/financials/financialstest"
 	"mapp/internal/history/historytest"
 	"mapp/internal/lineitem/lineitemtest"
+	"mapp/internal/overspend/overspendtest"
 	"mapp/internal/people/peopletest"
 	"mapp/internal/plan/plantest"
 	"mapp/internal/platform/fake"
@@ -23,6 +25,7 @@ import (
 	"mapp/internal/settings/settingstest"
 	"mapp/internal/stores"
 	"mapp/internal/swbs/swbstest"
+	"mapp/internal/workbook/workbooktest"
 )
 
 func New(db *fake.DB) stores.Set {
@@ -46,6 +49,8 @@ func planning(db *fake.DB) stores.Planning {
 	return stores.Planning{
 		Plans: plantest.NewStore(db), Campaigns: campaigntest.NewStore(db), Activities: activitytest.NewStore(db),
 		LineItems: lineitemtest.NewStore(db), Approvals: approvaltest.NewStore(db), AllWork: allworktest.NewStore(db),
+		Overspend: overspendtest.NewStore(db),
+		Bulk:      bulktest.NewStore(db), Workbook: workbooktest.NewStore(db, plantest.NewStore(db)),
 	}
 }
 

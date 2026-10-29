@@ -36,10 +36,10 @@ describe('PublicLayout', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows the MAPP logo in its header (FR-001)', () => {
+  it('shows the SP&A One logo in its header (FR-001)', () => {
     renderPage();
 
-    expect(screen.getByRole('banner')).toHaveTextContent('MAPP');
+    expect(screen.getByRole('banner')).toHaveTextContent('SP&A One');
   });
 
   it('has the light/dark switch in its header (FR-014, research R16)', () => {

@@ -6,40 +6,29 @@ import (
 	"mapp/internal/platform/date"
 )
 
-// The answer of GET /api/v1/all-work as a pure function of the year's nodes (D-114): build takes everything a
-// view depends on and returns the rows in their final order with their cells, the summary cards, the count
-// and the totals row. Service.Query reads the input; tests call build directly.
-
-// unassignedName is the name of an activity's unassigned planned cost row (FR-012).
 const unassignedName = "Unassigned planned cost (Sys_Gen_Balance)"
 
-// input is everything one view is worked out from.
 type input struct {
 	query      Query
-	year       int // the first year of the range
-	yearFrom   int // 016: the range (0: year)
+	year       int
+	yearFrom   int
 	yearTo     int
-	attributes []Attribute // 016: every Shell attribute, for the attribute filters and the Breakdown
-	rateNotes  []string    // 016: the rates used, for an export's notes (FR-009)
+	attributes []Attribute
+	rateNotes  []string
 	today      date.Date
 	now        time.Time
 	currency   Currency
 	data       YearData
-	choices    Choices  // the teams, business units, activity types and people that exist
-	catalogue  []Column // the columns the grid offers
+	choices    Choices
+	catalogue  []Column
 }
 
-// built is a worked-out view: the answer, the tree it came from and the query as it applied, without the
-// values left out (exports use all three).
 type built struct {
 	result Result
 	tree   *tree
 	query  Query
 }
 
-// build works out the view of in (FR-001 – FR-026): it marks the matches and context rows, adds up the
-// roll-ups, sorts, and makes the rows — with the period amounts of Budget & cost — the cards, the count and
-// the totals row. Filter values and columns that no longer exist are ignored and listed in leftOut (FR-031).
 func build(in input) built {
 	if in.yearFrom == 0 {
 		in.yearFrom = in.year
@@ -48,14 +37,14 @@ func build(in input) built {
 		in.yearTo = in.yearFrom
 	}
 	q, leftOut := knownValues(in.query, in.data, in.choices)
-	q.attrs = resolveAttrs(q.Attributes, in.attributes, in.data.Nodes) // 016 FR-039
-	if q.View == ViewBreakdown {                                       // its rows are the Grid's; the groups come from GET /api/v1/all-work/breakdown
+	q.attrs = resolveAttrs(q.Attributes, in.attributes, in.data.Nodes)
+	if q.View == ViewBreakdown {
 		q.View = ViewGrid
 	}
 	in.query = q
 	t := buildTree(in.data.Nodes)
 	if in.choices.SeesFinance {
-		t.withFinance(in.choices.FinancePlans) // feature 015 (finance.go)
+		t.withFinance(in.choices.FinancePlans)
 	}
 	applyFilters(t, q)
 	rollUp(t)
@@ -93,9 +82,6 @@ func build(in input) built {
 	return built{result: result, tree: t, query: q}
 }
 
-// knownValues returns q without the filter values that no longer exist, and those values as left out
-// (FR-031): plans that are not plans of the year, and people, teams, Business unit options and activity
-// types that are not among the choices. The rest of the query applies.
 func knownValues(q Query, data YearData, c Choices) (Query, []LeftOut) {
 	plans := map[string]bool{}
 	for _, n := range data.Nodes {
@@ -123,7 +109,6 @@ func knownValues(q Query, data YearData, c Choices) (Query, []LeftOut) {
 	return q, leftOut
 }
 
-// optionIn returns the test of an ID being one of options.
 func optionIn(options []Option) func(id string) bool {
 	return func(id string) bool {
 		for _, o := range options {
@@ -135,25 +120,20 @@ func optionIn(options []Option) func(id string) bool {
 	}
 }
 
-// rowBuilder makes the rows of one view.
 type rowBuilder struct {
 	in            input
 	columns       []Column
-	periods       *periods // Budget & cost only
+	periods       *periods
 	periodColumns []Period
-	periodBuckets [][]string // the buckets each period column adds up
+	periodBuckets [][]string
 }
 
-// withPeriods adds to row the period amounts and total of b (Budget & cost, FR-022).
 func (b rowBuilder) withPeriods(row *Row, amounts buckets) {
 	if b.periods != nil {
 		row.Periods, row.Total = b.periods.amounts(amounts, b.periodBuckets, b.in.currency)
 	}
 }
 
-// rows returns the shown records in tree order (FR-011): each plan, then its campaigns, initiatives and
-// activities; under an activity its line items and, when its balance is not zero, its unassigned planned
-// cost row (FR-012). The Calendar has no line-item or unassigned rows (FR-025).
 func (b rowBuilder) rows(t *tree) []Row {
 	rows := []Row{}
 	var add func(n *tnode)
@@ -193,7 +173,6 @@ func (b rowBuilder) rows(t *tree) []Row {
 	return rows
 }
 
-// recordRow returns the row of a plan, campaign, initiative, activity or line item.
 func (b rowBuilder) recordRow(t *tnode) Row {
 	n, cur := t.n, b.in.currency
 	// A line item is never tested by filters: it takes the role of its activity (D-113).
@@ -212,8 +191,8 @@ func (b rowBuilder) recordRow(t *tnode) Row {
 	}
 	switch n.Level {
 	case LevelPlan:
-		strategic, year := n.Strategic, yearOf(n, b.in.year)
-		row.Strategic, row.Year = &strategic, &year
+		strategic, year, bcpir := n.Strategic, yearOf(n, b.in.year), isBCPIR(n)
+		row.Strategic, row.Year, row.BCPIR = &strategic, &year, &bcpir
 	case LevelCampaign, LevelInitiative:
 		row.Timing = timingOf(n)
 	case LevelActivity:
@@ -237,14 +216,13 @@ func (b rowBuilder) recordRow(t *tnode) Row {
 	}
 	if b.periods != nil {
 		b.withPeriods(&row, b.periods.of[t])
-		if b.in.query.ComparePhased && t.isContainer() { // 016 FR-038
+		if b.in.query.ComparePhased && t.isContainer() {
 			row.PhasedBudget, row.OverPeriods = b.periods.phased(t, b.periods.of[t], b.periodBuckets, b.in.currency)
 		}
 	}
 	return row
 }
 
-// yearOf is the year of the record's plan: its PlanYear, or year when the source did not say.
 func yearOf(n *Node, year int) int {
 	if n.PlanYear != 0 {
 		return n.PlanYear
@@ -252,8 +230,6 @@ func yearOf(n *Node, year int) int {
 	return year
 }
 
-// unassignedRow returns the unassigned planned cost row of the activity a (FR-012): it opens its activity
-// and takes its role.
 func (b rowBuilder) unassignedRow(a *tnode) Row {
 	parent := a.n.ID
 	row := Row{
@@ -268,7 +244,6 @@ func (b rowBuilder) unassignedRow(a *tnode) Row {
 	return row
 }
 
-// cells returns the cells of a row, one per column.
 func (b rowBuilder) cells(r cellRow) []*Cell {
 	cells := make([]*Cell, len(b.columns))
 	for i, c := range b.columns {
@@ -277,8 +252,6 @@ func (b rowBuilder) cells(r cellRow) []*Cell {
 	return cells
 }
 
-// totals returns the totals row (FR-014): "Total · N activities", money summed over the matching
-// activities and the Plan budget over the matching plans, so it equals the summary cards.
 func (b rowBuilder) totals(m matches) Totals {
 	cur := b.in.currency
 	totals := Totals{
@@ -296,7 +269,7 @@ func (b rowBuilder) totals(m matches) Totals {
 			totals.Cells[i] = rolledCell(c.Key, &tnode{n: &Node{}}, m.activities, cur)
 		}
 	}
-	if b.periods != nil { // the footer of Budget & cost: the matching activities by period (FR-024)
+	if b.periods != nil {
 		totals.Periods, totals.Total = b.periods.amounts(b.periods.footer, b.periodBuckets, cur)
 	}
 	return totals

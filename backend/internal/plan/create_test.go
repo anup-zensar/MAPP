@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 
+	"mapp/internal/overspend"
+
 	"mapp/internal/history"
 	"mapp/internal/people"
 	"mapp/internal/platform/errs"
@@ -23,7 +25,7 @@ func TestDefaults_FR006(t *testing.T) {
 		CurrentYear: 2026, Years: []int{2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036}, Year: 2026,
 		TeamIDs: []string{teamLubricants}, OwnerID: ptr(priya.ID), // Closed team is inactive
 		DefaultSpread: SpreadEvenly, GoalStage: StageINQ, // two active models: none chosen
-		Currency: "USD", PlanType: TypeOperational,
+		Currency: "USD", PlanType: TypeOperational, Overspend: overspend.Warn,
 	}
 	if err != nil || !reflect.DeepEqual(defaults, want) {
 		t.Errorf("Defaults = %+v, %v\nwant       %+v", defaults, err, want)

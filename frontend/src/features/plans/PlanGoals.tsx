@@ -1,3 +1,4 @@
+import { FieldHelpTip } from '@/features/settings';
 import { Card } from '@/ui/Card/Card';
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { formatWhole } from '@/format/decimal';
@@ -10,10 +11,7 @@ import type { GoalStage } from './plan-text';
 
 const STAGES: GoalStage[] = ['inq', 'mql', 'revenue'];
 
-/**
- * The plan's goal beside what its activities plan (FR-016): INQ, MQL and Revenue, the typed stage
- * as typed and the others "Calculated" with their formula, and the share of the goal planned.
- */
+/** The plan's goal beside what its activities plan, stage by stage, and the share planned. */
 export function PlanGoals({ plan }: { plan: Plan }) {
   const { money } = useFormatters();
   const { goals } = plan;
@@ -37,7 +35,6 @@ export function PlanGoals({ plan }: { plan: Plan }) {
     );
   }
 
-  /** The stage's name, and "Calculated" with its formula under it for the stages worked out. */
   function stageName(stage: GoalStage) {
     return (
       <span className={styles.stage}>
@@ -65,7 +62,7 @@ export function PlanGoals({ plan }: { plan: Plan }) {
           <tr>
             <th scope="col">Stage</th>
             <th scope="col" className={styles.number}>
-              Plan goal
+              Plan goal <FieldHelpTip helpKey="plan.goals" label="Goals" />
             </th>
             <th scope="col" className={styles.number}>
               In activities

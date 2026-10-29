@@ -31,11 +31,7 @@ export interface ApprovalPreviewPanelProps {
   onDecided: () => void;
 }
 
-/**
- * The preview of an activity on the approvals page (FR-032), so the approver decides without
- * leaving the page: its facts and completeness, line items, unassigned planned cost, the approval
- * chain and the latest history; **Approve**, **Decline** (while Submitted) and **Open activity**.
- */
+/** The preview of an activity on the approvals page (FR-032): the approver decides without leaving it. */
 export function ApprovalPreviewPanel({
   activityId,
   onClose,
@@ -93,10 +89,8 @@ interface PreviewFooterProps {
 }
 
 /**
- * The panel's buttons, one primary chosen by the person's role (design system §2.5, §6.3): an
- * approver sees **Decline · Approve** with Approve last and primary; the owner never sees Approve
- * as a button (functional review A-01) — where the rules let them decide, it waits in ⋯. The
- * footer lines its buttons up from the right, so they are listed primary first.
+ * One primary button chosen by the person's role (design system §6.3); the owner never sees Approve as a
+ * button (functional review A-01). The footer lines them up from the right, so the primary is listed first.
  */
 function PreviewFooter({ preview, planId, onDecided }: PreviewFooterProps) {
   const { approval, activity } = preview;
@@ -143,7 +137,7 @@ function PreviewBody({ preview }: { preview: ApprovalPreview }) {
     : format.dateRange(activity.startDate, activity.endDate);
 
   return (
-    <div className={styles.body}>
+    <div className={styles.body} tabIndex={0} role="group" aria-label="Activity details">
       <div className={styles.chips}>
         <ActivityStatusChip status={activity.displayStatus} />
         <CompletenessChip missing={activity.missing} />
@@ -197,11 +191,7 @@ function PreviewBody({ preview }: { preview: ApprovalPreview }) {
 
 type PreviewLineItem = ApprovalPreview['lineItems'][number];
 
-/**
- * The activity's line items: a table that scrolls sideways inside the panel when it is wider, and
- * below 600 px one stacked card per line item, so nothing scrolls sideways on a phone (design
- * system §5.4).
- */
+/** Below 600 px one stacked card per line item, so nothing scrolls sideways on a phone (design system §5.4). */
 function LineItems({ items }: { items: PreviewLineItem[] }) {
   const format = useFormatters();
   const phone = useIsPhone();

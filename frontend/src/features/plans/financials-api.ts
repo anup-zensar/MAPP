@@ -1,4 +1,3 @@
-/** What a plan's, campaign's or initiative's Financials section asks the API (015). */
 import { useQuery } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
 import { ApiError } from '@/api/errors';
@@ -13,7 +12,6 @@ export function useRecordFinancials(recordId: string, displayCurrency: string) {
   });
 }
 
-/** "View all n transactions in Financials": the Financials page filtered to the record (015). */
 export function financialsHref(recordId: string): string {
-  return `/financials?${new URLSearchParams({ record: recordId })}`;
+  return `/financials?${new URLSearchParams({ recordId })}`;
 }

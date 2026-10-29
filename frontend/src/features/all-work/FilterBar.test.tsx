@@ -65,6 +65,7 @@ describe('FilterBar (US2)', () => {
       'Activity type',
       'Financials',
       'Strategic / AOP plans',
+      'BCPIR plans',
       'Show levels',
     ]);
     expect(screen.getByRole('searchbox', { name: 'Search' })).toHaveAttribute(

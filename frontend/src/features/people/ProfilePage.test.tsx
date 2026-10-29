@@ -9,7 +9,7 @@ describe('ProfilePage (feature 003, US4)', () => {
     renderProfile();
 
     expect(screen.getByRole('heading', { level: 1, name: 'My profile' })).toBeInTheDocument();
-    expect(document.title).toBe('My profile · MAPP');
+    expect(document.title).toBe('My profile · SP&A One');
 
     const details = card('Your details');
     expect(details).toHaveTextContent('Priya Raman');

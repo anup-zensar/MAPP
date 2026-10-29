@@ -13,16 +13,19 @@ import (
 	"mapp/internal/allwork"
 	"mapp/internal/approval"
 	"mapp/internal/auth"
+	"mapp/internal/budget"
 	"mapp/internal/campaign"
 	"mapp/internal/financials"
 	"mapp/internal/history"
 	"mapp/internal/lineitem"
+	"mapp/internal/overspend"
 	"mapp/internal/people"
 	"mapp/internal/plan"
 	"mapp/internal/platform/clock"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/telemetry"
 	"mapp/internal/platform/web"
+	"mapp/internal/purchaserequest"
 	"mapp/internal/settings"
 	"mapp/internal/stores"
 )
@@ -52,8 +55,13 @@ type wiring struct {
 	lineItems  *lineitem.Service
 	approvals  *approval.Service
 	financials *financials.Service
+	budgets    *budget.Service
+	prs        *purchaserequest.Service
 	allWork    allWorkSource
 	finance    financialPlanning
+	purchases  *purchaserequest.Service
+	guard      *overspend.Guard
+	overspend  *overspend.Service
 }
 
 type routeRegistrar interface {
@@ -63,6 +71,8 @@ type routeRegistrar interface {
 // New keeps no package-level state, so tests build as many APIs as they need, each on its own clock.
 func New(cfg Config, set stores.Set, now clock.Clock) (*App, error) {
 	w := &wiring{cfg: cfg, set: set, now: now, generator: ids.NewGenerator(set.Counters)}
+	w.guard = overspend.NewGuard(set.Tx, set.Overspend)
+	w.set.Tx = w.guard.Unchecked()
 	engine, tel, err := w.engine()
 	if err != nil {
 		return nil, err
@@ -91,7 +101,7 @@ func (w *wiring) engine() (*gin.Engine, *telemetry.Telemetry, error) {
 
 func (w *wiring) organisation() *auth.Service {
 	s := w.set
-	w.history = history.NewService(s.Tx, s.History, w.generator, w.now)
+	w.history = history.NewService(w.guard, s.History, w.generator, w.now)
 	w.people = people.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}, s.People)
 	authService := auth.NewService(s.Tx, s.Auth, s.People,
 		auth.Options{DemoMode: w.cfg.DemoMode(), DemoPassword: w.cfg.DemoPassword, Now: w.now})

@@ -6,6 +6,7 @@ import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { binItem, lineItemEntry, restorePreview } from '@/testing/fixtures/recycle-bin';
 import { reply } from '@/testing/replies';
+import { VIEWER } from '@/testing/fixtures/viewer';
 import type { BinItem } from './bin-text';
 import { RecycleBinPage } from './RecycleBinPage';
 
@@ -37,12 +38,24 @@ describe('RecycleBinPage', () => {
     ]);
 
     expect(screen.getByRole('heading', { level: 1, name: 'Recycle bin' })).toBeInTheDocument();
-    expect(document.title).toBe('Recycle bin · MAPP');
+    expect(document.title).toBe('Recycle bin · SP&A One');
     expect(await screen.findByText('2 of 2 items')).toBeInTheDocument();
     expect(rowNames()).toEqual(['Trade shows', 'Print ads']);
     // Destructive and rare: a menu item, never a red button on the page (design system §5.1).
     await user.click(screen.getByRole('button', { name: 'More' }));
     expect(await screen.findByRole('menuitem', { name: 'Empty recycle bin' })).toBeInTheDocument();
+  });
+
+  it('offers Empty recycle bin only to people whose roles may delete permanently (014 FR-011)', async () => {
+    mockApi([reply('GET /api/v1/recycle-bin', { body: binPage([binItem(), lineItemEntry()]) })]);
+    renderWithProviders(<RecycleBinPage />, {
+      path: '/recycle-bin',
+      route: '/recycle-bin',
+      user: VIEWER,
+    });
+
+    expect(await screen.findByText('2 of 2 items')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'More' })).not.toBeInTheDocument();
   });
 
   it('says so when the bin is empty, without Empty recycle bin (FR-014)', async () => {
@@ -128,7 +141,7 @@ describe('RecycleBinPage', () => {
     renderPage([reply('GET /api/v1/recycle-bin', { status: 500 })]);
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      "MAPP can't reach its server right now.",
+      "SP&A One can't reach its server right now.",
     );
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });

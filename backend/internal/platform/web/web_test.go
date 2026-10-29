@@ -22,7 +22,7 @@ import (
 
 const (
 	otherSiteBody  = `{"error":{"code":"bad_request","message":"This request came from another site and was refused.","fields":[]}}`
-	unreadableBody = `{"error":{"code":"bad_request","message":"MAPP couldn't read this request. Reload the page and try again.","fields":[]}}`
+	unreadableBody = `{"error":{"code":"bad_request","message":"SP\u0026A One couldn't read this request. Reload the page and try again.","fields":[]}}`
 	internalBody   = `{"error":{"code":"internal_error","message":"Something went wrong on our side. Please try again.","fields":[]}}`
 	notFoundBody   = `{"error":{"code":"not_found","message":"This page or record doesn't exist.","fields":[]}}`
 	testPath       = "/api/v1/test"

@@ -34,7 +34,7 @@ test('033 US1: from an approved activity to the purchase order and Committed fig
   const lineItemName = uniqueName('Gift boxes');
   await page.getByRole('textbox', { name: /^Line item name/ }).fill(lineItemName);
   await page.getByRole('textbox', { name: /^Planned cost/ }).fill('10000');
-  await page.getByLabel('Request SWBS code from GSAP').check();
+  await page.getByRole('checkbox', { name: 'Request SWBS code from GSAP' }).check();
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expectToast(page, `Line item '${lineItemName}' created`);
   await page.locator('#line-items').getByRole('link', { name: lineItemName }).first().click();

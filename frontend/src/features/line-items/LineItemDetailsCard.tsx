@@ -13,23 +13,25 @@ export function LineItemDetailsCard({ lineItem }: { lineItem: LineItem }) {
     <Card title="Details">
       <div className={styles.stack}>
         <DetailsList>
-          <Detail label={LABEL.name}>{lineItem.name}</Detail>
-          <Detail label={LABEL.owner}>
+          <Detail label={LABEL.name} helpKey="lineItem.name">
+            {lineItem.name}
+          </Detail>
+          <Detail label={LABEL.owner} helpKey="lineItem.owner">
             {lineItem.owner
               ? `${lineItem.owner.name}${lineItem.owner.active ? '' : ' (inactive)'}`
               : null}
           </Detail>
-          <Detail label={LABEL.currency}>
+          <Detail label={LABEL.currency} helpKey="lineItem.currency">
             {currencyLabel(
               lineItem.currency.code,
               lineItem.currency.name,
               lineItem.currency.active,
             )}
           </Detail>
-          <Detail label={LABEL.plannedCost} numeric>
+          <Detail label={LABEL.plannedCost} helpKey="lineItem.plannedCost" numeric>
             {moneyText(lineItem.plannedCost)}
           </Detail>
-          <Detail label={LABEL.description}>
+          <Detail label={LABEL.description} helpKey="lineItem.description">
             {lineItem.description ? (
               <span className={styles.description}>{lineItem.description}</span>
             ) : null}

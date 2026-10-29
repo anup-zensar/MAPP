@@ -23,7 +23,7 @@ const VENDOR = shellAttribute({
   type: 'text',
   marking: 'neededToSubmit',
   section: 'Purchase request',
-  locks: [{ field: 'delete', reason: 'MAPP reads this attribute for purchase requests.' }],
+  locks: [{ field: 'delete', reason: 'SP&A One reads this attribute for purchase requests.' }],
 });
 const MATERIAL_GROUP = shellAttribute({
   id: 'SA-1121',

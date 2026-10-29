@@ -11,19 +11,10 @@ import type { NavItem } from './navigation';
 import styles from './Sidebar.module.css';
 
 export interface SidebarProps {
-  /**
-   * Inside the menu drawer of narrow screens: always expanded, with the logo at the top and
-   * without Collapse, so one Escape always closes the drawer.
-   */
+  /** In the menu drawer: always expanded and without Collapse, so one Escape closes the drawer. */
   inDrawer?: boolean;
 }
 
-/**
- * The left sidebar (FR-010, FR-011, design system §2): the sections, a "More" group, and Collapse
- * at the bottom. It is white, 240 px wide, with 40 px items; the current section has the 4 px
- * yellow "you are here" bar, bold text and the hover grey (Shell). Collapsed, it is a 64 px icon
- * rail; the person's choice is saved for them. The logo, bell and account menu sit in the top bar.
- */
 export function Sidebar({ inDrawer = false }: SidebarProps) {
   const person = useCurrentUser();
   const { updatePreferences } = useSession();
@@ -39,8 +30,8 @@ export function Sidebar({ inDrawer = false }: SidebarProps) {
     <div className={cx(styles.sidebar, styles[variant])}>
       {inDrawer && (
         <div className={styles.brand}>
-          <Link to="/" className={styles.homeLink} aria-label="MAPP home">
-            <Logo withWordmark />
+          <Link to="/" className={styles.homeLink} aria-label="SP&A One home">
+            <Logo />
           </Link>
         </div>
       )}
@@ -67,11 +58,9 @@ export function Sidebar({ inDrawer = false }: SidebarProps) {
 interface NavItemsProps {
   items: NavItem[];
   collapsed: boolean;
-  /** The id of the group's label, which names the list for screen readers. */
   labelledBy?: string;
 }
 
-/** One group of sidebar links: those the person's roles open (feature 014, FR-012). */
 function NavItems({ items, collapsed, labelledBy }: NavItemsProps) {
   const { has } = useAccess();
   return (
@@ -85,18 +74,13 @@ function NavItems({ items, collapsed, labelledBy }: NavItemsProps) {
   );
 }
 
-/**
- * A sidebar link, marked with aria-current="page" on the current section, which also gives it its
- * highlight (Sidebar.module.css). Home is current only on Home itself; a section is current on its
- * sub-pages too, and on the addresses in its `alsoCurrentOn`.
- */
+/** Home is current only on Home; a section also on its sub-pages and its `alsoCurrentOn` addresses. */
 function NavItemLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
   const { pathname } = useLocation();
   const onSection = useMatch({ path: item.path, end: item.path === '/' }) !== null;
   const current =
     onSection || (item.alsoCurrentOn ?? []).some((start) => pathname.startsWith(start));
-  // A plain class name: in the icon rail the link is the trigger of a Tooltip, which joins class
-  // names as text.
+  // A plain class name: in the icon rail the link is a Tooltip trigger, which joins class names as text.
   const link = (
     <Link to={item.path} className={styles.item} aria-current={current ? 'page' : undefined}>
       <item.icon className={styles.icon} aria-hidden="true" />
@@ -112,7 +96,6 @@ function NavItemLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
     </Link>
   );
 
-  // In the icon rail a tooltip shows the hidden label on hover and focus.
   return collapsed ? (
     <Tooltip content={item.label} side="right">
       {link}
@@ -122,7 +105,6 @@ function NavItemLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
   );
 }
 
-/** "Collapse" (chevrons and word), or in the icon rail the chevrons alone with "Expand sidebar". */
 function CollapseButton({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   if (collapsed) {
     return (

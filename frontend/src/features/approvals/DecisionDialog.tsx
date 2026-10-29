@@ -16,7 +16,6 @@ import { commentSchema, declineSchema } from './schemas';
 import type { CommentValues } from './schemas';
 import styles from './approval-dialogs.module.css';
 
-/** The longest comment the API takes. */
 const COMMENT_MAX = 2000;
 
 export interface DecisionDialogProps {
@@ -29,13 +28,8 @@ export interface DecisionDialogProps {
 }
 
 /**
- * Approve or decline the current level (008 US2, FR-014 – FR-018; 017 FR-015, FR-019): the level
- * and its approvers, the next level or "the last level", the capacity the person decides in ("You
- * approve as delegate of …", "… as backup approver of level 2", or the on-behalf sentence), on a
- * level where all must approve how many approved and whether this approval completes it, "You own
- * this activity." while the rules still let the owner decide, and the comment — optional to
- * approve, required to decline (checked before anything is sent). A decision someone else made
- * first is explained with its time.
+ * Approve or decline the current level (008 FR-014 – FR-018; 017 FR-015, FR-019), saying in what capacity
+ * the person decides; the comment is optional to approve, required to decline.
  */
 export function DecisionDialog({ mode, approval, onClose, onDecided }: DecisionDialogProps) {
   const { show } = useToast();
@@ -51,7 +45,6 @@ export function DecisionDialog({ mode, approval, onClose, onDecided }: DecisionD
   const round = approval.rounds[0];
   const levelNumber = round?.currentLevel ?? 0;
   const level = round?.levels.find((each) => each.number === levelNumber);
-  // The next level that will wait: levels not needed or approved automatically are passed (017).
   const next = round?.levels.find(
     (each) => each.number > levelNumber && each.state === 'notReached',
   );
@@ -186,10 +179,7 @@ export function DecisionDialog({ mode, approval, onClose, onDecided }: DecisionD
   );
 }
 
-/**
- * "The activity goes back to Priya Raman, who can fix it and re-submit." — the owner as the API
- * names them with the approval (D-214); "its owner" for an activity without one.
- */
+/** The owner as the API names them with the approval (D-214); "its owner" for an activity without one. */
 function GoesBackTo({ owner }: { owner: ActivityApproval['owner'] }) {
   return (
     <p>
@@ -203,10 +193,8 @@ function GoesBackTo({ owner }: { owner: ActivityApproval['owner'] }) {
 type ChainLevel = ActivityApproval['rounds'][number]['levels'][number];
 
 /**
- * On a level where all must approve (017 FR-015): "1 of 3 already approved." and what this
- * approval does — "Level 2 is complete after this approval." or "Still waiting for … after this
- * approval." An approval counts for the approver, or for the approver a delegate acts for; a
- * backup's or an on-behalf approval completes the level. Null on other levels.
+ * On a level where all must approve (017 FR-015): an approval counts for the approver, or for the one a
+ * delegate acts for; a backup's or an on-behalf approval completes the level. Null on other levels.
  */
 function allLevelLines(
   level: ChainLevel,
@@ -227,9 +215,9 @@ function allLevelLines(
           : decision.actor.id,
       ),
   );
-  const countsFor =
-    capacity === 'delegate' ? (viewer.asDelegateOf ?? [])[0]?.id : capacity ? null : userId;
   const completesAll = capacity === 'backup' || capacity === 'onBehalf';
+  const countsFor =
+    capacity === 'delegate' ? (viewer.asDelegateOf ?? [])[0]?.id : completesAll ? null : userId;
   const stillWaiting = level.approvers.filter(
     (person) => !approvedIds.has(person.id) && person.id !== countsFor,
   );

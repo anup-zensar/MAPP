@@ -55,7 +55,7 @@ describe('SettingsPage (FR-001)', () => {
         'Set up the lists and rules every plan uses. Changes here apply to everyone straight away.',
       ),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Settings · MAPP');
+    expect(document.title).toBe('Settings · SP&A One');
 
     expect(await within(card('Models')).findByText('3 active')).toBeInTheDocument();
     expect(within(card('Activity types')).getByText('12 active')).toBeInTheDocument();

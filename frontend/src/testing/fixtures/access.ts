@@ -16,9 +16,9 @@ import { reply } from '../replies';
 const META = {
   version: 1,
   createdAt: '2026-10-01T09:00:00Z',
-  createdBy: { id: 'system', name: 'MAPP' },
+  createdBy: { id: 'system', name: 'SP&A One' },
   updatedAt: '2026-10-01T09:00:00Z',
-  updatedBy: { id: 'system', name: 'MAPP' },
+  updatedBy: { id: 'system', name: 'SP&A One' },
 };
 
 export const EUROPE = {

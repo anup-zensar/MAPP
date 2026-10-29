@@ -6,14 +6,14 @@ import { RECENT_IMPORTS_PAGE } from '@/testing/fixtures/rates';
 import { chooseAction, renderCurrenciesPage, rowOf } from '@/testing/fixtures/settings-pages';
 import { reply } from '@/testing/replies';
 
-const USD_LOCK = "USD is MAPP's base currency; its rate is always 1.";
+const USD_LOCK = "USD is SP&A One's base currency; its rate is always 1.";
 
 describe('CurrenciesPage: the list (FR-002, FR-028)', () => {
   it('shows each active currency with its rate both ways, its use and when the rate changed', async () => {
     renderCurrenciesPage();
 
     expect(screen.getByRole('heading', { level: 1, name: 'Currencies' })).toBeInTheDocument();
-    expect(document.title).toBe('Currencies · MAPP');
+    expect(document.title).toBe('Currencies · SP&A One');
     await screen.findByRole('table');
 
     const eur = rowOf('EUR');

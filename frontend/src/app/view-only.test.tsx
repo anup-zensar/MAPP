@@ -51,6 +51,7 @@ describe('Light access gating (feature 014, FR-011, FR-012)', () => {
       'Plans',
       'Approvals',
       'All work',
+      'Dashboards',
       'Settings',
       'Recycle bin',
       'Activity log',

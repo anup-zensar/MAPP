@@ -111,9 +111,9 @@ export const USD: Currency = {
     records: [],
   },
   locks: [
-    { field: 'rate', reason: "USD is MAPP's base currency; its rate is always 1." },
-    { field: 'active', reason: "USD is MAPP's base currency; its rate is always 1." },
-    { field: 'delete', reason: "USD is MAPP's base currency; its rate is always 1." },
+    { field: 'rate', reason: "USD is SP&A One's base currency; its rate is always 1." },
+    { field: 'active', reason: "USD is SP&A One's base currency; its rate is always 1." },
+    { field: 'delete', reason: "USD is SP&A One's base currency; its rate is always 1." },
     { field: 'code', reason: "The code can't change once the currency is saved." },
   ],
   version: 1,

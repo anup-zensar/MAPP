@@ -1,9 +1,5 @@
-/**
- * What All work asks the API (plan "State"). The view is read once per filter set and kept
- * (staleTime: Infinity, no refetch when the window regains focus): other people's changes appear
- * on the next filter or view change, or through Refresh. While a new answer loads, the previous
- * one stays on screen.
- */
+// A view is read once per filter set and kept: other people's changes appear on the next filter or
+// view change, or through Refresh. While a new answer loads, the previous one stays on screen.
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
@@ -13,6 +9,7 @@ import { ApiError } from '@/api/errors';
 import { useToast } from '@/ui/Toast/useToast';
 import type {
   AllWorkPreferences,
+  BreakdownChoice,
   AllWorkQuery,
   SavedView,
   SavedViewCreate,
@@ -25,10 +22,7 @@ import { toQueryParams } from './view-state';
 export const ALL_WORK_KEYS = {
   all: ['all-work'] as const,
   view: (query: AllWorkQuery | null) => ['all-work', query] as const,
-  /**
-   * null: the current year, before the first visit knows which year that is. A range of years
-   * (016 FR-034) has its own choices; one year keeps the key it had before ranges.
-   */
+  // null: the current year, before the first visit knows it; one year keeps its key from before ranges.
   options: (year: number | null, yearTo?: number) =>
     yearTo !== undefined && year !== null && yearTo > year
       ? (['all-work-options', year, yearTo] as const)
@@ -37,7 +31,6 @@ export const ALL_WORK_KEYS = {
   views: ['saved-views'] as const,
 };
 
-/** The view for a filter set (null: not known yet, nothing is asked). */
 export function useAllWork(query: AllWorkQuery | null) {
   return useQuery({
     queryKey: ALL_WORK_KEYS.view(query),
@@ -49,10 +42,6 @@ export function useAllWork(query: AllWorkQuery | null) {
   });
 }
 
-/**
- * The filter bar's choices and the column catalogue for a year or a range of years (016 FR-034);
- * for null, those of the current year, which the answer also files under its year.
- */
 export function useAllWorkOptions(year: number | null, enabled = true, yearTo?: number) {
   const queryClient = useQueryClient();
   return useQuery({
@@ -65,10 +54,6 @@ export function useAllWorkOptions(year: number | null, enabled = true, yearTo?: 
   });
 }
 
-/**
- * The choices of a year or range, from the cache when they were asked before (a saved view's
- * years).
- */
 export function fetchOptionsOf(queryClient: QueryClient, year: number, yearTo?: number) {
   return queryClient.fetchQuery({
     queryKey: ALL_WORK_KEYS.options(year, yearTo),
@@ -91,7 +76,6 @@ async function fetchOptions(queryClient: QueryClient, year: number | null, yearT
   return options;
 }
 
-/** The person's remembered columns and sort (the defaults when never changed). */
 export function useAllWorkPreferences() {
   return useQuery({
     queryKey: ALL_WORK_KEYS.preferences,
@@ -100,13 +84,9 @@ export function useAllWorkPreferences() {
   });
 }
 
-/** How long column changes wait before they are remembered (plan "State"). */
 const PREFERENCES_DELAY_MS = 500;
 
-/**
- * Remembers the columns, their order and the sort (FR-021): 500 ms after the last change, and at
- * once when the page closes before that.
- */
+/** Remembers the columns and sort 500 ms after the last change, or at once when the page closes. */
 export function usePreferencesSaver(): (preferences: AllWorkPreferences) => void {
   const queryClient = useQueryClient();
   const { show } = useToast();
@@ -143,7 +123,6 @@ export function usePreferencesSaver(): (preferences: AllWorkPreferences) => void
   );
 }
 
-/** The person's saved views, by name (FR-030). */
 export function useSavedViews() {
   return useQuery({
     queryKey: ALL_WORK_KEYS.views,
@@ -151,11 +130,8 @@ export function useSavedViews() {
   });
 }
 
-/**
- * After a change the list is asked again — also when it failed, because a refused change may mean
- * the view was deleted in another tab. A saved view is written into the list at once, so "Modified"
- * does not flicker while the list reloads.
- */
+// The list is asked again after a change, also a failed one (the view may be gone). A saved view is
+// written into the list at once, so "Modified" does not flicker while it reloads.
 function useViewsRefresh() {
   const queryClient = useQueryClient();
   return {
@@ -193,7 +169,7 @@ export function useUpdateView() {
   });
 }
 
-/** Deletes a view; the answer is the deleted view, so Undo can save it again (FR-031). */
+/** Deletes a view; the answer is the deleted view, so Undo can save it again. */
 export function useDeleteView() {
   const { refresh } = useViewsRefresh();
   return useMutation({
@@ -203,18 +179,27 @@ export function useDeleteView() {
   });
 }
 
-/** Whether a row's record still exists, before it opens (D-123). */
 export function locateRecord(recordId: string) {
   return call(api.GET('/api/v1/all-work/records/{recordId}', { params: { path: { recordId } } }));
 }
 
-/** Downloads All work as `format` for the view in `state`; answers the saved file's name. */
 export function exportAllWork(state: ViewState, format: 'xlsx' | 'csv'): Promise<string> {
   return downloadFromApi(
     api.GET('/api/v1/all-work/export', {
-      params: { query: { ...toQueryParams(state), format, unassigned: state.showUnassigned } },
+      params: {
+        query: {
+          ...toQueryParams(state),
+          ...(state.view === 'breakdown' && state.breakdown && breakdownParams(state.breakdown)),
+          format,
+          unassigned: state.showUnassigned,
+        },
+      },
       parseAs: 'blob',
     }),
-    `MAPP All work.${format}`,
+    `SP&A One All work.${format}`,
   );
+}
+
+function breakdownParams(choice: BreakdownChoice) {
+  return { by: choice.by, ...(choice.thenBy && { thenBy: choice.thenBy }) };
 }

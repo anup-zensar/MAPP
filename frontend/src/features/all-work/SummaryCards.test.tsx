@@ -1,7 +1,9 @@
 import { cleanup, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { parentOf } from '@/testing/dom';
+import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
+import { fieldHelpReply, helpOf } from '@/testing/fixtures/field-help-texts';
 import { testUser } from '@/testing/fixtures/users';
 import { gridResult } from '@/testing/fixtures/all-work';
 import { SummaryCards } from './SummaryCards';
@@ -29,19 +31,30 @@ describe('SummaryCards (FR-003)', () => {
     ).toBeInTheDocument();
   });
 
-  it('explains each card in a tip', async () => {
+  it('016 FR-047: explains each card with its Field help text; an emptied text has no tip', async () => {
+    const texts = helpOf([
+      'allWork.campaigns',
+      'allWork.initiatives',
+      'allWork.activities',
+      'allWork.plannedCost',
+      'allWork.planBudget',
+    ]);
+    mockApi([fieldHelpReply({ ...texts, 'allWork.unassignedPlannedCost': '' })]);
     const { user } = renderWithProviders(<SummaryCards summary={gridResult().summary} />, {
       user: testUser(),
     });
 
-    await user.click(screen.getByRole('button', { name: 'About Planned cost' }));
+    await user.click(await screen.findByRole('button', { name: 'About Planned cost' }));
 
     expect(await screen.findByRole('dialog', { name: 'About Planned cost' })).toHaveTextContent(
-      "The sum of the matching activities' planned cost. An activity without a planned cost counts as zero.",
+      'Help of allWork.plannedCost.',
     );
     for (const label of ['Campaigns', 'Initiatives', 'Activities', 'Plan budget']) {
       expect(screen.getByRole('button', { name: `About ${label}` })).toBeInTheDocument();
     }
+    expect(
+      screen.queryByRole('button', { name: 'About Unassigned planned cost' }),
+    ).not.toBeInTheDocument();
   });
 
   it('says in red how many activities have line items above their planned cost', () => {

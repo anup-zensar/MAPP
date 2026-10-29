@@ -9,10 +9,12 @@ import (
 	"mapp/internal/approval"
 	"mapp/internal/auth"
 	"mapp/internal/budget"
+	"mapp/internal/bulk"
 	"mapp/internal/campaign"
 	"mapp/internal/financials"
 	"mapp/internal/history"
 	"mapp/internal/lineitem"
+	"mapp/internal/overspend"
 	"mapp/internal/people"
 	"mapp/internal/plan"
 	"mapp/internal/platform/database"
@@ -21,6 +23,7 @@ import (
 	"mapp/internal/sample"
 	"mapp/internal/settings"
 	"mapp/internal/swbs"
+	"mapp/internal/workbook"
 )
 
 // Postgres is the set the API and the seed run on. Nothing stored yet means no number given out yet: every
@@ -49,7 +52,9 @@ func postgresPlanning(db *database.DB) Planning {
 	return Planning{
 		Plans: plan.NewPostgresStore(db), Campaigns: campaign.NewPostgresStore(db),
 		Activities: activity.NewPostgresStore(db), LineItems: lineitem.NewPostgresStore(db),
-		Approvals: approval.NewPostgresStore(db), AllWork: allwork.NewPostgresStore(db),
+		Overspend: overspend.NewPostgresStore(db),
+		Approvals: approval.NewPostgresStore(db), AllWork: allwork.NewPostgresStore(db), Bulk: bulk.NewPostgresStore(db),
+		Workbook: workbook.NewPostgresStore(db),
 	}
 }
 

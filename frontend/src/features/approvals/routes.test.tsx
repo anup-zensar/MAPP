@@ -17,7 +17,7 @@ describe('Approvals routes (feature 008)', () => {
     ]);
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Approvals' })).toBeInTheDocument();
-    expect(document.title).toBe('Approvals · MAPP');
+    expect(document.title).toBe('Approvals · SP&A One');
     expectCurrentSection('Approvals');
   });
 
@@ -27,7 +27,7 @@ describe('Approvals routes (feature 008)', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Approval workflows' }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Approval workflows · MAPP');
+    expect(document.title).toBe('Approval workflows · SP&A One');
     expectCurrentSection('Settings');
   });
 
@@ -44,7 +44,7 @@ describe('Approvals routes (feature 008)', () => {
     expect(
       await screen.findByRole('dialog', { name: 'Lubricants EU approval' }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Approval workflows · MAPP');
+    expect(document.title).toBe('Approval workflows · SP&A One');
     // The panel is modal: the page and the sidebar behind it are hidden from screen readers.
     const navigation = screen.getByRole('navigation', { name: 'Main', hidden: true });
     expect(

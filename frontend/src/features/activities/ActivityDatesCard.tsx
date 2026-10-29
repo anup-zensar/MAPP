@@ -6,6 +6,8 @@ import { FormField } from '@/ui/FormField/FormField';
 import { FormCard } from '@/ui/FormRail/FormRail';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import { SpreadEffectNote } from '@/features/line-items';
+import { limitNotes, overLimitMessages } from '@/features/overspend';
+import { useFieldHelp } from '@/features/settings';
 import { useFormatters } from '@/format/useFormatters';
 import type { ActivityFormData } from './api';
 import { fieldId } from './activity-form-state';
@@ -47,6 +49,14 @@ export function ActivityDatesCard(props: ActivityDatesCardProps) {
       ? { start: initiative.startDate, end: initiative.endDate }
       : undefined;
   const ongoingSaved = Boolean(stored?.ongoing);
+  const limits = data.overspendLimits;
+  const overLimits = overLimitMessages(
+    limits,
+    stored?.plannedCost?.amount ?? null,
+    value.plannedCost,
+  );
+  const costNotes = [props.costNote, ...limitNotes(limits)].filter(Boolean).join(' ');
+  const { help } = useFieldHelp();
 
   return (
     <FormCard id={ACTIVITY_SECTION.dates} title="Dates & cost">
@@ -62,6 +72,7 @@ export function ActivityDatesCard(props: ActivityDatesCardProps) {
                 label="Start and end dates"
                 idPrefix="field"
                 marking="Needed to submit"
+                tip={help('activity.dates')}
                 hint={datesFromInitiative ? FROM_INITIATIVE : undefined}
                 start={start.value}
                 end={end.value}
@@ -99,6 +110,7 @@ export function ActivityDatesCard(props: ActivityDatesCardProps) {
             <CheckboxField
               label="Ongoing (no end date)"
               name={fieldId('ongoing')}
+              tip={help('activity.ongoing')}
               checked={field.value}
               onChange={(ongoing) => {
                 if (ongoing) {
@@ -125,6 +137,7 @@ export function ActivityDatesCard(props: ActivityDatesCardProps) {
           <MoneyField
             label="Planned cost"
             marking="Needed to submit"
+            tip={help('activity.plannedCost')}
             hint={
               planCurrency === 'USD'
                 ? '0.00 or more'
@@ -137,7 +150,8 @@ export function ActivityDatesCard(props: ActivityDatesCardProps) {
               props.onCostTyped();
               field.onChange(plannedCost);
             }}
-            note={props.costNote}
+            note={costNotes || undefined}
+            error={overLimits.join(' ') || field.error}
           />
         )}
       />

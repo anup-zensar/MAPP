@@ -11,7 +11,8 @@ import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import type { ActivityApproval, ShowSubmitProblems } from '@/features/approvals';
 import { DecisionButton, DecisionDialog, SubmitButton } from '@/features/approvals';
-import { allows, gateItem } from '@/session/gate-action';
+import { FieldHelpTip } from '@/features/settings';
+import { allows, gateItem, moreItemFor } from '@/session/gate-action';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
 import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
@@ -21,31 +22,24 @@ import { activityEditHref, datesText, lineItemsAttentionText } from './activity-
 
 export interface ActivityHeaderProps {
   activity: Activity;
-  /** The activity's approval (feature 008), once loaded: who may decide, and how. */
   approval: ActivityApproval | undefined;
-  /** The More menu's actions of feature 006 (Copy, Move, View history, Delete). */
   moreActions: ActionsMenuItem[];
   /** Opens the Ready to submit panel and moves the focus there. */
   onOpenReady: () => void;
-  /** Submit found problems: show how many and list them. */
   onShowProblems: ShowSubmitProblems;
 }
 
 /** What the owner sees in More when the rules let them approve their own activity (FR·A-01). */
+function submitLabel(status: Activity['status']): string {
+  return status === 'created' ? 'Submit for approval' : 'Re-submit for approval';
+}
+
 const OWN_APPROVAL_HINT =
   'You own this activity — approving it yourself skips an independent check.';
 
 /**
- * The top of an activity's page (FR-019, design system §2.3, §6.3) through the one page header:
- * breadcrumb, name, and the meta row — level tag, status, completeness, ID, owner, dates. The
- * actions follow the person's main job here, with one primary button (UI audit X-04, AC-01, AC-03):
- *
- * - an approver of the current level, on a submitted activity they don't own: **Approve** (primary)
- *   and **Decline** side by side, Edit in More;
- * - everyone else: **Edit** (primary), and **Submit for approval** / **Re-submit for approval**
- *   while the activity is Created or Declined;
- * - the owner of a submitted activity is never offered Approve as a button; where the rules let
- *   them approve (D-020) it is in More with a warning (functional review A-01).
+ * The activity's page header. One primary action: Approve (with Decline) for an approver who is not
+ * the owner, else Edit with Submit while Created or Declined; an owner who may approve finds it in More.
  */
 export function ActivityHeader({
   activity,
@@ -99,6 +93,14 @@ export function ActivityHeader({
       ...moreActions,
     ];
   } else if (activity.status === 'created' || activity.status === 'declined') {
+    more = [
+      ...moreItemFor({ label: 'Edit', onSelect: () => void navigate(editHref) }, access?.edit),
+      ...moreItemFor(
+        { label: submitLabel(activity.status), onSelect: onOpenReady },
+        access?.submit,
+      ),
+      ...moreActions,
+    ];
     actions = (
       <>
         {allows(access?.submit) && (
@@ -133,6 +135,7 @@ export function ActivityHeader({
           <>
             <LevelTag level="activity" />
             <ActivityStatusChip status={activity.displayStatus} />
+            <FieldHelpTip helpKey="activity.status" label="Status" />
             <CompletenessChip
               missing={activity.readiness.activity.map((problem) => ({
                 id: problem.field,
@@ -145,6 +148,7 @@ export function ActivityHeader({
               itemsBelowText={lineItemsAttentionText}
               onItemsBelowSelect={onOpenReady}
             />
+            <FieldHelpTip helpKey="common.completeness" label="Completeness" />
             <span className={styles.fact}>{activity.id}</span>
             {activity.owner ? (
               <PersonLabel person={activity.owner} />

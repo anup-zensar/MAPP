@@ -1,13 +1,13 @@
 import { Outlet } from 'react-router';
 import type { RouteObject } from 'react-router';
 import { ComingSoonPage } from '@/features/placeholders';
-import type { PageHandle } from '@/session/page-handle';
-import { RequirePermission } from '@/session/RequirePermission';
 import { RequireSignIn } from '@/session/RequireSignIn';
 import { AppLayout } from './AppLayout';
+import { DASHBOARD_ROUTES } from './dashboard-routes';
 import { DevOnly } from './DevOnly';
 import { COMING_SOON_SECTIONS } from './navigation';
 import { NotFoundRoute } from './NotFoundRoute';
+import { WORKBOOK_ROUTES } from './routes-workbook';
 import {
   AccessPage,
   ActivityFormPage,
@@ -35,6 +35,7 @@ import {
   ModelsPage,
   NewCampaignPanel,
   NewInitiativePanel,
+  OverspendSettingsPage,
   PeoplePage,
   PlanCreatePage,
   PlanEditPage,
@@ -55,24 +56,18 @@ import {
   ShellAttributePage,
   ShellAttributesPage,
   SignInPage,
+  SpaPage,
   TeamsPage,
   TransactionPanel,
 } from './pages';
 import { RootLayout } from './RootLayout';
+import { gated, titled } from './route-helpers';
 import { RouteErrorPage } from './RouteErrorPage';
-
-function titled(title: string): { handle: PageHandle } {
-  return { handle: { title } };
-}
 
 /** Every page of the Plan module (features 002–016; docs/sdd/plan-module-build.md §5). */
 const PLAN_MODULE_ROUTES: RouteObject[] = [
   // 002 Settings
-  {
-    path: '/settings',
-    element: <SettingsPage />,
-    ...titled('Settings'),
-  },
+  { path: '/settings', element: <SettingsPage />, ...titled('Settings') },
   { path: '/settings/models', element: <ModelsPage />, ...titled('Models') },
   { path: '/settings/activity-types', element: <ActivityTypesPage />, ...titled('Activity types') },
   {
@@ -82,7 +77,7 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
   },
   {
     path: '/settings/shell-attributes/new',
-    element: <ShellAttributeEditorPage mode="create" />,
+    element: gated('settings.manage', <ShellAttributeEditorPage mode="create" />),
     ...titled('New Shell attribute'),
   },
   {
@@ -92,7 +87,7 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
   },
   {
     path: '/settings/shell-attributes/:attributeId/edit',
-    element: <ShellAttributeEditorPage mode="edit" />,
+    element: gated('settings.manage', <ShellAttributeEditorPage mode="edit" />),
     ...titled('Edit Shell attribute'),
   },
   { path: '/settings/currencies', element: <CurrenciesPage />, ...titled('Currencies') },
@@ -141,6 +136,7 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
     ],
   },
   { path: '/plans/:planId/edit', element: <PlanEditPage />, ...titled('Edit plan') },
+  { path: '/plans/:planId/spa', element: <SpaPage />, ...titled('SP&A view') },
   // 006 Activities, and the short address that finds an activity's plan (D-194)
   {
     path: '/plans/:planId/initiatives/:initiativeId/activities/new',
@@ -177,10 +173,14 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
     ...titled('Approval workflows'),
   },
   { path: '/all-work', element: <AllWorkPage />, ...titled('All work') },
-  { path: '/budgets', element: <GlobalBudgetsPage />, ...titled('Global budgets') },
+  {
+    path: '/budgets',
+    element: gated('globalBudgets.view', <GlobalBudgetsPage />),
+    ...titled('Global budgets'),
+  },
   {
     path: '/budgets/:globalBudgetId',
-    element: <GlobalBudgetPage />,
+    element: gated('globalBudgets.view', <GlobalBudgetPage />),
     ...titled('Global budget'),
   },
   // 015 Financials; a transaction's details panel opens over the list (child route)
@@ -199,11 +199,7 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
   // 032 Purchase requests; the list only for people holding purchaseRequests.list
   {
     path: '/purchase-requests',
-    element: (
-      <RequirePermission permission="purchaseRequests.list">
-        <PurchaseRequestsPage />
-      </RequirePermission>
-    ),
+    element: gated('purchaseRequests.list', <PurchaseRequestsPage />),
     ...titled('Purchase requests'),
   },
   {
@@ -226,13 +222,16 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
     element: <PurchaseRequestSettingsPage />,
     ...titled('Purchase requests'),
   },
-  // 011 Activity log and Recycle bin (under MORE in the sidebar)
+  {
+    path: '/settings/overspend-control',
+    element: <OverspendSettingsPage />,
+    ...titled('Overspend control'),
+  },
   { path: '/activity-log', element: <ActivityLogPage />, ...titled('Activity log') },
   { path: '/recycle-bin', element: <RecycleBinPage />, ...titled('Recycle bin') },
-  // 016 Settings › Import GSAP rates and Field help
   {
     path: '/settings/currencies/import',
-    element: <ImportRatesPage />,
+    element: gated('exchangeRates.manage', <ImportRatesPage />),
     ...titled('Import GSAP rates'),
   },
   { path: '/settings/field-help', element: <FieldHelpSettingsPage />, ...titled('Field help') },
@@ -248,8 +247,9 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
     },
   ].map((route) => ({
     ...route,
-    element: <RequirePermission permission="access.manage">{route.element}</RequirePermission>,
+    element: gated('access.manage', route.element),
   })),
+  ...DASHBOARD_ROUTES,
 ];
 
 /** Every page and its address (F1): a data router without loaders; pages load their own data. */
@@ -271,6 +271,7 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <HomePage />, ...titled('Home') },
           ...PLAN_MODULE_ROUTES,
+          ...WORKBOOK_ROUTES,
           ...COMING_SOON_SECTIONS.map((section) => ({
             path: section.path,
             element: <ComingSoonPage section={section} />,

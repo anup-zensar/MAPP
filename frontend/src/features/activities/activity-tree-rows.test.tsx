@@ -183,7 +183,7 @@ describe('activityTreeRows (feature 006)', () => {
     // The GSAP transactions linked to its line items stay (015 FR-029).
     expect(
       await within(question).findByText(
-        '3 GSAP transactions are linked to it. They stay in MAPP and leave the figures until it is restored.',
+        '3 GSAP transactions are linked to it. They stay in SP&A One and leave the figures until it is restored.',
       ),
     ).toBeVisible();
     expect(within(question).getByRole('button', { name: 'Cancel' })).toHaveFocus();

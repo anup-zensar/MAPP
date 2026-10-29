@@ -226,9 +226,11 @@ in from another browser and see the same preferences.
 - **FR-026**: The signed-in person's teams MUST be available to the "My teams" filters of other features (004,
   010). No plan or record is hidden from anyone in this phase (Q-006, domain model §8); Shell's rule that plans
   are visible only to members of their teams is enforced when roles arrive.
+  *Since feature 014 this rule follows roles: every action needs its permission of 014 Table A in the plan's scope (014 FR-041).*
 - **FR-027**: Every signed-in user MUST be able to manage people and teams (decision D-004). Shell's rules — only
   administrators manage people and teams, and per-member "can edit team content" and "can approve" flags — are
   enforced when roles arrive.
+  *Since feature 014 this rule follows roles: every action needs its permission of 014 Table A in the plan's scope (014 FR-041).*
 - **FR-028**: Every create, change, membership change, deactivation, reactivation, delete and restore of a person
   or team MUST be written to the activity log (feature 001).
 - **FR-029**: The demo data MUST include the teams and memberships of demo-users-and-data.md (Lubricants Europe,

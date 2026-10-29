@@ -10,7 +10,7 @@ describe('FinancialsPage (015 US3, FR-020 – FR-021)', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Financials' }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Financials · MAPP');
+    expect(document.title).toBe('Financials · SP&A One');
     expect(
       screen.getByText('Purchase orders, invoices, payments and accruals from GSAP'),
     ).toBeInTheDocument();
@@ -77,9 +77,12 @@ describe('FinancialsPage (015 US3, FR-020 – FR-021)', () => {
       '/plans/P-1001/activities/A-1003',
     );
 
-    // US3 scenario 4: not linked, with a chip.
+    // US3 scenario 4: not linked, with a chip and the reason.
     const brightside = transactionRow('PO 4500001004 / 10');
     expect(brightside).toHaveTextContent('Not linked');
+    expect(brightside).toHaveTextContent(
+      'No line item for HX key HX1099 — check the tracking key in GSAP.',
+    );
     expect(within(brightside).queryByRole('link', { name: /L-/ })).not.toBeInTheDocument();
     // A USD amount shows once.
     expect(within(transactionRow('Invoice 5100002002')).getAllByText('$2,500.00')).toHaveLength(1);

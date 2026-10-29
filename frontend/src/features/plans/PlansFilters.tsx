@@ -4,15 +4,11 @@ import { useId } from 'react';
 import type { PlanListFilters } from './list-preferences';
 import { PLAN_TYPE_LABELS, PLAN_TYPES } from './plan-currency';
 import styles from './PlansFilters.module.css';
+import { BcpirChoice } from './BcpirChoice';
 
 export interface PlansFiltersProps {
   filters: PlanListFilters;
-  /** Every year with a plan in the team scope, newest first (PlanList.years). */
   years: number[];
-  /**
-   * The API filters by a range of years and by plan type (016). Until 016's backend is merged it
-   * takes one year only and knows no plan types, so the menu offers one Year and no Plan type.
-   */
   served016?: boolean;
   onChange: (next: Partial<PlanListFilters>) => void;
 }
@@ -22,16 +18,15 @@ const LAYOUTS = [
   ['table', 'Table'],
 ] as const;
 
-/** How many of the menu's filters differ from their defaults: the "(n)" of **Filters (n)**. */
 function filtersInUse(filters: PlanListFilters): number {
   return (
     (filters.yearFrom !== null ? 1 : 0) +
     (filters.types.length > 0 ? 1 : 0) +
-    (filters.scope !== 'all' ? 1 : 0)
+    (filters.scope !== 'all' ? 1 : 0) +
+    (filters.bcpir !== 'include' ? 1 : 0)
   );
 }
 
-/** The years to offer, oldest first: the years with plans plus the chosen ends of the range. */
 function yearChoices(years: number[], filters: PlanListFilters): number[] {
   const all = new Set(years);
   if (filters.yearFrom !== null) all.add(filters.yearFrom);
@@ -39,19 +34,6 @@ function yearChoices(years: number[], filters: PlanListFilters): number[] {
   return [...all].sort((a, b) => a - b);
 }
 
-/**
- * **Filters (n)** of the Plans toolbar (design system §5.2, list toolbar): a button that opens the
- * less-used filters — the years, the plan types and whose plans to show — so the toolbar stays one
- * row. Each change applies at once; the chips under the toolbar show and remove them.
- *
- * **Years** (016 FR-033) is All years or a range from–to among the years with plans: choosing a
- * first year alone gives that one year, and the range never runs backwards (the other end
- * follows). **Plan type** takes several; none ticked means every type. Both need 016's API; before
- * it the menu keeps the single Year it had.
- *
- * On phones (below 600 px, UI audit P-06) the button is its icon with the number of filters in
- * use, so the toolbar keeps two rows, and the menu also holds the Cards / Table layout.
- */
 export function PlansFilters({ filters, years, served016 = true, onChange }: PlansFiltersProps) {
   const id = useId();
   const count = filtersInUse(filters);
@@ -190,7 +172,7 @@ export function PlansFilters({ filters, years, served016 = true, onChange }: Pla
               </label>
             ))}
           </fieldset>
-          {/* Phones only: the toolbar has no room for the layout switch. */}
+          <BcpirChoice name={`${id}-bcpir`} value={filters.bcpir} onChange={onChange} />
           <fieldset className={`${styles.field} ${styles.phoneOnly}`}>
             <legend className={styles.label}>Layout</legend>
             {LAYOUTS.map(([value, label]) => (

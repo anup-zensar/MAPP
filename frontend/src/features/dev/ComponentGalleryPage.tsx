@@ -12,6 +12,7 @@ import { EmptyState } from '@/ui/EmptyState/EmptyState';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { Logo } from '@/ui/Logo/Logo';
+import { LogoTile } from '@/ui/Logo/LogoTile';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { SidePanel } from '@/ui/SidePanel/SidePanel';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
@@ -204,8 +205,7 @@ export function ComponentGalleryPage() {
           <div className={styles.row}>
             <Logo />
             <Logo size="lg" />
-            <Logo withWordmark />
-            <Logo size="lg" withWordmark />
+            <LogoTile />
           </div>
         </Card>
 

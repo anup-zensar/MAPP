@@ -1,8 +1,3 @@
-/**
- * The demo global budget's answers for tests (014 plan, "Demo data"): GB-1001 "FY2026 Global
- * marketing budget", 2,500,000.00 USD, owned by Carlos Mendes, allocated to FY2026 Lubricants
- * Europe (1,200,000.00) and FY2026 Mobility China (800,000.00).
- */
 import type {
   AllocationOption,
   BudgetAllocationRow,
@@ -52,6 +47,7 @@ export const LUBRICANTS: BudgetAllocationRow = {
   plannedCost: usd('460000.00'),
   leftToPlan: usd('740000.00'),
   budgetUsedPercent: '38.33',
+  overspend: 'warn',
   version: 1,
   access: { edit: AVAILABLE, remove: AVAILABLE },
 };
@@ -66,6 +62,7 @@ export const MOBILITY: BudgetAllocationRow = {
   plannedCost: usd('210000.00'),
   leftToPlan: usd('590000.00'),
   budgetUsedPercent: '26.25',
+  overspend: 'warn',
   version: 1,
   access: { edit: AVAILABLE, remove: AVAILABLE },
 };
@@ -75,15 +72,16 @@ export const BRAND_OPTION: AllocationOption = {
   teams: [{ id: 'T-1003', name: 'Global Brand', colour: 'violet', active: true }],
   owner: ALEX,
   budget: usd('300000.00'),
+  overspend: 'warn',
   canAllocate: AVAILABLE,
 };
 
-/** GB-1001 as Carlos sees it (US6 scenario 1); pass what differs. */
 export function globalBudget(overrides: Partial<GlobalBudget> = {}): GlobalBudget {
   return {
     id: 'GB-1001',
     name: 'FY2026 Global marketing budget',
     year: 2026,
+    overspend: { mode: 'warn', canChange: { available: true, reason: '' } },
     amount: usd('2500000.00'),
     owner: CARLOS,
     description: 'Shared out to market plans by Global Marketing Ops.',
@@ -108,7 +106,6 @@ export function globalBudget(overrides: Partial<GlobalBudget> = {}): GlobalBudge
   };
 }
 
-/** The list's summary of GB-1001. */
 export function budgetSummary(overrides: Partial<GlobalBudgetSummary> = {}): GlobalBudgetSummary {
   const budget = globalBudget();
   return {

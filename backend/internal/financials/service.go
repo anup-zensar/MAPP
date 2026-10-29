@@ -13,6 +13,7 @@ import (
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
 )
 
 // maxListed caps the problems and not-linked rows listed; the totals still count them all.
@@ -224,8 +225,36 @@ func dayText(t time.Time) string {
 // FactsByLineItem gives All work the cards' USD figures by line item: current rates, the latest accrual
 // month, currencies no longer in Settings left out. It checks no access: the caller does.
 func (s *Service) FactsByLineItem(ctx context.Context) (map[string]Facts, error) {
-	var facts map[string]Facts
-	err := s.tx.Read(ctx, func(ctx context.Context) error {
+	facts := map[string]Facts{}
+	err := s.eachLinked(ctx, func(t *Transaction, usd *money.Amount, month string) {
+		f := facts[t.LineItemID]
+		f.add(t, usd, month)
+		facts[t.LineItemID] = f
+	})
+	return facts, err
+}
+
+// FactsByLineItemMonth is FactsByLineItem split by the month of each transaction's posting date, "2026-03",
+// for the SP&A view (feature 013). It checks no access: the caller does.
+func (s *Service) FactsByLineItemMonth(ctx context.Context) (map[string]map[string]Facts, error) {
+	facts := map[string]map[string]Facts{}
+	err := s.eachLinked(ctx, func(t *Transaction, usd *money.Amount, month string) {
+		byMonth := facts[t.LineItemID]
+		if byMonth == nil {
+			byMonth = map[string]Facts{}
+			facts[t.LineItemID] = byMonth
+		}
+		key := fmt.Sprintf("%04d-%02d", t.PostingDate.Year(), t.PostingDate.Month())
+		f := byMonth[key]
+		f.add(t, usd, month)
+		byMonth[key] = f
+	})
+	return facts, err
+}
+
+// eachLinked calls add for every linked transaction with its USD amount and the latest accrual month.
+func (s *Service) eachLinked(ctx context.Context, add func(t *Transaction, usd *money.Amount, month string)) error {
+	return s.tx.Read(ctx, func(ctx context.Context) error {
 		stored, err := s.repo.ListTransactions(ctx)
 		if err != nil {
 			return err
@@ -239,17 +268,13 @@ func (s *Service) FactsByLineItem(ctx context.Context) (map[string]Facts, error)
 			all[i] = &stored[i]
 		}
 		month := latestAccrualMonth(all)
-		facts = map[string]Facts{}
 		for _, t := range all {
 			if t.linked() {
-				f := facts[t.LineItemID]
-				f.add(t, usdOf(t, rates), month)
-				facts[t.LineItemID] = f
+				add(t, usdOf(t, rates), month)
 			}
 		}
 		return nil
 	})
-	return facts, err
 }
 
 // DataAsOf is nil when no GSAP data was ever loaded.

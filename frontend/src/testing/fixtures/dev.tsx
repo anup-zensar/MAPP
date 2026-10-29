@@ -155,7 +155,7 @@ export const AGENDA_CREATED: ActivityLogEntry = {
 };
 
 export const UNREACHABLE =
-  "MAPP can't reach its server right now. Check that it is running and try again.";
+  "SP&A One can't reach its server right now. Check that it is running and try again.";
 
 /** A list as the API answers it. */
 export function listOf<T>(items: T[]) {

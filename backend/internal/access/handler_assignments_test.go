@@ -36,7 +36,7 @@ func TestSetPersonRoles_Refusals_FR017_FR021(t *testing.T) {
 		problems.Fields[1].Field != "roles.1.teamIds" || problems.Fields[1].Message != "Choose at least one team." {
 		t.Errorf("problems = %+v", problems.Fields)
 	}
-	assertError(t, stale, http.StatusConflict, "version_conflict", "Not saved — MAPP changed this person")
+	assertError(t, stale, http.StatusConflict, "version_conflict", "Not saved — SP&A One changed this person")
 	only := "Alex Morgan is the only administrator. Give someone else the Administrator role first."
 	assertError(t, lastAdmin, http.StatusConflict, "not_allowed", only)
 	assertError(t, deactivate, http.StatusConflict, "not_allowed", only)

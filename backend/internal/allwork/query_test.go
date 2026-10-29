@@ -11,15 +11,13 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// Every parameter of the query is read (FR-004): single values, repeated values in order and once each,
-// the column order, and the sort split into column and direction; the search is trimmed.
 func TestParseQuery_AllParameters_FR004(t *testing.T) {
 	t.Parallel()
 	values := url.Values{
 		"year": {"2027"}, "view": {"budget"}, "plan": {"P-1001", "P-1002", "P-1001"}, "planStatus": {"published"},
 		"containerStatus": {"inProgress", "running"}, "activityStatus": {"declined", "approved"},
 		"owner": {"U-1003"}, "team": {"T-1001"}, "businessUnit": {"SO-1002"}, "activityType": {"AT-1005"},
-		"strategic": {"only"}, "showLevels": {"completeBranches"}, "search": {"  Launch film "},
+		"strategic": {"only"}, "bcpir": {"exclude"}, "showLevels": {"completeBranches"}, "search": {"  Launch film "},
 		"column": {"plannedCost", "id", "attr.SA-1003", "id"}, "sort": {"plannedCost:desc"}, "period": {"quarter"},
 		"finance": {"invoiced", "hasPurchaseOrder", "invoiced"},
 	}
@@ -33,10 +31,9 @@ func TestParseQuery_AllParameters_FR004(t *testing.T) {
 		Year: 2027, View: ViewBudget, Plans: []string{"P-1001", "P-1002"}, PlanStatuses: []string{"published"},
 		ContainerStatuses: []string{"inProgress", "running"}, ActivityStatuses: []string{"declined", "approved"},
 		Owners: []string{"U-1003"}, Teams: []string{"T-1001"}, BusinessUnits: []string{"SO-1002"},
-		ActivityTypes: []string{"AT-1005"}, Finance: []string{"invoiced", "hasPurchaseOrder"}, Strategic: StrategicOnly,
+		ActivityTypes: []string{"AT-1005"}, Finance: []string{"invoiced", "hasPurchaseOrder"}, Strategic: StrategicOnly, BCPIR: StrategicExclude,
 		ShowLevels: ShowCompleteBranches, Search: "Launch film", Columns: []string{"plannedCost", "id", "attr.SA-1003"},
 		Sort: &Sort{Column: "plannedCost", Direction: SortDescending}, Period: PeriodQuarter,
-		// 016: year is the alias of the range year–year; the new filters are empty, amounts in the display currency.
 		YearFrom: 2027, YearTo: 2027, PlanTypes: []string{}, PlanCurrencies: []string{}, Attributes: []AttrFilter{},
 		AmountsIn: AmountsInDisplay,
 	}
@@ -45,8 +42,6 @@ func TestParseQuery_AllParameters_FR004(t *testing.T) {
 	}
 }
 
-// Without parameters the query is the standard view: the current year, the grid, no filters, Include, Everything,
-// by month, the default columns (Columns nil) and the plan-tree order (FR-004, FR-009).
 func TestParseQuery_Defaults_FR004(t *testing.T) {
 	t.Parallel()
 	q, err := ParseQuery(url.Values{})
@@ -65,7 +60,6 @@ func TestParseQuery_Defaults_FR004(t *testing.T) {
 	}
 }
 
-// Every wrong parameter is reported at once, each with the plan's message (FR-004).
 func TestParseQuery_AllProblemsAtOnce_FR004(t *testing.T) {
 	t.Parallel()
 	values := url.Values{
@@ -104,8 +98,6 @@ func TestParseQuery_AllProblemsAtOnce_FR004(t *testing.T) {
 	}
 }
 
-// The filter bar has only the filters of FR-004 (FR-010, D-207): a Shell-attribute filter is an unknown
-// parameter, which changes nothing.
 func TestFilter_OnlyFR004Filters_FR010(t *testing.T) {
 	t.Parallel()
 	plain, _ := ParseQuery(url.Values{"owner": {"U-1003"}})
@@ -123,7 +115,6 @@ func TestFilter_OnlyFR004Filters_FR010(t *testing.T) {
 	}
 }
 
-// manyColumns returns n column keys.
 func manyColumns(n int) []string {
 	keys := make([]string, n)
 	for i := range keys {

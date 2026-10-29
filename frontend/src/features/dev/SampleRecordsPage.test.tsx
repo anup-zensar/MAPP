@@ -32,7 +32,7 @@ describe('SampleRecordsPage: the page', () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New sample folder' })).toBeInTheDocument();
-    expect(document.title).toBe('Sample records · MAPP');
+    expect(document.title).toBe('Sample records · SP&A One');
   });
 
   it('counts the folders, their notes and what is in the recycle bin (plan "Developer pages")', async () => {

@@ -1,14 +1,15 @@
-import { render, screen, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Tooltip } from 'radix-ui';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { renderWithProviders } from '@/testing/render';
 import { launchFilmSection, usd } from '@/testing/fixtures/line-items';
 import { SpreadGrid } from './SpreadGrid';
 
 const KEY = 'mapp.lineItemGrid';
 
 function renderGrid(grid = launchFilmSection().grid, noDates = false) {
-  return render(
+  return renderWithProviders(
     <Tooltip.Provider>
       <SpreadGrid grid={grid} noDates={noDates} />
     </Tooltip.Provider>,

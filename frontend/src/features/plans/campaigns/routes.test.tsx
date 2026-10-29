@@ -64,6 +64,6 @@ describe('Campaign and initiative routes (feature 005)', () => {
         hidden: true,
       }),
     ).toBeInTheDocument();
-    await waitFor(() => expect(document.title).toBe(`${tab} · MAPP`));
+    await waitFor(() => expect(document.title).toBe(`${tab} · SP&A One`));
   });
 });

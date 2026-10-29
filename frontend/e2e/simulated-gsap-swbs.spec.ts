@@ -55,7 +55,7 @@ test('030 US4: a finance person sends one line item to the simulated GSAP from i
   const confirm = page.getByRole('alertdialog', {
     name: 'Send Stand build to simulated GSAP now?',
   });
-  await expect(confirm).toContainText("Codes can't be changed or removed in MAPP.");
+  await expect(confirm).toContainText("Codes can't be changed or removed in SP&A One.");
   await confirm.getByRole('button', { name: 'Send to simulated GSAP now' }).click();
 
   const card = swbsCard(page);
@@ -103,7 +103,7 @@ test('030 US3: a received code stays and keeps the request on', async ({ page })
   await signInAs(page, PRIYA);
   await page.goto('/line-items/L-1005/edit');
 
-  const request = page.getByLabel('Request SWBS code from GSAP');
+  const request = page.getByRole('checkbox', { name: 'Request SWBS code from GSAP' });
   await expect(request).toBeChecked();
   await expect(request).toBeDisabled();
   await expect(
@@ -111,7 +111,7 @@ test('030 US3: a received code stays and keeps the request on', async ({ page })
       'This line item already has its SWBS code from the simulated GSAP, so the request stays on.',
     ),
   ).toBeVisible();
-  await page.getByLabel('Description').fill('Print and online booking');
+  await page.getByLabel('Description', { exact: true }).fill('Print and online booking');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
 
   await expect(page.getByRole('heading', { name: 'Media booking', level: 1 })).toBeVisible();

@@ -7,17 +7,21 @@ const activityLog = () => import('@/features/activity-log');
 const allWork = () => import('@/features/all-work');
 const approvalWorkflows = () => import('@/features/approval-workflows');
 const approvals = () => import('@/features/approvals');
+const dashboards = () => import('@/features/dashboards');
 const dev = () => import('@/features/dev');
 const financials = () => import('@/features/financials');
 const globalBudgets = () => import('@/features/global-budgets');
 const home = () => import('@/features/home');
 const lineItems = () => import('@/features/line-items');
+const overspend = () => import('@/features/overspend');
 const people = () => import('@/features/people');
 const plans = () => import('@/features/plans');
+const workbook = () => import('@/features/workbook');
 const purchaseRequests = () => import('@/features/purchase-requests');
 const recycleBin = () => import('@/features/recycle-bin');
 const settings = () => import('@/features/settings');
 const signIn = () => import('@/features/sign-in');
+const spa = () => import('@/features/spa');
 
 export const ActivityFormPage = lazy(() =>
   activities().then((feature) => ({ default: feature.ActivityFormPage })),
@@ -39,6 +43,9 @@ export const ApprovalWorkflowsPage = lazy(() =>
 );
 export const ApprovalsPage = lazy(() =>
   approvals().then((feature) => ({ default: feature.ApprovalsPage })),
+);
+export const DashboardsPage = lazy(() =>
+  dashboards().then((feature) => ({ default: feature.DashboardsPage })),
 );
 export const ComponentGalleryPage = lazy(() =>
   dev().then((feature) => ({ default: feature.ComponentGalleryPage })),
@@ -148,6 +155,16 @@ export const PurchaseRequestCreatePage = lazy(() =>
 export const PurchaseRequestEditPage = lazy(() =>
   purchaseRequests().then((feature) => ({ default: feature.PurchaseRequestEditPage })),
 );
+export const OverspendSettingsPage = lazy(() =>
+  overspend().then((feature) => ({ default: feature.OverspendSettingsPage })),
+);
 export const PurchaseRequestSettingsPage = lazy(() =>
   purchaseRequests().then((feature) => ({ default: feature.PurchaseRequestSettingsPage })),
+);
+export const SpaPage = lazy(() => spa().then((feature) => ({ default: feature.SpaPage })));
+export const ImportPage = lazy(() =>
+  workbook().then((feature) => ({ default: feature.ImportPage })),
+);
+export const ImportResultPage = lazy(() =>
+  workbook().then((feature) => ({ default: feature.ImportResultPage })),
 );

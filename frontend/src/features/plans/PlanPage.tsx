@@ -6,20 +6,24 @@ import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { Tabs } from '@/ui/Tabs/Tabs';
 import { ViewOnlyNote } from '@/ui/ViewOnlyNote/ViewOnlyNote';
+import { ViewOnlyArea } from '@/ui/ViewOnlyNote/view-only-area';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import type { TabItem } from '@/ui/Tabs/Tabs';
 import { HistorySection, showHistory } from '@/features/activity-log';
 import { usePageTitle } from '@/ui/usePageTitle';
-import { allows } from '@/session/gate-action';
+import { allows, moreItemFor } from '@/session/gate-action';
+import { useWorkbookMenu } from '@/features/workbook';
 import { BudgetByMonthCard } from './phasing/BudgetByMonthCard';
 import { useCampaignTreeContent } from './campaigns/useCampaignTreeContent';
 import { PlanDetails } from './PlanDetails';
 import { PlanGoals } from './PlanGoals';
 import { PlanHeader } from './PlanHeader';
+import { PlannedCostByCard } from './PlannedCostByCard';
 import { PlanNotFound } from './PlanNotFound';
 import styles from './PlanPage.module.css';
 import { usePlan } from './api';
 import type { Plan } from './api';
+import { changesNothingIn } from './plan-access';
 import { planCurrencyOf } from './plan-currency';
 import { PlanSummaryCards } from './PlanSummaryCards';
 import { RecordFinancials } from './RecordFinancials';
@@ -27,6 +31,7 @@ import { planTabOf } from './schemas';
 import type { PlanTab } from './schemas';
 import { PlanTree } from './tree/PlanTree';
 import { usePlanActions } from './usePlanActions';
+import { usePlanExport } from './usePlanExport';
 
 const TABS: TabItem<PlanTab>[] = [
   { value: 'tree', label: 'Plan tree' },
@@ -34,13 +39,8 @@ const TABS: TabItem<PlanTab>[] = [
   { value: 'history', label: 'History' },
 ];
 
-/**
- * A plan's page (US3, FR-011 – FR-017), the layout route of /plans/:planId, on the record template
- * (design system §2.4 B): the header, four summary cards, 015's Financials and 016's Budget by
- * month (D-305), then the tabs **Plan tree · Details · History** with the chosen one in the address. Feature 005 fills the tree through
- * `useCampaignTreeContent` and shows its side panels in the `<Outlet />` (child routes); the
- * browser tab names the plan unless a panel on top names itself.
- */
+// The layout route of /plans/:planId: header, summary cards, Financials, Budget by month and Planned
+// cost by, then the tabs Plan tree · Details · History. Campaign side panels show in the outlet.
 export function PlanPage() {
   const { planId = '' } = useParams();
   const navigate = useNavigate();
@@ -53,6 +53,9 @@ export function PlanPage() {
   const focusHistory = useRef(false);
   usePageTitle(panel ? null : (plan.data?.name ?? 'Plan'));
   const actions = usePlanActions({ onDeleted: () => void navigate('/plans') });
+  const exportItems = usePlanExport(planId);
+  const workbookItems = useWorkbookMenu(planId, allows(plan.data?.access?.content.editActivities));
+  const viewOnly = changesNothingIn(plan.data?.access);
 
   useEffect(() => {
     if (tab === 'history' && focusHistory.current) {
@@ -131,35 +134,40 @@ export function PlanPage() {
       return <ErrorState error={plan.error} onRetry={() => void plan.refetch()} />;
     }
     const data = plan.data;
+    const status: ActionsMenuItem =
+      data.status === 'draft'
+        ? { label: 'Publish', onSelect: () => void actions.publish(data) }
+        : { label: 'Unpublish', onSelect: () => actions.unpublish(data) };
     const moreItems: ActionsMenuItem[] = [
+      ...moreItemFor(
+        {
+          label: 'Edit',
+          onSelect: () => void navigate(`/plans/${encodeURIComponent(data.id)}/edit`),
+        },
+        data.access?.edit,
+      ),
+      ...moreItemFor(status, data.access?.publish),
       ...actions.copyItem(data),
-      // Opens the History tab and focuses its heading (feature 011, FR-011).
       { label: 'View history', onSelect: viewHistory },
+      ...workbookItems,
+      ...exportItems,
       ...actions.deleteItem(data),
     ];
-    // 014 FR-011: a person who may change nothing in the plan sees one View only note instead.
-    const viewOnly =
-      data.access !== undefined &&
-      !allows(data.access.edit) &&
-      !allows(data.access.content.editCampaigns) &&
-      !allows(data.access.content.editActivities);
     return (
       <>
         <PlanHeader
           plan={data}
           moreItems={moreItems}
           statusAction={
-            !allows(data.access?.publish) ? undefined : data.status === 'draft' ? (
-              <Button onClick={() => void actions.publish(data)}>Publish</Button>
-            ) : (
-              <Button onClick={() => actions.unpublish(data)}>Unpublish</Button>
+            allows(data.access?.publish) && (
+              <Button onClick={status.onSelect}>{status.label}</Button>
             )
           }
         />
         <div className={styles.body}>
           {viewOnly && <ViewOnlyNote area="plan" />}
           <PlanSummaryCards plan={data} />
-          {/* D-305: 015's Financials, then 016's Budget by month, both open, above the tabs. */}
+          {/* D-305: Financials, Budget by month and Planned cost by, open, above the tabs. */}
           <RecordFinancials recordId={data.id} planId={data.id} variant="page" />
           <BudgetByMonthCard
             level="plan"
@@ -168,6 +176,7 @@ export function PlanPage() {
             year={data.year}
             currency={planCurrencyOf(data)}
           />
+          <PlannedCostByCard plan={data} />
           <Tabs label="Plan" tabs={TABS} value={tab} onChange={chooseTab}>
             {tabContent(data)}
           </Tabs>
@@ -177,16 +186,17 @@ export function PlanPage() {
   }
 
   return (
-    <div className={styles.page}>
-      {content()}
-      {actions.dialogs}
-      {campaigns.dialogs}
-      {panel}
-    </div>
+    <ViewOnlyArea active={viewOnly}>
+      <div className={styles.page}>
+        {content()}
+        {actions.dialogs}
+        {campaigns.dialogs}
+        {panel}
+      </div>
+    </ViewOnlyArea>
   );
 }
 
-/** The page's shape while the plan loads: header, summary cards and tree. */
 function PlanPageSkeleton() {
   return (
     <div className={styles.body} aria-busy="true" aria-label="Loading the plan">

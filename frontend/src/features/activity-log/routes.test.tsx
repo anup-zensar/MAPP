@@ -16,7 +16,7 @@ describe('Activity log route (feature 011)', () => {
       await screen.findByRole('heading', { level: 1, name: 'Activity log' }),
     ).toBeInTheDocument();
     expect(screen.queryByText('Coming soon')).not.toBeInTheDocument();
-    expect(document.title).toBe('Activity log · MAPP');
+    expect(document.title).toBe('Activity log · SP&A One');
     expectCurrentSection('Activity log');
   });
 });

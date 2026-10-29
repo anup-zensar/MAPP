@@ -68,7 +68,7 @@ func TestApprove_PRForm_Contract_032_FR031(t *testing.T) {
 	xlsx := lea.Do(t, http.MethodGet, form+"xlsx", nil)
 
 	for _, want := range []string{"HX1006,Stand for the winter wave,Northlight Events GmbH,V-100101,GB01000105,SIM-GB01-0001",
-		"9200.00,EUR,2026-11-30,Daniel Okoro,daniel.okoro@shell.com,Original,No", "Routed by MAPP — no supporting documents are attached"} {
+		"9200.00,EUR,2026-11-30,Daniel Okoro,daniel.okoro@shell.com,Original,No", "Routed by SP&A One — no supporting documents are attached"} {
 		if !strings.Contains(string(csv.Body), want) {
 			t.Errorf("csv lacks %q:\n%s", want, csv.Body)
 		}

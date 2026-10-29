@@ -1,13 +1,12 @@
-import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
 import { cx } from '@/ui/cx';
+import { FieldHelpTip } from '@/features/settings';
 import { toCents } from '@/format/decimal';
 import { amountText, centsInput } from './line-item-math';
 import type { UnassignedBalance } from './api';
 import {
   ALL_ASSIGNED,
   BALANCE_LABEL,
-  BALANCE_TIP,
   exceededText,
   leftText,
   METER_LABEL,
@@ -17,11 +16,7 @@ import {
 } from './line-item-text';
 import styles from './UnassignedBalanceRow.module.css';
 
-/**
- * The system row "Unassigned planned cost (Sys_Gen_Balance)" (FR-002, FR-004): the balance, red
- * when line items exceed the planned cost, a meter of what is assigned, the state in words and the
- * rounding hint when a currency rate leaves a few cents (D-145).
- */
+/** The system row "Unassigned planned cost (Sys_Gen_Balance)": the balance, a meter and the state. */
 export function UnassignedBalanceRow({ balance }: { balance: UnassignedBalance }) {
   const exceeded = balance.state === 'exceeded';
   return (
@@ -29,7 +24,7 @@ export function UnassignedBalanceRow({ balance }: { balance: UnassignedBalance }
       <div className={styles.head}>
         <span className={styles.label}>
           {BALANCE_LABEL}
-          <InfoTip label="Unassigned planned cost" text={BALANCE_TIP} />
+          <FieldHelpTip helpKey="activity.unassignedPlannedCost" label="Unassigned planned cost" />
         </span>
         {balance.balance && (
           <span className={cx(styles.amount, exceeded && styles.problem)}>

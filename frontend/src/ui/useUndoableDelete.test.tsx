@@ -58,7 +58,7 @@ const UNDO_IDEAS = 'POST /api/v1/recycle-bin/BIN-1001/undo';
 const IDEAS_MOVED = "Sample folder 'Ideas' moved to the recycle bin";
 
 const UNREACHABLE =
-  "MAPP can't reach its server right now. Check that it is running and try again.";
+  "SP&A One can't reach its server right now. Check that it is running and try again.";
 
 interface DeleteButtonProps {
   /** What the API answered to the delete. */

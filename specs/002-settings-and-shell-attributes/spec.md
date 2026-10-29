@@ -215,6 +215,7 @@ Shell has long lists (1,217 cost centres). The administrator downloads a templat
   overwrite someone else's newer change MUST be refused, naming who changed it and when.
 - **FR-008**: Every signed-in user MUST be able to change Settings (D-004). Shell's rule — only administrators
   maintain Settings; only permitted finance roles edit exchange rates — is enforced when roles arrive.
+  *Since feature 014 this rule follows roles: every action needs its permission of 014 Table A in the plan's scope (014 FR-041).*
 
 **Models**
 

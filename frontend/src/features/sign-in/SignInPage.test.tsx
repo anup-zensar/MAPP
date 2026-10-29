@@ -19,11 +19,12 @@ afterEach(() => {
 });
 
 describe('SignInPage', () => {
-  it('welcomes people and says plainly that this is a demo sign-in with the shared password (FR-001, FR-002)', async () => {
+  it('welcomes people to SP&A One, its name in the logo colours, and says plainly that this is a demo sign-in with the shared password (FR-001, FR-002, 035 FR-003)', async () => {
     mockApi([reply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE })]);
     renderSignInPage();
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Sign in to MAPP' })).toBeInTheDocument();
+    const title = screen.getByRole('heading', { level: 1, name: 'Sign in to SP&A One' });
+    expect(within(title).getByRole('img', { name: 'SP&A One' })).toBeInTheDocument();
     expect(
       screen.getByText('Plan your marketing work, from plan to line item.'),
     ).toBeInTheDocument();
@@ -152,7 +153,7 @@ describe('SignInPage', () => {
         (_text, element) =>
           element?.tagName === 'P' &&
           element.textContent ===
-            "Stop MAPP's API, run go run ./cmd/seed in the backend folder, start the API again with go run ./cmd/api, then reload this page.",
+            "Stop SP&A One's API, run go run ./cmd/seed in the backend folder, start the API again with go run ./cmd/api, then reload this page.",
       ),
     ).toBeInTheDocument();
     expect(emailField()).toBeInTheDocument();
@@ -232,11 +233,11 @@ describe('SignInPage', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/'));
   });
 
-  it('names the page "Sign in · MAPP" in the browser tab (FR-017)', () => {
+  it('names the page "Sign in · SP&A One" in the browser tab (FR-017)', () => {
     mockApi([reply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE })]);
     renderSignInPage();
 
-    expect(document.title).toBe('Sign in · MAPP');
+    expect(document.title).toBe('Sign in · SP&A One');
   });
 });
 
@@ -247,7 +248,7 @@ describe('SignInPage while the session is checked (plan "Session")', () => {
 
     expect(await screen.findByRole('status')).toHaveTextContent('Loading…');
     expect(screen.queryByLabelText('E-mail')).not.toBeInTheDocument();
-    expect(document.title).toBe('Sign in · MAPP');
+    expect(document.title).toBe('Sign in · SP&A One');
   });
 
   it('shows the full-page error when the API cannot be reached (edge case)', async () => {

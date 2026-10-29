@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { OverspendMode } from '@/features/overspend';
 import { formatAmount, parseMoneyInput } from '@/format/decimal';
 import type { GlobalBudget, GlobalBudgetCreate, GlobalBudgetUpdate } from './api';
 
@@ -29,6 +30,7 @@ export const globalBudgetSchema = z.object({
   amount: amountSchema,
   ownerId: z.string(),
   description: z.string(),
+  overspend: z.enum(['warn', 'refuse']),
 });
 
 export type GlobalBudgetValues = z.infer<typeof globalBudgetSchema>;
@@ -36,6 +38,7 @@ export type GlobalBudgetValues = z.infer<typeof globalBudgetSchema>;
 export function globalBudgetValuesOf(
   budget: GlobalBudget | undefined,
   currentYear: number,
+  defaultMode: OverspendMode = 'warn',
 ): GlobalBudgetValues {
   return {
     name: budget?.name ?? '',
@@ -43,6 +46,7 @@ export function globalBudgetValuesOf(
     amount: budget ? formatAmount(budget.amount.amount) : '',
     ownerId: budget?.owner?.id ?? '',
     description: budget?.description ?? '',
+    overspend: budget?.overspend.mode ?? defaultMode,
   };
 }
 
@@ -53,6 +57,7 @@ export function newGlobalBudget(values: GlobalBudgetValues, amount: string): Glo
     amount: { amount, currency: 'USD' },
     ownerId: values.ownerId,
     description: values.description,
+    overspend: values.overspend,
   };
 }
 
@@ -76,6 +81,9 @@ export function changedFields(
   if (values.description !== budget.description) {
     body.description = values.description;
   }
+  if (values.overspend !== budget.overspend.mode) {
+    body.overspend = values.overspend;
+  }
   return Object.keys(body).length > 1 ? body : null;
 }
 
@@ -84,6 +92,7 @@ export function allocationSchema(isPlanChosen: (planId: string) => boolean) {
   return z.object({
     planId: z.string().refine(isPlanChosen, 'Choose a plan.'),
     amount: amountSchema,
+    overspend: z.enum(['warn', 'refuse']),
   });
 }
 

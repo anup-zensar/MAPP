@@ -1,0 +1,64 @@
+.name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.toggle {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-2);
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.toggle:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+.toggle:focus-visible,
+.open:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.toggle svg {
+  width: 16px;
+  height: 16px;
+}
+
+.open {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--link);
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.child th {
+  padding-left: calc(var(--space-6) + 32px);
+}
+
+.over {
+  color: var(--danger-text);
+  font-weight: var(--weight-bold);
+}
+
+.note {
+  margin: 0;
+  padding: var(--space-2) var(--space-6);
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}

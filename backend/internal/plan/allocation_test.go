@@ -13,10 +13,8 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// carlos is the global planner who owns the global budget of these tests.
 var carlos = actor.Actor{ID: "U-1005", Name: "Carlos Mendes"}
 
-// fakeAllocations is 014's Allocations hook with the allocations the test sets, by plan id.
 type fakeAllocations map[string]Allocation
 
 func (f fakeAllocations) AllocationOf(_ context.Context, planID string) (Allocation, bool, error) {
@@ -24,8 +22,6 @@ func (f fakeAllocations) AllocationOf(_ context.Context, planID string) (Allocat
 	return a, found, nil
 }
 
-// allocatedFixture is the fixture with one plan, "FY2026 Lubricants Test" (budget 1,200,000.00), that the
-// global budget "FY2026 Global marketing budget" of Carlos Mendes (U-1005) allocates to.
 func allocatedFixture(t *testing.T) (*fixture, PlanView) {
 	t.Helper()
 	f := newFixture(t)
@@ -39,8 +35,6 @@ func allocatedFixture(t *testing.T) (*fixture, PlanView) {
 	return f, created
 }
 
-// The plan page says where an allocated plan's budget comes from and whom to ask; a plan without an
-// allocation has none (FR-031, FR-033).
 func TestGet_AllocationOfThePlan_FR031_FR033(t *testing.T) {
 	t.Parallel()
 	f, created := allocatedFixture(t)
@@ -62,9 +56,6 @@ func TestGet_AllocationOfThePlan_FR031_FR033(t *testing.T) {
 	}
 }
 
-// The budget of an allocated plan is read-only: a save that changes it is refused with 409 not_allowed and
-// the sentence of the plan form, and changes nothing; a save that keeps it changes the rest (FR-031, US6
-// scenario 3).
 func TestUpdate_AllocatedBudgetIsReadOnly_FR031(t *testing.T) {
 	t.Parallel()
 	f, created := allocatedFixture(t)
@@ -88,17 +79,15 @@ func TestUpdate_AllocatedBudgetIsReadOnly_FR031(t *testing.T) {
 	}
 }
 
-// An allocation sets the plan budget through the plans service (FR-030, D-235): the plan gets a new version
-// and one "changed" entry, Plan budget 1,200,000.00 USD → 1,300,000.00 USD, with the comment naming the global
-// budget (data model §3). A plan version that is out of date is refused naming who changed the plan.
 func TestSetBudgetFromAllocation_FR030(t *testing.T) {
 	t.Parallel()
 	f, created := allocatedFixture(t)
 	f.clock.Advance(time.Hour)
 
-	err := f.service.SetBudgetFromAllocation(t.Context(), carlos, created.ID, usd(t, "1300000.00"), 1,
-		"Allocated from 'FY2026 Global marketing budget'")
-	stale := f.service.SetBudgetFromAllocation(t.Context(), carlos, created.ID, usd(t, "1400000.00"), 1, "")
+	err := f.service.SetBudgetFromAllocation(t.Context(), carlos, BudgetFromAllocation{PlanID: created.ID,
+		Amount: usd(t, "1300000.00"), Version: 1, Comment: "Allocated from 'FY2026 Global marketing budget'"})
+	stale := f.service.SetBudgetFromAllocation(t.Context(), carlos, BudgetFromAllocation{PlanID: created.ID,
+		Amount: usd(t, "1400000.00"), Version: 1})
 
 	stored := f.stored(t, created.ID)
 	if err != nil || stored.Budget == nil || stored.Budget.String() != "1300000.00" || stored.Version != 2 || stored.UpdatedBy != carlos {
@@ -117,14 +106,12 @@ func TestSetBudgetFromAllocation_FR030(t *testing.T) {
 	}
 }
 
-// An allocation of the amount the plan already has (the plan is newly allocated) logs only the comment and
-// keeps the plan's version (data model §3).
 func TestSetBudgetFromAllocation_SameAmountLogsTheCommentOnly_FR030(t *testing.T) {
 	t.Parallel()
 	f, created := allocatedFixture(t)
 
-	err := f.service.SetBudgetFromAllocation(t.Context(), carlos, created.ID, usd(t, "1200000.00"), 1,
-		"Allocated from 'FY2026 Global marketing budget'")
+	err := f.service.SetBudgetFromAllocation(t.Context(), carlos, BudgetFromAllocation{PlanID: created.ID,
+		Amount: usd(t, "1200000.00"), Version: 1, Comment: "Allocated from 'FY2026 Global marketing budget'"})
 
 	entries := f.entries(t)
 	if err != nil || f.stored(t, created.ID).Version != 1 || len(entries) != 2 || len(entries[0].Changes) != 0 ||
@@ -134,8 +121,6 @@ func TestSetBudgetFromAllocation_SameAmountLogsTheCommentOnly_FR030(t *testing.T
 	}
 }
 
-// Removing an allocation logs on the plan that it was removed and leaves the plan, its budget and its
-// version as they are (FR-034, data model §3).
 func TestAllocationRemoved_FR034(t *testing.T) {
 	t.Parallel()
 	f, created := allocatedFixture(t)
@@ -151,7 +136,6 @@ func TestAllocationRemoved_FR034(t *testing.T) {
 	}
 }
 
-// A copy of an allocated plan copies its budget as a typed amount and has no allocation (FR-035).
 func TestCopy_AllocatedPlanCopyHasNoAllocation_FR035(t *testing.T) {
 	t.Parallel()
 	f, created := allocatedFixture(t)
@@ -164,8 +148,6 @@ func TestCopy_AllocatedPlanCopyHasNoAllocation_FR035(t *testing.T) {
 	}
 }
 
-// PlannedCosts gives each plan's planned cost in USD from the levels below, nil for a plan without one, with
-// one call per level (FR-032, SC-009).
 func TestPlannedCosts_FR032(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

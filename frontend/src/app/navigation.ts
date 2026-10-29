@@ -4,6 +4,7 @@ import {
   FileText,
   House,
   Landmark,
+  LayoutDashboard,
   LayoutGrid,
   ReceiptText,
   RotateCcwClock,
@@ -61,6 +62,13 @@ const APPROVALS: NavItem = {
 
 const ALL_WORK: NavItem = { label: 'All work', path: '/all-work', icon: LayoutGrid };
 
+const DASHBOARDS: NavItem = {
+  label: 'Dashboards',
+  path: '/dashboards',
+  icon: LayoutDashboard,
+  permission: 'plans.view',
+};
+
 const FINANCIALS: NavItem = {
   label: 'Financials',
   path: '/financials',
@@ -96,6 +104,7 @@ export const MAIN_ITEMS: NavItem[] = [
   ALL_WORK,
   FINANCIALS,
   PURCHASE_REQUESTS,
+  DASHBOARDS,
 ];
 
 export const MORE_ITEMS: NavItem[] = [SETTINGS, RECYCLE_BIN, ACTIVITY_LOG];

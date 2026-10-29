@@ -1,4 +1,6 @@
 import { useLocation, useParams } from 'react-router';
+import { forbiddenMessage } from '@/session/access';
+import { NoAccess } from '@/ui/NoAccess/NoAccess';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useActivity, useEditActivityForm, useNewActivityForm } from './api';
 import { ActivityEditor } from './ActivityEditor';
@@ -6,31 +8,27 @@ import { ActivityFormHeader } from './ActivityFormHeader';
 import { FormSkeleton, LoadFailed } from './ActivityLoadStates';
 
 export interface ActivityFormPageProps {
-  /**
-   * new: /plans/:planId/initiatives/:initiativeId/activities/new;
-   * edit: /plans/:planId/activities/:activityId/edit (?field=<field> focuses a field).
-   */
+  /** new: /plans/:planId/initiatives/:initiativeId/activities/new; edit: …/activities/:activityId/edit. */
   mode: 'new' | 'edit';
 }
 
 const INITIATIVE_GONE = 'This initiative no longer exists — someone may have deleted it.';
 const ACTIVITY_GONE = 'This activity no longer exists — someone may have deleted it.';
 
-/**
- * The activity form, a full page for a new and an edited activity (feature 006, US1, US3, US4;
- * 006 plan, "Activity form page").
- */
 export function ActivityFormPage({ mode }: ActivityFormPageProps) {
   return mode === 'new' ? <NewActivityPage /> : <EditActivityPage />;
 }
 
-/** The new-activity page: loads the form of the initiative, then the editor. */
 function NewActivityPage() {
   const { initiativeId = '' } = useParams();
   const location = useLocation();
   usePageTitle('New activity');
   const query = useNewActivityForm(initiativeId);
 
+  const refused = forbiddenMessage(query.error);
+  if (refused) {
+    return <NoAccess message={refused} />;
+  }
   if (query.isPending || query.isError) {
     return (
       <>
@@ -51,7 +49,6 @@ function NewActivityPage() {
   return <ActivityEditor key={location.key} data={query.data} />;
 }
 
-/** The edit page: loads the activity and its form, then the editor with the activity's values. */
 function EditActivityPage() {
   const { activityId = '' } = useParams();
   const activity = useActivity(activityId);
@@ -60,6 +57,10 @@ function EditActivityPage() {
 
   if (activity.isSuccess && form.isSuccess) {
     return <ActivityEditor key={activity.data.id} data={form.data} activity={activity.data} />;
+  }
+  const refused = forbiddenMessage(form.error);
+  if (refused) {
+    return <NoAccess message={refused} />;
   }
   const failed = activity.isError ? activity : form.isError ? form : null;
   return (

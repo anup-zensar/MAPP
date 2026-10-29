@@ -135,9 +135,13 @@ func (d *demo) addActivities(ctx context.Context) error {
 	if err := d.addWorkflows(ctx); err != nil {
 		return err
 	}
-	repo := d.stores.Activities
 	d.activities = map[string]string{}
-	for _, a := range demoActivities {
+	return d.putActivities(ctx, demoActivities)
+}
+
+func (d *demo) putActivities(ctx context.Context, list []demoActivity) error {
+	repo := d.stores.Activities
+	for _, a := range list {
 		var r resolver
 		initiativeID := r.id(d.initiatives, "initiative", a.campaign+"/"+a.initiative)
 		if _, err := find(d.campaigns, "campaign", a.plan+"/"+a.campaign); err != nil && r.err == nil {

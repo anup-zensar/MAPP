@@ -15,7 +15,7 @@ import { RoutingHistory } from './RoutingHistory';
 
 const FORM = 'GET /api/v1/purchase-requests/{purchaseRequestId}/routings/{routingId}/form';
 const RESEND = 'POST /api/v1/purchase-requests/{purchaseRequestId}/resend';
-const FILE = 'MAPP PR form – PR-1002 – Original – 27 Oct 2026.xlsx';
+const FILE = 'SP&A One PR form – PR-1002 – Original – 27 Oct 2026.xlsx';
 
 let saved: string[];
 
@@ -109,7 +109,7 @@ describe('032 FR-031/FR-033/FR-035: routing history', () => {
       name: "Resend the PR form of 'PR for Stand build'?",
     });
     expect(dialog).toHaveTextContent(
-      "MAPP records a new routing with today's values. Sent dates do not change.",
+      "SP&A One records a new routing with today's values. Sent dates do not change.",
     );
     await user.click(within(dialog).getByRole('button', { name: 'Resend PR form' }));
 

@@ -1,7 +1,7 @@
 import type { FinancialImport, FinancialImportCheck } from '@/features/financials';
 
 /** The import of the demo data: GSAP's feed at 02:00, by MAPP itself. */
-export const SYSTEM = { id: 'system', name: 'MAPP' };
+export const SYSTEM = { id: 'system', name: 'SP&A One' };
 
 export const DEMO_IMPORT: FinancialImport = {
   id: 'FIM-1001',

@@ -36,7 +36,7 @@ export const INCORRECT = {
 };
 
 export const UNREACHABLE =
-  "MAPP can't reach its server right now. Check that it is running and try again.";
+  "SP&A One can't reach its server right now. Check that it is running and try again.";
 
 /** The sign-in page at /sign-in for a visitor who is not signed in (unless `user` says otherwise). */
 export function renderSignInPage({

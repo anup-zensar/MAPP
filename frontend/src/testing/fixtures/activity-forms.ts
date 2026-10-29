@@ -10,6 +10,7 @@ type ErrorBody = components['schemas']['Error'];
 /** The new-activity form of "Digital & social"; pass what a test needs to differ. */
 export function newForm(overrides: Partial<ActivityFormData> = {}): ActivityFormData {
   return {
+    overspendLimits: [],
     context: {
       plan: { id: 'P-1001', name: 'FY2026 Lubricants Europe', year: 2026, status: 'draft' },
       campaign: { type: 'campaign', id: 'C-1001', name: 'Helix launch' },

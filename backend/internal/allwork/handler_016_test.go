@@ -127,7 +127,7 @@ func TestExport_Breakdown_FR043(t *testing.T) {
 
 	body := string(csv.Body)
 	if csv.Status != http.StatusOK ||
-		!strings.Contains(csv.Header.Get("Content-Disposition"), `filename="MAPP All work - Breakdown - 2026-2027 - 12 Mar 2026.csv"`) ||
+		!strings.Contains(csv.Header.Get("Content-Disposition"), `filename="SP&A One All work - Breakdown - 2026-2027 - 12 Mar 2026.csv"`) ||
 		!strings.Contains(body, "Years,2026 – 2027\n") || !strings.Contains(body, "Break down by,Plan\n") ||
 		!strings.Contains(body, "Rates used,") || !strings.Contains(body, "FY2027 Lubricants UK & Ireland,") ||
 		!strings.Contains(body, "\nTotal,") {

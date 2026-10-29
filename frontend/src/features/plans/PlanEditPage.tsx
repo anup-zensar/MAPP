@@ -2,7 +2,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router';
 import { ApiError, conflictMessage } from '@/api/errors';
+import { budgetCheck } from '@/features/overspend';
+import { allows } from '@/session/gate-action';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { NoAccess } from '@/ui/NoAccess/NoAccess';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { useToast } from '@/ui/Toast/useToast';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
@@ -22,11 +25,6 @@ import type { PlanFormValues } from './schemas';
 const CONFLICT_NEXT_STEP =
   'Your changes are still here. Save again to replace their changes, or Cancel to see theirs.';
 
-/**
- * Edit plan (US4, FR-018 – FR-023), at /plans/:planId/edit (?focus=<field> focuses a field): the
- * plan form with the year locked. A new model or business unit is confirmed first; a save after
- * someone else's is refused, naming them, with the typed values kept.
- */
 export function PlanEditPage() {
   const { planId = '' } = useParams();
   const plan = usePlan(planId);
@@ -34,6 +32,10 @@ export function PlanEditPage() {
 
   if (plan.isError && plan.error instanceof ApiError && plan.error.kind === 'notFound') {
     return <PlanNotFound />;
+  }
+  const edit = plan.data?.access?.edit;
+  if (!allows(edit)) {
+    return <NoAccess message={edit?.reason || undefined} />;
   }
 
   return (
@@ -57,7 +59,6 @@ export function PlanEditPage() {
   );
 }
 
-/** The form, with the plan as it was when the page opened (the edit-form rule). */
 function EditForm({ plan: loaded }: { plan: Plan }) {
   const [plan] = useState(loaded);
   const initial = valuesFromPlan(plan);
@@ -72,7 +73,6 @@ function EditForm({ plan: loaded }: { plan: Plan }) {
   const [effects, setEffects] = useState<{ data: PlanChangeEffects; modelOnly: boolean } | null>(
     null,
   );
-  // The answer to the consequences dialog: true saves, false goes back to the form.
   const answer = useRef<((confirmed: boolean) => void) | null>(null);
 
   function answerEffects(confirmed: boolean) {
@@ -81,7 +81,6 @@ function EditForm({ plan: loaded }: { plan: Plan }) {
     answer.current = null;
   }
 
-  /** Asks the API what a new model or business unit changes, and the person whether to go on. */
   async function confirmEffects(values: PlanFormValues): Promise<boolean> {
     const modelChanged = values.modelId !== initial.modelId;
     const attributesChanged =
@@ -108,6 +107,16 @@ function EditForm({ plan: loaded }: { plan: Plan }) {
   }
 
   async function save(values: PlanFormValues): Promise<PlanSaveAnswer> {
+    const refused = budgetCheck({
+      mode: values.overspend,
+      typed: values.budget,
+      stored: plan.budget?.amount ?? null,
+      planned: plan.planFigures?.plannedCost ?? null,
+    }).error;
+    if (refused) {
+      setFailure({ message: refused });
+      return { problems: [] };
+    }
     try {
       if (!(await confirmEffects(values))) {
         return null;
@@ -122,15 +131,12 @@ function EditForm({ plan: loaded }: { plan: Plan }) {
     }
   }
 
-  /** A failure that is not about one field: a conflict, or the API's message. */
   async function showFailure(apiError: ApiError) {
     if (apiError.kind === 'validation') {
       setFailure(null);
       return;
     }
     if (apiError.kind === 'conflict') {
-      // The typed values stay; the form takes the version with the other person's change, so
-      // Save again replaces it on purpose (FR-023).
       const latest = await fetchLatestPlan(queryClient, plan.id).catch(() => undefined);
       if (latest) {
         setVersion(latest.version);

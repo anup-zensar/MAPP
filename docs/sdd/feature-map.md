@@ -21,12 +21,12 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
 | 009 | [009-home-dashboard](../../specs/009-home-dashboard/spec.md) | Home dashboard: summary cards, my plans, my activities, waiting for my approval, needs attention | P1 | 004–008 | Built |
 | 010 | [010-all-work-views](../../specs/010-all-work-views/spec.md) | All work: grid with roll-ups, filters and search, calendar, budget & cost by month, saved views, export | P2 | 004–008 | Built |
 | 011 | [011-activity-log-and-recycle-bin](../../specs/011-activity-log-and-recycle-bin/spec.md) | Activity log page and record history; recycle bin page with restore and permanent delete | P2 | 001, 004–007 | Done |
-| 012 | [012-bulk-actions-and-import](../../specs/012-bulk-actions-and-import/spec.md) | Select many rows: change owner/status fields, copy, move, delete; import activities from a template | P3 | 010 | Draft |
-| 013 | [013-bcpir-and-spa](../../specs/013-bcpir-and-spa/spec.md) | Shell's BCPIR and SP&A plan views (meaning to be clarified with Shell) | P3 | 004–008 | Draft |
-| 014 | [014-access-control](../../specs/014-access-control/spec.md) | Roles and access: fixed permissions, five default roles, team scopes, view-only vs edit enforced by the API, segregation of duties; global budgets allocated to market plans (BUS.ADM.020, BUS.BUD.040) | P1 | 001–011 | Built — finish open: hide or explain actions per role (T043–T051), e2e (T061) |
+| 012 | [012-bulk-actions-and-import](../../specs/012-bulk-actions-and-import/spec.md) | Select many rows in All work: change owner or a field, submit, copy, move, delete with Undo; the plan workbook — Excel template and export of a plan, import of its skeleton and of updates, with Undo import (RFP §8, D-338–D-341) | P1 | 010, 014 | Built — bulk actions in All work and the plan workbook (template, export, import, Undo import); open: checkboxes in the plan tree (Q-021), Shell to confirm Q-020 |
+| 013 | [013-bcpir-and-spa](../../specs/013-bcpir-and-spa/spec.md) | SP&A plan view of a plan or campaign (planned, committed, actual by period and dimension, budget and procurement panels) and the BCPIR marker and filter, re-baselined on Shell's spec 006 (D-333, D-334–D-337) | P1 | 004–008, 010, 015, 032 | Built — SP&A view of a plan or campaign (API + page), BCPIR marker and filter on the Plans list, plan page and All work, Breakdown by BCPIR plan; BCPIR return view, register and export not built (D-337); all gates and the full e2e green |
+| 014 | [014-access-control](../../specs/014-access-control/spec.md) | Roles and access: fixed permissions, five default roles, team scopes, view-only vs edit enforced by the API, segregation of duties; global budgets allocated to market plans (BUS.ADM.020, BUS.BUD.040) | P1 | 001–011 | Built — every task done: screens hide or explain actions per role (D-352), e2e `access-control.spec.ts` green |
 | 015 | [015-financial-transactions](../../specs/015-financial-transactions/spec.md) | Read-only GSAP purchase orders, invoices, payments and accruals from a simulated GSAP extract, shown on the activity, line item, plan, campaign, initiative, All work, Home and a Financials page (BUS.FIN.080) | P1 | 004–010, 014 | Built — finish open: e2e (T021, T025, T030, T035), Home no-access state (T044), container delete dialogs (T045) |
-| 016 | [016-planning-and-currency-extensions](../../specs/016-planning-and-currency-extensions/spec.md) | Dated exchange rates and a simulated GSAP rate import, plan currency, budget by month, split activity, plan type and multi-year views, Shell-attribute filters and Breakdown, field help (BUS.BUD.050, BUS.PLN.020, BUS.PLN.040, BUS.BUD.020, BUS.UX.020) | P1 | 002, 004–007, 010, 014 | Built — finish open: attribute filters and Breakdown screens (T074–T077), field-help tips (T084–T088), Import GSAP rates route (T028), e2e (T089) |
-| 017 | [017-approval-rules](../../specs/017-approval-rules/spec.md) | Approval rules: approver sources (named people, line manager, role), any or all, conditional and automatic levels, backup approvers, delegation, reminders and escalation, Monitoring (BUS.WFL.010) | P1 | 003, 008, 014 | Built — finish open: approvals read roles from 014 (T001, T008), line manager on People (T036), e2e (T047–T049) |
+| 016 | [016-planning-and-currency-extensions](../../specs/016-planning-and-currency-extensions/spec.md) | Dated exchange rates and a simulated GSAP rate import, plan currency, budget by month, split activity, plan type and multi-year views, Shell-attribute filters and Breakdown, field help (BUS.BUD.050, BUS.PLN.020, BUS.PLN.040, BUS.BUD.020, BUS.UX.020) | P1 | 002, 004–007, 010, 014 | Built — attribute filters, Breakdown and Planned cost by (D-350), field-help tips on every record screen (D-351); finish open: e2e (T089, end-to-end lane) |
+| 017 | [017-approval-rules](../../specs/017-approval-rules/spec.md) | Approval rules: approver sources (named people, line manager, role), any or all, conditional and automatic levels, backup approvers, delegation, reminders and escalation, Monitoring (BUS.WFL.010) | P1 | 003, 008, 014 | Built — approvals read roles from 014, line manager on People; finish open: e2e (T047–T049, end-to-end lane) |
 | 018 | [018-pinned-plans](../../specs/018-pinned-plans/spec.md) | Pinned plans: pin plans to the top of the Plans list with a star, saved per person as the display preference pinnedPlanIds (D-317) | P2 | 004 | Done |
 | 019 | [019-alignment-guardrails](../../specs/019-alignment-guardrails/spec.md) | Alignment guardrails: CI with three checks, branch rules, npm release age, ADR-0010 (constitution 3.1.0) | P1 | — | In progress |
 | 020 | — | Shell palette: design tokens with Shell's exact colours (constitution X) | P1 | 019 | Planned |
@@ -44,6 +44,9 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
 | 032 | [032-purchase-requests](../../specs/032-purchase-requests/spec.md) | Purchase requests on MAPP's side: raise from line items, lines and reservation, approval and modification, routing to the requisitioner in MAPP with a PR form, close-out, Purchase requests page (client 013; D-320) | P1 | 030, 031 | Built — PR record, reservation, approval and change approval, in-app routing with PR form, close, page, settings, Requisitioner role; all gates and e2e green; converge items T096–T100 open |
 | 033 | [033-simulated-gsap-pr-po](../../specs/033-simulated-gsap-pr-po/spec.md) | GSAP PR number and purchase order created by the simulated GSAP for a routed purchase request, shown on the purchase request and its lines, with Committed figures from the PO lines (D-321) | P1 | 032, 015 | Built — simulated GSAP PR and PO, booked as GSAP transactions, top-up; all gates and the whole PR→PO e2e green |
 | 034 | [034-planning-alignment](../../specs/034-planning-alignment/spec.md) | Planning rules aligned with Shell's process: line-item changes keep the activity's approval, Shell's finance lists and zero-based cost hierarchy, plan year current to +10 (D-322, D-325, D-326) | P1 | 006, 007, 002 | Built — line-item changes keep approval, Shell's lists, plan year current to +10; all gates and e2e green |
+| 035 | [035-product-name-spa-one](../../specs/035-product-name-spa-one/spec.md) | The product is shown as SP&A One: the coloured name is the logo (blue "&", yellow "One"), a "1" tile where the name does not fit and as the favicon, and every text, message and file name that names the product (D-332; constitution 4.5.0) | P1 | 001, 020 | In review — unit, contract and Go tests green; e2e in CI |
+| 036 | [036-planning-dashboards-and-export](../../specs/036-planning-dashboards-and-export/spec.md) | Executive and regional planning dashboards from plan and finance data (budget, planned, committed, actual by region, market, campaign and month; approvals, purchase requests, completeness), and export of plans and dashboards to PowerPoint and PDF (D-333) | P2 | 009, 010, 014, 015, 032 | Built — Executive and Regional dashboards, plan and dashboard export to .pptx and .pdf (ADR-0017); all gates and the full e2e suite green; open: widen the data.export label, Q-022, Q-023 |
+| 037 | [037-overspend-control](../../specs/037-overspend-control/spec.md) | Overspend control: each budget owner chooses whether going over a plan, campaign, initiative or global budget warns (default) or is refused, enforced by the API for every save that adds cost; Settings › Overspend control; purchase requests refused while line items exceed the activity's planned cost (D-333, D-346 – D-349) | P2 | 004, 005, 014, 016, 032 | Built — Go, unit, contract and e2e tests green (D-346 – D-349; Q-024, Q-025 open for Shell) |
 
 ## Scope boundaries
 
@@ -64,7 +67,7 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
 | Cross-plan grid, calendar, budget & cost, saved views, export | 010 | — |
 | Activity log page, History tab, recycle bin page | 011 | — |
 | Bulk actions, import | 012 | Single-record copy/move (004–006) |
-| BCPIR / SP&A views | 013 | The BCPIR flag field itself (004) |
+| SP&A view, BCPIR marker and filter | 013 | The BCPIR flag field itself (004); the BCPIR return view (Measure, later) |
 | Permissions, roles, scopes, access rules, who may decide an approval; global budgets and allocations | 014 | Approval rules (017) |
 | GSAP transactions, their simulated import and matching, financial figures | 015 | Creating POs or invoices (GSAP owns them) |
 | Exchange-rate history and rate import, plan currency, budget phasing, split activity, plan type, multi-year views, attribute filters and Breakdown, field help | 016 | A line item's own currency (007) |
@@ -82,15 +85,17 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
    specs 015–017 name the permission each action needs.
 5. **Every change is logged** with the actor (mechanism from 001).
 6. **Out of scope:** Finance budgets module, accrual calculation, invoice approval, supporting documents on
-   purchase requests, Measure, live GSAP integration, e-mail, real sign-in (SSO), AI. Purchase requests on
+   purchase requests, Measure's performance reporting, live GSAP integration, e-mail and sharing to Outlook or
+   Teams, real sign-in (SSO), AI. Purchase requests on
    MAPP's side and a simulated GSAP for SWBS codes, GSAP PRs and POs are in scope since constitution 4.4.0
-   (features 030–034). GSAP transactions and daily rates come from simulated feeds
+   (features 030–034); planning dashboards, PowerPoint/PDF export and overspend control since 4.6.0 (036, 037).
+   GSAP transactions and daily rates come from simulated feeds
    behind adapters (015, 016; D-242, D-259, D-308). Mention the rest only as future integration points.
 
 ## Later (not in this phase)
 
 Finance module (finance budgets, accrual calculation, invoice approval, PR supporting documents), Measure
-dashboards, live GSAP integration (the real SWBS request/response, PR/PO/invoice sync and rate feed behind the
+performance dashboards (revenue, attribution, waterfall, ROI), live GSAP integration (the real SWBS request/response, PR/PO/invoice sync and rate feed behind the
 adapters the simulated GSAP uses), Microsoft Entra ID sign-in (roles from Entra),
 Azure hosting, templates, snapshots, related plans/activities, multi-year activity linking,
 custom goals, latest estimates, media codes, calendar feeds, AI assistant.

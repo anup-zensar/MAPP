@@ -7,18 +7,18 @@ describe('usePageTitle', () => {
     const { rerender } = renderHook(({ page }) => usePageTitle(page), {
       initialProps: { page: 'Home' },
     });
-    expect(document.title).toBe('Home · MAPP');
+    expect(document.title).toBe('Home · SP&A One');
 
     rerender({ page: 'My profile' });
 
-    expect(document.title).toBe('My profile · MAPP');
+    expect(document.title).toBe('My profile · SP&A One');
   });
 
   it('leaves the tab alone with null, for a page under a side panel that names it', () => {
-    document.title = 'New campaign · MAPP';
+    document.title = 'New campaign · SP&A One';
 
     renderHook(() => usePageTitle(null));
 
-    expect(document.title).toBe('New campaign · MAPP');
+    expect(document.title).toBe('New campaign · SP&A One');
   });
 });

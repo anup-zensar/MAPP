@@ -66,7 +66,7 @@ export function RulesTab() {
         <p className={list.meta}>
           {data.updatedAt && data.updatedBy
             ? `Last changed by ${data.updatedBy.name} on ${dateTime(data.updatedAt)}`
-            : 'MAPP’s defaults, never changed.'}
+            : 'SP&A One’s defaults, never changed.'}
         </p>
       </div>
       {editing && (

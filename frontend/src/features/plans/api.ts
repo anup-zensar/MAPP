@@ -1,8 +1,3 @@
-/**
- * What the Plans pages ask the API (plan "Data"): the list, one plan, the defaults of a new plan,
- * and every change. Each change refreshes the lists and the plan when it is done — also when it
- * failed, because a refused change may mean someone else changed the plan meanwhile.
- */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
@@ -20,7 +15,6 @@ export type PlanChangeEffectsRequest = components['schemas']['PlanChangeEffectsR
 export type PlanCopyOptions = components['schemas']['PlanCopyOptions'];
 export type PlanCopyRequest = components['schemas']['PlanCopyRequest'];
 
-/** The filters the API takes (the layout is the page's own business). */
 export type PlanQuery = Omit<PlanListFilters, 'layout'>;
 
 export const PLAN_KEYS = {
@@ -31,16 +25,11 @@ export const PLAN_KEYS = {
   copyOptions: (planId: string) => ['plan-copy-options', planId] as const,
 };
 
-/**
- * The year parameters of the list (016 FR-033, D-269): one year goes as `year`, the alias every
- * API version understands; a range as `yearFrom` and `yearTo`; All years sends neither.
- */
 function yearParams({ yearFrom, yearTo }: Pick<PlanQuery, 'yearFrom' | 'yearTo'>) {
   if (yearFrom === null || yearTo === null) return {};
   return yearFrom === yearTo ? { year: yearFrom } : { yearFrom, yearTo };
 }
 
-/** The plans matching the filters, newest year first; the old answer stays while a new one loads. */
 export function usePlans(query: PlanQuery) {
   return useQuery({
     queryKey: PLAN_KEYS.list(query),
@@ -54,6 +43,7 @@ export function usePlans(query: PlanQuery) {
               ...yearParams(query),
               ...(query.types.length > 0 && { type: query.types }),
               ...(query.q.trim() !== '' && { q: query.q.trim() }),
+              ...(query.bcpir !== 'include' && { bcpir: query.bcpir }),
             },
           },
         }),
@@ -62,7 +52,6 @@ export function usePlans(query: PlanQuery) {
   });
 }
 
-/** One plan with its figures, goals and completeness. */
 export function usePlan(planId: string) {
   return useQuery({
     queryKey: PLAN_KEYS.plan(planId),
@@ -70,7 +59,6 @@ export function usePlan(planId: string) {
   });
 }
 
-/** The defaults of a new plan for the signed-in person. */
 export function usePlanDefaults() {
   return useQuery({
     queryKey: PLAN_KEYS.defaults,
@@ -79,7 +67,6 @@ export function usePlanDefaults() {
   });
 }
 
-/** The plan as stored now (after a conflict, the edit form takes its version from it). */
 export function fetchLatestPlan(queryClient: QueryClient, planId: string): Promise<Plan> {
   return queryClient.fetchQuery({
     queryKey: PLAN_KEYS.plan(planId),
@@ -99,14 +86,12 @@ export function useCreatePlan() {
 export function useUpdatePlan(planId: string) {
   const refresh = useRefresh();
   return useMutation({
-    // The version comes from the form, never from the cache (edit-form rule).
     mutationFn: (body: PlanUpdate) =>
       call(api.PATCH('/api/v1/plans/{planId}', { params: { path: { planId } }, body })),
     onSettled: () => refresh(planId),
   });
 }
 
-/** What a new model or business unit would change; nothing is saved. */
 export function useChangeEffects(planId: string) {
   return useMutation({
     mutationFn: (body: PlanChangeEffectsRequest) =>
@@ -139,10 +124,6 @@ export function useUnpublishPlan() {
   });
 }
 
-/**
- * What the copy dialog offers (FR-026): the suggested name, the years and the counts. Asked each
- * time the dialog opens, because the free "(copy n)" name and the counts change with every copy.
- */
 export function useCopyOptions(planId: string, enabled: boolean) {
   return useQuery({
     queryKey: PLAN_KEYS.copyOptions(planId),
@@ -153,7 +134,6 @@ export function useCopyOptions(planId: string, enabled: boolean) {
   });
 }
 
-/** Copies a plan, with or without everything in it; answers the new plan and notes (FR-027). */
 export function useCopyPlan() {
   const queryClient = useQueryClient();
   const refresh = useRefresh();
@@ -163,19 +143,16 @@ export function useCopyPlan() {
     onSettled: (_result, _error, { planId }) =>
       Promise.all([
         refresh(planId),
-        // The next copy suggests the next free name.
         queryClient.invalidateQueries({ queryKey: PLAN_KEYS.copyOptions(planId) }),
       ]),
   });
 }
 
-/** Moves a plan and everything in it to the recycle bin; answers the entry for Undo. */
 export function useDeletePlan() {
   const refresh = useRefresh();
   return useMutation({
     mutationFn: (planId: string) =>
       call(api.DELETE('/api/v1/plans/{planId}', { params: { path: { planId } } })),
-    // The plan itself is not asked again: it is gone, and its page is being left.
     onSettled: () => refresh(),
   });
 }
@@ -184,7 +161,6 @@ function fetchPlan(planId: string) {
   return call(api.GET('/api/v1/plans/{planId}', { params: { path: { planId } } }));
 }
 
-/** Asks again for every list of plans, the plan, and the recycle bin and activity log. */
 function useRefresh() {
   const queryClient = useQueryClient();
   return (planId?: string) =>

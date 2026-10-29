@@ -53,16 +53,20 @@ function FinanceDetails({ lineItem }: { lineItem: LineItem }) {
   return (
     <>
       <DetailsList>
-        <Detail label={LABEL.contractedAmount} numeric>
+        <Detail label={LABEL.contractedAmount} helpKey="lineItem.contractedAmount" numeric>
           {lineItem.contractedAmount ? moneyText(lineItem.contractedAmount) : null}
         </Detail>
-        <Detail label={LABEL.financeBudgetYear}>{lineItem.financeBudgetYear}</Detail>
-        <Detail label={LABEL.financeBudgetItem}>
+        <Detail label={LABEL.financeBudgetYear} helpKey="lineItem.financeBudgetYear">
+          {lineItem.financeBudgetYear}
+        </Detail>
+        <Detail label={LABEL.financeBudgetItem} helpKey="lineItem.financeBudgetItem">
           {item
             ? `${[item.name, item.budgetName, item.code].filter(Boolean).join(' · ')}${item.active ? '' : ' (inactive)'}`
             : null}
         </Detail>
-        <Detail label={LABEL.requestSwbs}>{lineItem.requestSwbs ? 'Yes' : 'No'}</Detail>
+        <Detail label={LABEL.requestSwbs} helpKey="lineItem.requestSwbs">
+          {lineItem.requestSwbs ? 'Yes' : 'No'}
+        </Detail>
       </DetailsList>
       {item && !item.active && <p className={styles.problem}>{inactiveItemText(item.name)}</p>}
     </>

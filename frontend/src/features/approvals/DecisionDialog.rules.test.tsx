@@ -13,7 +13,10 @@ import {
 } from '@/testing/fixtures/approvals';
 import type { ActivityApproval } from './api';
 /** Level 1 needs Carlos, Daniel and Alex (all must approve); Daniel approved already. */
-function allLevel(viewer: Partial<ActivityApproval['viewer']>): ActivityApproval {
+function allLevel(
+  viewer: Partial<ActivityApproval['viewer']>,
+  approvers = [CARLOS, DANIEL, ALEX],
+): ActivityApproval {
   return approvalOf({
     viewer: { isOwner: false, isCurrentApprover: true, onBehalfOf: [], ...viewer },
     rounds: [
@@ -22,12 +25,12 @@ function allLevel(viewer: Partial<ActivityApproval['viewer']>): ActivityApproval
           {
             number: 1,
             label: 'Level 1',
-            approvers: [CARLOS, DANIEL, ALEX],
+            approvers,
             state: 'waiting',
             decision: null,
             mode: 'all',
             approvedCount: 1,
-            requiredCount: 3,
+            requiredCount: approvers.length,
             decisions: [
               {
                 action: 'approved',
@@ -56,6 +59,19 @@ describe('DecisionDialog rules (feature 017, US2 and US3)', () => {
     expect(dialog).toHaveTextContent('1 of 3 already approved.');
     expect(dialog).toHaveTextContent('Still waiting for');
     expect(dialog).not.toHaveTextContent('Next: level 2');
+  });
+
+  it('says the level is complete when the last approver who waits approves it (FR-015)', () => {
+    renderDialog({
+      mode: 'approve',
+      approval: allLevel({ capacity: 'approver' }, [DANIEL, PRIYA]),
+    });
+
+    const dialog = screen.getByRole('alertdialog');
+    // The signed-in test user is Priya Raman, the only approver still waiting.
+    expect(dialog).toHaveTextContent('1 of 2 already approved.');
+    expect(dialog).toHaveTextContent('Level 1 is complete after this approval.');
+    expect(dialog).not.toHaveTextContent('Still waiting for');
   });
 
   it('says the level is complete when a backup approver approves it (FR-015, FR-019)', () => {

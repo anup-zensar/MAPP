@@ -246,12 +246,12 @@ func TestExport_NotesBeforeData_AboutSheet_FileName_FR034(t *testing.T) {
 			}
 		}
 	}
-	if xlsx.Name != "MAPP All work – Budget & cost – 2026 – 18 Oct 2026.xlsx" || xlsx.ContentType != contentTypeXLSX {
+	if xlsx.Name != "SP&A One All work – Budget & cost – 2026 – 18 Oct 2026.xlsx" || xlsx.ContentType != contentTypeXLSX {
 		t.Errorf("file = %q, %s", xlsx.Name, xlsx.ContentType)
 	}
-	if got := ContentDisposition("MAPP All work – Grid – 2026 – 18 Oct 2026.csv"); got !=
-		`attachment; filename="MAPP All work - Grid - 2026 - 18 Oct 2026.csv"; `+
-			`filename*=UTF-8''MAPP%20All%20work%20%E2%80%93%20Grid%20%E2%80%93%202026%20%E2%80%93%2018%20Oct%202026.csv` {
+	if got := ContentDisposition("SP&A One All work – Grid – 2026 – 18 Oct 2026.csv"); got !=
+		`attachment; filename="SP&A One All work - Grid - 2026 - 18 Oct 2026.csv"; `+
+			`filename*=UTF-8''SP%26A%20One%20All%20work%20%E2%80%93%20Grid%20%E2%80%93%202026%20%E2%80%93%2018%20Oct%202026.csv` {
 		t.Errorf("Content-Disposition = %s", got)
 	}
 }

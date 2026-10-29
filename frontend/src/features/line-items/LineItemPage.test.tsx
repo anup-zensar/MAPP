@@ -82,7 +82,7 @@ describe('LineItemPage (US4, FR-026)', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Agency fee' }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Agency fee · MAPP');
+    expect(document.title).toBe('Agency fee · SP&A One');
     const breadcrumb = screen.getByLabelText('Breadcrumb');
     expect(within(breadcrumb).getByRole('link', { name: 'Launch film' })).toHaveAttribute(
       'href',
@@ -254,7 +254,7 @@ describe('LineItemPage (US4, FR-026)', () => {
     expect(dialog).toHaveTextContent('It moves to the recycle bin; you can restore it.');
     // The GSAP transactions linked to it stay (015 FR-029), from the Financials section's query.
     expect(dialog).toHaveTextContent(
-      '2 GSAP transactions are linked to it. They stay in MAPP and leave the figures until it is restored.',
+      '2 GSAP transactions are linked to it. They stay in SP&A One and leave the figures until it is restored.',
     );
     expect(dialog).not.toHaveTextContent('This activity will need approval again.');
     expect(within(dialog).getByRole('button', { name: 'Cancel' })).toHaveFocus();

@@ -200,7 +200,8 @@ with the actor and the changed fields; Undo after the delete brings the record b
 ## Phase 8: Polish & Cross-Cutting Concerns
 
 - [X] T079 [P] Write `frontend/src/features/dev/ComponentGalleryPage.tsx` (+ CSS and test) as the plan's *Developer pages*; add `/dev/components` (inside `DevOnly`) to `frontend/src/app/router.tsx`
-- [ ] T080 Write `frontend/e2e/accessibility.spec.ts` (every state and keyboard journey in the plan's row for this file)
+- [X] T080 Write `frontend/e2e/accessibility.spec.ts` (every state and keyboard journey in the plan's row for this file)
+  - Done 2026-10-28: axe in light and dark mode on every listed state and both keyboard journeys. The demo-people answers (none, demo off, unreachable) are given in the browser with `page.route`. No Coming-soon page is left to check: every section is built (`COMING_SOON_SECTIONS` is empty).
 - [X] T081 [P] Write the documentation: `README.md` (what MAPP is, prerequisites, run, test, URLs, demo password, developer pages), `backend/README.md` (packages, commands, how to add a business package: model, repository, store_json, service, handler, kind, routes, contract), `frontend/README.md` (structure, commands, how to add a page and use shared components, regenerating API types)
 - [X] T082 Run the backend checks from `backend/`: `gofmt -l .` prints nothing, `go vet ./...` and `go test ./...` pass
 - [X] T083 Run the web-app checks from `frontend/`: `npm run check`, `npm run build` and `npm run test:e2e` pass (twice in a row for the end-to-end tests; for now only the smoke test, decision D-040)

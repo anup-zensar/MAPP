@@ -110,7 +110,7 @@ describe('AccountMenu', () => {
 
     const messages = await findMessages();
     expect(messages).toHaveTextContent(
-      "MAPP can't reach its server right now. Check that it is running and try again.",
+      "SP&A One can't reach its server right now. Check that it is running and try again.",
     );
     expect(router.state.location.pathname).toBe('/plans');
 

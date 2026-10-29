@@ -42,7 +42,7 @@ func TestSwbsRuns_Contract_030_FR011(t *testing.T) {
 
 	want := []swbs.Code{{LineItemID: "L-1003", LineItemName: "Venue hire", CompanyCode: "DE03", SwbsCode: "SIM-DE03-0001"}}
 	if page.Total != 1 || page.ReadyToSend != 1 || len(page.Items) != 1 || page.Items[0].ID != "SWR-1001" ||
-		page.Items[0].Source != swbs.SourceDemo || page.Items[0].RanBy.Name != "MAPP" {
+		page.Items[0].Source != swbs.SourceDemo || page.Items[0].RanBy.Name != "SP&A One" {
 		t.Errorf("page = %+v", page)
 	}
 	if diff := cmp.Diff(want, page.Items[0].Codes); diff != "" {

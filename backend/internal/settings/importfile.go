@@ -25,7 +25,7 @@ type importRow struct {
 
 // The files readRows refuses.
 var (
-	errOldExcel   = errors.New("settings: an .xls file, which MAPP does not read")
+	errOldExcel   = errors.New("settings: an .xls file, which SP&A One does not read")
 	errUnreadable = errors.New("settings: the file can't be read as .csv or .xlsx")
 )
 

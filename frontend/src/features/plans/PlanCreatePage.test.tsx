@@ -28,7 +28,7 @@ describe('PlanCreatePage (US1)', () => {
     renderPage();
 
     expect(screen.getByRole('heading', { level: 1, name: 'New plan' })).toBeInTheDocument();
-    expect(document.title).toBe('New plan · MAPP');
+    expect(document.title).toBe('New plan · SP&A One');
     expect(await screen.findByRole('button', { name: 'Remove 2026' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: /Goal stage/ })).toHaveValue('inq');
   });
@@ -68,6 +68,7 @@ describe('PlanCreatePage (US1)', () => {
         bcpir: false,
         goalStage: 'inq',
         goalAmount: null,
+        overspend: 'warn',
         attributes: {},
       },
     ]);
@@ -114,6 +115,6 @@ describe('PlanCreatePage (US1)', () => {
     renderPage([reply('GET /api/v1/plan-defaults', { status: 500 })]);
 
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent("MAPP can't reach its server");
+    expect(screen.getByRole('alert')).toHaveTextContent("SP&A One can't reach its server");
   });
 });
