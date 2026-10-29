@@ -488,10 +488,10 @@ None beyond Phase 1: every story below depends only on T001 – T003.
 
 ## Phase 20: Polish & cross-cutting
 
-- [ ] T200 Docs (D) — Domain model §4.4 note on the grid's conversion (FR-022) and §4.3 approval rule (FR-019 –
+- [x] T200 Docs (D) — Domain model §4.4 note on the grid's conversion (FR-022) and §4.3 approval rule (FR-019 –
   FR-021); design system: approve warning pattern, `acknowledgeOnly` dialog, rounding note; glossary "Approval over
   planned cost"
-- [ ] T201 Docs (D) — `docs/sdd/feature-map.md` row 038 → "Built" when every task is done; release note in
+- [x] T201 Docs (D) — `docs/sdd/feature-map.md` row 038 → "Built" when every task is done; release note in
   quickstart (built-in planners lose "Link financial transactions", D-353)
 - [ ] T202 Gates — backend `golangci-lint fmt ./...`, `golangci-lint run ./...`, `sqlc generate && sqlc vet` (no diff),
   `go vet ./...`, `go test -race ./...` with `TEST_DATABASE_URL`, `govulncheck ./...`; frontend `pnpm run check`,

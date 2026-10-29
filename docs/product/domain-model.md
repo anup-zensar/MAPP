@@ -257,6 +257,13 @@ cost exceeds the budget).
   - Negative: shown in red, "Line items exceed the activity's planned cost by X". It warns but does not
     block saving; it **does** block submitting (decision D-016) and submitting a purchase request that draws
     on the activity's line items (decision D-349).
+  - **Approval over planned cost** (feature 038 FR-019 – FR-021, D-354): Settings › Overspend control says what
+    happens when an activity's line items exceed its planned cost while it, or a purchase request drawing on it, is
+    approved: **Warn the approver** (the default) or **Refuse approval**. The overage is the negative unassigned
+    balance in the plan currency, worked out when approving. With Warn, the approval section and the Approve dialog
+    show "Line items of activity '<name>' are <overage> above its planned cost" and the approval's log entry records
+    it. With Refuse, approving any level of an activity, purchase-request or change round is refused naming each
+    activity and its overage; Decline and Recall stay allowed.
 - When adding a line item, its planned cost is pre-filled with the current unassigned balance.
 
 ### 4.4 Spreading a line item over time
@@ -275,6 +282,10 @@ choice) using one of four methods (default from the plan's *Default line-item sp
   each month is that month's amount converted at the current rate (§4.3), rounded to the cent, with any
   rounding difference placed in the last month so the months always add up to the line item's USD
   planned cost.
+- The **spread grid** (feature 038 FR-022) converts each row total once into the display currency and gives the
+  rounding difference to the row's last month with an amount, so in any display currency each row adds up to its total, each
+  column to its column total and the column totals to the grand total. The grand total may differ by a cent from
+  the separately converted "Assigned" figure (D-061).
 - For an **ongoing** activity (no end date), Evenly and Last behave like First (only Custom spreads).
 - While an activity has **no dates yet** (dates are only needed to submit), its E/F/L line items cannot
   be spread: they show "Spread once the activity has dates" and their amounts appear in a **No dates**

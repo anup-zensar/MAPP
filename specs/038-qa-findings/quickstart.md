@@ -55,5 +55,11 @@ fresh environment and record the result per finding ID in tasks.md.
 
 ## Release note
 
-Built-in Global planner and Planner roles no longer hold "Link financial transactions" (D-353): linking is done by
-the people who import GSAP extracts, who are the only ones who see transactions that are not linked.
+- **Roles** (migration 00027): built-in Global planner and Planner roles no longer hold "Link financial
+  transactions" (D-353): linking is done by the people who import GSAP extracts, who are the only ones who see
+  transactions that are not linked. A custom role holding it without "Import GSAP extracts" is refused on save.
+- **Sign-in limit** (D-355): repeated failed sign-ins are refused for 15 minutes per e-mail and per client. Behind a
+  proxy, set `TRUSTED_PROXIES` to its addresses (IPs or CIDR ranges), otherwise every person counts as the proxy's
+  client; `compose.yaml` sets `172.16.0.0/12`.
+- **Approval over planned cost** (D-354, migration 00026): Settings › Overspend control gains "Warn the approver"
+  (default, as before plus a warning) or "Refuse approval" for activities whose line items exceed their planned cost.

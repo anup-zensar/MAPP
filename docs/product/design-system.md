@@ -581,6 +581,9 @@ next to the written name, it has no contrast requirement.
 - **An amount in another currency than the reader's** (feature 016) shows as an `AmountPair`: the amount in
   its own currency in full, then a muted "≈ 6,645.57 USD" in the display currency with a `RateTip` ⓘ ("1 USD =
   0.79 GBP · rate of 19 Oct 2026 · GSAP import"); one amount only when both currencies are the same.
+- **Grids add up in every display currency** (feature 038 FR-022): a row total is converted once and its
+  months share it, the last month with an amount taking the rounding difference; column and grand totals are
+  sums of the converted cells. A separately converted summary figure may differ by a cent (D-061).
 
 ### 4.5 Dates and times
 
@@ -771,6 +774,8 @@ changes?" before typed values are lost. Save is never disabled.
 - Destructive questions: confirm is `danger` and names the action ("Delete campaign"); **Cancel has the
   focus**. Other questions: confirm is `primary`. `ClearValuesDialog`: "Keep editing" (focused) and "Clear
   and save" (primary).
+- `ConfirmDialog acknowledgeOnly` (feature 038 FR-044): a dialog that only informs ("Can't delete 'Q4'") has
+  one **Close** button (secondary, focused) and no confirm button; it never asks a question it cannot act on.
 - `FormDialog`: the first field has the focus; Enter submits; a second submit while busy is ignored.
 - `role="alertdialog"` for questions, `dialog` for forms; the focus returns where it was.
 
@@ -943,6 +948,12 @@ focused; F8 moves the focus to it; announced at once.
 14 `--ink`, optional action link. Families: info, warning (waiting), success, danger. `role="status"`, or
 `role="alert"` for failures. Used for: waiting and declined notices on record pages (with the decline
 reason), failed saves, "view only" notices, "Shown because the plan's business unit includes Lubricants".
+
+**Approve warning** (feature 038, D-354) — when an activity's line items exceed its planned cost, the approval
+section of the activity or purchase request and the Approve dialog show a warning alert above the decision, one
+line per activity: "Line items of activity 'Launch film' are 25,000.00 USD above its planned cost" (Warn the
+approver). With Refuse approval, **Approve** stays visible but disabled, described by that reason; Decline and
+Recall stay enabled.
 
 **`EmptyState`** — centred in its card, padding 48 24; a 48 px outline icon in `--ink-2`; title Jost 600
 20/28; one sentence 14 `--ink-2` (max 480 wide; Text Strong in a not-found or no-access message, which
@@ -1251,3 +1262,4 @@ or one component (see the recommendations report for the questions to Shell).
 | 2.1 | 26 Oct 2026 | Feature 020, Shell palette (constitution X): Primary Yellow `#FFC600` (hover `#FFCB14`, press `#EBB600`), Secondary Red `#DD1D21` and every theme colour exactly, light and dark; `--raised`, link states and Disabled tokens added; `--brand-yellow-tint` and `--danger-bg-hover` retired, red and yellow never tinted or shaded; where Text Subtle, links and red text may sit, with Text Strong elsewhere; Text Strong focus ring; problem chips a red fill; the navy and dark-blue roles moved to palette tokens (§3.1, §3.10, §3.11, §4.1, §4.3, §5, §9, §12). |
 | 2.2 | 28 Oct 2026 | Features 032 and 033: the purchase-request screens, their words and confirmations (§2.6); level tags PURCHASE REQUEST and PR LINE in the line items' grey (§4.2). |
 | 2.3 | 28 Oct 2026 | Feature 035, constitution 4.5.0: the product is shown as SP&A One; the name is the logo with "&" Shell dark blue and "One" Shell yellow (`#AD8700` on light surfaces); `LogoTile` with a yellow "1" below 960 px and as the favicon; tokens `--brand-name-amp`, `--brand-name-one`, `--brand-tile`, `--on-brand-tile`; `--brand-mark` and the star retired (§1, §2, §3.1, §3.10, §5.7, §6, §12). |
+| 2.4 | 29 Oct 2026 | Feature 038: grids add up in every display currency (§4.4); `ConfirmDialog acknowledgeOnly` (§5.3); the approve warning and disabled Approve for approval over planned cost (§5.6). |
