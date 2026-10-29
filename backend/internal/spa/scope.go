@@ -18,7 +18,8 @@ type activity struct {
 	lineItems    []*lineItem
 	planned      money.Amount
 	months       [12]money.Amount
-	notScheduled money.Amount
+	notScheduled money.Amount // planned cost not placed in a month, never below 0 (038 FR-023)
+	above        money.Amount // months above the planned cost: line items exceeding it
 	outside      money.Amount
 	spend        Spend
 	actual       [12]money.Amount
@@ -79,7 +80,8 @@ func (t tree) activitiesUnder(campaigns []*Record) []*activity {
 }
 
 // placePlanned spreads the activity's planned cost over the months of year: each line item by its spread, a
-// positive unassigned balance evenly over the activity's months (All work's Budget & cost rule).
+// positive unassigned balance evenly over the activity's months (All work's Budget & cost rule); what stays
+// unplaced is not scheduled, what the months hold above the planned cost is apart (038 FR-023).
 func (a *activity) placePlanned(year int) {
 	typed := amountOf(a.rec.PlannedCost)
 	var onLineItems money.Amount
@@ -98,7 +100,11 @@ func (a *activity) placePlanned(year int) {
 		}
 	}
 	a.planned = typed.Sub(a.outside)
-	a.notScheduled = a.planned.Sub(money.Sum(a.months[:]...))
+	if left := a.planned.Sub(money.Sum(a.months[:]...)); left.Sign() > 0 {
+		a.notScheduled = left
+	} else {
+		a.above = left.Neg()
+	}
 }
 
 // place adds amount to its month when the month is in year and reports true; otherwise it counts as outside.
