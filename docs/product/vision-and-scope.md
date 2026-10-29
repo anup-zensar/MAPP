@@ -29,8 +29,8 @@ It replaces Hive9's Plan module with the same business process and data, in a mo
 | **Finance advisor** | Look at planned cost, budget use and line-item finance coding. |
 
 Shell's 19 Hive9 roles (Marketer, Business Champion, Marketing Team Leader, Client Admin, Local Finance
-Manager, TA, …) are mapped to real permissions when role-based access arrives; in this phase every user
-can do everything.
+Manager, TA, …) map to MAPP's roles and permissions (feature 014): every action needs its permission in the
+plan's scope, and the screens hide or explain what a role does not allow.
 
 ## In scope now — the Plan module
 
@@ -48,16 +48,22 @@ can do everything.
 | All work views | Grid with roll-ups and filters, calendar, budget & cost by month, saved views, export |
 | History and safety | Activity log for every record; recycle bin with restore |
 | Financials (feature 015) | See GSAP's purchase orders, invoices, payments and accruals — read-only, from a simulated GSAP extract — as Committed, Invoiced, Paid and Accrued on every level, on the Financials page, in All work and on Home; import the extract; link a transaction GSAP could not match |
-| Bulk and import (later in phase) | Select many rows to change owner/status, copy or move; import activities from a template |
-| BCPIR & SP&A (to be clarified) | Shell's BCPIR and SP&A plan views |
+| Roles and access (feature 014) | Five default roles, team scopes, view-only vs edit enforced by the API; global budgets allocated to market plans |
+| Approval rules (feature 017) | Conditions, backup approvers, delegation, reminders and escalation, monitoring |
+| Bulk and import (feature 012) | Select many rows in All work to change owner or a field, submit, copy, move or delete with Undo; export a plan to Excel and import it back |
+| SP&A and BCPIR (feature 013) | The SP&A view of a plan or campaign and the BCPIR marker, as Shell's spec 006 defines them |
+| Purchase requests (features 030–034) | Raise, approve and route purchase requests from line items, with SWBS codes, GSAP PR numbers and purchase orders from a simulated GSAP |
+| Dashboards and export (feature 036) | Executive and regional planning dashboards; export of plans and dashboards to PowerPoint and PDF |
+| Overspend control (feature 037) | Each budget warns or refuses when planned cost goes over it; an organisation default |
 
 ## Out of scope now
 
-- Finance module: finance budgets (beyond a simple list of budget items), purchase requests, accrual
-  requests and calculation. GSAP transactions are only read (feature 015).
-- Measure reporting dashboards.
-- GSAP integration (SWBS requests are only recorded), e-mail, Microsoft Entra ID sign-in, role-based
-  access, Azure hosting, PostgreSQL (all planned).
+- Finance module: finance budgets (beyond a simple list of budget items), accrual requests and
+  calculation, invoice approval, supporting documents on purchase requests. GSAP transactions are only read
+  (feature 015).
+- Measure's performance reporting: revenue, attribution, funnel and ROI from external performance data.
+- Live GSAP integration (a simulated GSAP stands in), e-mail and sharing to Outlook or Teams, Microsoft
+  Entra ID sign-in, Azure hosting (all planned).
 - An AI assistant, optimizer, attribution, Google Analytics, Kanban board, Trello/Jira and Google
   Calendar integrations (possible later, per Shell's PRISM guidance: foundations before AI).
 

@@ -225,7 +225,9 @@ links.
    35,652.17 of 460,000.00 planned (8 %), Invoiced 33,152.17, Paid 30,652.17 and Accrued (Sep 2026)
    2,500.00.
 2. **Given** the same card, **Then** "1 activity committed above planned cost" opens All work filtered to
-   it. "1 transaction not linked to a line item" opens Financials on the Not linked tab.
+   it. Transactions not linked to a line item belong to no plan, so since feature 014 only people who may
+   import financial data see them: Alex Morgan's card shows "1 transaction not linked to a line item",
+   which opens Financials on the Not linked tab; Priya Raman's shows none.
 3. **Given** a person whose teams have no plans with transactions, **Then** the card says "No purchase
    orders or invoices for your plans yet" with **Open Financials**.
 
