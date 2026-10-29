@@ -31,7 +31,7 @@ export function cellText(
     case 'text':
       return `${cell.text ?? NOTHING}${cell.inactive ? ' (inactive)' : ''}`;
     case 'status':
-      return `${cell.text ? statusWord(cell.text, cell.tone) : NOTHING}${cell.inactive ? ' (inactive)' : ''}`;
+      return `${cell.text ? statusWord(cell.text) : NOTHING}${cell.inactive ? ' (inactive)' : ''}`;
     default:
       return NOTHING;
   }

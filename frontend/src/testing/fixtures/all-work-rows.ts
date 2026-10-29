@@ -81,7 +81,7 @@ const STATUS: Record<string, AllWorkStatus> = {
   draft: { value: 'draft', label: 'Draft', tone: 'neutral' },
   inProgress: {
     value: 'inProgress',
-    label: 'In progress',
+    label: 'Partly approved',
     tone: 'review',
     detail: '1 of 3 activities approved',
   },

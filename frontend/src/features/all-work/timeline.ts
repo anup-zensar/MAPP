@@ -17,7 +17,7 @@ export function legendOf(rows: AllWorkRow[]): AllWorkStatus[] {
   const seen = new Map<string, AllWorkStatus>();
   for (const row of rows) {
     if (row.status && LEVEL_WORDS[row.level]) {
-      const label = statusWord(row.status.label, row.status.tone);
+      const label = statusWord(row.status.label);
       if (!seen.has(label)) {
         seen.set(label, { ...row.status, label });
       }

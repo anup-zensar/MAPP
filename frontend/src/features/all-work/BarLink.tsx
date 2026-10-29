@@ -30,7 +30,7 @@ interface BarLinkProps {
 export function BarLink({ row, bar, year, yearTo, trackPx, onOpen }: BarLinkProps) {
   const { date, dateRange, money } = useFormatters();
   const tone = row.status?.tone ?? 'neutral';
-  const word = row.status ? statusWord(row.status.label, row.status.tone) : '';
+  const word = row.status ? statusWord(row.status.label) : '';
   const from = bar.continuesFrom ? `Continues from ${year - 1}` : '';
   const into = bar.continuesInto ? `Continues into ${yearTo + 1}` : '';
   const ongoing = bar.ongoing ? 'Ongoing' : '';

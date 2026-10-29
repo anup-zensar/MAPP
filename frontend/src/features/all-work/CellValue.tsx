@@ -55,7 +55,7 @@ function Value({ cell, search }: { cell: AllWorkCell; search: string }) {
     case 'status':
       return (
         <StatusChip tone={cell.tone ?? 'neutral'}>
-          {statusWord(cell.text ?? '', cell.tone)}
+          {statusWord(cell.text ?? '')}
           {cell.inactive && ' (inactive)'}
         </StatusChip>
       );

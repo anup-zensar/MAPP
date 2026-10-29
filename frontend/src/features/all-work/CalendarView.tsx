@@ -140,9 +140,7 @@ export function CalendarView({
                   {row.name}
                 </RecordLink>
                 {row.status && (
-                  <StatusChip tone={row.status.tone}>
-                    {statusWord(row.status.label, row.status.tone)}
-                  </StatusChip>
+                  <StatusChip tone={row.status.tone}>{statusWord(row.status.label)}</StatusChip>
                 )}
               </li>
             ))}
