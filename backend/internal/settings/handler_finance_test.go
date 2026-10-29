@@ -29,7 +29,7 @@ func TestFinanceAPI_ListYear_FR015(t *testing.T) {
 	gone := alex.Do(t, http.MethodGet, "/api/v1/finance-budget-items/FBI-9999", nil)
 
 	assertBudgets2026(t, current)
-	if next.Year != 2027 || next.Total != 0 || next.Items == nil {
+	if next.Year != 2027 || next.Total != 1 || len(next.Items) != 1 || next.Items[0].Name != "2027 Lubricants Budget" { // 038 L-30 seed
 		t.Errorf("2027 = %+v", next)
 	}
 	if item.BudgetName != "2026 Lubricants Budget" || item.Year != 2026 || len(item.Locks) != 1 || item.Locks[0].Field != "year" {
@@ -73,10 +73,10 @@ const (
 // retailBody is the new item of US5-3: "Europe – Retail" in "2026 Lubricants Budget", code "LUB-EU-RET".
 var retailBody = map[string]any{"year": 2026, "budgetName": "2026 Lubricants Budget", "name": "Europe – Retail", "code": "LUB-EU-RET"}
 
-// retailAnswer is the answer for the active item retailBody (FBI-1007) in the budget budget (id and name) at
+// retailAnswer is the answer for the active item retailBody (FBI-1009) in the budget budget (id and name) at
 // version, with its code, created by Alex.
 func retailAnswer(budgetID, budgetName, code string, version int) string {
-	return `{"id":"FBI-1007","budgetId":"` + budgetID + `","budgetName":"` + budgetName + `","year":2026,"name":"Europe – Retail","code":"` + code +
+	return `{"id":"FBI-1009","budgetId":"` + budgetID + `","budgetName":"` + budgetName + `","year":2026,"name":"Europe – Retail","code":"` + code +
 		`","active":true,"usage":` + unusedBody + `,"locks":` + yearLockBody + `,"version":` + itoa(version) + `,` + alexAtStart + `}`
 }
 
@@ -88,15 +88,15 @@ func TestFinanceAPI_CreateGetUpdate_FR014(t *testing.T) {
 	alex := server.SignIn(t, alexsEmail)
 
 	created := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items", retailBody)
-	got := alex.Do(t, http.MethodGet, "/api/v1/finance-budget-items/FBI-1007", nil)
-	moved := alex.Do(t, http.MethodPatch, "/api/v1/finance-budget-items/FBI-1007", map[string]any{"budgetName": "2026 Retail Budget", "code": "", "version": 1})
+	got := alex.Do(t, http.MethodGet, "/api/v1/finance-budget-items/FBI-1009", nil)
+	moved := alex.Do(t, http.MethodPatch, "/api/v1/finance-budget-items/FBI-1009", map[string]any{"budgetName": "2026 Retail Budget", "code": "", "version": 1})
 	invalid := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items", map[string]any{"year": 2040, "budgetName": " ", "name": ""})
-	stale := alex.Do(t, http.MethodPatch, "/api/v1/finance-budget-items/FBI-1007", map[string]any{"name": "X", "version": 1})
+	stale := alex.Do(t, http.MethodPatch, "/api/v1/finance-budget-items/FBI-1009", map[string]any{"name": "X", "version": 1})
 	gone := alex.Do(t, http.MethodPatch, "/api/v1/finance-budget-items/FBI-9999", map[string]any{"name": "X", "version": 1})
 
 	assertAnswer(t, created, http.StatusCreated, retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 1))
 	assertAnswer(t, got, http.StatusOK, retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 1))
-	assertAnswer(t, moved, http.StatusOK, retailAnswer("FB-1003", "2026 Retail Budget", "", 2))
+	assertAnswer(t, moved, http.StatusOK, retailAnswer("FB-1004", "2026 Retail Budget", "", 2))
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"year","message":"Choose a year from 2025 to 2031."},`+
 		`{"field":"budgetName","message":"Enter a budget name."},{"field":"name","message":"Enter a name."}`))
 	if stale.Status != http.StatusConflict {
@@ -146,9 +146,9 @@ func TestFinanceAPI_Status_FR004(t *testing.T) {
 	alex := server.SignIn(t, alexsEmail)
 	mustCreate(t, alex, "/api/v1/finance-budget-items", retailBody)
 
-	inactive := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items/FBI-1007/status", map[string]any{"active": false, "version": 1})
-	stale := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items/FBI-1007/status", map[string]any{"active": true, "version": 1})
-	active := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items/FBI-1007/status", map[string]any{"active": true, "version": 2})
+	inactive := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items/FBI-1009/status", map[string]any{"active": false, "version": 1})
+	stale := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items/FBI-1009/status", map[string]any{"active": true, "version": 1})
+	active := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items/FBI-1009/status", map[string]any{"active": true, "version": 2})
 	gone := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items/FBI-9999/status", map[string]any{"active": true, "version": 1})
 
 	assertAnswer(t, inactive, http.StatusOK, replace(retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 2), `"active":true`, `"active":false`))
@@ -166,8 +166,8 @@ func TestFinanceAPI_Delete_FR004(t *testing.T) {
 	alex := server.SignIn(t, alexsEmail)
 	mustCreate(t, alex, "/api/v1/finance-budget-items", retailBody)
 
-	deleted := alex.Do(t, http.MethodDelete, "/api/v1/finance-budget-items/FBI-1007", nil)
-	afterDelete := alex.Do(t, http.MethodGet, "/api/v1/finance-budget-items/FBI-1007", nil)
+	deleted := alex.Do(t, http.MethodDelete, "/api/v1/finance-budget-items/FBI-1009", nil)
+	afterDelete := alex.Do(t, http.MethodGet, "/api/v1/finance-budget-items/FBI-1009", nil)
 	undone := alex.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-1001/undo", nil)
 	inUse := alex.Do(t, http.MethodDelete, "/api/v1/finance-budget-items/FBI-1001", nil)
 	gone := alex.Do(t, http.MethodDelete, "/api/v1/finance-budget-items/FBI-9999", nil)
@@ -178,12 +178,12 @@ func TestFinanceAPI_Delete_FR004(t *testing.T) {
 
 	budget := `{"type":"financeBudget","id":"FB-1001","name":"2026 Lubricants Budget"}`
 	assertAnswer(t, deleted, http.StatusOK, `{"recycleBinEntry":{"id":"BIN-1001","recordType":"financeBudgetItem","recordTypeLabel":"finance budget item",`+
-		`"recordId":"FBI-1007","recordName":"Europe – Retail","path":[`+budget+`],"parent":`+budget+`,"deletedAt":"2026-03-12T09:00:00Z",`+
+		`"recordId":"FBI-1009","recordName":"Europe – Retail","path":[`+budget+`],"parent":`+budget+`,"deletedAt":"2026-03-12T09:00:00Z",`+
 		`"deletedBy":{"id":"U-1001","name":"Alex Morgan"},"contents":[]}}`)
 	assertAnswer(t, afterDelete, http.StatusNotFound, itemGoneBody)
-	assertAnswer(t, undone, http.StatusOK, `{"recordType":"financeBudgetItem","recordTypeLabel":"finance budget item","recordId":"FBI-1007",`+
+	assertAnswer(t, undone, http.StatusOK, `{"recordType":"financeBudgetItem","recordTypeLabel":"finance budget item","recordId":"FBI-1009",`+
 		`"recordName":"Europe – Retail","details":""}`)
-	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/v1/finance-budget-items/FBI-1007", nil), http.StatusOK,
+	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/v1/finance-budget-items/FBI-1009", nil), http.StatusOK,
 		retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 1))
 	if inUse.Status != http.StatusConflict || refused.Error.Code != "in_use" ||
 		!strings.HasPrefix(refused.Error.Message, "'Europe – Digital' is in use (linked to ") {
