@@ -7,7 +7,6 @@ import { overPlannedCostText } from './decision-messages';
 import styles from './ApprovalSection.module.css';
 
 type ActivityOverage = components['schemas']['ActivityOverage'];
-type Availability = components['schemas']['ActionAvailability'];
 
 /**
  * With Warn (038 FR-019, D-354): each activity of the round whose line items exceed its planned cost,
@@ -24,15 +23,6 @@ export function OverPlannedCostAlert({ overages }: { overages: readonly Activity
       ))}
     </ApprovalAlert>
   );
-}
-
-/**
- * Why a person who may decide cannot approve now (038 FR-020: Refuse while line items exceed the
- * planned cost); "" when Approve is available or the person may not decide at all.
- */
-export function approveRefusal(actions: { approve: Availability; decline: Availability }): string {
-  const { approve, decline } = actions;
-  return !approve.available && approve.reason !== '' && decline.available ? approve.reason : '';
 }
 
 export interface RefusedApproveProps {

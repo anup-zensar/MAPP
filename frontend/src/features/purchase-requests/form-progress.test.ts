@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { filledText } from '@/ui/FormRail/form-progress';
 import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
 import { attribute } from '@/testing/fixtures/attribute-forms';
+import { purchaseRequest } from '@/testing/fixtures/purchase-requests';
 import { fromPurchaseRequest } from './form-state';
 import { railSections } from './form-progress';
-import { purchaseRequest } from '@/testing/fixtures/purchase-requests';
 
 function formOf(
   level: AttributeForm['level'],

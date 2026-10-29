@@ -3,7 +3,8 @@ import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import type { ActivityApproval } from './api';
 import { DecisionButton } from './DecisionButton';
 import { DecisionDialog } from './DecisionDialog';
-import { approveRefusal, RefusedApprove } from './OverPlannedCost';
+import { approveRefusal } from './decision-role';
+import { RefusedApprove } from './OverPlannedCost';
 
 export interface DecisionButtonsProps {
   approval: ActivityApproval;
