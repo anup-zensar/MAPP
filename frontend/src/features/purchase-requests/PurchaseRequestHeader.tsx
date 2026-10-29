@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { asApiError } from '@/api/errors';
 import { showHistory } from '@/features/activity-log';
+import { useAccess } from '@/session/access';
 import { allows, gateItem } from '@/session/gate-action';
 import { Button, LinkButton } from '@/ui/Button/Button';
 import { CompletenessChip } from '@/ui/CompletenessChip/CompletenessChip';
@@ -31,6 +32,7 @@ export function PurchaseRequestHeader({
   purchaseRequest: PurchaseRequest;
 }) {
   const navigate = useNavigate();
+  const { has } = useAccess();
   const { show } = useToast();
   const [open, setOpen] = useState<OpenDialog>(null);
   const href = purchaseRequestHref(pr.id);
@@ -57,7 +59,7 @@ export function PurchaseRequestHeader({
   return (
     <>
       <PageHeader
-        breadcrumb={purchaseRequestBreadcrumb(pr)}
+        breadcrumb={purchaseRequestBreadcrumb(pr, has('purchaseRequests.list'))}
         title={pr.name}
         meta={
           <>

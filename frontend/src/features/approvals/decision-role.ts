@@ -2,6 +2,8 @@ import { useActivityApproval } from './api';
 import type { ActivityApproval } from './api';
 import type { ApprovalActivity } from './approval-types';
 
+type Availability = ActivityApproval['actions']['approve'];
+
 /**
  * How the signed-in person meets the decision on an activity now:
  * - `decide`: they may approve or decline it and did not own or submit it — Approve and Decline
@@ -30,4 +32,13 @@ export function useDecidesNow(activity: Pick<ApprovalActivity, 'id' | 'status'>)
   const submitted = activity.status === 'submitted';
   const approval = useActivityApproval(activity.id, submitted);
   return submitted && approval.data !== undefined && decisionRole(approval.data) === 'decide';
+}
+
+/**
+ * Why a person who may decide cannot approve now (038 FR-020: Refuse while line items exceed the
+ * planned cost); "" when Approve is available or the person may not decide at all.
+ */
+export function approveRefusal(actions: { approve: Availability; decline: Availability }): string {
+  const { approve, decline } = actions;
+  return !approve.available && approve.reason !== '' && decline.available ? approve.reason : '';
 }

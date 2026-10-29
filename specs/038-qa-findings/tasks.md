@@ -433,7 +433,7 @@ None beyond Phase 1: every story below depends only on T001 – T003.
 - [ ] T170 [P] [US15] B3 — Failing handler test in `campaign` (create and update with `startDate` "2026-02-30" →
   `validation_failed` "Enter a valid date." on `startDate`), then fix `campaign/model.go` (string dates) and
   `campaign/validate.go` — FR-054 (L-5 a)
-- [ ] T171 [P] [US15] B3 — Failing unit test `platform/record` `TestCheckSingleLine_038_FR055_L11` (tab, LF, CR,
+- [x] T171 [P] [US15] B3 — Failing unit test `platform/record` `TestCheckSingleLine_038_FR055_L11` (tab, LF, CR,
   U+202A–U+202E, U+2066–U+2069, U+200E/F refused; ordinary text and emoji accepted), then add
   `record.CheckSingleLine`
 - [ ] T172 [US15] B3 — Failing name tests per package, then call `CheckSingleLine` from `plan/validate.go`,

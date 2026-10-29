@@ -10,6 +10,13 @@ export const REMOVE_LINE = 'Remove line';
 export const SAVE = 'Save';
 export const SAVE_AND_RESUBMIT = 'Save and re-submit';
 export const SUBMIT_CHANGES = 'Submit changes';
+export const CHANGE_ROUND_STARTS =
+  'A change approval round starts. The purchase request stays approved as it was until the change is approved.';
+export const STAYS_RESERVED = 'The approved amounts stay reserved until the change is approved.';
+
+export function submitChangesTitle(name: string): string {
+  return `Submit changes to '${name}'?`;
+}
 export const SAVING = 'Saving…';
 export const CANCEL = 'Cancel';
 export const RELOAD = 'Reload';

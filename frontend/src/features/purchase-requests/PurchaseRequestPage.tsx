@@ -12,11 +12,15 @@ import { NoAccess } from '@/ui/NoAccess/NoAccess';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { usePageTitle } from '@/ui/usePageTitle';
+import { ViewOnlyNote } from '@/ui/ViewOnlyNote/ViewOnlyNote';
+import { ViewOnlyArea } from '@/ui/ViewOnlyNote/view-only-area';
 import { usePurchaseRequest } from './api';
 import type { PurchaseRequest } from './api';
 import { ApprovedVersionCard } from './ApprovedVersionCard';
 import { GsapFields } from './GsapFields';
+import { breadcrumbRoot } from './page-links';
 import { GO_TO_PLANS, GO_TO_PURCHASE_REQUESTS } from './page-text';
+import { changesNothingIn } from './purchase-request-access';
 import { AWAITING_NOTICE, PURCHASE_REQUEST } from './purchase-request-text';
 import { PurchaseRequestApprovalSection } from './PurchaseRequestApprovalSection';
 import { PurchaseRequestDetailsCard } from './PurchaseRequestDetailsCard';
@@ -28,10 +32,13 @@ import styles from './PurchaseRequestPage.module.css';
 /**
  * A purchase request's page (032 FR-008, FR-009, FR-052; 033 FR-001): header with its status,
  * completeness and actions, the server's notice, details, GSAP data, lines, the approved version
- * while a change waits, approval, routing history and history.
+ * while a change waits, approval, routing history and history. A person who may change nothing on it
+ * sees one View only note instead of disabled actions (038 FR-025).
  */
 export function PurchaseRequestPage() {
   const { purchaseRequestId = '' } = useParams();
+  const { has } = useAccess();
+  const root = breadcrumbRoot(has('purchaseRequests.list'));
   const purchaseRequest = usePurchaseRequest(purchaseRequestId);
   usePageTitle(purchaseRequest.data?.name ?? PURCHASE_REQUEST);
 
@@ -43,7 +50,7 @@ export function PurchaseRequestPage() {
   if (!purchaseRequest.data) {
     return (
       <>
-        <PageHeader breadcrumb={[{ label: 'Plans', to: '/plans' }]} title={PURCHASE_REQUEST} />
+        <PageHeader breadcrumb={[root, { label: PURCHASE_REQUEST }]} title={PURCHASE_REQUEST} />
         <Card>
           <Skeleton lines={6} />
         </Card>
@@ -54,10 +61,12 @@ export function PurchaseRequestPage() {
 }
 
 function Loaded({ purchaseRequest: pr }: { purchaseRequest: PurchaseRequest }) {
+  const viewOnly = changesNothingIn(pr);
   return (
-    <>
+    <ViewOnlyArea active={viewOnly}>
       <PurchaseRequestHeader purchaseRequest={pr} />
       <div className={styles.page}>
+        {viewOnly && <ViewOnlyNote area="record" />}
         {pr.notice && (
           <ApprovalAlert tone={pr.notice === AWAITING_NOTICE ? 'warning' : 'info'}>
             <p>{pr.notice}</p>
@@ -80,7 +89,7 @@ function Loaded({ purchaseRequest: pr }: { purchaseRequest: PurchaseRequest }) {
           level="purchaseRequest"
         />
       </div>
-    </>
+    </ViewOnlyArea>
   );
 }
 
@@ -90,11 +99,14 @@ function LoadFailed({ error, onRetry }: { error: unknown; onRetry: () => void })
   if (error instanceof ApiError && error.kind === 'forbidden') {
     return <NoAccess message={error.message} />;
   }
+  const list = has('purchaseRequests.list');
   const header = (
-    <PageHeader breadcrumb={[{ label: 'Plans', to: '/plans' }]} title={PURCHASE_REQUEST} />
+    <PageHeader
+      breadcrumb={[breadcrumbRoot(list), { label: PURCHASE_REQUEST }]}
+      title={PURCHASE_REQUEST}
+    />
   );
   if (error instanceof ApiError && error.kind === 'notFound') {
-    const list = has('purchaseRequests.list');
     return (
       <>
         {header}

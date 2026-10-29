@@ -31,6 +31,7 @@ import { railSections } from './form-progress';
 import { HeaderFields } from './HeaderFields';
 import type { LineItemPickerProps } from './LineItemPicker';
 import { LineRowsEditor } from './LineRowsEditor';
+import { SubmitChangesDialog } from './SubmitChangesDialog';
 import { usePurchaseRequestSave } from './usePurchaseRequestSave';
 import type { SaveFailure } from './usePurchaseRequestSave';
 import styles from './PurchaseRequestForm.module.css';
@@ -62,7 +63,10 @@ export interface PurchaseRequestFormProps {
   onCancel: () => void;
 }
 
-/** New and edit purchase request (032 FR-003, FR-005 – FR-016, FR-053, FR-054): one form. */
+/**
+ * New and edit purchase request (032 FR-003, FR-005 – FR-016, FR-053, FR-054): one form. Submit
+ * changes asks first (038 FR-028).
+ */
 export function PurchaseRequestForm(props: PurchaseRequestFormProps) {
   const { stored, options } = props;
   const [start] = useState(props.initial);
@@ -72,6 +76,7 @@ export function PurchaseRequestForm(props: PurchaseRequestFormProps) {
     ...CHECK_ON_SAVE,
   });
   const [problems, setProblems] = useState<FieldProblem[]>([]);
+  const [change, setChange] = useState<PurchaseRequestInput | null>(null);
   const values = useWatch({ control: form.control, compute: (all) => all });
   const mode = saveModeOf(stored, onlyAddsLines(start, values), options.linesOnApproved);
   const save = usePurchaseRequestSave({ onSave: props.onSave, setProblems });
@@ -98,7 +103,12 @@ export function PurchaseRequestForm(props: PurchaseRequestFormProps) {
   const submit = form.handleSubmit(
     (valid) => {
       setProblems([]);
-      void save.save(toInput(valid, mode.then));
+      const input = toInput(valid, mode.then);
+      if (mode.then === 'submitChanges') {
+        setChange(input);
+      } else {
+        void save.save(input);
+      }
     },
     (errors) => setProblems(clientProblems(errors)),
   );
@@ -107,7 +117,9 @@ export function PurchaseRequestForm(props: PurchaseRequestFormProps) {
     <div className={styles.page}>
       <PageHeader breadcrumb={props.breadcrumb} title={props.title} />
       <form noValidate aria-busy={save.saving} onSubmit={(event) => void submit(event)}>
-        <FormLayout sections={railSections(values)}>
+        <FormLayout
+          sections={railSections(values, options.attributeForm, options.lineAttributeForm)}
+        >
           {stored?.notice && (
             <ApprovalAlert tone="warning">
               <p>{stored.notice}</p>
@@ -142,6 +154,20 @@ export function PurchaseRequestForm(props: PurchaseRequestFormProps) {
           <Button onClick={props.onCancel}>{CANCEL}</Button>
         </FormFooter>
       </form>
+      {stored && (
+        <SubmitChangesDialog
+          purchaseRequestId={stored.id}
+          name={stored.name}
+          open={change !== null}
+          busy={save.saving}
+          onOpenChange={(open) => !open && setChange(null)}
+          onConfirm={() => {
+            if (change) {
+              void save.save(change).finally(() => setChange(null));
+            }
+          }}
+        />
+      )}
       {dialog}
     </div>
   );

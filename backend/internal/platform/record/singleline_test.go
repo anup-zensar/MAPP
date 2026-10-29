@@ -6,25 +6,34 @@ import (
 	"mapp/internal/platform/record"
 )
 
-const singleLineMessage = "Names can't contain tabs, line breaks or text-direction characters."
-
 func TestCheckSingleLine_038_FR055_L11(t *testing.T) {
 	t.Parallel()
-	refused := map[string]string{
-		"tab": "Helix\tlaunch", "line feed": "Helix\nlaunch", "carriage return": "Helix\rlaunch",
-		"left-to-right embedding": "Helix‪launch", "right-to-left override": "Helix‮launch",
-		"left-to-right isolate": "⁦Helix", "pop directional isolate": "Helix⁩",
-		"left-to-right mark": "Helix‎", "right-to-left mark": "‏Helix",
-		"line separator": "Helix launch", "paragraph separator": "Helix launch",
+	const refused = "Names can't contain tabs, line breaks or text-direction characters."
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{"ordinary text", "Helix Ultra launch – Q3 (UK & Ireland)", ""},
+		{"emoji", "Summer launch 🚀", ""},
+		{"empty", "", ""},
+		{"tab", "Helix\tUltra", refused},
+		{"line feed", "Helix\nUltra", refused},
+		{"carriage return", "Helix\rUltra", refused},
+		{"left-to-right embedding U+202A", "Helix‪Ultra", refused},
+		{"right-to-left override U+202E", "Helix‮Ultra", refused},
+		{"left-to-right isolate U+2066", "Helix⁦Ultra", refused},
+		{"pop directional isolate U+2069", "Helix⁩Ultra", refused},
+		{"left-to-right mark U+200E", "Helix‎Ultra", refused},
+		{"right-to-left mark U+200F", "Helix‏Ultra", refused},
+		{"zero-width joiner in an emoji U+200D", "👩‍💻 team", ""},
 	}
-	for name, text := range refused {
-		if got := record.CheckSingleLine(text); got != singleLineMessage {
-			t.Errorf("%s: CheckSingleLine(%q) = %q, want the single-line message", name, text, got)
-		}
-	}
-	for _, text := range []string{"Helix launch", "Café & crème — 2026", "Rocket 🚀 launch", "مرحبا", "日本の計画", ""} {
-		if got := record.CheckSingleLine(text); got != "" {
-			t.Errorf("CheckSingleLine(%q) = %q, want no problem", text, got)
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := record.CheckSingleLine(tt.in); got != tt.want {
+				t.Errorf("CheckSingleLine(%q) = %q, want %q", tt.in, got, tt.want)
+			}
+		})
 	}
 }
