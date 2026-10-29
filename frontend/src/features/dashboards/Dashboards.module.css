@@ -120,10 +120,15 @@
   white-space: nowrap;
 }
 
-.table th {
+.table thead th {
   background: var(--gray-bg);
   color: var(--ink);
   font-weight: var(--weight-bold);
+}
+
+.table tbody th,
+.table tfoot th {
+  font-weight: var(--weight-regular);
 }
 
 .table .number {

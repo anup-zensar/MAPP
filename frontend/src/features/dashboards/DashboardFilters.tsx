@@ -15,8 +15,8 @@ export function DashboardFilters({ kind, dashboard, onChange }: DashboardFilters
   const { filters, choices } = dashboard;
   return (
     <div className={styles.filters} role="group" aria-label="Filters">
-      <label className={styles.field} htmlFor={`${id}-year`}>
-        Year
+      <div className={styles.field}>
+        <label htmlFor={`${id}-year`}>Year</label>
         <select
           id={`${id}-year`}
           className={styles.select}
@@ -29,10 +29,10 @@ export function DashboardFilters({ kind, dashboard, onChange }: DashboardFilters
             </option>
           ))}
         </select>
-      </label>
+      </div>
       {kind === 'regional' && (
-        <label className={styles.field} htmlFor={`${id}-team`}>
-          Market
+        <div className={styles.field}>
+          <label htmlFor={`${id}-team`}>Market</label>
           <select
             id={`${id}-team`}
             className={styles.select}
@@ -45,10 +45,10 @@ export function DashboardFilters({ kind, dashboard, onChange }: DashboardFilters
               </option>
             ))}
           </select>
-        </label>
+        </div>
       )}
-      <label className={styles.field} htmlFor={`${id}-type`}>
-        Plan type
+      <div className={styles.field}>
+        <label htmlFor={`${id}-type`}>Plan type</label>
         <select
           id={`${id}-type`}
           className={styles.select}
@@ -62,9 +62,9 @@ export function DashboardFilters({ kind, dashboard, onChange }: DashboardFilters
             </option>
           ))}
         </select>
-      </label>
-      <label className={styles.field} htmlFor={`${id}-currency`}>
-        Currency
+      </div>
+      <div className={styles.field}>
+        <label htmlFor={`${id}-currency`}>Currency</label>
         <select
           id={`${id}-currency`}
           className={styles.select}
@@ -77,7 +77,7 @@ export function DashboardFilters({ kind, dashboard, onChange }: DashboardFilters
             </option>
           ))}
         </select>
-      </label>
+      </div>
     </div>
   );
 }
