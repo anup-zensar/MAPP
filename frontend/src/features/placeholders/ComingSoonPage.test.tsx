@@ -5,10 +5,7 @@ import { renderWithProviders } from '@/testing/render';
 import { ComingSoonPage } from './ComingSoonPage';
 import type { ComingSoonSection } from './ComingSoonPage';
 
-/**
- * Every section of the Plan module has its page since 011 built Recycle bin and Activity log, so
- * the page is shown here with a made-up section: it stays for a section a later module adds.
- */
+// Every Plan module section has its page now, so the page is tested with a made-up section.
 const LATER: ComingSoonSection = {
   label: 'Later section',
   icon: Sparkles,

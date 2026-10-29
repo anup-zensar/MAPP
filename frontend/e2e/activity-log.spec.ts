@@ -7,20 +7,12 @@ import {
 } from './planning-changes';
 import { createInitiative, createPlanningRecords } from './planning';
 
-// End-to-end journeys of feature 011's Activity log (US2) and the History sections of the record pages
-// (US3), against the real API with the demo data (011 plan "Tests", T046).
-//
-// Every text and label comes from the "User-visible messages" table of specs/011 plan.md; the filter chips
-// and their buttons are 004's FilterChips ("Remove filter: <chip>", D-197).
-//
-// Tests create their own records (names from uniqueName) as Mei Lin and never assert global counts; the
-// demo history (seed/history.go) gives the log more than one page of entries. The whole log is read as
-// Alex Morgan, whose Administrator role sees every entry; Mei's own log holds only her market's (014).
+// Tests create their own records as Mei Lin and never assert global counts. The whole log is
+// read as Alex Morgan, who sees every entry; the demo history gives it more than one page.
 
 const MEI = 'mei.lin@shell.com';
 const ALEX = 'alex.morgan@shell.com';
 
-/** One entry of a list of log entries, found by the words of its sentence. */
 function entry(scope: Page | Locator, sentence: string): Locator {
   return scope
     .getByRole('listitem')
@@ -28,7 +20,6 @@ function entry(scope: Page | Locator, sentence: string): Locator {
     .first();
 }
 
-/** The chip of a filter in use (its button removes it). */
 function chip(page: Page, label: string): Locator {
   return page.getByRole('button', { name: `Remove filter: ${label}`, exact: true });
 }
@@ -38,8 +29,7 @@ test('US2: the cards, filters, chips, details and record links of the activity l
 }) => {
   test.slow();
   await signInAs(page, MEI);
-  // Today's changes by Mei: the records of a new plan, a planned cost changed once and an initiative
-  // that went to the recycle bin.
+  // Today's changes by Mei: a new plan, a planned cost changed once, an initiative in the bin.
   const records = await createPlanningRecords(page, 'Log', { withWorkflow: false, leaveEmpty: [] });
   await changeActivityPlannedCost(page, records.activityId, '25000.00');
   const binned = await createInitiative(
@@ -51,7 +41,6 @@ test('US2: the cards, filters, chips, details and record links of the activity l
   );
   await callApi(page, 'DELETE', `/api/v1/initiatives/${binned.id}`);
 
-  // The whole log, with more than one page of entries: Alex sees every entry (014).
   await signInAs(page, ALEX);
   await page.goto('/activity-log');
   await expect(page.getByRole('heading', { level: 1, name: 'Activity log' })).toBeVisible();
@@ -59,16 +48,13 @@ test('US2: the cards, filters, chips, details and record links of the activity l
   await expect(
     page.getByText("See who changed what, and when. Entries can't be edited or removed."),
   ).toBeVisible();
-  // Entries have no edit or delete control (FR-010).
   await expect(page.getByRole('button', { name: /^(Edit|Delete)\b/ })).toHaveCount(0);
   await expectNoAxeViolations(page);
 
-  // A summary card's link applies its filter (FR-002).
   await page.getByRole('link', { name: /^Changes today: [\d,]+ — show these entries$/ }).click();
   await expect(page).toHaveURL(/[?&]range=today\b/);
   await expect(chip(page, 'Date: Today')).toBeVisible();
 
-  // Person and action (FR-003): chips and "N of M entries".
   await page.getByLabel('Person', { exact: true }).selectOption({ label: 'Mei Lin' });
   await expect(chip(page, 'Person: Mei Lin')).toBeVisible();
   await page.getByRole('button', { name: 'Action: Any action' }).click();
@@ -78,7 +64,6 @@ test('US2: the cards, filters, chips, details and record links of the activity l
   await expect(page).toHaveURL(/[?&]person=U-\d+/);
   await expect(page.getByText(/^[\d,]+ of [\d,]+ entries$/)).toBeVisible();
 
-  // The activity's change expands into its field change (FR-007), with the keyboard (SC-008).
   const changed = entry(page, `Mei Lin changed activity '${records.activityName}'`);
   await expect(changed).toBeVisible();
   await expect(changed.getByText('Changed', { exact: true })).toBeVisible();
@@ -91,13 +76,12 @@ test('US2: the cards, filters, chips, details and record links of the activity l
   );
   await expect(changed.getByText(/Planned cost: .*20,000\.00.* → .*25,000\.00/)).toBeVisible();
 
-  // A record that exists links to its page (FR-008).
   await changed.getByRole('link', { name: records.activityName, exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${escapeRegExp(records.activityPath)}$`));
   await expect(page.getByRole('heading', { level: 1, name: records.activityName })).toBeVisible();
   await page.goBack();
 
-  // A record in the recycle bin links to its row there, which is highlighted (FR-008, FR-017).
+  // A record in the recycle bin links to its row there, which is highlighted.
   await chip(page, 'Action: Changed').click();
   await page.getByRole('button', { name: 'Action: Any action' }).click();
   await page.getByRole('menuitemcheckbox', { name: 'Deleted', exact: true }).click();
@@ -110,13 +94,10 @@ test('US2: the cards, filters, chips, details and record links of the activity l
     page.getByRole('heading', { level: 2, name: binned.name, exact: true }),
   ).toBeFocused();
 
-  // Back on the filtered log, Clear filters; then Load more on the whole log, with the keyboard (FR-009,
-  // SC-008): the demo history holds more than 50 entries.
   await page.goBack();
   await expect(chip(page, 'Action: Deleted')).toBeVisible();
   await page.getByRole('button', { name: 'Clear filters' }).click();
   await expect(page).toHaveURL(/\/activity-log$/);
-  // With no filter the count reads "1,204 of 1,204 entries" (design system §11, rule 14).
   await expect(page.getByText(/^([\d,]+) of \1 entries$/)).toBeVisible();
   await expect(page.getByText(/^Showing the last 50 of [\d,]+$/)).toBeVisible();
   await page.getByRole('button', { name: 'Load more' }).focus();
@@ -142,7 +123,6 @@ test('US3: an activity’s History, with and without its line items, and Open in
   await changeActivityPlannedCost(page, records.activityId, '24000.00');
   await changeLineItemPlannedCost(page, lineItem, '6000.00');
 
-  // Step 1–2: the activity's ⋯ More › View history brings its History section up.
   await page.goto(records.activityPath);
   await expect(page.getByRole('heading', { level: 1, name: records.activityName })).toBeVisible();
   await page.getByRole('button', { name: `Actions for ${records.activityName}` }).click();
@@ -152,7 +132,6 @@ test('US3: an activity’s History, with and without its line items, and Open in
   const history = page.getByRole('region', { name: 'History', exact: true });
   await expect(history.getByText('Every change to this activity, newest first')).toBeVisible();
 
-  // The activity's own entries, newest first; no line item yet (US3 scenario 1).
   const activityChanges = history
     .getByRole('listitem')
     .filter({ hasText: `Mei Lin changed activity '${records.activityName}'` });
@@ -165,7 +144,6 @@ test('US3: an activity’s History, with and without its line items, and Open in
   ).toBeVisible();
   await expectNoAxeViolations(page);
 
-  // Include line items (US3 scenario 2): the line item's entries appear, naming it.
   const include = history.getByRole('checkbox', { name: 'Include line items' });
   await expect(include).not.toBeChecked();
   await include.click();
@@ -173,7 +151,6 @@ test('US3: an activity’s History, with and without its line items, and Open in
   await expect(entry(history, `Mei Lin changed line item '${lineItem.name}'`)).toBeVisible();
   await expect(entry(history, `Mei Lin created line item '${lineItem.name}'`)).toBeVisible();
 
-  // The choice is remembered for Mei (FR-012).
   await page.reload();
   await expect(
     page
@@ -181,7 +158,6 @@ test('US3: an activity’s History, with and without its line items, and Open in
       .getByRole('checkbox', { name: 'Include line items' }),
   ).toBeChecked();
 
-  // Step 3: Open in activity log, with the Record filter and the items inside as a chip (FR-013).
   await page
     .getByRole('region', { name: 'History', exact: true })
     .getByRole('link', { name: 'Open in activity log' })

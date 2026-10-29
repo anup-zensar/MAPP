@@ -101,7 +101,6 @@ export const AGENDA_IN_BIN: RecycleBinEntry = {
   contents: [],
 };
 
-/** Fields every activity-log entry of these tests shares. */
 export const LOGGED = { comment: '', details: '', path: [], changes: [] };
 
 export const IDEAS_CREATED: ActivityLogEntry = {
@@ -157,7 +156,6 @@ export const AGENDA_CREATED: ActivityLogEntry = {
 export const UNREACHABLE =
   "SP&A One can't reach its server right now. Check that it is running and try again.";
 
-/** A list as the API answers it. */
 export function listOf<T>(items: T[]) {
   return { items, total: items.length };
 }
@@ -168,10 +166,7 @@ export interface PageAnswers {
   log?: Answer<'GET /api/v1/activity-log'>;
 }
 
-/**
- * Answers the page's three lists — by default the folders "Ideas" (two notes) and "Plans", an
- * empty recycle bin and an empty activity log — and any other requests given.
- */
+/** By default the folders "Ideas" (two notes) and "Plans", an empty bin and an empty log. */
 export function mockSampleRecords(
   {
     folders = { body: listOf([IDEAS, PLANS]) },
@@ -188,7 +183,6 @@ export function mockSampleRecords(
   ]);
 }
 
-/** The page at its own address, for Priya, before its lists have arrived. */
 export function renderSampleRecordsPageLoading() {
   return renderWithProviders(<SampleRecordsPage />, {
     user: PRIYA,
@@ -197,20 +191,17 @@ export function renderSampleRecordsPageLoading() {
   });
 }
 
-/** The page at its own address, for Priya, once its lists have arrived. */
 export async function renderSampleRecordsPage() {
   const rendered = renderSampleRecordsPageLoading();
   await screen.findByRole('region', { name: 'Sample folders' });
   return rendered;
 }
 
-/** Chooses an action in a folder's "⋯" menu. */
 export async function chooseAction(user: UserEvent, folderName: string, action: string) {
   await user.click(screen.getByRole('button', { name: `Actions for ${folderName}` }));
   await user.click(await screen.findByRole('menuitem', { name: action }));
 }
 
-/** Opens the edit panel of a folder and types a new name in it. */
 export async function renameIn(user: UserEvent, folderName: string, newName: string) {
   await chooseAction(user, folderName, 'Edit');
   const panel = await screen.findByRole('dialog', { name: 'Edit sample folder' });
@@ -219,12 +210,10 @@ export async function renameIn(user: UserEvent, folderName: string, newName: str
   return panel;
 }
 
-/** The value of a summary card, found by its label. */
 export function summaryValue(label: string) {
   return screen.getByText(label, { selector: 'p' }).nextElementSibling;
 }
 
-/** The list item that holds the given text, in the given card. */
 export function itemWith(card: HTMLElement, text: string) {
   return closestTo(within(card).getByText(text), 'li');
 }

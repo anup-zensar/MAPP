@@ -33,15 +33,8 @@ import { deactivateSentences, isInUse, SELF_DEACTIVATION } from './texts';
 
 const PERSON_NOUN = { one: 'person', many: 'people' };
 
-/** The form panel that is open. */
 type OpenForm = { kind: 'new' } | { kind: 'edit'; person: Person | PersonDetails };
 
-/**
- * Settings › People (feature 003, US1, FR-001 – FR-009): everyone who can sign in, with e-mail, job
- * title, teams and status; the Settings list toolbar (search, Active · Inactive · All, "6 of 6
- * people"), the details panel at /settings/people/:personId, New person, Edit, Deactivate and
- * Reactivate. People are never deleted (FR-008).
- */
 export function PeoplePage() {
   usePageTitle('People');
   const { personId } = useParams();
@@ -98,11 +91,7 @@ export function PeoplePage() {
   );
 }
 
-/**
- * Deactivate and Reactivate with the one set-inactive behaviour (design system §6.7): a person who
- * owns or approves something is asked about first, with what they own and approve (FR-005);
- * anyone else is deactivated at once. Both offer Undo.
- */
+/** A person who owns or approves something is asked about first; anyone else goes at once. */
 function usePersonStatus() {
   const queryClient = useQueryClient();
   const setPersonStatus = useSetPersonStatus();
@@ -130,7 +119,6 @@ interface PeopleCardProps {
   actions: PersonActions;
 }
 
-/** The toolbar and the table, with the list's loading, empty, no-match and error states. */
 function PeopleCard({ currentUserId, onNew, onOpen, actions }: PeopleCardProps) {
   const people = usePeople();
   const filters = useListFilters();

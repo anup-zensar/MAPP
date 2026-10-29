@@ -10,19 +10,14 @@ import {
 import { approveThroughApi, decideAs } from './planning-changes';
 import { createPlanningRecords, planTree, treeRow } from './planning';
 
-// Approval restart and the notification bell (008 US5, US6) and My profile's display preferences
-// (003 US4), against the real API with the demo data.
-// The demo data they read (backend/seed): FY2026 Lubricants Europe (P-1001, team Lubricants Europe,
-// owner Priya Raman) with Helix launch and its activities. Tests create their own records.
+// The journeys read FY2026 Lubricants Europe (P-1001, Priya's) and create their own records.
 
 const MEI = 'mei.lin@shell.com';
 const CARLOS = 'carlos.mendes@shell.com';
 const SARA = 'sara.novak@shell.com';
 
-/** The year of the demo plans FY2026 Lubricants Europe and FY2026 Mobility China. */
 const SEED_YEAR = 2026;
 
-/** The notification bell in the top bar; its name says the unread count (008 plan, Bell). */
 function bell(page: Page) {
   return page.getByRole('button', { name: /^Notifications(, \d+ unread)?$/ });
 }
@@ -40,7 +35,7 @@ test('Approval restart and the bell: changing an approved activity restarts its 
   const id = records.activityId;
   await approveThroughApi(page, records);
 
-  // Mei changes the planned cost of the Approved activity: the form says what will happen (006 FR-027).
+  // Mei changes the planned cost of the Approved activity: the form says what will happen.
   await signInAs(page, MEI);
   await page.goto(records.activityPath);
   await expect(page.getByRole('heading', { name, level: 1 })).toBeVisible();
@@ -62,7 +57,6 @@ test('Approval restart and the bell: changing an approved activity restarts its 
   await restart.getByRole('button', { name: 'Save and restart approval' }).click();
   await expectToast(page, `Activity '${name}' saved`);
 
-  // Created again; the approval history says why (008 FR-022, FR-025).
   await expect(page).toHaveURL(new RegExp(`${escapeRegExp(records.activityPath)}$`));
   await expect(page.getByText('Created', { exact: true }).first()).toBeVisible();
   await page.getByRole('tab', { name: 'Approval' }).click();
@@ -72,7 +66,7 @@ test('Approval restart and the bell: changing an approved activity restarts its 
     approval.getByText('Planned cost changed from 20,000.00 USD to 25,000.00 USD'),
   ).toBeVisible();
 
-  // The people who approved it are told (FR-035, D-161): Carlos Mendes's bell.
+  // The people who approved it are told: Carlos Mendes's bell.
   await signInAs(page, CARLOS);
   await page.goto('/');
   await bell(page).click();
@@ -85,7 +79,6 @@ test('Approval restart and the bell: changing an approved activity restarts its 
     }),
   ).toBeVisible();
 
-  // Mei submits it again; Carlos declines it.
   await signInAs(page, MEI);
   await page.goto(records.activityPath);
   await page.getByRole('button', { name: 'Submit for approval' }).first().click();
@@ -95,7 +88,6 @@ test('Approval restart and the bell: changing an approved activity restarts its 
   const reason = 'Please keep the planned cost at 20,000.00 USD.';
   await decideAs(page, CARLOS, id, 'decline', reason);
 
-  // The owner's bell shows the decline with the comment, unread (FR-033, FR-035).
   await signInAs(page, MEI);
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Welcome back, Mei.' })).toBeVisible();
@@ -109,7 +101,6 @@ test('Approval restart and the bell: changing an approved activity restarts its 
   await expect(notice).toHaveAccessibleName(/ Unread$/);
   await expectNoAxeViolations(page);
 
-  // Choosing it marks it read and opens the activity's Approval section (FR-034).
   await notice.click();
   await expect(page).toHaveURL(new RegExp(`${escapeRegExp(records.activityPath)}#approval$`));
   await expect(page.getByText('Declined', { exact: true }).first()).toBeVisible();
@@ -123,7 +114,6 @@ test('Approval restart and the bell: changing an approved activity restarts its 
   await bell(page).click();
   await expect(panel.getByRole('button', { name: declined })).not.toHaveAccessibleName(/Unread$/);
 
-  // Mark all as read empties the count.
   await panel.getByRole('button', { name: 'Mark all as read' }).click();
   await expect(bell(page)).toHaveAccessibleName('Notifications');
   await expect(panel.getByRole('button', { name: 'Mark all as read' })).toHaveCount(0);
@@ -162,14 +152,12 @@ test('My profile: the display currency and date format follow on the Plans list 
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Plans' }).click();
   await expect(page.getByRole('heading', { name: 'Plans', level: 1 })).toBeVisible();
   const card = page.getByRole('article', { name: 'FY2026 Lubricants Europe' });
-  // Amounts are in the plan's currency (USD), each with its EUR value at the current rate (016).
   await expect(card).toContainText('1,200,000.00 USD');
   await expect(card).toContainText('about 1,104,000.00 EUR');
   await expect(card).toContainText(/Planned cost[\d,]+\.\d{2} USD≈ about [\d,]+\.\d{2} EUR/);
   await expect(card).not.toContainText('$');
 
-  // The plan page: amounts in the plan's currency with their EUR value (016), and dates as
-  // DD/MM/YYYY, in the header, the summary and the tree.
+  // The plan page: amounts with their EUR value, and dates as DD/MM/YYYY everywhere.
   await card.getByRole('link', { name: 'FY2026 Lubricants Europe', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'FY2026 Lubricants Europe', level: 1 }),
@@ -181,7 +169,6 @@ test('My profile: the display currency and date format follow on the Plans list 
   const planRow = treeRow(page, 'P-1001');
   await expect(planRow).toContainText(`01/01/${SEED_YEAR} – 31/12/${SEED_YEAR}`);
   await expect(planRow).toContainText('1,104,000.00 EUR');
-  // Helix launch's 700,000.00 USD budget is 644,000.00 EUR.
   const helix = treeRow(page, 'C-1001');
   await expect(helix).toContainText(`01/01/${SEED_YEAR} – 31/12/${SEED_YEAR}`);
   await expect(helix).toContainText('644,000.00 EUR');

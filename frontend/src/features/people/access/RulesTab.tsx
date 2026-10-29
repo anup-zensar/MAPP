@@ -11,11 +11,7 @@ import { NO_SELF_APPROVAL, SCOPE_WORDS } from './access-words';
 import { RulesPanel } from './RulesPanel';
 import styles from './access.module.css';
 
-/**
- * The Rules tab (FR-019, FR-026): whether people may approve what they own or submitted, and the
- * role a person added in Settings › People receives (with scope My teams). **Edit** opens the
- * rules in a side panel, saved with their version.
- */
+/** Whether people may approve what they own or submitted, and the role a new person receives. */
 export function RulesTab() {
   const rules = useAccessRules();
   const roles = useRoles();

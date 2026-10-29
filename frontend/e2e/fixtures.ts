@@ -1,14 +1,9 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Locator, type Page } from '@playwright/test';
 
-/** The password every demo person shares (shown on the sign-in page, decision D-004). */
 export const DEMO_PASSWORD = 'mapp';
 
-/**
- * Signs `email` in through the API (the browser keeps the session cookie) and resets that person's
- * preferences — theme, sidebar, display currency (003), date format (003), Home's scope (009) and the
- * History sections' Include items inside (011) — so every test starts from the same screen (research R19).
- */
+/** Signs `email` in and resets their preferences, so every test starts from the same screen. */
 export async function signInAs(page: Page, email: string): Promise<void> {
   const signIn = await page.request.post('/api/v1/auth/sign-in', {
     data: { email, password: DEMO_PASSWORD },
@@ -27,12 +22,10 @@ export async function signInAs(page: Page, email: string): Promise<void> {
   expect(reset.ok()).toBe(true);
 }
 
-/** A name no other test uses, so tests never depend on each other's records. */
 export function uniqueName(prefix: string): string {
   return `${prefix} ${Date.now().toString(36)}`;
 }
 
-/** Checks the page against WCAG 2.2 A and AA with axe and expects no violations (SC-006). */
 export async function expectNoAxeViolations(page: Page): Promise<void> {
   // The product name is a logotype, exempt from text contrast (WCAG 1.4.3, constitution X); axe cannot tell.
   const results = await new AxeBuilder({ page })
@@ -45,15 +38,11 @@ export async function expectNoAxeViolations(page: Page): Promise<void> {
   expect(summary).toEqual([]);
 }
 
-/** Expects a message on screen, such as a toast; a toast's text is also copied for screen readers. */
 export async function expectToast(page: Page, text: string | RegExp): Promise<void> {
   await expect(page.getByText(text).first()).toBeVisible();
 }
 
-/**
- * The action called exactly `name`, whether the page draws it as a link (LinkButton) or a button.
- * When both exist, the first in the page wins (the page header's or toolbar's).
- */
+/** The action called exactly `name`, link or button; when both exist, the first one wins. */
 export function action(scope: Page | Locator, name: string): Locator {
   return scope
     .getByRole('link', { name, exact: true })
@@ -61,10 +50,6 @@ export function action(scope: Page | Locator, name: string): Locator {
     .first();
 }
 
-/**
- * Chooses the option of a native select whose text starts with `text`, so "Event" matches
- * "Event · default $25,000.00" and "EUR" matches "EUR – Euro".
- */
 export async function chooseOption(select: Locator, text: string): Promise<void> {
   const option = select
     .locator('option')
@@ -73,15 +58,11 @@ export async function chooseOption(select: Locator, text: string): Promise<void>
   await select.selectOption({ label });
 }
 
-/** `text` as a regular expression that matches it literally. */
 export function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/**
- * Calls the API as the signed-in person and answers its JSON; a refusal fails the test with the
- * API's own message. For preparing records a test needs, never for what the test proves.
- */
+/** Calls the API as the signed-in person: to prepare a test's records, never for what it proves. */
 export async function callApi<T>(
   page: Page,
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
@@ -96,7 +77,6 @@ export async function callApi<T>(
   return body;
 }
 
-/** The item at `index`; fails the test when there is none. */
 export function itemAt<T>(items: readonly T[], index: number): T {
   const item = items.at(index);
   if (item === undefined) {
