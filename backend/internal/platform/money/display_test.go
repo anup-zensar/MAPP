@@ -1,6 +1,7 @@
 package money_test
 
 import (
+	"fmt"
 	"testing"
 
 	"mapp/internal/platform/money"
@@ -49,4 +50,38 @@ func TestDisplay_OptionalKeepsNil_D220(t *testing.T) {
 	if got := money.DisplayUSD.Money(usd); got != usd {
 		t.Errorf("DisplayUSD changed %v into %v", usd, got)
 	}
+}
+
+// Parts converts the months of one total so that they add up to the total converted once: 3 × 5,000.00 GBP
+// at 0.79 is 18,987.34 USD, not 3 × 6,329.11; in GBP, or without a rate, they stay as they are (038 FR-022, M-1).
+func TestDisplayParts_038_FR022_M1(t *testing.T) {
+	t.Parallel()
+	rates := money.Rates{"GBP": rate(t, "0.79"), "EUR": rate(t, "0.92")}
+	gbp := money.Money{Amount: amount(t, "5000.00"), Currency: "GBP"}
+	parts := []money.Money{gbp, gbp, gbp}
+	cases := []struct {
+		d    money.Display
+		want string
+	}{
+		{money.DisplayUSD.WithRates(rates), "[6329.11 USD 6329.11 USD 6329.12 USD]"},
+		{money.DisplayIn("EUR", "0.92").WithRates(rates), "[5822.78 EUR 5822.78 EUR 5822.79 EUR]"},
+		{money.DisplayIn("GBP", "0.79").WithRates(rates), "[5000.00 GBP 5000.00 GBP 5000.00 GBP]"},
+		{money.DisplayIn("EUR", "0.92"), "[5000.00 GBP 5000.00 GBP 5000.00 GBP]"},
+	}
+	for _, c := range cases {
+		if got := fmt.Sprint(moneyTexts(c.d.Parts(parts))); got != c.want {
+			t.Errorf("Parts(3 × 5,000.00 GBP) in %s = %s, want %s", c.d.Currency(), got, c.want)
+		}
+	}
+	if got := money.DisplayUSD.Parts(nil); len(got) != 0 {
+		t.Errorf("Parts(nil) = %v, want empty", got)
+	}
+}
+
+func moneyTexts(ms []money.Money) []string {
+	out := make([]string, len(ms))
+	for i, m := range ms {
+		out[i] = m.Amount.String() + " " + m.Currency
+	}
+	return out
 }

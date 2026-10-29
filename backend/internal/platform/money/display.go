@@ -1,5 +1,7 @@
 package money
 
+import "slices"
+
 // Display converts amounts into a person's display currency (feature 003, D-061): usd × rate, rounded
 // half-up to the cent. Features work every sum out in USD first and convert each amount they answer once,
 // so a total can differ by a cent from the sum of its converted parts.
@@ -44,24 +46,50 @@ func (d Display) Currency() string {
 // currency unchanged; an amount in another currency with the rates of WithRates. An amount whose currency
 // has no rate stays as it is, in its own currency, so it is never labelled wrongly.
 func (d Display) Money(m Money) Money {
-	if m.Currency == "" || m.Currency == BaseCurrency {
-		if d.currency == "" || d.currency == BaseCurrency {
-			return m
-		}
-		return Money{Amount: FromUSD(m.Amount, d.rate), Currency: d.currency}
-	}
-	if m.Currency == d.Currency() {
+	from, to, ok := d.between(m.Currency)
+	if !ok {
 		return m
-	}
-	from, found := d.rates[m.Currency]
-	if !found || from.micros <= 0 {
-		return m
-	}
-	to := One
-	if d.currency != "" && d.currency != BaseCurrency {
-		to = d.rate
 	}
 	return Money{Amount: Convert(m.Amount, from, to), Currency: d.Currency()}
+}
+
+// Parts converts ms, the parts of one total in one currency, so that they add up to their sum converted
+// once (ConvertParts, 038 FR-022): every part but the last as Money does, the last the remainder.
+func (d Display) Parts(ms []Money) []Money {
+	converted := slices.Clone(ms)
+	if len(ms) == 0 {
+		return converted
+	}
+	from, to, ok := d.between(ms[0].Currency)
+	if !ok {
+		return converted
+	}
+	amounts := make([]Amount, len(ms))
+	for i, m := range ms {
+		amounts[i] = m.Amount
+	}
+	for i, a := range ConvertParts(amounts, from, to) {
+		converted[i] = Money{Amount: a, Currency: d.Currency()}
+	}
+	return converted
+}
+
+// between gives the rates that convert an amount in code into the display currency; false when it stays as
+// it is (already in the display currency, or no usable rate).
+func (d Display) between(code string) (from, to Rate, ok bool) {
+	usd := d.currency == "" || d.currency == BaseCurrency
+	to = One
+	if !usd {
+		to = d.rate
+	}
+	switch {
+	case code == "" || code == BaseCurrency:
+		return One, to, !usd
+	case code == d.Currency():
+		return to, to, false
+	}
+	from, found := d.rates[code]
+	return from, to, found && from.micros > 0
 }
 
 // Optional converts m, or gives nil when there is no amount.

@@ -202,7 +202,8 @@ func assertSectionInEuros(t *testing.T, section Section) { //nolint:gocyclo // 1
 		t.Errorf("balance = %+v, want 18,400.00 EUR left of 110,400.00 EUR", b)
 	}
 	if section.Grid.Total.Format() != "92,000.00 EUR" || section.Grid.Rows[1].Total.Format() != "46,000.00 EUR" ||
-		section.Grid.Rows[1].Cells[2].Format() != "15,333.35 EUR" {
+		section.Grid.Rows[1].Cells[2].Format() != "15,333.34 EUR" { // 038 FR-022 (M-1): the row adds up to 46,000.00
+
 		t.Errorf("grid = %+v, want EUR totals and cells", section.Grid)
 	}
 }
