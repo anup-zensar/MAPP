@@ -89,6 +89,9 @@ func (b *book) page(q Query, year int, record *tnode, sc scope, currentYear int)
 		Items: []TransactionRow{}, Page: q.Page, PageSize: q.PageSize, Year: year, Source: b.source(),
 		Choices: b.choices(year, sc, currentYear),
 	}
+	if sc.unlinked {
+		page.Counts.NotLinked = new(int)
+	}
 	if record != nil {
 		ref := record.ref()
 		page.RecordFilter = &ref
@@ -168,8 +171,8 @@ func (c *TypeCounts) add(p placed) {
 	case TypeAccrual:
 		c.Accrual++
 	}
-	if p.state == StateNotLinked {
-		c.NotLinked++
+	if p.state == StateNotLinked && c.NotLinked != nil {
+		*c.NotLinked++
 	}
 }
 
