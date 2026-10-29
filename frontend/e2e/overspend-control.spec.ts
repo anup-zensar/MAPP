@@ -56,8 +56,8 @@ test('037 US1: the owner sets Refuse, and an over-budget activity is refused bef
       `1,000.00 GBP left to plan in campaign '${campaign.name}', which refuses overspending.`,
     ),
   ).toBeVisible();
-  await page.getByLabel('Activity name').fill('Too expensive');
-  const cost = page.getByLabel('Planned cost');
+  await page.getByLabel('Activity name', { exact: true }).fill('Too expensive');
+  const cost = page.getByLabel('Planned cost', { exact: true });
   await cost.fill('1500');
   await cost.blur();
   const over = `This is 500.00 GBP over the budget of campaign '${campaign.name}', which refuses overspending.`;

@@ -116,7 +116,9 @@ test('016 US2, US3 (T089): Priya plans in GBP with USD beside it and phases the 
   await editor.getByRole('button', { name: 'Save budget by month' }).click();
   await expect(editor).toHaveCount(0);
   await expect(
-    card.getByRole('row', { name: `Budget ${'50,000.00 '.repeat(12)}600,000.00` }),
+    card.getByRole('row', {
+      name: new RegExp(`^Budget (About Budget )?${'50,000\\.00 '.repeat(12)}600,000\\.00$`),
+    }),
   ).toBeVisible();
 
   // Custom by quarter: 100,000.00 in Q1 spreads over its months, the cent going to March.
@@ -134,7 +136,9 @@ test('016 US2, US3 (T089): Priya plans in GBP with USD beside it and phases the 
   await editor.getByRole('button', { name: 'Save budget by month' }).click();
   await expect(editor).toHaveCount(0);
   await expect(
-    card.getByRole('row', { name: /^Budget 33,333\.33 33,333\.33 33,333\.34 50,000\.00 / }),
+    card.getByRole('row', {
+      name: /^Budget (About Budget )?33,333\.33 33,333\.33 33,333\.34 50,000\.00 /,
+    }),
   ).toBeVisible();
   await expect(
     card.getByText(

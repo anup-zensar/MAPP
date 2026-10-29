@@ -148,8 +148,8 @@ export function PlanPage() {
       ),
       ...moreItemFor(status, data.access?.publish),
       ...actions.copyItem(data),
-      ...workbookItems,
       { label: 'View history', onSelect: viewHistory },
+      ...workbookItems,
       ...exportItems,
       ...actions.deleteItem(data),
     ];

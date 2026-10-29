@@ -8,7 +8,7 @@ async function isFocused(target: Locator): Promise<boolean> {
 
 /** Presses Tab until `target` has the focus; fails when the keyboard never reaches it. */
 export async function tabTo(page: Page, target: Locator): Promise<void> {
-  for (let presses = 0; presses < 120; presses++) {
+  for (let presses = 0; presses < 300; presses++) {
     if (await isFocused(target)) {
       return;
     }

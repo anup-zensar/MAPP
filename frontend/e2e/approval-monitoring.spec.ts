@@ -16,14 +16,9 @@ async function openMonitoring(page: Page) {
   return page.getByRole('tabpanel', { name: 'Monitoring' });
 }
 
-function typedDate(offsetDays: number): string {
-  const day = new Date(Date.now() + offsetDays * 86_400_000).toISOString().slice(0, 10);
-  const [year, month, date] = day.split('-');
-  return `${date}${month}${year}`;
+function isoDate(offsetDays: number): string {
+  return new Date(Date.now() + offsetDays * 86_400_000).toISOString().slice(0, 10);
 }
-
-// The order of a date field's parts follows the browser's language; fixed so the typed digits land right.
-test.use({ locale: 'en-GB' });
 
 test.describe('with the seeded overdue round', () => {
   // The demo round of Trade magazine ads has waited two days, past Lubricants EU approval's escalation
@@ -107,10 +102,13 @@ test('017 (T048 journey 6): the workflow form with conditions and errors and the
     await expect(page.getByRole('option', { name: /^Carlos Mendes/ })).toBeVisible();
     await page.keyboard.press('ArrowDown');
     await page.keyboard.press('Enter');
-    await tabTo(page, form.getByRole('textbox', { name: 'Start date' }));
-    await page.keyboard.type(typedDate(0));
-    await tabTo(page, form.getByRole('textbox', { name: 'End date' }));
-    await page.keyboard.type(typedDate(2));
+    // A date field's part order follows the operating system's language, not the page's (Linux CI is US).
+    const start = form.getByRole('textbox', { name: 'Start date' });
+    await tabTo(page, start);
+    await start.fill(isoDate(0));
+    const end = form.getByRole('textbox', { name: 'End date' });
+    await tabTo(page, end);
+    await end.fill(isoDate(2));
     await tabTo(page, form.getByRole('textbox', { name: 'Note (optional)' }));
     await page.keyboard.type('Away at a customer workshop');
     await expectNoAxeViolations(page);
