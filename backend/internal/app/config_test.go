@@ -49,7 +49,7 @@ func TestLoadConfig_ReadsEveryVariable(t *testing.T) {
 	want := app.Config{
 		Env: "development", Host: "0.0.0.0", Port: 18080, DatabaseURL: "postgres://planner@127.0.0.1:5433/mapp_dev", DemoPassword: "open sesame",
 		LogLevel: slog.LevelDebug, ShutdownTimeout: 25 * time.Second,
-		Telemetry: telemetry.Config{Traces: telemetry.Console, Metrics: telemetry.Console},
+		Telemetry:      telemetry.Config{Traces: telemetry.Console, Metrics: telemetry.Console},
 		TrustedProxies: []string{"10.0.0.0/8", "172.18.0.2"},
 	}
 	if !reflect.DeepEqual(cfg, want) {

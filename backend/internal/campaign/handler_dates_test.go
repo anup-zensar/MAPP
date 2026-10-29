@@ -76,5 +76,5 @@ func TestUnknownFieldNextToDatesIsStillRefused_038_FR054(t *testing.T) {
 		map[string]any{"name": "Colour", "colour": "red"}, apitest.SkipRequestValidation())
 
 	assertBody(t, response, http.StatusBadRequest,
-		`{"error":{"code":"bad_request","message":"SP&A One couldn't read this request. Reload the page and try again.","fields":[]}}`)
+		`{"error":{"code":"bad_request","message":"SP\u0026A One couldn't read this request. Reload the page and try again.","fields":[]}}`)
 }

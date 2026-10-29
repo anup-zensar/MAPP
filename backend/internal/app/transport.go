@@ -26,11 +26,11 @@ func newEngine(cfg Config) (*gin.Engine, *telemetry.Telemetry, error) {
 	}
 	engine, err := web.NewEngine(web.Options{Tracer: tel.Tracer, Meter: tel.Meter, TrustedProxies: cfg.TrustedProxies,
 		BodyLimits: map[string]int64{
-		"POST /api/v1/exchange-rates/import-check":  settings.MaxRateUploadBytes,
-		"POST /api/v1/exchange-rates/import":        settings.MaxRateUploadBytes,
-		"POST /api/v1/plans/{planId}/imports/check": workbook.MaxUploadBytes,
-		"POST /api/v1/plans/{planId}/imports":       workbook.MaxUploadBytes,
-	}})
+			"POST /api/v1/exchange-rates/import-check":  settings.MaxRateUploadBytes,
+			"POST /api/v1/exchange-rates/import":        settings.MaxRateUploadBytes,
+			"POST /api/v1/plans/{planId}/imports/check": workbook.MaxUploadBytes,
+			"POST /api/v1/plans/{planId}/imports":       workbook.MaxUploadBytes,
+		}})
 	if err != nil {
 		return nil, nil, err
 	}

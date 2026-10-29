@@ -10,6 +10,7 @@ import (
 
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
 	"mapp/internal/settings"
 )
 
@@ -70,6 +71,8 @@ func (s *Service) check(ctx context.Context, f ActivityFacts, siblings []LineIte
 		problems.Add("name", enterNameMessage)
 	case utf8.RuneCountInString(li.Name) > maxNameLength:
 		problems.Add("name", nameTooLongMessage)
+	case record.CheckSingleLine(li.Name) != "":
+		problems.Add("name", record.CheckSingleLine(li.Name))
 	default:
 		if other, taken := named(siblings, li.Name); taken {
 			problems.Add("name", fmt.Sprintf(nameTakenMessage, f.Name, other.Name))

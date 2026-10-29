@@ -15,9 +15,9 @@ import (
 const serviceName = "mapp-api"
 
 type Options struct {
-	Tracer     trace.TracerProvider
-	Meter      metric.MeterProvider
-	BodyLimits map[string]int64
+	Tracer         trace.TracerProvider
+	Meter          metric.MeterProvider
+	BodyLimits     map[string]int64
 	TrustedProxies []string
 }
 
