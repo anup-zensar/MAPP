@@ -251,6 +251,10 @@ and multi-year · US6 categories · US7 field help.
     covered here because another feature lane is finishing them: attribute filters, Breakdown and Field help
     (T074–T077, T084–T088). The plan form shows "≈ … USD" only after saving, as T039 decided, so the journey
     checks it on the plan page.
+  - Bug found and fixed: All work's pager ("Rows 1–50 of …", shown from 51 rows) lies on the grey page in
+    Text Subtle, which fails WCAG 1.4.3 contrast (axe `color-contrast`); it is now Text Strong, as constitution X
+    asks on grey. The journey's axe check found it once the full suite had added enough rows; no component test
+    can see it, because jsdom computes no colours.
 - [ ] T090 [P] Update `docs/product/domain-model.md`: §4 money rules (plan currency, dated rates, `Convert`, unassigned in the plan currency), §4.1 Budget by month, §2.5 split as a re-approval change, §6 Currency (rate history), §7 records (exchange rate, rate import, field help)
 - [ ] T091 [P] Update `docs/product/field-catalogue.md`: §1 Plan type, Plan currency, Budget by month; §1 #8, §2 #5, §3 #6, §4.1 #8 "money (plan currency)"; §2–§3 Budget by month; §4 Split from / Split into; §5 #6 "Planned cost (plan currency)"
 - [ ] T092 [P] Update `docs/product/glossary.md` (Plan currency, Current rate, Rate history, GSAP rate import, Budget by month, Phased budget, Split activity, Plan type, Breakdown, Field help) and `docs/product/design-system.md` §4–§5 (AmountPair, RateTip, YearRangeField, Budget by month card)
