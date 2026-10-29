@@ -5,13 +5,9 @@ description: "Task list for feature 017 — Approval rules (amends 008, 014 and 
 
 # Tasks: Approval Rules
 
-> **Build state after the final merge** (`plan-module` at `a1ae8fe`, 21 October 2026): the rule engine,
-> delegation, reminders and escalation, Monitoring and their screens are built and ticked. **Open:** T001 and
-> T008 (approvals still read people's roles from the stand-in `backend/internal/app/approvals_access.go`, which
-> hard-codes the demo roles; role changes made in Settings › Roles and access do not yet change who can approve);
-> T036 (line manager on the People screen; line managers come from the demo data); T046 (`npm run check`: three
-> tests in `src/app/RequireSignIn.test.tsx` and `src/app/SessionProvider.test.tsx` fail at the merge);
-> T047–T049 (end-to-end journeys); T050.
+> **Build state** (2026-10-29): everything is built and ticked except T047 – T049 (end-to-end journeys, written by
+> the end-to-end lane). Approvals read people's roles from Settings › Roles and access (T008), and People has the
+> line manager field (T036).
 
 **Input**: [plan.md](plan.md), [spec.md](spec.md), [data-model.md](data-model.md),
 [contracts/openapi.yaml](contracts/openapi.yaml). **Prerequisites**: feature 008 built; **feature 014
@@ -54,6 +50,19 @@ plan wins and the difference is reported.
   has the six Table C rows; both lanes add `internal/approvals/authority.go` (keep 017's, which is 014's order
   extended, data-model §6).
 
+## Delivered names (T001, 2026-10-29)
+
+014 is merged (`plan-module`), and so is 011. Names 017 uses: `platform/authz` — `Grants` (`From(ctx)`, `Has`,
+`InScope`, `Refusal`, `Rules.NoSelfApproval`), `PlanFacts`, `ApprovalsDecide`, `ApprovalsDecideOnBehalf`,
+`WorkflowsManage`, `Require`, `RequireIn`, `RequireView`, `RequireViewActivity`; `errs.Forbidden`. `internal/access` hooks
+(`hooks.go`): `CanApprove`, `HoldersOf`, `RoleHolders` (active holders whose scope covers the plan), `GrantsFor`,
+`ListRoles`, `GetRules`; the route table is `access/routes*.go` (017's six rows in `routes_approvals.go`
+`approvalRuleRoutes`). The approve/decline check order lives in `internal/approval/authority.go`, whose
+`(*Service).NamedIn` feeds 014's activity view rule. People: line-manager rules in `people/person_form.go`
+(`checkManager`), usage role `manager` in `people/usage.go`. 002's readers: `settings.(*Service).ActivityTypes`,
+`Attributes`, `Options`, `BusinessUnit`. Since feature 025 the package is `internal/approval` (singular) and the
+adapters are `internal/app/approvals_access.go` (`approvalsAccess`, `approvalRuleChoices`) and `approvals_adapter.go`.
+
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: can run in parallel (different files, no dependency on an unfinished task)
@@ -64,7 +73,7 @@ plan wins and the difference is reported.
 
 ## Phase 1: Setup
 
-- [ ] T001 Check 014 is merged; if not, stop and report. Note under "Delivered names" at the top of this file (no code): 014's `authz` names (grants, `PlanFacts`, the permission constants for `approvals.decide`, `approvals.decideOnBehalf`, `workflows.manage`, the access-rule field, `Require`, `errs.Forbidden`), its `internal/access` hooks (`CanApprove`, role listing with permissions, assignments with scopes, any `RoleHolders`), where its approve/decline check order lives in `internal/approvals`, its `activities.Approvers.NamedIn` adapter; whether 011 is merged; the `people` service functions for create/update/validation and usage; 002's readers `ActivityTypes`, `BusinessUnit`, `Options`
+- [x] T001 Check 014 is merged; if not, stop and report. Note under "Delivered names" at the top of this file (no code): 014's `authz` names (grants, `PlanFacts`, the permission constants for `approvals.decide`, `approvals.decideOnBehalf`, `workflows.manage`, the access-rule field, `Require`, `errs.Forbidden`), its `internal/access` hooks (`CanApprove`, role listing with permissions, assignments with scopes, any `RoleHolders`), where its approve/decline check order lives in `internal/approvals`, its `activities.Approvers.NamedIn` adapter; whether 011 is merged; the `people` service functions for create/update/validation and usage; 002's readers `ActivityTypes`, `BusinessUnit`, `Options`
 - [x] T002 (done by the consolidation, D-298) Merge `specs/017-approval-rules/contracts/openapi.yaml` into `backend/api/openapi.yaml` following its "How to merge" rules (new paths and schemas; `x-merge: extend` properties, required entries and `x-add-enum` values); add the 7 new operations to `notYetServed` in `backend/internal/app/app_test.go`
 - [x] T003 (done by the consolidation) Regenerate `frontend/src/api/schema.d.ts` (`npm run api:types` in `frontend/`); `npm run api:check` passes
 
@@ -80,7 +89,12 @@ plan wins and the difference is reported.
 - [x] T005 Extend `backend/internal/approvals/model.go` with data-model §1–§8: `Condition`, the new `Level`, `Workflow`, `RoundLevel` (incl. `noApprover`), `Round`, `Action` fields, `Delegation`, new action and notification kinds, and the API types of the fragment (`ConditionView`, `SubmissionLevel`, `ExcludedPerson`, `RuleFacts`, `RuleOptions`, `DelegationView`, `DelegationPage`, `DelegationInput`, `DelegationUpdate`, `Monitoring`, `AgeingBucket`, `LevelWaiting`, `EscalationRun`, `EscalationEvent`, and the new fields of `ChainLevel`, `Viewer`, `Row`, `RowRound`, `Decision`, `DeclineNote`, `HistoryEntryView`, `RoundView`, `Submission`, `WorkflowView`, `LevelView`); a `normalise()` on read applying data-model §10 defaults
 - [x] T006 Add table `approval_delegations` to `backend/internal/approvals/repository.go` and `store_json.go` (`GetDelegation`, `ListDelegations`, `PutDelegation`); tests in `store_json_test.go` including `TestLegacyRecords_ReadWithDefaults_017P19` (008-shaped JSON reads with §10 defaults)
 - [x] T007 Extend `backend/internal/approvals/ports.go`: `ActivityFacts.Plan` (`authz.PlanFacts`), `ActivityTypeID`, `BusinessUnits`; `Choice`; `Access` (`CanApprove`, `ApprovingRoles`, `RoleHolders`); `RuleChoices`; `(*Service).UseAccess`, `UseRuleChoices` with permissive defaults in `NewService` (`service.go`); extend `fake_test.go` (`fakeActivities` new fields, `fakeAccess`, `fakeChoices`, a helper putting `authz` grants in the context)
-- [ ] T008 `backend/internal/app/approvals_adapter.go`: fill the new `ActivityFacts` fields (plan facts from 004, activity type ID, the plan's business units via 002's `BusinessUnit` with labels and active flags) and add `ruleChoices` over 002's readers; new `backend/internal/app/approvals_access.go` implementing `approvals.Access` over `internal/access` (add `RoleHolders` to `internal/access/hooks.go` if T001 found none: active holders of the role whose scope covers the plan); wire both in `app.go`; add the six Table C rows of plan *Access rules for the new operations* to `internal/access/routes.go`; tests `TestAdapter_RuleFacts_FR010`, `TestApprovalsAccess_RoleHolders_FR001`, 014's every-operation-has-a-rule test green
+- [x] T008 `backend/internal/app/approvals_adapter.go`: fill the new `ActivityFacts` fields (plan facts from 004, activity type ID, the plan's business units via 002's `BusinessUnit` with labels and active flags) and add `ruleChoices` over 002's readers; new `backend/internal/app/approvals_access.go` implementing `approvals.Access` over `internal/access` (add `RoleHolders` to `internal/access/hooks.go` if T001 found none: active holders of the role whose scope covers the plan); wire both in `app.go`; add the six Table C rows of plan *Access rules for the new operations* to `internal/access/routes.go`; tests `TestAdapter_RuleFacts_FR010`, `TestApprovalsAccess_RoleHolders_FR001`, 014's every-operation-has-a-rule test green
+  *Done:* `approvals_access.go` reads 014's access service (no stand-in left); the six Table C rows are in
+  `internal/access/routes_approvals.go`; wired in `internal/app/areas.go`. `TestAdapter_RuleFacts_FR010`,
+  `TestApprovalsAccess_RoleHolders_FR001` and `access_routes_test.go` pass; new end-to-end proof through the API
+  `internal/approval/handler_roles_test.go` `TestApprove_FollowsRolesChangedInSettings_017_FR017` (taking Daniel's
+  Approver role away in Settings stops him approving; giving it back lets him approve).
 
 ### US1 — automatic vs manager approval, roles (P1)
 
@@ -142,7 +156,11 @@ plan wins and the difference is reported.
 - [x] T033 [US1] `LevelsEditor.tsx` (+ test) and `levelDrafts.ts`: Who approves, approvers or role (roles that approve), mode (not for line manager), Only needed when / Approve automatically when toggles with `RuleConditionFields`, Backup approver; problem keys `levels.<n>.*` mapped to fields (depends on T032)
 - [x] T034 [US1] `WorkflowFormPanel.tsx` (+ test): Reminders and escalation section (new workflows 3 and 5), new hint text, every API problem in `FormErrorSummary`; `WorkflowDetailsPanel.tsx`, `ApprovalWorkflowsPage.tsx`, `workflowTexts.ts`: level summaries and timings (tests updated)
 - [x] T035 [US1] `features/approvals/SubmitDialog.tsx` (+ test): outcomes per level, left-out notes (incl. "can't approve — no approving role"), backup line, no-approver advice, "This activity will be approved automatically.", toast "Activity '<name>' approved automatically"
-- [ ] T036 [P] [US1] `features/people/…` people form and details (+ tests): Line manager picker with hint, details lines, Deactivate usage line (FR-016)
+- [x] T036 [P] [US1] `features/people/…` people form and details (+ tests): Line manager picker with hint, details lines, Deactivate usage line (FR-016)
+  *Built:* `PersonFormPanel` **Line manager** (`PersonField`, hint, `managerId` sent only when changed or chosen),
+  `LineManagerFacts.tsx` in the details ("Line manager" / "No line manager", "Line manager of 2 people" from usage;
+  the details answer has no manager, so it is read from the people list), `texts.ts` `reportsText` and the Deactivate
+  sentence; tests `PeoplePage.manager.test.tsx`, `texts.test.ts`.
 
 ### US2 and US7
 
@@ -164,7 +182,7 @@ plan wins and the difference is reported.
 - [x] T043 [US5] `RunEscalationsButton.tsx` (+ test): shown when `canRunEscalations`; confirm dialog; result toast and not-escalated toast; invalidation
 - [x] T044 [US6] `ApprovalsTable.tsx` (+ test): chips Overdue, Escalated to, as delegate of, No approver; "<a> of <b> approved" in the Level cell
 - [x] T045 [P] `features/notifications/NotificationList.tsx` (+ test): icons and texts of `autoApproved`, `reminder`, `escalated`
-- [ ] T046 `npm run check` green in `frontend/` (api:check, typecheck, lint, format, tests)
+- [x] T046 `npm run check` green in `frontend/` (api:check, typecheck, lint, format, tests)
 
 ---
 
@@ -178,7 +196,11 @@ plan wins and the difference is reported.
 
 ## Phase 5: Polish
 
-- [ ] T050 Check every FR of spec.md against plan *Requirement traceability*: each has a passing test named with it; tick the tasks; list the Proposed decisions 017-P1 – 017-P22 and the 16 client defaults in the lane report for the consolidation step (decision log, domain model §2.3, §6, §8, 014 FR-019 label, feature map, demo data page — not edited by build agents)
+- [x] T050 Check every FR of spec.md against plan *Requirement traceability*: each has a passing test named with it; tick the tasks; list the Proposed decisions 017-P1 – 017-P22 and the 16 client defaults in the lane report for the consolidation step (decision log, domain model §2.3, §6, §8, 014 FR-019 label, feature map, demo data page — not edited by build agents)
+  *Checked 2026-10-29:* FR-001 – FR-037 each have passing tests named with them (backend `internal/approval`,
+  `internal/people`, `internal/app`, `seed`; web `features/approvals`, `features/approval-workflows`,
+  `features/people`). The proposed decisions 017-P1 – 017-P22 were recorded by the consolidation as D-276 – D-297;
+  the client defaults are in the final validation report §8. T047 – T049 (end-to-end) belong to the e2e lane.
 
 ---
 

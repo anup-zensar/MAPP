@@ -10,16 +10,26 @@ import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
 import { useFormatters } from '@/format/useFormatters';
-import { fetchLatestPerson, useCheckPersonImpact, useCreatePerson, useUpdatePerson } from './api';
+import {
+  fetchLatestPerson,
+  useCheckPersonImpact,
+  useCreatePerson,
+  usePeople,
+  useUpdatePerson,
+} from './api';
 import type { ImpactWarning, Person, PersonDetails, PersonUpdate } from './api';
 import { formFailure } from './feedback';
 import { OwnerImpactDialog } from './OwnerImpactDialog';
 import { removedIds } from './removed-ids';
-import { personChanges, personSchema, personValuesOf } from './schemas';
+import { PersonField } from './PersonField';
+import { managerIdOf, newPerson, personChanges, personSchema, personValuesOf } from './schemas';
 import type { PersonValues } from './schemas';
 import { TeamField } from './TeamField';
 
-const FIELDS = ['name', 'email', 'jobTitle', 'teamIds'] as const;
+const FIELDS = ['name', 'email', 'jobTitle', 'teamIds', 'managerId'] as const;
+
+const MANAGER_HINT =
+  "Approves this person's activities when a workflow level uses the line manager.";
 
 export interface PersonFormPanelProps {
   /** The person to edit; without one, the panel adds a new person. */
@@ -28,9 +38,8 @@ export interface PersonFormPanelProps {
 }
 
 /**
- * "New person" or "Edit person" (US1-1, US1-2, US1-4): name, e-mail, job title and teams. When
- * teams were removed, the API's impact check comes first and its warnings are confirmed in
- * OwnerImpactDialog (plan "Save flow").
+ * "New person" or "Edit person": name, e-mail, job title, teams and line manager. When teams were
+ * removed, the API's impact check comes first and its warnings are confirmed in OwnerImpactDialog.
  */
 export function PersonFormPanel({ person, onClose }: PersonFormPanelProps) {
   const queryClient = useQueryClient();
@@ -41,7 +50,10 @@ export function PersonFormPanel({ person, onClose }: PersonFormPanelProps) {
   const updatePerson = useUpdatePerson();
   const checkImpact = useCheckPersonImpact();
   // The edit-form rule of feature 001: the person is copied into the form once, when it opens.
-  const start = personValuesOf(person);
+  const people = usePeople();
+  const [start] = useState(() =>
+    personValuesOf(person, managerIdOf(person, people.data?.items ?? [])),
+  );
   const form = useForm<PersonValues>({
     resolver: zodResolver(personSchema),
     defaultValues: start,
@@ -98,7 +110,7 @@ export function PersonFormPanel({ person, onClose }: PersonFormPanelProps) {
       if (person) {
         await update(person.id, personChanges(start, values, version), values);
       } else {
-        done(await createPerson.mutateAsync(values), 'created');
+        done(await createPerson.mutateAsync(newPerson(values)), 'created');
       }
     } catch (error) {
       await fail(error);
@@ -172,6 +184,11 @@ export function PersonFormPanel({ person, onClose }: PersonFormPanelProps) {
           render={(field) => (
             <TeamField label="Teams" hint="Only active teams can be added." {...field} />
           )}
+        />
+        <FormField
+          control={form.control}
+          name="managerId"
+          render={(field) => <PersonField label="Line manager" hint={MANAGER_HINT} {...field} />}
         />
       </FormPanel>
       <OwnerImpactDialog
