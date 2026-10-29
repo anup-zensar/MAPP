@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"mapp/internal/approval"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/errs"
@@ -26,6 +27,7 @@ type Facts struct {
 	WorkflowID, ModificationWorkflowID string
 	Path                               []errs.RecordRef
 	Plan                               authz.PlanFacts
+	Overages                           []approval.Overage
 	record.Meta
 }
 
@@ -70,6 +72,7 @@ func (s *Service) factsFrom(ctx context.Context, pr PurchaseRequest) (Facts, err
 	f := Facts{ID: pr.ID, Name: pr.Name, Status: pr.Status, OwnerID: pr.OwnerID, MoAApproverID: pr.MoAApproverID,
 		WorkflowID: pr.WorkflowID, ModificationWorkflowID: pr.ModificationWorkflowID, Plan: pr.planFacts(facts), Meta: pr.Meta}
 	_, f.Path = r.plan(pr)
+	f.Overages = overagesOf(pr, facts)
 	if len(pr.Lines) > 0 {
 		total := r.usd(pr.Lines)
 		f.Amount = &total

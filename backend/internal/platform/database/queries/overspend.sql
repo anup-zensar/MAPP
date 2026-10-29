@@ -39,12 +39,14 @@ SELECT * FROM overspend_configuration WHERE id = 'overspend';
 
 -- name: PutOverspendConfiguration :exec
 INSERT INTO overspend_configuration (
-    id, default_mode, version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+    id, default_mode, approval_over_planned_cost, version, created_at, created_by_id, created_by_name, updated_at,
+    updated_by_id, updated_by_name
 ) VALUES (
-    'overspend', $1, $2, $3, $4, $5, $6, $7, $8
+    'overspend', $1, $2, $3, $4, $5, $6, $7, $8, $9
 )
 ON CONFLICT (id) DO UPDATE SET
     default_mode = excluded.default_mode,
+    approval_over_planned_cost = excluded.approval_over_planned_cost,
     version = excluded.version,
     updated_at = excluded.updated_at,
     updated_by_id = excluded.updated_by_id,

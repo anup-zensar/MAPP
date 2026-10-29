@@ -165,3 +165,22 @@ func TestApprovalSection_SubmitFollowsThePurchaseRequest_Contract_032_FR022(t *t
 		"priya purchaseRequest submit false resubmit false",
 	}, got)
 }
+
+func TestSubmission_NamesRecordFieldApprover_038_FR027_M9(t *testing.T) {
+	t.Parallel()
+	s := apitest.New(t)
+	receiveSwbsCodes(t, s)
+	priya := s.SignIn(t, priyasEmail)
+	pr := create(t, priya, body(standBuild, "EUR", "1000.00"))
+
+	check := decoded[purchaserequest.SubmissionView](t, priya.Do(t, http.MethodGet, prs+"/"+pr.ID+"/approval/submission", nil),
+		http.StatusOK)
+
+	var got []string
+	for _, l := range check.Outcomes {
+		for _, p := range l.Approvers {
+			got = append(got, fmt.Sprint("level ", l.Number, ": ", p.Name))
+		}
+	}
+	same(t, "038 FR-027 the MoA approver is named", []string{"level 1: Daniel Okoro"}, got)
+}

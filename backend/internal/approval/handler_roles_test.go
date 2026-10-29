@@ -2,6 +2,7 @@ package approval_test
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 
 	"mapp/internal/platform/apitest"
@@ -29,6 +30,25 @@ func TestApprove_FollowsRolesChangedInSettings_017_FR017(t *testing.T) {
 	}
 	if appr := decodeApproval(t, approved); appr.Status != "approved" {
 		t.Errorf("approve with the Approver role given back: status %s, want approved", appr.Status)
+	}
+}
+
+func TestApprove_PermissionBeforeRoundMovedOn_038_FR056_L15(t *testing.T) {
+	t.Parallel()
+	server := apitest.New(t)
+	daniel, priya := server.SignIn(t, danielsEmail), server.SignIn(t, priyasEmail)
+	roundID := decodeApproval(t, daniel.Do(t, http.MethodGet, "/api/v1/activities/"+tradeMagazineAds+"/approval", nil)).Rounds[0].ID
+	decision := map[string]any{"roundId": roundID, "level": 1}
+	decodeApproval(t, daniel.Do(t, http.MethodPost, "/api/v1/activities/"+tradeMagazineAds+"/approval/approve", decision))
+
+	late := priya.Do(t, http.MethodPost, "/api/v1/activities/"+tradeMagazineAds+"/approval/approve", decision)
+
+	var answer struct {
+		Error struct{ Code, Message string }
+	}
+	late.Decode(t, &answer)
+	if late.Status != http.StatusForbidden || answer.Error.Code != "forbidden" || strings.Contains(answer.Error.Message, "Daniel") {
+		t.Errorf("038 FR-056 Priya approving a decided round = %d %s, want 403 forbidden naming nobody", late.Status, late.Body)
 	}
 }
 

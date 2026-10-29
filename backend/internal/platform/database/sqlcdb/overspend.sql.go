@@ -11,7 +11,7 @@ import (
 )
 
 const getOverspendConfiguration = `-- name: GetOverspendConfiguration :many
-SELECT id, default_mode, version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name FROM overspend_configuration WHERE id = 'overspend'
+SELECT id, default_mode, version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name, approval_over_planned_cost FROM overspend_configuration WHERE id = 'overspend'
 `
 
 func (q *Queries) GetOverspendConfiguration(ctx context.Context) ([]OverspendConfiguration, error) {
@@ -33,6 +33,7 @@ func (q *Queries) GetOverspendConfiguration(ctx context.Context) ([]OverspendCon
 			&i.UpdatedAt,
 			&i.UpdatedByID,
 			&i.UpdatedByName,
+			&i.ApprovalOverPlannedCost,
 		); err != nil {
 			return nil, err
 		}
@@ -160,12 +161,14 @@ func (q *Queries) ListOverspendGlobalBudgets(ctx context.Context) ([]ListOverspe
 
 const putOverspendConfiguration = `-- name: PutOverspendConfiguration :exec
 INSERT INTO overspend_configuration (
-    id, default_mode, version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+    id, default_mode, approval_over_planned_cost, version, created_at, created_by_id, created_by_name, updated_at,
+    updated_by_id, updated_by_name
 ) VALUES (
-    'overspend', $1, $2, $3, $4, $5, $6, $7, $8
+    'overspend', $1, $2, $3, $4, $5, $6, $7, $8, $9
 )
 ON CONFLICT (id) DO UPDATE SET
     default_mode = excluded.default_mode,
+    approval_over_planned_cost = excluded.approval_over_planned_cost,
     version = excluded.version,
     updated_at = excluded.updated_at,
     updated_by_id = excluded.updated_by_id,
@@ -173,19 +176,21 @@ ON CONFLICT (id) DO UPDATE SET
 `
 
 type PutOverspendConfigurationParams struct {
-	DefaultMode   string
-	Version       int
-	CreatedAt     time.Time
-	CreatedByID   string
-	CreatedByName string
-	UpdatedAt     time.Time
-	UpdatedByID   string
-	UpdatedByName string
+	DefaultMode             string
+	ApprovalOverPlannedCost string
+	Version                 int
+	CreatedAt               time.Time
+	CreatedByID             string
+	CreatedByName           string
+	UpdatedAt               time.Time
+	UpdatedByID             string
+	UpdatedByName           string
 }
 
 func (q *Queries) PutOverspendConfiguration(ctx context.Context, arg PutOverspendConfigurationParams) error {
 	_, err := q.db.Exec(ctx, putOverspendConfiguration,
 		arg.DefaultMode,
+		arg.ApprovalOverPlannedCost,
 		arg.Version,
 		arg.CreatedAt,
 		arg.CreatedByID,

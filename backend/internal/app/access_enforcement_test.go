@@ -99,7 +99,7 @@ func TestLogAndRecycleBin_Filtered_FR007_FR038(t *testing.T) {
 }
 
 // Nobody approves an activity they own or submitted while the rule is on (messages 5, 6a, 6b).
-func TestApprovals_WhoMayDecide_FR025_FR026(t *testing.T) {
+func TestApprovals_WhoMayDecide_FR025_FR026_038_FR056(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	alex, priya, daniel := server.SignIn(t, alexsEmail), server.SignIn(t, priyasEmail), server.SignIn(t, danielsEmail)
@@ -113,9 +113,10 @@ func TestApprovals_WhoMayDecide_FR025_FR026(t *testing.T) {
 		}
 	}
 
-	// Priya submitted A-1004 and owns it; Daniel is the approver of its level 1.
+	// Priya submitted A-1004 and owns it; Daniel is the approver of its level 1. As a Planner she holds neither
+	// approvals permission, which is said first.
 	refused(t, "Priya approving her own activity", priya.Do(t, http.MethodPost, "/api/v1/activities/A-1004/approval/approve", decision(1)),
-		"Only the approvers of level 1 (Daniel Okoro) can approve or decline this activity.")
+		"Approving activities isn't part of your role (Planner). Ask an administrator if you need it.")
 	var priyas actions
 	priya.Do(t, http.MethodGet, "/api/v1/activities/A-1004/approval", nil).Decode(t, &priyas)
 	if priyas.Actions.Approve.Available || priyas.Actions.Approve.Reason != "" || !priyas.Actions.Recall.Available {

@@ -15,6 +15,7 @@ type Engine interface {
 	RecallSubject(ctx context.Context, a actor.Actor, kind approval.SubjectKind, id string) (approval.Section, error)
 	DecideSubject(ctx context.Context, a actor.Actor, kind approval.SubjectKind, id string, d approval.SubjectDecision) (approval.Section, error)
 	SectionOf(ctx context.Context, a actor.Actor, kind approval.SubjectKind, id string) (approval.Section, error)
+	SubmissionOf(ctx context.Context, a actor.Actor, kind approval.SubjectKind, id string) (approval.Submission, error)
 }
 
 func (s *Service) UseApprovals(e Engine) {
@@ -97,7 +98,7 @@ func (s *Service) approvalOf(ctx context.Context, a actor.Actor, pr PurchaseRequ
 	}
 	view := ApprovalView{PurchaseRequestID: pr.ID, PurchaseRequestName: pr.Name, PurchaseRequestVersion: pr.Version,
 		Status: pr.Status, ChangePending: pr.ChangePending, Owner: first.Owner,
-		Sections: []ApprovalSection{sectionOf(focus, first)}, OverPlannedCost: []approval.Overage{}}
+		Sections: []ApprovalSection{sectionOf(focus, first)}, OverPlannedCost: append([]approval.Overage{}, first.OverPlannedCost...)}
 	found, err := s.deps.People.People(ctx, []string{pr.MoAApproverID})
 	if err != nil {
 		return ApprovalView{}, err

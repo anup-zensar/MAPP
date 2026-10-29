@@ -27,8 +27,9 @@ type PurchaseRequestFacts struct {
 	ModificationWorkflowID string
 	Path                   []errs.RecordRef
 	record.Meta
-	Access authz.PlanFacts
-	Plan   PlanFacts
+	Access   authz.PlanFacts
+	Plan     PlanFacts
+	Overages []Overage
 }
 
 const (

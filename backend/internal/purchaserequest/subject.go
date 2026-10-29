@@ -2,10 +2,12 @@ package purchaserequest
 
 import (
 	"context"
+	"slices"
 
 	"mapp/internal/approval"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
 	"mapp/internal/platform/money"
 )
 
@@ -54,6 +56,19 @@ func (s *Service) RoundChanged(ctx context.Context, a actor.Actor, id string, ki
 	return engineFacts(f), err
 }
 
+func overagesOf(pr PurchaseRequest, facts map[string]LineItemFacts) []approval.Overage {
+	overages := []approval.Overage{}
+	for _, l := range pr.Lines {
+		f := facts[l.LineItemID]
+		seen := slices.ContainsFunc(overages, func(o approval.Overage) bool { return o.Activity.ID == f.ActivityID })
+		if f.ActivityOverBy != nil && !seen {
+			overages = append(overages, approval.Overage{
+				Activity: errs.RecordRef{Type: groupActivity, ID: f.ActivityID, Name: f.ActivityName}, OverBy: *f.ActivityOverBy})
+		}
+	}
+	return overages
+}
+
 func engineFacts(f Facts) approval.PurchaseRequestFacts {
 	var amount *money.Money
 	if f.Amount != nil {
@@ -63,7 +78,7 @@ func engineFacts(f Facts) approval.PurchaseRequestFacts {
 	return approval.PurchaseRequestFacts{
 		ID: f.ID, Name: f.Name, Status: string(f.Status), OwnerID: f.OwnerID, MoAApproverID: f.MoAApproverID,
 		Amount: amount, WorkflowID: f.WorkflowID, ModificationWorkflowID: f.ModificationWorkflowID, Path: f.Path,
-		Meta: f.Meta, Access: f.Plan,
+		Meta: f.Meta, Access: f.Plan, Overages: f.Overages,
 		Plan: approval.PlanFacts{ID: f.Plan.ID, TeamIDs: f.Plan.TeamIDs, OwnerID: f.Plan.OwnerID, CreatedByID: f.Plan.CreatedByID},
 	}
 }

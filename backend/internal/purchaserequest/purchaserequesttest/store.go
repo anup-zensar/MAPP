@@ -13,7 +13,6 @@ import (
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/fake"
-	"mapp/internal/platform/money"
 	"mapp/internal/purchaserequest"
 )
 
@@ -179,16 +178,7 @@ func (s Store) Claims(ctx context.Context, lineItemIDs []string) ([]purchaserequ
 	if err != nil {
 		return nil, err
 	}
-	claims := []purchaserequest.Claim{}
-	for _, pr := range all {
-		for _, l := range pr.Lines {
-			if slices.Contains(lineItemIDs, l.LineItemID) {
-				claims = append(claims, purchaserequest.Claim{LineID: l.ID, PurchaseRequestID: pr.ID, PurchaseRequest: pr.Name,
-					LineItemID: l.LineItemID, Status: pr.Status, Amount: money.Money{Amount: l.Amount, Currency: l.Currency}})
-			}
-		}
-	}
-	return claims, nil
+	return purchaserequest.ClaimsOf(all, lineItemIDs), nil
 }
 
 func (s Store) Put(ctx context.Context, pr purchaserequest.PurchaseRequest) error {
