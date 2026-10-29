@@ -8,6 +8,8 @@ import (
 	"io"
 	"strings"
 	"unicode/utf8"
+
+	"mapp/internal/platform/errs"
 )
 
 // The rate feed seam (016 FR-008, D-259). GSAP's daily exchange rates are simulated: an administrator
@@ -55,6 +57,7 @@ const (
 	rateFileTooManyMessage    = "The file has %s rows — import at most 20,000 rows at a time."
 	rateFileUnreadableMessage = "This file can't be read. Save it as a .csv file in UTF-8 and try again."
 	rateFileEmptyMessage      = "The file has no rows below the header."
+	rateFileNothingMessage    = "This file is empty."
 )
 
 // GSAPRateFile is the simulated GSAP daily rate extract (data-model §2.4): a CSV file in UTF-8 (a byte-order
@@ -74,27 +77,20 @@ func (GSAPRateFile) Read(_ string, content []byte) ([]FeedRow, error) {
 	if !utf8.Valid(content) {
 		return nil, contentProblem(rateFileUnreadableMessage)
 	}
+	if len(bytes.TrimSpace(content)) == 0 {
+		return nil, contentProblem(rateFileNothingMessage)
+	}
 	reader := csv.NewReader(bytes.NewReader(content))
 	reader.FieldsPerRecord = -1 // short rows are read and checked cell by cell
 	reader.TrimLeadingSpace = true
+	reader.LazyQuotes = true // a stray quote makes a row's cell wrong, not the file unreadable (038 FR-034)
 	header, err := reader.Read()
-	if errors.Is(err, io.EOF) {
-		return nil, contentProblem(fmt.Sprintf(rateFileColumnMessage, gsapColumns[0]))
-	}
 	if err != nil {
 		return nil, contentProblem(rateFileUnreadableMessage)
 	}
-	index := map[string]int{}
-	for i, cell := range header {
-		name := strings.ToLower(strings.TrimSpace(cell))
-		if _, seen := index[name]; !seen {
-			index[name] = i
-		}
-	}
-	for _, column := range gsapColumns {
-		if _, found := index[column]; !found {
-			return nil, contentProblem(fmt.Sprintf(rateFileColumnMessage, column))
-		}
+	index, err := headerIndex(header)
+	if err != nil {
+		return nil, err
 	}
 	cell := func(record []string, column string) string {
 		if i := index[column]; i < len(record) {
@@ -127,6 +123,25 @@ func (GSAPRateFile) Read(_ string, content []byte) ([]FeedRow, error) {
 		return nil, contentProblem(rateFileEmptyMessage)
 	}
 	return rows, nil
+}
+
+// headerIndex finds each column by name in the header, in any order and letter case; every missing column is
+// named at once (038 FR-034).
+func headerIndex(header []string) (map[string]int, error) {
+	index := map[string]int{}
+	for i, cell := range header {
+		name := strings.ToLower(strings.TrimSpace(cell))
+		if _, seen := index[name]; !seen {
+			index[name] = i
+		}
+	}
+	var problems errs.Problems
+	for _, column := range gsapColumns {
+		if _, found := index[column]; !found {
+			problems.Add("content", fmt.Sprintf(rateFileColumnMessage, column))
+		}
+	}
+	return index, problems.Err()
 }
 
 // blank reports whether every cell of record is empty.
