@@ -21,28 +21,24 @@ type demoCampaign struct {
 	phasing                               []string // 016: a custom phasing as month, amount pairs; nil for not phased
 }
 
-// demoInitiative is one initiative of 005 data model §9.
 type demoInitiative struct {
 	name, owner, start, end, budget string
 	attributes                      func(v *values)
 }
 
-// clusterAndRegion sets the Lubricants – Europe cluster and one of its regions.
 func clusterAndRegion(region string) func(v *values) {
 	return func(v *values) {
 		v.choices("Cluster", "Lubricants – Europe").choices("Region", region)
 	}
 }
 
-// notFIT4 sets the initiative's FIT4 initiative to No.
 func notFIT4(v *values) {
 	v.yesNo("FIT4 initiative", false)
 }
 
-// demoCampaigns are C-1001 … C-1005 with I-1001 … I-1010, in ID order; C-1005 "Helix UK & Ireland" is in
-// the GBP plan of 016 with its budget phased in four months. Retail growth has no cluster and no
-// region on purpose ("2 fields needed", 004's publish example); Fleet cards has no dates; Brand platform
-// ends after its plan's year (R4) and its initiatives' budgets exceed its own (over-allocated by 50,000.00).
+// demoCampaigns are C-1001 … C-1005 with I-1001 … I-1010 in ID order; C-1005 is the GBP plan's of 016, phased in four
+// months. Retail growth has no cluster or region on purpose ("2 fields needed", 004); Fleet cards has no dates; Brand
+// platform ends after its plan's year (R4) and its initiatives' budgets exceed its own by 50,000.00.
 var demoCampaigns = []demoCampaign{
 	{plan: "FY2026 Lubricants Europe", name: "Helix launch", owner: "Priya Raman", start: "2026-01-01", end: "2026-12-31",
 		budget: "700000.00", attributes: func(v *values) {
@@ -80,12 +76,14 @@ var demoCampaigns = []demoCampaign{
 		}},
 }
 
-// addCampaigns creates the four demo campaigns and their eight initiatives through the campaigns
-// repository.
 func (d *demo) addCampaigns(ctx context.Context) error {
-	repo := d.stores.Campaigns
 	d.campaigns, d.initiatives = map[string]string{}, map[string]string{}
-	for _, c := range demoCampaigns {
+	return d.putCampaigns(ctx, demoCampaigns)
+}
+
+func (d *demo) putCampaigns(ctx context.Context, list []demoCampaign) error {
+	repo := d.stores.Campaigns
+	for _, c := range list {
 		var r resolver
 		planID := r.id(d.plans, "plan", c.plan)
 		ownerID := r.id(d.people, "person", c.owner)
@@ -113,26 +111,31 @@ func (d *demo) addCampaigns(ctx context.Context) error {
 			return err
 		}
 		d.campaigns[c.plan+"/"+c.name] = id
-
-		for _, i := range c.initiatives {
-			initiative, err := d.initiativeOf(i, id, currency)
-			if err != nil {
-				return err
-			}
-			if initiative.ID, err = d.next(ctx, ids.PrefixInitiative); err != nil {
-				return err
-			}
-			if err := repo.PutInitiative(ctx, initiative); err != nil {
-				return err
-			}
-			d.initiatives[c.name+"/"+i.name] = initiative.ID
+		if err := d.putInitiatives(ctx, c, id, currency); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-// initiativeOf builds the stored initiative i of the campaign campaignID, without its ID, looking up its
-// owner by name. MAPP creates it at the seed time.
+func (d *demo) putInitiatives(ctx context.Context, c demoCampaign, campaignID, currency string) error {
+	repo := d.stores.Campaigns
+	for _, i := range c.initiatives {
+		initiative, err := d.initiativeOf(i, campaignID, currency)
+		if err != nil {
+			return err
+		}
+		if initiative.ID, err = d.next(ctx, ids.PrefixInitiative); err != nil {
+			return err
+		}
+		if err := repo.PutInitiative(ctx, initiative); err != nil {
+			return err
+		}
+		d.initiatives[c.name+"/"+i.name] = initiative.ID
+	}
+	return nil
+}
+
 func (d *demo) initiativeOf(i demoInitiative, campaignID, currency string) (campaign.Initiative, error) {
 	ownerID, err := find(d.people, "person", i.owner)
 	if err != nil {
@@ -148,8 +151,7 @@ func (d *demo) initiativeOf(i demoInitiative, campaignID, currency string) (camp
 	}, nil
 }
 
-// planningFields turns the texts of a seeded campaign, initiative or activity into its stored dates, budget or
-// planned cost in the plan currency currency (016) and Shell attribute values ("" dates or budget: none).
+// planningFields reads "" dates or budget as none and puts amounts in the plan's currency (016).
 func (d *demo) planningFields(start, end, budget, currency string, level settings.Level, attributes func(v *values)) (
 	*date.Date, *date.Date, *money.Money, settings.AttributeValues, error) {
 	startDate, endDate, err := dates(start, end)
@@ -173,7 +175,6 @@ func (d *demo) planningFields(start, end, budget, currency string, level setting
 	return startDate, endDate, amount, values, err
 }
 
-// dates parses a start and an end date; "" is no date.
 func dates(start, end string) (*date.Date, *date.Date, error) {
 	var parsed [2]*date.Date
 	for i, text := range []string{start, end} {

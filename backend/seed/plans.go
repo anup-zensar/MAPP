@@ -61,48 +61,58 @@ const (
 )
 
 func (d *demo) addPlans(ctx context.Context) error {
-	repo := d.stores.Plans
 	d.plans, d.planCurrencies = map[string]string{}, map[string]string{}
-	for _, p := range demoPlans {
-		var r resolver
-		values := d.newValues(settings.LevelPlan)
-		if len(p.businessUnits) > 0 {
-			values.choices("Business unit", p.businessUnits...)
-		}
-		if p.smp {
-			values.yesNo("Strategic Marketing Plan (SMP)", true)
-		}
-		attributes, err := values.done()
-		if err != nil {
+	return d.putPlans(ctx, demoPlans)
+}
+
+func (d *demo) putPlans(ctx context.Context, list []demoPlan) error {
+	for _, p := range list {
+		if err := d.putPlan(ctx, p); err != nil {
 			return err
 		}
-		pl := plan.Plan{
-			Name: p.name, Year: p.year, ModelID: r.id(d.settings.Models, "model", p.model),
-			TeamIDs: []string{r.id(d.teams, "team", p.team)}, OwnerID: r.id(d.people, "person", p.owner),
-			AOP: p.aop, BCPIR: p.bcpir, Description: p.description, DefaultSpread: plan.SpreadEvenly, GoalStage: p.goalStage,
-			GoalAmount: p.goalAmount, Attributes: attributes, Status: p.status, Meta: d.meta(),
-			Currency: cmp.Or(p.currency, money.BaseCurrency), PlanType: cmp.Or(p.planType, plan.TypeOperational),
-			BudgetPhasing: rollup.Phasing{Method: cmp.Or(p.phasing, rollup.MethodNone), Months: []rollup.PhasingMonth{}},
-		}
-		if p.financeBudget != "" {
-			pl.DefaultFinanceBudgetID = r.id(d.settings.Budgets, "finance budget", fmt.Sprintf("%d/%s", p.year, p.financeBudget))
-		}
-		if r.err != nil {
-			return r.err
-		}
-		budget, err := money.ParseAmount(p.budget)
-		if err != nil {
-			return fmt.Errorf("seed: budget of %s: %w", p.name, err)
-		}
-		pl.Budget = &budget
-		if pl.ID, err = d.next(ctx, ids.PrefixPlan); err != nil {
-			return err
-		}
-		if err := repo.Put(ctx, pl); err != nil {
-			return err
-		}
-		d.plans[p.name] = pl.ID
-		d.planCurrencies[p.name] = pl.Currency
 	}
+	return nil
+}
+
+func (d *demo) putPlan(ctx context.Context, p demoPlan) error {
+	var r resolver
+	values := d.newValues(settings.LevelPlan)
+	if len(p.businessUnits) > 0 {
+		values.choices("Business unit", p.businessUnits...)
+	}
+	if p.smp {
+		values.yesNo("Strategic Marketing Plan (SMP)", true)
+	}
+	attributes, err := values.done()
+	if err != nil {
+		return err
+	}
+	pl := plan.Plan{
+		Name: p.name, Year: p.year, ModelID: r.id(d.settings.Models, "model", p.model),
+		TeamIDs: []string{r.id(d.teams, "team", p.team)}, OwnerID: r.id(d.people, "person", p.owner),
+		AOP: p.aop, BCPIR: p.bcpir, Description: p.description, DefaultSpread: plan.SpreadEvenly, GoalStage: p.goalStage,
+		GoalAmount: p.goalAmount, Attributes: attributes, Status: p.status, Meta: d.meta(),
+		Currency: cmp.Or(p.currency, money.BaseCurrency), PlanType: cmp.Or(p.planType, plan.TypeOperational),
+		BudgetPhasing: rollup.Phasing{Method: cmp.Or(p.phasing, rollup.MethodNone), Months: []rollup.PhasingMonth{}},
+	}
+	if p.financeBudget != "" {
+		pl.DefaultFinanceBudgetID = r.id(d.settings.Budgets, "finance budget", fmt.Sprintf("%d/%s", p.year, p.financeBudget))
+	}
+	if r.err != nil {
+		return r.err
+	}
+	budget, err := money.ParseAmount(p.budget)
+	if err != nil {
+		return fmt.Errorf("seed: budget of %s: %w", p.name, err)
+	}
+	pl.Budget = &budget
+	if pl.ID, err = d.next(ctx, ids.PrefixPlan); err != nil {
+		return err
+	}
+	if err := d.stores.Plans.Put(ctx, pl); err != nil {
+		return err
+	}
+	d.plans[p.name] = pl.ID
+	d.planCurrencies[p.name] = pl.Currency
 	return nil
 }

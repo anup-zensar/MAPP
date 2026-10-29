@@ -1,5 +1,6 @@
 // Command seed creates and migrates the database at DATABASE_URL and loads MAPP's demo data into it (FR-028):
-// go run ./cmd/seed, -reset to empty every table first, or -if-empty to leave a database with data alone.
+// go run ./cmd/seed, -reset to empty every table first, or -if-empty to leave a database with data alone;
+// -showcase adds two complete 2026 plans after the demo story.
 package main
 
 import (
@@ -27,8 +28,9 @@ func (m message) Error() string {
 }
 
 type options struct {
-	reset   bool
-	ifEmpty bool
+	reset    bool
+	ifEmpty  bool
+	showcase bool
 }
 
 func main() {
@@ -62,14 +64,15 @@ func parseArgs(args []string) (options, error) {
 	flags := flag.NewFlagSet("seed", flag.ExitOnError)
 	reset := flags.Bool("reset", false, "empty every table first (this deletes the current data)")
 	ifEmpty := flags.Bool("if-empty", false, "leave a database that already has data as it is, and succeed")
+	showcase := flags.Bool("showcase", false, "also load two complete 2026 plans, every level down to line items")
 	_ = flags.Parse(args) // ExitOnError: a wrong option stops the program with a description of the options
 	if flags.NArg() > 0 {
-		return options{}, message(fmt.Sprintf("Unexpected argument '%s' — the options are -reset and -if-empty.", flags.Arg(0)))
+		return options{}, message(fmt.Sprintf("Unexpected argument '%s' — the options are -reset, -if-empty and -showcase.", flags.Arg(0)))
 	}
 	if *reset && *ifEmpty {
 		return options{}, message("Choose -reset or -if-empty, not both.")
 	}
-	return options{reset: *reset, ifEmpty: *ifEmpty}, nil
+	return options{reset: *reset, ifEmpty: *ifEmpty, showcase: *showcase}, nil
 }
 
 func refuse(cfg app.Config) error {
@@ -88,7 +91,11 @@ func load(ctx context.Context, url string, opts options) (string, error) {
 		return "", err
 	}
 	defer db.Close()
-	err = seed.Load(ctx, stores.Postgres(db), clock.System)
+	var with []seed.Option
+	if opts.showcase {
+		with = append(with, seed.WithShowcase())
+	}
+	err = seed.Load(ctx, stores.Postgres(db), clock.System, with...)
 	switch {
 	case errors.Is(err, seed.ErrNotEmpty) && opts.ifEmpty:
 		return "The database already has data; it was left as it is.", nil
@@ -96,6 +103,9 @@ func load(ctx context.Context, url string, opts options) (string, error) {
 		return "", message("The database already has data. Run go run ./cmd/seed -reset to replace it (this deletes the current data).")
 	case err != nil:
 		return "", err
+	}
+	if opts.showcase {
+		return fmt.Sprintf("Loaded the demo data: %s; and the showcase: %s.", seed.Loaded, seed.ShowcaseLoaded), nil
 	}
 	return fmt.Sprintf("Loaded the demo data: %s.", seed.Loaded), nil
 }

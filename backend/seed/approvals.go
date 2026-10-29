@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"mapp/internal/activity"
 	"mapp/internal/approval"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/ids"
@@ -107,103 +108,135 @@ func (d *demo) addApprovals(ctx context.Context) error {
 	if err := d.addApprovalRules(ctx); err != nil {
 		return err
 	}
-	repo := d.stores.Approvals
-	activityRepo := d.stores.Activities
-	peopleRepo := d.stores.People
-	person := func(name string) (actor.Actor, error) {
+	if err := d.putRounds(ctx, demoRounds); err != nil {
+		return err
+	}
+	if err := d.addNotifications(ctx, d.stores.Approvals, d.personActor(ctx)); err != nil {
+		return err
+	}
+	return d.addDelegation(ctx)
+}
+
+func (d *demo) personActor(ctx context.Context) func(name string) (actor.Actor, error) {
+	return func(name string) (actor.Actor, error) {
 		id, err := find(d.people, "person", name)
 		if err != nil {
 			return actor.Actor{}, err
 		}
-		p, _, err := peopleRepo.Get(ctx, id)
+		p, _, err := d.stores.People.Get(ctx, id)
 		return p.Actor(), err
 	}
+}
 
+func (d *demo) putRounds(ctx context.Context, list []demoRound) error {
 	numbers := map[string]int{}
-	for _, dr := range demoRounds {
-		activityID, err := find(d.activities, "activity", dr.plan+"/"+dr.activity)
-		if err != nil {
-			return err
-		}
-		activity, found, err := activityRepo.Get(ctx, activityID)
-		if err != nil || !found {
-			return cmpErr(err, fmt.Errorf("seed: activity %s is not stored", activityID))
-		}
-		workflow, found, err := repo.GetWorkflow(ctx, activity.ApprovalWorkflowID)
-		if err != nil || !found {
-			return cmpErr(err, fmt.Errorf("seed: activity %s has no approval workflow", activityID))
-		}
-		submitter, err := person(dr.submittedBy)
-		if err != nil {
-			return err
-		}
-		levels := make([]approval.RoundLevel, 0, len(workflow.Levels))
-		for i, l := range workflow.Levels {
-			level := approval.RoundLevel{Number: i + 1, Name: l.Name, Approvers: []actor.Actor{}}
-			for _, approverID := range l.ApproverIDs {
-				p, _, err := peopleRepo.Get(ctx, approverID)
-				if err != nil {
-					return err
-				}
-				level.Approvers = append(level.Approvers, p.Actor())
-			}
-			levels = append(levels, level)
-		}
-
-		numbers[activityID]++
-		submittedAt := d.at.Add(-dr.submittedAgo)
-		round := approval.Round{
-			SubjectKind: approval.KindActivity, SubjectID: activityID, Number: numbers[activityID], WorkflowID: workflow.ID,
-			WorkflowName: workflow.Name,
-			Levels:       levels, CurrentLevel: 1, Outcome: approval.OutcomeOpen, SubmittedAt: submittedAt, SubmittedBy: submitter,
-			Meta: record.NewMeta(submitter, submittedAt),
-		}
-		round.Levels[0].StartedAt = &submittedAt
-		if err = d.roundRules(ctx, &round, workflow, ruleSubject{act: activity, planID: d.plans[dr.plan]}); err != nil {
-			return err
-		}
-		if round.ID, err = d.next(ctx, ids.PrefixApprovalRound); err != nil {
-			return err
-		}
-		submitted := approval.ActionSubmitted
-		if dr.resubmitted {
-			submitted = approval.ActionResubmitted
-		}
-		if err := d.addAction(ctx, repo, round, roundAction{kind: submitted, by: submitter, at: submittedAt}); err != nil {
-			return err
-		}
-		for _, decision := range dr.decisions {
-			by, err := person(decision.by)
-			if err != nil {
-				return err
-			}
-			at := d.at.Add(-decision.ago)
-			action := approval.ActionApproved
-			if decision.declined {
-				action = approval.ActionDeclined
-			}
-			if err := d.addAction(ctx, repo, round, roundAction{kind: action, by: by, at: at, comment: decision.comment}); err != nil {
-				return err
-			}
-			switch {
-			case decision.declined:
-				round.Outcome, round.EndedAt = approval.OutcomeDeclined, &at
-			case round.CurrentLevel == len(round.Levels):
-				round.Outcome, round.EndedAt = approval.OutcomeApproved, &at
-			default:
-				round.CurrentLevel++
-				round.Levels[round.CurrentLevel-1].StartedAt = &at
-			}
-			round.Touch(by, at)
-		}
-		if err := repo.PutRound(ctx, round); err != nil {
+	for _, dr := range list {
+		if err := d.putRound(ctx, dr, numbers); err != nil {
 			return err
 		}
 	}
-	if err := d.addNotifications(ctx, repo, person); err != nil {
+	return nil
+}
+
+func (d *demo) putRound(ctx context.Context, dr demoRound, numbers map[string]int) error {
+	act, workflow, err := d.roundSubject(ctx, dr)
+	if err != nil {
 		return err
 	}
-	return d.addDelegation(ctx)
+	submitter, err := d.personActor(ctx)(dr.submittedBy)
+	if err != nil {
+		return err
+	}
+	levels, err := d.roundLevels(ctx, workflow)
+	if err != nil {
+		return err
+	}
+	numbers[act.ID]++
+	submittedAt := d.at.Add(-dr.submittedAgo)
+	round := approval.Round{
+		SubjectKind: approval.KindActivity, SubjectID: act.ID, Number: numbers[act.ID], WorkflowID: workflow.ID,
+		WorkflowName: workflow.Name,
+		Levels:       levels, CurrentLevel: 1, Outcome: approval.OutcomeOpen, SubmittedAt: submittedAt, SubmittedBy: submitter,
+		Meta: record.NewMeta(submitter, submittedAt),
+	}
+	round.Levels[0].StartedAt = &submittedAt
+	if err = d.roundRules(ctx, &round, workflow, ruleSubject{act: act, planID: d.plans[dr.plan]}); err != nil {
+		return err
+	}
+	if round.ID, err = d.next(ctx, ids.PrefixApprovalRound); err != nil {
+		return err
+	}
+	submitted := approval.ActionSubmitted
+	if dr.resubmitted {
+		submitted = approval.ActionResubmitted
+	}
+	if err := d.addAction(ctx, d.stores.Approvals, round, roundAction{kind: submitted, by: submitter, at: submittedAt}); err != nil {
+		return err
+	}
+	if err := d.decide(ctx, &round, dr.decisions); err != nil {
+		return err
+	}
+	return d.stores.Approvals.PutRound(ctx, round)
+}
+
+func (d *demo) roundSubject(ctx context.Context, dr demoRound) (activity.Activity, approval.Workflow, error) {
+	activityID, err := find(d.activities, "activity", dr.plan+"/"+dr.activity)
+	if err != nil {
+		return activity.Activity{}, approval.Workflow{}, err
+	}
+	act, found, err := d.stores.Activities.Get(ctx, activityID)
+	if err != nil || !found {
+		return activity.Activity{}, approval.Workflow{}, cmpErr(err, fmt.Errorf("seed: activity %s is not stored", activityID))
+	}
+	workflow, found, err := d.stores.Approvals.GetWorkflow(ctx, act.ApprovalWorkflowID)
+	if err != nil || !found {
+		return activity.Activity{}, approval.Workflow{}, cmpErr(err, fmt.Errorf("seed: activity %s has no approval workflow", activityID))
+	}
+	return act, workflow, nil
+}
+
+func (d *demo) roundLevels(ctx context.Context, workflow approval.Workflow) ([]approval.RoundLevel, error) {
+	levels := make([]approval.RoundLevel, 0, len(workflow.Levels))
+	for i, l := range workflow.Levels {
+		level := approval.RoundLevel{Number: i + 1, Name: l.Name, Approvers: []actor.Actor{}}
+		for _, approverID := range l.ApproverIDs {
+			p, _, err := d.stores.People.Get(ctx, approverID)
+			if err != nil {
+				return nil, err
+			}
+			level.Approvers = append(level.Approvers, p.Actor())
+		}
+		levels = append(levels, level)
+	}
+	return levels, nil
+}
+
+func (d *demo) decide(ctx context.Context, round *approval.Round, decisions []demoDecision) error {
+	for _, decision := range decisions {
+		by, err := d.personActor(ctx)(decision.by)
+		if err != nil {
+			return err
+		}
+		at := d.at.Add(-decision.ago)
+		action := approval.ActionApproved
+		if decision.declined {
+			action = approval.ActionDeclined
+		}
+		if err := d.addAction(ctx, d.stores.Approvals, *round, roundAction{kind: action, by: by, at: at, comment: decision.comment}); err != nil {
+			return err
+		}
+		switch {
+		case decision.declined:
+			round.Outcome, round.EndedAt = approval.OutcomeDeclined, &at
+		case round.CurrentLevel == len(round.Levels):
+			round.Outcome, round.EndedAt = approval.OutcomeApproved, &at
+		default:
+			round.CurrentLevel++
+			round.Levels[round.CurrentLevel-1].StartedAt = &at
+		}
+		round.Touch(by, at)
+	}
+	return nil
 }
 
 type roundAction struct {

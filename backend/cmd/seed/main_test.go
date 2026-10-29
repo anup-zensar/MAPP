@@ -61,7 +61,7 @@ func TestRun_RefusesUnexpectedArguments(t *testing.T) {
 		args []string
 		want string
 	}{
-		{args: []string{"-reset", "mapp2"}, want: "Unexpected argument 'mapp2' — the options are -reset and -if-empty."},
+		{args: []string{"-reset", "mapp2"}, want: "Unexpected argument 'mapp2' — the options are -reset, -if-empty and -showcase."},
 		{args: []string{"-reset", "-if-empty"}, want: "Choose -reset or -if-empty, not both."},
 	}
 	for _, tt := range tests {
