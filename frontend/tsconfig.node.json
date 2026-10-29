@@ -6,5 +6,11 @@
     "lib": ["ES2023", "DOM"],
     "types": ["node"]
   },
-  "include": ["vite.config.ts", "playwright.config.ts", "e2e"]
+  "include": [
+    "vite.config.ts",
+    "security-headers.ts",
+    "security-headers.test.ts",
+    "playwright.config.ts",
+    "e2e"
+  ]
 }
