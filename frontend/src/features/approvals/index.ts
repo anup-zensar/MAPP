@@ -10,6 +10,7 @@ export { DecisionButton } from './DecisionButton';
 export { DecisionDialog } from './DecisionDialog';
 export { approveRefusal, OverPlannedCostAlert, RefusedApprove } from './OverPlannedCost';
 export { PurchaseRequestDecisionDialog } from './PurchaseRequestDecisionDialog';
+export { SubmissionOutcomes } from './SubmissionOutcomes';
 export { SubmitButton } from './SubmitButton';
 export type { ApprovalActivity, ShowSubmitProblems } from './approval-types';
 export { invalidateAllButSession, useActivityApproval } from './api';

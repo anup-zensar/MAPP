@@ -6,7 +6,7 @@ import { Link } from 'react-router';
 import { z } from 'zod';
 import type { components } from '@/api/generated/schema';
 import { asApiError, isSessionLost } from '@/api/errors';
-import { ApprovalChain } from '@/features/approvals';
+import { ApprovalChain, SubmissionOutcomes } from '@/features/approvals';
 import { Button } from '@/ui/Button/Button';
 import { FormDialog } from '@/ui/FormDialog/FormDialog';
 import { FormField } from '@/ui/FormField/FormField';
@@ -168,7 +168,11 @@ function SubmitPurchaseRequestDialog({ purchaseRequest: pr, onClose }: DialogPro
         ) : (
           <>
             <p>{workflowText(data.workflow)}</p>
-            {data.levels.length > 0 && <ApprovalChain upcomingLevels={data.levels} />}
+            {data.outcomes.length > 0 ? (
+              <SubmissionOutcomes outcomes={data.outcomes} />
+            ) : (
+              data.levels.length > 0 && <ApprovalChain upcomingLevels={data.levels} />
+            )}
             {problem && (
               <p role="alert" className={styles.problem}>
                 {problem}
