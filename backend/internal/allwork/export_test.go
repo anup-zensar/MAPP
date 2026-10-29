@@ -31,7 +31,6 @@ func exportOf(t *testing.T, b *yearBuilder, q Query, format string, unassigned b
 	return file
 }
 
-// csvLines reads a CSV export: its notes, then its table (heading, rows, totals).
 func csvLines(t *testing.T, f File) (notes, table [][]string) {
 	t.Helper()
 	body := string(f.Body)
@@ -54,7 +53,6 @@ func csvLines(t *testing.T, f File) (notes, table [][]string) {
 	return read(before), read(after)
 }
 
-// rowNamed returns the table row whose Name (third value) is name.
 func rowNamed(t *testing.T, table [][]string, name string) []string {
 	t.Helper()
 	for _, row := range table {
@@ -66,8 +64,6 @@ func rowNamed(t *testing.T, table [][]string, name string) []string {
 	return nil
 }
 
-// The file holds every matching and context row — collapsed branches too — with Level, Path and Name, the
-// view's columns in order and the totals row; context rows are marked (FR-032, US7 scenario 1).
 func TestExport_GridHasEveryRowLevelPathColumnsTotals_FR032(t *testing.T) {
 	t.Parallel()
 	b := seedYear()
@@ -117,7 +113,6 @@ func TestExport_GridHasEveryRowLevelPathColumnsTotals_FR032(t *testing.T) {
 	}
 }
 
-// slicesIndex returns the index of the table row named name.
 func slicesIndex(table [][]string, name string) int {
 	for i, row := range table {
 		if len(row) > 2 && row[2] == name {
@@ -127,8 +122,6 @@ func slicesIndex(table [][]string, name string) int {
 	return -1
 }
 
-// The Calendar exports each record's ID, status, dates, owner and planned cost; Budget & cost its Plan
-// budget, its periods and its total (FR-032, US7 scenario 2).
 func TestExport_CalendarAndBudgetColumns_FR032(t *testing.T) {
 	t.Parallel()
 	b := seedYear()
@@ -158,8 +151,6 @@ func TestExport_CalendarAndBudgetColumns_FR032(t *testing.T) {
 	}
 }
 
-// Money is exported as numbers in the display currency, with the currency in the heading; a local amount
-// has a Currency column beside it; dates are dates and statuses words (FR-033).
 func TestExport_MoneyNumbersCurrencyHeadingsDatesStatusWords_FR033(t *testing.T) {
 	t.Parallel()
 	eur := Currency{Code: "EUR", Rate: mustRate("0.92")}
@@ -203,9 +194,6 @@ func TestExport_MoneyNumbersCurrencyHeadingsDatesStatusWords_FR033(t *testing.T)
 	}
 }
 
-// Every export states, before the data, the view, year, filters, search, Show levels, display currency,
-// exporter and time — on an "About this export" sheet in a spreadsheet — and its name gives the view, year
-// and date (FR-034).
 func TestExport_NotesBeforeData_AboutSheet_FileName_FR034(t *testing.T) {
 	t.Parallel()
 	b := seedYear()
@@ -256,8 +244,6 @@ func TestExport_NotesBeforeData_AboutSheet_FileName_FR034(t *testing.T) {
 	}
 }
 
-// Unassigned planned cost rows are exported as the screen shows them: with the switch on, not with it off
-// (FR-012).
 func TestExport_UnassignedFollowsSwitch_FR012(t *testing.T) {
 	t.Parallel()
 	count := func(unassigned bool) int {

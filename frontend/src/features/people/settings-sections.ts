@@ -1,7 +1,3 @@
-/**
- * Feature 003's cards on the Settings page (listed by features/settings/sections.ts), each with
- * the count of active records from feature 003's own data.
- */
 import { Users, UsersRound } from 'lucide-react';
 import type { SettingsSection } from '@/features/settings';
 import { ActivePeopleCount, ActiveTeamsCount } from './ActiveCounts';

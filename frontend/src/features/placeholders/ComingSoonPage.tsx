@@ -5,7 +5,6 @@ import { usePageTitle } from '@/ui/usePageTitle';
 import { CentredMessage } from './CentredMessage';
 import styles from './ComingSoonPage.module.css';
 
-/** A section a later feature builds; until then its page says in one sentence what it will do. */
 export interface ComingSoonSection {
   label: string;
   icon: LucideIcon;
@@ -13,15 +12,10 @@ export interface ComingSoonSection {
 }
 
 export interface ComingSoonPageProps {
-  /** The section a later feature builds (navigation.ts). */
   section: ComingSoonSection;
 }
 
-/**
- * The page of a section that a later feature builds (FR-015): its name, one sentence on what it
- * will do, and a way back to Home — never an error. It has the same centred layout as Page not
- * found (UI audit M-02).
- */
+/** A section's name, what it will do and a way back to Home: never an error. */
 export function ComingSoonPage({ section }: ComingSoonPageProps) {
   usePageTitle(section.label);
 

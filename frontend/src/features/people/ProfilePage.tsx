@@ -20,15 +20,9 @@ import { EditPreferencesPanel } from './EditPreferencesPanel';
 import { currencyLabel, DISPLAY_CURRENCY_NOTE } from './texts';
 import styles from './ProfilePage.module.css';
 
-/** The side panel that is open. */
 type OpenPanel = 'details' | 'preferences' | null;
 
-/**
- * My profile (feature 003, US4, FR-021 – FR-025), from the account menu: the signed-in person's
- * details, their display preferences, their teams and their access (014 FR-024), each card that
- * can change with its own Edit side panel (D-068). Everything comes from the session, so the page
- * shows at once.
- */
+/** Everything comes from the session, so the page shows at once. */
 export function ProfilePage() {
   usePageTitle('My profile');
   const user = useCurrentUser();
@@ -43,7 +37,7 @@ export function ProfilePage() {
       <div className={styles.cards}>
         <DetailsCard user={user} onEdit={() => setOpen('details')} />
         <PreferencesCard onEdit={() => setOpen('preferences')} />
-        {/* Older answers have no teams (D-191). */}
+        {/* Older answers have no teams. */}
         <TeamsCard teams={user.teams ?? []} />
         <YourAccessCard />
       </div>
@@ -54,7 +48,7 @@ export function ProfilePage() {
   );
 }
 
-/** Your details: avatar, name, job title and the e-mail, which is changed elsewhere (US4-1). */
+/** Your details: avatar, name, job title and the e-mail, which is changed elsewhere. */
 function DetailsCard({ user, onEdit }: { user: CurrentUser; onEdit: () => void }) {
   return (
     <Card
@@ -91,11 +85,7 @@ function DetailsCard({ user, onEdit }: { user: CurrentUser; onEdit: () => void }
   );
 }
 
-/**
- * Display preferences: the display currency ("EUR — Euro", " (inactive)" when it was set inactive
- * and the person keeps it) and the date format with its example (FR-023, FR-024). Until the
- * currencies' names arrive, or when they can't be loaded, the code alone is shown.
- */
+/** Until the currencies' names arrive, or when they can't be loaded, the code alone is shown. */
 function PreferencesCard({ onEdit }: { onEdit: () => void }) {
   const { displayCurrency, dateFormat } = useFormatters();
   const currencies = useDisplayCurrencies();
@@ -130,7 +120,6 @@ function PreferencesCard({ onEdit }: { onEdit: () => void }) {
   );
 }
 
-/** My teams, read-only, with the way to Settings › Teams (US4-1, US4-5). */
 function TeamsCard({ teams }: { teams: TeamRef[] }) {
   return (
     <Card title="My teams">

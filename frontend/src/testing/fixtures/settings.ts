@@ -1,7 +1,3 @@
-/**
- * Settings records for feature 002's page tests (only tests import this file): the demo models,
- * activity types and currencies as the API answers them, and the API's error answers.
- */
 import type { components } from '@/api/generated/schema';
 
 type Model = components['schemas']['Model'];
@@ -159,12 +155,10 @@ export const JPY: Currency = {
 
 export const CURRENCIES = { items: [USD, EUR, JPY], total: 3 };
 
-/** The API's answer to a save with problems. */
 export function validationFailed(fields: { field: string; message: string }[]): ErrorBody {
   return { error: { code: 'validation_failed', message: 'Check the highlighted fields.', fields } };
 }
 
-/** The API's answer when someone else saved first. */
 export function versionConflict(): ErrorBody {
   return {
     error: {
@@ -176,12 +170,10 @@ export function versionConflict(): ErrorBody {
   };
 }
 
-/** The API's answer to a delete of a record in use. */
 export function inUse(message: string): ErrorBody {
   return { error: { code: 'in_use', message, fields: [] } };
 }
 
-/** The API's answer to a delete: the record's recycle-bin entry, for Undo. */
 export function deleted(recordTypeLabel: string, recordId: string, recordName: string) {
   const recycleBinEntry: RecycleBinEntry = {
     id: 'RB-1001',

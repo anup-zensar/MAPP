@@ -1,16 +1,3 @@
-/**
- * What the Financials page asks the API (015 plan, "Query keys and invalidation"): one page of
- * transactions for the filters in the address, one transaction, the imports, the check and the
- * import of a simulated GSAP extract, the sample file, and the manual link and unlink.
- *
- * | Key                                        | Invalidated by        |
- * | ['financials', 'transactions', params]     | import, link, unlink  |
- * | ['financials', 'transaction', id]          | link, unlink          |
- * | ['financials', 'imports']                  | import                |
- *
- * An import, a link or an unlink also changes every figure on the record pages, Home and All work,
- * so those mutations invalidate ['financials'], ['all-work'] and ['home'].
- */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
 import type { components } from '@/api/generated/schema';
@@ -42,14 +29,10 @@ const TRANSACTIONS_KEY = [...FINANCIALS_KEY, 'transactions'];
 const TRANSACTION_KEY = [...FINANCIALS_KEY, 'transaction'];
 export const IMPORTS_KEY = [...FINANCIALS_KEY, 'imports'];
 
-/** The keys of the other places that show financial figures (All work 010, Home 009). */
+/** An import, a link or an unlink changes every figure on these pages, so it invalidates them. */
 const FIGURE_KEYS = [FINANCIALS_KEY, ['all-work'], ['home']];
 
-/**
- * One page of transactions for the filters, with the tab counts, the totals, the choices and the
- * source line. The previous page stays on screen while the next one loads, so the table does not
- * jump while people type or page.
- */
+/** The previous page stays on screen while the next one loads, so the table does not jump. */
 export function useFinancialTransactions(filters: FinancialFilters) {
   const query = toQuery(filters);
   return useQuery({
@@ -59,7 +42,6 @@ export function useFinancialTransactions(filters: FinancialFilters) {
   });
 }
 
-/** One transaction with every field, its link and its import (the details panel, FR-022). */
 export function useFinancialTransaction(transactionId: string) {
   return useQuery({
     queryKey: [...TRANSACTION_KEY, transactionId],
@@ -72,7 +54,6 @@ export function useFinancialTransaction(transactionId: string) {
   });
 }
 
-/** Every import, newest first (Import history, FR-008). */
 export function useFinancialImports(enabled = true) {
   return useQuery({
     queryKey: IMPORTS_KEY,
@@ -81,7 +62,6 @@ export function useFinancialImports(enabled = true) {
   });
 }
 
-/** Checks a file without saving anything (FR-004, step 1). */
 export function useCheckImport() {
   return useMutation({
     mutationFn: (body: FinancialImportRequest) =>
@@ -89,7 +69,7 @@ export function useCheckImport() {
   });
 }
 
-/** Imports a file (FR-004, step 2); every figure is asked again afterwards. */
+/** Imports a file; every figure is asked again afterwards. */
 export function useImportExtract() {
   const refresh = useRefreshFigures();
   return useMutation({
@@ -99,7 +79,6 @@ export function useImportExtract() {
   });
 }
 
-/** Links a not-linked transaction to a line item by hand (FR-026). */
 export function useLinkTransaction() {
   const refresh = useRefreshFigures();
   return useMutation({
@@ -122,7 +101,7 @@ export function useLinkTransaction() {
   });
 }
 
-/** Undoes a manual link (FR-026); the transaction is matched again by the rules. */
+/** Undoes a manual link; the transaction is matched again by the rules. */
 export function useUnlinkTransaction() {
   const refresh = useRefreshFigures();
   return useMutation({
@@ -148,7 +127,6 @@ export function useLineItemPreview(lineItemId: string) {
   });
 }
 
-/** Saves the sample file "mapp-gsap-extract-sample.csv" (FR-009). */
 export function downloadSampleFile(): Promise<string> {
   return downloadFromApi(
     api.GET('/api/v1/financials/imports/template', { parseAs: 'blob' }),

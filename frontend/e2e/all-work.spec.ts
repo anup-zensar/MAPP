@@ -2,14 +2,11 @@ import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { expectNoAxeViolations, expectToast, signInAs, uniqueName } from './fixtures';
 
-// All work (010): the grid, the calendar, budget and cost by month, saved views and the export.
-
 const PRIYA = 'priya.raman@shell.com';
 
-/** The year of the demo plans FY2026 Lubricants Europe and FY2026 Mobility China. */
 const SEED_YEAR = 2026;
 
-/** The current year: the default year of a new finance budget item, and the year All work marks Today in. */
+// The default year of a new finance budget item, and the year All work marks Today in.
 const THIS_YEAR = new Date().getFullYear();
 
 test('All work: filter and search the grid, the calendar, budget and cost by month, a saved view and a CSV export (010)', async ({
@@ -17,12 +14,11 @@ test('All work: filter and search the grid, the calendar, budget and cost by mon
 }) => {
   test.slow();
   await signInAs(page, PRIYA);
-  // The demo plans' year, named in the address (D-122), so the journey holds in any year.
+  // The demo plans' year, named in the address, so the journey holds in any year.
   await page.goto(`/all-work?year=${SEED_YEAR}`);
   await expect(page.getByRole('heading', { name: 'All work', level: 1 })).toBeVisible();
   await expect(page.getByText('Filter, compare and export all planned work.')).toBeVisible();
   const filters = page.getByRole('group', { name: 'Filters' });
-  // 016 FR-034: the year filter is a range, "Years · 2026" for one year.
   await expect(filters.getByRole('button', { name: `Years · ${SEED_YEAR}` })).toBeVisible();
   const count = page.getByText(/^\d+ of \d+ activit(y|ies)$/);
   await expect(count).toHaveText(/^(\d+) of \1 activities$/);
@@ -31,7 +27,6 @@ test('All work: filter and search the grid, the calendar, budget and cost by mon
   await expect(gridRow('Fleet roadshow')).toBeVisible();
   await expectNoAxeViolations(page);
 
-  // A filter (FR-004, FR-005): only declined activities, with their plan, campaign and initiative.
   await filters.getByRole('button', { name: 'Activity status' }).click();
   await page
     .getByRole('dialog', { name: 'Activity status' })
@@ -49,7 +44,6 @@ test('All work: filter and search the grid, the calendar, budget and cost by mon
   await expect(page.getByRole('button', { name: /^Remove filter: / })).toHaveCount(0);
   await expect(count).toHaveText(/^(\d+) of \1 activities$/);
 
-  // Search (FR-006) and a filter together: one Complete activity.
   await filters.getByRole('button', { name: 'Activity status' }).click();
   await page
     .getByRole('dialog', { name: 'Activity status' })
@@ -68,11 +62,10 @@ test('All work: filter and search the grid, the calendar, budget and cost by mon
   );
   await expect(page.getByRole('region', { name: 'Summary' })).toContainText('$45K');
 
-  // The calendar (FR-025 – FR-028): the year's timeline with today's line, then the month grid.
   await page.getByRole('tab', { name: 'Calendar' }).click();
   const calendar = page.getByRole('table', { name: `Calendar ${SEED_YEAR}` });
   await expect(calendar).toBeVisible();
-  // The Today line is drawn only on the current year's timeline (FR-026).
+  // The Today line is drawn only on the current year's timeline.
   await expect(calendar.getByRole('columnheader').filter({ hasText: 'Today' })).toHaveCount(
     SEED_YEAR === THIS_YEAR ? 1 : 0,
   );
@@ -90,7 +83,7 @@ test('All work: filter and search the grid, the calendar, budget and cost by mon
   await expectNoAxeViolations(page);
   await page.getByRole('button', { name: 'Timeline' }).click();
 
-  // Budget and cost by month, then by quarter (FR-022 – FR-024): Jan–Feb only, 45,000.00 in total.
+  // Budget and cost by month, then by quarter: Jan–Feb only, 45,000.00 in total.
   await page.getByRole('tab', { name: 'Budget & cost' }).click();
   const budget = page.getByRole('table', { name: 'Budget & cost' });
   await expect(budget.getByRole('columnheader', { name: 'Jan' })).toBeVisible();
@@ -101,7 +94,6 @@ test('All work: filter and search the grid, the calendar, budget and cost by mon
   await page.getByRole('button', { name: 'Quarterly' }).click();
   await expect(budget.getByRole('columnheader', { name: 'Q1' })).toBeVisible();
   const billboardBudget = budget.getByRole('row').filter({ hasText: 'Billboard winter wave' });
-  // Q1, Q2, Q3, Q4, Total.
   await expect(billboardBudget.getByRole('cell')).toHaveText([
     '',
     '$45,000.00',
@@ -111,7 +103,6 @@ test('All work: filter and search the grid, the calendar, budget and cost by mon
     '$45,000.00',
   ]);
 
-  // Save the view, clear everything, then reopen the view (FR-029 – FR-031).
   const viewName = uniqueName('E2E view');
   await page.getByRole('button', { name: 'Views' }).click();
   await page.getByRole('menuitem', { name: 'Save current view…' }).click();
@@ -138,7 +129,6 @@ test('All work: filter and search the grid, the calendar, budget and cost by mon
   );
   await expect(count).toHaveText(/^1 of \d+ activities$/);
 
-  // Export the grid to CSV (FR-032 – FR-034): the notes about the export, then the rows.
   await page.getByRole('tab', { name: 'Grid' }).click();
   await page.getByRole('button', { name: 'Export' }).click();
   const downloading = page.waitForEvent('download');

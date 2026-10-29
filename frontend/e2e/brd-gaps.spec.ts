@@ -3,9 +3,6 @@ import { action, callApi, expectToast, itemAt, signInAs, uniqueName } from './fi
 import { lubricantsActivity, STANDARD_WORKFLOW } from './lubricants';
 import { createPlan, createPlanningRecords, idOf, type ListOf, type Named } from './planning';
 
-// End-to-end journeys through the client's BRD MVP gaps (features 014–017), against the real API with
-// the demo data: roles and access (014), financial transactions (015), planning and currency (016:
-// split activity, global budgets) and approval rules (017: approved automatically, delegation).
 // Records a journey needs are prepared through the API; what it proves is done on screen.
 
 const ALEX = 'alex.morgan@shell.com';
@@ -15,12 +12,9 @@ const MEI = 'mei.lin@shell.com';
 const CARLOS = 'carlos.mendes@shell.com';
 const SARA = 'sara.novak@shell.com';
 
-/** The demo plan, activity and purchase order of the GSAP story (backend/seed). */
 const LUBRICANTS_PLAN = 'FY2026 Lubricants Europe';
 const SOCIAL_ACTIVITY = 'A-1002';
 const SOCIAL_PO = 'PO 4500001002 / 10';
-
-// ---------------------------------------------------------------------------------------------------
 
 test('014: an administrator gives a person a role in Settings › Roles and access, and it takes effect', async ({
   page,
@@ -43,7 +37,6 @@ test('014: an administrator gives a person a role in Settings › Roles and acce
   await expect(page.getByRole('heading', { name: 'Plans', level: 1 })).toBeVisible();
   await expect(action(page, 'New plan')).toHaveCount(0);
 
-  // Alex gives them Planner for their own teams.
   await signInAs(page, ALEX);
   await page.goto('/settings/access');
   await expect(page.getByRole('heading', { name: 'Roles and access', level: 1 })).toBeVisible();
@@ -73,7 +66,7 @@ test('014: a viewer sees a plan read-only', async ({ page }) => {
   await expect(page.getByRole('note').filter({ hasText: /^View only/ })).toContainText(
     'your role (Viewer) lets you see this plan but not change it.',
   );
-  // No Edit, Publish or Add campaign: the actions follow the plan's access (014 FR-011).
+  // No Edit, Publish or Add campaign: the actions follow the plan's access.
   await expect(action(page, 'Edit')).toHaveCount(0);
   await expect(action(page, 'Publish')).toHaveCount(0);
   await expect(action(page, 'Add campaign')).toHaveCount(0);
@@ -129,7 +122,6 @@ test('017: a delegate approves for the approver who is away', async ({ page }) =
   );
 
   try {
-    // Priya submits a $30,000.00 activity: it waits for Daniel at level 1.
     await signInAs(page, PRIYA);
     const activity = await lubricantsActivity(page, 'Delegate', '30000.00');
     await callApi(page, 'POST', `/api/v1/activities/${activity.id}/approval/submit`, {
@@ -137,7 +129,6 @@ test('017: a delegate approves for the approver who is away', async ({ page }) =
       comment: '',
     });
 
-    // Carlos finds it on his Approvals page and approves it as Daniel's delegate.
     await signInAs(page, CARLOS);
     await page.goto('/approvals');
     await expect(page.getByRole('heading', { name: 'Approvals', level: 1 })).toBeVisible();
@@ -150,7 +141,6 @@ test('017: a delegate approves for the approver who is away', async ({ page }) =
     await approve.getByRole('button', { name: 'Approve', exact: true }).click();
     await expectToast(page, `Activity '${activity.name}' approved`);
 
-    // Priya sees who decided, and for whom.
     await signInAs(page, PRIYA);
     await page.goto(activity.path);
     await expect(page.getByText('Approved', { exact: true }).first()).toBeVisible();
@@ -194,7 +184,6 @@ test('016: a planner splits an activity in two', async ({ page }) => {
   await dialog.getByRole('button', { name: 'Split activity' }).click();
   await expectToast(page, `'${name}' split — '${newName}' created.`);
 
-  // Both activities are in the plan; the planned cost is shared between them.
   const activities = await callApi<ListOf<Named & { plannedCost: { amount: string } }>>(
     page,
     'GET',
@@ -227,7 +216,6 @@ test('016: a global planner allocates part of the global budget to a plan', asyn
   await dialog.getByRole('button', { name: 'Allocate', exact: true }).click();
   await expectToast(page, `Allocation to '${plan.name}' saved`);
 
-  // The allocation is the plan's budget now.
   await signInAs(page, MEI);
   const saved = await callApi<{ budget: { amount: string; currency: string } | null }>(
     page,

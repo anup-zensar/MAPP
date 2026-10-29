@@ -7,8 +7,7 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// Deactivate keeps the person's memberships, logs "deactivated" with the status change, and removes them
-// from the people who can sign in (FR-005, FR-028, US1 scenario 5).
+// Deactivate keeps the person's memberships, logs the status change, and stops them signing in.
 func TestSetPersonStatus_DeactivateKeepsMembershipsAndLogs_FR005_FR028(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -31,7 +30,6 @@ func TestSetPersonStatus_DeactivateKeepsMembershipsAndLogs_FR005_FR028(t *testin
 	}
 }
 
-// Nobody can deactivate themselves (FR-006); nothing changes.
 func TestSetPersonStatus_Yourself_NotAllowed_FR006(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -46,7 +44,7 @@ func TestSetPersonStatus_Yourself_NotAllowed_FR006(t *testing.T) {
 	}
 }
 
-// Deactivating an inactive person changes nothing: no new version, no log entry (FR-005).
+// Deactivating an inactive person changes nothing: no new version, no log entry.
 func TestSetPersonStatus_AlreadyInactiveUnchanged_FR005(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -62,7 +60,7 @@ func TestSetPersonStatus_AlreadyInactiveUnchanged_FR005(t *testing.T) {
 	assertLog(t, f, nil)
 }
 
-// Reactivate lets the person sign in and be chosen again, still in their teams (FR-007, US1 scenario 7).
+// Reactivate lets the person sign in and be chosen again, still in their teams.
 func TestSetPersonStatus_ReactivateMembershipsIntact_FR007(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -82,8 +80,7 @@ func TestSetPersonStatus_ReactivateMembershipsIntact_FR007(t *testing.T) {
 	}
 }
 
-// The status action needs both fields of its body, checks the version and answers not_found for an
-// unknown person.
+// The status action needs both fields of its body, checks the version and answers not_found for an unknown person.
 func TestSetPersonStatus_MissingActiveAndVersion(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

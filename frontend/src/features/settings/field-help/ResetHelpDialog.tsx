@@ -13,11 +13,7 @@ export interface ResetHelpDialogProps {
   onCancel: () => void;
 }
 
-/**
- * "Reset the help of 'Planned cost'?" (016 FR-046, US7-3): **Reset to default** brings the
- * default text back (the chip then reads "Default"); Cancel has the focus. A failure, such as a
- * newer change by someone else, is said in a message.
- */
+/** Cancel has the focus; a failure, such as a newer change by someone else, shows a message. */
 export function ResetHelpDialog({ entry, version, onDone, onCancel }: ResetHelpDialogProps) {
   const update = useUpdateFieldHelp();
   const { show } = useToast();

@@ -29,7 +29,6 @@ type errorEnvelope struct {
 	Error *errs.Error `json:"error"`
 }
 
-// readBody refuses, with bad_request, anything but one strict JSON value; the reason goes only to the log.
 func readBody(r *http.Request, body io.Reader, dst any) error {
 	if err := decode(r.Header.Get("Content-Type"), body, dst); err != nil {
 		slog.WarnContext(r.Context(), "unreadable request body", "method", r.Method, "path", r.URL.Path, "error", err)
@@ -53,7 +52,6 @@ func decode(contentType string, body io.Reader, dst any) error {
 	return nil
 }
 
-// encode falls back to the internal_error envelope when v cannot be encoded, a programming mistake.
 func encode(status int, v any) (int, []byte, error) {
 	body, err := json.Marshal(v)
 	if err != nil {

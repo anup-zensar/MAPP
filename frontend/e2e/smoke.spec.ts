@@ -1,8 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { DEMO_PASSWORD, expectNoAxeViolations, signInAs, uniqueName } from './fixtures';
 
-// A short end-to-end smoke test of feature 001's main journeys, against the real API with the demo data.
-
 test('US1: a visitor is sent to sign in and comes back after choosing a demo person (FR-001–FR-005)', async ({
   page,
 }) => {
@@ -45,24 +43,19 @@ test('US1: wrong password is refused; e-mail case and spaces are ignored (FR-003
 
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('heading', { name: 'Welcome back, Priya.' })).toBeVisible();
-  // Priya's teams have plans, so Home shows them at a glance (Getting started is for people in no
-  // team, or in teams without plans: feature 009).
+  // Priya's teams have plans, so Home shows them at a glance instead of Getting started.
   await expect(page.getByRole('region', { name: 'Plans at a glance' })).toBeVisible();
 });
 
 test('US2: every navigation item opens its page with its tab title (FR-010, FR-015, FR-017, SC-003)', async ({
   page,
 }) => {
-  // Alex Morgan, the administrator: Global budgets and Financials are shown only to people whose
-  // role includes them (014 FR-011).
+  // Global budgets and Financials are shown only to people whose role includes them, such as Alex.
   await signInAs(page, 'alex.morgan@shell.com');
   await page.goto('/');
   const nav = page.getByRole('navigation', { name: 'Main' });
   const main = page.getByRole('main');
 
-  // Every section is built: Plans, Approvals, Settings (features 002–008), Home (009), All work (010),
-  // Recycle bin and Activity log (011), Global budgets (014), Financials (015). No page shows
-  // "Coming soon" any more.
   const pages: { item: string; heading: string }[] = [
     { item: 'Plans', heading: 'Plans' },
     { item: 'Global budgets', heading: 'Global budgets' },
@@ -92,7 +85,7 @@ test('US4: sign out returns to the sign-in page and Back does not show the previ
   await signInAs(page, 'mei.lin@shell.com');
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Welcome back, Mei.' })).toBeVisible();
-  // Open another page inside the app first, so that Back has a MAPP page to go back to.
+  // Open another page inside the app first, so that Back has an app page to go back to.
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Plans' }).click();
   await expect(page).toHaveTitle('Plans · SP&A One');
 
