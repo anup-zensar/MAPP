@@ -10,6 +10,7 @@ export const HISTORY_TITLE = 'Runs';
 export const NO_RUNS = 'No runs yet.';
 export const NO_ACCESS = 'Running the simulated GSAP needs the permission to import GSAP extracts.';
 export const NOTHING_SENT = 'Nothing was ready to send.';
+export const PROCESSING = 'Simulated GSAP is processing the request…';
 export const CODES_FINAL = "Codes can't be changed or removed in SP&A One.";
 
 export const SOURCE_TEXT = {
