@@ -126,6 +126,28 @@ func TestPlannedByMonth_PlanCurrency_FR024(t *testing.T) {
 	}
 }
 
+// Each row counts the activities below it whose line items exceed their planned cost, so the card can say
+// why its months add up to more than the planned cost (038 FR-024, L-2).
+func TestBudgetByMonth_NegativeBalanceCount_038_FR024_L2(t *testing.T) {
+	t.Parallel()
+	nodes := phasingNodes(
+		activityNode("A-1", "1000.00", "2027-12"),
+		lineItemNode("L-1", "A-1", "1500.00", "", "2027-12", "1500.00"),
+		activityNode("A-2", "9000.00", "2027-03"),
+		lineItemNode("L-2", "A-2", "6000.00", "", "2027-03", "6000.00"),
+	)
+
+	result := budgetByMonth(buildTree(nodes), 2027)
+
+	got := []int{}
+	for _, r := range result.Rows {
+		got = append(got, r.NegativeBalanceCount)
+	}
+	if want := []int{1, 1, 1, 0}; !slices.Equal(got, want) {
+		t.Errorf("negative balance counts of P-1, C-1, I-1, I-2 = %v, want %v", got, want)
+	}
+}
+
 // The rows: Budget (phased, "—" when not phased), Planned cost, Difference (only when phased), Allocated to the
 // children (plans and campaigns; null for initiatives) and the over flags; "2 campaigns are not phased" is
 // the count of children without phasing (FR-024).

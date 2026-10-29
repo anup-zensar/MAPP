@@ -1,6 +1,7 @@
 package home
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -23,9 +24,41 @@ func TestSummary_OwnedActivitiesCoverAllPlans_EdgeCase(t *testing.T) {
 	for _, scope := range []string{"myTeams", "everything"} {
 		got, err := s.Summary(t.Context(), priya, scope)
 
-		if err != nil || got.ActivitiesOwned != (ActivityCounts{Count: 1, Submitted: 1}) {
-			t.Errorf("%s: activities owned = %+v, %v; want the activity outside her teams", scope, got.ActivitiesOwned, err)
+		if c := countsText(got.ActivitiesOwned); err != nil || c != "1 (0 declined, 1 submitted) in 2026–2026" {
+			t.Errorf("%s: activities owned = %s, %v; want the activity outside her teams", scope, c, err)
 		}
+	}
+}
+
+// countsText writes the Activities I own card as "9 (1 declined, 1 submitted) in 2026–2027".
+func countsText(c ActivityCounts) string {
+	years := "no years"
+	if c.YearFrom != nil && c.YearTo != nil {
+		years = fmt.Sprintf("%d–%d", *c.YearFrom, *c.YearTo)
+	}
+	return fmt.Sprintf("%d (%d declined, %d submitted) in %s", c.Count, c.Declined, c.Submitted, years)
+}
+
+// The card covers the plan years of the person's activities, at most five from the earliest, and counts only
+// the activities of those years, as All work on those years lists them (038 FR-032, M-5; D-357).
+func TestSummary_OwnedActivitiesYears_038_FR032_M5(t *testing.T) {
+	t.Parallel()
+	f := newFakeSources()
+	f.plans = []Plan{newPlan("P-1", "FY2026", 2026, lubricantsEurope), newPlan("P-2", "FY2027", 2027, lubricantsEurope),
+		newPlan("P-3", "FY2031", 2031, lubricantsEurope)}
+	in := func(id string) errs.RecordRef { return errs.RecordRef{Type: "plan", ID: id} }
+	f.activities[priya.ID] = []Activity{{ID: "A-1", Plan: in("P-2"), Status: "declined"},
+		{ID: "A-2", Plan: in("P-1"), Status: "created"}, {ID: "A-3", Plan: in("P-3"), Status: "submitted"}}
+	s := newService(t, f)
+
+	got, err := s.Summary(t.Context(), priya, "myTeams")
+	none, noneErr := s.Summary(t.Context(), daniel, "myTeams")
+
+	if c := countsText(got.ActivitiesOwned); err != nil || c != "2 (1 declined, 0 submitted) in 2026–2027" {
+		t.Errorf("activities owned = %s, %v; want 2 in 2026–2027 (2031 is more than four years later)", c, err)
+	}
+	if c := countsText(none.ActivitiesOwned); noneErr != nil || c != "0 (0 declined, 0 submitted) in no years" {
+		t.Errorf("no activities = %s, %v", c, noneErr)
 	}
 }
 

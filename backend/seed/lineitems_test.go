@@ -13,7 +13,7 @@ import (
 )
 
 // Every line item has its activity's owner, the finance budget year 2026 and finance coding from Shell's lists (D-325).
-func TestLoad_LineItems_FR009(t *testing.T) {
+func TestLoad_LineItems_FR009_038_FR061_L30(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
 	spendType := d.attributeID(t, settings.LevelLineItem, "Spend type")
@@ -55,8 +55,9 @@ func TestLoad_LineItems_FR009(t *testing.T) {
 		"L-1006 Billboard winter wave Stand build EUR 9,200.00 evenly[] swbs=true FBI-1003 / BTL - Event / 7250150 - Sponsorship programmes",
 		"L-1007 Grand opening Shanghai Station signage USD 1,000.00 custom[2026-04=450.00 2026-05=450.00] swbs=true FBI-1004 / BTL - Event",
 		"L-1008 Grand opening Shanghai Fleet card promotion CNY 280,450.00 evenly[] swbs=true FBI-1005 / ATL - Digital / 7250080 - Advertising - Digital",
-		"L-1009 UK launch event Venue GBP 15,000.00 evenly[] swbs=true  / BTL - Event / 7250150 - Sponsorship programmes",
-		"L-1010 UK launch event Agency fee (Ireland) EUR 23,000.00 evenly[] swbs=true  / BTL - Agency Fees / 7250060 - Advertising - Corp/Agency/Production",
+		// 038 FR-061 (L-30): the FY2027 line items carry an item of the 2027 finance budget.
+		"L-1009 UK launch event Venue GBP 15,000.00 evenly[] swbs=true FBI-1007 / BTL - Event / 7250150 - Sponsorship programmes",
+		"L-1010 UK launch event Agency fee (Ireland) EUR 23,000.00 evenly[] swbs=true FBI-1008 / BTL - Agency Fees / 7250060 - Advertising - Corp/Agency/Production",
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("line items =\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))

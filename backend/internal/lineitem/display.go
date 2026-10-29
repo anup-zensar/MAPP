@@ -70,24 +70,39 @@ func (d display) balance(b UnassignedBalance) UnassignedBalance {
 	return b
 }
 
-// grid returns g, built in the plan currency, with every cell and total converted on its own: in the plan
-// currency the cells add up exactly; converted, a total can differ by a cent from the sum of its cells.
+// grid converts g so that it still adds up: each row total once, its cells as its parts (038 FR-022).
 func (d display) grid(g SpreadGrid) SpreadGrid {
-	converted := SpreadGrid{Columns: g.Columns, Rows: make([]SpreadGridRow, 0, len(g.Rows)), Total: d.money(g.Total)}
-	converted.Totals = d.cells(g.Totals)
+	converted := SpreadGrid{Columns: g.Columns, Rows: make([]SpreadGridRow, 0, len(g.Rows)),
+		Totals: make([]*money.Money, len(g.Totals)), Total: d.money(money.Money{Currency: g.Total.Currency})}
 	for _, row := range g.Rows {
-		converted.Rows = append(converted.Rows, SpreadGridRow{
-			LineItemID: row.LineItemID, Name: row.Name, Cells: d.cells(row.Cells), Total: d.money(row.Total),
-		})
+		r := d.row(row)
+		converted.Rows = append(converted.Rows, r)
+		converted.Total.Amount = converted.Total.Amount.Add(r.Total.Amount)
+		for i, cell := range r.Cells {
+			if cell == nil {
+				continue
+			}
+			if converted.Totals[i] == nil {
+				converted.Totals[i] = &money.Money{Currency: cell.Currency}
+			}
+			converted.Totals[i].Amount = converted.Totals[i].Amount.Add(cell.Amount)
+		}
 	}
 	return converted
 }
 
-// cells converts each amount of cells, keeping the empty ones empty.
-func (d display) cells(cells []*money.Money) []*money.Money {
-	converted := make([]*money.Money, len(cells))
-	for i, cell := range cells {
-		converted[i] = d.optional(cell)
+// row converts the cells of row as parts of its total, keeping the empty ones empty.
+func (d display) row(row SpreadGridRow) SpreadGridRow {
+	columns := make([]int, 0, len(row.Cells))
+	parts := make([]money.Money, 0, len(row.Cells))
+	for i, cell := range row.Cells {
+		if cell != nil {
+			columns, parts = append(columns, i), append(parts, *cell)
+		}
 	}
-	return converted
+	cells := make([]*money.Money, len(row.Cells))
+	for j, part := range d.Parts(parts) {
+		cells[columns[j]] = &part
+	}
+	return SpreadGridRow{LineItemID: row.LineItemID, Name: row.Name, Cells: cells, Total: d.money(row.Total)}
 }

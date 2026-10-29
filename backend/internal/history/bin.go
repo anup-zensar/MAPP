@@ -171,7 +171,7 @@ func (s *Service) PreviewRestore(ctx context.Context, a actor.Actor, entryID str
 }
 
 // describePreview adds to preview what the dry run did: every changed field of every record that came back
-// (Restored), then every field the restore changed in a stored record, as the entries that its hooks
+// (Restored) that its notes do not state, then every field the restore changed in a stored record, as the entries that its hooks
 // logged say (FR-020), and the notes of the kinds' restore rules, in order.
 func (s *Service) describePreview(ctx context.Context, preview *RestorePreview, done []restored, logged []Entry) error {
 	came := map[recordKey]bool{}
@@ -186,7 +186,7 @@ func (s *Service) describePreview(ctx context.Context, preview *RestorePreview, 
 			if err != nil {
 				return err
 			}
-			for _, c := range described {
+			for _, c := range unstated(described, r.notes) {
 				preview.Changes = append(preview.Changes, RecordChange{
 					RecordType: pair.kind.Name, RecordTypeLabel: pair.kind.Singular,
 					RecordID: pair.before.ID, RecordName: pair.before.Name, Restored: true,
@@ -209,6 +209,15 @@ func (s *Service) describePreview(ctx context.Context, preview *RestorePreview, 
 		}
 	}
 	return nil
+}
+
+// unstated drops from a restored record's changes the rename and status reset that the notes of its restore
+// state: the kinds' restore rules note every one they make, so the preview states it once (038 FR-049).
+func unstated(changes []Change, notes []string) []Change {
+	if len(notes) == 0 {
+		return changes
+	}
+	return slices.DeleteFunc(changes, func(c Change) bool { return c.Field == "name" || c.Field == "status" })
 }
 
 // restoreChain restores the entries in order, the entries holding the missing parents first, by a at now,

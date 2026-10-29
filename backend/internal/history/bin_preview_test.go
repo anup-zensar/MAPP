@@ -28,25 +28,17 @@ func TestPreviewRestore_DestinationIsCurrentPlace_EdgeCase(t *testing.T) {
 }
 
 // The preview states every status change of the records that come back, as their kinds' restore rules
-// make them, with the rules' notes (011 FR-018, FR-019): here an approved child and grandchild come back
-// as created.
-func TestPreviewRestore_StatusChanges_FR018_FR019(t *testing.T) {
+// make them, once: by the rules' notes, not again as a change (011 FR-018, FR-019; 038 FR-049, L-23): here an
+// approved child and grandchild come back as created.
+func TestPreviewRestore_StatusChangesOnce_038_FR049_L23(t *testing.T) {
 	t.Parallel()
 	f := newStatusFixture(t)
 	deleted := f.moveToBin(t, "child", "C-1")
 
 	preview := f.preview(t, deleted.ID)
 
-	want := []RecordChange{
-		{RecordType: "child", RecordTypeLabel: "child", RecordID: "C-1", RecordName: "Child one", Restored: true,
-			Field: "status", Label: "Status", OldText: "approved", NewText: "created"},
-		{RecordType: "grandchild", RecordTypeLabel: "grandchild", RecordID: "G-1", RecordName: "Grandchild one", Restored: true,
-			Field: "status", Label: "Status", OldText: "approved", NewText: "created"},
-		{RecordType: "grandchild", RecordTypeLabel: "grandchild", RecordID: "G-2", RecordName: "Grandchild two", Restored: true,
-			Field: "status", Label: "Status", OldText: "approved", NewText: "created"},
-	}
-	if !reflect.DeepEqual(preview.Changes, want) {
-		t.Errorf("changes =\n%s\nwant\n%s", asJSON(preview.Changes), asJSON(want))
+	if len(preview.Changes) != 0 {
+		t.Errorf("changes = %s, want none: the notes state them", asJSON(preview.Changes))
 	}
 	wantNotes := []string{"'Child one' comes back as created.", "'Grandchild one' comes back as created.",
 		"'Grandchild two' comes back as created."}
@@ -58,8 +50,9 @@ func TestPreviewRestore_StatusChanges_FR018_FR019(t *testing.T) {
 	}
 }
 
-// When the name is taken meanwhile, the preview says the record comes back under a new name (011 FR-022).
-func TestPreviewRestore_NameClash_FR022(t *testing.T) {
+// When the name is taken meanwhile, the preview says once that the record comes back under a new name
+// (011 FR-022; 038 FR-049, L-23).
+func TestPreviewRestore_NameClashOnce_038_FR049_L23(t *testing.T) {
 	t.Parallel()
 	f := newStatusFixture(t)
 	deleted := f.moveToBin(t, "child", "C-1")
@@ -67,10 +60,8 @@ func TestPreviewRestore_NameClash_FR022(t *testing.T) {
 
 	preview := f.preview(t, deleted.ID)
 
-	name := RecordChange{RecordType: "child", RecordTypeLabel: "child", RecordID: "C-1", RecordName: "Child one", Restored: true,
-		Field: "name", Label: "Name", OldText: "Child one", NewText: "Child one (restored)"}
-	if !slices.Contains(preview.Changes, name) {
-		t.Errorf("changes = %s, want %s", asJSON(preview.Changes), asJSON(name))
+	if slices.ContainsFunc(preview.Changes, func(c RecordChange) bool { return c.Field == "name" }) {
+		t.Errorf("changes = %s, want the rename only in the notes", asJSON(preview.Changes))
 	}
 	if note := "Renamed to 'Child one (restored)' because the name was taken."; !slices.Contains(preview.Notes, note) {
 		t.Errorf("notes = %q, want %q", preview.Notes, note)

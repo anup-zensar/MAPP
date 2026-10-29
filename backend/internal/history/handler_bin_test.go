@@ -77,7 +77,7 @@ func TestListRecycleBin_Items_Contract(t *testing.T) {
 // The restore preview of the note whose folder is in the bin: the folder comes back first, under a new
 // name because "Ideas" is taken, and the note returns into it (011 FR-018, FR-022, FR-023). Nothing is
 // saved: the bin and the log are unchanged. An entry the bin never had answers not found.
-func TestRestorePreview_Contract(t *testing.T) {
+func TestRestorePreview_Contract_038_FR049_L23(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
@@ -90,8 +90,7 @@ func TestRestorePreview_Contract(t *testing.T) {
 	assertAnswer(t, response, http.StatusOK, `{"entry":`+noteBinItem+`,`+
 		`"destination":[{"type":"sampleFolder","id":"SF-1001","name":"Ideas (restored)"}],`+
 		`"parentEntries":[`+folderBinItem+`],`+
-		`"changes":[{"recordType":"sampleFolder","recordTypeLabel":"sample folder","recordId":"SF-1001","recordName":"Ideas",`+
-		`"restored":true,"field":"name","label":"Name","oldText":"Ideas","newText":"Ideas (restored)"}],`+
+		`"changes":[],`+ // 038 FR-049 (L-23): the note states the rename
 		`"notes":["Renamed to 'Ideas (restored)' because the name was taken."]}`)
 	assertAnswer(t, unknown, http.StatusNotFound, unknownEntryBody)
 	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil), http.StatusOK,

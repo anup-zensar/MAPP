@@ -39,19 +39,15 @@ func (p span) actual(a *activity) money.Amount {
 	return money.Sum(a.actual[p.first : p.last+1]...)
 }
 
-// periodsOf is FR-017: planned and actual by quarter and by month, with what is not scheduled.
+// periodsOf is FR-017 and 038 FR-023: periods + not scheduled − line items above planned cost = planned cost.
 func periodsOf(acts []*activity, year int, sees bool, s shower) Periods {
-	notScheduled := sumOf(acts, func(a *activity) money.Amount { return a.notScheduled })
-	p := Periods{
+	notScheduled := func(a *activity) money.Amount { return a.notScheduled }
+	above := func(a *activity) money.Amount { return a.above }
+	return Periods{
 		Quarters: periodList(acts, quarterSpans(year), sees, s), Months: periodList(acts, monthSpans(year), sees, s),
-		NotScheduledTrace:          s.trace(acts, func(a *activity) money.Amount { return a.notScheduled }),
-		LinesAbovePlannedCostTrace: []Contribution{},
+		NotScheduled: s.nonZero(sumOf(acts, notScheduled)), NotScheduledTrace: s.trace(acts, notScheduled),
+		LinesAbovePlannedCost: s.nonZero(sumOf(acts, above)), LinesAbovePlannedCostTrace: s.trace(acts, above),
 	}
-	if !notScheduled.IsZero() {
-		m := s.money(notScheduled)
-		p.NotScheduled = &m
-	}
-	return p
 }
 
 // periodList gives every period its bars on one scale: the largest planned or actual amount of the list.

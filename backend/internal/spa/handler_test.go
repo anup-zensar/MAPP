@@ -68,6 +68,18 @@ func TestGetSpaView_FR005_ACampaignsView(t *testing.T) {
 	}
 }
 
+// Grand opening Shanghai's line items exceed its planned cost: the answer has the row, as the contract says
+// (038 FR-023, M-2).
+func TestGetSpaView_LinesAbovePlannedCost_038_FR023_M2(t *testing.T) {
+	t.Parallel()
+	s := apitest.New(t)
+	p := viewOf(t, s.SignIn(t, "carlos.mendes@shell.com").Do(t, http.MethodGet, "/api/v1/plans/P-1002/spa", nil)).Periods
+	if p.LinesAbovePlannedCost == nil || len(p.LinesAbovePlannedCostTrace) != 1 ||
+		p.LinesAbovePlannedCostTrace[0].Name != "Grand opening Shanghai" || (p.NotScheduled != nil && p.NotScheduled.Amount.Sign() < 0) {
+		t.Errorf("not scheduled %v, above %v, trace %+v", p.NotScheduled, p.LinesAbovePlannedCost, p.LinesAbovePlannedCostTrace)
+	}
+}
+
 func TestGetSpaView_FR012_ACampaignOfAnotherPlanIs(t *testing.T) {
 	t.Parallel()
 	s := apitest.New(t)

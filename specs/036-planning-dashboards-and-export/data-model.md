@@ -10,8 +10,8 @@ currency (`money.Display`).
 |---|---|---|---|
 | `year` | 2000–2100 | the current year (injected clock) | The plan year (D-011) |
 | `planType` | `operational`, `strategic`, `crossMarket`, empty | empty = all | 016 plan type |
-| `currency` | an active currency code of Settings | the person's display currency | 400 `validation_failed` otherwise |
-| `teamId` | a team id (Regional only) | the person's first team by name, else the first team | 400 when unknown |
+| `currency` | an active currency code of Settings | the person's display currency | An unknown or inactive code falls back to the default, else USD; `filters` says which (038 FR-012, D-357); only a code that is not three capitals is 400 `validation_failed` |
+| `teamId` | a team id (Regional only) | the person's first team by name, else the first team | An unknown or out-of-scope team falls back to the default; `filters` says which (038 FR-012) |
 | `planId` | a plan id (Regional only) | none | Ignored unless the plan is among the dashboard's plans |
 
 ## 2. View (contract `PlanningDashboard`)

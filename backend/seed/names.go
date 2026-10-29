@@ -34,6 +34,10 @@ const (
 	mobilityBudget    = "2026 Mobility Budget"
 	itemChinaRetail   = "China – Retail"
 	itemChinaFleet    = "China – Fleet"
+	ukBudget          = "2027 Lubricants Budget"
+	itemUKEvents      = "UK & Ireland – Events"
+	itemUKAgency      = "UK & Ireland – Agency"
+	ukBudgetYear      = 2027
 
 	unitLubricants = "Lubricants"
 	unitMobility   = "Mobility"
