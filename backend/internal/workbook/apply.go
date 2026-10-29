@@ -11,6 +11,8 @@ import (
 
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
 	"mapp/internal/platform/sheet"
 )
 
@@ -160,15 +162,36 @@ func (ap *applier) readCells(w *rowWork) {
 			continue
 		}
 		text := w.s.text(w.row, c.field)
-		if w.stored != nil && text == format(c, w.stored.Values, ap.plan.Choices) {
+		if w.stored != nil && ap.unchanged(c, text, w.stored.Values) {
 			continue
 		}
-		if problem := parse(c, text, &w.values, ap.plan.Choices); problem != "" {
+		if problem := checkCell(c, text, &w.values, ap.plan.Choices); problem != "" {
 			w.problem(c.heading, text, problem)
 			continue
 		}
 		w.changed[c.field] = true
 	}
+}
+
+// unchanged reports whether a cell still holds the record's value: the same text, or the same amount written
+// as a number (038 FR-059).
+func (ap *applier) unchanged(c column, text string, stored Values) bool {
+	if text == format(c, stored, ap.plan.Choices) {
+		return true
+	}
+	was, isAmount := amountField(c.field, &stored)
+	var read *money.Amount
+	return isAmount && *was != nil && parseAmount(text, &read) == "" && read != nil && *read == **was
+}
+
+// checkCell reads a cell into values; a name must be a single line (038 FR-055).
+func checkCell(c column, text string, values *Values, ch Choices) string {
+	if c.field == fieldName {
+		if problem := record.CheckSingleLine(text); problem != "" {
+			return problem
+		}
+	}
+	return parse(c, text, values, ch)
 }
 
 func isStructural(field string) bool {

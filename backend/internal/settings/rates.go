@@ -40,12 +40,22 @@ const (
 	rateGoneMessage         = "This exchange rate no longer exists — someone may have deleted it."
 	usdAlwaysOneMessage     = "USD is always 1."
 	rateDateMessage         = "Enter a date such as 2026-10-19."
+	rateEarlyDateMessage    = "Enter a date on or after 1 Jan 2000."
 	rateDateTakenMessage    = "%s already has a rate on %s."
 	lastCurrentRateMessage  = "%s needs a rate dated today or earlier."
 	firstRateFutureMessage  = "A new currency needs a rate dated today or earlier."
 	plansRecalculated       = "%s planned in %s. %s %s amounts stay the same; %s USD values change (%s → %s USD)."
 	plansRecalculatedDetail = "%s planned in %s: %s → %s USD."
 )
+
+// firstRateDate is the earliest date a rate may have, typed or imported (038 FR-034).
+var firstRateDate = date.New(2000, 1, 1) //nolint:gochecknoglobals // a fixed date
+
+// has reports whether code has a rate on day.
+func (b rateBook) has(code string, day date.Date) bool {
+	_, found := b.onDate(code, day)
+	return found
+}
 
 // checkRateInput checks a new dated rate of the currency c against book (FR-001, FR-003): USD has no rates;
 // a date "YYYY-MM-DD" that the currency has no rate on yet; a rate above 0 with at most six decimals, at
@@ -56,9 +66,12 @@ func checkRateInput(c Currency, in RateInput, book rateBook, problems *errs.Prob
 		return date.Date{}, money.Rate{}
 	}
 	day, err := date.Parse(strings.TrimSpace(in.Date))
-	if err != nil {
+	switch {
+	case err != nil:
 		problems.Add("date", rateDateMessage)
-	} else if _, taken := book.onDate(c.Code, day); taken {
+	case day.Before(firstRateDate):
+		problems.Add("date", rateEarlyDateMessage)
+	case book.has(c.Code, day):
 		problems.Add("date", fmt.Sprintf(rateDateTakenMessage, c.Code, date.Format(day)))
 	}
 	rate := checkRate(in.Rate, problems)
