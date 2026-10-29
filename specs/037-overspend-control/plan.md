@@ -49,6 +49,9 @@ MSW for each form state; Playwright `frontend/e2e/overspend-control.spec.ts` for
 **Project Type**: Web application (Go API + React web app)
 
 **Performance Goals**: each planning write adds four aggregate reads (R3); measured with `apibench`
+(`BenchmarkOverspend`, T029: an activity create under a campaign set to Refuse, allowed and refused). On
+2026-10-29, demo data, a loaded developer machine: allowed 51 statements, 335 ms; refused 43 statements (rolled
+back before the answer), 250 ms
 
 **Constraints**: every touched file within 300 non-blank lines and its 5 % comment budget; functions within
 the metrics; shared files touched minimally (openapi.yaml, schema.d.ts regenerated, app wiring, seed,

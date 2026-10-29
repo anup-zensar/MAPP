@@ -60,7 +60,7 @@ and the message needs names and money formatting.
 their activities' planned cost in one query; global budgets with their allocated plans in another). Writes
 are serialised already (`database.DB.Write` takes the write lock), so the check also covers two concurrent
 saves that together go over. At MAPP's size (hundreds of plans, thousands of activities) the reads are
-milliseconds; `apibench` shows the per-operation query count.
+milliseconds; `apibench` shows the per-operation query count (`BenchmarkOverspend`, results in plan.md).
 
 ## R4 — The answer of a refused save
 

@@ -95,7 +95,8 @@ parallel with the other `[P]` tasks of its phase.
   `TestOverAllocationUnderARefusePlan_KeepsWarning_Contract_037_FR013`: a campaign budget above its Refuse plan's
   budget still saves (FR-013, D-346). Note: passed on first run; no code change
 - [x] T029 Benchmark `backend/internal/platform/apibench/overspend_test.go` `BenchmarkOverspend`: an allowed and a
-  refused activity create under a campaign set to Refuse, on the volume database (plan, Performance Goals).
+  refused activity create under a campaign set to Refuse, on the demo and volume databases (plan, Performance
+  Goals).
   Note: results recorded in plan.md
 - [x] T030 Record the unscoped guard read as a deviation: plan.md Complexity Tracking, D-355, ADR-0018 (proposed,
   for the product owner's approval) (constitution VII, B5)
