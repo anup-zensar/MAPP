@@ -52,7 +52,7 @@ export function DecimalField({
   }
 
   const unitId = `${name}-unit`;
-  const input = (describedBy: string | undefined) => (
+  const input = (describedBy: string | undefined, required: true | undefined) => (
     <input
       id={name}
       name={name}
@@ -64,6 +64,7 @@ export function DecimalField({
       onBlur={formatOnBlur}
       aria-invalid={error ? true : undefined}
       aria-describedby={[suffix && unitId, describedBy].filter(Boolean).join(' ') || undefined}
+      aria-required={required}
       className={cx(inputs.input, inputs.numeric, error && inputs.invalid)}
       style={compact ? { maxWidth: '140px' } : undefined}
     />
@@ -71,16 +72,16 @@ export function DecimalField({
 
   return (
     <FieldShell id={name} error={error} note={note} {...frame}>
-      {(describedBy) =>
+      {(describedBy, required) =>
         suffix ? (
           <div className={inputs.withUnit} style={compact ? { maxWidth: '140px' } : undefined}>
-            {input(describedBy)}
+            {input(describedBy, required)}
             <span id={unitId} className={inputs.unit}>
               {suffix}
             </span>
           </div>
         ) : (
-          input(describedBy)
+          input(describedBy, required)
         )
       }
     </FieldShell>

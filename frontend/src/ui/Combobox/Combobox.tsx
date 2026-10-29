@@ -165,7 +165,7 @@ export function Combobox({
 
   return (
     <FieldShell id={name} error={error} note={disabledReason ?? note} {...frame}>
-      {(describedBy) => (
+      {(describedBy, required) => (
         <Popover.Root open={isOpen} onOpenChange={setOpen}>
           <Popover.Anchor asChild>
             {/* eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-static-element-interactions -- a pointer shortcut to the input, which keyboards reach directly */}
@@ -210,6 +210,7 @@ export function Combobox({
                 aria-disabled={disabled || undefined}
                 aria-invalid={error ? true : undefined}
                 aria-describedby={describedBy}
+                aria-required={required}
                 readOnly={disabled}
                 placeholder={value.length === 0 ? placeholder : undefined}
                 value={query}

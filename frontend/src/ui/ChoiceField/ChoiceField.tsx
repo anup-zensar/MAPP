@@ -124,7 +124,7 @@ export function ChoiceField(props: ChoiceFieldProps) {
   const { value, onChange } = props;
   return (
     <FieldShell {...frame} id={name} error={error} note={disabledReason ?? note}>
-      {(describedBy) => (
+      {(describedBy, required) => (
         <select
           id={name}
           name={name}
@@ -133,6 +133,7 @@ export function ChoiceField(props: ChoiceFieldProps) {
           onChange={(event) => onChange(event.target.value)}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
+          aria-required={required}
           className={cx(inputs.input, inputs.select, error && inputs.invalid)}
         >
           <option value="">Choose…</option>

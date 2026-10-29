@@ -43,7 +43,7 @@ export function TextAreaField({
 
   return (
     <FieldShell id={name} error={error} note={countdown} {...frame}>
-      {(describedBy) => (
+      {(describedBy, required) => (
         <textarea
           id={name}
           name={name}
@@ -52,6 +52,7 @@ export function TextAreaField({
           onChange={(event) => onChange(event.target.value)}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
+          aria-required={required}
           className={cx(inputs.input, styles.textarea, error && inputs.invalid)}
         />
       )}

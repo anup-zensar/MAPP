@@ -3,6 +3,7 @@ import { AlertDialog } from 'radix-ui';
 import { useRef } from 'react';
 import type { ReactNode } from 'react';
 import { Button } from '../Button/Button';
+import { RequiredLegend } from '../RequiredLegend/RequiredLegend';
 import styles from './ConfirmDialog.module.css';
 
 interface DialogBase {
@@ -65,6 +66,7 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
           }}
         >
           <AlertDialog.Title className={styles.title}>{title}</AlertDialog.Title>
+          <RequiredLegend />
           <AlertDialog.Description asChild>
             <div className={styles.text}>{children}</div>
           </AlertDialog.Description>

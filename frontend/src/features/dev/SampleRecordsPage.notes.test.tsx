@@ -68,7 +68,7 @@ describe('SampleRecordsPage: notes', () => {
 
     expect(await within(panel).findByRole('alert')).toHaveTextContent('Enter a title.');
     expect(within(panel).getByLabelText('Title')).toHaveAccessibleDescription(
-      'Required Enter a title.',
+      'required Enter a title.',
     );
   });
 
