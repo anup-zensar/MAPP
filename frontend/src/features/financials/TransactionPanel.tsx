@@ -126,7 +126,7 @@ export function TransactionPanel() {
 }
 
 function Details({ transaction }: { transaction: FinancialTransaction }) {
-  const { date, dateTime, money, displayCurrency } = useFormatters();
+  const { date, dateTime, money, displayCurrency, dateFormat } = useFormatters();
   const t = transaction;
   const day = (timestamp: string) => date(localDate(timestamp));
   const poReference = t.poNumber ? [t.poNumber, t.poLineNumber].filter(Boolean).join(' / ') : '';
@@ -146,7 +146,7 @@ function Details({ transaction }: { transaction: FinancialTransaction }) {
             <Item label="PO number / PO line">{poReference || '—'}</Item>
           )}
           <Item label="Posting date">{date(t.postingDate)}</Item>
-          {t.accrualMonth && <Item label="Accrual month">{monthText(t.accrualMonth)}</Item>}
+          {t.accrualMonth && <Item label="Accrual month">{monthText(t.accrualMonth, dateFormat)}</Item>}
           <Item label="Amount">
             <span className={styles.money}>{money(t.amount)}</span>
             {t.currencyMissing && (

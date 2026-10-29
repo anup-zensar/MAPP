@@ -62,7 +62,7 @@ export function FinancialsCard({ scope }: { scope: HomeScope }) {
 }
 
 function Overview({ overview, open }: { overview: FinancialOverview; open: ReactNode }) {
-  const { money, dateTime } = useFormatters();
+  const { money, dateTime, dateFormat } = useFormatters();
   const { figures, source, year } = overview;
   // 038 FR-004: not-linked transactions only for people who may import.
   const notLinked = useAccess().has('finance.import') ? overview.notLinked : 0;
@@ -99,8 +99,8 @@ function Overview({ overview, open }: { overview: FinancialOverview; open: React
             value={money(figures.paid)}
           />
           <Figure
-            label={accruedLabel(source.accrualMonth)}
-            tip={accruedTip(source.accrualMonth)}
+            label={accruedLabel(source.accrualMonth, dateFormat)}
+            tip={accruedTip(source.accrualMonth, dateFormat)}
             value={money(figures.accrued)}
           />
         </dl>

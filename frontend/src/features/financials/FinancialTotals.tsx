@@ -13,7 +13,7 @@ export function FinancialTotals({
   page: FinancialTransactionPage | undefined;
   failed: boolean;
 }) {
-  const { money, moneyCompact } = useFormatters();
+  const { money, moneyCompact, dateFormat } = useFormatters();
   if (failed) {
     return null;
   }
@@ -45,9 +45,9 @@ export function FinancialTotals({
       {card('Invoiced', totals.invoiced, TILE_TIPS.invoiced)}
       {card('Paid', totals.paid, TILE_TIPS.paid)}
       {card(
-        accruedLabel(source.accrualMonth),
+        accruedLabel(source.accrualMonth, dateFormat),
         totals.accrued,
-        TILE_TIPS.accrued(source.accrualMonth),
+        TILE_TIPS.accrued(source.accrualMonth, dateFormat),
       )}
     </div>
   );
