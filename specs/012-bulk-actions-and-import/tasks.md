@@ -24,7 +24,7 @@ database `mapp_e2e_b`.
 - [x] T001 Re-shape the import schemas in `backend/api/openapi.yaml` (`ImportUpload`, `ImportProblem`,
   `ImportLevelCounts`, `ImportCheck`, `ImportSummary`, `ImportRecordRef`, `ImportUndoPreview`, `ImportKept`,
   `ImportDetail`, `PlanImportPage`; `ImportRun`, `ImportNewInitiative`, `ImportWillCreate` removed) and add
-  `GET /api/v1/plans/{planId}/export`; `pnpm run api:types`.
+  `GET /api/v1/plans/{planId}/workbook`; `pnpm run api:types`.
 - [x] T002 [P] Add `PrefixBulkAction = "BLK"` and `PrefixImport = "IMP"` to `backend/internal/platform/ids/ids.go`.
 - [x] T003 [P] Migration `00023_bulk_and_imports.sql` (data-model §1), queries `bulk.sql` and `workbook.sql`;
   `sqlc generate && sqlc vet`.

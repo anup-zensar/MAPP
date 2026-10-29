@@ -73,7 +73,7 @@ logged; request body limit raised only for the two upload operations (7 MB)
 
 ```text
 backend/
-├── api/openapi.yaml                       # import schemas re-shaped (not served before), + GET /plans/{planId}/export
+├── api/openapi.yaml                       # import schemas re-shaped (not served before), + GET /plans/{planId}/workbook
 ├── internal/platform/sheet/               # + xlsx_read.go, csv_read.go, read.go (+ tests, fuzz)
 ├── internal/platform/ids/ids.go           # + BLK, IMP
 ├── internal/history/note.go               # + WithNote; log.go appends the note (comment budget restored)
@@ -81,7 +81,7 @@ backend/
 ├── internal/bulk/                         # NEW: model, ports, store(+postgres), service, run, request, texts, handler, bulktest
 ├── internal/workbook/                     # NEW: model, ports, layout, cells, attributes, read, rows, apply, build,
 │                                          #      service, undo, store(+postgres), texts, handler, workbooktest
-├── internal/access/routes_workbook.go     # NEW: GET /plans/{planId}/export
+├── internal/access/routes_workbook.go     # NEW: GET /plans/{planId}/workbook
 ├── internal/stores/…                      # + Bulk, Workbook stores
 └── internal/app/                          # bulk_*.go, workbook_*.go adapters; areas.go wiring; transport.go limits
 
