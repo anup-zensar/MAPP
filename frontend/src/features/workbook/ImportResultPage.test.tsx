@@ -6,7 +6,7 @@ import { testUser } from '@/testing/fixtures/users';
 import { importDetail, importSummary } from '@/testing/fixtures/workbook';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
-import { reply } from '@/testing/replies';
+import { apiError, pending, reply } from '@/testing/replies';
 import { ImportResultPage } from './ImportResultPage';
 import { problemsCsv } from './files';
 
@@ -58,6 +58,28 @@ describe('012 FR-035, FR-036: import results and Undo import', () => {
     expect(await screen.findByText(/Undone by Priya Raman/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Undo import' })).not.toBeInTheDocument();
     expect(api.requests.some((r) => r.path === '/api/v1/imports/IMP-1001/undo')).toBe(true);
+  });
+
+  it('shows the skeleton while the import loads', async () => {
+    renderPage([reply('GET /api/v1/imports/{importId}', () => pending())]);
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Loading…');
+    expect(screen.queryByRole('button', { name: 'Undo import' })).not.toBeInTheDocument();
+  });
+
+  it('shows the no-access page when the API refuses the import', async () => {
+    const message = "You don't have access to this plan. Ask an administrator if you need it.";
+    renderPage([
+      reply('GET /api/v1/imports/{importId}', {
+        status: 403,
+        body: apiError('forbidden', message),
+      }),
+      reply('GET /api/v1/me', { body: testUser() }),
+    ]);
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'No access' })).toBeInTheDocument();
+    expect(screen.getByText(message)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
   });
 
   it('shows the API message for an import that no longer exists', async () => {

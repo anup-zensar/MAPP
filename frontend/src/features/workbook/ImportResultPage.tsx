@@ -5,7 +5,6 @@ import { useFormatters } from '@/format/useFormatters';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
-import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { recordHref } from '@/ui/record-links';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
@@ -14,10 +13,11 @@ import { usePageTitle } from '@/ui/usePageTitle';
 import { useImportDetail, useUndoImport } from './api';
 import type { ImportDetail } from './api';
 import { ProblemsTable } from './CheckResult';
+import { LoadFailed } from './LoadFailed';
 import styles from './workbook.module.css';
 import { LEVEL_PLURALS, totalsText } from './workbook-text';
 
-/** The results of one import, its records and Undo import (FR-035, FR-036). */
+/** The results of one import, its records and Undo import. */
 export function ImportResultPage() {
   usePageTitle('Import results');
   const importId = useParams().importId ?? '';
@@ -29,7 +29,7 @@ export function ImportResultPage() {
 
   if (detail.isPending) return <Skeleton lines={6} />;
   if (detail.isError)
-    return <ErrorState error={detail.error} onRetry={() => void detail.refetch()} />;
+    return <LoadFailed error={detail.error} onRetry={() => void detail.refetch()} />;
   const { import: imp } = detail.data;
 
   function confirmUndo() {
