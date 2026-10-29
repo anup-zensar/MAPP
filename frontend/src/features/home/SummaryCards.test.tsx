@@ -66,6 +66,28 @@ describe('SummaryCards', () => {
     expect(api.requests.map((request) => request.search)).toEqual(['?scope=myTeams']);
   });
 
+  it('opens All work on the years of the activities I own and names them (038 FR-032, M-5)', async () => {
+    const counts = { count: 6, declined: 1, submitted: 2, yearFrom: 2026, yearTo: 2027 };
+    renderCards('myTeams', { body: summaryOf({ activitiesOwned: counts }) });
+
+    const owned = await screen.findByRole('link', {
+      name: 'Activities I own: 6 — open your activities',
+    });
+    expect(owned).toHaveAttribute('href', '/all-work?owner=U-1002&yearFrom=2026&yearTo=2027');
+    expect(cardOf(owned)).toHaveTextContent('in 2026–2027');
+  });
+
+  it('opens All work on the one year when the activities I own are all in it (038 FR-032)', async () => {
+    const counts = { count: 6, declined: 1, submitted: 2, yearFrom: 2026, yearTo: 2026 };
+    renderCards('myTeams', { body: summaryOf({ activitiesOwned: counts }) });
+
+    const owned = await screen.findByRole('link', {
+      name: 'Activities I own: 6 — open your activities',
+    });
+    expect(owned).toHaveAttribute('href', '/all-work?owner=U-1002&year=2026');
+    expect(cardOf(owned)).toHaveTextContent('in 2026');
+  });
+
   it('explains every card with an info tip (FR-005)', async () => {
     renderCards();
 

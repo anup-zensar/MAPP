@@ -84,7 +84,7 @@ func TestExport_GridHasEveryRowLevelPathColumnsTotals_FR032(t *testing.T) {
 		t.Errorf("%d lines, want the heading, %d rows and the totals", len(table), rows)
 	}
 	want := map[string][]string{
-		"Digital & social": {"Initiative", "FY2026 Lubricants Europe › Helix launch", "Digital & social", "I-1001", "In progress",
+		"Digital & social": {"Initiative", "FY2026 Lubricants Europe › Helix launch", "Digital & social", "I-1001", "Partly approved",
 			"Priya Raman", "2026-01-01", "2026-06-30", "300000.00", "200000.00", "125000.00", "75000.00", "0.00", "0.00"},
 		"Film production": {"Line item", "FY2026 Lubricants Europe › Helix launch › Digital & social › Launch film", "Film production",
 			"L-1002", "All filled in", "Priya Raman", "", "", "", "50000.00", "", "", "0.00", "0.00"},
@@ -273,5 +273,25 @@ func TestExport_UnassignedFollowsSwitch_FR012(t *testing.T) {
 
 	if on, off := count(true), count(false); on != 8 || off != 0 {
 		t.Errorf("unassigned rows: %d with the switch on, %d off; want 8 and 0", on, off)
+	}
+}
+
+// Campaigns and initiatives whose activities are partly approved read "Partly approved" in the export and its
+// filter note, as on the screen; a running activity keeps "In progress" — 038 FR-033 (M-11).
+func TestExport_ContainerStatusPartlyApproved_038_FR033_M11(t *testing.T) {
+	t.Parallel()
+	b := seedYear()
+
+	notes, table := csvLines(t, exportOf(t, b, Query{ContainerStatuses: []string{"inProgress"}}, FormatCSV, true))
+
+	if got := rowNamed(t, table, "Digital & social"); got[4] != "Partly approved" {
+		t.Errorf("Digital & social status = %q, want Partly approved", got[4])
+	}
+	if notes[2][1] != "Campaign / initiative status: Partly approved" {
+		t.Errorf("filter note = %q", notes[2])
+	}
+	_, all := csvLines(t, exportOf(t, b, Query{}, FormatCSV, true))
+	if got := rowNamed(t, all, "Partner co-marketing fund"); got[4] != "In progress" {
+		t.Errorf("running activity status = %q, want In progress", got[4])
 	}
 }

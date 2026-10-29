@@ -1,6 +1,7 @@
 import { configure, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
+import { CONFLICT_NEXT_STEP } from '@/api/errors';
 import { launchFilmSection } from '@/testing/fixtures/line-items';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
@@ -110,7 +111,7 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
     ]);
   });
 
-  it('keeps the typed values after a conflict and saves over it with the newer version (FR-026)', async () => {
+  it('keeps the typed values after a conflict, says what to do (038 FR-039, L-1) and saves over it with the newer version (FR-026)', async () => {
     let saves = 0;
     const { user, api } = openEditForm(launchFilm(), [
       reply(
@@ -138,6 +139,7 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
         'Not saved — Alex Morgan changed this activity on 12 Mar 2026 at 10:42',
       ),
     ).toBeVisible();
+    expect(screen.getByText(CONFLICT_NEXT_STEP)).toBeVisible();
     expect(screen.getByLabelText('Description')).toHaveValue('Mine');
 
     await user.click(screen.getByRole('button', { name: 'Save' }));

@@ -14,6 +14,7 @@ import {
   ofPlanBudgetText,
   oldestWaitingText,
   percentUsedText,
+  ownedYearsText,
   planCountsText,
   plansWithoutBudgetText,
 } from './home-text';
@@ -69,12 +70,19 @@ export function SummaryCards({ scope }: { scope: HomeScope }) {
       />
       <SummaryLinkCard
         label="Activities I own"
-        tip="Activities you own, in every plan."
+        tip="Activities you own, in the plans of these years."
         value={formatWhole(activitiesOwned.count)}
         detail={
-          <span>{activityCountsText(activitiesOwned.declined, activitiesOwned.submitted)}</span>
+          <span>
+            {[
+              ownedYearsText(activitiesOwned.yearFrom, activitiesOwned.yearTo),
+              activityCountsText(activitiesOwned.declined, activitiesOwned.submitted),
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </span>
         }
-        to={myActivitiesHref(person.id)}
+        to={myActivitiesHref(person.id, activitiesOwned.yearFrom, activitiesOwned.yearTo)}
         linkLabel="open your activities"
       />
       <SummaryLinkCard

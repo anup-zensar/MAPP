@@ -67,4 +67,46 @@ describe('GettingStartedCard', () => {
       '/settings/teams',
     );
   });
+
+  it('offers a Viewer in no team only what the role can do and to ask an administrator (038 FR-051, L-25)', () => {
+    const viewer = testUser({
+      access: {
+        roles: [],
+        permissions: [{ key: 'plans.view', all: true, teams: [] }],
+        administrators: [
+          { id: 'U-1001', name: 'Alex Morgan', initials: 'AM', jobTitle: 'Admin', active: true },
+        ],
+        noSelfApproval: true,
+      },
+    });
+    renderWithProviders(<GettingStartedCard reason="notInTeam" />, { user: viewer });
+
+    expect(within(card()).getByText(/You're not in a team yet/)).toHaveTextContent(
+      "You're not in a team yet. Plans belong to teams — ask an administrator (Alex Morgan) to add you to one.",
+    );
+    expect(within(card()).queryByRole('link', { name: 'Teams page' })).toBeNull();
+    expect(within(card()).queryByRole('link', { name: 'Set up Settings' })).toBeNull();
+    expect(within(card()).queryByRole('link', { name: 'Create a plan' })).toBeNull();
+    expect(within(card()).queryByRole('link', { name: 'Submit for approval' })).toBeNull();
+  });
+
+  it('offers a planner the steps of the role, without Settings (038 FR-051)', () => {
+    const keys = ['plans.view', 'plans.create', 'campaigns.edit', 'activities.edit'] as const;
+    const planner = testUser({
+      access: {
+        roles: [],
+        permissions: keys.map((key) => ({ key, all: true, teams: [] })),
+        administrators: [],
+        noSelfApproval: true,
+      },
+    });
+    renderWithProviders(<GettingStartedCard reason="noTeamPlans" />, { user: planner });
+
+    expect(
+      within(card())
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Create a plan', 'Add campaigns and initiatives', 'Add activities and line items']);
+    expect(within(card()).getByText('The Plan module in three steps')).toBeInTheDocument();
+  });
 });

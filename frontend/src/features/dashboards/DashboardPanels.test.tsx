@@ -58,6 +58,19 @@ describe('Dashboard panels (036 FR-010, FR-014, FR-016, FR-017, edge cases)', ()
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
 
+  it('says there are no purchase requests instead of a table of zeros (038 FR-053, L-29)', () => {
+    const none = {
+      ...dashboard().purchaseRequests,
+      byStatus: [{ status: 'created' as const, count: 0, amount: usd('0.00') }],
+      count: 0,
+      amount: usd('0.00'),
+    };
+    renderWithProviders(<PurchaseRequestsPanel purchaseRequests={none} />, { user });
+
+    expect(screen.getByText('No purchase requests on these plans yet.')).toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  });
+
   it('marks an over-allocated global budget and says when the year has none (FR-004)', () => {
     const [budget] = dashboard().globalBudgets ?? [];
     if (!budget) {

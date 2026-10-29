@@ -1,5 +1,6 @@
 // All work: the cross-plan Grid, Calendar, Budget & cost and Breakdown views and saved views.
 export { AllWorkPage } from './AllWorkPage';
+export { monthsAboveText } from './all-work-text';
 export { useAllWorkOptions } from './api';
 export { useAllWorkBreakdown } from './breakdown-api';
 export { defaultGrouping } from './breakdown-state';
