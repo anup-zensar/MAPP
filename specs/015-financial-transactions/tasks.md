@@ -285,9 +285,15 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
 - [x] T043 [P] (B) Access seam (FR-028): in `service_test.go`, a fake `Access` denying view, import and
   link, and `VisiblePlanIDs` scoping lists, counts, totals, the overview and `FactsByLineItem` users (All
   work hides the group).
-- [ ] T044 [P] (W) No-access states: the "You don't have access to financial data" text in
+- [x] T044 [P] (W) No-access states: the "You don't have access to financial data" text in
   `FinancialsCard`, `FinancialsPage`, `FinancialsHomeCard` and `LineItemFinancials`, shown on a 409
   `not_allowed` (tests with `mockApi`).
+  - Done 2026-10-29. The refusal is **403 `forbidden`** (Consolidation, D-299), so every state answers that
+    (`FinancialsSection` also keeps 409 `not_allowed`). Already built: the Financials page (tested), the activity
+    and line-item sections (`FinancialsSection.tsx`; the line item's test added) and `RecordFinancials` (test
+    added). Built: Home's card (`features/home/FinancialsCard.tsx`) shows the note in place of its figures,
+    without Open Financials. Bug found by the new test and fixed: `RecordFinancials` retried a refusal twice, so
+    the note came after about 3 s of skeleton; it now follows the app's rule (no retry).
 - [ ] T045 [P] (W) Delete dialogs (FR-029): add the linked-transactions sentence to
   `frontend/src/features/line-items/DeleteLineItemDialog.tsx`,
   `frontend/src/features/activities/DeleteActivityDialog.tsx`,
