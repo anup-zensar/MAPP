@@ -32,6 +32,7 @@ const (
 	msgRoleTwice               = "'%s' is listed twice."
 	msgChooseTeamsFromList     = "Choose teams from the list."
 	msgReload                  = "Reload the page and try again."
+	msgLinkNeedsImport         = "Linking financial transactions needs Import GSAP extracts too — only people who import see transactions that are not linked." // 038 FR-006
 )
 
 // Warnings of the roles impact check (FR-022).

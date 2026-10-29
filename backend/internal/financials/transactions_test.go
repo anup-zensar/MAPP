@@ -2,6 +2,7 @@ package financials
 
 import (
 	"net/http"
+	"reflect"
 	"testing"
 
 	"mapp/internal/platform/actor"
@@ -9,6 +10,10 @@ import (
 )
 
 // User story 3 — the Financials page (FR-021).
+
+func count(n int) *int {
+	return &n
+}
 
 func (f *fixture) list(t *testing.T, a actor.Actor, q Query) TransactionPage {
 	t.Helper()
@@ -36,8 +41,8 @@ func TestTransactions_FiltersCountsAndTotals_FR021(t *testing.T) { //nolint:gocy
 	t.Parallel()
 	f := newFixture(t)
 	all := f.list(t, alex, Query{})
-	wantCounts := TypeCounts{All: 11, PurchaseOrder: 4, Invoice: 3, Payment: 2, Accrual: 2, NotLinked: 1}
-	if all.Counts != wantCounts || all.Total != 11 || all.Year != 2026 || all.Items[0].ID != "FT-1011" {
+	wantCounts := TypeCounts{All: 11, PurchaseOrder: 4, Invoice: 3, Payment: 2, Accrual: 2, NotLinked: count(1)}
+	if !reflect.DeepEqual(all.Counts, wantCounts) || all.Total != 11 || all.Year != 2026 || all.Items[0].ID != "FT-1011" {
 		t.Errorf("counts %+v, total %d, year %d", all.Counts, all.Total, all.Year)
 	}
 	wantTotals := Totals{Committed: usd(t, "47652.17"), Invoiced: usd(t, "33152.17"), Paid: usd(t, "30652.17"), Accrued: usd(t, "2500.00")}
@@ -106,11 +111,11 @@ func checkSeedChoices(t *testing.T, choices Choices) {
 func (f *fixture) checkTabsKeepCountsAndTotals(t *testing.T, wantCounts TypeCounts, wantTotals Totals) {
 	t.Helper()
 	invoices := f.list(t, alex, Query{Type: string(TypeInvoice)})
-	if invoices.Counts != wantCounts || invoices.Totals != wantTotals {
+	if !reflect.DeepEqual(invoices.Counts, wantCounts) || invoices.Totals != wantTotals {
 		t.Errorf("the tab changed the counts or totals: %+v %+v", invoices.Counts, invoices.Totals)
 	}
 	notLinked := f.list(t, alex, Query{Link: filterNotLinked})
-	if notLinked.Totals.Committed != usd(t, "12000.00") || notLinked.Counts != wantCounts || notLinked.Items[0].Link.Reason == nil ||
+	if notLinked.Totals.Committed != usd(t, "12000.00") || !reflect.DeepEqual(notLinked.Counts, wantCounts) || notLinked.Items[0].Link.Reason == nil ||
 		*notLinked.Items[0].Link.Reason != "No line item for HX key HX1099 — check the tracking key in GSAP." {
 		t.Errorf("not linked: totals %+v, counts %+v, first %+v", notLinked.Totals, notLinked.Counts, notLinked.Items[0].Link)
 	}
@@ -121,7 +126,7 @@ func (f *fixture) checkTabsKeepCountsAndTotals(t *testing.T, wantCounts TypeCoun
 func (f *fixture) checkRecordAndYearFilters(t *testing.T) {
 	t.Helper()
 	record := f.list(t, alex, Query{RecordID: "L-1004"})
-	if record.RecordFilter == nil || record.RecordFilter.Name != "Speaker fees" || record.Counts.All != 4 || record.Counts.NotLinked != 0 {
+	if record.RecordFilter == nil || record.RecordFilter.Name != "Speaker fees" || record.Counts.All != 4 || *record.Counts.NotLinked != 0 {
 		t.Errorf("record filter %+v, counts %+v", record.RecordFilter, record.Counts)
 	}
 	if other := f.list(t, alex, Query{Year: 2027}); other.Counts.All != 0 || other.Totals.Committed != usd(t, "0.00") {

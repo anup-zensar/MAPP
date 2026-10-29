@@ -16,6 +16,7 @@ import (
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/money"
+	"mapp/internal/platform/sheet"
 )
 
 // CSVFeed is the simulated GSAP extract (FR-004, D-247): a UTF-8 .csv file with a header row naming the
@@ -143,6 +144,7 @@ type csvRecord struct {
 // readRecords reads every record of the file that has at least one non-blank cell.
 func readRecords(content []byte) ([]csvRecord, error) {
 	reader := csv.NewReader(bytes.NewReader(content))
+	reader.Comma = sheet.DelimiterOf(content)
 	reader.FieldsPerRecord = -1 // rows may be shorter or longer than the header
 	reader.LazyQuotes = true    // a stray quote inside a vendor name is part of it
 	var records []csvRecord

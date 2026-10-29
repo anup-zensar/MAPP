@@ -18,7 +18,7 @@ func ReadCSV(data []byte, maxRows int) (Table, error) {
 		return Table{}, ErrUnreadable
 	}
 	r := csv.NewReader(bytes.NewReader(data))
-	r.Comma = delimiterOf(data)
+	r.Comma = DelimiterOf(data)
 	r.FieldsPerRecord = -1
 	r.LazyQuotes = true
 	table := Table{Rows: []Row{}}
@@ -46,7 +46,8 @@ func ReadCSV(data []byte, maxRows int) (Table, error) {
 	}
 }
 
-func delimiterOf(data []byte) rune {
+// DelimiterOf returns the separator the first line of data uses most: comma, semicolon or tab.
+func DelimiterOf(data []byte) rune {
 	first, _, _ := bytes.Cut(data, []byte("\n"))
 	best, bestCount := ',', bytes.Count(first, []byte(","))
 	for _, d := range []rune{';', '\t'} {

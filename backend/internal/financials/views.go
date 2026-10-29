@@ -183,12 +183,12 @@ type TransactionView struct {
 
 // TypeCounts are the counts of the Financials page's tabs (FinancialTypeCounts).
 type TypeCounts struct {
-	All           int `json:"all"`
-	PurchaseOrder int `json:"purchaseOrder"`
-	Invoice       int `json:"invoice"`
-	Payment       int `json:"payment"`
-	Accrual       int `json:"accrual"`
-	NotLinked     int `json:"notLinked"`
+	All           int  `json:"all"`
+	PurchaseOrder int  `json:"purchaseOrder"`
+	Invoice       int  `json:"invoice"`
+	Payment       int  `json:"payment"`
+	Accrual       int  `json:"accrual"`
+	NotLinked     *int `json:"notLinked,omitempty"` // nil for people who may not see not-linked transactions (038 FR-004)
 }
 
 // PlanChoice is a plan of the Plan filter (FinancialPlanChoice).

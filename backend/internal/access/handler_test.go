@@ -243,6 +243,26 @@ func TestAccessRules_ChangeAndNewPeople_FR019_FR023(t *testing.T) {
 	}
 }
 
+// createRole and updateRole refuse "Link financial transactions" without "Import GSAP extracts" on the
+// field permissions (038 FR-006, H-4).
+func TestRoles_LinkNeedsImport_038_FR006_H4(t *testing.T) {
+	t.Parallel()
+	server := apitest.New(t)
+	alex := server.SignIn(t, alexsEmail)
+	linkAlone := []string{"finance.view", "finance.link"}
+
+	created := alex.Do(t, http.MethodPost, "/api/v1/roles", map[string]any{"name": "Linker", "permissions": linkAlone, "defaultScope": "all"})
+	changed := alex.Do(t, http.MethodPatch, "/api/v1/roles/RL-1005", map[string]any{"permissions": linkAlone, "version": 1})
+
+	for _, r := range []*apitest.Response{created, changed} {
+		var answer errorAnswer
+		r.Decode(t, &answer)
+		if r.Status != http.StatusBadRequest || len(answer.Error.Fields) != 1 || answer.Error.Fields[0].Field != "permissions" {
+			t.Errorf("answer = %d %s, want 400 on permissions", r.Status, r.Body)
+		}
+	}
+}
+
 // assertError checks an error answer's status, code and, when not empty, message.
 func assertError(t *testing.T, r *apitest.Response, status int, code, message string) {
 	t.Helper()

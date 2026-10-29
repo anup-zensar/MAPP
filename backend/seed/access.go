@@ -20,7 +20,7 @@ var demoRoles = []struct {
 		[]authz.Permission{
 			authz.PlansView, authz.PlansCreate, authz.PlansEdit, authz.PlansPublish, authz.PlansDelete,
 			authz.CampaignsEdit, authz.CampaignsDelete, authz.ActivitiesEdit, authz.ActivitiesDelete,
-			authz.ActivitiesSubmit, authz.DataExport, authz.FinanceView, authz.FinanceLink, authz.ApprovalsDecide,
+			authz.ActivitiesSubmit, authz.DataExport, authz.FinanceView, authz.ApprovalsDecide,
 			authz.GlobalBudgetsView, authz.GlobalBudgetsManage, authz.PurchaseRequestsEdit, authz.PurchaseRequestsDelete,
 			authz.PurchaseRequestsSubmit, authz.PurchaseRequestsList,
 		}, authz.ScopeAll},
@@ -28,7 +28,7 @@ var demoRoles = []struct {
 		[]authz.Permission{
 			authz.PlansView, authz.PlansCreate, authz.PlansEdit, authz.PlansPublish,
 			authz.CampaignsEdit, authz.CampaignsDelete, authz.ActivitiesEdit, authz.ActivitiesDelete,
-			authz.ActivitiesSubmit, authz.DataExport, authz.FinanceView, authz.FinanceLink,
+			authz.ActivitiesSubmit, authz.DataExport, authz.FinanceView,
 			authz.PurchaseRequestsEdit, authz.PurchaseRequestsDelete, authz.PurchaseRequestsSubmit,
 		}, authz.ScopeMyTeams},
 	{"Approver", authz.BuiltInApprover, "Approves activities they are named on.",

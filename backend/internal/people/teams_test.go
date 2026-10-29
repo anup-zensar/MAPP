@@ -83,6 +83,19 @@ func TestCreateTeam_AllProblemsAtOnce_FR011(t *testing.T) {
 	assertLog(t, f, nil)
 }
 
+// A team name with a tab, a line break or a text-direction character is refused (038 FR-055, L-11).
+func TestCreateTeam_SingleLineName_038_FR055_L11(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	alex := f.addPerson(t, "Alex Morgan", "", true)
+	for _, name := range []string{"Mobility\tChina", "Mobility\nChina", "Mobility ‮China"} {
+		_, err := f.service.CreateTeam(t.Context(), alex.Actor(), TeamInput{Name: name})
+		assertError(t, err, errs.Validation(errs.FieldError{Field: "name",
+			Message: "Names can't contain tabs, line breaks or text-direction characters."}))
+	}
+	assertLog(t, f, nil)
+}
+
 // Without a colour, a new team gets the palette colour the fewest teams have, the first in palette order
 // on a tie; a chosen colour is kept (D-025, D-065).
 func TestCreateTeam_ColourLeastUsed_D025(t *testing.T) {

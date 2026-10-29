@@ -133,7 +133,10 @@ func (f *fakeAccess) SeeFinanceIn(_ context.Context, _ actor.Actor, planID strin
 }
 func (f *fakeAccess) Import(context.Context, actor.Actor) error { return refuse(f.noImport) }
 func (f *fakeAccess) Link(_ context.Context, _ actor.Actor, planID string) error {
-	return refuse(f.noLink || (planID != "" && f.plans != nil && !slices.Contains(f.plans, planID)))
+	if planID != "" && f.plans != nil && !slices.Contains(f.plans, planID) {
+		return errs.NotFound("This plan no longer exists — someone may have deleted it.")
+	}
+	return refuse(f.noLink)
 }
 func (f *fakeAccess) VisiblePlanIDs(context.Context, actor.Actor) ([]string, error) {
 	return f.plans, nil

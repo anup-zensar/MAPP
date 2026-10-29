@@ -12,8 +12,9 @@ import (
 )
 
 // Transaction returns one transaction with every field of the details panel (FR-022). A linked
-// transaction needs access to its plan's financial data; a not-linked one needs the right to import
-// (D-301): otherwise it is forbidden, or not_found when its plan is outside a's access.
+// transaction needs access to its plan's financial data, forbidden otherwise; a not-linked one needs the
+// right to import (D-301, D-353). A plan outside a's access, or a not-linked one without import, answers
+// not_found.
 func (s *Service) Transaction(ctx context.Context, a actor.Actor, id string) (TransactionView, error) {
 	var view TransactionView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -40,14 +41,16 @@ func (s *Service) Transaction(ctx context.Context, a actor.Actor, id string) (Tr
 	return view, nil
 }
 
-// mayOpen checks that a may open t (D-301).
+// mayOpen checks that a may open t (D-301, D-353).
 func (s *Service) mayOpen(ctx context.Context, a actor.Actor, b *book, t *Transaction) error {
-	var err error
-	if li := b.lineItemOf(t); li != nil {
-		err = s.access.SeeFinanceIn(ctx, a, li.PlanID)
-	} else {
-		err = s.access.Import(ctx, a)
+	li := b.lineItemOf(t)
+	if li == nil {
+		if s.access.Import(ctx, a) != nil {
+			return errs.NotFound(msgTransactionGone)
+		}
+		return nil
 	}
+	err := s.access.SeeFinanceIn(ctx, a, li.PlanID)
 	switch {
 	case err == nil:
 		return nil
@@ -106,7 +109,7 @@ func (s *Service) transactionView(ctx context.Context, a actor.Actor, b *book, t
 	if li := b.lineItemOf(t); li != nil {
 		planID = li.PlanID
 	}
-	v.CanLink = !t.linked() && s.access.Link(ctx, a, "") == nil
+	v.CanLink = !t.linked() && s.access.Import(ctx, a) == nil && s.access.Link(ctx, a, "") == nil
 	v.CanUnlink = t.MatchedBy == MatchedByManual && s.access.Link(ctx, a, planID) == nil
 	return v
 }

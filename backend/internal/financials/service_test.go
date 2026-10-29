@@ -117,8 +117,9 @@ func TestAccess_NoViewRefusesEveryRead_FR028(t *testing.T) {
 }
 
 // Without finance.import a person cannot check, import or get the sample file, and does not see the
-// transactions that are not linked: not in the lists, counts, totals or the overview (FR-028, D-301).
-func TestAccess_NoImportHidesNotLinked_FR028(t *testing.T) {
+// transactions that are not linked: not in the lists, counts, totals or the overview, and opening one
+// answers as a missing transaction (FR-028, D-301, 038 FR-004).
+func TestAccess_NoImportHidesNotLinked_FR028_038_FR004(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 	f.access.noImport = true
@@ -130,10 +131,12 @@ func TestAccess_NoImportHidesNotLinked_FR028(t *testing.T) {
 	_, err = f.service.Template(ctx, priya)
 	assertCode(t, err, http.StatusForbidden, errs.CodeForbidden)
 	_, err = f.service.Transaction(ctx, priya, "FT-1004")
-	assertCode(t, err, http.StatusForbidden, errs.CodeForbidden)
+	_, missing := f.service.Transaction(ctx, priya, "FT-9999")
+	assertCode(t, err, http.StatusNotFound, errs.CodeNotFound)
+	sameAnswer(t, err, missing)
 
 	page := f.list(t, priya, Query{})
-	if page.Counts.All != 10 || page.Counts.NotLinked != 0 || page.Totals.Committed != usd(t, "35652.17") {
+	if page.Counts.All != 10 || page.Counts.NotLinked != nil || page.Totals.Committed != usd(t, "35652.17") {
 		t.Errorf("counts %+v, totals %+v", page.Counts, page.Totals)
 	}
 	overview, err := f.service.Overview(ctx, priya, "everything")
@@ -158,8 +161,9 @@ func TestAccess_NoLinkRefusesLinking_FR028(t *testing.T) {
 }
 
 // A person who sees only some plans gets only their transactions; a record or transaction of another plan
-// answers like a missing one, and a link into one is forbidden (FR-028, 014 FR-007, 022 FR-005).
-func TestAccess_VisiblePlansScopeEverything_FR028_022_FR005(t *testing.T) { //nolint:gocyclo // 12: one scenario per access rule, kept together so the rules read as one table.
+// answers like a missing one, and a link into one answers like a missing line item (FR-028, 014 FR-007,
+// 022 FR-005, 038 FR-007).
+func TestAccess_VisiblePlansScopeEverything_FR028_022_FR005_038_FR007(t *testing.T) { //nolint:gocyclo // 12: one scenario per access rule, kept together so the rules read as one table.
 	f := newFixture(t)
 	f.access.plans = []string{"P-1002"}
 	ctx := t.Context()
@@ -184,7 +188,7 @@ func TestAccess_VisiblePlansScopeEverything_FR028_022_FR005(t *testing.T) { //no
 		t.Errorf("overview = %+v, %v", overview.Figures, err)
 	}
 	_, err = f.service.Link(ctx, priya, "FT-1004", LinkRequest{LineItemID: "L-1003", Version: version(1)})
-	_ = assertCode(t, err, http.StatusForbidden, errs.CodeForbidden)
+	_ = assertCode(t, err, http.StatusBadRequest, errs.CodeValidationFailed)
 	_, err = f.service.Transactions(ctx, priya, Query{Type: filterAll, Link: filterAll, Page: 1, PageSize: 50, PlanID: "P-1001"})
 	_ = assertCode(t, err, http.StatusBadRequest, errs.CodeValidationFailed)
 }
