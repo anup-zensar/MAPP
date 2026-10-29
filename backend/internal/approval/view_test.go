@@ -149,9 +149,10 @@ func TestApproval_NotSubmittedYet_FR024(t *testing.T) {
 			{Number: 2, Label: "Level 2", Approvers: []PersonView{{ID: alex.ID, Name: "Alex Morgan", Initials: "AM", Active: true}},
 				ApproverType: SourcePeople, Mode: ModeAny, Summary: "Level 2 · Alex Morgan"},
 		},
-		Rounds:  []RoundView{},
-		Viewer:  Viewer{IsOwner: true, OnBehalfOf: []PersonView{}, AsDelegateOf: []PersonView{}},
-		Actions: ActionSet{Submit: ActionAvailability{Available: true}},
+		Rounds:          []RoundView{},
+		Viewer:          Viewer{IsOwner: true, OnBehalfOf: []PersonView{}, AsDelegateOf: []PersonView{}},
+		Actions:         ActionSet{Submit: ActionAvailability{Available: true}},
+		OverPlannedCost: []Overage{},
 	}
 	if !reflect.DeepEqual(asOwner, want) {
 		t.Errorf("approval =\n%+v\nwant\n%+v", asOwner, want)

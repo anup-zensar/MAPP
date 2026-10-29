@@ -1,6 +1,7 @@
 package approval
 
 import (
+	"mapp/internal/platform/errs"
 	"mapp/internal/platform/money"
 )
 
@@ -65,6 +66,13 @@ type ActivityApproval struct {
 	LatestDecline   *DeclineNote `json:"latestDecline"`
 	Viewer          Viewer       `json:"viewer"`
 	Actions         ActionSet    `json:"actions"`
+	OverPlannedCost []Overage    `json:"overPlannedCost"`
+}
+
+// Overage is an activity whose line items exceed its planned cost (contract ActivityOverage).
+type Overage struct {
+	Activity errs.RecordRef `json:"activity"`
+	OverBy   money.Money    `json:"overBy"`
 }
 
 func activityApproval(sec Section) ActivityApproval {
@@ -72,7 +80,7 @@ func activityApproval(sec Section) ActivityApproval {
 		ActivityID: sec.Subject.ID, ActivityName: sec.Subject.Name, ActivityVersion: sec.Subject.Version,
 		Status: sec.Subject.Status, DisplayStatus: sec.Subject.DisplayStatus, OwnerID: sec.OwnerID, Owner: sec.Owner,
 		Workflow: sec.Workflow, UpcomingLevels: sec.UpcomingLevels, Rounds: sec.Rounds, LatestDecline: sec.LatestDecline,
-		Viewer: sec.Viewer, Actions: sec.Actions,
+		Viewer: sec.Viewer, Actions: sec.Actions, OverPlannedCost: []Overage{},
 	}
 }
 

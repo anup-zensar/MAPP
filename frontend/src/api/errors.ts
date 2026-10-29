@@ -30,6 +30,8 @@ export type ApiErrorKind =
   | 'parentDeletedPermanently'
   | 'forbidden'
   | 'overBudget'
+  | 'tooManyAttempts'
+  | 'tooLarge'
   | 'unreachable'
   | 'other';
 
@@ -52,6 +54,8 @@ const KIND_BY_CODE: Record<ErrorDetail['code'], ApiErrorKind> = {
   parent_deleted_permanently: 'parentDeletedPermanently',
   forbidden: 'forbidden',
   over_budget: 'overBudget',
+  too_many_attempts: 'tooManyAttempts',
+  too_large: 'tooLarge',
   internal_error: 'other',
 };
 

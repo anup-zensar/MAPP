@@ -165,6 +165,19 @@ describe('call()', () => {
   });
 });
 
+describe('038 FR-014, FR-054: too many sign-in attempts and too large a request', () => {
+  it.each([
+    ['too_many_attempts', 429, 'tooManyAttempts'],
+    ['too_large', 413, 'tooLarge'],
+  ] as const)('turns the code %s (%i) into the kind %s', (code, status, kind) => {
+    expect(ApiError.fromBody(status, apiError(code, 'A message.'))).toMatchObject({
+      kind,
+      message: 'A message.',
+      status,
+    });
+  });
+});
+
 describe('ApiError.missing (feature 004, not_ready)', () => {
   it('carries the needed fields grouped by record, and is empty for other errors', () => {
     const missing = [

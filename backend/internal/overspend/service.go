@@ -91,8 +91,9 @@ func (s *Service) saveChange(ctx context.Context, a actor.Actor, before, after C
 }
 
 func configurationView(ctx context.Context, c Configuration) ConfigurationView {
-	return ConfigurationView{DefaultMode: c.DefaultMode.Normalised(), Version: c.Version, UpdatedAt: c.UpdatedAt,
-		UpdatedBy: c.UpdatedBy, CanChange: authz.AvailableAnywhere(ctx, authz.SettingsManage)}
+	return ConfigurationView{DefaultMode: c.DefaultMode.Normalised(), ApprovalOverPlannedCost: Warn,
+		Version: c.Version, UpdatedAt: c.UpdatedAt, UpdatedBy: c.UpdatedBy,
+		CanChange: authz.AvailableAnywhere(ctx, authz.SettingsManage)}
 }
 
 // DefaultMode is the setting a new budget starts with (FR-007); it joins the caller's transaction.

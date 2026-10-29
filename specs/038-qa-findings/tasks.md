@@ -29,7 +29,7 @@ with `frontend/`.
 
 ## Phase 1: Setup (shared, one person, before any lane starts)
 
-- [ ] T001 Backend — Contract first: apply [contracts/openapi.yaml](contracts/openapi.yaml) to
+- [x] T001 Backend — Contract first: apply [contracts/openapi.yaml](contracts/openapi.yaml) to
   `backend/api/openapi.yaml` (new schemas `OverspendApprovalMode`, `ActivityOverage`; properties on
   `OverspendConfiguration(Input)`, `PurchaseRequestConfiguration`, `ActivityApproval`, `PurchaseRequestApproval`,
   `PurchaseRequestSubmission`, `HomeActivityCounts`, `SpaPeriods`, `DashboardMonths`, `BudgetByMonthRow`; responses

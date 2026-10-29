@@ -103,11 +103,12 @@ func DefaultConfiguration() Configuration {
 }
 
 type ConfigurationView struct {
-	DefaultMode Mode               `json:"defaultMode"`
-	Version     int                `json:"version"`
-	UpdatedAt   time.Time          `json:"updatedAt"`
-	UpdatedBy   actor.Actor        `json:"updatedBy"`
-	CanChange   authz.Availability `json:"canChange"`
+	DefaultMode             Mode               `json:"defaultMode"`
+	ApprovalOverPlannedCost Mode               `json:"approvalOverPlannedCost"`
+	Version                 int                `json:"version"`
+	UpdatedAt               time.Time          `json:"updatedAt"`
+	UpdatedBy               actor.Actor        `json:"updatedBy"`
+	CanChange               authz.Availability `json:"canChange"`
 }
 
 type ConfigurationInput struct {

@@ -82,6 +82,9 @@ export function PurchaseRequestSettingsPage() {
 
 function LastChanged({ config }: { config: PurchaseRequestConfiguration }) {
   const { date } = useFormatters();
+  if (!config.updatedBy || !config.updatedAt) {
+    return null;
+  }
   return (
     <p className={styles.meta}>
       {lastChangedText(config.updatedBy.name, date(localDate(config.updatedAt)))}

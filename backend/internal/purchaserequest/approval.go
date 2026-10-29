@@ -52,19 +52,21 @@ type ApprovalView struct {
 	Owner                  *approval.PersonView `json:"owner"`
 	MoAApprover            *approval.PersonView `json:"moaApprover"`
 	Sections               []ApprovalSection    `json:"sections"`
+	OverPlannedCost        []approval.Overage   `json:"overPlannedCost"`
 }
 
 type SubmissionView struct {
-	PurchaseRequestID string                `json:"purchaseRequestId"`
-	Version           int                   `json:"version"`
-	Kind              string                `json:"kind"`
-	RoundKind         RoundKind             `json:"roundKind"`
-	Available         bool                  `json:"available"`
-	Reason            string                `json:"reason"`
-	Ready             bool                  `json:"ready"`
-	Problems          []Problem             `json:"problems"`
-	Workflow          *approval.WorkflowRef `json:"workflow"`
-	Levels            []approval.LevelView  `json:"levels"`
+	PurchaseRequestID string                     `json:"purchaseRequestId"`
+	Version           int                        `json:"version"`
+	Kind              string                     `json:"kind"`
+	RoundKind         RoundKind                  `json:"roundKind"`
+	Available         bool                       `json:"available"`
+	Reason            string                     `json:"reason"`
+	Ready             bool                       `json:"ready"`
+	Problems          []Problem                  `json:"problems"`
+	Workflow          *approval.WorkflowRef      `json:"workflow"`
+	Levels            []approval.LevelView       `json:"levels"`
+	Outcomes          []approval.SubmissionLevel `json:"outcomes"`
 }
 
 type PreviewView struct {
@@ -95,7 +97,7 @@ func (s *Service) approvalOf(ctx context.Context, a actor.Actor, pr PurchaseRequ
 	}
 	view := ApprovalView{PurchaseRequestID: pr.ID, PurchaseRequestName: pr.Name, PurchaseRequestVersion: pr.Version,
 		Status: pr.Status, ChangePending: pr.ChangePending, Owner: first.Owner,
-		Sections: []ApprovalSection{sectionOf(focus, first)}}
+		Sections: []ApprovalSection{sectionOf(focus, first)}, OverPlannedCost: []approval.Overage{}}
 	found, err := s.deps.People.People(ctx, []string{pr.MoAApproverID})
 	if err != nil {
 		return ApprovalView{}, err

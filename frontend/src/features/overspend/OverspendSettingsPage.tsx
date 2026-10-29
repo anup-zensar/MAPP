@@ -114,9 +114,11 @@ function SettingForm({ config }: { config: OverspendConfiguration }) {
           <span>{config.canChange.reason}</span>
         </p>
       )}
-      <p className={styles.note}>
-        {lastChangedText(config.updatedBy.name, date(localDate(config.updatedAt)))}
-      </p>
+      {config.updatedBy && config.updatedAt && (
+        <p className={styles.note}>
+          {lastChangedText(config.updatedBy.name, date(localDate(config.updatedAt)))}
+        </p>
+      )}
       {!locked && (
         <div className={styles.actions}>
           <Button type="submit" variant="primary" aria-busy={save.isPending || undefined}>

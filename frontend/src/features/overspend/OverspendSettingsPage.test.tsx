@@ -16,6 +16,7 @@ function configuration(
 ): components['schemas']['OverspendConfiguration'] {
   return {
     defaultMode: 'warn',
+    approvalOverPlannedCost: 'warn',
     version: 1,
     updatedAt: '2026-10-27T09:00:00Z',
     updatedBy: { id: 'U-1001', name: 'Alex Morgan' },

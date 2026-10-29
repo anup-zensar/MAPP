@@ -44,7 +44,8 @@ func periodsOf(acts []*activity, year int, sees bool, s shower) Periods {
 	notScheduled := sumOf(acts, func(a *activity) money.Amount { return a.notScheduled })
 	p := Periods{
 		Quarters: periodList(acts, quarterSpans(year), sees, s), Months: periodList(acts, monthSpans(year), sees, s),
-		NotScheduledTrace: s.trace(acts, func(a *activity) money.Amount { return a.notScheduled }),
+		NotScheduledTrace:          s.trace(acts, func(a *activity) money.Amount { return a.notScheduled }),
+		LinesAbovePlannedCostTrace: []Contribution{},
 	}
 	if !notScheduled.IsZero() {
 		m := s.money(notScheduled)
