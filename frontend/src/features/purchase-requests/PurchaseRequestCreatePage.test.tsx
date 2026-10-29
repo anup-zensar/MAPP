@@ -173,8 +173,9 @@ describe('032 FR-003/FR-053/FR-054: new purchase request', () => {
       'Keep editing',
       'Discard changes',
     ]);
-    expect(answers[0]).toHaveFocus();
-    await user.click(answers[0]);
+    const keepEditing = within(dialog).getByRole('button', { name: 'Keep editing' });
+    expect(keepEditing).toHaveFocus();
+    await user.click(keepEditing);
     expect(router.state.location.pathname).toBe('/purchase-requests/new');
     expect(field('name')).toHaveValue('PR for Stand build 2');
 

@@ -14,12 +14,18 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { lazy } from 'react';
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type { Permission } from '@/session/access';
 
 // The badge loads with the approvals code after the frame is drawn, off the first page.
 const ApprovalsNavBadge = lazy(() =>
   import('@/features/approvals').then((feature) => ({ default: feature.ApprovalsNavBadge })),
+);
+
+const PurchaseSupportOnly = lazy(() =>
+  import('@/features/purchase-requests').then((feature) => ({
+    default: feature.PurchaseSupportOnly,
+  })),
 );
 
 export interface NavItem {
@@ -31,6 +37,8 @@ export interface NavItem {
   alsoCurrentOn?: string[];
   /** Shown only to people who hold it; the address checks it too (RequirePermission). */
   permission?: Permission;
+  /** Wraps the item, which it may leave out (Purchase requests while Purchase Support is off). */
+  Shown?: ComponentType<{ children: ReactNode }>;
 }
 
 export interface ComingSoonSection extends NavItem {
@@ -81,6 +89,7 @@ const PURCHASE_REQUESTS: NavItem = {
   path: '/purchase-requests',
   icon: FileText,
   permission: 'purchaseRequests.list',
+  Shown: PurchaseSupportOnly,
 };
 
 const SETTINGS: NavItem = { label: 'Settings', path: '/settings', icon: Settings };

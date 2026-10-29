@@ -65,11 +65,20 @@ function NavItems({ items, collapsed, labelledBy }: NavItemsProps) {
   const { has } = useAccess();
   return (
     <ul className={styles.list} aria-labelledby={labelledBy}>
-      {itemsFor(items, has).map((item) => (
-        <li key={item.path}>
-          <NavItemLink item={item} collapsed={collapsed} />
-        </li>
-      ))}
+      {itemsFor(items, has).map((item) => {
+        const entry = (
+          <li key={item.path}>
+            <NavItemLink item={item} collapsed={collapsed} />
+          </li>
+        );
+        return item.Shown ? (
+          <Suspense key={item.path} fallback={entry}>
+            <item.Shown>{entry}</item.Shown>
+          </Suspense>
+        ) : (
+          entry
+        );
+      })}
     </ul>
   );
 }
