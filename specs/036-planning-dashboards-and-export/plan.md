@@ -14,13 +14,15 @@
    person may see) or Regional (one team) — from what the owning features already calculate: All work's year
    data (`allwork.Source.Year`: the plans in the person's scope with budgets, planned costs, spreads, GSAP
    figures, completeness), All work's Budget & cost spread rule (a new exported `allwork.PlannedByActivity`),
-   015's payments of the plans' line items by posting month (new `financials.Service.PaidByMonth`), 017's
+   015's purchase orders and payments of the plans' line items by posting month (new
+   `financials.Service.SpendByMonth`), 017's
    approval rounds of the plans' activities and purchase requests (new `approval.Service.RoundSummaries` and the
    extracted `approval.AverageDecisionDays`), 032's purchase requests (new `purchaserequest.Service.Summaries`,
    over the existing scoped `OnLineItems`), and 014's global budgets of the year (new
    `budget.Service.YearFigures`). It has no store of its own, like Home (009): `internal/app` adapts the other
    areas to its ports (D-196). Every read of plan-owned data is limited in SQL to the records of the plans in
-   scope (D-356); a plan's Actual counts only the payments posted in its year, as 013's Actual spend (D-357).
+   scope (D-356); a plan's Committed and Actual count only the purchase orders and payments posted in its year,
+   as 013's Committed and Actual spend (D-357, D-358).
 2. **Export** (`GET /api/v1/plans/{planId}/export`, `GET /api/v1/dashboards/{executive|regional}/export`):
    the dashboard package turns a View (or a one-plan View plus its activities) into a format-free `deck.Deck`;
    a new platform package `internal/platform/deck` lays every page out once and writes it as a .pptx (Office
@@ -47,9 +49,9 @@ files; existing web-app stack (TanStack Query, Zod, Radix, lucide-react, CSS Mod
 `PlanStore.ListInScope` and `PlanStore.GetInScope` (023), the purchase requests from
 `purchaserequest.PostgresStore.OnLineItems` (032), each with its PostgreSQL scope-isolation test. Four store
 reads are new, one sqlc statement each with `= ANY(…)` (research R9, D-356):
-`financials.Store.PaymentsOnLineItems` (the line items of the plans whose finance the person sees),
-`approval.Store.RoundsOfSubjects` and `ActionsOfSubjects` (the plans' activities and purchase requests), each
-with a scope-isolation test on PostgreSQL (`TestPostgresStorePaymentsOnLineItemsScopeIsolation_036_FR002`,
+`financials.Store.SpendOnLineItems` (purchase orders and payments of the line items of the plans whose finance
+the person sees), `approval.Store.RoundsOfSubjects` and `ActionsOfSubjects` (the plans' activities and purchase
+requests), each with a scope-isolation test on PostgreSQL (`TestPostgresStoreSpendOnLineItemsScopeIsolation_036_FR002`,
 `TestPostgresStoreRoundsOfSubjectsScopeIsolation_036_FR002`), and `budget.Store.AllocationsOfBudgets` (the
 year's global budgets, read without a plan scope by 014's rule: Complexity Tracking, D-356)
 
@@ -124,7 +126,7 @@ backend/
 ├── internal/dashboard/                      # NEW business area (read-only, no store)
 │   ├── model.go          # View and its parts (API types)
 │   ├── query.go          # Query, parsing and validation of the filters
-│   ├── ports.go          # Transactor; Planning, Plans, Payments, Rounds, Purchases, GlobalBudgets, Directory
+│   ├── ports.go          # Transactor; Planning, Plans, Spending, Rounds, Purchases, GlobalBudgets, Directory
 │   ├── service.go        # Executive, Regional
 │   ├── input.go          # reading everything a View needs in one transaction
 │   ├── board.go          # the plans on a dashboard, indexed, with each plan's and campaign's sums
@@ -147,7 +149,7 @@ backend/
 │   ├── pdf.go
 │   └── layout_test.go, writers_test.go
 ├── internal/allwork/planned_by_month.go     # exported Budget & cost spread per activity
-├── internal/financials/paid_by_month.go     # payments of the given line items by posting month
+├── internal/financials/spend_by_month.go    # purchase orders and payments of the given line items by month
 ├── internal/approval/round_summaries.go     # rounds of the given records; AverageDecisionDays
 ├── internal/purchaserequest/summaries.go    # PRs on line items, amount in USD, status
 ├── internal/budget/year_figures.go          # the year's global budgets with their figures
@@ -171,16 +173,16 @@ feature folder in the web app, as constitution B2 and F2 lay them out.
 | Rule | Where | Test |
 |---|---|---|
 | Budget, planned, committed, actual sums; budget used, budget spent, left to plan, unspent budget, over budget (FR-008–FR-011) | `dashboard/board.go`, `dashboard/figures.go` | `TestFigures_FR008_FR011` (no budget, finance hidden, over budget, another currency) |
-| Actual = payments posted in the plan's year, as 013's Actual spend, in plans, campaigns and activities (FR-011, D-357) | `dashboard/board.go` (`countPaid`), `dashboard/export_plan.go` | `TestActual_PaidInThePlansYearOnly_D357`, `TestPlanDeck_FR023` |
+| Committed and Actual = purchase orders and payments posted in the plan's year, as 013's Committed and Actual spend, in plans, campaigns and activities; other years apart (FR-011, D-357, D-358) | `dashboard/board.go` (`countSpend`), `dashboard/export_plan.go` | `TestActual_PaidInThePlansYearOnly_D357`, `TestCommitted_PostedInThePlansYearOnly_D358`, `TestPlanDeck_FR023` |
 | A plan in two markets counts in both rows and once in the total (FR-012) | `dashboard/tables.go` | `TestMarkets_PlanInTwoTeams_FR012` |
 | By plan by name; campaigns over budget and left to plan, top five, no budget excluded (FR-013, FR-015) | `dashboard/tables.go` | `TestPlans_ByNameWithTheirFinance_FR013`, `TestCampaignLists_FR015` |
-| Monthly planned = Budget & cost spread; no dates and other years apart; actual by posting month; running totals; paid outside the year, not counted (FR-014) | `dashboard/months.go`, `allwork/planned_by_month.go`, `financials/paid_by_month.go` | `TestMonths_FR014`, `TestPlannedByActivity_010_FR023`, `TestPaidByMonth_036_FR014` |
+| Monthly planned = Budget & cost spread; no dates and other years apart; actual by posting month; running totals; committed and paid outside the year, not counted (FR-014) | `dashboard/months.go`, `allwork/planned_by_month.go`, `financials/spend_by_month.go` | `TestMonths_FR014`, `TestPlannedByActivity_010_FR023`, `TestSpendByMonth_036_FR014` |
 | Approvals waiting, oldest, decided, auto, average days (FR-016) | `dashboard/panels.go`, `approval/round_summaries.go` | `TestApprovals_FR016`, `TestRoundSummaries_036_FR016`, `TestAverageDecisionDays_HalfUpToOneDecimal`, monitoring tests unchanged |
 | Purchase requests by status and amount, waiting for GSAP, switched off (FR-017) | `dashboard/panels.go`, `purchaserequest/summaries.go` | `TestPurchaseRequests_FR017`; `Summaries` through the contract tests (`TestExecutive_Filters_FR006`: 2027's PR-1001) |
 | Completeness per level (FR-018) | `dashboard/panels.go` | `TestCompleteness_FR018` |
 | Global budgets of the year as the Global budgets page, in the display currency (FR-004) | `budget/year_figures.go`, `dashboard/panels.go` | `TestYearFigures_AsTheGlobalBudgetsPage_036_FR004`, `TestGlobalBudgets_ShownInTheCurrency_FR004` |
 | Scope: only plans in scope; finance only where visible; global budgets only with the permission (FR-002–FR-004, SC-001, SC-002) | service + adapters | contract tests per persona `TestExecutive_EqualsTheRecordPages_SC001`, `TestExecutive_OnlyThePlansInScope_FR002`, `TestExecutive_FinanceHidden_FR003` |
-| Every store read of plan-owned data limited in SQL to the plans in scope (B5, D-356) | `financials`, `approval` PostgreSQL stores | `TestPostgresStorePaymentsOnLineItemsScopeIsolation_036_FR002`, `TestPostgresStoreRoundsOfSubjectsScopeIsolation_036_FR002` |
+| Every store read of plan-owned data limited in SQL to the plans in scope (B5, D-356) | `financials`, `approval` PostgreSQL stores | `TestPostgresStoreSpendOnLineItemsScopeIsolation_036_FR002`, `TestPostgresStoreRoundsOfSubjectsScopeIsolation_036_FR002` |
 | Filters: defaults, allowlists (FR-006) | `dashboard/query.go`, `dashboard/input.go` | `TestParseQuery_FR006`, `TestExecutive_Filters_FR006`, `TestExecutive_Validation_FR006` |
 | Regional default team, plan drill (FR-020–FR-022) | `dashboard/input.go`, `dashboard/tables.go` | `TestRegional_FR020_FR022`, `TestPlanCampaigns_FR021` |
 | Files: page layout, continuation, fitting, escaping, valid .pptx and .pdf (FR-023–FR-026) | `platform/deck` | `TestLayout_*`, `TestFit_ShortensWithEllipsis`, `TestWinANSI_*`, `TestWritePPTX_*`, `TestWritePDF_*` |

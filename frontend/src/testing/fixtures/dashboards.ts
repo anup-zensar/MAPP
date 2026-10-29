@@ -39,6 +39,7 @@ function months(): PlanningDashboard['months'] {
     }),
     noDates: usd('5000.00'),
     otherYears: null,
+    committedOutsideYear: null,
     paidOutsideYear: null,
   };
 }

@@ -24,9 +24,9 @@ func (s fakeStore) ListTransactions(context.Context) ([]Transaction, error) {
 	return s.transactions.List()
 }
 
-func (s fakeStore) PaymentsOnLineItems(_ context.Context, lineItemIDs []string) ([]Transaction, error) {
+func (s fakeStore) SpendOnLineItems(_ context.Context, lineItemIDs []string) ([]Transaction, error) {
 	return s.transactions.Where(func(t Transaction) bool {
-		return t.Type == TypePayment && slices.Contains(lineItemIDs, t.LineItemID)
+		return t.spend() && slices.Contains(lineItemIDs, t.LineItemID)
 	})
 }
 

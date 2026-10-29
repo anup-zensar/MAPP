@@ -30,7 +30,7 @@ currency (`money.Display`).
 | `plans` | per plan in view, by name: plan ref (id, name, status, type), teams, `Figures`, `financeShown` | FR-013 |
 | `overBudget`, `leftToPlan` | up to 5 `CampaignRow` each | FR-015 |
 | `planCampaigns` | the chosen plan and every campaign of it as `CampaignRow`, or null | FR-021 |
-| `months` | 12 `Month` rows; `noDates`, `otherYears`, `paidOutsideYear` (not counted in Actual, D-357) | FR-014 |
+| `months` | 12 `Month` rows; `noDates`, `otherYears`, `committedOutsideYear` and `paidOutsideYear` (not counted in Committed and Actual, D-357, D-358) | FR-014 |
 | `approvals` | waiting, oldest waiting since, approved, declined, auto-approved, average decision days, activities by display status | FR-016 |
 | `purchaseRequests` | available (Purchase Support on), count and amount per status, total count and amount, waiting for GSAP | FR-017 |
 | `completeness` | per level plan … line item: total, complete, percent | FR-018 |
@@ -43,7 +43,7 @@ currency (`money.Display`).
 |---|---|---|
 | `budget` | Σ plan budgets (campaign rows: the campaign budget) | no record in the set has a budget |
 | `plannedCost` | Σ activities' planned cost | no activity has one |
-| `committed`, `actual` | Σ line items' Committed (015) and payments posted in the plan's year (013's Actual spend, D-357), over the records whose finance the person sees | the person sees finance in none of them |
+| `committed`, `actual` | Σ line items' purchase orders and payments (015) posted in the plan's year (013's Committed and Actual spend, D-357, D-358), over the records whose finance the person sees | the person sees finance in none of them |
 | `budgetUsedPercent` | `rollup.BudgetUsedPercent(planned, budget)` | no budget, budget 0.00 or no planned cost |
 | `budgetSpentPercent` | `rollup.BudgetUsedPercent(actual, budget)` | no budget or no actual |
 | `leftToPlan` | `rollup.LeftToPlan(budget, planned)` | no budget |

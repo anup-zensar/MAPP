@@ -31,8 +31,8 @@ type Planning interface { // allwork.Source's reads (010)
 type Plans interface { // 004, scoped
 	YearOf(ctx context.Context, planID string) (int, bool, error)
 }
-type Payments interface { // 015: only the line items asked for (D-356)
-	PaidByMonth(ctx context.Context, lineItemIDs []string) (map[string]map[string]money.Amount, error)
+type Spending interface { // 015: only the line items asked for (D-356, D-358)
+	SpendByMonth(ctx context.Context, lineItemIDs []string) (map[string]map[string]financials.Facts, error)
 }
 type Rounds interface { // 017: only the records asked for (D-356)
 	RoundSummaries(ctx context.Context, subjectIDs []string) ([]approval.RoundSummary, error)
@@ -53,8 +53,8 @@ New exported functions in other areas:
 
 - `allwork.PlannedByActivity(nodes []allwork.Node, year int) map[string]allwork.Months` — each activity's
   planned cost by month of `year`, with `NoDates` and `OtherYears`, in USD (010 FR-023).
-- `financials.(*Service).PaidByMonth(ctx, lineItemIDs)` — the payments of those line items, USD by posting
-  month (store read `PaymentsOnLineItems`).
+- `financials.(*Service).SpendByMonth(ctx, lineItemIDs)` — the Committed and Paid of those line items, USD by
+  posting month (store read `SpendOnLineItems`).
 - `approval.(*Service).RoundSummaries(ctx, subjectIDs)` (store reads `RoundsOfSubjects`, `ActionsOfSubjects`)
   and `approval.AverageDecisionDays(decided, seconds int64) *string`.
 - `purchaserequest.(*Service).Summaries(ctx, lineItemIDs)` — scoped purchase requests with status, USD

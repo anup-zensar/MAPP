@@ -26,9 +26,10 @@ func (s Store) ListTransactions(context.Context) ([]financials.Transaction, erro
 	return s.transactions.List()
 }
 
-func (s Store) PaymentsOnLineItems(_ context.Context, lineItemIDs []string) ([]financials.Transaction, error) {
+func (s Store) SpendOnLineItems(_ context.Context, lineItemIDs []string) ([]financials.Transaction, error) {
 	return s.transactions.Where(func(t financials.Transaction) bool {
-		return t.Type == financials.TypePayment && slices.Contains(lineItemIDs, t.LineItemID)
+		spend := t.Type == financials.TypePurchaseOrder || t.Type == financials.TypePayment
+		return spend && slices.Contains(lineItemIDs, t.LineItemID)
 	})
 }
 

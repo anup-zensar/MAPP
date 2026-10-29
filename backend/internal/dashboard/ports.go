@@ -6,9 +6,9 @@ import (
 	"mapp/internal/allwork"
 	"mapp/internal/approval"
 	"mapp/internal/budget"
+	"mapp/internal/financials"
 	"mapp/internal/people"
 	"mapp/internal/platform/date"
-	"mapp/internal/platform/money"
 	"mapp/internal/purchaserequest"
 )
 
@@ -27,9 +27,9 @@ type Plans interface {
 	YearOf(ctx context.Context, planID string) (int, bool, error)
 }
 
-// Payments, Rounds and Purchases read only the records asked for, which come from the plans in scope (B5, D-356).
-type Payments interface {
-	PaidByMonth(ctx context.Context, lineItemIDs []string) (map[string]map[string]money.Amount, error)
+// Spending, Rounds and Purchases read only the records asked for, which come from the plans in scope (B5, D-356).
+type Spending interface {
+	SpendByMonth(ctx context.Context, lineItemIDs []string) (map[string]map[string]financials.Facts, error)
 }
 
 type Rounds interface {
@@ -62,7 +62,7 @@ type Currency struct {
 type Deps struct {
 	Planning      Planning
 	Plans         Plans
-	Payments      Payments
+	Spending      Spending
 	Rounds        Rounds
 	Purchases     Purchases
 	GlobalBudgets GlobalBudgets

@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"mapp/internal/allwork"
+	"mapp/internal/financials"
 	"mapp/internal/platform/money"
 )
 
@@ -30,8 +31,7 @@ func facts(t *testing.T, committed, paid string) *allwork.FinanceFacts {
 	return &allwork.FinanceFacts{Committed: amount(t, committed), Paid: amount(t, paid)}
 }
 
-// sampleNodes are two plans of 2026: Beta (teams T-1 and T-2, budget 1,000.00, its finance visible) with a campaign
-// over budget and one under, and Alpha (team T-2, no budget, finance not visible).
+// sampleNodes: Beta (T-1, T-2, budget 1,000.00, finance seen, a campaign over budget), Alpha (T-2, no budget or finance).
 func sampleNodes(t *testing.T) []allwork.Node {
 	t.Helper()
 	return []allwork.Node{
@@ -55,11 +55,14 @@ func sampleNodes(t *testing.T) []allwork.Node {
 	}
 }
 
-func samplePaid(t *testing.T) map[string]map[string]money.Amount {
+func sampleSpend(t *testing.T) map[string]map[string]financials.Facts {
 	t.Helper()
-	return map[string]map[string]money.Amount{
-		"L-1": {"2026-03": amount(t, "150.00"), "2025-12": amount(t, "50.00")},
-		"L-3": {"2026-03": amount(t, "5.00")},
+	spent := func(committed, paid string) financials.Facts {
+		return financials.Facts{Committed: amount(t, committed), Paid: amount(t, paid)}
+	}
+	return map[string]map[string]financials.Facts{
+		"L-1": {"2026-03": spent("250.00", "150.00"), "2025-12": spent("50.00", "50.00")},
+		"L-3": {"2026-03": spent("10.00", "5.00")},
 	}
 }
 
@@ -69,7 +72,7 @@ func sampleBoard(t *testing.T, keep func(*allwork.Node) bool) *board {
 		keep = func(*allwork.Node) bool { return true }
 	}
 	b := newBoard(sampleNodes(t), keep, true, []string{"P-1"})
-	b.countPaid(samplePaid(t), 2026)
+	b.countSpend(sampleSpend(t), 2026)
 	return b
 }
 
@@ -112,7 +115,7 @@ func TestFigures_FR008_FR011(t *testing.T) {
 	alpha := b.own["P-2"].figures(money.DisplayIn("EUR", "0.92"))
 	over := b.own["C-1"].figures(money.DisplayUSD)
 
-	same(t, "totals", texts("1000.00", "850.00", "300.00", "150.00", "150.00", "850.00", 85, 15, false),
+	same(t, "totals", texts("1000.00", "850.00", "250.00", "150.00", "150.00", "850.00", 85, 15, false),
 		texts(text(total.Budget), text(total.PlannedCost), text(total.Committed), text(total.Actual), text(total.LeftToPlan),
 			text(total.UnspentBudget), percent(total.BudgetUsedPercent), percent(total.BudgetSpentPercent), total.OverBudget))
 	same(t, "Alpha in euros", texts("—", "—", -1, "—", "46.00", "EUR"), texts(text(alpha.Budget), text(alpha.Committed),
@@ -128,6 +131,16 @@ func TestActual_PaidInThePlansYearOnly_D357(t *testing.T) {
 	activity := b.activityFinance()["A-1"]
 	same(t, "actuals", texts("150.00", "150.00", "150.00", "—"), texts(text(usd(b.own["P-1"].actual)),
 		text(usd(b.own["C-1"].actual)), text(usd(activity.actual)), text(usd(b.own["P-2"].actual))))
+}
+
+// Committed is the purchase orders posted in the plan's year (013's Committed): L-1's PO of 2025 counts nowhere (D-358).
+func TestCommitted_PostedInThePlansYearOnly_D358(t *testing.T) {
+	t.Parallel()
+	b := sampleBoard(t, nil)
+
+	activity := b.activityFinance()["A-1"]
+	same(t, "committed", texts("250.00", "250.00", "250.00", "50.00"), texts(text(usd(b.own["P-1"].committed)),
+		text(usd(b.own["C-1"].committed)), text(usd(activity.committed)), text(usd(b.outside.committed))))
 }
 
 func TestPlans_ByNameWithTheirFinance_FR013(t *testing.T) {

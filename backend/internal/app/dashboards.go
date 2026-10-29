@@ -14,7 +14,7 @@ import (
 // dashboards wires feature 036 over All work's source and the services that work its figures out (D-342).
 func (w *wiring) dashboards() {
 	service := dashboard.NewService(w.set.Tx, dashboard.Deps{
-		Planning: w.allWork, Plans: dashboardPlans{repo: w.set.Plans}, Payments: w.financials, Rounds: w.approvals,
+		Planning: w.allWork, Plans: dashboardPlans{repo: w.set.Plans}, Spending: w.financials, Rounds: w.approvals,
 		Purchases: w.prs, GlobalBudgets: w.budgets,
 		Directory: dashboardDirectory{people: w.people, settings: w.settings},
 	}, w.now)

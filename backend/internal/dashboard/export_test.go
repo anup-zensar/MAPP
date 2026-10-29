@@ -19,7 +19,7 @@ func sampleInput(t *testing.T, kind Kind, plan string) *input {
 	in := &input{request: request{kind: kind, query: Query{Year: 2026, Currency: "USD"}, plan: plan}, now: now,
 		today: date.Today(now), display: money.DisplayUSD, data: allwork.YearData{Nodes: nodes}}
 	in.board = newBoard(nodes, in.keeps, true, []string{"P-1"})
-	in.board.countPaid(samplePaid(t), 2026)
+	in.board.countSpend(sampleSpend(t), 2026)
 	return in
 }
 

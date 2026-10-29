@@ -8,6 +8,7 @@ import (
 
 	"mapp/internal/allwork"
 	"mapp/internal/approval"
+	"mapp/internal/financials"
 	"mapp/internal/people"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
@@ -38,7 +39,7 @@ type input struct {
 	data      allwork.YearData
 	board     *board
 	teams     map[string]people.TeamRef
-	paid      map[string]map[string]money.Amount
+	spend     map[string]map[string]financials.Facts
 	rounds    []approval.RoundSummary
 	purchases purchaserequest.Summaries
 	global    []GlobalBudget
@@ -95,16 +96,16 @@ func (s *Service) readChoices(ctx context.Context, a actor.Actor, in *input, wor
 	return err
 }
 
-// readPanels reads, one statement each, what the board's records need: their payments, purchase requests and
-// approval rounds, and the year's global budgets for a person who may see them.
+// readPanels reads, one statement each, what the board's records need: their purchase orders and payments,
+// purchase requests and approval rounds, and the year's global budgets for a person who may see them.
 func (s *Service) readPanels(ctx context.Context, in *input) error {
 	var err error
 	if ids := in.board.financeLineItemIDs(); len(ids) > 0 {
-		if in.paid, err = s.deps.Payments.PaidByMonth(ctx, ids); err != nil {
+		if in.spend, err = s.deps.Spending.SpendByMonth(ctx, ids); err != nil {
 			return err
 		}
 	}
-	in.board.countPaid(in.paid, in.query.Year)
+	in.board.countSpend(in.spend, in.query.Year)
 	if in.purchases, err = s.deps.Purchases.Summaries(ctx, in.board.lineItemIDs()); err != nil {
 		return err
 	}

@@ -95,16 +95,9 @@ func (b *board) activityFinance() map[string]sums {
 		}
 	}
 	for _, li := range b.byLevel[allwork.LevelLineItem] {
-		s, counted := out[li.ParentID]
-		if !counted {
-			continue
+		if s, counted := out[li.ParentID]; counted {
+			out[li.ParentID] = s.plus(b.spent[li.ID])
 		}
-		paid := b.paid[li.ID]
-		s = s.plus(sums{actual: &paid})
-		if li.Finance != nil {
-			s = s.plus(sums{committed: &li.Finance.Committed})
-		}
-		out[li.ParentID] = s
 	}
 	return out
 }

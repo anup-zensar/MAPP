@@ -7,12 +7,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"mapp/internal/platform/date"
-	"mapp/internal/platform/money"
 )
 
-// Only payments of the line items asked for count, by posting month, at the current rate; a currency no longer in
-// Settings is left out, as Paid leaves it out (036 FR-014, D-257, D-356).
-func TestPaidByMonth_036_FR014(t *testing.T) {
+// Only purchase orders and payments of the line items asked for count, by posting month, at the current rate; a
+// currency no longer in Settings is left out, as Committed and Paid leave it out (036 FR-011, FR-014, D-257, D-358).
+func TestSpendByMonth_036_FR014(t *testing.T) {
 	t.Parallel()
 	f := newEmptyFixture(t)
 	transaction := func(id string, typ Type, lineItemID, day, amount, currency string) Transaction {
@@ -23,7 +22,7 @@ func TestPaidByMonth_036_FR014(t *testing.T) {
 		return f.service.repo.AddTransactions(ctx, []Transaction{
 			transaction("FT-1", TypePayment, "L-1003", "2026-03-05", "100.00", "USD"),
 			transaction("FT-2", TypePayment, "L-1003", "2026-03-20", "92.00", "EUR"),
-			transaction("FT-3", TypePayment, "L-1003", "2026-04-01", "10.00", "USD"),
+			transaction("FT-3", TypePurchaseOrder, "L-1003", "2025-12-01", "300.00", "USD"),
 			transaction("FT-4", TypeInvoice, "L-1003", "2026-03-06", "500.00", "USD"),
 			transaction("FT-5", TypePayment, "", "2026-03-06", "700.00", "USD"),
 			transaction("FT-6", TypePayment, "L-1004", "2026-03-06", "9.00", "XYZ"),
@@ -31,15 +30,22 @@ func TestPaidByMonth_036_FR014(t *testing.T) {
 		})
 	})
 
-	got, err := f.service.PaidByMonth(t.Context(), []string{"L-1003", "L-1004"})
+	got, err := f.service.SpendByMonth(t.Context(), []string{"L-1003", "L-1004"})
 
 	if err != nil {
-		t.Fatalf("PaidByMonth: %v", err)
+		t.Fatalf("SpendByMonth: %v", err)
 	}
-	want := map[string]map[string]money.Amount{
-		"L-1003": {"2026-03": amountOf(t, "200.00"), "2026-04": amountOf(t, "10.00")},
+	texts := map[string]string{}
+	for lineItem, months := range got {
+		for month, facts := range months {
+			texts[lineItem+" "+month] = "committed " + facts.Committed.String() + ", paid " + facts.Paid.String()
+		}
 	}
-	if diff := cmp.Diff(want, got, cmp.Comparer(func(x, y money.Amount) bool { return x.Cmp(y) == 0 })); diff != "" {
-		t.Errorf("PaidByMonth mismatch (-want +got):\n%s", diff)
+	want := map[string]string{
+		"L-1003 2025-12": "committed 300.00, paid 0.00",
+		"L-1003 2026-03": "committed 0.00, paid 200.00",
+	}
+	if diff := cmp.Diff(want, texts); diff != "" {
+		t.Errorf("SpendByMonth mismatch (-want +got):\n%s", diff)
 	}
 }

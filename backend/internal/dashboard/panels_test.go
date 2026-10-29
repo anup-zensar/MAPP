@@ -23,18 +23,17 @@ func TestMonths_FR014(t *testing.T) {
 		"A-3": {ByMonth: map[string]money.Amount{}, NoDates: amount(t, "100.00")},
 		"A-4": {ByMonth: map[string]money.Amount{"2026-03": amount(t, "50.00")}, OtherYears: amount(t, "0.00")},
 	}
-	paid := samplePaid(t)
-
-	got := sampleBoard(t, nil).months(planned, paid, 2026, money.DisplayUSD)
+	got := sampleBoard(t, nil).months(planned, 2026, money.DisplayUSD)
 
 	if len(got.Items) != 12 || got.Items[11].Month != "2026-12" {
 		t.Fatalf("months = %+v", got.Items)
 	}
 	march := got.Items[2]
-	hidden := sampleBoard(t, func(p *allwork.Node) bool { return p.ID == "P-2" }).months(planned, paid, 2026, money.DisplayUSD)
-	same(t, "months", texts("650.00", "150.00", "750.00", "150.00", "100.00", "—", "50.00", "—", "—"),
+	hidden := sampleBoard(t, func(p *allwork.Node) bool { return p.ID == "P-2" }).months(planned, 2026, money.DisplayUSD)
+	same(t, "months", texts("650.00", "150.00", "750.00", "150.00", "100.00", "—", "50.00", "50.00", "—", "—", "—"),
 		texts(march.Planned.Amount, text(march.Actual), march.PlannedToDate.Amount, text(march.ActualToDate), text(got.NoDates),
-			text(got.OtherYears), text(got.PaidOutsideYear), text(hidden.Items[2].Actual), text(hidden.PaidOutsideYear)))
+			text(got.OtherYears), text(got.CommittedOutsideYear), text(got.PaidOutsideYear), text(hidden.Items[2].Actual),
+			text(hidden.CommittedOutsideYear), text(hidden.PaidOutsideYear)))
 }
 
 // The rounds of the board's activities and purchase requests only: waiting since the oldest level start, decided by
