@@ -8,6 +8,7 @@ import {
   formatRelativeTime,
   formatTime,
   formatWaitingTime,
+  formatMonth,
   formatWeekdayDate,
   localDate,
   parseDate,
@@ -68,6 +69,23 @@ describe('dates and times of a timestamp', () => {
   });
 });
 
+describe("the person's date format in headings and month labels (038 FR-058, D-356)", () => {
+  it.each([
+    ['DD MMM YYYY', 'Tuesday 27 Oct 2026', 'Sep 2026'],
+    ['DD/MM/YYYY', 'Tuesday 27/10/2026', '09/2026'],
+    ['MM/DD/YYYY', 'Tuesday 10/27/2026', '09/2026'],
+    ['YYYY-MM-DD', 'Tuesday 2026-10-27', '2026-09'],
+  ] as const)('038 FR-058: %s writes "%s" and "%s"', (format, heading, month) => {
+    expect(formatWeekdayDate('2026-10-27', format)).toBe(heading);
+    expect(formatMonth('2026-09', format)).toBe(month);
+  });
+
+  it('038 FR-058: writes September as "Sep", never "Sept"', () => {
+    expect(formatMonth('2026-09')).toBe('Sep 2026');
+    expect(formatMonth('2027-01')).toBe('Jan 2027');
+  });
+});
+
 describe('formatWeekdayDate (feature 011)', () => {
   it('names the weekday before the date, for the activity log’s day headings (FR-004)', () => {
     expect(formatWeekdayDate('2026-10-12')).toBe('Monday 12 Oct 2026');
@@ -125,6 +143,12 @@ describe('formatMoneyCompact', () => {
 
   it('shows "—" when there is no amount (FR-021)', () => {
     expect(formatMoneyCompact('', 'USD')).toBe('—');
+  });
+
+  it('038 FR-044: never rounds up to "1000T"; the full amount shows instead', () => {
+    expect(formatMoneyCompact('999999999999999.99', 'USD')).toBe('$999,999,999,999,999.99');
+    expect(formatMoneyCompact('-999995000000000', 'EUR')).toBe('-999,995,000,000,000.00 EUR');
+    expect(formatMoneyCompact('999994999999999', 'USD')).toBe('$999.99T');
   });
 });
 

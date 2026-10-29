@@ -59,8 +59,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           >
             <Toast.Description className={styles.message}>
               {/* Radix announces the message and the action's alt text back to back; the trailing
-                  space keeps them apart ("…recycle bin Restore it…", not "…binRestore it…"). */}
+                  space keeps them apart ("…recycle bin Restore it…", not "…binRestore it…"). The
+                  dash only shows: "<message> — View" (038 FR-049). */}
               {`${toast.message} `}
+              {toast.action && <span aria-hidden="true">— </span>}
             </Toast.Description>
             {toast.action && (
               <Toast.Action

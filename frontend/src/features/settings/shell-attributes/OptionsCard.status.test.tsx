@@ -145,7 +145,7 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Delete option' }));
 
     const messages = await findMessages();
-    expect(messages).toHaveTextContent("Option 'Radio' moved to the recycle bin");
+    expect(messages).toHaveTextContent("Option 'Radio' deleted");
     expect(within(messages).getByRole('button', { name: 'Undo' })).toBeInTheDocument();
   });
 

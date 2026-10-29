@@ -1,6 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
+import type { DateFormat } from '@/format/intl';
 import type { PlanningLevel } from '@/ui/LevelTag/LevelTag';
 import { nth } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
@@ -15,13 +16,18 @@ const PREFERENCES = 'PATCH /api/v1/me/preferences';
 
 function renderSection(
   answers: HttpHandler[],
-  { level = 'activity', include = false }: { level?: PlanningLevel; include?: boolean } = {},
+  {
+    level = 'activity',
+    include = false,
+    dateFormat = 'DD MMM YYYY',
+  }: { level?: PlanningLevel; include?: boolean; dateFormat?: DateFormat } = {},
 ) {
   const api = mockApi(answers);
   const user = testUser();
+  const preferences = { ...user.preferences, historyIncludeInside: include, dateFormat };
   const rendered = renderWithProviders(
     <HistorySection recordType={level} recordId="A-1042" recordName="Film shoot" level={level} />,
-    { user: { ...user, preferences: { ...user.preferences, historyIncludeInside: include } } },
+    { user: { ...user, preferences } },
   );
   return { ...rendered, api };
 }
@@ -125,6 +131,19 @@ describe('HistorySection', () => {
     const messages = await findMessages();
     expect(messages).toHaveTextContent("Your choice couldn't be saved.");
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
+  });
+
+  it("038 FR-058: day headings follow the person's date format", async () => {
+    renderSection(
+      [
+        reply('GET /api/v1/activity-log', {
+          body: logPage([logEntry({ id: 'LOG-7', seq: 7, at: '2026-10-12T10:00:00Z' })]),
+        }),
+      ],
+      { dateFormat: 'DD/MM/YYYY' },
+    );
+
+    expect(await screen.findByText(/^Monday 12\/10\/2026/)).toBeInTheDocument();
   });
 
   it('says when nothing was recorded yet', async () => {

@@ -3,6 +3,7 @@ import { Dialog } from 'radix-ui';
 import { useRef } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Button } from '../Button/Button';
+import { RequiredLegend } from '../RequiredLegend/RequiredLegend';
 import styles from './FormDialog.module.css';
 
 export interface FormDialogProps {
@@ -84,7 +85,10 @@ export function FormDialog({
             <Dialog.Description className={styles.description}>{description}</Dialog.Description>
           )}
           <form noValidate aria-busy={busy} onSubmit={submit}>
-            <div className={styles.form}>{children}</div>
+            <div className={styles.form}>
+              <RequiredLegend />
+              {children}
+            </div>
             <div className={styles.actions}>
               {!hideCancel && (
                 <Dialog.Close asChild>

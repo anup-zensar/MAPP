@@ -97,7 +97,7 @@ test('An activity deleted from its page is found in the recycle bin and restored
     .getByRole('alertdialog', { name: `Delete activity '${name}'?` })
     .getByRole('button', { name: 'Delete activity' })
     .click();
-  await expectToast(page, `Activity '${name}' moved to the recycle bin`);
+  await expectToast(page, `Activity '${name}' deleted`);
 
   // Find it in the recycle bin from the main navigation, by its ID.
   await page

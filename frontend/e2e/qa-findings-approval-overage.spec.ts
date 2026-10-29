@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './support/no-csp-violations';
 import { action, expectNoAxeViolations, expectToast, signInAs, uniqueName } from './fixtures';
 import {
   ALEX,

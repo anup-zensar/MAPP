@@ -1,3 +1,5 @@
+import { formatMonth } from '@/format/intl';
+import type { DateFormat } from '@/format/intl';
 import type { PlanType } from './dashboard-links';
 
 export const NOTHING = '—';
@@ -40,12 +42,9 @@ export function percentText(percent: number | null): string {
   return percent === null ? NOTHING : `${percent}%`;
 }
 
-export function monthLabel(month: string): string {
-  const [year, number] = month.split('-');
-  const name = new Intl.DateTimeFormat('en-GB', { month: 'short', timeZone: 'UTC' }).format(
-    Date.UTC(Number(year), Number(number) - 1, 1),
-  );
-  return `${name} ${year}`;
+/** "Sep 2026" (never "Sept"), or in the person's date format ("09/2026", 038 FR-058). */
+export function monthLabel(month: string, format?: DateFormat): string {
+  return formatMonth(month, format);
 }
 
 export function emptyText(year: number, teamName: string | null): string {

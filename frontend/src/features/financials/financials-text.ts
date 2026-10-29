@@ -2,6 +2,8 @@
 // table, the panel and the dialogs.
 import { formatWhole } from '@/format/decimal';
 import { plural } from '@/format/text';
+import { formatMonth } from '@/format/intl';
+import type { DateFormat } from '@/format/intl';
 import type {
   FinancialImportCounts,
   FinancialImportNotLinkedRow,
@@ -46,23 +48,20 @@ export const TILE_TIPS = {
   committed: 'The value of purchase orders GSAP has issued for these line items.',
   invoiced: 'Supplier invoices GSAP has received against them, less credit notes.',
   paid: "Payments GSAP has released — Shell's actuals.",
-  accrued: (month: string | null) =>
+  accrued: (month: string | null, format?: DateFormat) =>
     month
-      ? `Money owed for work received but not yet invoiced, as GSAP accrued it for ${monthText(month)}.`
+      ? `Money owed for work received but not yet invoiced, as GSAP accrued it for ${monthText(month, format)}.`
       : 'Money owed for work received but not yet invoiced, as GSAP accrued it.',
 };
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-export function monthText(month: string): string {
-  const [year, number] = month.split('-');
-  const name = MONTHS[Number(number) - 1];
-  return name ? `${name} ${year}` : month;
+/** "Sep 2026", or the month in the person's date format ("09/2026", 038 FR-058). */
+export function monthText(month: string, format?: DateFormat): string {
+  return formatMonth(month, format);
 }
 
 /** "Accrued (Sep 2026)", or "Accrued" when the data has no accruals (edge case). */
-export function accruedLabel(month: string | null): string {
-  return month ? `Accrued (${monthText(month)})` : 'Accrued';
+export function accruedLabel(month: string | null, format?: DateFormat): string {
+  return month ? `Accrued (${monthText(month, format)})` : 'Accrued';
 }
 
 export function tabLabel(tab: FinancialTab, counts: FinancialTypeCounts | undefined): string {

@@ -6,6 +6,8 @@
  */
 import type { components } from '@/api/generated/schema';
 import { formatAmount, formatCents, parseMoneyInput, toCents } from '@/format/decimal';
+import { formatMonth as formatMonthLabel } from '@/format/intl';
+import type { DateFormat } from '@/format/intl';
 
 export type SpreadMethod = components['schemas']['SpreadMethod'];
 type Money = components['schemas']['Money'];
@@ -25,20 +27,6 @@ export interface MonthCents {
 }
 
 const MILLION = 1_000_000n;
-const MONTH_NAMES = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
 
 /**
  * Reads a typed amount in cents: "12500", "12,500.00", "12.5k"; more than two decimals are rounded
@@ -65,10 +53,9 @@ export function centsInput(cents: bigint): string {
   return formatAmount(formatCents(cents));
 }
 
-/** "Mar 2026" for "2026-03". */
-export function formatMonth(month: string): string {
-  const [year, number] = month.split('-');
-  return `${MONTH_NAMES[Number(number) - 1]} ${year}`;
+/** "Mar 2026" for "2026-03", or in the person's date format ("03/2026", 038 FR-058). */
+export function formatMonth(month: string, format?: DateFormat): string {
+  return formatMonthLabel(month, format);
 }
 
 /** The month `count` months after `month` (before it when negative): ("2026-12", 1) → "2027-01". */

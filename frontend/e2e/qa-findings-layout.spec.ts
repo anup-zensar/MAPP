@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './support/no-csp-violations';
 import { callApi, expectNoAxeViolations, signInAs } from './fixtures';
 import { createPlan, createPlanningRecords } from './planning';
 import { xlsx } from './xlsx';

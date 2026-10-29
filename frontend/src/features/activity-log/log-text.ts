@@ -8,6 +8,7 @@ import type { components } from '@/api/generated/schema';
 import type { StatusTone } from '@/ui/StatusChip/StatusChip';
 import { formatWhole } from '@/format/decimal';
 import { formatWeekdayDate } from '@/format/intl';
+import type { DateFormat } from '@/format/intl';
 import { isPlanningType, recordHref } from '@/ui/record-links';
 import type { PlanningRecordType } from '@/ui/record-links';
 import { plural } from '@/format/text';
@@ -174,15 +175,18 @@ export function detailLines(entry: ActivityLogEntry): string[] {
   return lines;
 }
 
-/** "Today", "Yesterday" or "Monday 12 Oct 2026" for a local calendar date (FR-004). */
-export function dayLabel(date: string, today: string): string {
+/**
+ * "Today", "Yesterday" or "Monday 12 Oct 2026" — in the person's date format (038 FR-058) — for a
+ * local calendar date (FR-004).
+ */
+export function dayLabel(date: string, today: string, format?: DateFormat): string {
   if (date === today) {
     return 'Today';
   }
   if (date === dayBefore(today)) {
     return 'Yesterday';
   }
-  return formatWeekdayDate(date);
+  return formatWeekdayDate(date, format);
 }
 
 /** The calendar day before "2026-03-01": "2026-02-28" (worked out in UTC, so no time zone moves it). */

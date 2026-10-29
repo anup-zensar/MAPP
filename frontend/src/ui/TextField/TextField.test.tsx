@@ -36,7 +36,7 @@ describe('TextField', () => {
     expect(input).toHaveAttribute('autocomplete', 'username');
   });
 
-  it('shows the marking as a word and the hint, both read with the field (FR-019)', () => {
+  it('marks a field required to save with an asterisk and reads "required" and the hint with it (FR-019, 038 FR-063)', () => {
     render(
       <Field
         label="Name"
@@ -47,9 +47,10 @@ describe('TextField', () => {
       />,
     );
 
-    expect(screen.getByText('Required')).toBeInTheDocument();
+    expect(screen.getByText('*')).toHaveAttribute('aria-hidden', 'true');
     const input = screen.getByRole('textbox', { name: 'Name' });
-    expect(input).toHaveAccessibleDescription('Required Up to 80 characters.');
+    expect(input).toHaveAttribute('aria-required', 'true');
+    expect(input).toHaveAccessibleDescription('required Up to 80 characters.');
     expect(input).toHaveAttribute('maxLength', '80');
   });
 

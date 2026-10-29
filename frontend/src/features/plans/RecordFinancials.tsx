@@ -123,26 +123,6 @@ export function RecordFinancials({ recordId, planId, variant }: RecordFinancials
   );
 }
 
-/** "Mar 2026" for an accrual month "2026-03". */
-function monthText(month: string): string {
-  const names = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  const [year, number] = month.split('-');
-  return `${names[Number(number) - 1] ?? ''} ${year}`.trim();
-}
-
 function Figures({
   figures,
   accrualMonth,
@@ -152,8 +132,8 @@ function Figures({
   accrualMonth: string | null;
   variant: 'page' | 'panel';
 }) {
-  const { money } = useFormatters();
-  const accrued = accrualMonth ? `Accrued (${monthText(accrualMonth)})` : 'Accrued';
+  const { money, month } = useFormatters();
+  const accrued = accrualMonth ? `Accrued (${month(accrualMonth)})` : 'Accrued';
   const negative =
     figures.notYetCommitted !== null && figures.notYetCommitted.amount.startsWith('-');
   return (
@@ -198,7 +178,7 @@ function Figures({
           {accrued}
           <InfoTip
             label="Accrued"
-            text={`Money owed for work received but not yet invoiced, as GSAP accrued it for ${accrualMonth ? monthText(accrualMonth) : 'the latest month'}.`}
+            text={`Money owed for work received but not yet invoiced, as GSAP accrued it for ${accrualMonth ? month(accrualMonth) : 'the latest month'}.`}
           />
         </p>
         <p className={styles.value}>{money(figures.accrued)}</p>

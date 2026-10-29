@@ -1,6 +1,8 @@
 import { CircleAlert, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { cx } from '../cx';
+import { Marking } from '../FieldShell/FieldShell';
+import type { FieldMarking } from '../FieldShell/FieldShell';
 import { InfoTip } from '../InfoTip/InfoTip';
 import { Tooltip } from '../Tooltip/Tooltip';
 import styles from './TextField.module.css';
@@ -15,8 +17,8 @@ export interface TextFieldProps {
   error?: string;
   /** A short help text under the label. */
   hint?: string;
-  /** Shown as a word next to the label (design system §6.2). */
-  marking?: 'Required' | 'Needed to publish' | 'Needed to submit';
+  /** A red asterisk for "Required", otherwise a word next to the label (design system §6.2). */
+  marking?: FieldMarking;
   maxLength?: number;
   type?: 'text' | 'email' | 'password';
   /** The browser's autofill hint, for example "username" or "current-password". */
@@ -31,7 +33,7 @@ export interface TextFieldProps {
 }
 
 /**
- * A labelled text input (design system §7): the label above, the marking as a word, the problem
+ * A labelled text input (design system §7): the label above, then the marking, the problem
  * under the field. Screen readers hear the marking, the hint and the problem with the field.
  * A password field also gets the eye button that shows what was typed (use PasswordField).
  */
@@ -65,12 +67,8 @@ export function TextField({
         <label htmlFor={name} className={styles.label}>
           {label}
         </label>
+        <Marking id={markingId} marking={marking} />
         {tip && <InfoTip label={label} text={tip} />}
-        {marking && (
-          <span id={markingId} className={styles.marking}>
-            {marking}
-          </span>
-        )}
       </div>
       {hint && (
         <p id={hintId} className={styles.hint}>
@@ -89,6 +87,7 @@ export function TextField({
           list={suggestions ? suggestionsId : undefined}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy || undefined}
+          aria-required={marking === 'Required' || undefined}
           className={cx(styles.input, isPassword && styles.withEye, error && styles.invalid)}
         />
         {isPassword && (

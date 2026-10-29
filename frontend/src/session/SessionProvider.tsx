@@ -18,6 +18,7 @@ import {
   setForbiddenHandler,
   setSessionLostHandler,
 } from './api';
+import { unsavedFormTitle } from './lost-changes';
 import { SESSION_KEY, SessionContext, signInAddress } from './useSession';
 import type { CurrentUser, PreferencesUpdate, SessionEnd, SessionStatus } from './useSession';
 
@@ -64,10 +65,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       // First forget the person, then show the sign-in page in the same moment (flushSync).
       // Otherwise the page on screen, or the sign-in page, would see the old state in between
       // and send people on a second time, without the notice.
+      // The form whose typed changes are lost is named on the sign-in page (038 FR-031).
+      const lostChanges = reason === 'sessionLost' ? unsavedFormTitle() : null;
       sessionChanges.current += 1;
       queryClient.setQueryData(SESSION_KEY, null);
       const to = reason === 'sessionLost' ? sessionLostAddress(pageOnScreen.current) : '/sign-in';
-      navigate(to, { replace: true, state: { notice: reason }, flushSync: true });
+      const state = lostChanges ? { notice: reason, lostChanges } : { notice: reason };
+      navigate(to, { replace: true, state, flushSync: true });
       // Nothing of the person's data stays in the browser, so Back cannot show it again.
       queryClient.removeQueries({ predicate: isOtherData });
     },
@@ -244,7 +248,7 @@ function sessionStatus(data: CurrentUser | null | undefined, checkFailed: boolea
  * and so its own way back.
  */
 function sessionLostAddress(page: Path): string {
-  const address = page.pathname + page.search;
+  const address = page.pathname + page.search + page.hash;
   return matchPath('/sign-in', page.pathname) ? address : signInAddress(address);
 }
 

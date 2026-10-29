@@ -91,7 +91,7 @@ describe('AccessPage: Roles tab (feature 014, US4)', () => {
 
     const messages = await findMessages();
     expect(
-      await within(messages).findByText("Role 'Finance reviewer' moved to the recycle bin"),
+      await within(messages).findByText("Role 'Finance reviewer' deleted"),
     ).toBeInTheDocument();
     await user.click(within(messages).getByRole('button', { name: 'Undo' }));
     expect(await screen.findByText("Role 'Finance reviewer' restored")).toBeInTheDocument();

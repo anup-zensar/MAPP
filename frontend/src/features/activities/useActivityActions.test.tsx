@@ -137,9 +137,7 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
     await user.click(within(question).getByRole('button', { name: 'Delete activity' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1001'));
-    expect(
-      await screen.findByText("Activity 'Launch film' moved to the recycle bin"),
-    ).toBeVisible();
+    expect(await screen.findByText("Activity 'Launch film' deleted")).toBeVisible();
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
 
     const messages = await findMessages();

@@ -4,6 +4,8 @@
  * Evenly months and checks every save with the same rules.
  */
 import { formatAmount, formatCents, parseMoneyInput, toCents } from '@/format/decimal';
+import { formatMonth } from '@/format/intl';
+import type { DateFormat } from '@/format/intl';
 
 /** The months' short names, January first (the person's date format never changes them). */
 export const MONTH_NAMES = [
@@ -26,10 +28,9 @@ export function monthKeys(year: number): string[] {
   return MONTH_NAMES.map((_, index) => `${year}-${String(index + 1).padStart(2, '0')}`);
 }
 
-/** "Mar 2027" for "2027-03". */
-export function monthLabel(key: string): string {
-  const [year, month] = key.split('-');
-  return `${MONTH_NAMES[Number(month) - 1]} ${year}`;
+/** "Mar 2027" for "2027-03", or in the person's date format ("2027-03", 038 FR-058). */
+export function monthLabel(key: string, format?: DateFormat): string {
+  return formatMonth(key, format);
 }
 
 /** "Q1 2027" … "Q4 2027". */

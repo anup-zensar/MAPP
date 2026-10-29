@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './support/no-csp-violations';
 import { expectNoAxeViolations, signInAs } from './fixtures';
 
 // 038 US4 (H-1): an address with a currency or market the person cannot use shows the dashboard with the

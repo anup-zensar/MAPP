@@ -15,7 +15,7 @@ import { safeNext } from '@/session/safe-next';
 import { ProductName } from '@/ui/Logo/Logo';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useDemoPeople } from './api';
-import { noticeOf } from './schemas';
+import { lostChangesOf, noticeOf } from './schemas';
 import { SignInForm } from './SignInForm';
 import styles from './SignInPage.module.css';
 
@@ -76,6 +76,10 @@ function Notice() {
 
 function noticeText(routerState: unknown): string {
   const notice = noticeOf(routerState);
+  const lostChanges = lostChangesOf(routerState);
+  if (notice === 'sessionLost' && lostChanges) {
+    return `Your session ended, so your changes in '${lostChanges}' weren't saved. ${NOTICES.sessionLost}`;
+  }
   return notice ? NOTICES[notice] : '';
 }
 

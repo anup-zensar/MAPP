@@ -29,7 +29,7 @@ describe('TextAreaField', () => {
 
     expect(field).toHaveAttribute('rows', '3');
     expect(field).toHaveAccessibleDescription(
-      'Required What the plan is for. Enter a description.',
+      'required What the plan is for. Enter a description.',
     );
     expect(screen.getByRole('button', { name: 'About Description' })).toBeInTheDocument();
 

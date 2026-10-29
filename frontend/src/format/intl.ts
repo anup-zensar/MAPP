@@ -155,12 +155,30 @@ export function formatDateTime(
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 /**
- * The calendar date "2026-10-12" as "Monday 12 Oct 2026" (feature 011: the activity log's day
- * headings). The weekday is worked out in UTC, so the time zone cannot move it to another day.
+ * The calendar date "2026-10-12" as "Monday 12 Oct 2026", or with the date in the given format
+ * ("Monday 2026-10-12"; the activity log's day headings, 038 FR-058). The weekday is worked out in
+ * UTC, so the time zone cannot move it to another day.
  */
-export function formatWeekdayDate(date: string): string {
+export function formatWeekdayDate(date: string, format: DateFormat = DEFAULT_DATE_FORMAT): string {
   const weekday = WEEKDAYS[new Date(`${date}T00:00:00Z`).getUTCDay()];
-  return `${weekday} ${formatDate(date)}`;
+  return `${weekday} ${formatDate(date, format)}`;
+}
+
+/**
+ * The month "2026-09" (or a date in it) as "Sep 2026", or in the given format: "09/2026",
+ * "2026-09" (038 FR-058, D-356). Every month label with a year is written by this function.
+ */
+export function formatMonth(month: string, format: DateFormat = DEFAULT_DATE_FORMAT): string {
+  const [year = '', number = ''] = month.split('-');
+  switch (format) {
+    case 'DD/MM/YYYY':
+    case 'MM/DD/YYYY':
+      return `${number}/${year}`;
+    case 'YYYY-MM-DD':
+      return `${year}-${number}`;
+    default:
+      return `${MONTHS[Number(number) - 1]} ${year}`;
+  }
 }
 
 /**
@@ -223,15 +241,21 @@ export function formatMoney(value: string | null | undefined, currency: string):
 
 /**
  * "$1.25M" or "12.5K EUR" for summary cards, which show formatMoney's full value in a tooltip.
- * Amounts under 1,000 are short already and are shown in full.
+ * Amounts under 1,000 are short already and are shown in full, and so are amounts that would round
+ * up to 1000 of the largest unit ("1000T", 038 FR-044).
  */
 export function formatMoneyCompact(value: string | null | undefined, currency: string): string {
   if (!value || Math.abs(Number(value)) < 1000) {
     return formatMoney(value, currency);
   }
-  return currency === 'USD'
-    ? compactDollars.format(exact(value))
-    : `${compactAmount.format(exact(value))} ${currency}`;
+  const format = currency === 'USD' ? compactDollars : compactAmount;
+  const parts = format.formatToParts(exact(value));
+  const integer = parts.filter((part) => part.type === 'integer').map((part) => part.value);
+  if (integer.join('').length > 3) {
+    return formatMoney(value, currency);
+  }
+  const compact = parts.map((part) => part.value).join('');
+  return currency === 'USD' ? compact : `${compact} ${currency}`;
 }
 
 function twoDigits(n: number): string {

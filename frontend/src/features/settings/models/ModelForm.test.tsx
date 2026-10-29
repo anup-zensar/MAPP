@@ -28,7 +28,7 @@ describe('ModelForm (FR-009, FR-010)', () => {
     renderForm({ kind: 'new' });
 
     const form = screen.getByRole('dialog', { name: 'New model' });
-    expect(field(/^Name/)).toHaveAccessibleDescription('Required');
+    expect(field(/^Name/)).toHaveAccessibleDescription('required');
     expect(field(/^INQ→MQL rate/)).toBeInTheDocument();
     expect(field(/^MQL→deal rate/)).toBeInTheDocument();
     expect(field(/^Average deal size/)).toHaveAccessibleDescription(/USD/);

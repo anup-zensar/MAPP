@@ -46,7 +46,10 @@ describe('PlanForm (US1, FR-005 – FR-010)', () => {
     expect(await screen.findByRole('textbox', { name: /Plan name/ })).toBeInTheDocument();
     expect(sectionTitles()).toEqual(['Basics', 'Budget', 'Shell attributes', 'Goals']);
     const basics = screen.getByRole('region', { name: 'Basics' });
-    expect(within(basics).getByText('Plan name').parentElement).toHaveTextContent('Required');
+    expect(within(basics).getByRole('textbox', { name: 'Plan name' })).toHaveAttribute(
+      'aria-required',
+      'true',
+    );
     expect(screen.getByRole('button', { name: 'Remove 2026' })).toBeInTheDocument();
     expect(screen.getByText('Default: the current year')).toBeInTheDocument();
     expect(await screen.findByText('Default: your teams')).toBeInTheDocument();

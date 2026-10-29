@@ -132,7 +132,7 @@ describe('CurrenciesPage: status and delete (US4 scenario 2, FR-004)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Delete currency' }));
 
     const messages = await findMessages();
-    expect(messages).toHaveTextContent("Currency 'Japanese yen' moved to the recycle bin");
+    expect(messages).toHaveTextContent("Currency 'Japanese yen' deleted");
     expect(within(messages).getByRole('button', { name: 'Undo' })).toBeInTheDocument();
   });
 

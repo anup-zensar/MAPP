@@ -68,7 +68,7 @@ describe('SampleRecordsPage: notes', () => {
 
     expect(await within(panel).findByRole('alert')).toHaveTextContent('Enter a title.');
     expect(within(panel).getByLabelText('Title')).toHaveAccessibleDescription(
-      'Required Enter a title.',
+      'required Enter a title.',
     );
   });
 
@@ -90,7 +90,7 @@ describe('SampleRecordsPage: notes', () => {
     await user.click(within(question).getByRole('button', { name: 'Delete sample note' }));
 
     const messages = await findMessages();
-    expect(messages).toHaveTextContent("Sample note 'Agenda' moved to the recycle bin");
+    expect(messages).toHaveTextContent("Sample note 'Agenda' deleted");
     expect(within(messages).getByRole('button', { name: 'Undo' })).toBeInTheDocument();
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(api.requests).toContainEqual({

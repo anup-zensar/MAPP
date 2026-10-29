@@ -266,9 +266,7 @@ describe('LineItemPage (US4, FR-026)', () => {
     );
     expect(router.state.location.hash).toBe('#line-items');
     expect(api.requests.find((r) => r.method === 'DELETE')?.search).toBe('');
-    expect(
-      await screen.findByText("Line item 'Agency fee' moved to the recycle bin"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Line item 'Agency fee' deleted")).toBeInTheDocument();
     const messages = await findMessages();
     await user.click(within(messages).getByRole('button', { name: 'Undo' }));
     expect(await screen.findByText("Line item 'Agency fee' restored")).toBeInTheDocument();

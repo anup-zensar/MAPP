@@ -2,6 +2,7 @@
 import { fileURLToPath, URL } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
+import { developmentHeaders, securityHeaders } from './security-headers.ts';
 
 // Where the development and preview servers forward /api requests. The end-to-end tests point it at
 // their own API with MAPP_API_URL. 127.0.0.1 rather than "localhost": Node may resolve localhost
@@ -13,7 +14,8 @@ if (process.env.VITEST) {
   process.env.TZ = 'UTC';
 }
 
-const proxy = { '/api': { target: apiTarget } };
+// xfwd: the API counts sign-in attempts per client, so it must see the browser's address (038 FR-014).
+const proxy = { '/api': { target: apiTarget, xfwd: true } };
 
 export default defineConfig({
   plugins: [react()],
@@ -21,8 +23,8 @@ export default defineConfig({
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
   // Servers listen on this computer only (no firewall prompt) and never move to another port silently.
-  server: { host: '127.0.0.1', port: 5173, strictPort: true, proxy },
-  preview: { host: '127.0.0.1', port: 4173, strictPort: true, proxy },
+  server: { host: '127.0.0.1', port: 5173, strictPort: true, proxy, headers: developmentHeaders },
+  preview: { host: '127.0.0.1', port: 4173, strictPort: true, proxy, headers: securityHeaders },
   build: {
     rolldownOptions: {
       // Each feature's code is one file named after the feature (app/pages.tsx loads them).
@@ -31,7 +33,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'security-headers.test.ts'],
     setupFiles: ['src/testing/setup.ts'],
     // Generous, because a busy laptop can run a single test for several seconds.
     testTimeout: 15000,

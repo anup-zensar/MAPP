@@ -7,7 +7,7 @@ import { useFailureMessage } from './useFailureMessage';
 
 type DeleteResult = components['schemas']['DeleteResult'];
 
-/** "Sample folder 'Ideas' moved to the recycle bin" with Undo, restorable on this page too. */
+/** "Sample folder 'Ideas' deleted" with Undo, restorable on this page too. */
 const UNDO_OPTIONS = {
   invalidate: SAMPLE_PAGE_LISTS,
   altText: 'Restore it from Recently deleted on this page',

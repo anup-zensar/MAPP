@@ -1,6 +1,7 @@
 import { CircleAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
+import { useFormatters } from '@/format/useFormatters';
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
 import { cx } from '@/ui/cx';
@@ -16,7 +17,7 @@ import {
 } from './gsap-financials';
 import type { FinancialFiguresData } from './gsap-financials';
 import styles from './GsapFigures.module.css';
-import { formatMonth, moneyText } from './line-item-math';
+import { moneyText } from './line-item-math';
 
 export interface GsapFiguresProps {
   figures: FinancialFiguresData;
@@ -32,7 +33,8 @@ export interface GsapFiguresProps {
  * reader's display currency, as the API answers them.
  */
 export function GsapFigures({ figures, accrualMonth }: GsapFiguresProps) {
-  const month = accrualMonth ? formatMonth(accrualMonth) : null;
+  const { month: monthOf } = useFormatters();
+  const month = accrualMonth ? monthOf(accrualMonth) : null;
   const over = figures.committedAbovePlanned;
   const notYet = figures.notYetCommitted;
   const first = figures.firstLineItemAbovePlanned;
