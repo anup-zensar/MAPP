@@ -2,7 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import type { RouteObject } from 'react-router';
 import { afterEach, describe, expect, it } from 'vitest';
-import { SignInPage } from '@/features/sign-in/SignInPage';
+import { SignInPage } from '@/features/sign-in';
 import { patchPreferences } from '@/session/api';
 import { RequireSignIn } from '@/session/RequireSignIn';
 import { PRIYA, SESSION_EXPIRED } from '@/testing/fixtures/session';
