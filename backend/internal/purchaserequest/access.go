@@ -57,6 +57,9 @@ func (f accessFacts) submit(ctx context.Context) authz.Availability {
 	case StatusCreated:
 		return authz.Available(ctx, authz.PurchaseRequestsSubmit, f.plan)
 	case StatusApproved:
+		if changes := f.submitChanges(ctx); !changes.Available {
+			return changes
+		}
 		return authz.Unavailable(msgEditToChange)
 	case StatusSubmitted, StatusInReview, StatusDeclined, StatusClosed:
 	}

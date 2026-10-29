@@ -52,6 +52,9 @@ func (s *Service) section(ctx context.Context, a actor.Actor, sub subject) (Sect
 		if err = s.viewerOn(ctx, &view, at, viewing{a: a, d: rc.people}); err != nil {
 			return Section{}, err
 		}
+		if err = s.overagesOn(ctx, &view, at.sub); err != nil {
+			return Section{}, err
+		}
 	}
 	limitSubmit(ctx, &view.Actions, sub)
 	if sub.Status == StatusDeclined {

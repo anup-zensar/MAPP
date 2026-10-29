@@ -50,6 +50,8 @@ type Section struct {
 	LatestDecline  *DeclineNote `json:"latestDecline"`
 	Viewer         Viewer       `json:"viewer"`
 	Actions        ActionSet    `json:"actions"`
+
+	OverPlannedCost []Overage `json:"-"`
 }
 
 type ActivityApproval struct {
@@ -80,7 +82,7 @@ func activityApproval(sec Section) ActivityApproval {
 		ActivityID: sec.Subject.ID, ActivityName: sec.Subject.Name, ActivityVersion: sec.Subject.Version,
 		Status: sec.Subject.Status, DisplayStatus: sec.Subject.DisplayStatus, OwnerID: sec.OwnerID, Owner: sec.Owner,
 		Workflow: sec.Workflow, UpcomingLevels: sec.UpcomingLevels, Rounds: sec.Rounds, LatestDecline: sec.LatestDecline,
-		Viewer: sec.Viewer, Actions: sec.Actions, OverPlannedCost: []Overage{},
+		Viewer: sec.Viewer, Actions: sec.Actions, OverPlannedCost: append([]Overage{}, sec.OverPlannedCost...),
 	}
 }
 

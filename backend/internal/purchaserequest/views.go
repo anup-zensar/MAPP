@@ -189,8 +189,8 @@ type ConfigurationView struct {
 	PurchaseSupport                 bool               `json:"purchaseSupport"`
 	LinesOnApprovedPurchaseRequests LinesOnApproved    `json:"linesOnApprovedPurchaseRequests"`
 	Version                         int                `json:"version"`
-	UpdatedAt                       time.Time          `json:"updatedAt"`
-	UpdatedBy                       actor.Actor        `json:"updatedBy"`
+	UpdatedAt                       *time.Time         `json:"updatedAt"`
+	UpdatedBy                       *actor.Actor       `json:"updatedBy"`
 	CanChange                       authz.Availability `json:"canChange"`
 }
 
