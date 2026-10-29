@@ -122,11 +122,13 @@ function Dashboard({ kind, dashboard, filters, onChange }: DashboardProps) {
     return (
       <>
         {filtersBar}
-        <EmptyState
-          icon={<LayoutDashboard />}
-          title={emptyText(dashboard.filters.year, dashboard.team?.name ?? null)}
-          text="Choose another year, market or plan type."
-        />
+        <div className={styles.onGrey}>
+          <EmptyState
+            icon={<LayoutDashboard />}
+            title={emptyText(dashboard.filters.year, dashboard.team?.name ?? null)}
+            text="Choose another year, market or plan type."
+          />
+        </div>
       </>
     );
   }
