@@ -29,7 +29,12 @@ test('036 US1: the Executive dashboard adds up every market a person may see, an
   const markets = page.getByRole('table', { name: /Plans and figures by market/ });
   await expect(markets.getByRole('link', { name: 'Lubricants Europe' })).toBeVisible();
   await expect(markets.getByRole('link', { name: 'Mobility China', exact: true })).toBeVisible();
-  await expect(page.getByLabel('Summary').getByText(/^\$[\d,]+\.\d{2}$/).first()).toBeVisible();
+  await expect(
+    page
+      .getByLabel('Summary')
+      .getByText(/^\$[\d,]+\.\d{2}$/)
+      .first(),
+  ).toBeVisible();
   await expect(page.getByRole('img', { name: /Planned cost by month/ })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Approvals' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Global budgets' })).toBeVisible();
@@ -38,18 +43,29 @@ test('036 US1: the Executive dashboard adds up every market a person may see, an
   await page.getByRole('button', { name: 'Table' }).click();
   await expect(page.getByRole('rowheader', { name: 'Mar 2026' })).toBeVisible();
   await page.getByLabel('Currency', { exact: true }).selectOption('EUR');
-  await expect(page.getByLabel('Summary').getByText(/^[\d,]+\.\d{2} EUR$/).first()).toBeVisible();
+  await expect(
+    page
+      .getByLabel('Summary')
+      .getByText(/^[\d,]+\.\d{2} EUR$/)
+      .first(),
+  ).toBeVisible();
 
   await markets.getByRole('link', { name: 'Mobility China', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Regional dashboard' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'FY2026 Mobility China', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'FY2026 Mobility China', exact: true }),
+  ).toBeVisible();
   await expectNoAxeViolations(page);
 
   await signInAs(page, PRIYA);
   await page.goto(`/dashboards/executive?year=${SEED_YEAR}`);
-  await expect(page.getByRole('link', { name: 'FY2026 Lubricants Europe', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'FY2026 Lubricants Europe', exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole('link', { name: 'Mobility China', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'FY2026 Mobility China', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'FY2026 Mobility China', exact: true })).toHaveCount(
+    0,
+  );
 });
 
 test('036 US2: a plan downloads as PowerPoint and PDF files that open, with every page (FR-023, FR-025)', async ({

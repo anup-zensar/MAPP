@@ -3,7 +3,7 @@ import { Outlet } from 'react-router';
 import { describe, expect, it } from 'vitest';
 import { SessionProvider } from '@/session/SessionProvider';
 import { expectNoAxeViolations } from '@/testing/axe';
-import { dashboard } from '@/testing/fixtures/dashboards';
+import { dashboard, figures } from '@/testing/fixtures/dashboards';
 import { testUser } from '@/testing/fixtures/users';
 import { mockApi } from '@/testing/mock-api';
 import type { MockedApi } from '@/testing/mock-api';
@@ -14,19 +14,22 @@ import { DashboardsPage } from './DashboardsPage';
 
 type ExecutiveAnswer = Answer<'GET /api/v1/dashboards/executive'>;
 
+const REGIONAL = dashboard({
+  kind: 'regional',
+  team: { id: 'T-1001', name: 'Lubricants Europe', colour: 'blue', active: true },
+  filters: { year: 2026, planType: null, currency: 'USD', teamId: 'T-1001', planId: null },
+});
+
 function renderPage(
   answer: ExecutiveAnswer = { body: dashboard() },
   route = '/dashboards/executive',
+  regional: Answer<'GET /api/v1/dashboards/regional'> = { body: REGIONAL },
 ) {
   const api = mockApi([
     reply('GET /api/v1/me', { body: testUser() }),
     reply('GET /api/v1/dashboards/executive', answer),
-    reply('GET /api/v1/dashboards/regional', {
-      body: dashboard({
-        kind: 'regional',
-        team: { id: 'T-1001', name: 'Lubricants Europe', colour: 'blue', active: true },
-      }),
-    }),
+    reply('GET /api/v1/dashboards/regional', regional),
+    reply('GET /api/v1/dashboards/regional/export', () => new Response('%PDF-1.4')),
   ]);
   const rendered = renderRoutes(
     [
@@ -131,7 +134,7 @@ describe('DashboardsPage (036 US1)', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows its loading, error and no-access states (FR-028)', async () => {
+  it('shows its loading state in reserved space (FR-028)', async () => {
     renderPage(() => pending());
     expect(await screen.findByLabelText('Loading the dashboard')).toBeInTheDocument();
   });
@@ -159,5 +162,56 @@ describe('DashboardsPage, Regional (036 US3)', () => {
       await screen.findByRole('link', { name: 'Show campaigns of FY2026 Lubricants Europe' }),
     ).toHaveAttribute('href', '/dashboards/regional?team=T-1001&plan=P-1001');
     await expectNoAxeViolations();
+  });
+
+  it('shows the campaigns of the chosen plan and keeps the market when the plan type changes (FR-021)', async () => {
+    const campaigns = {
+      plan: { id: 'P-1001', name: 'FY2026 Lubricants Europe' },
+      items: [
+        {
+          campaign: { id: 'C-1009', name: 'Fleet push' },
+          plan: { id: 'P-1001', name: 'FY2026 Lubricants Europe' },
+          figures: figures(),
+          difference: null,
+        },
+      ],
+    };
+    const { user, router } = renderPage(undefined, '/dashboards/regional?team=T-1001&plan=P-1001', {
+      body: {
+        ...REGIONAL,
+        planCampaigns: campaigns,
+        filters: { ...REGIONAL.filters, planId: 'P-1001' },
+      },
+    });
+
+    const table = await screen.findByRole('table', {
+      name: /Campaigns of FY2026 Lubricants Europe/,
+    });
+    expect(within(table).getByRole('link', { name: 'Fleet push' })).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText('Plan type'), 'operational');
+    expect(router.state.location.search).toBe('?planType=operational&team=T-1001');
+  });
+
+  it('opens the other dashboard from its tab without the market (FR-022)', async () => {
+    const { user, router } = renderPage(undefined, '/dashboards/regional?team=T-1001&year=2026');
+
+    await user.click(await screen.findByRole('tab', { name: 'Executive' }));
+
+    expect(router.state.location.pathname).toBe('/dashboards/executive');
+    expect(router.state.location.search).toBe('?year=2026');
+  });
+
+  it('exports the Regional dashboard with its market (FR-024)', async () => {
+    URL.createObjectURL = () => 'blob:export';
+    URL.revokeObjectURL = () => {};
+    const { user, api } = renderPage(undefined, '/dashboards/regional?team=T-1001');
+
+    await user.click(await screen.findByRole('button', { name: 'Export' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'PDF (.pdf)' }));
+
+    await screen.findByRole('button', { name: 'Export' });
+    const query = queries(api, '/api/v1/dashboards/regional/export')[0];
+    expect(query?.get('format')).toBe('pdf');
+    expect(query?.get('teamId')).toBe('T-1001');
   });
 });

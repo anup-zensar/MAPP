@@ -30,6 +30,11 @@ application use these definitions. Hive9 names are given in brackets where users
 | **Finance budget item** | A row of a finance budget (e.g. "2026 Lubricants Budget › Europe – Digital") that a line item is linked to. Managed by Finance; a simple list in Settings for now. |
 | **Finance budget** | Finance's budget for a year (e.g. "2026 Lubricants Budget"), made up of finance budget items. Only the list of items exists in this phase. |
 | **Actuals** | What was really spent, reported by finance. Coming in a later phase. |
+| **Committed** | The value of the GSAP purchase orders on a record's line items (feature 015). |
+| **Actual (paid)** | What GSAP reports as paid on a record's line items — Shell's actuals (features 015, 036). |
+| **Unspent budget** | Budget minus actual: how much of a budget is not yet paid out (feature 036). |
+| **Budget spent** | Actual as a percentage of the budget (feature 036; Hive9's burn rate). |
+| **Dashboard** | A read-only page that adds up the plans you may see — Executive for every market, Regional for one (feature 036). |
 
 ## Goals
 
