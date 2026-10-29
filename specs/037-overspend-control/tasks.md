@@ -11,7 +11,7 @@ parallel with the other `[P]` tasks of its phase.
 - [x] T001 Migration `backend/internal/platform/database/migrations/00025_overspend.sql`: `overspend` columns on
   plans, campaigns, initiatives, global_budgets; table `overspend_configuration` (data-model §1)
 - [x] T002 sqlc: the new column in every put/copy query of plans, campaigns, initiatives, global budgets; queries
-  `OverspendPlanningBudgets`, `OverspendGlobalBudgets`, `GetOverspendConfiguration`, `PutOverspendConfiguration`
+  `ListOverspendBudgets`, `ListOverspendGlobalBudgets`, `GetOverspendConfiguration`, `PutOverspendConfiguration`
   in `queries/overspend.sql`; `sqlc generate` and `vet`
 - [x] T003 Contract first in `backend/api/openapi.yaml`: schemas and properties of contracts/openapi.yaml, error
   code `over_budget` with `overBudget`; `pnpm run api:types`
@@ -26,22 +26,23 @@ parallel with the other `[P]` tasks of its phase.
 - [x] T006 [P] Failing tests `access_test.go`: owner, budget manager in scope, other planner (reason), internal
   call (FR-003)
 - [x] T007 Implement `model.go`, `rules.go`, `guard.go`, `access.go`, `store.go`, `store_postgres.go`,
-  `overspendtest/store.go` (fake over the other areas' fake tables), `errs.OverBudget`
-- [x] T008 Failing tests then implementation of the configuration: `service_test.go`, `handler_test.go` (contract,
-  403 without settings.manage, version conflict, validation, log entry) — `service.go`, `kinds.go`,
+  `overspendtest/store.go` (fake over the other areas' fake tables); the refusal's code is `overspend.CodeOverBudget`
+  with `overspend.Refusal` in `rules.go` (no change to `errs`)
+- [x] T008 Failing tests then implementation of the configuration: `handler_test.go` (contract, 403 without
+  settings.manage, version conflict, validation, log entry; the service is tested through it) — `service.go`, `kinds.go`,
   `handler.go`; routes in `backend/internal/access/routes_overspend.go` (FR-006)
 
 ## Phase 3: User Story 1 — a budget owner refuses overspending (P1) 🎯
 
-- [x] T009 [P] [US1] Failing tests `plan/overspend_test.go`: create takes the default or the sent mode; update
-  logs "Overspend"; a planner who is not the owner gets 403; allocated plan 409; view shows control (FR-001 –
-  FR-005, FR-007)
-- [x] T010 [P] [US1] Failing tests `campaign/overspend_test.go` for campaigns and initiatives (same rules)
+- [x] T009 [P] [US1] Failing API tests in `backend/internal/overspend`: create takes the default or the sent mode
+  (`handler_test.go`); update logs "Overspend" and a planner who is not the owner gets 403 (`enforcement_test.go`);
+  allocated plan 409 (`budgets_test.go`); view shows control (FR-001 – FR-005, FR-007)
+- [x] T010 [P] [US1] The same rules for campaigns and initiatives, in the same files
 - [x] T011 [US1] Implement plan and campaign/initiative fields, inputs, views, checks, log labels, store columns,
   fakes; plan defaults carry the organisation default
 - [x] T012 [US1] Wire the guard in `backend/internal/app` (plans, campaigns, activities, budgets, history) and the
   default and limits ports; seed writes `warn`
-- [x] T013 [US1] Failing API tests `app/overspend_test.go` (contract-validated): activity create and update over a
+- [x] T013 [US1] Failing API tests `backend/internal/overspend/enforcement_test.go` (contract-validated): activity create and update over a
   Refuse plan, campaign and initiative budget refused with the message; under it saved; Warn saved (US1
   scenarios 2, 4, 5); lowering a Refuse budget below planned cost refused (scenario 7)
 - [x] T014 [US1] Activity form `overspendLimits` (activity port, service, tests) (FR-014)
@@ -51,14 +52,15 @@ parallel with the other `[P]` tasks of its phase.
 
 ## Phase 4: User Story 2 — every path (P2)
 
-- [x] T016 [US2] Failing API tests `app/overspend_paths_test.go`: activity move, copy, split; initiative move and
+- [x] T016 [US2] Failing API tests `backend/internal/overspend/paths_test.go` and `budgets_test.go`: activity move, copy, split; initiative move and
   copy; campaign move and copy; plan copy with contents; restore and Undo from the recycle bin; a delete over a
   Refuse budget passes; line-item create and update never refused (US2 scenarios 1–5, FR-009, FR-012)
 - [x] T017 [US2] Fix any path the tests show unguarded
 
 ## Phase 5: User Story 3 — global budgets and allocations (P2)
 
-- [x] T018 [US3] Failing tests `budget/overspend_test.go` and API tests: global budget mode on create/update and
+- [x] T018 [US3] Failing API tests `backend/internal/overspend/budgets_test.go` and `budget` service tests
+  (`allocation_change_test.go`): global budget mode on create/update and
   view; allocation input sets the plan's mode through `SetBudgetFromAllocation`; allocate refused when the plan
   does not fit a Refuse global budget; lowering an allocation below planned cost refused (FR-004, FR-009)
 - [x] T019 [US3] Implement budget model, inputs, rows, options, store column, fake; plan's allocation input
@@ -83,6 +85,22 @@ parallel with the other `[P]` tasks of its phase.
 - [x] T026 Gates: fmt, lint (new from 587eade2), sqlc diff, vet, tests with PostgreSQL, govulncheck, `pnpm run
   check`, `pnpm run build`, full e2e; comment budget and file length of every touched file
 
+## Phase 9: Analyze findings (2026-10-29)
+
+- [x] T027 [US2] API test `backend/internal/overspend/paths_test.go`
+  `TestRefuse_CampaignMoveIntoARefusePlan_Contract_037_US2`: a campaign moved into a plan whose allocation refuses
+  overspending is refused naming the plan and changes nothing; with room it moves (US2 scenario 1, FR-009 –
+  FR-011). Note: passed on first run — the guard already covered the campaign move; no code change
+- [x] T028 API test `backend/internal/overspend/budgets_test.go`
+  `TestOverAllocationUnderARefusePlan_KeepsWarning_Contract_037_FR013`: a campaign budget above its Refuse plan's
+  budget still saves (FR-013, D-346). Note: passed on first run; no code change
+- [x] T029 Benchmark `backend/internal/platform/apibench/overspend_test.go` `BenchmarkOverspend`: an allowed and a
+  refused activity create under a campaign set to Refuse, on the demo and volume databases (plan, Performance
+  Goals).
+  Note: results recorded in plan.md
+- [x] T030 Record the unscoped guard read as a deviation: plan.md Complexity Tracking, D-355, ADR-0018 (proposed,
+  for the product owner's approval) (constitution VII, B5)
+
 ## Dependencies
 
-Phase 1 → Phase 2 → US1 (T009–T015) → US2, US3, US4, US5 (independent of each other) → Phase 8.
+Phase 1 → Phase 2 → US1 (T009–T015) → US2, US3, US4, US5 (independent of each other) → Phase 8 → Phase 9.
