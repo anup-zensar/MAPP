@@ -247,3 +247,25 @@ func TestRestoreRole_NameTaken_FR018(t *testing.T) {
 		t.Errorf("restored role %q with details %q", role.Name, restored.Details)
 	}
 }
+
+// "Link financial transactions" is saved only together with "Import GSAP extracts", on create and on
+// change; with both the role is saved (038 FR-006, H-4).
+func TestRole_LinkNeedsImport_038_FR006_H4(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	want := []errs.FieldError{{Field: "permissions", Message: "Linking financial transactions needs Import GSAP extracts too — only people who import see transactions that are not linked."}}
+	linkAlone := []authz.Permission{authz.FinanceView, authz.FinanceLink}
+
+	_, createErr := f.service.CreateRole(t.Context(), alex, RoleInput{Name: "Linker", Permissions: linkAlone, DefaultScope: authz.ScopeAll})
+	_, updateErr := f.service.UpdateRole(t.Context(), alex, viewerID, RoleUpdate{Version: version(1), Permissions: &linkAlone})
+
+	for _, err := range []error{createErr, updateErr} {
+		if got := apiError(t, err); got.Status != http.StatusBadRequest || !reflect.DeepEqual(got.Fields, want) {
+			t.Errorf("link alone = %d %+v, want 400 %+v", got.Status, got.Fields, want)
+		}
+	}
+	both := append(slices.Clone(linkAlone), authz.FinanceImport)
+	if _, err := f.service.CreateRole(t.Context(), alex, RoleInput{Name: "Linker", Permissions: both, DefaultScope: authz.ScopeAll}); err != nil {
+		t.Errorf("link with import: %v", err)
+	}
+}

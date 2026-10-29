@@ -2,6 +2,7 @@ package access
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -40,7 +41,7 @@ func checkDescription(problems *errs.Problems, description string) string {
 }
 
 // checkPermissions returns the permissions without repeats in Table A order and adds their problems: at
-// least one (message 15), each a key of Table A.
+// least one (message 15), each a key of Table A, and finance.link only with finance.import (038 FR-006).
 func checkPermissions(problems *errs.Problems, keys []authz.Permission) []authz.Permission {
 	for _, key := range keys {
 		if _, known := authz.Lookup(string(key)); !known {
@@ -50,6 +51,9 @@ func checkPermissions(problems *errs.Problems, keys []authz.Permission) []authz.
 	ordered := authz.InOrder(keys)
 	if len(ordered) == 0 && len(keys) == 0 {
 		problems.Add("permissions", msgChoosePermission)
+	}
+	if slices.Contains(ordered, authz.FinanceLink) && !slices.Contains(ordered, authz.FinanceImport) {
+		problems.Add("permissions", msgLinkNeedsImport)
 	}
 	return ordered
 }

@@ -29,7 +29,7 @@ var priyasAccessBody = `{"roles":[{"id":"RA-1005","role":{"id":"RL-1003","name":
 	`"scope":{"type":"myTeams","teams":` + priyasTeamsBody + `,"text":"My teams"},"scopeEmpty":false}],` +
 	`"permissions":[` + inLubricantsEurope("plans.view", "plans.create", "plans.edit", "plans.publish", "campaigns.edit",
 	"campaigns.delete", "activities.edit", "activities.delete", "activities.submit", "data.export", "finance.view",
-	"finance.link", "purchaseRequests.edit", "purchaseRequests.delete", "purchaseRequests.submit") + `],` +
+	"purchaseRequests.edit", "purchaseRequests.delete", "purchaseRequests.submit") + `],` +
 	`"administrators":[{"id":"U-1001","name":"Alex Morgan","initials":"AM","jobTitle":"Marketing administrator","active":true}],` +
 	`"noSelfApproval":true}`
 

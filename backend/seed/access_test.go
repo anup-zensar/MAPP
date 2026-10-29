@@ -57,7 +57,7 @@ func TestSeed_RolesAssignmentsAndRules_FR040(t *testing.T) {
 		{authz.ActivitiesSubmit, true, true, true, false, false},
 		{authz.DataExport, true, true, true, true, true},
 		{authz.FinanceView, true, true, true, true, true},
-		{authz.FinanceLink, true, true, true, false, false},
+		{authz.FinanceLink, true, false, false, false, false},
 		{authz.FinanceImport, true, false, false, false, false},
 		{authz.ApprovalsDecide, true, true, false, true, false},
 		{authz.ApprovalsDecideOnBehalf, true, false, false, false, false},

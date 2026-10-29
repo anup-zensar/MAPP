@@ -21,11 +21,11 @@ var teamNames = map[string]string{lubricants: "Lubricants Europe", mobility: "Mo
 var tableB = map[string][]authz.Permission{
 	"RL-1002": {authz.PlansView, authz.PlansCreate, authz.PlansEdit, authz.PlansPublish, authz.PlansDelete,
 		authz.CampaignsEdit, authz.CampaignsDelete, authz.ActivitiesEdit, authz.ActivitiesDelete, authz.ActivitiesSubmit,
-		authz.DataExport, authz.FinanceView, authz.FinanceLink, authz.ApprovalsDecide, authz.GlobalBudgetsView,
+		authz.DataExport, authz.FinanceView, authz.ApprovalsDecide, authz.GlobalBudgetsView,
 		authz.GlobalBudgetsManage},
 	"RL-1003": {authz.PlansView, authz.PlansCreate, authz.PlansEdit, authz.PlansPublish, authz.CampaignsEdit,
 		authz.CampaignsDelete, authz.ActivitiesEdit, authz.ActivitiesDelete, authz.ActivitiesSubmit, authz.DataExport,
-		authz.FinanceView, authz.FinanceLink},
+		authz.FinanceView},
 	"RL-1004": {authz.PlansView, authz.DataExport, authz.FinanceView, authz.ApprovalsDecide},
 	"RL-1005": {authz.PlansView, authz.DataExport, authz.FinanceView},
 }
@@ -180,6 +180,24 @@ func TestGrants_AdministratorHoldsEverything_FR003(t *testing.T) {
 	}
 	if !alex.IsAdministrator() {
 		t.Error("IsAdministrator = false")
+	}
+}
+
+// "Link financial transactions" without "Import GSAP extracts" is not held: a custom role saved before 038
+// grants nothing with it; with import from any role it applies in the link role's scope (038 FR-006, H-4).
+func TestGrants_LinkNeedsImport_038_FR006_H4(t *testing.T) {
+	t.Parallel()
+	perms := map[string][]authz.Permission{"RL-1010": {authz.FinanceView, authz.FinanceLink}, "RL-1011": {authz.FinanceImport}}
+	linker := role("RL-1010", "Linker", "", authz.ScopeMyTeams)
+	importer := role("RL-1011", "Importer", "", authz.ScopeAll)
+	alone := authz.NewGrants("U-1004", []authz.GrantedRole{linker}, []string{lubricants}, perms, nil, authz.Rules{})
+	both := authz.NewGrants("U-1004", []authz.GrantedRole{linker, importer}, []string{lubricants}, perms, nil, authz.Rules{})
+
+	if alone.Has(authz.FinanceLink) || alone.InScope(authz.FinanceLink, plan(lubricants)) {
+		t.Error("finance.link without finance.import is held")
+	}
+	if !both.InScope(authz.FinanceLink, plan(lubricants)) || both.InScope(authz.FinanceLink, plan(mobility)) {
+		t.Error("finance.link with finance.import does not apply in the link role's scope only")
 	}
 }
 

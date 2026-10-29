@@ -84,7 +84,7 @@ type Grants struct {
 // role's permissions come from permsByRole (by role ID). A role with scope My teams contributes myTeamIDs,
 // the person's teams now, active or not; Chosen teams contributes its TeamIDs; All markets makes a
 // permission apply everywhere. Permissions that are not scoped apply everywhere whatever the scope. The
-// Administrator role gives every permission everywhere.
+// Administrator role gives every permission everywhere. finance.link without finance.import is not held.
 func NewGrants(personID string, roles []GrantedRole, myTeamIDs []string, permsByRole map[string][]Permission,
 	admins []actor.Actor, rules Rules) Grants {
 	g := Grants{PersonID: personID, Roles: slices.Clone(roles), Administrators: slices.Clone(admins), Rules: rules,
@@ -113,6 +113,9 @@ func NewGrants(personID string, roles []GrantedRole, myTeamIDs []string, permsBy
 			}
 			g.perms[p] = r
 		}
+	}
+	if _, imports := g.perms[FinanceImport]; !imports {
+		delete(g.perms, FinanceLink) // 038 FR-006: linking is only for people who see not-linked transactions
 	}
 	for p, r := range g.perms {
 		if r.all {
