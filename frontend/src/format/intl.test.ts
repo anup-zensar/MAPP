@@ -8,6 +8,7 @@ import {
   formatRelativeTime,
   formatTime,
   formatWaitingTime,
+  formatMonth,
   formatWeekdayDate,
   localDate,
   parseDate,
@@ -65,6 +66,23 @@ describe('dates and times of a timestamp', () => {
       expect(localDate('2026-03-12T23:30:00Z')).toBe('2026-03-13');
       expect(formatDateTime('2026-03-12T23:30:00Z')).toBe('13 Mar 2026, 05:00');
     });
+  });
+});
+
+describe("the person's date format in headings and month labels (038 FR-058, D-356)", () => {
+  it.each([
+    ['DD MMM YYYY', 'Tuesday 27 Oct 2026', 'Sep 2026'],
+    ['DD/MM/YYYY', 'Tuesday 27/10/2026', '09/2026'],
+    ['MM/DD/YYYY', 'Tuesday 10/27/2026', '09/2026'],
+    ['YYYY-MM-DD', 'Tuesday 2026-10-27', '2026-09'],
+  ] as const)('038 FR-058: %s writes "%s" and "%s"', (format, heading, month) => {
+    expect(formatWeekdayDate('2026-10-27', format)).toBe(heading);
+    expect(formatMonth('2026-09', format)).toBe(month);
+  });
+
+  it('038 FR-058: writes September as "Sep", never "Sept"', () => {
+    expect(formatMonth('2026-09')).toBe('Sep 2026');
+    expect(formatMonth('2027-01')).toBe('Jan 2027');
   });
 });
 

@@ -6,7 +6,9 @@ import {
   formatDateTime,
   formatMoney,
   formatMoneyCompact,
+  formatMonth,
   formatRelativeTime,
+  formatWeekdayDate,
   parseDate,
 } from './intl';
 import type { DateFormat } from './intl';
@@ -25,6 +27,10 @@ export interface Formatters {
   displayCurrency: string;
   /** "12 Mar 2026" (or the person's format) for a calendar date "YYYY-MM-DD". */
   date: (date: string) => string;
+  /** "Monday 12 Oct 2026" (or "Monday 2026-10-12") for a day heading (038 FR-058). */
+  weekdayDate: (date: string) => string;
+  /** "Sep 2026" (or "09/2026", "2026-09") for a month "YYYY-MM" (038 FR-058). */
+  month: (month: string) => string;
   /** "12 Mar 2026, 14:32" for a timestamp, in the person's time zone. */
   dateTime: (timestamp: string) => string;
   /** "01 Feb – 30 Nov 2026"; "—" when a date is missing. */
@@ -56,6 +62,8 @@ export function useFormatters(): Formatters {
     dateFormat,
     displayCurrency,
     date: (date) => formatDate(date, dateFormat),
+    weekdayDate: (date) => formatWeekdayDate(date, dateFormat),
+    month: (month) => formatMonth(month, dateFormat),
     dateTime: (timestamp) => formatDateTime(timestamp, dateFormat),
     dateRange: (start, end) => formatDateRange(start, end, dateFormat),
     relativeTime: (timestamp) => formatRelativeTime(timestamp, new Date(), dateFormat),

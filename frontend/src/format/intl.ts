@@ -155,12 +155,30 @@ export function formatDateTime(
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 /**
- * The calendar date "2026-10-12" as "Monday 12 Oct 2026" (feature 011: the activity log's day
- * headings). The weekday is worked out in UTC, so the time zone cannot move it to another day.
+ * The calendar date "2026-10-12" as "Monday 12 Oct 2026", or with the date in the given format
+ * ("Monday 2026-10-12"; the activity log's day headings, 038 FR-058). The weekday is worked out in
+ * UTC, so the time zone cannot move it to another day.
  */
-export function formatWeekdayDate(date: string): string {
+export function formatWeekdayDate(date: string, format: DateFormat = DEFAULT_DATE_FORMAT): string {
   const weekday = WEEKDAYS[new Date(`${date}T00:00:00Z`).getUTCDay()];
-  return `${weekday} ${formatDate(date)}`;
+  return `${weekday} ${formatDate(date, format)}`;
+}
+
+/**
+ * The month "2026-09" (or a date in it) as "Sep 2026", or in the given format: "09/2026",
+ * "2026-09" (038 FR-058, D-356). Every month label with a year is written by this function.
+ */
+export function formatMonth(month: string, format: DateFormat = DEFAULT_DATE_FORMAT): string {
+  const [year = '', number = ''] = month.split('-');
+  switch (format) {
+    case 'DD/MM/YYYY':
+    case 'MM/DD/YYYY':
+      return `${number}/${year}`;
+    case 'YYYY-MM-DD':
+      return `${year}-${number}`;
+    default:
+      return `${MONTHS[Number(number) - 1]} ${year}`;
+  }
 }
 
 /**

@@ -1,6 +1,7 @@
 import { LoaderCircle } from 'lucide-react';
 import { Button } from '@/ui/Button/Button';
 import { localDate } from '@/format/intl';
+import { useFormatters } from '@/format/useFormatters';
 import { LogEntry } from './LogEntry';
 import { dayLabel, entriesText, loadedLine } from './log-text';
 import type { ActivityLogEntry } from './log-text';
@@ -37,6 +38,7 @@ export function LogEntryList({
   headingLevel = 2,
 }: LogEntryListProps) {
   const today = localDate(new Date());
+  const { dateFormat } = useFormatters();
   const Heading = HEADINGS[headingLevel];
 
   return (
@@ -44,7 +46,7 @@ export function LogEntryList({
       {groupByDay(entries).map(([day, dayEntries]) => (
         <section key={day} className={styles.day}>
           <Heading className={styles.heading}>
-            {dayLabel(day, today)}
+            {dayLabel(day, today, dateFormat)}
             {/* The space stays outside the span, so screen readers keep it between the words. */}{' '}
             <span className={styles.count}>· {entriesText(dayEntries.length)}</span>
           </Heading>
