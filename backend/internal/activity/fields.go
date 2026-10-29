@@ -9,6 +9,7 @@ import (
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
 	"mapp/internal/settings"
 )
 
@@ -69,6 +70,8 @@ func (s *Service) checkName(ctx context.Context, problems *errs.Problems, c fiel
 		problems.Add("name", enterNameMessage)
 	case utf8.RuneCountInString(name) > maxNameLength:
 		problems.Add("name", nameTooLongMessage)
+	case record.CheckSingleLine(name) != "":
+		problems.Add("name", record.CheckSingleLine(name))
 	default:
 		siblings, err := s.repo.ListByInitiative(ctx, c.pc.initiative.ID)
 		if err != nil {

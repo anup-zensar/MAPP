@@ -61,6 +61,7 @@ Environment variables; an empty one counts as not set. Invalid values stop the A
 | `DEMO_PASSWORD` | The password every demo person shares; may not be blank | `mapp` |
 | `LOG_LEVEL` | `debug`, `info`, `warn` or `error` | `info` |
 | `SHUTDOWN_TIMEOUT` | How long the requests in progress may take to finish when the API stops, 1s–60s | `10s` |
+| `TRUSTED_PROXIES` | Comma-separated IP addresses or CIDR ranges of proxies, besides `127.0.0.1` and `::1`, whose `X-Forwarded-For` names the client (the sign-in attempt limit counts by it; for `compose.yaml`) | none |
 | `OTEL_TRACES_EXPORTER`, `OTEL_METRICS_EXPORTER` | `none`, or `console` to write traces or metrics to standard error; nothing is ever sent off this computer | `none` |
 
 Example, PowerShell: `$env:APP_PORT = '18081'; go run ./cmd/api` · Git Bash: `APP_PORT=18081 go run ./cmd/api`

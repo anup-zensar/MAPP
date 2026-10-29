@@ -12,7 +12,6 @@ import (
 	"mapp/internal/settings"
 )
 
-// The longest name and description, in characters (data model §1–§2).
 const (
 	maxNameLength        = 120
 	maxDescriptionLength = 2000
@@ -27,6 +26,7 @@ const (
 	initiativeNameTakenMessage = "'%s' already has an initiative called '%s'." // campaign name, other initiative's name
 	descriptionTooLongMessage  = "Use 2,000 characters or fewer."
 	chooseActivePersonMessage  = "Choose an active person."
+	invalidDateMessage         = "Enter a valid date."
 	enterEndDateMessage        = "Enter an end date too, or clear the start date."
 	enterStartDateMessage      = "Enter a start date too, or clear the end date."
 	endBeforeStartMessage      = "End date must be on or after the start date (%s)."
@@ -42,7 +42,6 @@ const (
 	planGoneMessage            = "This plan no longer exists — someone may have deleted it."
 )
 
-// form is what the create and update forms of both levels send.
 type form struct {
 	Name, Description  string
 	OwnerID            *string
@@ -51,8 +50,6 @@ type form struct {
 	Attributes         settings.AttributeValues
 }
 
-// checked is a form after its own checks: texts trimmed, an empty owner as none, the budget read. Values
-// with a problem are left as sent; the problem stops the save anyway.
 type checked struct {
 	Name, Description  string
 	OwnerID            *string
@@ -60,11 +57,6 @@ type checked struct {
 	Budget             *money.Money
 }
 
-// checkForm checks the fields that need nothing but the form (FR-005), adding every problem to problems:
-// the name (and, through nameTaken, its uniqueness under the parent), the description, both dates or
-// neither with the start on or before the end, and the budget (in the plan currency, at most 2 decimals, not
-// negative — never compared with what remains, D-015). nameTaken returns the "already has" message for a
-// valid name, or "".
 func checkForm(problems *errs.Problems, f form, currency string, nameTaken func(name string) string) checked {
 	c := checked{
 		Description: strings.TrimSpace(f.Description),
@@ -81,22 +73,35 @@ func checkForm(problems *errs.Problems, f form, currency string, nameTaken func(
 		problems.Add("description", descriptionTooLongMessage)
 	}
 
-	switch {
-	case c.StartDate != nil && c.EndDate == nil:
-		problems.Add("endDate", enterEndDateMessage)
-	case c.StartDate == nil && c.EndDate != nil:
-		problems.Add("startDate", enterStartDateMessage)
-	case c.StartDate != nil && c.EndDate.Before(*c.StartDate):
-		problems.Add("endDate", fmt.Sprintf(endBeforeStartMessage, date.Format(*c.StartDate)))
-	}
-
+	c.StartDate, c.EndDate = checkDates(problems, c.StartDate, c.EndDate)
 	c.Budget = checkBudget(problems, f.Budget, currency)
 	return c
 }
 
-// checkName checks a name of a form or a copy (FR-005, FR-026), adding its problem to problems: required, at
-// most 120 characters, and — through nameTaken, which returns the "already has" message for a valid name, or
-// "" — unique under the parent. It returns the name trimmed.
+func checkDates(problems *errs.Problems, start, end *date.Date) (*date.Date, *date.Date) {
+	startValid, endValid := validDate(problems, "startDate", start), validDate(problems, "endDate", end)
+	if !startValid || !endValid {
+		return nil, nil
+	}
+	switch {
+	case start != nil && end == nil:
+		problems.Add("endDate", enterEndDateMessage)
+	case start == nil && end != nil:
+		problems.Add("startDate", enterStartDateMessage)
+	case start != nil && end.Before(*start):
+		problems.Add("endDate", fmt.Sprintf(endBeforeStartMessage, date.Format(*start)))
+	}
+	return start, end
+}
+
+func validDate(problems *errs.Problems, field string, d *date.Date) bool {
+	if d != nil && d.IsZero() {
+		problems.Add(field, invalidDateMessage)
+		return false
+	}
+	return true
+}
+
 func checkName(problems *errs.Problems, name string, nameTaken func(name string) string) string {
 	name = strings.TrimSpace(name)
 	switch {
@@ -104,6 +109,8 @@ func checkName(problems *errs.Problems, name string, nameTaken func(name string)
 		problems.Add("name", enterNameMessage)
 	case utf8.RuneCountInString(name) > maxNameLength:
 		problems.Add("name", nameTooLongMessage)
+	case record.CheckSingleLine(name) != "":
+		problems.Add("name", record.CheckSingleLine(name))
 	default:
 		if message := nameTaken(name); message != "" {
 			problems.Add("name", message)
@@ -112,8 +119,6 @@ func checkName(problems *errs.Problems, name string, nameTaken func(name string)
 	return name
 }
 
-// checkBudget reads a budget: nil for none, otherwise in the plan currency (016 FR-011) with at most two
-// decimals and not negative.
 func checkBudget(problems *errs.Problems, in *money.Input, currency string) *money.Money {
 	if in == nil {
 		return nil
@@ -134,9 +139,6 @@ func checkBudget(problems *errs.Problems, in *money.Input, currency string) *mon
 	return &budget
 }
 
-// campaignNamed returns the campaign among campaigns, other than exceptID, whose name is name ignoring
-// letter case, and false when there is none. Names are stored trimmed, so surrounding spaces are ignored
-// too.
 func campaignNamed(campaigns []Campaign, name, exceptID string) (Campaign, bool) {
 	for _, c := range campaigns {
 		if c.ID != exceptID && strings.EqualFold(c.Name, name) {
@@ -146,7 +148,6 @@ func campaignNamed(campaigns []Campaign, name, exceptID string) (Campaign, bool)
 	return Campaign{}, false
 }
 
-// initiativeNamed is campaignNamed for initiatives.
 func initiativeNamed(initiatives []Initiative, name, exceptID string) (Initiative, bool) {
 	for _, i := range initiatives {
 		if i.ID != exceptID && strings.EqualFold(i.Name, name) {
@@ -156,8 +157,6 @@ func initiativeNamed(initiatives []Initiative, name, exceptID string) (Initiativ
 	return Initiative{}, false
 }
 
-// checkInsideCampaign applies R3 (FR-006): when the campaign has both dates and the initiative has both,
-// the initiative's dates lie inside the campaign's. The message names the allowed range.
 func checkInsideCampaign(problems *errs.Problems, campaign Campaign, start, end *date.Date) {
 	if campaign.StartDate == nil || campaign.EndDate == nil || start == nil || end == nil {
 		return // a campaign without dates does not limit its initiatives (spec edge case)
@@ -167,17 +166,12 @@ func checkInsideCampaign(problems *errs.Problems, campaign Campaign, start, end 
 	}
 }
 
-// dated is a record below whose dates a new date range must contain (FR-007): an initiative, or an
-// activity, where an ongoing one has only its start date checked.
 type dated struct {
 	name       string
 	start, end *date.Date
 	ongoing    bool
 }
 
-// checkChildrenInside applies FR-007: every child with dates must lie inside start – end (an ongoing child:
-// its start only); undated children are ignored. One problem on startDate names every child outside, with
-// its dates; plural is "initiatives" or "activities".
 func checkChildrenInside(problems *errs.Problems, plural string, children []dated, start, end date.Date) {
 	var outside []string
 	for _, child := range children {
@@ -206,13 +200,10 @@ func checkChildrenInside(problems *errs.Problems, plural string, children []date
 	}
 }
 
-// datesChanged reports whether a save changes a record's start or end date (D-095: the date rules run only
-// then).
 func datesChanged(oldStart, oldEnd, newStart, newEnd *date.Date) bool {
 	return !sameDate(oldStart, newStart) || !sameDate(oldEnd, newEnd)
 }
 
-// sameDate reports whether two optional dates are equal: both none, or the same day.
 func sameDate(a, b *date.Date) bool {
 	if a == nil || b == nil {
 		return a == nil && b == nil
@@ -220,15 +211,12 @@ func sameDate(a, b *date.Date) bool {
 	return *a == *b
 }
 
-// checkVersionSent adds the version problem when an update sends no version, or one below 1: the version
-// check cannot work then (FR-018).
 func checkVersionSent(problems *errs.Problems, version *int) {
 	if version == nil || *version < 1 {
 		problems.Add("version", reloadMessage)
 	}
 }
 
-// checkVersionIfSent leaves a missing or invalid version to checkVersionSent, which reports it with the form.
 func checkVersionIfSent(m record.Meta, version *int, noun string) error {
 	if version == nil || *version < 1 {
 		return nil
@@ -236,8 +224,6 @@ func checkVersionIfSent(m record.Meta, version *int, noun string) error {
 	return m.CheckVersion(*version, noun)
 }
 
-// campaignNameTaken returns the "already has" message when another campaign of plan than exceptID has name,
-// ignoring letter case (FR-005); "" otherwise.
 func campaignNameTaken(siblings []Campaign, plan PlanFacts, name, exceptID string) string {
 	if other, taken := campaignNamed(siblings, name, exceptID); taken {
 		return fmt.Sprintf(campaignNameTakenMessage, plan.Name, other.Name)
@@ -245,8 +231,6 @@ func campaignNameTaken(siblings []Campaign, plan PlanFacts, name, exceptID strin
 	return ""
 }
 
-// initiativeNameTaken returns the "already has" message when another initiative of campaign than exceptID
-// has name, ignoring letter case (FR-005); "" otherwise.
 func initiativeNameTaken(siblings []Initiative, campaign Campaign, name, exceptID string) string {
 	if other, taken := initiativeNamed(siblings, name, exceptID); taken {
 		return fmt.Sprintf(initiativeNameTakenMessage, campaign.Name, other.Name)

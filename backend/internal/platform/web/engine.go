@@ -15,9 +15,10 @@ import (
 const serviceName = "mapp-api"
 
 type Options struct {
-	Tracer     trace.TracerProvider
-	Meter      metric.MeterProvider
-	BodyLimits map[string]int64
+	Tracer         trace.TracerProvider
+	Meter          metric.MeterProvider
+	BodyLimits     map[string]int64
+	TrustedProxies []string
 }
 
 // NewEngine puts recovery inside tracing, request ID and log, so a panic keeps their attributes and is a 500.
@@ -26,8 +27,9 @@ func NewEngine(o Options) (*gin.Engine, error) {
 	engine := gin.New()
 	engine.RedirectTrailingSlash = false
 	engine.RedirectFixedPath = false
-	if err := engine.SetTrustedProxies(nil); err != nil {
-		return nil, fmt.Errorf("trust no proxy: %w", err)
+	// Only these proxies may report the client's address, which the sign-in attempt limit counts by.
+	if err := engine.SetTrustedProxies(append([]string{"127.0.0.1", "::1"}, o.TrustedProxies...)); err != nil {
+		return nil, fmt.Errorf("trusted proxies: %w", err)
 	}
 	engine.Use(
 		otelgin.Middleware(serviceName, otelgin.WithTracerProvider(o.Tracer), otelgin.WithMeterProvider(o.Meter),
@@ -37,6 +39,7 @@ func NewEngine(o Options) (*gin.Engine, error) {
 		Recover(),
 		SecurityHeaders(),
 		SameOrigin(),
+		RejectControlInPath(),
 		LimitBody(maxBodyBytes, o.BodyLimits),
 	)
 	engine.NoRoute(func(c *gin.Context) { RespondError(c, errs.NotFound(notFoundMessage)) })

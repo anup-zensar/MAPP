@@ -7,6 +7,8 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -23,6 +25,7 @@ type Service struct {
 	demoMode     bool
 	demoPassword string
 	now          clock.Clock
+	attempts     *attempts
 }
 
 type Options struct {
@@ -34,7 +37,7 @@ type Options struct {
 func NewService(tx Transactor, repo Store, peopleRepo People, opts Options) *Service {
 	return &Service{
 		tx: tx, repo: repo, people: peopleRepo, demoMode: opts.DemoMode, demoPassword: opts.DemoPassword,
-		now: opts.Now,
+		now: opts.Now, attempts: newAttempts(opts.Now),
 	}
 }
 
@@ -47,20 +50,47 @@ func (s *Service) DemoPassword() string {
 	return s.demoPassword
 }
 
-// SignIn ends oldToken's session and every expired one of anyone, so old sessions do not pile up.
-func (s *Service) SignIn(ctx context.Context, email, password, oldToken string) (string, people.Person, error) {
-	email = strings.ToLower(strings.TrimSpace(email)) // e-mails are stored in lower case
+// SignInAttempt is what one sign-in sends; Client is the address the trusted proxy reports.
+type SignInAttempt struct {
+	Email, Password, Client, OldToken string
+}
+
+// SignIn checks the lock before the credentials and outside the write lock (D-355); it ends OldToken's
+// session and every expired one of anyone, so old sessions do not pile up.
+func (s *Service) SignIn(ctx context.Context, in SignInAttempt) (string, people.Person, error) {
+	email := strings.ToLower(strings.TrimSpace(in.Email))
 	var problems errs.Problems
 	if email == "" {
 		problems.Add("email", "Enter your e-mail")
 	}
-	if password == "" {
+	if in.Password == "" {
 		problems.Add("password", "Enter the password")
 	}
 	if err := problems.Err(); err != nil {
 		return "", people.Person{}, err
 	}
+	if wait := s.attempts.wait(email, in.Client); wait > 0 {
+		return "", people.Person{}, errs.TooManyAttempts(retryMessage(wait), wait)
+	}
+	token, person, err := s.startSession(ctx, email, in.Password, in.OldToken)
+	s.count(ctx, email, in.Client, err)
+	return token, person, err
+}
 
+func (s *Service) count(ctx context.Context, email, client string, err error) {
+	if err == nil {
+		s.attempts.succeeded(email, client)
+		return
+	}
+	if apiErr, ok := errors.AsType[*errs.Error](err); !ok || apiErr.Code != errs.CodeIncorrectCredentials {
+		return
+	}
+	for _, kind := range s.attempts.failed(email, client) {
+		slog.WarnContext(ctx, "sign-in locked after too many failed attempts", "key", kind)
+	}
+}
+
+func (s *Service) startSession(ctx context.Context, email, password, oldToken string) (string, people.Person, error) {
 	token := newToken()
 	var person people.Person
 	err := s.tx.Write(ctx, func(ctx context.Context) error {

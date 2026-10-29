@@ -184,7 +184,7 @@ func TestRequireSignIn_HandlerCanWrite_FR007(t *testing.T) {
 	now := func() time.Time { return time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC) }
 	service := auth.NewService(db, authtest.NewStore(db), peopletest.NewStore(db),
 		auth.Options{DemoMode: true, DemoPassword: demoPassword, Now: now})
-	token, _, err := service.SignIn(t.Context(), priyasEmail, demoPassword, "")
+	token, _, err := service.SignIn(t.Context(), auth.SignInAttempt{Email: priyasEmail, Password: demoPassword})
 	if err != nil {
 		t.Fatalf("SignIn: %v", err)
 	}
