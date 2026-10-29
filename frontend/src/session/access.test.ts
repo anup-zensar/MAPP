@@ -7,9 +7,9 @@ import {
   isShown,
   itemsFor,
   joinWith,
-  summariseAccess,
 } from './access';
-import type { MyAccess, MyPermission } from './access';
+import * as access from './access';
+import type { MyAccess } from './access';
 
 const LUBRICANTS = {
   id: 'T-1001',
@@ -107,33 +107,10 @@ describe('availabilityProps and isShown', () => {
   });
 });
 
-describe('summariseAccess', () => {
-  it('says in one line per place what the scoped permissions allow, in Table A order (FR-017, FR-024)', () => {
-    expect(summariseAccess(SARA.permissions)).toEqual([
-      'In Lubricants Europe and Mobility China: view plans and everything in them, export from All work and see financial data.',
-    ]);
-  });
-
-  it('groups by place, then lists what applies everywhere (FR-017)', () => {
-    const permissions: MyPermission[] = [
-      { key: 'plans.view', all: false, teams: [LUBRICANTS, MOBILITY] },
-      { key: 'plans.create', all: false, teams: [MOBILITY] },
-      { key: 'activities.edit', all: false, teams: [MOBILITY] },
-      { key: 'globalBudgets.view', all: true, teams: [] },
-      { key: 'approvals.decide', all: true, teams: [] },
-      { key: 'people.manage', all: true, teams: [] },
-    ];
-
-    expect(summariseAccess(permissions)).toEqual([
-      'In Lubricants Europe and Mobility China: view plans and everything in them.',
-      'In Mobility China: create and copy plans and add, edit, move and copy activities and line items.',
-      'In all markets: see global budgets and their allocations.',
-      'Everywhere: approve or decline when named as an approver and add and change people and teams.',
-    ]);
-  });
-
-  it('says "No access yet." for a person without a permission (FR-024)', () => {
-    expect(summariseAccess([])).toEqual(['No access yet.']);
+describe('permission words', () => {
+  it('038 FR-045: come from one table only, features/people/access/access-words.ts', () => {
+    expect(Object.keys(access)).not.toContain('summariseAccess');
+    expect(Object.keys(access)).not.toContain('permissionLabel');
   });
 });
 
