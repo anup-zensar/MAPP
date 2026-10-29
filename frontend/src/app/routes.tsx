@@ -172,10 +172,14 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
     ...titled('Approval workflows'),
   },
   { path: '/all-work', element: <AllWorkPage />, ...titled('All work') },
-  { path: '/budgets', element: <GlobalBudgetsPage />, ...titled('Global budgets') },
+  {
+    path: '/budgets',
+    element: gated('globalBudgets.view', <GlobalBudgetsPage />),
+    ...titled('Global budgets'),
+  },
   {
     path: '/budgets/:globalBudgetId',
-    element: <GlobalBudgetPage />,
+    element: gated('globalBudgets.view', <GlobalBudgetPage />),
     ...titled('Global budget'),
   },
   // 015 Financials; a transaction's details panel opens over the list (child route)

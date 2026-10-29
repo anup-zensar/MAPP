@@ -11,8 +11,9 @@ import { TEAMS } from '@/testing/fixtures/teams';
 import { VIEWER } from '@/testing/fixtures/viewer';
 import { expectNoAxeViolations } from '@/testing/axe';
 import { mockApi } from '@/testing/mock-api';
-import { renderWithProviders } from '@/testing/render';
+import { renderRoutes, renderWithProviders } from '@/testing/render';
 import { reply } from '@/testing/replies';
+import { routes } from './routes';
 
 const NOTE =
   'View only — only administrators change Settings. Ask Alex Morgan if something needs to change.';
@@ -55,4 +56,13 @@ describe('014 FR-011: People, Teams and Approval workflows for someone who may n
       await expectNoAxeViolations();
     },
   );
+});
+
+describe('014 FR-012: Global budgets for someone whose roles do not open them', () => {
+  it('shows the no-access page at its address', async () => {
+    mockApi([reply('GET /api/v1/me', { body: VIEWER })]);
+    renderRoutes(routes, { route: '/budgets' });
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'No access' })).toBeVisible();
+  });
 });

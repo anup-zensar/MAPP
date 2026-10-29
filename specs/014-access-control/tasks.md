@@ -250,8 +250,12 @@ built with 012.
 
 ## Phase 6: End-to-end (needs Phases 3 and 5)
 
-- [ ] T061 New `frontend/e2e/access-control.spec.ts`: journeys 1–5 of plan *Tests* with an axe check on every page
+- [x] T061 New `frontend/e2e/access-control.spec.ts`: journeys 1–5 of plan *Tests* with an axe check on every page
   (US1–US3, US5, US6; SC-002, SC-003, SC-007).
+  *Built:* six journeys, axe on every page; US3 puts Sara's roles back afterwards; US5 uses the Lubricants EU
+  workflow, whose level 1 falls to the backup Alex Morgan when Daniel owns the activity (017 D-283). Found on the way:
+  `/budgets` showed the refusal text instead of the no-access page, so the Global budgets routes are now gated
+  (`app/routes.tsx`, test in `app/view-only.admin-lists.test.tsx`).
 - [x] T062 Update `frontend/e2e/core-flow.spec.ts`, `module-rest.spec.ts`, `smoke.spec.ts`: each step signs in as the
   persona whose seeded roles allow it (plan *Tests*); only actor names in expected texts change.
 
