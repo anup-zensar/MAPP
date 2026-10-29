@@ -146,7 +146,9 @@ function Details({ transaction }: { transaction: FinancialTransaction }) {
             <Item label="PO number / PO line">{poReference || '—'}</Item>
           )}
           <Item label="Posting date">{date(t.postingDate)}</Item>
-          {t.accrualMonth && <Item label="Accrual month">{monthText(t.accrualMonth, dateFormat)}</Item>}
+          {t.accrualMonth && (
+            <Item label="Accrual month">{monthText(t.accrualMonth, dateFormat)}</Item>
+          )}
           <Item label="Amount">
             <span className={styles.money}>{money(t.amount)}</span>
             {t.currencyMissing && (
