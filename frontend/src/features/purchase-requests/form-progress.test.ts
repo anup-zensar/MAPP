@@ -6,7 +6,10 @@ import { fromPurchaseRequest } from './form-state';
 import { railSections } from './form-progress';
 import { purchaseRequest } from '@/testing/fixtures/purchase-requests';
 
-function formOf(level: string, ...attributes: ReturnType<typeof attribute>[]): AttributeForm {
+function formOf(
+  level: AttributeForm['level'],
+  ...attributes: ReturnType<typeof attribute>[]
+): AttributeForm {
   return {
     level,
     businessUnitAttributeId: null,

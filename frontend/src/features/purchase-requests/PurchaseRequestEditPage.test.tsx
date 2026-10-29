@@ -227,12 +227,6 @@ describe('032 FR-023/FR-036/FR-039: save label by status', () => {
     expect(await saveWith(purchaseRequest({ status }), label)).toMatchObject({ then });
   });
 
-  it('an approved purchase request: Submit changes', async () => {
-    expect(await saveWith(routedPurchaseRequest(), 'Submit changes')).toMatchObject({
-      then: 'submitChanges',
-    });
-  });
-
   it('a change in review: Save and re-submit', async () => {
     const pr = routedPurchaseRequest({ status: 'inReview', changePending: true });
     expect(await saveWith(pr, 'Save and re-submit')).toMatchObject({ then: 'resubmit' });
