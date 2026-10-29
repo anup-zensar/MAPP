@@ -151,6 +151,26 @@ func plannedByMonth(n *tnode, keys []string, out map[*tnode]buckets) buckets {
 	return own
 }
 
+func negativeBelow(n *tnode) int {
+	if n.n.Level != LevelActivity {
+		count := 0
+		for _, c := range n.children {
+			count += negativeBelow(c)
+		}
+		return count
+	}
+	var assigned money.Amount
+	for _, li := range n.children {
+		if li.n.PlannedCostPlan != nil {
+			assigned = assigned.Add(li.n.PlannedCostPlan.Amount)
+		}
+	}
+	if n.n.PlannedCostPlan == nil || assigned.Cmp(n.n.PlannedCostPlan.Amount) <= 0 {
+		return 0
+	}
+	return 1
+}
+
 func bucketIn(keys []string, month string) string {
 	for _, k := range keys {
 		if k == month {
@@ -161,7 +181,8 @@ func bucketIn(keys []string, month string) string {
 }
 
 func phasedRow(n *tnode, planned buckets, keys []string, currency string) BudgetByMonthRow {
-	row := BudgetByMonthRow{RecordType: n.n.Level, RecordID: n.n.ID, Name: n.n.Name, Method: methodNone}
+	row := BudgetByMonthRow{RecordType: n.n.Level, RecordID: n.n.ID, Name: n.n.Name, Method: methodNone,
+		NegativeBalanceCount: negativeBelow(n)}
 	if n.parent != nil {
 		parent := n.parent.n.ID
 		row.ParentID = &parent

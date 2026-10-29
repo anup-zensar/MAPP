@@ -55,6 +55,9 @@ func TestGetBudgetByMonth_Contract_FR024(t *testing.T) {
 	if ireland.RecordID != "I-1010" || ireland.Months.PlannedCost[8].Amount.Format() != "25,000.00" {
 		t.Errorf("Ireland = %+v", ireland)
 	}
+	if plan.NegativeBalanceCount != 0 || uk.NegativeBalanceCount != 0 { // 038 FR-024: no line items above planned cost
+		t.Errorf("negative balance counts = %d, %d; want 0", plan.NegativeBalanceCount, uk.NegativeBalanceCount)
+	}
 	if gone.Status != http.StatusNotFound {
 		t.Errorf("unknown plan = %d %s, want 404", gone.Status, gone.Body)
 	}
