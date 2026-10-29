@@ -28,10 +28,10 @@ func TestCheckRateImport_ThousandRows_016_SC002(t *testing.T) {
 	elapsed := time.Hour
 	var check RateImportCheck
 	for range 3 {
-		start := time.Now()
+		began := time.Now()
 		var err error
 		check, err = f.service.CheckRateImport(t.Context(), alex, file)
-		elapsed = min(elapsed, time.Since(start))
+		elapsed = min(elapsed, time.Since(began))
 		if err != nil {
 			t.Fatalf("CheckRateImport: %v", err)
 		}

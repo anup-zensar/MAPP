@@ -5,14 +5,11 @@ description: "Task list for feature 016 — Planning and Currency Extensions"
 
 # Tasks: Planning and Currency Extensions
 
-> **Build state after the final merge** (`plan-module` at `a1ae8fe`, 21 October 2026): the backend is complete.
-> Shared web parts were built under other names: `RateTip`, `MoneyPair` and `rates.ts` in `features/line-items/`,
-> `AmountPair` in `features/plans/`, `YearRangeMenu` in `features/all-work/`, `useFieldHelp` and `FieldHelpTip`
-> in `features/settings/field-help/`. **Open:** T028 (the Import GSAP rates page is built, but
-> `/settings/currencies/import` is not in `frontend/src/app/router.tsx` — `SETTINGS_016_ROUTES` is unused — so
-> the Currencies page's **Import GSAP rates** button opens Not found); T074–T077 (attribute filters, Breakdown,
-> Planned cost by, saved views and export of them); T084–T088 (record screens do not read Field help yet);
-> T089 (end-to-end journeys); T090–T093 (product documents); T094, T095.
+> **Build state** (2026-10-29): every task is done and ticked except T089 (the end-to-end journeys, written by the
+> end-to-end lane). Since the final merge: the Import GSAP rates route (T028, routed by feature 026), attribute
+> filters, Breakdown and Planned cost by (T074 – T077, D-350), Field help on the record screens (T084 – T088,
+> D-351), the product documents (T090 – T093), the checks (T094) and the success criteria (T095,
+> `checklists/requirements.md`; SC-003 needs a usability session with Shell planners).
 
 **Input**: Design documents from `specs/016-planning-and-currency-extensions/`
 
@@ -264,8 +261,8 @@ and multi-year · US6 categories · US7 field help.
 - [x] T091 [P] Update `docs/product/field-catalogue.md`: §1 Plan type, Plan currency, Budget by month; §1 #8, §2 #5, §3 #6, §4.1 #8 "money (plan currency)"; §2–§3 Budget by month; §4 Split from / Split into; §5 #6 "Planned cost (plan currency)"
 - [x] T092 [P] Update `docs/product/glossary.md` (Plan currency, Current rate, Rate history, GSAP rate import, Budget by month, Phased budget, Split activity, Plan type, Breakdown, Field help) and `docs/product/design-system.md` §4–§5 (AmountPair, RateTip, YearRangeField, Budget by month card)
 - [x] T093 [P] Update `docs/sdd/plan-module-build.md` (016 row in §2, owners of the new shared parts in §4, routes in §5, seed order note in §6) and `docs/sdd/feature-map.md` (016 row and scope boundaries)
-- [ ] T094 Run the backend checks (`gofmt -l .` prints nothing, `go vet ./...`, `go test ./...`) and the web checks (`npm.cmd run check`); `notYetServed` holds none of 016's operations (depends on T089)
-- [ ] T095 Check SC-001 – SC-009 (timed runs for SC-002, SC-003, SC-006; axe for SC-009) and record the results in `specs/016-planning-and-currency-extensions/checklists/requirements.md`; tick the tasks (depends on T094)
+- [x] T094 Run the backend checks (`gofmt -l .` prints nothing, `go vet ./...`, `go test ./...`) and the web checks (`npm.cmd run check`); `notYetServed` holds none of 016's operations (depends on T089)
+- [x] T095 Check SC-001 – SC-009 (timed runs for SC-002, SC-003, SC-006; axe for SC-009) and record the results in `specs/016-planning-and-currency-extensions/checklists/requirements.md`; tick the tasks (depends on T094)
 
 ---
 

@@ -1,10 +1,8 @@
 # Tasks: Access Control and Global Budgets
 
-> **Build state after the final merge** (`plan-module` at `a1ae8fe`, 21 October 2026): the backend, Settings ›
-> Roles and access (routed in `25ea214`, only with `access.manage`), Your access, Global budgets and allocations,
-> the filtered sidebar and Home's no-role state are built and ticked. **Open:** T043 (record pages do not yet show
-> `NoAccess` on a 403), T044–T051 (pages still show actions the reader's role does not allow; the API refuses
-> them), T061 (end-to-end journeys), T063 (product documents), T064 (full check run).
+> **Build state** (2026-10-29): every task is done and ticked. The screens hide or explain the actions a role
+> does not allow (T043 – T051, D-352), `frontend/e2e/access-control.spec.ts` runs the access journeys (T061), the
+> product documents carry 014's rules (T063) and every check passes (T064).
 
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [data-model.md](data-model.md),
 [contracts/openapi.yaml](contracts/openapi.yaml)
@@ -274,7 +272,7 @@ built with 012.
   glossary (Permission, Role, Scope, Market, Global budget, Allocation, View only); design system §5.6 (ViewOnlyNote,
   NoAccess); the 014 pointer in 002 FR-008, 003 FR-026/FR-027, 004 FR-004/FR-032, 005 FR-031, 008 FR-017/FR-021 and
   the Assumptions of 006, 007, 009 and 011; build guide rows for 014.
-- [ ] T064 Checks: backend `gofmt -l .` prints nothing, `go vet ./...`, `go test ./...`; frontend `npm run check`;
+- [x] T064 Checks: backend `gofmt -l .` prints nothing, `go vet ./...`, `go test ./...`; frontend `npm run check`;
   Playwright suite (all journeys) green; tick the tasks.
 
 ## Requirement coverage
