@@ -8,27 +8,25 @@ import { CellValue } from './CellValue';
 import { isNumeric } from './cell-text';
 import { GridRow } from './GridRow';
 import { ScrollBox } from './ScrollBox';
+import { PageSelectBox } from './SelectBox';
+import type { GridSelection } from './SelectBox';
 import type { VisibleRow } from './view-rows';
 
 export interface AllWorkGridProps {
   result: AllWorkResult;
-  /** The rows of the page on screen (D-115). */
   rows: VisibleRow[];
-  /** The path above a page that starts inside a branch ("Continued: …"). */
   continued: string;
   search: string;
-  /** The column the children of every parent are sorted by (FR-015); null: plan-tree order. */
   sort: Sort | null;
-  /** A click on a sortable heading. */
   onSort: (column: string) => void;
   onToggle: (key: string) => void;
   onOpen: (row: AllWorkRow) => void;
+  selection?: GridSelection;
 }
 
 /**
- * The Grid (US1, FR-011 – FR-017, plan "Grid"): Name, then the chosen columns; the rows of one
- * page, each opening its record; and the totals row, which closes every page. Read-only (FR-002).
- * The table scrolls sideways inside its card; the names stay on the left.
+ * The Grid (010 FR-011 – FR-017): Name, then the chosen columns; the rows of one page, each opening its
+ * record, ticked for bulk actions with `selection` (012); the totals row closes every page.
  */
 export function AllWorkGrid({
   result,
@@ -39,6 +37,7 @@ export function AllWorkGrid({
   onSort,
   onToggle,
   onOpen,
+  selection,
 }: AllWorkGridProps) {
   const { columns, totals } = result;
   const statusInName = !columns.some((column) => column.key === 'status');
@@ -52,6 +51,7 @@ export function AllWorkGrid({
           <thead>
             <tr>
               <th scope="col" className={styles.nameHead}>
+                {selection && <PageSelectBox selection={selection} />}
                 Name
               </th>
               {columns.map((column) => (
@@ -69,6 +69,7 @@ export function AllWorkGrid({
                 statusInName={statusInName}
                 onToggle={onToggle}
                 onOpen={onOpen}
+                selection={selection}
               />
             ))}
           </tbody>
@@ -96,11 +97,7 @@ interface ColumnHeadingProps {
   onSort: (column: string) => void;
 }
 
-/**
- * A column heading; a sortable one is a button that sorts ascending, then descending, then back to
- * the plan-tree order (FR-015). aria-sort tells screen readers which way. A column whose sum needs
- * explaining has an ⓘ after its words (Unassigned planned cost; functional review X-02).
- */
+/** A sortable heading sorts ascending, descending, then back to the plan-tree order (FR-015). */
 function ColumnHeading({ column, sort, onSort }: ColumnHeadingProps) {
   const direction = sort?.column === column.key ? sort.direction : null;
   const Icon = direction === 'asc' ? ArrowUp : direction === 'desc' ? ArrowDown : ArrowUpDown;

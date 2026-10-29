@@ -7,6 +7,7 @@ import { Tabs } from '@/ui/Tabs/Tabs';
 import { useToast } from '@/ui/Toast/useToast';
 import type { TabItem } from '@/ui/Tabs/Tabs';
 import { usePageTitle } from '@/ui/usePageTitle';
+import { BulkBar, useSelection } from '@/features/bulk';
 import { useAccess } from '@/session/access';
 import { useAllWork, useAllWorkOptions, useAllWorkPreferences, usePreferencesSaver } from './api';
 import styles from './AllWorkPage.module.css';
@@ -31,8 +32,8 @@ import { clearAll } from './view-chips';
 import { continuedPath, pageOf, toggleRow, visibleRows } from './view-rows';
 import { nextSort } from './view-columns';
 import { standardState, toQueryParams, withoutRefused, yearRange } from './view-state';
+import { gridSelection, matchingRecords } from './grid-selection';
 
-/** The views as pill tabs (FR-001). */
 const TABS: TabItem<ViewType>[] = [
   { value: 'grid', label: VIEW_LABELS.grid },
   { value: 'calendar', label: VIEW_LABELS.calendar },
@@ -40,10 +41,8 @@ const TABS: TabItem<ViewType>[] = [
 ];
 
 /**
- * All work (feature 010, FR-001): every plan of a year as a read-only Grid, Calendar or Budget &
- * cost view, with the summary cards and one filter bar, under one state that survives moving around
- * MAPP (FR-009). Nothing is created, changed or deleted here (FR-002); a row opens its
- * record (FR-016).
+ * All work (feature 010): every plan of a year as a Grid, Calendar or Budget & cost view under one state
+ * that survives moving around (FR-009); the Grid's rows are ticked for bulk actions (feature 012).
  */
 export function AllWorkPage() {
   const { has } = useAccess();
@@ -61,6 +60,7 @@ export function AllWorkPage() {
   const savePreferences = usePreferencesSaver();
   const [choosingColumns, setChoosingColumns] = useState(false);
   const { show } = useToast();
+  const selection = useSelection();
   // The previous answer stays while a new one loads, but only for the same view.
   const result = state && query.data?.view === state.view ? query.data : undefined;
 
@@ -69,7 +69,6 @@ export function AllWorkPage() {
     [result, state],
   );
   const page = pageOf(visible, entry.page, entry.pageSize);
-  // The Calendar's Month layout shows one month of activities; it has no pages.
   const monthLayout = state?.view === 'calendar' && state.calendarLayout === 'month';
 
   // Back from a record: the page scrolls to where it was (FR-016), once the rows are there.
@@ -83,7 +82,6 @@ export function AllWorkPage() {
     }
   }, [result, entry.scrollY]);
 
-  // A refused filter is named in a message and set back (plan "States").
   const refusal =
     query.error instanceof ApiError && query.error.kind === 'validation' ? query.error : null;
   useEffect(() => {
@@ -96,8 +94,14 @@ export function AllWorkPage() {
     setState((current) => withoutRefused(current, fields, standard));
   }, [refusal, state, preferences.data, options.data, setState, show]);
 
+  function clearSelection() {
+    if (selection.records.length > 0) {
+      selection.clear();
+      show({ message: 'Selection cleared because the filters changed' });
+    }
+  }
+
   function changeExpansion(next: ViewState) {
-    // Opening and closing rows keeps the page (it may become shorter).
     setState(next, { keepPage: true });
   }
 
@@ -119,9 +123,11 @@ export function AllWorkPage() {
         options={options.data}
         count={query.data?.count}
         updating={query.isFetching && query.data !== undefined}
-        onChange={(change) => setState(change)}
+        onChange={(change) => {
+          clearSelection();
+          setState(change);
+        }}
       />
-      {/* The cards and the count are the same in every view: the last answer serves. */}
       <SummaryCards summary={query.data?.summary ?? null} />
       <div aria-busy={query.isFetching} className={styles.card}>
         <ViewToolbar
@@ -137,7 +143,10 @@ export function AllWorkPage() {
           error={query.isError ? query.error : null}
           hasPlans={options.data ? options.data.plans.length > 0 : true}
           onRetry={() => void query.refetch()}
-          onClearFilters={() => setState(clearAll)}
+          onClearFilters={() => {
+            clearSelection();
+            setState(clearAll);
+          }}
         >
           {result && monthLayout && (
             <MonthCalendar key={result.year} result={result} onOpen={(row) => void open(row)} />
@@ -172,10 +181,17 @@ export function AllWorkPage() {
               onSort={(column) => changeColumns(state.columns, nextSort(state.sort, column))}
               onToggle={(key) => changeExpansion(toggleRow(state, key))}
               onOpen={(row) => void open(row)}
+              selection={gridSelection(
+                selection,
+                page.rows.map((visible) => visible.row),
+              )}
             />
           )}
         </ViewContent>
       </div>
+      {result && state.view === 'grid' && (
+        <BulkBar selection={selection} matching={matchingRecords(result.rows)} />
+      )}
       {result && result.rows.length > 0 && !monthLayout && (
         <Pager
           page={page}
@@ -212,7 +228,6 @@ export function AllWorkPage() {
             <ErrorState error={session.startError} onRetry={session.retryStart} />
           </Card>
         ) : state ? (
-          // The view switch sits right under the header, the filters after it (UI audit AW-03).
           <Tabs
             label="All work views"
             tabs={TABS}
