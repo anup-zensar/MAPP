@@ -22,7 +22,7 @@ func WithShowcase() Option {
 	return func(o *options) { o.showcase = true }
 }
 
-const ShowcaseLoaded = "2 plans, 4 campaigns, 8 initiatives, 12 activities, 23 line items, 6 approval rounds"
+const ShowcaseLoaded = "3 plans, 7 campaigns, 12 initiatives, 20 activities, 39 line items, 9 approval rounds"
 
 type showcaseFile struct {
 	Presets map[string]attributeSet
@@ -38,11 +38,11 @@ type attributeSet struct {
 }
 
 type showcasePlan struct {
-	Name, Model, Team, Owner, Budget, Status, GoalStage, GoalAmount, FinanceBudget, Description string
-	Year                                                                                        int
-	BusinessUnits                                                                               []string
-	SMP                                                                                         bool
-	Campaigns                                                                                   []showcaseCampaign
+	Name, Model, Team, Owner, Budget, Status, GoalStage, GoalAmount, FinanceBudget, Description, Overspend string
+	Year                                                                                                   int
+	BusinessUnits                                                                                          []string
+	SMP                                                                                                    bool
+	Campaigns                                                                                              []showcaseCampaign
 }
 
 type showcaseCampaign struct {
@@ -130,7 +130,7 @@ func (l *showcaseLists) addPlan(p showcasePlan) {
 	l.plans = append(l.plans, demoPlan{
 		name: p.Name, year: p.Year, model: p.Model, team: p.Team, owner: p.Owner, budget: p.Budget,
 		status: plan.Status(p.Status), businessUnits: p.BusinessUnits, smp: p.SMP, goalStage: plan.GoalStage(p.GoalStage),
-		goalAmount: p.GoalAmount, financeBudget: p.FinanceBudget, description: p.Description,
+		goalAmount: p.GoalAmount, financeBudget: p.FinanceBudget, description: p.Description, overspend: p.Overspend,
 	})
 	for _, c := range p.Campaigns {
 		campaign := demoCampaign{plan: p.Name, name: c.Name, owner: c.Owner, start: c.Start, end: c.End, budget: c.Budget,

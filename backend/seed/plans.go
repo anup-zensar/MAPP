@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 
+	"mapp/internal/overspend"
 	"mapp/internal/plan"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/money"
@@ -27,6 +28,7 @@ type demoPlan struct {
 	planType                         plan.PlanType
 	currency                         string
 	phasing                          rollup.PhasingMethod
+	overspend                        string
 }
 
 // demoPlans: FY2026 Mobility China has no business unit on purpose (it shows what Publish needs), and FY2026
@@ -90,7 +92,7 @@ func (d *demo) putPlan(ctx context.Context, p demoPlan) error {
 	pl := plan.Plan{
 		Name: p.name, Year: p.year, ModelID: r.id(d.settings.Models, "model", p.model),
 		TeamIDs: []string{r.id(d.teams, "team", p.team)}, OwnerID: r.id(d.people, "person", p.owner),
-		AOP: p.aop, BCPIR: p.bcpir, Description: p.description, DefaultSpread: plan.SpreadEvenly, GoalStage: p.goalStage,
+		AOP: p.aop, BCPIR: p.bcpir, Overspend: overspend.Mode(p.overspend).Normalised(), Description: p.description, DefaultSpread: plan.SpreadEvenly, GoalStage: p.goalStage,
 		GoalAmount: p.goalAmount, Attributes: attributes, Status: p.status, Meta: d.meta(),
 		Currency: cmp.Or(p.currency, money.BaseCurrency), PlanType: cmp.Or(p.planType, plan.TypeOperational),
 		BudgetPhasing: rollup.Phasing{Method: cmp.Or(p.phasing, rollup.MethodNone), Months: []rollup.PhasingMonth{}},
