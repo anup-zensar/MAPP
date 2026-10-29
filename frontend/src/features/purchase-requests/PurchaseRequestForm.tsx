@@ -107,7 +107,7 @@ export function PurchaseRequestForm(props: PurchaseRequestFormProps) {
     <div className={styles.page}>
       <PageHeader breadcrumb={props.breadcrumb} title={props.title} />
       <form noValidate aria-busy={save.saving} onSubmit={(event) => void submit(event)}>
-        <FormLayout sections={railSections(values)}>
+        <FormLayout sections={railSections(values, options.attributeForm, options.lineAttributeForm)}>
           {stored?.notice && (
             <ApprovalAlert tone="warning">
               <p>{stored.notice}</p>
