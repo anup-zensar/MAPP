@@ -1,8 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { callApi, expectNoAxeViolations, signInAs } from './fixtures';
 
-// 013 SP&A view and BCPIR marker: US1 (the SP&A view of a plan and its campaigns) and US2 (BCPIR plans).
-
 const PRIYA = 'priya.raman@shell.com';
 const PLAN = 'FY2026 Lubricants Europe';
 
@@ -31,7 +29,6 @@ test('SP&A view of a plan: figures traced to activities, periods, dimension, cam
   await expect(page.getByText(/^Finance data as of /)).toBeVisible();
   await expectNoAxeViolations(page);
 
-  // SC-003 and FR-007: Committed is the plan page's, and its activities add up to it.
   await headline
     .getByRole('button', { name: `${committed}, show what makes up Committed` })
     .click();
@@ -40,7 +37,6 @@ test('SP&A view of a plan: figures traced to activities, periods, dimension, cam
   await expectNoAxeViolations(page);
   await page.keyboard.press('Escape');
 
-  // FR-017, FR-018: months, and another dimension, kept in the address.
   await page.getByRole('button', { name: 'Months' }).click();
   await expect(page.getByRole('rowheader', { name: 'Mar 2026' })).toBeVisible();
   await page.getByRole('combobox', { name: 'Group by' }).selectOption({ label: 'Activity type' });
@@ -49,7 +45,6 @@ test('SP&A view of a plan: figures traced to activities, periods, dimension, cam
     page.getByRole('columnheader', { name: 'Activity type', exact: true }).first(),
   ).toBeVisible();
 
-  // FR-005: a campaign's view; Back returns to the whole plan.
   await page.getByRole('combobox', { name: 'Scope' }).selectOption({ label: 'Helix launch' });
   await expect(page).toHaveURL(/campaign=C-1001/);
   const activities = page.getByRole('table', { name: 'Activities' });
@@ -58,14 +53,12 @@ test('SP&A view of a plan: figures traced to activities, periods, dimension, cam
   await expect(page.getByRole('combobox', { name: 'Scope' })).toHaveValue('');
   await expect(activities.getByRole('link', { name: 'Fleet roadshow' })).toBeVisible();
 
-  // FR-019: sort and open an activity's line items.
   await activities.getByRole('button', { name: 'Actual spend' }).click();
   await expect(activities.getByRole('row').nth(1)).toContainText('Social always-on');
   await activities.getByRole('button', { name: 'Show the line items of Social always-on' }).click();
   await expect(activities.getByRole('link', { name: 'Venue hire' })).toBeVisible();
   await expectNoAxeViolations(page);
 
-  // FR-022: Raise purchase request opens 032's form for the chosen line item.
   await page.getByRole('button', { name: 'Actions for Social always-on' }).click();
   await page.getByRole('menuitem', { name: 'Raise purchase request for Venue hire' }).click();
   await expect(page).toHaveURL(/\/purchase-requests\/new\?lineItemId=L-1003/);
