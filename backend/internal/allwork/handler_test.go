@@ -19,13 +19,12 @@ const (
 	danielsEmail = "daniel.okoro@shell.com"
 )
 
-// The default view is the grid of the current year: both 2026 plans with everything below them, the cards,
-// the count and the totals row, which equals the cards (FR-001, FR-003, FR-011, FR-014).
+// The default view is the grid of the current year, and its totals row equals the cards.
 func TestGetAllWork_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
-	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all")
 
 	response := priya.Do(t, http.MethodGet, "/api/v1/all-work", nil)
 
@@ -56,7 +55,6 @@ func TestGetAllWork_Contract(t *testing.T) {
 		r.Summary.PlannedCost.Amount != r.Totals.PlannedCost.Amount || r.Summary.PlanBudget.Amount.String() != "2000000.00" {
 		t.Errorf("summary %+v, count %+v, totals %d activities", r.Summary, r.Count, r.Totals.Activities)
 	}
-	// The other views answer in the contract's shape too: the calendar without line items and grid columns.
 	calendar := priya.Do(t, http.MethodGet, "/api/v1/all-work?view=calendar&year=2026", nil)
 	var c allwork.Result
 	calendar.Decode(t, &c)
@@ -65,7 +63,6 @@ func TestGetAllWork_Contract(t *testing.T) {
 			t.Errorf("calendar row %s is a %s", row.Key, row.Level)
 		}
 	}
-	// A query in the order the person chose its columns keeps that order.
 	ordered := priya.Do(t, http.MethodGet, "/api/v1/all-work?column=plannedCost&column=id&column=createdAt", nil)
 	var o allwork.Result
 	ordered.Decode(t, &o)
@@ -76,7 +73,6 @@ func TestGetAllWork_Contract(t *testing.T) {
 	if strings.Join(keys, ",") != "plannedCost,id,createdAt" {
 		t.Errorf("columns = %q", keys)
 	}
-	// A year without plans answers no rows.
 	empty := priya.Do(t, http.MethodGet, "/api/v1/all-work?year=2030", nil)
 	var e allwork.Result
 	empty.Decode(t, &e)
@@ -85,8 +81,7 @@ func TestGetAllWork_Contract(t *testing.T) {
 	}
 }
 
-// A row's record is located before it opens (FR-016, D-123): a stored record answers its level, name and
-// plan; a deleted one answers 404 with what became of it.
+// A deleted record answers 404 with what became of it.
 func TestLocate_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -108,8 +103,7 @@ func TestLocate_Contract(t *testing.T) {
 		`{"error":{"code":"not_found","message":"This initiative no longer exists — someone may have deleted it.","fields":[]}}`)
 }
 
-// Every filter parameter of the contract is accepted, together, and the answer follows them (FR-004):
-// Priya's declined activities in the published plans of Lubricants Europe.
+// Every filter parameter at once: Priya's declined activities in the published plans of Lubricants Europe.
 func TestGetAllWork_EveryFilterParameter_FR004(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -136,13 +130,11 @@ func TestGetAllWork_EveryFilterParameter_FR004(t *testing.T) {
 	}
 }
 
-// The filter bar's choices (FR-004): the years, the plans and owners of the year, the teams with the
-// person's own first, the business units, the activity types and the column catalogue.
 func TestGetOptions_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
-	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all")
 
 	response := priya.Do(t, http.MethodGet, "/api/v1/all-work/options", nil)
 	wrongYear := priya.Do(t, http.MethodGet, "/api/v1/all-work/options?year=3000", nil, apitest.SkipRequestValidation())
@@ -170,13 +162,11 @@ func TestGetOptions_Contract(t *testing.T) {
 		`"fields":[{"field":"year","message":"Choose a year from 2000 to 2100."}]}}`)
 }
 
-// Export answers the file of the view, .xlsx or CSV, named in Content-Disposition after the view, year and
-// date; a wrong format is refused (FR-032 – FR-034).
 func TestExport_XlsxAndCsvContentTypeAndDisposition_FR034(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
-	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all")
 
 	xlsx := priya.Do(t, http.MethodGet, "/api/v1/all-work/export?format=xlsx&activityStatus=declined", nil)
 	csv := priya.Do(t, http.MethodGet, "/api/v1/all-work/export?format=csv&view=budget&unassigned=false", nil)
@@ -201,7 +191,6 @@ func TestExport_XlsxAndCsvContentTypeAndDisposition_FR034(t *testing.T) {
 		`{"field":"unassigned","message":"Choose one of the listed values."}]}}`)
 }
 
-// assertAnswer checks an answer's status and exact body.
 func assertAnswer(t *testing.T, r *apitest.Response, status int, body string) {
 	t.Helper()
 	if r.Status != status || string(r.Body) != body {

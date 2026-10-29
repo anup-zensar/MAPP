@@ -10,8 +10,7 @@ import (
 	"mapp/internal/platform/apitest"
 )
 
-// The currencies come USD first, then by code, with the rate both ways and their locks; a new currency
-// answers 201 and is listed; every problem of a new currency comes at once (FR-028, US4-1, US4-5).
+// The currencies come USD first, then by code; every problem of a new currency comes at once.
 func TestCurrenciesAPI_ListCreateGet_FR028(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -51,30 +50,26 @@ func TestCurrenciesAPI_ListCreateGet_FR028(t *testing.T) {
 	assertAnswer(t, gone, http.StatusNotFound, `{"error":{"code":"not_found","message":"This currency no longer exists — someone may have deleted it.","fields":[]}}`)
 }
 
-// Bodies of the currency tests.
 const (
 	currencyGoneBody = `{"error":{"code":"not_found","message":"This currency no longer exists — someone may have deleted it.","fields":[]}}`
 )
 
-// jpyBody is the new currency of US4-1.
 var jpyBody = map[string]any{"code": "jpy", "name": "Japanese yen", "symbol": "¥", "rate": "150"}
 
-// jpyAnswer is the answer for the currency jpyBody at version, with who changed its rate and its status;
-// Alex created it at the start.
+// jpyAnswer is the currency jpyBody at version; Alex created it at the start.
 func jpyAnswer(version int, rateChanged string, active bool) string {
 	return `{"code":"JPY","name":"Japanese yen","symbol":"¥","rate":"150","inverseRate":"0.006667",` + rateChanged +
 		`,"rateDate":"2026-03-12","rateSource":"manual","rateImportFileName":null,"active":` + strconv.FormatBool(active) + `,"usage":` + unusedBody +
 		`,"locks":[{"field":"code","reason":"The code can't change once the currency is saved."}],"version":` + itoa(version) + `,` + alexAtStart + `}`
 }
 
-// A save from an out-of-date copy is refused with who changed the currency and when; a new rate marks who
-// changed it (FR-007, FR-028).
+// A save from an out-of-date copy is refused with who changed the currency and when.
 func TestCurrenciesAPI_UpdateConflict_FR007(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	daniel := server.SignIn(t, danielsEmail)
-	server.GrantRole(t, danielsEmail, "administrator", "all") // 014: changing Settings
+	server.GrantRole(t, danielsEmail, "administrator", "all")
 	mustCreate(t, alex, "/api/v1/currencies", jpyBody)
 	server.Advance(90 * time.Minute)
 	var daniels struct {
@@ -95,7 +90,7 @@ func TestCurrenciesAPI_UpdateConflict_FR007(t *testing.T) {
 	assertAnswer(t, gone, http.StatusNotFound, currencyGoneBody)
 }
 
-// The impact check validates like the update and answers the warnings, saving nothing (FR-030, D-044).
+// The impact check validates like the update and answers the warnings, saving nothing.
 func TestCurrenciesAPI_Impact_FR030(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -113,8 +108,6 @@ func TestCurrenciesAPI_Impact_FR030(t *testing.T) {
 		jpyAnswer(1, `"rateChangedAt":"2026-03-12T09:00:00Z","rateChangedBy":{"id":"U-1001","name":"Alex Morgan"}`, true))
 }
 
-// Set inactive and Reactivate answer the currency with its new status; an out-of-date version is refused
-// (FR-004).
 func TestCurrenciesAPI_Status_FR004(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -132,7 +125,7 @@ func TestCurrenciesAPI_Status_FR004(t *testing.T) {
 	}
 }
 
-// An unused currency moves to the recycle bin, listed by its code, and Undo brings it back (FR-004).
+// An unused currency moves to the recycle bin, listed by its code, and Undo brings it back.
 func TestCurrenciesAPI_DeleteAndUndo_FR004(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t, apitest.WithoutDemoHistory())

@@ -12,7 +12,6 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// eventLine writes one event of a run: "<activity> L<n> <action> <days>d to <names>".
 func eventLine(e EscalationEvent) string {
 	var to []string
 	for _, p := range e.To {
@@ -21,12 +20,9 @@ func eventLine(e EscalationEvent) string {
 	return e.Activity.ID + " " + e.Action + " " + daysText(e.WaitedDays) + " to [" + strings.Join(to, ", ") + "]"
 }
 
-// Running reminders and escalations (017 FR-026 – FR-028, SC-005): a level that has waited the reminder
-// days gets one reminder, to its waiting approvers and their delegates; one that has waited the escalation
-// days is escalated to its usable backup approver — who, the waiting approvers and the owner are told — and
-// no separate reminder is sent; a backup approver who is inactive, cannot approve, owns or submitted the
-// activity, or already approves the level cannot take it and the level is reported; a second run sends
-// nothing; legacy rounds wait from 008's time; it needs workflows.manage.
+// A level waiting the reminder days reminds its approvers and their delegates; at the escalation days it goes to
+// a usable backup approver instead (else it is reported), who is told with the approvers and the owner; a second
+// run sends nothing; legacy rounds wait from their submission; running needs workflows.manage.
 func TestRunEscalations_FR026_FR027_FR028_SC005(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -132,7 +128,6 @@ func TestRunEscalations_FR026_FR027_FR028_SC005(t *testing.T) {
 	assertError(t, err, errs.Forbidden("Changing approval workflows isn't part of your role (Planner). Ask an administrator if you need it."))
 }
 
-// eventLines writes events with eventLine.
 func eventLines(events []EscalationEvent) []string {
 	lines := []string{}
 	for _, e := range events {
@@ -141,7 +136,6 @@ func eventLines(events []EscalationEvent) []string {
 	return lines
 }
 
-// assertNotifiedFirst checks the newest notification of p, written as "<kind>: <title> — <text>".
 func assertNotifiedFirst(t *testing.T, f *fixture, p actor.Actor, want string) {
 	t.Helper()
 	list := f.notifications(t, p.ID)
@@ -153,10 +147,8 @@ func assertNotifiedFirst(t *testing.T, f *fixture, p actor.Actor, want string) {
 	}
 }
 
-// Monitoring is computed over the rows of All open (017 FR-029, FR-030, SC-006): waiting days in whole days
-// from when the level was reached; overdue at the escalation days, or the reminder days without escalation;
-// the five ageing buckets add up to All open; waiting by level per workflow and level; the overdue rows
-// oldest first; the month's average time to decision without approvals at submission, and their count.
+// Waiting days are whole days since the level was reached; overdue at the escalation days, or the reminder days
+// without escalation; the ageing buckets add up to All open; the average excludes approvals at submission.
 func TestMonitoring_FR029_FR030_SC006(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -214,10 +206,8 @@ func TestMonitoring_FR029_FR030_SC006(t *testing.T) {
 	}
 }
 
-// Every approval event of the feature is in the approval history and the activity log with the person or
-// MAPP, the capacity and the rule or reason (017 FR-034, FR-035, SC-004): automatic approval and levels
-// not needed at submission, a partial approval, decisions as delegate, backup and on behalf, reminders and
-// escalations, and delegations created, changed and cancelled.
+// Every approval event is in the approval history and the activity log, with the person or the system, the
+// capacity and the rule or reason.
 func TestApprovalRuleEvents_Logged_FR034_FR035_SC004(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
