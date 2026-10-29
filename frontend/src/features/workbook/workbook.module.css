@@ -11,11 +11,11 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  color: var(--ink-2);
+  color: var(--ink);
 }
 
 .steps [aria-current='step'] {
-  color: var(--ink);
+  text-decoration: underline;
   font-weight: var(--weight-bold);
 }
 
