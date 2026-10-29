@@ -6,6 +6,7 @@ import type { HttpHandler } from 'msw';
 import type { components } from '@/api/generated/schema';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
+import { activityRecord, figures } from '@/testing/fixtures/line-item-financials';
 import { testUser } from '@/testing/fixtures/users';
 import { reply } from '@/testing/replies';
 import type { RecordTarget } from './record-target';
@@ -63,7 +64,10 @@ function Harness({
 
 function renderDialog(target: RecordTarget, answers: HttpHandler[] = [], onDeleted = vi.fn()) {
   const onClose = vi.fn();
-  const api = mockApi(answers);
+  const api = mockApi([
+    ...answers,
+    reply('GET /api/v1/financials/records/{recordId}', { body: activityRecord() }),
+  ]);
   const rendered = renderWithProviders(
     <Harness target={target} onClose={onClose} onDeleted={onDeleted} />,
     { user: testUser() },
@@ -108,6 +112,24 @@ describe('DeleteRecordDialog (feature 005, US5)', () => {
       '1 of these activities is approved. If it is restored later from the recycle bin, it returns as Created and needs approval again.',
     );
     expect(within(dialog).getByRole('button', { name: 'Delete initiative' })).toBeInTheDocument();
+  });
+
+  it('says the GSAP transactions linked below it stay and leave the figures (015 FR-029)', async () => {
+    renderDialog(HELIX, [
+      reply(
+        'GET /api/v1/financials/records/{recordId}',
+        { body: activityRecord({ figures: figures({ transactionCount: 3 }) }) },
+        { recordId: 'C-1001' },
+      ),
+    ]);
+
+    const dialog = screen.getByRole('alertdialog', { name: "Delete campaign 'Helix launch'?" });
+    expect(
+      await within(dialog).findByText(
+        '3 GSAP transactions are linked to it. They stay in SP&A One and leave the figures until it is restored.',
+      ),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Delete campaign' })).toBeEnabled();
   });
 
   it('says nothing about contents or approvals when nothing is below', () => {

@@ -294,11 +294,17 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
     added). Built: Home's card (`features/home/FinancialsCard.tsx`) shows the note in place of its figures,
     without Open Financials. Bug found by the new test and fixed: `RecordFinancials` retried a refusal twice, so
     the note came after about 3 s of skeleton; it now follows the app's rule (no retry).
-- [ ] T045 [P] (W) Delete dialogs (FR-029): add the linked-transactions sentence to
+- [x] T045 [P] (W) Delete dialogs (FR-029): add the linked-transactions sentence to
   `frontend/src/features/line-items/DeleteLineItemDialog.tsx`,
   `frontend/src/features/activities/DeleteActivityDialog.tsx`,
   `frontend/src/features/campaigns/DeleteRecordDialog.tsx` and the plan delete dialog in
   `frontend/src/features/plans/dialogs/`, from the record view's `transactionCount` (+ tests).
+  - Done 2026-10-29. The line-item and activity dialogs already said it (tests in `LineItemPage.test.tsx`,
+    `LineItemsSection.actions.test.tsx`, `DeleteActivityDialog.test.tsx`). Added to
+    `features/plans/campaigns/DeleteRecordDialog.tsx` (campaign and initiative) and
+    `features/plans/dialogs/DeletePlanDialog.tsx`, from the record view (the Financials card's query, so an open
+    panel or page answers from its cache), with a test each; the product name on screen is SP&A One (D-332). The
+    shared test fixtures `plan-actions.tsx` and `campaign-tree.tsx` answer the record view with no transactions.
 - [x] T046 [P] (B) In `service_test.go`, test that copying a plan, campaign, activity or line item copies
   no transaction and the copy's figures are 0.00 (FR-030). Test that deleting a line item drops its
   amounts from every figure and restoring brings them back (FR-012).
