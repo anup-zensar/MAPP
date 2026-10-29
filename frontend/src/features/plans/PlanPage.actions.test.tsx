@@ -97,6 +97,8 @@ describe('PlanPage actions and history (US5, US6, FR-026 – FR-031)', () => {
     expect((await screen.findAllByRole('menuitem')).map((item) => item.textContent)).toEqual([
       'Copy',
       'View history',
+      'Export to PowerPoint',
+      'Export to PDF',
       'Delete',
     ]);
     await user.click(screen.getByRole('menuitem', { name: 'Copy' }));

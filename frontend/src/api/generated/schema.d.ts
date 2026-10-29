@@ -4088,6 +4088,96 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dashboards/executive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Executive dashboard of every market the person may see (feature 036, FR-001 – FR-019)
+         * @description Every figure covers only the plans of the year the person may see; committed and actual cover only the
+         *     plans whose financial data they may see; global budgets appear only to holders of globalBudgets.view.
+         *     Amounts are in the chosen currency (default the person's display currency).
+         */
+        get: operations["getExecutiveDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboards/regional": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The Regional dashboard of one market (team), with a plan's campaigns (feature 036, FR-020 – FR-022) */
+        get: operations["getRegionalDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboards/executive/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The Executive dashboard as a PowerPoint or PDF file (feature 036, FR-024) */
+        get: operations["exportExecutiveDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboards/regional/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The Regional dashboard as a PowerPoint or PDF file (feature 036, FR-024) */
+        get: operations["exportRegionalDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plans/{planId}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A plan as a PowerPoint or PDF file — summary, campaigns, budget against planned and actual, activities (feature 036, FR-023) */
+        get: operations["exportPlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -9804,6 +9894,175 @@ export interface components {
             /** @description Levels due for escalation that no backup approver could take. */
             notEscalated: components["schemas"]["EscalationEvent"][];
         };
+        /** @description An Executive or Regional dashboard (feature 036). Every amount is in filters.currency; null means "—" (nothing to add up, no budget, or financial data the person may not see). */
+        PlanningDashboard: {
+            /** @enum {string} */
+            kind: "executive" | "regional";
+            filters: components["schemas"]["DashboardFilters"];
+            choices: components["schemas"]["DashboardChoices"];
+            /** @description The market of the Regional dashboard; null on the Executive dashboard. */
+            team: components["schemas"]["TeamRef"] | null;
+            planCount: number;
+            plansWithoutBudget: number;
+            finance: components["schemas"]["DashboardFinance"];
+            /**
+             * Format: date-time
+             * @description When GSAP data was last received; null when none ever was.
+             */
+            financeAsOf: string | null;
+            totals: components["schemas"]["DashboardFigures"];
+            /** @description Each team with plans on the dashboard (Executive only; empty on the Regional dashboard). */
+            markets: components["schemas"]["DashboardMarketRow"][];
+            plans: components["schemas"]["DashboardPlanRow"][];
+            /** @description Up to five campaigns with planned cost above budget, largest overspend first. */
+            overBudget: components["schemas"]["DashboardCampaignRow"][];
+            /** @description Up to five campaigns with budget above planned cost, most left to plan first. */
+            leftToPlan: components["schemas"]["DashboardCampaignRow"][];
+            planCampaigns: components["schemas"]["DashboardPlanCampaigns"] | null;
+            months: components["schemas"]["DashboardMonths"];
+            approvals: components["schemas"]["DashboardApprovals"];
+            purchaseRequests: components["schemas"]["DashboardPurchaseRequests"];
+            completeness: components["schemas"]["DashboardCompleteness"][];
+            /** @description The year's global budgets; null when the person may not see global budgets. */
+            globalBudgets: components["schemas"]["DashboardGlobalBudget"][] | null;
+            canExport: boolean;
+        };
+        DashboardFilters: {
+            year: number;
+            planType: components["schemas"]["PlanType"] | null;
+            currency: string;
+            teamId: string | null;
+            planId: string | null;
+        };
+        DashboardChoices: {
+            /** @description The years with plans the person may see, and the current year, newest first. */
+            years: number[];
+            teams: components["schemas"]["DashboardTeamChoice"][];
+            currencies: components["schemas"]["DashboardCurrencyChoice"][];
+        };
+        DashboardTeamChoice: {
+            id: string;
+            name: string;
+            active: boolean;
+            mine: boolean;
+        };
+        DashboardCurrencyChoice: {
+            code: string;
+            name: string;
+        };
+        DashboardFinance: {
+            /** @description The person may see financial data in at least one plan on the dashboard. */
+            visible: boolean;
+            /** @description The plans whose committed and actual figures are counted. */
+            planCount: number;
+        };
+        DashboardFigures: {
+            budget: components["schemas"]["Money"] | null;
+            plannedCost: components["schemas"]["Money"] | null;
+            committed: components["schemas"]["Money"] | null;
+            /** @description Paid, Shell's actuals (015). */
+            actual: components["schemas"]["Money"] | null;
+            /** @description Planned cost ÷ budget, a whole percent. */
+            budgetUsedPercent: number | null;
+            /** @description Actual ÷ budget, a whole percent. */
+            budgetSpentPercent: number | null;
+            leftToPlan: components["schemas"]["Money"] | null;
+            /** @description Budget − actual. */
+            unspentBudget: components["schemas"]["Money"] | null;
+            overBudget: boolean;
+        };
+        DashboardMarketRow: {
+            team: components["schemas"]["TeamRef"];
+            planCount: number;
+            figures: components["schemas"]["DashboardFigures"];
+        };
+        DashboardPlanRef: {
+            id: string;
+            name: string;
+            status: components["schemas"]["PlanStatus"];
+            planType: components["schemas"]["PlanType"];
+        };
+        DashboardPlanRow: {
+            plan: components["schemas"]["DashboardPlanRef"];
+            teams: components["schemas"]["TeamRef"][];
+            figures: components["schemas"]["DashboardFigures"];
+            financeShown: boolean;
+        };
+        DashboardCampaignRow: {
+            campaign: components["schemas"]["DashboardRecordRef"];
+            plan: components["schemas"]["DashboardRecordRef"];
+            figures: components["schemas"]["DashboardFigures"];
+            /** @description Over budget, planned − budget; in Left to plan, budget − planned; null in a plan's campaigns. */
+            difference: components["schemas"]["Money"] | null;
+        };
+        DashboardRecordRef: {
+            id: string;
+            name: string;
+        };
+        DashboardPlanCampaigns: {
+            plan: components["schemas"]["DashboardRecordRef"];
+            items: components["schemas"]["DashboardCampaignRow"][];
+        };
+        DashboardMonths: {
+            items: components["schemas"]["DashboardMonth"][];
+            /** @description Planned cost not yet spread (activities without dates); null when none. */
+            noDates: components["schemas"]["Money"] | null;
+            /** @description Planned cost spread into months of other years; null when none. */
+            otherYears: components["schemas"]["Money"] | null;
+            /** @description Payments posted outside the year; null when none or when financial data is hidden. */
+            paidOutsideYear: components["schemas"]["Money"] | null;
+        };
+        DashboardMonth: {
+            month: string;
+            planned: components["schemas"]["Money"];
+            actual: components["schemas"]["Money"] | null;
+            plannedToDate: components["schemas"]["Money"];
+            actualToDate: components["schemas"]["Money"] | null;
+        };
+        DashboardApprovals: {
+            waiting: number;
+            /** Format: date-time */
+            oldestWaitingSince: string | null;
+            approved: number;
+            declined: number;
+            autoApproved: number;
+            /** @description Days from submission to decision, one decimal ("2.5"); null when nothing was decided. */
+            averageDecisionDays: string | null;
+            activitiesByStatus: components["schemas"]["DashboardStatusCount"][];
+        };
+        DashboardStatusCount: {
+            status: components["schemas"]["ActivityDisplayStatus"];
+            count: number;
+        };
+        DashboardPurchaseRequests: {
+            /** @description Purchase Support is switched on. */
+            available: boolean;
+            byStatus: components["schemas"]["DashboardPurchaseRequestStatus"][];
+            count: number;
+            amount: components["schemas"]["Money"];
+            waitingForGsap: number;
+        };
+        DashboardPurchaseRequestStatus: {
+            status: components["schemas"]["PurchaseRequestStatus"];
+            count: number;
+            amount: components["schemas"]["Money"];
+        };
+        DashboardCompleteness: {
+            /** @enum {string} */
+            level: "plan" | "campaign" | "initiative" | "activity" | "lineItem";
+            total: number;
+            complete: number;
+            percent: number | null;
+        };
+        DashboardGlobalBudget: {
+            id: string;
+            name: string;
+            amount: components["schemas"]["Money"];
+            allocated: components["schemas"]["Money"];
+            unallocated: components["schemas"]["Money"];
+            plannedCost: components["schemas"]["Money"];
+            overAllocated: boolean;
+        };
     };
     responses: {
         /** @description The request is not valid (validation_failed lists every field problem; bad_request when the body cannot be read). */
@@ -9858,6 +10117,18 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description The file, named in Content-Disposition, e.g. "SP&A One – FY2026 Lubricants Europe – 28 Oct 2026.pptx" (feature 036). */
+        OfficeFile: {
+            headers: {
+                /** @description attachment with filename (ASCII) and filename* (UTF-8). */
+                "Content-Disposition"?: string;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation": string;
+                "application/pdf": string;
             };
         };
     };
@@ -10041,6 +10312,17 @@ export interface components {
         AllWorkAmountsIn: "display" | "plan";
         /** @example DLG-1001 */
         DelegationId: string;
+        /** @description The plan year; default the current year (feature 036). */
+        DashboardYear: number;
+        /** @description Only plans of this type; all types when absent. */
+        DashboardPlanType: components["schemas"]["PlanType"];
+        /** @description An active currency of Settings to show amounts in; default the person's display currency. */
+        DashboardCurrency: string;
+        /** @description The market (team) of the Regional dashboard; default the person's first team by name, else the first team. */
+        DashboardTeam: string;
+        /** @description A plan of the dashboard whose campaigns to show; ignored when the plan is not on the dashboard. */
+        DashboardPlan: string;
+        ExportFormat: "pptx" | "pdf";
     };
     requestBodies: never;
     headers: never;
@@ -17780,6 +18062,148 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getExecutiveDashboard: {
+        parameters: {
+            query?: {
+                /** @description The plan year; default the current year (feature 036). */
+                year?: components["parameters"]["DashboardYear"];
+                /** @description Only plans of this type; all types when absent. */
+                planType?: components["parameters"]["DashboardPlanType"];
+                /** @description An active currency of Settings to show amounts in; default the person's display currency. */
+                currency?: components["parameters"]["DashboardCurrency"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The dashboard. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningDashboard"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getRegionalDashboard: {
+        parameters: {
+            query?: {
+                /** @description The plan year; default the current year (feature 036). */
+                year?: components["parameters"]["DashboardYear"];
+                /** @description Only plans of this type; all types when absent. */
+                planType?: components["parameters"]["DashboardPlanType"];
+                /** @description An active currency of Settings to show amounts in; default the person's display currency. */
+                currency?: components["parameters"]["DashboardCurrency"];
+                /** @description The market (team) of the Regional dashboard; default the person's first team by name, else the first team. */
+                teamId?: components["parameters"]["DashboardTeam"];
+                /** @description A plan of the dashboard whose campaigns to show; ignored when the plan is not on the dashboard. */
+                planId?: components["parameters"]["DashboardPlan"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The dashboard of the market. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningDashboard"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    exportExecutiveDashboard: {
+        parameters: {
+            query: {
+                format: components["parameters"]["ExportFormat"];
+                /** @description The plan year; default the current year (feature 036). */
+                year?: components["parameters"]["DashboardYear"];
+                /** @description Only plans of this type; all types when absent. */
+                planType?: components["parameters"]["DashboardPlanType"];
+                /** @description An active currency of Settings to show amounts in; default the person's display currency. */
+                currency?: components["parameters"]["DashboardCurrency"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OfficeFile"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    exportRegionalDashboard: {
+        parameters: {
+            query: {
+                format: components["parameters"]["ExportFormat"];
+                /** @description The plan year; default the current year (feature 036). */
+                year?: components["parameters"]["DashboardYear"];
+                /** @description Only plans of this type; all types when absent. */
+                planType?: components["parameters"]["DashboardPlanType"];
+                /** @description An active currency of Settings to show amounts in; default the person's display currency. */
+                currency?: components["parameters"]["DashboardCurrency"];
+                /** @description The market (team) of the Regional dashboard; default the person's first team by name, else the first team. */
+                teamId?: components["parameters"]["DashboardTeam"];
+                /** @description A plan of the dashboard whose campaigns to show; ignored when the plan is not on the dashboard. */
+                planId?: components["parameters"]["DashboardPlan"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OfficeFile"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    exportPlan: {
+        parameters: {
+            query: {
+                format: components["parameters"]["ExportFormat"];
+                /** @description An active currency of Settings to show amounts in; default the person's display currency. */
+                currency?: components["parameters"]["DashboardCurrency"];
+            };
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OfficeFile"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
     };

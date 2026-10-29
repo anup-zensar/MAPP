@@ -27,6 +27,7 @@ import { planTabOf } from './schemas';
 import type { PlanTab } from './schemas';
 import { PlanTree } from './tree/PlanTree';
 import { usePlanActions } from './usePlanActions';
+import { usePlanExport } from './usePlanExport';
 
 const TABS: TabItem<PlanTab>[] = [
   { value: 'tree', label: 'Plan tree' },
@@ -53,6 +54,7 @@ export function PlanPage() {
   const focusHistory = useRef(false);
   usePageTitle(panel ? null : (plan.data?.name ?? 'Plan'));
   const actions = usePlanActions({ onDeleted: () => void navigate('/plans') });
+  const exportItems = usePlanExport(planId);
 
   useEffect(() => {
     if (tab === 'history' && focusHistory.current) {
@@ -133,8 +135,8 @@ export function PlanPage() {
     const data = plan.data;
     const moreItems: ActionsMenuItem[] = [
       ...actions.copyItem(data),
-      // Opens the History tab and focuses its heading (feature 011, FR-011).
       { label: 'View history', onSelect: viewHistory },
+      ...exportItems,
       ...actions.deleteItem(data),
     ];
     // 014 FR-011: a person who may change nothing in the plan sees one View only note instead.

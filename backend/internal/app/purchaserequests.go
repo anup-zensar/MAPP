@@ -18,6 +18,7 @@ func (w *wiring) purchaseRequestsArea() error {
 	if err := w.register(prs.Kinds()); err != nil {
 		return err
 	}
+	w.prs = prs
 	prs.UseApprovals(w.approvals)
 	w.approvals.UsePurchaseRequests(prs)
 	prs.UseGSAP(w.simulatedOrders())

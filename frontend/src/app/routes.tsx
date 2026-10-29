@@ -5,6 +5,7 @@ import type { PageHandle } from '@/session/page-handle';
 import { RequirePermission } from '@/session/RequirePermission';
 import { RequireSignIn } from '@/session/RequireSignIn';
 import { AppLayout } from './AppLayout';
+import { DASHBOARD_ROUTES } from './dashboard-routes';
 import { DevOnly } from './DevOnly';
 import { COMING_SOON_SECTIONS } from './navigation';
 import { NotFoundRoute } from './NotFoundRoute';
@@ -69,11 +70,7 @@ function titled(title: string): { handle: PageHandle } {
 /** Every page of the Plan module (features 002–016; docs/sdd/plan-module-build.md §5). */
 const PLAN_MODULE_ROUTES: RouteObject[] = [
   // 002 Settings
-  {
-    path: '/settings',
-    element: <SettingsPage />,
-    ...titled('Settings'),
-  },
+  { path: '/settings', element: <SettingsPage />, ...titled('Settings') },
   { path: '/settings/models', element: <ModelsPage />, ...titled('Models') },
   { path: '/settings/activity-types', element: <ActivityTypesPage />, ...titled('Activity types') },
   {
@@ -250,6 +247,7 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
     ...route,
     element: <RequirePermission permission="access.manage">{route.element}</RequirePermission>,
   })),
+  ...DASHBOARD_ROUTES,
 ];
 
 /** Every page and its address (F1): a data router without loaders; pages load their own data. */

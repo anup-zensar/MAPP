@@ -31,6 +31,7 @@ func (w *wiring) areas() error {
 	}
 	w.views()
 	w.spaArea()
+	w.dashboards()
 	w.usesOfPeople()
 	w.usesInSettings()
 	return nil
@@ -135,6 +136,7 @@ func (w *wiring) budgetsArea() error {
 		return err
 	}
 	w.plans.UseAllocations(planAllocations{budgets: budgetsService})
+	w.budgets = budgetsService
 	mount(w.signedIn, budget.NewHandler(budgetsService))
 	return nil
 }

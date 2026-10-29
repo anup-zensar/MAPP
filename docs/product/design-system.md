@@ -593,6 +593,24 @@ next to the written name, it has no contrast requirement.
 end, the real percentage is written and announced). The value is always written next to the bar
 ("38% used").
 
+### 4.7 Charts (feature 036)
+
+Charts are bars drawn from the API's figures (ADR-0017), each with a legend in words, a text summary for
+screen readers and a **Table** view that lists the same figures. Series colours are tokens outside the
+palette, never yellow or red, each ≥ 3:1 on its surface:
+
+| Token | Series | Light | Dark |
+|---|---|---|---|
+| `--chart-budget` | Budget | `#5B6B7A` | `#8696A6` |
+| `--chart-planned` | Planned cost | `#336094` | `#6F9BD1` |
+| `--chart-committed` | Committed | `#008192` | `#3FB6C5` |
+| `--chart-actual` | Actual (paid) | `#008557` | `#3DBB8C` |
+
+The Dashboards page (`/dashboards/executive`, `/dashboards/regional`) is a list template (§2.4): page header
+with **Export** (PowerPoint, PDF) as a secondary menu, Executive and Regional tabs, the filters in a row,
+then summary figures, tables, the monthly chart and the panels in cards. Exported files use the same tokens'
+light values with Text Strong text on white.
+
 ---
 
 ## 5. Components
