@@ -77,6 +77,23 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
     expect(within(review).getByRole('button', { name: 'Import 5 rates' })).toBeInTheDocument();
   });
 
+  it('038 FR-048 (L-22): marks each group open or closed, and opens a closed one', async () => {
+    const { user } = renderImport();
+    await user.upload(fileField(), rateFile());
+    const review = await screen.findByRole('region', {
+      name: "Review of 'gsap_rates_2026-10-20.csv'",
+    });
+
+    const problems = within(review).getByText('Problems (1)').closest('summary');
+    const toAdd = within(review).getByText('To add (3)').closest('summary');
+    expect(problems?.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    expect(toAdd?.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    expect(problems?.parentElement).toHaveAttribute('open');
+    expect(toAdd?.parentElement).not.toHaveAttribute('open');
+    await user.click(toAdd!);
+    expect(toAdd?.parentElement).toHaveAttribute('open');
+  });
+
   it('imports the rows to add and replace in one step, then goes back to Currencies (FR-007)', async () => {
     const { user, api, router } = renderImport([
       reply('POST /api/v1/exchange-rates/import', { body: IMPORTED }),
