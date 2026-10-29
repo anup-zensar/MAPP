@@ -163,12 +163,12 @@ function ContentsTree({ records, parentId }: { records: BinRecord[]; parentId: s
   );
 }
 
-const PURCHASE_LEVELS: readonly string[] = ['purchaseRequest', 'purchaseRequestLine'];
-
 /** The LevelTag of a planning or purchase-request record; null for other record types. */
 function levelOf(recordType: string): LevelTagProps['level'] | null {
   if (isPlanningType(recordType)) {
     return recordType;
   }
-  return PURCHASE_LEVELS.includes(recordType) ? (recordType as LevelTagProps['level']) : null;
+  return recordType === 'purchaseRequest' || recordType === 'purchaseRequestLine'
+    ? recordType
+    : null;
 }

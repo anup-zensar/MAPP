@@ -90,7 +90,7 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
     expect(toAdd?.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
     expect(problems?.parentElement).toHaveAttribute('open');
     expect(toAdd?.parentElement).not.toHaveAttribute('open');
-    await user.click(toAdd!);
+    await user.click(within(review).getByText('To add (3)'));
     expect(toAdd?.parentElement).toHaveAttribute('open');
   });
 

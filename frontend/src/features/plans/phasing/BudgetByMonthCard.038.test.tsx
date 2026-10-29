@@ -19,11 +19,15 @@ const PLAN = {
 
 function renderCard(negativeBalanceCount = 0, access: Availability = ALLOWED, user = testUser()) {
   const answer = budgetByMonth();
-  const [planRow, ...rest] = answer.rows;
   mockApi([
     reply(
       'GET /api/v1/plans/{planId}/budget-by-month',
-      { body: { ...answer, rows: [{ ...planRow!, negativeBalanceCount }, ...rest] } },
+      {
+        body: {
+          ...answer,
+          rows: answer.rows.map((row, i) => (i === 0 ? { ...row, negativeBalanceCount } : row)),
+        },
+      },
       { planId: 'P-1004' },
     ),
   ]);

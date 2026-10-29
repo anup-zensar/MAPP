@@ -90,7 +90,6 @@ describe('014 FR-011: the plan page follows the reader’s access', () => {
 
   it('038 FR-029 (M-6): offers a Viewer no Edit budget by month', async () => {
     const answer = budgetByMonth({ planId: 'P-1001' });
-    const [planRow, ...rest] = answer.rows;
     mockApi([
       ...HISTORY_ANSWERS,
       ...NOTHING_INSIDE,
@@ -99,7 +98,10 @@ describe('014 FR-011: the plan page follows the reader’s access', () => {
         body: plan({ access: VIEWER_PLAN_ACCESS, budgetPhasing: phasing() }),
       }),
       reply('GET /api/v1/plans/{planId}/budget-by-month', {
-        body: { ...answer, rows: [{ ...planRow!, recordId: 'P-1001' }, ...rest] },
+        body: {
+          ...answer,
+          rows: answer.rows.map((row, i) => (i === 0 ? { ...row, recordId: 'P-1001' } : row)),
+        },
       }),
       reply('GET /api/v1/shell-attribute-forms/{level}', { body: planForm() }),
     ]);
