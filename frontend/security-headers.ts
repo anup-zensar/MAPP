@@ -21,6 +21,8 @@ const policy = [
   "default-src 'self'",
   `script-src 'self' 'sha256-${themeScriptHash()}'`,
   "style-src 'self'",
+  // Radix's scroll lock writes a <style> element whose text varies with the scrollbar (ADR-0018).
+  "style-src-elem 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self'",
   "connect-src 'self'",

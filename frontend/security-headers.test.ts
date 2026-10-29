@@ -44,6 +44,12 @@ describe('security headers of the web app (038 FR-015, D-355)', () => {
     expect(policy).toContain("frame-ancestors 'none'");
   });
 
+  it("038 FR-015, ADR-0018: admits Radix's scroll-lock <style> element, never inline style attributes", () => {
+    const policy = securityHeaders['Content-Security-Policy'];
+    expect(policy).toContain("style-src 'self';");
+    expect(policy).toContain("style-src-elem 'self' 'unsafe-inline';");
+  });
+
   it('038 FR-015: forbids framing, foreign referrers and content sniffing', () => {
     expect(securityHeaders).toMatchObject({
       'X-Frame-Options': 'DENY',

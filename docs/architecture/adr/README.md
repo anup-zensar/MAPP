@@ -23,3 +23,4 @@ Consequences. Add a new ADR (next number) instead of editing an accepted one; ma
 | [0015](0015-pnpm-package-manager.md) | pnpm as the web app's package manager | Accepted |
 | [0016](0016-simulated-gsap-round-trip.md) | A simulated GSAP for SWBS codes, GSAP PRs and purchase orders | Accepted |
 | [0017](0017-dashboards-charts-and-office-exports.md) | Dashboard charts as plain SVG; PowerPoint and PDF files made by the API | Accepted |
+| [0018](0018-web-content-security-policy.md) | The web app's content security policy, with inline style elements allowed | Accepted |
