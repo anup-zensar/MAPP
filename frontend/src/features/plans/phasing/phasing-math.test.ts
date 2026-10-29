@@ -38,6 +38,8 @@ describe('phasingMath (016 data-model §3.3)', () => {
     expect(monthKeys(2027)[0]).toBe('2027-01');
     expect(monthKeys(2027)[11]).toBe('2027-12');
     expect(monthLabel('2027-03')).toBe('Mar 2027');
+    // 038 FR-058: in the person's date format.
+    expect(monthLabel('2027-03', 'YYYY-MM-DD')).toBe('2027-03');
   });
 
   it('reads typed amounts: empty is 0.00, negatives and words are refused', () => {

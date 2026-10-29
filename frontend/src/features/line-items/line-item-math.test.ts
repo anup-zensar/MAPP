@@ -120,6 +120,8 @@ describe('parseAmount and texts', () => {
 
   it('writes months as people read them', () => {
     expect(formatMonth('2026-03')).toBe('Mar 2026');
+    // 038 FR-058: in the person's date format.
+    expect(formatMonth('2026-03', 'MM/DD/YYYY')).toBe('03/2026');
     expect(addMonths('2026-12', 1)).toBe('2027-01');
     expect(addMonths('2026-01', -1)).toBe('2025-12');
   });
