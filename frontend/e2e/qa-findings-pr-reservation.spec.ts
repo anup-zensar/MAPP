@@ -66,7 +66,9 @@ test('038 FR-001 (C-1): a change in review keeps the approved amount reserved', 
   await expect(page).toHaveURL(new RegExp(`/purchase-requests/${prId}$`));
 
   // While the change waits, 15,800.00 USD stay reserved: nothing is left for a second request (032 rule).
-  const defaults = await page.request.get(`/api/v1/purchase-requests/new-defaults?lineItemId=${lineItem.id}`);
+  const defaults = await page.request.get(
+    `/api/v1/purchase-requests/new-defaults?lineItemId=${lineItem.id}`,
+  );
   expect(defaults.status()).toBe(400);
   expect(await defaults.text()).toContain('Nothing left to request');
 
