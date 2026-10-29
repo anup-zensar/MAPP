@@ -1,0 +1,185 @@
+# Feature 038 — changes to backend/api/openapi.yaml (the source of truth). Everything is additive except
+# where marked BEHAVIOUR: those keep their shape and change what the operation answers.
+#
+# Changed properties of existing schemas (written as full schemas below where new):
+#   OverspendConfiguration        + approvalOverPlannedCost (required); updatedAt, updatedBy become nullable
+#   OverspendConfigurationInput   + approvalOverPlannedCost (optional; absent keeps the stored value)
+#   PurchaseRequestConfiguration  updatedAt, updatedBy become nullable (null = never saved, FR-057)
+#   ActivityApproval              + overPlannedCost: ActivityOverage[] (required, empty when none)
+#   PurchaseRequestApproval       + overPlannedCost: ActivityOverage[] (required, empty when none)
+#   PurchaseRequestSubmission     + outcomes: ApprovalSubmissionLevel[] (required)
+#   HomeActivityCounts            + yearFrom, yearTo (integer or null)
+#   SpaPeriods                    + linesAbovePlannedCost (Money or null), linesAbovePlannedCostTrace (SpaContribution[])
+#   DashboardMonths               + negativeBalanceCount (integer >= 0, required)
+#   BudgetByMonthRow              + negativeBalanceCount (integer >= 0, required; activities below the row)
+#   FinancialTransactionPage      counts.notLinked omitted for people who may not see not-linked transactions
+#   ErrorDetail.code              + too_many_attempts, too_large
+#
+# BEHAVIOUR changes (no schema change):
+#   getExecutiveDashboard, getRegionalDashboard and their exports: a well-formed but unknown, inactive or
+#     out-of-scope currency or teamId no longer answers 400 validation_failed; the default is used and the
+#     answer's filters show it (036 FR-007; 036 data-model.md and contracts/api.md corrected).
+#   getFinancialTransaction, linkFinancialTransaction, unlinkFinancialTransaction: a transaction the person may
+#     not see answers 404 not_found before permission, version and state; an out-of-scope target line item
+#     answers the same 400 field problem as a missing one (FR-007).
+#   approveActivityLevel, approvePurchaseRequest: 403 forbidden first for a person holding neither approvals
+#     permission (FR-056); 409 not_allowed when approval over planned cost is set to refuse (FR-020).
+#   createRole, updateRole: 400 validation_failed on field "permissions" when finance.link is chosen without
+#     finance.import (FR-006).
+#   Every operation with a JSON body: 400 validation_failed naming the field for control characters and
+#     unpaired surrogates (FR-017); 413 too_large over the body limit (FR-054). Every path parameter holding a
+#     control character: 404 not_found.
+#   Campaign and initiative create/update: startDate/endDate are strings checked by the service; an impossible
+#     date answers 400 validation_failed "Enter a valid date." on that field (FR-054).
+#   All operations: response headers Content-Security-Policy, X-Frame-Options, Referrer-Policy,
+#     X-Content-Type-Options (FR-015) — described once in info.description.
+paths:
+  /api/v1/auth/sign-in:
+    post:
+      operationId: signIn
+      # Only the new response is shown; 200, 400, 401, 404 and default are unchanged.
+      responses:
+        "429":
+          $ref: "#/components/responses/TooManyAttempts"
+  /api/v1/overspend-configuration:
+    put:
+      operationId: saveOverspendConfiguration
+      summary: >-
+        Change the setting new budgets start with and whether approving is refused while an activity's line items
+        exceed its planned cost (needs settings.manage)
+      # requestBody and responses unchanged in shape; the input gains approvalOverPlannedCost.
+components:
+  responses:
+    TooManyAttempts:
+      description: >-
+        Too many failed sign-ins for this e-mail (5) or from this client (20) within 15 minutes; refused for 15 minutes
+        from the failure that reached the limit, also with the right password (too_many_attempts, FR-014).
+      headers:
+        Retry-After:
+          description: Seconds until sign-in may be tried again.
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    TooLarge:
+      description: The request body is larger than the operation's limit (too_large, FR-054).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    OverspendApprovalMode:
+      type: string
+      description: >-
+        What happens when someone approves an activity, a purchase request or its change while an activity's line
+        items exceed its planned cost (038 FR-018): warn the approver (default) or refuse the approval.
+      enum: [warn, refuse]
+    OverspendConfiguration:
+      type: object
+      additionalProperties: false
+      required: [defaultMode, approvalOverPlannedCost, version, updatedAt, updatedBy, canChange]
+      properties:
+        defaultMode:
+          $ref: "#/components/schemas/OverspendMode"
+        approvalOverPlannedCost:
+          $ref: "#/components/schemas/OverspendApprovalMode"
+        version:
+          type: integer
+          minimum: 1
+        updatedAt:
+          description: Null while the setting has never been saved (038 FR-057).
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        updatedBy:
+          oneOf:
+            - $ref: "#/components/schemas/ActorRef"
+            - type: "null"
+        canChange:
+          $ref: "#/components/schemas/ActionAvailability"
+    OverspendConfigurationInput:
+      type: object
+      additionalProperties: false
+      required: [version, defaultMode]
+      properties:
+        version:
+          type: integer
+        defaultMode:
+          type: string
+        approvalOverPlannedCost:
+          description: Absent keeps the stored value.
+          type: string
+    ActivityOverage:
+      type: object
+      additionalProperties: false
+      description: >-
+        An activity of the round whose line items exceed its planned cost (negative unassigned planned cost, domain
+        model §4.3), in the plan currency (038 FR-019, FR-021).
+      required: [activity, overBy]
+      properties:
+        activity:
+          $ref: "#/components/schemas/RecordRef"
+        overBy:
+          $ref: "#/components/schemas/Money"
+    # Shown as additions to existing schemas:
+    ActivityApprovalAddition:
+      type: object
+      description: Added to ActivityApproval and PurchaseRequestApproval (required, empty when none).
+      properties:
+        overPlannedCost:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityOverage"
+    PurchaseRequestSubmissionAddition:
+      type: object
+      description: Added to PurchaseRequestSubmission (required); the same outcomes as getApprovalSubmission (038 FR-027).
+      properties:
+        outcomes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalSubmissionLevel"
+    HomeActivityCountsAddition:
+      type: object
+      description: >-
+        Added to HomeActivityCounts (required): the plan years the count covers — the earliest plan year of the
+        person's activities and at most four more; All work opens on them (038 FR-032). Null when there are none.
+      properties:
+        yearFrom:
+          oneOf:
+            - type: integer
+            - type: "null"
+        yearTo:
+          oneOf:
+            - type: integer
+            - type: "null"
+    SpaPeriodsAddition:
+      type: object
+      description: >-
+        Added to SpaPeriods (required): the total by which activities' line items exceed their planned cost (038
+        FR-023); quarters + notScheduled − linesAbovePlannedCost = planned cost. notScheduled is never negative.
+      properties:
+        linesAbovePlannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        linesAbovePlannedCostTrace:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaContribution"
+    DashboardMonthsAddition:
+      type: object
+      description: >-
+        Added to DashboardMonths and BudgetByMonthRow (required) — how many activities in scope have line items above
+        their planned cost, so their months add up to more than it (038 FR-024).
+      properties:
+        negativeBalanceCount:
+          type: integer
+          minimum: 0
+    ErrorDetailCodesAddition:
+      type: string
+      description: Codes added to ErrorDetail.code by 038.
+      enum: [too_many_attempts, too_large]

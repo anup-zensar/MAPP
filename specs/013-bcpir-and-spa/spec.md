@@ -262,6 +262,9 @@ open a purchase request and raise a new one from an activity row.
 - **FR-017**: "Spend by quarter" MUST show, for each quarter of the plan's year, the planned cost allocated
   to it (D-336) and the actual spend posted in it, with a switch to months, and "Not yet scheduled" when not
   zero; periods plus Not yet scheduled MUST equal the planned cost.
+  *Amended by [038 FR-023](../038-qa-findings/spec.md) (D-357, QA M-2): Not yet scheduled is worked out per activity
+  and is never negative; line items above an activity's planned cost show as a row "Line items above planned cost",
+  so periods + Not yet scheduled − that row = planned cost.*
 - **FR-018**: "Spend by dimension" MUST show the planned cost by the dimension the person chooses (D-336),
   largest first, each with its share of the planned cost, "Not filled in" and "Not yet itemised" rows when
   not zero, and say when activities count in several rows.
