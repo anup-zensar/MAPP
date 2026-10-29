@@ -7,14 +7,23 @@ import (
 	"mapp/internal/platform/authz"
 )
 
-// Planning reads the plan (not_found when unseen) and runs the single operations, which refuse with *errs.Error.
+// Planning reads the plan (not_found when unseen), prepares the Writer of an import and deletes for its undo;
+// the operations refuse with *errs.Error.
 type Planning interface {
 	Plan(ctx context.Context, a actor.Actor, planID string) (Plan, error)
 	PlanFacts(ctx context.Context, planID string) (authz.PlanFacts, bool, error)
-	Create(ctx context.Context, a actor.Actor, r NewRecord) (string, error)
-	Update(ctx context.Context, a actor.Actor, c Change) error
+	Prepare(ctx context.Context, a actor.Actor, p Plan) (Writer, error)
 	Delete(ctx context.Context, a actor.Actor, level Level, id string) error
 	Exists(ctx context.Context, level Level, id string) (bool, error)
+}
+
+// Writer creates and updates the records of one import with the rules of the single operations, reading what
+// they share once (038 FR-008). A created record may have a provisional id until Flush, which stores what is
+// kept and returns the readable id of each provisional one; the applier flushes after each sheet.
+type Writer interface {
+	Create(ctx context.Context, a actor.Actor, r NewRecord) (string, error)
+	Update(ctx context.Context, a actor.Actor, c Change) error
+	Flush(ctx context.Context) (map[string]string, error)
 }
 
 type NewRecord struct {

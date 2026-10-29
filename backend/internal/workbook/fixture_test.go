@@ -49,6 +49,10 @@ func (f *fakePlanning) Update(_ context.Context, _ actor.Actor, c Change) error 
 	return nil
 }
 
+func (f *fakePlanning) Prepare(context.Context, actor.Actor, Plan) (Writer, error) { return f, nil }
+
+func (f *fakePlanning) Flush(context.Context) (map[string]string, error) { return nil, nil }
+
 func (f *fakePlanning) Delete(context.Context, actor.Actor, Level, string) error { return nil }
 
 func (f *fakePlanning) Exists(context.Context, Level, string) (bool, error) { return true, nil }
