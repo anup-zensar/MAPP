@@ -4,7 +4,6 @@ import "mapp/internal/platform/authz"
 
 func planRoutes() map[string]Rule {
 	return map[string]Rule{
-		// 004 Plans
 		"GET /api/v1/plan-defaults":                  need(authz.PlansCreate),
 		"GET /api/v1/plans":                          signedIn(), // filtered to the plans the person can see
 		"POST /api/v1/plans":                         inPlan(authz.PlansCreate),
@@ -22,27 +21,25 @@ func planRoutes() map[string]Rule {
 
 func campaignRoutes() map[string]Rule {
 	return map[string]Rule{
-		// 005 Campaigns and initiatives
 		"POST /api/v1/plans/{planId}/campaigns":               inPlan(authz.CampaignsEdit),
 		"GET /api/v1/campaigns/{campaignId}":                  view(),
 		"PATCH /api/v1/campaigns/{campaignId}":                inPlan(authz.CampaignsEdit),
 		"DELETE /api/v1/campaigns/{campaignId}":               inPlan(authz.CampaignsDelete),
-		"GET /api/v1/campaigns/{campaignId}/destinations":     viewAnd(authz.CampaignsEdit), // filtered to destinations with campaigns.edit
+		"GET /api/v1/campaigns/{campaignId}/destinations":     viewAnd(authz.CampaignsEdit),
 		"POST /api/v1/campaigns/{campaignId}/move":            inPlan(authz.CampaignsEdit),
-		"POST /api/v1/campaigns/{campaignId}/copy":            viewAnd(authz.CampaignsEdit), // the service: at the destination
+		"POST /api/v1/campaigns/{campaignId}/copy":            viewAnd(authz.CampaignsEdit),
 		"POST /api/v1/campaigns/{campaignId}/initiatives":     inPlan(authz.CampaignsEdit),
 		"GET /api/v1/initiatives/{initiativeId}":              view(),
 		"PATCH /api/v1/initiatives/{initiativeId}":            inPlan(authz.CampaignsEdit),
 		"DELETE /api/v1/initiatives/{initiativeId}":           inPlan(authz.CampaignsDelete),
-		"GET /api/v1/initiatives/{initiativeId}/destinations": inPlan(authz.CampaignsEdit), // campaigns of the same plan
+		"GET /api/v1/initiatives/{initiativeId}/destinations": inPlan(authz.CampaignsEdit),
 		"POST /api/v1/initiatives/{initiativeId}/move":        inPlan(authz.CampaignsEdit),
-		"POST /api/v1/initiatives/{initiativeId}/copy":        inPlan(authz.CampaignsEdit), // into a campaign of the same plan
+		"POST /api/v1/initiatives/{initiativeId}/copy":        inPlan(authz.CampaignsEdit),
 	}
 }
 
 func activityRoutes() map[string]Rule {
 	return map[string]Rule{
-		// 006 Activities
 		"GET /api/v1/initiatives/{initiativeId}/activity-form": inPlan(authz.ActivitiesEdit),
 		"POST /api/v1/initiatives/{initiativeId}/activities":   inPlan(authz.ActivitiesEdit),
 		"GET /api/v1/plans/{planId}/activities":                view(),
@@ -50,15 +47,14 @@ func activityRoutes() map[string]Rule {
 		"PATCH /api/v1/activities/{activityId}":                inPlan(authz.ActivitiesEdit),
 		"DELETE /api/v1/activities/{activityId}":               inPlan(authz.ActivitiesDelete),
 		"GET /api/v1/activities/{activityId}/form":             inPlan(authz.ActivitiesEdit),
-		"GET /api/v1/activities/{activityId}/destinations":     inPlan(authz.ActivitiesEdit), // initiatives of the same plan
+		"GET /api/v1/activities/{activityId}/destinations":     inPlan(authz.ActivitiesEdit),
 		"POST /api/v1/activities/{activityId}/move":            inPlan(authz.ActivitiesEdit),
-		"POST /api/v1/activities/{activityId}/copy":            inPlan(authz.ActivitiesEdit), // into an initiative of the same plan
+		"POST /api/v1/activities/{activityId}/copy":            inPlan(authz.ActivitiesEdit),
 	}
 }
 
 func lineItemRoutes() map[string]Rule {
 	return map[string]Rule{
-		// 007 Line items
 		"GET /api/v1/activities/{activityId}/line-items":              view(),
 		"POST /api/v1/activities/{activityId}/line-items":             inPlan(authz.ActivitiesEdit),
 		"GET /api/v1/activities/{activityId}/line-items/form-options": inPlan(authz.ActivitiesEdit),
@@ -71,10 +67,9 @@ func lineItemRoutes() map[string]Rule {
 
 func bulkRoutes() map[string]Rule {
 	return map[string]Rule{
-		// 012 Bulk actions and import (deferred; declared so the table is complete when they are built)
 		"GET /api/v1/bulk-actions/fields":               signedIn(),
-		"POST /api/v1/bulk-actions/targets":             signedIn(), // filtered
-		"POST /api/v1/bulk-actions/preview":             custom(),   // each target like its single operation
+		"POST /api/v1/bulk-actions/targets":             signedIn(),
+		"POST /api/v1/bulk-actions/preview":             custom(), // each target like its single operation
 		"POST /api/v1/bulk-actions":                     custom(),
 		"POST /api/v1/bulk-actions/{bulkActionId}/undo": custom(),
 		"GET /api/v1/plans/{planId}/imports":            view(),

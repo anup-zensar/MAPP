@@ -97,8 +97,7 @@ func TestView_FR019_TheActivityRows(t *testing.T) {
 	}
 }
 
-// TestTraceSums is SC-002: every figure's contributing activities add up to it, whatever the data.
-func TestTraceSums(t *testing.T) {
+func TestTraceSums_FR007_SC002_EveryListAddsUpToItsFigure(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 	f.record("A-2").PlannedCost = ptr(amt(t, "61234.57"))
@@ -123,5 +122,19 @@ func TestTraceSums(t *testing.T) {
 	}
 	for _, r := range v.Dimension.Rows {
 		check(r.Label, r.Amount, r.Trace)
+	}
+}
+
+// The plan reader returns live records only; GSAP keeps the transactions of records moved to the recycle bin.
+func TestView_FR011_TransactionsOfRecordsInTheRecycleBinAreLeftOut(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	f.finance.spend["L-4"] = map[string]Spend{"2026-08": {Committed: amt(t, "7000.00"), Actual: amt(t, "7000.00")}}
+	f.finance.spend["L-9"] = map[string]Spend{"2026-09": {Committed: amt(t, "9000.00"), Actual: amt(t, "9000.00")}}
+	v := f.view(t, Query{})
+	got := []string{moneyText(v.Headline.Committed), moneyText(v.Headline.ActualSpend), moneyText(v.Periods.Quarters[2].Actual)}
+	want := []string{"200,000.00 USD", "150,000.00 USD", "150,000.00 USD"}
+	if diff := cmp.Diff(want, got); diff != "" || len(v.Activities) != 2 || len(v.Headline.ActualSpendTrace) != 1 {
+		t.Errorf("figures (-want +got):\n%s activities %d, trace %+v", diff, len(v.Activities), v.Headline.ActualSpendTrace)
 	}
 }

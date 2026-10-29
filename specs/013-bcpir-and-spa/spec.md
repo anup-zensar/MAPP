@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-18 · **Re-baselined**: 2026-10-28 on Shell's specification 006 (decision D-333)
 
-**Status**: Clarified (documented decisions D-334–D-337; ready to plan)
+**Status**: Built (2026-10-29; documented decisions D-334–D-337)
 
 **Input**: Decision D-333 (constitution 4.6.0): "the SP&A plan view and the BCPIR marker and filter of
 Shell's spec 006 (013, re-baselined on it; the BCPIR view's return figures wait for performance data, which
