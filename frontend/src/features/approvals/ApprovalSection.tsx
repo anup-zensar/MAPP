@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { Card } from '@/ui/Card/Card';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
@@ -12,6 +13,7 @@ import type { ApprovalActivity, ShowSubmitProblems } from './approval-types';
 import { DecisionButtons, OwnerDecisionMenu } from './DecisionActions';
 import { decisionRole } from './decision-role';
 import { declineBoxText } from './decision-messages';
+import { approveRefusal, OverPlannedCostAlert } from './OverPlannedCost';
 import { RecallButton } from './RecallButton';
 import { SubmitButton } from './SubmitButton';
 import styles from './ApprovalSection.module.css';
@@ -72,6 +74,8 @@ function ApprovalBody({ approval, activity, onShowProblems }: ApprovalBodyProps)
     !actions.recall.available ? actions.recall.reason : '',
   ].filter((reason, index, all) => reason !== '' && all.indexOf(reason) === index);
   const canSubmit = actions.submit.available || actions.resubmit.available;
+  const refusal = approveRefusal(actions);
+  const refusalId = useId();
 
   return (
     <div className={styles.body}>
@@ -95,18 +99,20 @@ function ApprovalBody({ approval, activity, onShowProblems }: ApprovalBodyProps)
         </div>
       )}
 
+      {actions.approve.available && <OverPlannedCostAlert overages={approval.overPlannedCost} />}
+
       {(canSubmit || role !== 'none' || actions.recall.available) && (
         <div className={styles.actions}>
           {canSubmit && (
             <SubmitButton activity={current} onShowProblems={onShowProblems} variant="secondary" />
           )}
-          {role === 'decide' && <DecisionButtons approval={approval} />}
+          {role === 'decide' && <DecisionButtons approval={approval} refusalId={refusalId} />}
           {actions.recall.available && <RecallButton approval={approval} />}
           {role === 'owner' && <OwnerDecisionMenu approval={approval} />}
         </div>
       )}
       {reasons.map((reason) => (
-        <p key={reason} className={styles.reason}>
+        <p key={reason} id={reason === refusal ? refusalId : undefined} className={styles.reason}>
           {reason}
         </p>
       ))}

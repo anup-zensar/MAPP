@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { components } from '@/api/generated/schema';
 import { expectNoAxeViolations } from '@/testing/axe';
@@ -25,6 +25,15 @@ function configuration(
   };
 }
 
+const BUDGETS = 'New budgets start with';
+const APPROVAL =
+  "When an activity's line items exceed its planned cost, approving it or its purchase requests";
+
+/** The radio `name` of the choice `legend`: the two choices both start with "Warn" and "Refuse". */
+function choice(legend: string, name: RegExp): HTMLElement {
+  return within(screen.getByRole('group', { name: legend })).getByRole('radio', { name });
+}
+
 function renderPage(handlers: Parameters<typeof mockApi>[0]) {
   const api = mockApi(handlers);
   return { api, ...renderWithProviders(<OverspendSettingsPage />, { user: testUser() }) };
@@ -46,22 +55,25 @@ describe('037 FR-006 FR-007: Settings › Overspend control', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeVisible();
   });
 
-  it('says existing budgets keep theirs, and saves Refuse with the version', async () => {
+  it('says existing budgets keep theirs, and saves Refuse with the version (038 FR-018)', async () => {
     const { api, user } = renderPage([
       reply(GET, { body: configuration() }),
       reply(PUT, { body: configuration({ defaultMode: 'refuse', version: 2 }) }),
     ]);
 
-    expect(await screen.findByRole('radio', { name: /^Warn/ })).toBeChecked();
+    await screen.findByRole('group', { name: BUDGETS });
+    expect(choice(BUDGETS, /^Warn/)).toBeChecked();
     expect(screen.getByText('Existing budgets keep their own setting.')).toBeVisible();
     expect(screen.getByText(/Last changed by Alex Morgan/)).toBeVisible();
     await expectNoAxeViolations();
 
-    await user.click(screen.getByRole('radio', { name: /^Refuse/ }));
+    await user.click(choice(BUDGETS, /^Refuse/));
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText('Overspend control saved.')).toBeVisible();
-    expect(api.bodiesOf(PUT)).toEqual([{ version: 1, defaultMode: 'refuse' }]);
+    expect(api.bodiesOf(PUT)).toEqual([
+      { version: 1, defaultMode: 'refuse', approvalOverPlannedCost: 'warn' },
+    ]);
   });
 
   it('is read-only with the reason for a person who may not change Settings', async () => {
@@ -69,7 +81,7 @@ describe('037 FR-006 FR-007: Settings › Overspend control', () => {
     renderPage([reply(GET, { body: configuration({ canChange: { available: false, reason } }) })]);
 
     expect(await screen.findByText(reason)).toBeVisible();
-    expect(screen.getByRole('radio', { name: /^Warn/ })).toBeDisabled();
+    expect(choice(BUDGETS, /^Warn/)).toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument();
     await expectNoAxeViolations();
   });
@@ -85,12 +97,59 @@ describe('037 FR-006 FR-007: Settings › Overspend control', () => {
       }),
     ]);
 
-    await user.click(await screen.findByRole('radio', { name: /^Refuse/ }));
+    await screen.findByRole('group', { name: BUDGETS });
+    await user.click(choice(BUDGETS, /^Refuse/));
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       /Not saved — Daniel Okoro changed this setting/,
     );
-    expect(screen.getByRole('radio', { name: /^Refuse/ })).toBeChecked();
+    expect(choice(BUDGETS, /^Refuse/)).toBeChecked();
+  });
+});
+
+describe('038 FR-018, FR-057 (M-18, L-16): approving over planned cost; never changed', () => {
+  it('offers Warn the approver (default) and Refuse approval, and saves the choice', async () => {
+    const { api, user } = renderPage([
+      reply(GET, { body: configuration() }),
+      reply(PUT, { body: configuration({ approvalOverPlannedCost: 'refuse', version: 2 }) }),
+    ]);
+
+    await screen.findByRole('group', { name: APPROVAL });
+    expect(choice(APPROVAL, /^Warn the approver/)).toBeChecked();
+    expect(choice(APPROVAL, /^Refuse approval/)).not.toBeChecked();
+    await expectNoAxeViolations();
+
+    await user.click(choice(APPROVAL, /^Refuse approval/));
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(await screen.findByText('Overspend control saved.')).toBeVisible();
+    expect(api.bodiesOf(PUT)).toEqual([
+      { version: 1, defaultMode: 'warn', approvalOverPlannedCost: 'refuse' },
+    ]);
+  });
+
+  it('shows the stored choice read-only to a person who may not change Settings', async () => {
+    const reason = "Changing Settings isn't part of your role. Ask Alex Morgan.";
+    renderPage([
+      reply(GET, {
+        body: configuration({
+          approvalOverPlannedCost: 'refuse',
+          canChange: { available: false, reason },
+        }),
+      }),
+    ]);
+
+    await screen.findByRole('group', { name: APPROVAL });
+    expect(choice(APPROVAL, /^Refuse approval/)).toBeChecked();
+    expect(choice(APPROVAL, /^Refuse approval/)).toBeDisabled();
+    expect(choice(APPROVAL, /^Warn the approver/)).toBeDisabled();
+  });
+
+  it('says "Not changed since SP&A One was set up" when it was never saved', async () => {
+    renderPage([reply(GET, { body: configuration({ updatedAt: null, updatedBy: null }) })]);
+
+    expect(await screen.findByText('Not changed since SP&A One was set up')).toBeVisible();
+    expect(screen.queryByText(/Last changed by/)).not.toBeInTheDocument();
   });
 });

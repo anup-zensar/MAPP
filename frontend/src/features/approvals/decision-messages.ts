@@ -1,5 +1,6 @@
 import type { ApiError } from '@/api/errors';
 import type { components } from '@/api/generated/schema';
+import { formatMoneyText } from '@/format/decimal';
 import { formatDate, formatTime, localDate } from '@/format/intl';
 import type { DateFormat } from '@/format/intl';
 import { actorText, capitalise, names } from './messages';
@@ -108,4 +109,12 @@ function when(timestamp: string, dateFormat?: DateFormat): string {
   const time = `at ${formatTime(timestamp)}`;
   const day = localDate(timestamp);
   return day === localDate(new Date()) ? time : `on ${formatDate(day, dateFormat)} ${time}`;
+}
+
+/** "Line items of activity 'Launch film' are 25,000.00 USD above its planned cost" (038 FR-019). */
+export function overPlannedCostText({
+  activity,
+  overBy,
+}: components['schemas']['ActivityOverage']): string {
+  return `Line items of activity '${activity.name}' are ${formatMoneyText(overBy)} above its planned cost`;
 }
