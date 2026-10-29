@@ -207,8 +207,9 @@ The marking of every field is in [field-catalogue.md](field-catalogue.md).
 ## 4. Money rules
 
 All money is an exact decimal amount **with a currency**. MAPP's **base currency is USD** (decision
-D-010): budgets and planned costs are stored in USD; a line item may be entered in a local currency and
-is converted to USD. Users can choose a **display currency**; every amount on screen is converted for
+D-010): totals across plans are calculated in USD. Since feature 016 every plan has a **plan currency**
+in which its budgets and planned costs are typed (§4.7); a line item may be entered in a local currency
+and is converted. Users can choose a **display currency**; every amount on screen is converted for
 display and labelled with its currency.
 
 ### 4.1 Budget flows down (marketing "plan budget")
@@ -304,6 +305,34 @@ request card with its dates, its source and the HX key (§2.4). The purchase-req
 and an activity are live since feature 032 (§2.4a), and the simulated GSAP's purchase orders count as
 Committed since feature 033.
 
+### 4.7 Plan currency and dated exchange rates (feature 016)
+
+- A plan's budget, its campaigns' and initiatives' budgets and its activities' planned costs are typed and
+  stored in the **plan currency** (USD by default). It can change only while nothing in the plan has an
+  amount in it.
+- A currency keeps a **rate history**: rates per 1 USD, each valid from a date. A conversion uses the
+  latest rate dated on or before today (the **current rate**); a future rate changes nothing before its
+  date, and the last current rate cannot be deleted. Rates are added in Settings or imported from the
+  simulated **GSAP rate file**, which is checked before anything is saved.
+- Any amount converts to any currency through USD (`Convert`): from its currency to USD, then to the other,
+  rounded half up to the cent once. The **unassigned planned cost** of an activity is worked out in the plan
+  currency (§4.3); line items in other currencies are converted at the current rate.
+
+### 4.8 Budget by month (feature 016)
+
+A plan, campaign or initiative budget may be **phased**: None, Evenly (the remainder in the last month) or
+custom amounts per month of the plan's year. The months must add up to the budget; while they do not, the
+card says by how much ("Budget by month adds up to 590,000.00 GBP, not the budget 600,000.00 GBP"). Removing
+the budget removes its phasing. Budget & cost can compare each period's planned cost with the phased budget.
+
+### 4.9 Global budgets (feature 014)
+
+A **global budget** is money for a year owned by someone who manages budgets for all markets. It is shared
+out by **allocations** to plans of the same year: an allocation *is* the plan's budget, which the plan's
+owner sees but cannot change ("Allocated from '<global budget>' — ask <owner> to change it."). The global
+budget shows how much is allocated, unallocated (red, "Over-allocated by X", when negative) and planned;
+people see only the allocations to plans they can see, and the rest as one "Other markets" row.
+
 ---
 
 ## 5. Other rules
@@ -334,11 +363,14 @@ Committed since feature 033.
 | **Model** | Name, INQ→MQL rate, MQL→deal rate, average deal size (USD), allowed activity types, active | Plan (required), activity goals, activity type list |
 | **Activity type** | Name, optional default planned cost (USD), active | Activity |
 | **Custom attribute** | Label, level (plan · campaign · initiative · activity · line item), type (single choice · multiple choice · multiple choice with % split · yes/no · text · long text · number), options, marking (optional / needed to publish / needed to submit), business-unit condition, parent attribute for dependent options, display order, active | Every level's form |
-| **Currency** | Code (ISO), name, symbol, rate = units per 1 USD (USD fixed at 1), active | Line items, display currency |
+| **Currency** | Code (ISO), name, symbol, active, and a **rate history** of dated rates per 1 USD (USD fixed at 1) whose latest rate on or before today is the current rate (§4.7) | Plan currency, line items, display currency |
 | **Finance budget item** | Budget year, budget name (e.g. "2026 Lubricants Budget"), item name, code, active. A stand-in list until the Finance module exists. | Line item link, plan default finance budget |
 | **Approval workflow** | Name, what it approves (object type: activity · purchase request · modified purchase request, chosen at creation and fixed once used), ordered levels, active; remind after (1–60 days) and escalate after (1–90 days, more than remind after), both optional. Each level: who approves (named people · the record owner · the owner's line manager · the holders of a role that approves, for the plan · the person named on the record, for purchase requests the MoA approver), any one or all must approve (one approver for the owner, the line manager and the named person), optional "only needed when" and "approve automatically when" conditions (planned cost — for purchase requests the amount — at least / below in USD; for activities also business unit is one of, activity type is one of; the parts combine with AND), and a backup approver (required on every level when escalation is on) | Activity, purchase request (feature 032) |
 | **Person** | Name, e-mail, job title, teams, line manager (optional; never oneself, no loops) | Owners, approvers, "line manager" approval levels, demo sign-in |
-| **Team** | Name, members, colour (assigned automatically from the chart palette, changeable) | Plan teams, owner choice, "My teams" filter, coloured team pills |
+| **Team** | Name, members, colour (assigned automatically from the chart palette, changeable) | Plan teams, owner choice, "My teams" filter, coloured team pills, role scopes (a market is a team) |
+| **Role** (feature 014) | Name, description, permissions from the fixed list of 014 Table A, default scope; five built in (Administrator, Global planner, Planner, Approver, Viewer); the Administrator role holds every permission and cannot change | Role assignments: a person's roles, each for All markets, My teams or Chosen teams |
+| **Access rules** (feature 014) | "Nobody approves an activity they own or submitted" (on by default) and the role new people get (Viewer) | Approvals, new people |
+| **Field help** (feature 016) | One help text (0–300 characters, plain text) per built-in field and calculated value; MAPP supplies a default, an administrator may edit or reset it; empty hides the ⓘ | Every form, details page and summary card |
 
 Configuration records are never hard-deleted while in use: they are set **inactive** (no longer offered
 for new choices, existing values kept and labelled "(inactive)").
@@ -355,19 +387,29 @@ for new choices, existing values kept and labelled "(inactive)").
 | **Notification** | In-app message to a person about one record of one type, e.g. "Activity A-1042 is waiting for your approval" or "Purchase request approved", also for records approved automatically, approval reminders and escalations. |
 | **Approval delegation** | A person's approvals handed to a delegate (who can approve) for a date range of at most 90 days, with an optional note; planned, current, ended or cancelled; never deleted. While current, the delegate approves the person's waiting levels "as delegate of" them. |
 | **Saved view** | A user's named combination of filters, columns and view type on the planning views. |
+| **Exchange rate** (feature 016) | One rate of a currency per 1 USD, valid from a date, with its source (typed or a GSAP rate import) and who recorded it. |
+| **Rate import** (feature 016) | One import of the simulated GSAP rate file: file name, who, when, and how many rates were added, skipped or refused. Log only. |
+| **Global budget** and **Budget allocation** (feature 014) | Money for a year and the parts of it given to plans (§4.9); deleted to the recycle bin like any record. |
 
 ---
 
-## 8. What changes when real sign-in and roles arrive (later)
+## 8. Who may see and do what (feature 014)
 
-- Plans become visible only to members of the plan's teams (Shell's rule). Today a **My teams / All
-  plans** switch on the Plans list shows this without enforcing it.
-- Approve/decline is limited on the server (feature 017): the waiting approvers of the current level, their
-  current delegates, the backup approver once the level is escalated, or someone allowed to decide on
-  behalf. While the access rule "Nobody approves an activity they own or submitted" is on, the owner and
-  the submitter can never decide and are left out when approvers are resolved (segregation of duties). The
-  history records the capacity (as delegate of, as backup approver, on behalf of).
-- Line managers are kept in MAPP today; later they come from Entra ID. Reminders and escalations run
-  when someone allowed to create and change approval workflows runs them (a job endpoint); later a
+- Every action needs its permission of 014 Table A, given by a person's **roles**; each role assignment has
+  a **scope**: All markets, My teams (the person's teams, as they are now) or Chosen teams. The API checks
+  every request and refuses an operation without a rule (fail closed).
+- A person sees a plan and everything in it only when a role gives them "View plans" for it or they own it;
+  they also see an activity they own or are named to approve. A record outside their access looks exactly
+  like a missing one; 403 refuses only an action on a record they can see, with the reason.
+- Screens follow the API's decisions: where a person may change nothing, one **View only** note names their
+  roles and the administrators to ask; where they may change some things, an action they may not take is
+  shown disabled with its reason (D-352).
+- Approve/decline is limited on the server (feature 017): the waiting approvers of the current level who hold
+  "Approve or decline when named as an approver", their current delegates, the backup approver once the level
+  is escalated, or someone allowed to decide on behalf. While the access rule "Nobody approves an activity
+  they own or submitted" is on, the owner and the submitter never decide and are left out when approvers are
+  resolved (segregation of duties). The history records the capacity (as delegate of, as backup approver, on
+  behalf of). A role changed in Settings changes who may approve at once.
+- Sign-in stays a demo until Microsoft Entra ID; line managers are kept in MAPP and later come from Entra ID.
+  Reminders and escalations run when someone allowed to change approval workflows runs them; later a
   scheduler runs them and notifications are also sent by e-mail.
-- Permissions per level (create/edit/delete) come from roles mapped to Shell's 19 Hive9 roles.

@@ -374,3 +374,4 @@ its amount (confirmation, activity becomes *Created*), duplicate it and delete t
   are future features (D-008).
 - No permissions in this phase: every signed-in user can do everything here (D-004); every change records
   the actor.
+- Since feature 014, who may see and change these records follows roles and team scopes (014 Table A and Table C; 014 FR-041).

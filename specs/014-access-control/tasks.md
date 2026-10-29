@@ -261,7 +261,7 @@ built with 012.
 
 ## Phase 7: Documents and checks
 
-- [ ] T063 [P] Prepare, for the consolidation step (do not edit `docs/sdd/decision-log.md`): ADR-0008 "Role-based
+- [x] T063 [P] Prepare, for the consolidation step (do not edit `docs/sdd/decision-log.md`): ADR-0008 "Role-based
   access with team scopes" (`docs/architecture/adr/0008-role-based-access.md`); constitution 1.1.0 wording
   (D-239, done once by D-308); `docs/product/domain-model.md` §8 rewritten as current rules and §6 rows Role, Global budget;
   `docs/product/demo-users-and-data.md` Roles column and the global budget; `docs/product/glossary.md` (Permission,
@@ -269,6 +269,11 @@ built with 012.
   no-access page); one sentence pointing to 014 in 002 FR-008, 003 FR-026–FR-027, 004 FR-004 and FR-032, 005
   FR-031, 006 and 007 Assumptions, 008 FR-017 and FR-021, 009 and 011 Assumptions (FR-041);
   `docs/sdd/plan-module-build.md` rows for 014.
+  *Done 2026-10-29:* ADR-0008 was already in `docs/architecture/adr/`; domain model §4.9, §6 (Role, Access rules),
+  §7 (Global budget and allocation) and §8 rewritten as current rules; demo-users-and-data (roles, global budget);
+  glossary (Permission, Role, Scope, Market, Global budget, Allocation, View only); design system §5.6 (ViewOnlyNote,
+  NoAccess); the 014 pointer in 002 FR-008, 003 FR-026/FR-027, 004 FR-004/FR-032, 005 FR-031, 008 FR-017/FR-021 and
+  the Assumptions of 006, 007, 009 and 011; build guide rows for 014.
 - [ ] T064 Checks: backend `gofmt -l .` prints nothing, `go vet ./...`, `go test ./...`; frontend `npm run check`;
   Playwright suite (all journeys) green; tick the tasks.
 

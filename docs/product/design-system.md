@@ -564,6 +564,9 @@ next to the written name, it has no contrast requirement.
   "$0.00"; a short reason may follow in `--ink-2` ("— · Nothing planned yet").
 - Percentages without a space: "38%" (UK style); shares in the split editor "33.33%".
 - Whole numbers grouped: "1,250".
+- **An amount in another currency than the reader's** (feature 016) shows as an `AmountPair`: the amount in
+  its own currency in full, then a muted "≈ 6,645.57 USD" in the display currency with a `RateTip` ⓘ ("1 USD =
+  0.79 GBP · rate of 19 Oct 2026 · GSAP import"); one amount only when both currencies are the same.
 
 ### 4.5 Dates and times
 
@@ -860,6 +863,14 @@ date input, which shows "12/31/2026" in US-English browsers (UI audit X-15, C-04
 "%" unit); under it the running total in 14 bold: "100.00% — complete" (`--success-text`), "90.00% — 10.00%
 left" (`--ink-2`), "110.00% — 10.00% too much" (`--danger-text`); **Split evenly** as a secondary `sm` button.
 
+**`YearRangeField`** (feature 016) — two selects, **From** and **To**, that keep From ≤ To, at most five years
+apart on All work ("Choose at most 5 years."), with **All years** where a list allows it (Plans).
+
+**Budget by month card** (feature 016) — on the plan page and the campaign and initiative panels: the phasing
+(None · Evenly · Custom months) with a period table and the running total ("100,000.00 of 600,000.00
+phased — 500,000.00 left"); **Edit** opens the phasing editor in a side panel; a mismatch is a warning, not
+a block.
+
 **`ShellAttributeFields`** — the attribute sections in the order of the form definition, each field by the
 choice rules above; dependent fields stay visible but locked with a reason until their parent is set; the
 Settings preview highlights one attribute with `--hover`, its secondary text in Text Strong (was a
@@ -906,6 +917,16 @@ reason), failed saves, "view only" notices, "Shown because the plan's business u
 sits on the grey page without a card, §3.1); the action. **The action is a secondary button when the
 page header already holds the same primary action** ("New plan"), and the primary only when the page has
 no other (§11, rule 1).
+
+**`ViewOnlyNote`** (feature 014) — an info `InlineAlert` with a lock under the page header, once per page,
+where the person may change nothing: "View only — your role (Viewer) lets you see this plan but not change
+it. Ask an administrator (Alex Morgan) if you need to change it." (Settings: "View only — only
+administrators change Settings. Ask … if something needs to change."). Menus on that page leave out what the
+person may not do; elsewhere such an action stays, disabled with the server's reason (D-352).
+
+**`NoAccess`** (feature 014) — the no-access page at the address of a page or form the person's roles do
+not open: a shield icon, "No access" as the title, the server's sentence and **Go to Home**. A record
+outside the person's access shows the not-found page instead, so nothing of it is revealed.
 
 **`ErrorState`** — the same layout with a white alert icon on a 48 px `--danger-bg` circle (a cloud icon when offline),
 the plain-language message as `role="alert"` and **Try again** (secondary, with a refresh icon). No

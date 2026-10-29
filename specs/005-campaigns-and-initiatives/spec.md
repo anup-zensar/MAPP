@@ -307,6 +307,7 @@ campaigns' totals; copy "Helix launch" and compare the copy with the original.
   actor (feature 001); **View history** opens the record's history (feature 011).
 - **FR-031**: MAPP MUST NOT restrict these actions by role (D-004); Shell's role rules for creating,
   editing, moving and deleting campaigns and initiatives are enforced when roles arrive.
+  *Since feature 014 this rule follows roles: every action needs its permission of 014 Table A in the plan's scope (014 FR-041).*
 
 ### Key Entities *(include if feature involves data)*
 

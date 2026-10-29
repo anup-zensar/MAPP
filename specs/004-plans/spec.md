@@ -199,6 +199,7 @@ check the dialog's counts, choose Undo and confirm everything is back with the s
   it is sorted by year (newest first), then name; filters and layout are remembered per user.
 - **FR-004**: **My teams** MUST show plans with one of the user's teams; it never stops anyone opening a
   plan (Q-006), and **All plans** is the default.
+  *Since feature 014 this rule follows roles: every action needs its permission of 014 Table A in the plan's scope (014 FR-041).*
 
 **Create plan**
 
@@ -309,6 +310,7 @@ check the dialog's counts, choose Undo and confirm everything is back with the s
 - **FR-032**: MAPP MUST NOT restrict these actions by role or team (D-004). Shell's rules — plans
   visible only to their teams' members; creating, publishing, unpublishing and deleting plans limited to
   permitted roles — are enforced when roles arrive.
+  *Since feature 014 this rule follows roles: every action needs its permission of 014 Table A in the plan's scope (014 FR-041).*
 
 ### Key Entities *(include if feature involves data)*
 

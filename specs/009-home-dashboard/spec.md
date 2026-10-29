@@ -306,3 +306,4 @@ approval rounds and the activity log from features 001 and 004–008.
 - Line-item problems appear through their activity ("n items below need attention"), not as separate
   items, even when a line item has another owner.
 - Charts, saved dashboards, AI analysis and a floating assistant are out of scope.
+- Since feature 014, who may see and change these records follows roles and team scopes (014 Table A and Table C; 014 FR-041).

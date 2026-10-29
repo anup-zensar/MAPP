@@ -37,6 +37,8 @@ Per feature, one **backend** agent and one **frontend** agent work in parallel f
 | 010 All work | `allwork`, `platform/sheet` | `features/all-work/`, `lib/download.ts` | `saved_views` SV, `all_work_preferences` | AllWork…, SavedView… and the AllWork* parameters |
 | 011 Activity log and recycle bin | `history` (query, bin, purge, preview) | `features/activity-log/`, `features/recycle-bin/` | `activity_log`, `recycle_bin` (001); preference `historyIncludeInside` | ActivityLog…, RecycleBinListItem, RestorePreview…, PurgeResult, EmptyRecycleBin…; extends 001 schemas (optional fields, D-191) |
 | 012 Bulk actions and import | `bulk`, `imports`; `history` (`WithNote`), `platform/web` (`ReadJSONUpTo`), `platform/sheet` (readers) | `features/bulk/`, `features/imports/` | `bulk_actions` BLK, `imports` IMP | Bulk…, Import…, BulkActionId, ImportId |
+| 014 Access control and global budgets | `platform/authz` (permissions, grants, checks, messages), `access` (roles, assignments, rules, route table, middleware), `budget` (global budgets, allocations); hooks in `plan`, `campaign`, `activity`, `lineitem`, `approval`, `history`, `people` | `session/access.ts`, `session/gate-action.ts`, `session/refusal-text.ts`, `session/RequirePermission.tsx`, `ui/ViewOnlyNote/` (+ `view-only-area.tsx`), `ui/NoAccess/`, `features/people/access/`, `features/global-budgets/` | `roles` RL, `role_assignments` RA, `access_rules`, `global_budgets` GB, `budget_allocations` BA | Permission…, Role…, MyAccess, ActionAvailability, PlanAccess, ContainerAccess, ActivityAccess, LineItemAccess, BinEntryAccess, GlobalBudget…, Allocation…; error code `forbidden` |
+| 016 Planning and currency extensions | `platform/money` (`Convert`), `rollup` (phasing), `settings` (rates, rate import, field help), `allwork` (attribute filters, breakdown); plan currency, plan type, phasing and split in `plan`, `campaign`, `activity`, `lineitem` | `features/settings/currencies/` (rate history, Import GSAP rates), `features/settings/field-help/`, `features/plans/phasing/`, `features/plans/PlannedCostByCard.tsx`, `features/activities/SplitActivityDialog.tsx`, `features/all-work/` (Breakdown, More filters, year range) | `exchange_rates` XR, `rate_imports` RI, `field_help` | ExchangeRate…, RateImport…, FieldHelp…, PlanType, Phasing…, Split…, AllWorkBreakdown… |
 
 Error codes added once in the merged contract and in `frontend/src/api/errors.ts`: `in_use`, `cannot_restore` (002),
 `not_allowed` (003), `not_ready` + `missing` (004), `parent_deleted_permanently` (011). Go constants are added by the owner
@@ -81,6 +83,8 @@ of the earlier features when they are built.
 | 010 | `lib/download.ts` |
 | 011 | HistorySection (`features/activity-log/`) |
 | 012 | SelectionBar; selection props on TreeTable and AllWorkGrid |
+| 014 | ViewOnlyNote + ViewOnlyArea, NoAccess, RequirePermission, `useAccess`, `gateItem` / `allows` / `moreItemFor`, `refusalText`, `TeamPicker.offered` |
+| 016 | AmountPair (`features/plans/`), RateTip, MoneyPair and `rates.ts` (`features/line-items/`), YearRangeMenu (`features/all-work/`), `useFieldHelp` and FieldHelpTip (`features/settings/field-help/`, exported by `features/settings`), BudgetByMonthCard (`features/plans/phasing/`), BreakdownTable and GroupingPickers (`features/all-work/`) |
 
 Not built (draft duplicates): FilterPills, PillFilter, SegmentedControl → SegmentedFilter · PageHeader breadcrumbs →
 Breadcrumb · SelectField, MultiChoiceField, YesNoField, NumberField → ChoiceField, CheckboxField, DecimalField · MoneyInput →
@@ -98,6 +102,8 @@ MoneyField · AttributeFields, AttributeValueList/View → ShellAttributeFields,
 | 007 | `/activities/:activityId/line-items/new`, `/line-items/:lineItemId`, `/line-items/:lineItemId/edit` |
 | 008 | `/approvals` (`?tab=`, `?activity=`), `/settings/approval-workflows`, `/settings/approval-workflows/:workflowId` |
 | 009 · 010 · 011 · 012 | `/` (Home) · `/all-work` · `/activity-log`, `/recycle-bin` · `/plans/:planId/import`, `/plans/:planId/imports/:importId` |
+| 014 | `/settings/access` (`?tab=`, `?person=`), `/settings/access/roles/new`, `/settings/access/roles/:roleId`, `…/edit` (need `access.manage`); `/budgets`, `/budgets/:globalBudgetId` (need `globalBudgets.view`) |
+| 016 | `/settings/currencies/import` (needs `exchangeRates.manage`), `/settings/field-help`; All work's Breakdown tab and the plan page's Planned cost by card use `/all-work` and `/plans/:planId` |
 
 Sections leave `COMING_SOON_SECTIONS` in `app/navigation.ts` when built: Settings (002), Plans (004), Approvals (008),
 All work (010), Activity log and Recycle bin (011); My profile (003) is in the account menu.
@@ -116,7 +122,10 @@ All work (010), Activity log and Recycle bin (011); My profile (003) is in the a
 `seed.Load`, in this order: people (001) → Settings (002, returns `seed.SettingsSeed`, IDs by name) → teams T-1001…T-1003 and
 memberships (003) → plans P-1001…P-1003 (004) → campaigns, initiatives (005) → activities A-1001…A-1011 (006) → line items
 L-1001…L-1008 (007) → workflows WF-1001, WF-1002 (seeded by 006 in 008's shape), rounds and notifications (008) → demo
-history (011). Steps look up earlier data by name and write **no** activity-log entries except 011's.
+history (011). Steps look up earlier data by name and write **no** activity-log entries except 011's. Since 014 and 016: the roles,
+assignments and access rules come right after the teams (014), the global budget and its allocations after the plans
+(014); the rates are migrated into the rate history at start-up (016) and every seeded Shell attribute gets a help
+text (016).
 
 ## 7. Conventions for build agents
 
