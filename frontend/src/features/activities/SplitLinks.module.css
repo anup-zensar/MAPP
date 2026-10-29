@@ -1,5 +1,9 @@
-/* The split links under the header (016 FR-031): 14 px, one per line, with the split icon. */
+/* The split links under the header (016 FR-031): 14 px, one per line, with the split icon.
+   The header is grey: secondary text and links take the ink colour to reach 4.5:1 (038 FR-038). */
 .links {
+  --ink-2: var(--ink);
+  --link: var(--ink);
+
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1) var(--space-5);
@@ -14,6 +18,12 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
+}
+
+/* Ink like the text around it, so the underline marks the link. */
+.links a {
+  color: var(--ink);
+  text-decoration: underline;
 }
 
 .links svg {

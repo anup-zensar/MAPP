@@ -157,6 +157,8 @@ describe('GlobalBudgetsPage (014 US6, FR-036)', () => {
     await user.click(within(panel).getByRole('textbox', { name: /Name/ }));
     await user.paste('FY2026 Global marketing budget');
     await user.type(within(panel).getByRole('textbox', { name: /Amount/ }), '100');
+    await user.click(within(panel).getByRole('combobox', { name: /Owner/ }));
+    await user.click(await screen.findByRole('option', { name: /Carlos Mendes/ }));
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     expect(

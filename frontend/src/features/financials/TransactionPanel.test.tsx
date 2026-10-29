@@ -205,6 +205,22 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
     await waitFor(() => expect(unlink).toHaveFocus());
   });
 
+  it('offers Link only when the server says canLink (038 FR-005, H-4)', async () => {
+    renderPanel('FT-1004', { body: transactionOf(FT_1004, { canLink: false }) });
+
+    const panel = await screen.findByRole('dialog', { name: 'PO 4500001004 / 10' });
+    expect(await within(panel).findByText('Document number')).toBeInTheDocument();
+    expect(within(panel).queryByRole('button', { name: 'Link to a line item' })).toBeNull();
+  });
+
+  it('offers Unlink only when the server says canUnlink (038 FR-005, H-5)', async () => {
+    renderPanel('FT-1004', { body: { ...manuallyLinked(), canUnlink: false } });
+
+    const panel = await screen.findByRole('dialog', { name: 'PO 4500001004 / 10' });
+    expect(await within(panel).findByText('Document number')).toBeInTheDocument();
+    expect(within(panel).queryByRole('button', { name: 'Unlink' })).toBeNull();
+  });
+
   it('says when the transaction does not exist', async () => {
     renderPanel('FT-9999', {
       status: 404,

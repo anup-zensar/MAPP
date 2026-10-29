@@ -175,6 +175,7 @@ export function PlanPage() {
             record={data}
             year={data.year}
             currency={planCurrencyOf(data)}
+            access={data.access?.edit}
           />
           <PlannedCostByCard plan={data} />
           <Tabs label="Plan" tabs={TABS} value={tab} onChange={chooseTab}>

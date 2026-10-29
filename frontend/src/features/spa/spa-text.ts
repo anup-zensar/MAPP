@@ -31,7 +31,10 @@ export const PERIODS = {
   actual: 'Actual spend',
   notScheduled: 'Not yet scheduled',
   notScheduledTip:
-    'Planned cost that is not in a month yet: activities without dates, or line items above the planned cost.',
+    'Planned cost that is not in a month yet, such as that of activities without dates.',
+  linesAbove: 'Line items above planned cost',
+  linesAboveTip:
+    'How much the line items of some activities exceed their planned cost. The periods include those line items, so periods + not yet scheduled − this = planned cost.',
 };
 
 export const DIMENSION = {

@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { Outlet } from 'react-router';
 import { describe, expect, it } from 'vitest';
 import { SessionProvider } from '@/session/SessionProvider';
@@ -10,6 +10,7 @@ import type { MockedApi } from '@/testing/mock-api';
 import { renderRoutes } from '@/testing/render';
 import { apiError, pending, reply } from '@/testing/replies';
 import type { Answer } from '@/testing/replies';
+import type { PlanningDashboard } from './api';
 import { DashboardsPage } from './DashboardsPage';
 
 type ExecutiveAnswer = Answer<'GET /api/v1/dashboards/executive'>;
@@ -48,6 +49,23 @@ function renderPage(
     { route, user: testUser() },
   );
   return { ...rendered, api };
+}
+
+/** An answer made with the filters asked for, as the API answers a known currency, type or plan. */
+function echoing(base: PlanningDashboard) {
+  return (request: Request) => {
+    const asked = new URL(request.url).searchParams;
+    const planType = (['operational', 'strategic', 'crossMarket'] as const).find(
+      (type) => type === asked.get('planType'),
+    );
+    const filters = {
+      ...base.filters,
+      currency: asked.get('currency') ?? base.filters.currency,
+      planType: planType ?? base.filters.planType,
+      planId: asked.get('planId') ?? base.filters.planId,
+    };
+    return { body: { ...base, filters } };
+  };
 }
 
 function queries(api: MockedApi, path: string): URLSearchParams[] {
@@ -96,7 +114,7 @@ describe('DashboardsPage (036 US1)', () => {
   });
 
   it('keeps the filters in the address and asks for them (FR-006, FR-007)', async () => {
-    const { user, api, router } = renderPage();
+    const { user, api, router } = renderPage(echoing(dashboard()));
 
     await user.selectOptions(await screen.findByLabelText('Currency'), 'EUR');
     await user.selectOptions(screen.getByLabelText('Plan type'), 'strategic');
@@ -115,6 +133,18 @@ describe('DashboardsPage (036 US1)', () => {
 
     await screen.findByRole('heading', { level: 1, name: 'Executive dashboard' });
     expect(queries(api, '/api/v1/dashboards/executive')[0]?.toString()).toBe('');
+  });
+
+  it('shows the currency the answer used and corrects the address to it (038 FR-012, H-1)', async () => {
+    const { router } = renderPage(
+      { body: dashboard() },
+      '/dashboards/executive?currency=XXX&year=2026',
+    );
+
+    expect(await screen.findByLabelText('Currency')).toHaveValue('USD');
+    expect(screen.queryByRole('button', { name: /Try again|Retry/ })).toBeNull();
+    await waitFor(() => expect(router.state.location.search).toBe('?year=2026&currency=USD'));
+    expect(router.state.historyAction).toBe('REPLACE');
   });
 
   it('says why there is nothing to show (US1 scenario 13)', async () => {
@@ -176,13 +206,11 @@ describe('DashboardsPage, Regional (036 US3)', () => {
         },
       ],
     };
-    const { user, router } = renderPage(undefined, '/dashboards/regional?team=T-1001&plan=P-1001', {
-      body: {
-        ...REGIONAL,
-        planCampaigns: campaigns,
-        filters: { ...REGIONAL.filters, planId: 'P-1001' },
-      },
-    });
+    const { user, router } = renderPage(
+      undefined,
+      '/dashboards/regional?team=T-1001&plan=P-1001',
+      echoing({ ...REGIONAL, planCampaigns: campaigns }),
+    );
 
     const table = await screen.findByRole('table', {
       name: /Campaigns of FY2026 Lubricants Europe/,
@@ -190,6 +218,16 @@ describe('DashboardsPage, Regional (036 US3)', () => {
     expect(within(table).getByRole('link', { name: 'Fleet push' })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText('Plan type'), 'operational');
     expect(router.state.location.search).toBe('?planType=operational&team=T-1001');
+  });
+
+  it('shows the market the answer used for an unknown one and corrects the address (038 FR-012, H-1)', async () => {
+    const { router } = renderPage(undefined, '/dashboards/regional?team=T-9999&plan=P-9999');
+
+    expect(
+      await screen.findByRole('link', { name: 'Show campaigns of FY2026 Lubricants Europe' }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Market')).toHaveValue('T-1001');
+    await waitFor(() => expect(router.state.location.search).toBe('?team=T-1001'));
   });
 
   it('opens the other dashboard from its tab without the market (FR-022)', async () => {

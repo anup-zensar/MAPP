@@ -139,6 +139,17 @@ describe('SampleRecordsPage: delete, Undo and restore', () => {
     ).toHaveTextContent('Restore');
   });
 
+  it('038 FR-052 (L-27): offers Restore only to people who may restore', async () => {
+    const refused = { available: false, reason: "Restoring isn't part of your role (Viewer)." };
+    const access = { restore: refused, deletePermanently: refused };
+    mockSampleRecords({ bin: { body: listOf([{ ...IDEAS_IN_BIN, access }]) } });
+    await renderSampleRecordsPage();
+
+    const card = screen.getByRole('region', { name: 'Recently deleted' });
+    expect(within(card).getByText(/Sample folder 'Ideas' \(SF-1001\)/)).toBeInTheDocument();
+    expect(within(card).queryByRole('button', { name: /^Restore/ })).not.toBeInTheDocument();
+  });
+
   it('restores from Recently deleted and says what the restore changed (FR-025)', async () => {
     const api = mockSampleRecords({ bin: { body: listOf([IDEAS_IN_BIN]) } }, [
       reply(

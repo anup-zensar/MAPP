@@ -52,6 +52,11 @@ export function FinancialsPage() {
   // 014 FR-011, 030 FR-013: importing and the simulated GSAP only for a person who may import.
   const canImport = useAccess().has('finance.import');
   const data = transactions.data;
+  // 038 FR-004: the Not linked tab only for people the server gives its count to.
+  const shownTabs = TABS.filter(
+    (tab) => tab !== 'notLinked' || (data ? data.counts.notLinked !== undefined : canImport),
+  );
+  const tab = shownTabs.includes(filters.tab) ? filters.tab : 'all';
   const forbidden =
     transactions.error instanceof ApiError && transactions.error.kind === 'forbidden';
 
@@ -88,12 +93,12 @@ export function FinancialsPage() {
           <FinancialTotals page={data} failed={transactions.isError && !data} />
           <Tabs
             label="Transaction type"
-            tabs={TABS.map((tab): TabItem<FinancialTab> => ({
-              value: tab,
-              label: tabLabel(tab, data?.counts),
+            tabs={shownTabs.map((shown): TabItem<FinancialTab> => ({
+              value: shown,
+              label: tabLabel(shown, data?.counts),
             }))}
-            value={filters.tab}
-            onChange={(tab) => change({ tab })}
+            value={tab}
+            onChange={(next) => change({ tab: next })}
           >
             <section className={styles.panel} aria-label="Transactions">
               <FinancialsToolbar filters={filters} page={data} onChange={change} />
@@ -110,7 +115,7 @@ export function FinancialsPage() {
                       }
                     />
                   ) : (
-                    <EmptyState icon={<ReceiptText />} title={emptyTabText(filters.tab, data)} />
+                    <EmptyState icon={<ReceiptText />} title={emptyTabText(tab, data)} />
                   )
                 ) : (
                   <>

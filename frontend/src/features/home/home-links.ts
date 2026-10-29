@@ -10,11 +10,22 @@ export function plansListHref(scope: HomeScope): string {
 }
 
 /**
- * Where "Activities I own" leads (D-174): All work (feature 010) filtered to the person once; All
- * work then drops the filter from its address (D-122).
+ * Where "Activities I own" leads (D-174): All work (feature 010) filtered to the person once, on the
+ * plan years of those activities (038 FR-032); All work then drops the filter from its address (D-122).
  */
-export function myActivitiesHref(personId: string): string {
-  return `/all-work?owner=${encodeURIComponent(personId)}`;
+export function myActivitiesHref(
+  personId: string,
+  yearFrom: number | null = null,
+  yearTo: number | null = null,
+): string {
+  const params = new URLSearchParams({ owner: personId });
+  if (yearFrom !== null && yearTo !== null && yearTo > yearFrom) {
+    params.set('yearFrom', String(yearFrom));
+    params.set('yearTo', String(yearTo));
+  } else if (yearFrom !== null) {
+    params.set('year', String(yearFrom));
+  }
+  return `/all-work?${params}`;
 }
 
 /** The Approvals page on its Waiting for me tab, with one activity's preview open when given. */

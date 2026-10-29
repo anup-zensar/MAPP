@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { PhasingMethod } from './api';
-import { readAmount } from './phasing-math';
+import { monthLabel, readAmount } from './phasing-math';
 
 const PHASING_METHODS: readonly PhasingMethod[] = ['none', 'evenly', 'custom'];
 
@@ -23,3 +23,26 @@ export const phasingSchema = z
   );
 
 export type PhasingValues = z.infer<typeof phasingSchema>;
+
+/** "Mar 2027: Type an amount of 0.00 or more." for each month that is not an amount (038 FR-040). */
+export function monthProblems(months: string[], keys: string[]): string {
+  return keys
+    .flatMap((key, index) =>
+      readAmount(months[index] ?? '') === null ? [`${monthLabel(key)}: ${MONTH_PROBLEM}`] : [],
+    )
+    .join(' ');
+}
+
+/** The API's problems, "months[2].amount" naming the month of the sent months it is about. */
+export function namedProblems(
+  fields: { field: string; message: string }[],
+  sent: { month: string }[],
+): string {
+  return fields
+    .map(({ field, message }) => {
+      const index = /^months\[(\d+)\]/.exec(field)?.[1];
+      const month = index === undefined ? undefined : sent[Number(index)]?.month;
+      return month ? `${monthLabel(month)}: ${message}` : message;
+    })
+    .join(' ');
+}

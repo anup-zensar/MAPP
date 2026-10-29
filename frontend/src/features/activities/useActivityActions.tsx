@@ -8,6 +8,7 @@ import { ActivityDeleteQuestion } from './ActivityDeleteQuestion';
 import { CopyActivityDialog } from './CopyActivityDialog';
 import { MoveActivityDialog } from './MoveActivityDialog';
 import { SplitActivityDialog } from './SplitActivityDialog';
+import { MOVE_TO } from './activity-text';
 import { SPLIT_ACTIVITY } from './split-text';
 
 /** The actions of an activity's More menu, and the dialog they open (render it once). */
@@ -35,7 +36,7 @@ export function useActivityActions(
   return {
     items: [
       ...gateItem({ label: 'Copy', onSelect: () => setOpen('copy') }, access?.copy),
-      ...gateItem({ label: 'Move', onSelect: () => setOpen('move') }, access?.move),
+      ...gateItem({ label: MOVE_TO, onSelect: () => setOpen('move') }, access?.move),
       // Split off line items and planned cost into a new activity (016 FR-026).
       ...gateItem({ label: SPLIT_ACTIVITY, onSelect: () => setOpen('split') }, access?.edit),
       // Brings the page's History into view and focuses it (feature 011, FR-011).

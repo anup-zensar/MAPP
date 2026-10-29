@@ -3,7 +3,7 @@ import type { MouseEvent } from 'react';
 import { cx } from '@/ui/cx';
 import { useFormatters } from '@/format/useFormatters';
 import gridStyles from './AllWorkGrid.module.css';
-import { NOT_PHASED, PHASED_BUDGET_ROW, totalText } from './all-work-text';
+import { monthsAboveText, NOT_PHASED, PHASED_BUDGET_ROW, totalText } from './all-work-text';
 import type { AllWorkResult, AllWorkRow, Money } from './all-work-types';
 import styles from './BudgetView.module.css';
 import { isControl, NOTHING } from './cell-text';
@@ -31,11 +31,14 @@ export interface BudgetViewProps {
  * a row opens its record.
  */
 export function BudgetView({ result, rows, continued, search, onToggle, onOpen }: BudgetViewProps) {
-  const { periods, totals } = result;
+  const { periods, totals, summary } = result;
 
   return (
     <div className={gridStyles.grid}>
       <p className={styles.note}>To change how a cost is spread, open its line item</p>
+      {summary.negativeBalanceCount > 0 && (
+        <p className={styles.note}>{monthsAboveText(summary.negativeBalanceCount)}</p>
+      )}
       {continued && <p className={gridStyles.continued}>Continued: {continued}</p>}
       <ScrollBox label="Budget & cost">
         <table className={gridStyles.table}>

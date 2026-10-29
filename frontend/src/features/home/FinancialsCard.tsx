@@ -9,6 +9,7 @@ import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { cx } from '@/ui/cx';
 import { useFormatters } from '@/format/useFormatters';
+import { useAccess } from '@/session/access';
 import styles from './FinancialsCard.module.css';
 import { useFinancialOverview } from './api';
 import type { FinancialOverview, HomeScope } from './api';
@@ -31,7 +32,7 @@ import { SectionError } from './SectionError';
  * Home's Financials card (015 US6, FR-025), right under the summary cards: for the current year
  * and the Home scope, Committed against planned cost with its meter, Invoiced, Paid and Accrued;
  * then "n activities committed above planned cost" (All work with that filter) and "n transactions
- * not linked to a line item" (Financials › Not linked), Open Financials and the source line. It
+ * not linked to a line item" (Financials › Not linked, for importers), Open Financials and the source line. It
  * loads and fails on its own, like the other Home cards (009 FR-022).
  */
 export function FinancialsCard({ scope }: { scope: HomeScope }) {
@@ -63,6 +64,8 @@ export function FinancialsCard({ scope }: { scope: HomeScope }) {
 function Overview({ overview, open }: { overview: FinancialOverview; open: ReactNode }) {
   const { money, dateTime } = useFormatters();
   const { figures, source, year } = overview;
+  // 038 FR-004: not-linked transactions only for people who may import.
+  const notLinked = useAccess().has('finance.import') ? overview.notLinked : 0;
   const empty = figures.transactionCount === 0;
 
   // Without any GSAP data the empty state says so; the source line would only repeat it.
@@ -102,7 +105,7 @@ function Overview({ overview, open }: { overview: FinancialOverview; open: React
           />
         </dl>
       )}
-      {(overview.activitiesAbovePlanned > 0 || overview.notLinked > 0) && (
+      {(overview.activitiesAbovePlanned > 0 || notLinked > 0) && (
         <ul className={styles.links}>
           {overview.activitiesAbovePlanned > 0 && (
             <li>
@@ -113,11 +116,11 @@ function Overview({ overview, open }: { overview: FinancialOverview; open: React
               </Link>
             </li>
           )}
-          {overview.notLinked > 0 && (
+          {notLinked > 0 && (
             <li>
               <Link to={NOT_LINKED_HREF} className={styles.link}>
                 <Unlink aria-hidden="true" className={styles.icon} />
-                {notLinkedText(overview.notLinked)}
+                {notLinkedText(notLinked)}
                 <ChevronRight aria-hidden="true" className={styles.chevron} />
               </Link>
             </li>

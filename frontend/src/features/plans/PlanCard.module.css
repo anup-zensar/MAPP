@@ -35,8 +35,10 @@
   gap: var(--space-1);
 }
 
+/* A name without spaces wraps inside the card (038 FR-036). */
 .name {
   margin: 0;
+  overflow-wrap: anywhere;
   font-size: var(--text-md);
   font-weight: var(--weight-bold);
   line-height: var(--leading-md);

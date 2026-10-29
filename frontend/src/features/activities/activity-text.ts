@@ -13,6 +13,9 @@ export type ModelFacts = components['schemas']['ActivityModelFacts'];
 /** Shown for an empty value (design system §6.3). */
 export const EMPTY = '—';
 
+/** The Move menu item, as on campaigns and initiatives (038 FR-041). */
+export const MOVE_TO = 'Move to…';
+
 /** The date writers of useFormatters() that dates and date ranges need. */
 export type DateWriters = Pick<Formatters, 'date' | 'dateRange'>;
 
