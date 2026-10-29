@@ -80,8 +80,7 @@ func (t tree) activitiesUnder(campaigns []*Record) []*activity {
 }
 
 // placePlanned spreads the activity's planned cost over the months of year: each line item by its spread, a
-// positive unassigned balance evenly over the activity's months (All work's Budget & cost rule); what stays
-// unplaced is not scheduled, what the months hold above the planned cost is apart (038 FR-023).
+// positive balance evenly over its months; the rest is not scheduled, the months above planned cost apart (038 FR-023).
 func (a *activity) placePlanned(year int) {
 	typed := amountOf(a.rec.PlannedCost)
 	var onLineItems money.Amount

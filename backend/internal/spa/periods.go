@@ -39,8 +39,7 @@ func (p span) actual(a *activity) money.Amount {
 	return money.Sum(a.actual[p.first : p.last+1]...)
 }
 
-// periodsOf is FR-017: planned and actual by quarter and by month, with what is not scheduled and the line
-// items above planned cost, so that periods + not scheduled − above = planned cost (038 FR-023, D-357).
+// periodsOf is FR-017 and 038 FR-023: periods + not scheduled − line items above planned cost = planned cost.
 func periodsOf(acts []*activity, year int, sees bool, s shower) Periods {
 	notScheduled := func(a *activity) money.Amount { return a.notScheduled }
 	above := func(a *activity) money.Amount { return a.above }

@@ -140,7 +140,6 @@ func TestExecutive_Validation_FR006(t *testing.T) {
 		strings.Contains(string(wrong.Body), `"planType"`), strings.Contains(string(wrong.Body), `"currency"`)))
 }
 
-// A currency not in Settings or an unknown market falls back to the default, exports too (038 FR-012, H-1).
 func TestUnknownFilters_FallBack_038_FR012_H1(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -156,7 +155,6 @@ func TestUnknownFilters_FallBack_038_FR012_H1(t *testing.T) {
 	get(t, d, regional+"/export?format=pptx&year=2026&teamId=T-9999", http.StatusOK)
 }
 
-// Grand opening Shanghai's line items exceed its planned cost: the monthly chart counts it (038 FR-024, L-2).
 func TestMonths_NegativeBalanceCount_038_FR024_L2(t *testing.T) {
 	t.Parallel()
 	v := view(t, apitest.New(t).SignIn(t, carlos), executive+"?year=2026")

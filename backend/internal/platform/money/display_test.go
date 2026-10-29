@@ -52,8 +52,7 @@ func TestDisplay_OptionalKeepsNil_D220(t *testing.T) {
 	}
 }
 
-// Parts converts the months of one total so that they add up to the total converted once: 3 × 5,000.00 GBP
-// at 0.79 is 18,987.34 USD, not 3 × 6,329.11; in GBP, or without a rate, they stay as they are (038 FR-022, M-1).
+// Parts adds up to the total converted once: 3 × 5,000.00 GBP at 0.79 is 18,987.34 USD, not 3 × 6,329.11.
 func TestDisplayParts_038_FR022_M1(t *testing.T) {
 	t.Parallel()
 	rates := money.Rates{"GBP": rate(t, "0.79"), "EUR": rate(t, "0.92")}

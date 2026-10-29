@@ -40,8 +40,6 @@ func TestMonths_FR014(t *testing.T) {
 			text(got.OtherYears), text(got.PaidOutsideYear), text(hidden.Items[2].Actual), text(hidden.PaidOutsideYear)))
 }
 
-// The chart counts the activities whose line items exceed their planned cost, the reason its months add up to
-// more than the planned cost (038 FR-024, L-2).
 func TestMonths_NegativeBalanceCount_038_FR024_L2(t *testing.T) {
 	t.Parallel()
 	planned := map[string]allwork.Months{

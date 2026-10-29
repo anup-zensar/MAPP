@@ -10,8 +10,7 @@ import (
 const monthsInYear = 12
 
 // months is the planned cost by month as All work's Budget & cost view spreads it, and the payments by posting
-// month of the plans whose financial figures count (FR-014), with how many activities have line items above
-// their planned cost (038 FR-024).
+// month of the plans whose financial figures count (FR-014), and the activities above planned cost (038 FR-024).
 func (b *board) months(planned map[string]allwork.Months, paid map[string]map[string]money.Amount, year int,
 	d money.Display) Months {
 	plannedBy, actualBy := map[string]money.Amount{}, map[string]money.Amount{}
@@ -56,7 +55,6 @@ func (b *board) months(planned map[string]allwork.Months, paid map[string]map[st
 	return out
 }
 
-// exceeds says whether the activity a's months hold more than its planned cost: its line items exceed it.
 func exceeds(a *allwork.Node, m allwork.Months) bool {
 	spread := m.NoDates.Add(m.OtherYears)
 	for _, amount := range m.ByMonth {

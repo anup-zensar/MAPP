@@ -70,10 +70,7 @@ func (d display) balance(b UnassignedBalance) UnassignedBalance {
 	return b
 }
 
-// grid returns g, built in the plan currency, in the display currency so that it still adds up (038 FR-022):
-// each row's total converted once and its cells distributed over it, then the column totals and the grand
-// total as sums of the converted cells and rows. The grand total may differ by a cent from the converted
-// Assigned figure (D-061).
+// grid converts g so that it still adds up: each row total once, its cells as its parts (038 FR-022).
 func (d display) grid(g SpreadGrid) SpreadGrid {
 	converted := SpreadGrid{Columns: g.Columns, Rows: make([]SpreadGridRow, 0, len(g.Rows)),
 		Totals: make([]*money.Money, len(g.Totals)), Total: d.money(money.Money{Currency: g.Total.Currency})}

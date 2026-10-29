@@ -6,8 +6,7 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// a1011Grid is the spread grid of A-1011 "UK launch event" in its plan currency: Venue 15,000.00 GBP and Agency
-// fee (Ireland) 23,000.00 EUR = 19,750.00 GBP, spread evenly over March – May 2027; February is empty.
+// a1011Grid is A-1011's grid in GBP: Venue 15,000.00 GBP and 23,000.00 EUR = 19,750.00 GBP over March – May 2027.
 func a1011Grid() SpreadGrid {
 	gbp := func(s string) *money.Money { return &money.Money{Amount: amount(s), Currency: "GBP"} }
 	return SpreadGrid{
@@ -22,9 +21,7 @@ func a1011Grid() SpreadGrid {
 	}
 }
 
-// In any display currency the grid adds up: each row's months to its total, which is the line item's planned
-// cost converted once; each column to its total; the column totals and the row totals to the grand total
-// (038 FR-022, M-1).
+// In any display currency rows, columns and totals add up; a row total is its planned cost converted once.
 func TestGrid_AddsUp_038_FR022_M1(t *testing.T) {
 	t.Parallel()
 	rates := money.Rates{"GBP": rate("0.79"), "EUR": rate("0.92")}

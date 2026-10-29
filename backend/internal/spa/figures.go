@@ -23,7 +23,6 @@ func (s shower) financial(sees bool, usd money.Amount) *money.Money {
 	return &m
 }
 
-// nonZero shows usd, or gives nil when it is zero.
 func (s shower) nonZero(usd money.Amount) *money.Money {
 	return s.financial(!usd.IsZero(), usd)
 }
