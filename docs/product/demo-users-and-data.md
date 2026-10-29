@@ -39,7 +39,7 @@ All demo users share the password **`mapp`**, shown on the sign-in page (decisio
 
 | Plan | State | Contents |
 |---|---|---|
-| **FY2026 Lubricants Europe** (Priya Raman, Lubricants Europe, Lubricants 1.0, budget 1,200,000 USD) | Published | 2 campaigns ("Helix launch", "Rimula fleet"), 4 initiatives, 7 activities in every status (Created, Submitted, Declined, Approved/In progress, Complete), line items in USD, EUR and GBP, one activity with a non-zero unassigned balance |
+| **FY2026 Lubricants Europe** (Priya Raman, Lubricants Europe, Lubricants 1.0, budget 1,200,000 USD; the BCPIR plan, 013) | Published | 2 campaigns ("Helix launch", "Rimula fleet"), 4 initiatives, 7 activities in every status (Created, Submitted, Declined, Approved/In progress, Complete), line items in USD, EUR and GBP, one activity with a non-zero unassigned balance |
 | **FY2026 Mobility China** (Mei Lin, Mobility China, Mobility 1.0, budget 800,000 USD) | Draft | 1 campaign, 2 initiatives, 3 activities — deliberately incomplete (missing cluster/region, missing GL code, Country/OU split at 90 %) to demonstrate completeness |
 | **FY2027 Global Brand** (Alex Morgan, Global Marketing Ops, Lubricants 1.0) | Draft, Strategic / AOP | 1 campaign with an over-allocated initiative budget (negative remaining budget) |
 

@@ -18,6 +18,7 @@ const purchaseRequests = () => import('@/features/purchase-requests');
 const recycleBin = () => import('@/features/recycle-bin');
 const settings = () => import('@/features/settings');
 const signIn = () => import('@/features/sign-in');
+const spa = () => import('@/features/spa');
 
 export const ActivityFormPage = lazy(() =>
   activities().then((feature) => ({ default: feature.ActivityFormPage })),
@@ -151,3 +152,4 @@ export const PurchaseRequestEditPage = lazy(() =>
 export const PurchaseRequestSettingsPage = lazy(() =>
   purchaseRequests().then((feature) => ({ default: feature.PurchaseRequestSettingsPage })),
 );
+export const SpaPage = lazy(() => spa().then((feature) => ({ default: feature.SpaPage })));

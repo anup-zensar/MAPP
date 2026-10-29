@@ -5,5 +5,6 @@ export { PurchaseRequestCreatePage } from './PurchaseRequestCreatePage';
 export { PurchaseRequestEditPage } from './PurchaseRequestEditPage';
 export { PurchaseRequestPage } from './PurchaseRequestPage';
 export { PurchaseRequestSettingsPage } from './PurchaseRequestSettingsPage';
+export { PurchaseRequestStatusChip } from './PurchaseRequestStatusChip';
 export { PurchaseRequestsPage } from './PurchaseRequestsPage';
 export { PURCHASE_REQUEST_SETTINGS_SECTIONS } from './settings-sections';

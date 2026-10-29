@@ -14,7 +14,6 @@ import type { FilterValue, Filters, SavedView, ViewState } from './all-work-type
 import { NAME_MAX, nameTaken, viewNamed } from './view-names';
 import { NO_FILTERS, withYears } from './view-state';
 
-/** The address parameters other pages may link with (the API's names, D-122). */
 const ADDRESS_KEYS = [
   'year',
   'yearFrom',
@@ -31,11 +30,11 @@ const ADDRESS_KEYS = [
   'businessUnit',
   'activityType',
   'strategic',
+  'bcpir',
   'showLevels',
   'search',
 ] as const;
 
-/** A plan currency in the address: three capital letters. */
 const CURRENCY_CODE = /^[A-Z]{3}$/;
 
 const yearParam = z.coerce.number().int().min(2000).max(2100).optional().catch(undefined);
@@ -69,6 +68,7 @@ const addressSchema = z.object({
   businessUnits: ids,
   activityTypes: ids,
   strategic: firstKnown(STRATEGIC_LABELS, 'include'),
+  bcpir: firstKnown(STRATEGIC_LABELS, 'include'),
   showLevels: firstKnown(SHOW_LEVELS_LABELS, 'everything'),
   planTypes: known(PLAN_TYPE_LABELS),
   planCurrencies: currencyCodes,
@@ -80,32 +80,27 @@ type Address = z.infer<typeof addressSchema>;
 
 const NO_ADDRESS: Address = {
   ...NO_FILTERS,
+  bcpir: 'include',
   planTypes: [],
   planCurrencies: [],
   finance: [],
   search: '',
 };
 
-/** Whether the address names any All work filter. */
 export function hasAddressFilters(params: URLSearchParams): boolean {
   return ADDRESS_KEYS.some((key) => params.has(key));
 }
 
-/**
- * The state that an address such as /all-work?owner=U-1003&activityStatus=declined opens (feature
- * 009's cards, D-122): those filters over `base`. Values that are not valid are ignored. An ID
- * keeps itself as its name until the filter bar's choices name it.
- */
 export function fromAddress(params: URLSearchParams, base: ViewState): ViewState {
   const { year, yearFrom, yearTo, search, ...address } = readAddress(params);
-  const { planTypes, planCurrencies, finance, ...lists } = address;
+  const { planTypes, planCurrencies, finance, bcpir, ...lists } = address;
   const filters: Filters = {
     ...lists,
     ...(planTypes.length > 0 && { planTypes }),
     ...(planCurrencies.length > 0 && { planCurrencies }),
     ...(finance.length > 0 && { finance }),
+    ...(bcpir !== 'include' && { bcpir }),
   };
-  // A range of at most five years (016 FR-034); anything else falls back to one year.
   if (yearFrom !== undefined && yearTo !== undefined && isRange(yearFrom, yearTo)) {
     return withYears({ ...base, filters, search }, yearFrom, yearTo);
   }
@@ -133,6 +128,7 @@ function readAddress(params: URLSearchParams): Address {
     businessUnits: params.getAll('businessUnit'),
     activityTypes: params.getAll('activityType'),
     strategic: params.getAll('strategic'),
+    bcpir: params.getAll('bcpir'),
     showLevels: params.getAll('showLevels'),
     planTypes: params.getAll('planType'),
     planCurrencies: params.getAll('planCurrency'),
@@ -145,7 +141,6 @@ function readAddress(params: URLSearchParams): Address {
 const viewName = z
   .string()
   .refine((name) => name.trim() !== '', 'Enter a name for the view.')
-  // Characters, not UTF-16 units: "é" or an emoji counts once.
   .refine((name) => [...name.trim()].length <= NAME_MAX, 'Use 60 characters or fewer.');
 
 export const saveViewSchema = z.object({ name: viewName, isDefault: z.boolean() });

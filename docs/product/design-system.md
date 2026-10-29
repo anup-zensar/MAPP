@@ -239,6 +239,20 @@ money reserved on line items L-1006 and L-1011 will be released. You can restore
 the line item will be released."; Close lists each line's current, invoiced and released amount before it
 asks; "The simulated GSAP will create a GSAP PR and a purchase order with 1 line (10,000.00 USD) for PR-1002."
 
+### 2.7 SP&A view (feature 013)
+
+`/plans/<id>/spa`, reached by **SP&A view** (secondary) in the plan page's header. A read-only page: breadcrumb
+Plans › plan › SP&A view, title "SP&A view", meta row with the plan's status chip, its **BCPIR** tag and year,
+and **Open in All work** (secondary; no primary button). Under the header, on the grey page: **Scope** (Whole
+plan or one campaign) and "Finance data as of …". Then a figures card (Planned cost, Committed, Actual spend,
+Remaining, Utilisation with its bar, Variance; overspend red with the word "Overspend"); *Spend by period*
+(Quarters · Months, planned and actual with bars, Not yet scheduled) beside *Spend by dimension* (Group by,
+share with a bar, totals row); *Activities* (sortable table, ▸ opens the line items, ⋯ Raise purchase request
+for each line item or its reason); *Budget* beside *Purchase requests*. Every underlined amount opens a side
+panel "What makes up …" with the activities and their total. Scope, dimension, period and sort are in the
+address, so Back keeps them. The BCPIR tag (outlined, like the plan type) also marks BCPIR plans on the Plans
+list, the plan header and All work's plan rows.
+
 ---
 
 ## 3. Visual tokens

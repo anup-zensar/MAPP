@@ -18,6 +18,7 @@ const VALID = z
     yearTo: z.int().nullable(),
     types: z.array(z.enum(PLAN_TYPES)),
     scope: z.enum(['all', 'myTeams']),
+    bcpir: z.enum(['include', 'only', 'exclude']),
     q: z.string(),
     layout: z.enum(['cards', 'table']),
   })
@@ -25,8 +26,29 @@ const VALID = z
     yearFrom === null || yearTo === null ? yearFrom === yearTo : yearFrom <= yearTo,
   );
 
-const KEYS = ['status', 'yearFrom', 'yearTo', 'year', 'type', 'scope', 'q', 'layout', 'other'];
-const WORDS = ['draft', 'published', 'myTeams', 'table', 'strategic', 'crossMarket', '2026', '999'];
+const KEYS = [
+  'status',
+  'yearFrom',
+  'yearTo',
+  'year',
+  'type',
+  'scope',
+  'bcpir',
+  'q',
+  'layout',
+  'other',
+];
+const WORDS = [
+  'draft',
+  'published',
+  'myTeams',
+  'table',
+  'strategic',
+  'crossMarket',
+  '2026',
+  '999',
+  'only',
+];
 
 /** Any address: the list's parameters with any text or one of their words. */
 const anyAddress = fc
@@ -42,6 +64,7 @@ const anyFilters: fc.Arbitrary<PlanListFilters> = fc
     years: fc.option(fc.tuple(year, year)),
     types: fc.subarray(PLAN_TYPES),
     scope: fc.constantFrom('all', 'myTeams'),
+    bcpir: fc.constantFrom('include', 'only', 'exclude'),
     q: fc.string().filter((q) => q === '' || q.trim() !== ''),
     layout: fc.constantFrom('cards', 'table'),
   })
@@ -96,6 +119,7 @@ describe('listPreferences (FR-003)', () => {
       yearTo: 2026,
       types: ['strategic'],
       scope: 'myTeams',
+      bcpir: 'only',
       q: 'china',
       layout: 'table',
     });
@@ -106,6 +130,7 @@ describe('listPreferences (FR-003)', () => {
       yearTo: 2026,
       types: ['strategic'],
       scope: 'myTeams',
+      bcpir: 'only',
       q: '',
       layout: 'table',
     });
@@ -175,11 +200,12 @@ describe('listPreferences (FR-003)', () => {
         yearTo: 2026,
         types: ['operational', 'crossMarket'],
         scope: 'myTeams',
+        bcpir: 'exclude',
         q: 'x',
         layout: 'table',
       }).toString(),
     ).toBe(
-      'status=published&yearFrom=2025&yearTo=2026&type=operational&type=crossMarket&scope=myTeams&q=x&layout=table',
+      'status=published&yearFrom=2025&yearTo=2026&type=operational&type=crossMarket&scope=myTeams&bcpir=exclude&q=x&layout=table',
     );
   });
 });

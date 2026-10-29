@@ -1,8 +1,3 @@
-/**
- * The All work state and what follows from it, as pure functions (plan "State", data-model §1.2):
- * the standard view, the years, the API query, "Modified" (FR-030), the parts the API refused and
- * the parts of a saved view that no longer exist (FR-031). schemas.ts reads the address (D-122).
- */
 import { FILTER_LABELS, MAX_YEARS } from './all-work-text';
 import type {
   AllWorkOptions,
@@ -14,7 +9,6 @@ import type {
   ViewState,
 } from './all-work-types';
 
-/** No filter in use (data-model §1.3): empty lists, Include and Everything. */
 export const NO_FILTERS: Filters = {
   plans: [],
   planStatuses: [],
@@ -28,15 +22,12 @@ export const NO_FILTERS: Filters = {
   showLevels: 'everything',
 };
 
-/** Rows per page (D-115). */
 export const PAGE_SIZES = [50, 100, 200] as const;
 export type PageSize = (typeof PAGE_SIZES)[number];
 
-/** The filters that hold IDs with the name they had when chosen. */
 export const ID_FILTERS = ['plans', 'owners', 'teams', 'businessUnits', 'activityTypes'] as const;
 export type IdFilter = (typeof ID_FILTERS)[number];
 
-/** The filters that hold fixed values (statuses, plan types, currencies, Financials). */
 export const VALUE_FILTERS = [
   'planStatuses',
   'containerStatuses',
@@ -47,10 +38,6 @@ export const VALUE_FILTERS = [
 ] as const;
 export type ValueFilter = (typeof VALUE_FILTERS)[number];
 
-/**
- * The years a state shows (016 FR-034): from `year` to `yearTo`, or the one year of a state saved
- * before ranges existed (FR-043: an old year reads as a one-year range).
- */
 export function yearRange(state: Pick<ViewState, 'year' | 'yearTo'>): { from: number; to: number } {
   const to =
     state.yearTo !== undefined && state.yearTo > state.year
@@ -59,11 +46,6 @@ export function yearRange(state: Pick<ViewState, 'year' | 'yearTo'>): { from: nu
   return { from: state.year, to };
 }
 
-/**
- * The state for the years `from` to `to` (016 FR-034, FR-035): a one-year range keeps the plain
- * year (as before 016, so older servers understand it); a longer one opens Budget & cost on
- * Yearly. Chosen plans go, as with a new year: the plans of other years cannot be chosen.
- */
 export function withYears(state: ViewState, from: number, to: number): ViewState {
   const { yearFrom: _from, yearTo: _to, ...rest } = state;
   void _from;
@@ -78,10 +60,6 @@ export function withYears(state: ViewState, from: number, to: number): ViewState
   };
 }
 
-/**
- * The standard view (FR-009): the Grid of the year without filters, with the person's remembered
- * columns and sort, plans, campaigns and initiatives open, unassigned rows shown, by month.
- */
 export function standardState(preferences: AllWorkPreferences, year: number): ViewState {
   return {
     view: 'grid',
@@ -97,14 +75,9 @@ export function standardState(preferences: AllWorkPreferences, year: number): Vi
   };
 }
 
-/**
- * The query of GET /api/v1/all-work for a state: only what is in use. Columns go with the Grid (the
- * other views have fixed columns), the period with Budget & cost.
- */
 export function toQueryParams(state: ViewState): AllWorkQuery {
   const { filters } = state;
   const { from, to } = yearRange(state);
-  // One year goes as `year`, as before 016; a range as yearFrom and yearTo (016 FR-034).
   const query: AllWorkQuery =
     to > from ? { yearFrom: from, yearTo: to, view: state.view } : { year: from, view: state.view };
   const ids = (values: FilterValue[]) => values.map((value) => value.id);
@@ -117,6 +90,7 @@ export function toQueryParams(state: ViewState): AllWorkQuery {
   if (filters.businessUnits.length > 0) query.businessUnit = ids(filters.businessUnits);
   if (filters.activityTypes.length > 0) query.activityType = ids(filters.activityTypes);
   if (filters.strategic !== 'include') query.strategic = filters.strategic;
+  if (filters.bcpir !== undefined && filters.bcpir !== 'include') query.bcpir = filters.bcpir;
   if (filters.showLevels !== 'everything') query.showLevels = filters.showLevels;
   if (filters.planTypes?.length) query.planType = [...filters.planTypes];
   if (filters.planCurrencies?.length) query.planCurrency = [...filters.planCurrencies];
@@ -130,20 +104,12 @@ export function toQueryParams(state: ViewState): AllWorkQuery {
   return query;
 }
 
-/**
- * The state a saved view keeps (data-model §1.2): the contract's filters only, so the Financials
- * filter of the session (015 FR-024, an address filter) is left out.
- */
 export function savedStateOf(state: ViewState): SavedView['state'] {
   const { finance: _finance, ...filters } = state.filters;
   void _finance;
   return { ...state, filters };
 }
 
-/**
- * Whether two states show the same view (FR-030, "Modified"). The order of chosen filter values
- * and of opened rows does not matter, nor the names stored with IDs; the order of columns does.
- */
 export function sameState(a: ViewState, b: ViewState): boolean {
   return canonical(a) === canonical(b);
 }
@@ -179,7 +145,6 @@ function canonical(state: ViewState): string {
   });
 }
 
-/** The filter of each repeatable or single filter parameter of the API. */
 const PARAMETER_FILTERS = new Map<string, keyof Filters>([
   ['plan', 'plans'],
   ['planStatus', 'planStatuses'],
@@ -190,16 +155,13 @@ const PARAMETER_FILTERS = new Map<string, keyof Filters>([
   ['businessUnit', 'businessUnits'],
   ['activityType', 'activityTypes'],
   ['strategic', 'strategic'],
+  ['bcpir', 'bcpir'],
   ['showLevels', 'showLevels'],
   ['planType', 'planTypes'],
   ['planCurrency', 'planCurrencies'],
   ['finance', 'finance'],
 ]);
 
-/**
- * The state with the parts the API refused set back to the standard view's (plan "States":
- * the offending filter is reset). `fields` are the API's parameter names.
- */
 export function withoutRefused(state: ViewState, fields: string[], standard: ViewState): ViewState {
   let next = state;
   for (const field of fields) {
@@ -207,7 +169,6 @@ export function withoutRefused(state: ViewState, fields: string[], standard: Vie
     if (filter) {
       next = { ...next, filters: { ...next.filters, [filter]: NO_FILTERS[filter] } };
     } else if (field === 'year' || field === 'yearFrom' || field === 'yearTo') {
-      // Back to the standard year, as one year (016 FR-034).
       const { yearFrom: _from, yearTo: _to, ...single } = next;
       void _from;
       void _to;
@@ -229,12 +190,6 @@ export function withoutRefused(state: ViewState, fields: string[], standard: Vie
   return next;
 }
 
-/**
- * A saved view's state without what no longer exists (FR-031): plans, people, teams, options and
- * activity types the filter bar no longer offers, and columns the column chooser no longer has.
- * `names` says what was left out, for "Some parts of this view no longer exist and were left out:
- * <list>."
- */
 export function leftOutOf(
   state: ViewState,
   options: AllWorkOptions,
@@ -265,7 +220,6 @@ export function leftOutOf(
   return { state: { ...state, filters, columns, sort }, names };
 }
 
-/** The filter bar's choices of an ID filter. */
 export function choicesOf(
   filter: IdFilter,
   options: AllWorkOptions | undefined,

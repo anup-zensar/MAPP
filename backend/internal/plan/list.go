@@ -12,15 +12,15 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// The messages of the list's filters (plan "User-visible messages").
 const (
 	msgChooseScope    = "Choose all or myTeams."
 	msgChooseStatus   = "Choose draft or published."
 	msgChooseListYear = "Choose a year such as 2026."
+	msgChooseBCPIR    = "Choose include, only or exclude."
+	bcpirOnly         = "only"
+	bcpirExclude      = "exclude"
 )
 
-// filterProblems checks the team scope, the status, the year range and the plan types of a list filter;
-// empty means every plan.
 func filterProblems(filter ListFilter) errs.Problems {
 	var problems errs.Problems
 	if !slices.Contains([]string{"", ScopeAll, ScopeMyTeams}, filter.Scope) {
@@ -29,8 +29,11 @@ func filterProblems(filter ListFilter) errs.Problems {
 	if !slices.Contains([]string{"", string(StatusDraft), string(StatusPublished)}, filter.Status) {
 		problems.Add("status", msgChooseStatus)
 	}
-	if filter.YearFrom != nil && filter.YearTo != nil && *filter.YearTo < *filter.YearFrom { // 016 FR-033
+	if filter.YearFrom != nil && filter.YearTo != nil && *filter.YearTo < *filter.YearFrom {
 		problems.Add("yearTo", msgYearToBeforeFrom)
+	}
+	if !slices.Contains([]string{"", "include", bcpirOnly, bcpirExclude}, filter.BCPIR) {
+		problems.Add("bcpir", msgChooseBCPIR)
 	}
 	for _, t := range filter.Types {
 		if !slices.Contains(planTypes, PlanType(t)) {
@@ -41,11 +44,8 @@ func filterProblems(filter ListFilter) errs.Problems {
 	return problems
 }
 
-// msgYearToBeforeFrom refuses a year range that ends before it starts (016 FR-033).
 const msgYearToBeforeFrom = "Choose a last year that is not before the first year."
 
-// inRange reports whether p matches the year range and the plan types of filter (016 FR-033): year is the
-// alias of a one-year range.
 func (filter ListFilter) inRange(p Plan) bool {
 	from, to := filter.YearFrom, filter.YearTo
 	if filter.Year != nil {
@@ -57,13 +57,8 @@ func (filter ListFilter) inRange(p Plan) bool {
 	return len(filter.Types) == 0 || slices.Contains(filter.Types, string(p.PlanType))
 }
 
-// List returns the plans of the Plans page (FR-001 – FR-004, D-080): only the plans a may see (014 FR-007).
-// The team scope comes next: All plans, or My teams — plans with one of a's teams, which only narrows the
-// list (Q-006). Total counts the plans in the scope; the summary covers the scope, the year range and the
-// plan types (016 FR-033), whatever the status and the search; the items match every filter — the search is
-// any part of the name or the ID, ignoring letter case — newest year first, then by name. Each level below
-// is asked once for all the plans (SC-009). Each plan's amounts are in its plan currency with the display
-// currency beside; the summary converts each plan's totals to USD before adding them (016 FR-014).
+// List shows only the plans a may see; the summary covers the team scope, the years and the plan types
+// whatever the status, the BCPIR filter and the search, and adds each plan's totals in USD.
 func (s *Service) List(ctx context.Context, a actor.Actor, filter ListFilter) (PlanList, error) {
 	if err := filterProblems(filter).Err(); err != nil {
 		return PlanList{}, err
@@ -140,7 +135,7 @@ func yearsOf(plans []Plan) []int {
 
 func (r listReads) summaryOf(plans []Plan) ListSummary {
 	var summary ListSummary
-	var budgets, plannedCosts []money.Amount // in USD, each plan converted once
+	var budgets, plannedCosts []money.Amount
 	for _, p := range plans {
 		summary.Plans++
 		if p.Status == StatusPublished {
@@ -176,9 +171,11 @@ func (s *Service) itemsOf(ctx context.Context, plans []Plan, filter ListFilter, 
 	return items, nil
 }
 
-// matches takes the search query already lowered, so that it is lowered once for the whole list.
 func (filter ListFilter) matches(p Plan, query string) bool {
 	if filter.Status != "" && string(p.Status) != filter.Status {
+		return false
+	}
+	if (filter.BCPIR == bcpirOnly && !p.BCPIR) || (filter.BCPIR == bcpirExclude && p.BCPIR) {
 		return false
 	}
 	return strings.Contains(strings.ToLower(p.Name), query) || strings.Contains(strings.ToLower(p.ID), query)
@@ -192,14 +189,13 @@ func (s *Service) itemOf(ctx context.Context, p Plan, r listReads) (PlanSummary,
 	}
 	own := identity(p.Currency)
 	return PlanSummary{
-		ID: p.ID, Name: p.Name, Year: p.Year, Status: p.Status, AOP: p.AOP, Owner: sh.owner, Teams: sh.teams,
+		ID: p.ID, Name: p.Name, Year: p.Year, Status: p.Status, AOP: p.AOP, BCPIR: p.BCPIR, Owner: sh.owner, Teams: sh.teams,
 		BusinessUnit: sh.businessUnit, Figures: sh.figures, Completeness: sh.completeness,
-		Access:   authz.PlanAccessOf(ctx, AccessFacts(p)), // 014 FR-011
+		Access:   authz.PlanAccessOf(ctx, AccessFacts(p)),
 		PlanType: p.PlanType, Currency: p.Currency, PlanBudget: own.optional(p.Budget), PlanPlannedCost: own.optional(f.PlannedCost),
 	}, nil
 }
 
-// inScope returns the plans of the team scope: every plan, or with myTeams those with one of a's teams.
 func (s *Service) inScope(ctx context.Context, a actor.Actor, scope string) ([]Plan, error) {
 	all, err := s.repo.ListInScope(ctx, authz.ScopeOf(ctx))
 	if err != nil || scope != ScopeMyTeams {
@@ -218,7 +214,6 @@ func (s *Service) inScope(ctx context.Context, a actor.Actor, scope string) ([]P
 	return scoped, nil
 }
 
-// sumOf adds amounts up; nil when there are none, so a total of nothing shows "—", not 0.00.
 func sumOf(amounts []money.Amount) *money.Amount {
 	if len(amounts) == 0 {
 		return nil

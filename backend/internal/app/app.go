@@ -23,6 +23,7 @@ import (
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/telemetry"
 	"mapp/internal/platform/web"
+	"mapp/internal/purchaserequest"
 	"mapp/internal/settings"
 	"mapp/internal/stores"
 )
@@ -54,6 +55,7 @@ type wiring struct {
 	financials *financials.Service
 	allWork    allWorkSource
 	finance    financialPlanning
+	purchases  *purchaserequest.Service
 }
 
 type routeRegistrar interface {

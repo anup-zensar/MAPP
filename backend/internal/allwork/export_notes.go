@@ -8,18 +8,15 @@ import (
 	"mapp/internal/platform/date"
 )
 
-// The words of the notes.
 const (
 	labelNone = "None"
 	labelYear = "Year"
 )
 
-// notes returns the notes before the data (FR-034): the view, the year, one line per active filter (or
-// None), the search, Show levels, the display currency, who exported it and when.
 func (e exporter) notes(a actor.Actor) [][2]string {
 	r := e.b.result
 	notes := [][2]string{{"View", viewNames[r.View]}, {labelYear, strconv.Itoa(r.Year)}}
-	if r.YearTo > r.YearFrom && r.YearFrom != 0 { // 016 FR-034: the range
+	if r.YearTo > r.YearFrom && r.YearFrom != 0 {
 		notes[1] = [2]string{"Years", yearsText(r, " – ")}
 	}
 	chips := e.chips()
@@ -39,7 +36,7 @@ func (e exporter) notes(a actor.Actor) [][2]string {
 	}
 	now := e.in.now.UTC()
 	if showsFinance(e.b.result.Columns) {
-		notes = append(notes, financeNote(e.in.data.FinanceAsOf)) // feature 015 (FR-023)
+		notes = append(notes, financeNote(e.in.data.FinanceAsOf))
 	}
 	notes = append(notes,
 		[2]string{"Search", search},
@@ -52,7 +49,6 @@ func (e exporter) notes(a actor.Actor) [][2]string {
 	)
 }
 
-// rateNotes are the rates the export's amounts were converted with (016 FR-009), one line each.
 func (e exporter) rateNotes() [][2]string {
 	notes := [][2]string{}
 	for i, line := range e.in.rateNotes {
@@ -65,8 +61,6 @@ func (e exporter) rateNotes() [][2]string {
 	return notes
 }
 
-// chips returns the active filters as their chips read, "<Filter>: <value>", in the order of the filter bar
-// (FR-008).
 func (e exporter) chips() []string {
 	q := e.b.query
 	var chips []string
@@ -100,9 +94,10 @@ func (e exporter) chips() []string {
 	case StrategicExclude:
 		chips = append(chips, "Strategic / AOP plans: Exclude")
 	}
-	add("Plan type", q.PlanTypes, func(v string) string { return planTypeWords[v] }) // 016 FR-037
+	chips = append(chips, bcpirChips(q)...)
+	add("Plan type", q.PlanTypes, func(v string) string { return planTypeWords[v] })
 	add("Plan currency", q.PlanCurrencies, func(v string) string { return v })
-	for _, f := range q.attrs { // 016 FR-039: "Brands: Helix, Not filled in"
+	for _, f := range q.attrs {
 		labels := make([]string, 0, len(f.values))
 		for _, v := range f.values {
 			labels = append(labels, attributeValueLabel(f.attribute, v))
@@ -112,7 +107,6 @@ func (e exporter) chips() []string {
 	return chips
 }
 
-// attributeValueLabel is a value of an attribute filter as its chip reads it.
 func attributeValueLabel(a Attribute, v string) string {
 	switch v {
 	case AttrNotFilledIn:
@@ -125,7 +119,6 @@ func attributeValueLabel(a Attribute, v string) string {
 	return optionLabel(a.Options)(v)
 }
 
-// chipLabel returns the word of a status value of family.
 func chipLabel(family map[string]chip) func(string) string {
 	return func(v string) string {
 		if c, found := family[v]; found {
@@ -135,7 +128,6 @@ func chipLabel(family map[string]chip) func(string) string {
 	}
 }
 
-// optionLabel returns the name of an option ID among options.
 func optionLabel(options []Option) func(string) string {
 	return func(id string) string {
 		for _, o := range options {

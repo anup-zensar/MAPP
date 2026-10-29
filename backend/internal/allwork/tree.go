@@ -6,24 +6,16 @@ import (
 	"unicode/utf8"
 )
 
-// The matching of data model §3 (FR-005 – FR-008, D-113).
-
-// levelRank orders the levels top-down.
 var levelRank = map[Level]int{LevelPlan: 0, LevelCampaign: 1, LevelInitiative: 2, LevelActivity: 3, LevelLineItem: 4}
 
-// filter is one active filter of FR-004: the levels it is tested on, top-down, and the test of a record of
-// such a level.
 type filter struct {
 	levels []Level
 	meets  func(n *Node) bool
-	test   func(t *tnode) bool // when set, tests the record with its children instead of meets (016 line-item attributes)
+	test   func(t *tnode) bool
 }
 
-// progressValues are the Approval progress values of the Campaign / initiative status filter; the others
-// are Timing values (domain model §2.2).
 var progressValues = []string{"noActivities", "inProgress", "allApproved"}
 
-// filtersOf returns the active filters of q (FR-004). An empty list is no filter, and so is Include.
 func filtersOf(q Query) []filter {
 	plans := []Level{LevelPlan}
 	activities := []Level{LevelActivity}
@@ -49,6 +41,7 @@ func filtersOf(q Query) []filter {
 	case StrategicExclude:
 		filters = append(filters, filter{levels: plans, meets: func(n *Node) bool { return !n.Strategic }})
 	}
+	filters = append(filters, bcpirFilter(q)...)
 	// 016 FR-037, FR-039: the plan type and plan currency of plans, and the Shell-attribute filters.
 	add(q.PlanTypes, plans, func(n *Node) bool { return slices.Contains(q.PlanTypes, n.PlanType) })
 	add(q.PlanCurrencies, plans, func(n *Node) bool { return slices.Contains(q.PlanCurrencies, n.PlanCurrency) })
@@ -58,9 +51,6 @@ func filtersOf(q Query) []filter {
 	return filters
 }
 
-// containerStatusTest is the test of the Campaign / initiative status filter: the values of one group —
-// Approval progress, Timing — combine with OR, the two groups with AND; a record without dates has no
-// Timing (D-113).
 func containerStatusTest(values []string) func(n *Node) bool {
 	var progress, timing []string
 	for _, v := range values {
@@ -76,14 +66,10 @@ func containerStatusTest(values []string) func(n *Node) bool {
 	}
 }
 
-// containsAny reports whether list holds any of values.
 func containsAny(list, values []string) bool {
 	return slices.ContainsFunc(list, func(v string) bool { return slices.Contains(values, v) })
 }
 
-// holds reports whether the filter holds for the record t (data model §3.1): on a level it is tested on,
-// the record must meet it; below those levels, the nearest ancestor at a tested level must; above them, a
-// record below must be a match. Children are marked before their parents, so matchBelow is known.
 func (f filter) holds(t *tnode) bool {
 	if slices.Contains(f.levels, t.n.Level) {
 		return f.on(t)
@@ -99,7 +85,6 @@ func (f filter) holds(t *tnode) bool {
 	return t.matchBelow
 }
 
-// on tests the record t of a level the filter is tested on.
 func (f filter) on(t *tnode) bool {
 	if f.test != nil {
 		return f.test(t)
@@ -107,12 +92,10 @@ func (f filter) on(t *tnode) bool {
 	return f.meets(t.n)
 }
 
-// applyFilters marks every record of t a match, a context row or hidden, for the filters, the search and
-// the Show levels choice of q (data model §3).
 func applyFilters(t *tree, q Query) {
 	filters := filtersOf(q)
 	if len(q.Finance) > 0 {
-		filters = append(filters, financeFilter(q.Finance, t)) // feature 015 (FR-024)
+		filters = append(filters, financeFilter(q.Finance, t))
 	}
 	for _, p := range t.plans {
 		mark(p, filters, q.Search, strings.ToLower(q.Search), false)
@@ -133,10 +116,6 @@ func applyFilters(t *tree, q Query) {
 	}
 }
 
-// mark marks n and everything below it, children first (data model §3.2, §3.3). A record is a match when
-// it meets the search — its own name, ID, external name or description holds the text, one of its line
-// items' does (activities), or an ancestor's does (ancestorHit) — and every filter holds for it. It is
-// shown when it is a match or has a shown record below it. Line items take the marks of their activity.
 func mark(n *tnode, filters []filter, text, lowerText string, ancestorHit bool) {
 	n.hit = nil
 	if lowerText != "" {
@@ -173,8 +152,6 @@ func mark(n *tnode, filters []filter, text, lowerText string, ancestorHit bool) 
 	}
 }
 
-// searchHit returns the fields of n that contain the search text, ignoring letter case, and for a hit in
-// the external name or description an excerpt of about 60 characters around it (FR-006); nil without a hit.
 func searchHit(n *Node, text, lowerText string) *SearchHit {
 	hit := &SearchHit{Fields: []string{}}
 	for _, field := range []struct{ name, value string }{
@@ -194,11 +171,8 @@ func searchHit(n *Node, text, lowerText string) *SearchHit {
 	return hit
 }
 
-// excerptLength is the length of a search excerpt, in characters.
 const excerptLength = 60
 
-// excerptAround returns about 60 characters of value around the first place that holds text, ignoring
-// letter case, on one line, with "…" where it was cut.
 func excerptAround(value, text string) string {
 	runes := []rune(strings.Join(strings.Fields(value), " "))
 	if len(runes) <= excerptLength {
@@ -224,9 +198,6 @@ func excerptAround(value, text string) string {
 	return excerpt
 }
 
-// countOf returns "Showing N of M <noun>" (FR-008, data model §3.5): activities — or campaigns, or
-// initiatives, under the last two Show levels choices — with N the shown matches of that level and M every
-// record of that level in the year's plans.
 func countOf(t *tree, q Query, m matches) Count {
 	switch q.ShowLevels {
 	case ShowCampaignsWithoutInitiatives:

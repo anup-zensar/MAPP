@@ -10,13 +10,6 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// The Breakdown of 016 (FR-040 – FR-042, data-model §3.5) over twoYears: A-1 10,000.00 (P-1001, Europe,
-// Helix, Germany 60 % / France 40 %, FIT4 yes, Content production, Priya; L-1 4,000.00 Media, L-2 1,000.00
-// Event), A-2 6,000.00 (P-1001, Europe, Helix and Rimula, FIT4 no, Digital media, Daniel), A-3 8,000.00
-// (P-2001, Asia, Content production, Priya) and A-4 without a planned cost (P-2001, Asia, Digital media, Priya;
-// L-3 3,000.00 Media). Planned cost 24,000.00 USD in all.
-
-// breakdownView works out the Breakdown of q over nodes for the years from–to, in USD.
 func breakdownView(nodes []Node, q Query, from, to int) (Breakdown, error) {
 	if q.Strategic == "" {
 		q.Strategic = StrategicInclude
@@ -37,7 +30,6 @@ func breakdownView(nodes []Node, q Query, from, to int) (Breakdown, error) {
 	})
 }
 
-// mustBreakdown is breakdownView that fails the test on an error.
 func mustBreakdown(t *testing.T, nodes []Node, q Query) Breakdown {
 	t.Helper()
 	b, err := breakdownView(nodes, q, 2026, 2027)
@@ -47,8 +39,6 @@ func mustBreakdown(t *testing.T, nodes []Node, q Query) Breakdown {
 	return b
 }
 
-// groupsText writes the groups as "<label> <activities>/<line items> <planned cost> <share>%", with the budget
-// and budget used when there are.
 func groupsText(groups []BreakdownGroup) []string {
 	list := []string{}
 	for _, g := range groups {
@@ -57,7 +47,6 @@ func groupsText(groups []BreakdownGroup) []string {
 	return list
 }
 
-// groupText writes one group as groupsText does.
 func groupText(label string, activities, lineItems int, planned money.Money, share string, budget *money.Money, used *int) string {
 	text := fmt.Sprintf("%s %d/%d %s %s%%", label, activities, lineItems, planned.Format(), share)
 	if budget != nil {
@@ -69,7 +58,6 @@ func groupText(label string, activities, lineItems int, planned money.Money, sha
 	return text
 }
 
-// childrenText writes the "then by" groups of g as groupsText does.
 func childrenText(g BreakdownGroup) []string {
 	list := []string{}
 	for _, c := range g.Children {
@@ -78,7 +66,6 @@ func childrenText(g BreakdownGroup) []string {
 	return list
 }
 
-// assertGroups compares the groups with want.
 func assertGroups(t *testing.T, name string, got []BreakdownGroup, want []string) {
 	t.Helper()
 	if text := groupsText(got); !slices.Equal(text, want) {
@@ -86,8 +73,6 @@ func assertGroups(t *testing.T, name string, got []BreakdownGroup, want []string
 	}
 }
 
-// A single choice gives each activity's planned cost to the value of its ancestor at the attribute's level, in
-// Settings' option order; a campaign attribute's groups have the budgets of their campaigns (FR-041, FR-040).
 func TestBreakdown_SingleChoice_FR041(t *testing.T) {
 	t.Parallel()
 	b := mustBreakdown(t, twoYears(), Query{By: "attr:SA-CL"})
@@ -101,8 +86,6 @@ func TestBreakdown_SingleChoice_FR041(t *testing.T) {
 	}
 }
 
-// A multiple choice without split counts the full amount in each chosen group and says so; the totals count
-// every activity once (FR-041).
 func TestBreakdown_MultipleCountsInEach_FR041(t *testing.T) {
 	t.Parallel()
 	b := mustBreakdown(t, twoYears(), Query{By: "attr:SA-B"})
@@ -119,9 +102,6 @@ func TestBreakdown_MultipleCountsInEach_FR041(t *testing.T) {
 	}
 }
 
-// A % split divides the amount by the shares, half up per value, the last value getting the rest (FR-041):
-// Germany 60 % / France 40 % of 10,000.00 → 6,000.00 / 4,000.00; 50 % / 50 % of 10,000.01 → 5,000.01 /
-// 5,000.00.
 func TestBreakdown_SplitRemainderOnLast_FR041(t *testing.T) {
 	t.Parallel()
 	even := withAttr(twoYears(), "A-1", "SA-C", shares("SO-DE", "50", "SO-FR", "50"))
@@ -149,8 +129,6 @@ func TestBreakdown_SplitRemainderOnLast_FR041(t *testing.T) {
 	}
 }
 
-// A line-item attribute groups the line items' planned cost and puts each activity's unassigned planned cost
-// in Not on a line item, last (FR-041).
 func TestBreakdown_LineItemAttributeAndNotOnALineItem_FR041(t *testing.T) {
 	t.Parallel()
 	b := mustBreakdown(t, twoYears(), Query{By: "attr:SA-S"})
@@ -162,8 +140,6 @@ func TestBreakdown_LineItemAttributeAndNotOnALineItem_FR041(t *testing.T) {
 	})
 }
 
-// Line items of activities without a planned cost are included, and the note names their amount: the totals
-// row is then the Planned cost card plus that amount (FR-041).
 func TestBreakdown_NoPlannedCostNote_FR041(t *testing.T) {
 	t.Parallel()
 	b := mustBreakdown(t, twoYears(), Query{By: "attr:SA-S"})
@@ -174,7 +150,6 @@ func TestBreakdown_NoPlannedCostNote_FR041(t *testing.T) {
 	}
 }
 
-// A value hidden by its attribute's Business unit condition is Not filled in.
 func TestBreakdown_HiddenIsNotFilled(t *testing.T) {
 	t.Parallel()
 	nodes := withAttr(withAttr(twoYears(), "A-1", "SA-M", options("SO-X")), "A-3", "SA-M", options("SO-X"))
@@ -187,8 +162,6 @@ func TestBreakdown_HiddenIsNotFilled(t *testing.T) {
 	})
 }
 
-// "Then by" groups each group again by a second grouping; it must differ from the first, and the first is
-// needed (FR-040, FR-044).
 func TestBreakdown_ThenBy_FR040(t *testing.T) {
 	t.Parallel()
 	b := mustBreakdown(t, twoYears(), Query{By: "plan", ThenBy: "attr:SA-B"})
@@ -211,8 +184,6 @@ func TestBreakdown_ThenBy_FR040(t *testing.T) {
 	})
 }
 
-// Groupings of plans, campaigns and initiatives show the budgets of their records and the budget used; within a
-// "then by" group only the records of the group's branch count; groupings of activities have no budget (FR-040).
 func TestBreakdown_BudgetGroupings_FR040(t *testing.T) {
 	t.Parallel()
 	byPlanThenCluster := mustBreakdown(t, twoYears(), Query{By: "plan", ThenBy: "attr:SA-CL"})
@@ -231,8 +202,6 @@ func TestBreakdown_BudgetGroupings_FR040(t *testing.T) {
 	}
 }
 
-// The built-in groupings: Plan type, Plan currency, Year, Team, Business unit, Activity type and Owner, with
-// their labels (FR-040).
 func TestBreakdown_BuiltIns_FR040(t *testing.T) {
 	t.Parallel()
 	cases := map[string][]string{
@@ -254,14 +223,13 @@ func TestBreakdown_BuiltIns_FR040(t *testing.T) {
 	for _, g := range b.Groupings {
 		keys = append(keys, g.Key)
 	}
-	want := []string{"plan", "planType", "planCurrency", "year", "team", "businessUnit", "activityType", "owner",
+	want := []string{"plan", "planType", "bcpir", "planCurrency", "year", "team", "businessUnit", "activityType", "owner",
 		"attr:SA-CL", "attr:SA-B", "attr:SA-C", "attr:SA-F", "attr:SA-M", "attr:SA-S"}
 	if !slices.Equal(keys, want) {
 		t.Errorf("groupings = %q, want %q (no number attribute)", keys, want)
 	}
 }
 
-// The totals row equals the Planned cost card of the same filters (SC-007), whatever the grouping.
 func TestBreakdown_TotalsEqualCard_SC007(t *testing.T) {
 	t.Parallel()
 	card := rangeView(twoYears(), Query{View: ViewGrid}, 2026, 2027).result.Summary.PlannedCost
@@ -279,8 +247,6 @@ func TestBreakdown_TotalsEqualCard_SC007(t *testing.T) {
 	}
 }
 
-// For one plan, amountsIn=plan gives the Breakdown in the plan currency — the plan page's Planned cost by card
-// (FR-042); with several plans it is refused.
 func TestBreakdown_PlanCurrencyForOnePlan_FR042(t *testing.T) {
 	t.Parallel()
 	nodes := twoYears()

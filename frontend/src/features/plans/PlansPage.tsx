@@ -26,16 +26,10 @@ import { PlanTable } from './PlanTable';
 import { MY_TEAMS_HINT } from './plan-text';
 import { usePlanActions } from './usePlanActions';
 
-/** How long the search waits after the last key before it asks the API (plan "Plans list"). */
 const SEARCH_DELAY_MS = 250;
 
-/** The most plans one person can pin (018 FR-006, D-317) — the API refuses more. */
 const MAX_PINNED_PLANS = 100;
 
-/**
- * Pinned plans first, each group keeping the list's current order (018 FR-002). A pinned id whose
- * plan the list doesn't show is simply not there (018 FR-007).
- */
 function pinnedFirst(plans: PlanSummary[], pinnedIds: string[]): PlanSummary[] {
   const pinned = new Set(pinnedIds);
   return [
@@ -44,11 +38,6 @@ function pinnedFirst(plans: PlanSummary[], pinnedIds: string[]): PlanSummary[] {
   ];
 }
 
-/**
- * Plans (US2, FR-001 – FR-004; 016 FR-033): every plan as cards or a table, with summary cards,
- * status, years, plan type and team filters, search on name or ID, removable filter chips and the result count. Filters
- * live in the address and are remembered per person.
- */
 export function PlansPage() {
   usePageTitle('Plans');
   const user = useCurrentUser();
@@ -56,8 +45,6 @@ export function PlansPage() {
   const { show } = useToast();
   const canCreate = useAccess().has('plans.create');
   const [search, setSearch] = useSearchParams();
-  // 016's API sends every plan's type; until then the list takes one year and no plan types, so
-  // a plan type in the address is neither sent nor shown as a chip.
   const [served016, setServed016] = useState(false);
   const chosen = readFilters(search, user.id);
   const filters = served016 ? chosen : { ...chosen, types: [] };
@@ -68,6 +55,7 @@ export function PlansPage() {
     yearTo: filters.yearTo,
     types: filters.types,
     scope: filters.scope,
+    bcpir: filters.bcpir,
     q: filters.q,
   });
   const actions = usePlanActions();
@@ -76,12 +64,6 @@ export function PlansPage() {
     setServed016(true);
   }
 
-  /**
-   * Pins or unpins one plan (018 FR-001, FR-004): the full new list goes to the session, which
-   * updates the signed-in person in the query cache at once and PATCHes /api/v1/me/preferences in
-   * the background — the same way the theme is saved. A new pin goes last: the stored order only
-   * says what is pinned; the list's own sort orders the pinned group (D-317).
-   */
   function togglePin(plan: PlanSummary) {
     const pinnedIds = user.preferences.pinnedPlanIds;
     if (pinnedIds.includes(plan.id)) {
@@ -97,7 +79,6 @@ export function PlansPage() {
 
   const isPinned = (plan: PlanSummary) => user.preferences.pinnedPlanIds.includes(plan.id);
 
-  /** Changes some filters: in the address (replacing it) and in what is remembered. */
   function change(next: Partial<PlanListFilters>) {
     setSearch(
       (current) => {
@@ -109,7 +90,6 @@ export function PlansPage() {
     );
   }
 
-  // The search is sent 250 ms after typing stops.
   const searchTimer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(searchTimer.current), []);
 
@@ -142,10 +122,8 @@ export function PlansPage() {
   const summary = data?.summary;
   const planYears = data?.years ?? [];
   const showsTable = filters.layout === 'table';
-  // Pinned plans first in both layouts, each group in the list's own order (018 FR-002).
   const items = data ? pinnedFirst(data.items, user.preferences.pinnedPlanIds) : [];
 
-  /** The list's state when it has no plans to show: loading, failure, empty, filtered out. */
   function listState() {
     if (plans.isError && !data) {
       return <ErrorState error={plans.error} onRetry={() => void plans.refetch()} />;
@@ -159,7 +137,6 @@ export function PlansPage() {
           icon={<ClipboardList />}
           title="No plans yet — create your first plan"
           text="A plan holds one year of marketing for one business."
-          // Secondary: the header already holds the primary New plan (design system §11, rule 1).
           action={
             canCreate && (
               <LinkButton to="/plans/new" icon={<Plus />}>
@@ -190,7 +167,6 @@ export function PlansPage() {
         title="Plans"
         description="Every yearly marketing plan, its status, its budget and what's still missing."
         actions={
-          // 014 FR-011: New plan only for a person who may create plans.
           canCreate && (
             <LinkButton to="/plans/new" variant="primary" icon={<Plus />}>
               New plan
@@ -201,7 +177,6 @@ export function PlansPage() {
       <div className={styles.page}>
         <PlanListSummary summary={summary} />
 
-        {/* The list toolbar inside the list's card, across its full width (design system §2.4 A). */}
         <section className={styles.listCard} aria-label="Plan list">
           <div className={styles.toolbar}>
             <div className={styles.search}>
@@ -294,7 +269,6 @@ export function PlansPage() {
   );
 }
 
-/** Grey lines while the plans load. */
 function ListSkeleton() {
   return (
     <div className={styles.skeletonList} aria-label="Loading plans">

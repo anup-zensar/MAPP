@@ -13,31 +13,21 @@ import styles from './RowName.module.css';
 import { statusWord } from './status-words';
 import type { VisibleRow } from './view-rows';
 
-/** Names longer than this may end with an ellipsis; the full name shows on hover and focus. */
 const LONG_NAME = 36;
 
 export interface RowNameProps {
   visible: VisibleRow;
-  /** The searched text, marked in the name and the excerpt (FR-006). */
   search: string;
-  /** Shows the status chip after the name, when no column shows it (D-118). */
   showStatus: boolean;
   onToggle: (key: string) => void;
   onOpen: (row: AllWorkRow) => void;
-  /** A line under the name (Budget & cost: "Line items exceed the planned cost by …"). */
   children?: ReactNode;
 }
 
-/**
- * The name of a row in every view (plan "Grid", FR-011): indented by depth, the Expand or
- * Collapse button, the level tag, the name as a link to the record, the AOP tag, the status chip
- * when needed, "Shown for context" on context rows (FR-005) and the excerpt of a search hit.
- */
 export function RowName({ visible, search, showStatus, onToggle, onOpen, children }: RowNameProps) {
   const { row, expanded, childCount } = visible;
 
   function open(event: MouseEvent<HTMLAnchorElement>) {
-    // Ctrl, Shift or the middle button open the page in a new tab as usual.
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
       return;
     }
@@ -71,10 +61,10 @@ export function RowName({ visible, search, showStatus, onToggle, onOpen, childre
           {row.level !== 'unassigned' && <LevelTag level={row.level} />}
           {row.name.length > LONG_NAME ? <Tooltip content={row.name}>{link}</Tooltip> : link}
           {row.level === 'plan' && row.year !== undefined && (
-            // Plan rows show their year: All work may show several (016 FR-034).
             <span className={styles.year}>{row.year}</span>
           )}
           {row.strategic && <span className={styles.aop}>AOP</span>}
+          {row.bcpir && <span className={styles.aop}>BCPIR</span>}
           {showStatus && row.status && (
             <StatusChip tone={row.status.tone}>
               {statusWord(row.status.label, row.status.tone)}

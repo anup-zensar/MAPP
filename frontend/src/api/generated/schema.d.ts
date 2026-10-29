@@ -3862,6 +3862,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/plans/{planId}/spa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * The SP&A view of the plan, or of one of its campaigns
+         * @description Planned cost, committed, actual spend, remaining, utilisation and variance of the scope, by quarter and month, by a chosen dimension and by activity, with the budget and procurement panels (013 FR-005 – FR-022). Amounts are in the signed-in person's display currency. Financial figures are null without finance.view in the plan.
+         */
+        get: operations["getSpaView"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/activities/{activityId}/split-options": {
         parameters: {
             query?: never;
@@ -5708,6 +5731,8 @@ export interface components {
             year: number;
             status: components["schemas"]["PlanStatus"];
             aop: boolean;
+            /** @description 013. BCPIR plan. Optional in the contract; always sent once its feature is built (D-298). */
+            bcpir?: boolean;
             owner: components["schemas"]["PersonRef"] | null;
             teams: components["schemas"]["TeamRef"][];
             businessUnit: components["schemas"]["OptionRef"][];
@@ -7724,6 +7749,8 @@ export interface components {
             searchHit?: components["schemas"]["AllWorkSearchHit"];
             /** @description Plans only - Strategic / AOP plan (the AOP tag). */
             strategic?: boolean;
+            /** @description Plans only - BCPIR plan (013 FR-002). */
+            bcpir?: boolean;
             status: components["schemas"]["AllWorkStatus"] | null;
             timing?: components["schemas"]["AllWorkStatus"];
             /** Format: date */
@@ -7917,6 +7944,11 @@ export interface components {
             activityTypes: components["schemas"]["AllWorkFilterValue"][];
             /** @enum {string} */
             strategic: "include" | "only" | "exclude";
+            /**
+             * @description 013. Optional; a view saved before 013 reads as include.
+             * @enum {string}
+             */
+            bcpir?: "include" | "only" | "exclude";
             /** @enum {string} */
             showLevels: "everything" | "completeBranches" | "campaignsWithoutInitiatives" | "initiativesWithoutActivities";
             /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
@@ -9307,6 +9339,161 @@ export interface components {
             /** @description The plan, then each campaign followed by its initiatives, in plan-tree order. */
             rows: components["schemas"]["BudgetByMonthRow"][];
         };
+        SpaRecordRef: {
+            /** @enum {string} */
+            type: "plan" | "campaign" | "initiative" | "activity" | "lineItem";
+            id: string;
+            name: string;
+        };
+        /** @description One activity's part of a figure (013 FR-007); the parts of a figure sum to it. */
+        SpaContribution: {
+            activityId: string;
+            name: string;
+            amount: components["schemas"]["Money"];
+        };
+        SpaPlan: {
+            id: string;
+            name: string;
+            year: number;
+            status: components["schemas"]["PlanStatus"];
+            bcpir: boolean;
+        };
+        /** @description 013 FR-015, FR-016. Percentages have one decimal ("37.5", "-62.5"); null with noPlannedCostReason when planned cost is 0.00. Financial figures are null without finance.view. */
+        SpaHeadline: {
+            plannedCost: components["schemas"]["Money"];
+            committed: components["schemas"]["Money"] | null;
+            actualSpend: components["schemas"]["Money"] | null;
+            invoiced: components["schemas"]["Money"] | null;
+            remaining: components["schemas"]["Money"] | null;
+            utilisationPercent: string | null;
+            variancePercent: string | null;
+            overspend: boolean;
+            noPlannedCostReason: string | null;
+            plannedCostTrace: components["schemas"]["SpaContribution"][];
+            committedTrace: components["schemas"]["SpaContribution"][];
+            actualSpendTrace: components["schemas"]["SpaContribution"][];
+        };
+        /** @description One quarter or month of the plan's year (013 FR-017); bars are 0–100, relative to the largest amount of the set. */
+        SpaPeriod: {
+            /** @example 2026-Q3 */
+            key: string;
+            /** @example Q3 2026 */
+            label: string;
+            planned: components["schemas"]["Money"];
+            actual: components["schemas"]["Money"] | null;
+            plannedBar: number;
+            actualBar: number;
+            plannedTrace: components["schemas"]["SpaContribution"][];
+            actualTrace: components["schemas"]["SpaContribution"][];
+        };
+        SpaPeriods: {
+            quarters: components["schemas"]["SpaPeriod"][];
+            months: components["schemas"]["SpaPeriod"][];
+            /** @description Planned cost not placed in a month (no dates, line items above planned cost); null when 0.00. */
+            notScheduled: components["schemas"]["Money"] | null;
+            notScheduledTrace: components["schemas"]["SpaContribution"][];
+        };
+        SpaDimension: {
+            /** @example activityType */
+            key: string;
+            label: string;
+        };
+        SpaDimensionRow: {
+            key: string;
+            label: string;
+            amount: components["schemas"]["Money"];
+            /**
+             * @description Share of the scope's planned cost in per cent, two decimals.
+             * @example 37.50
+             */
+            share: string;
+            bar: number;
+            trace: components["schemas"]["SpaContribution"][];
+        };
+        SpaDimensionBreakdown: {
+            key: string;
+            label: string;
+            rows: components["schemas"]["SpaDimensionRow"][];
+            total: components["schemas"]["Money"];
+            /** @description Activities with several values without shares count in each row. */
+            countsInEach: boolean;
+        };
+        SpaLineItemRow: {
+            id: string;
+            name: string;
+            plannedCost: components["schemas"]["Money"];
+            committed: components["schemas"]["Money"] | null;
+            actualSpend: components["schemas"]["Money"] | null;
+        };
+        SpaActivityRow: {
+            id: string;
+            name: string;
+            campaign: components["schemas"]["SpaRecordRef"];
+            initiative: components["schemas"]["SpaRecordRef"];
+            owner: string | null;
+            activityType: string | null;
+            /** @description The activity's Channel / audience values, comma separated. */
+            channel: string | null;
+            /** @example Q1 2026 */
+            startQuarter: string | null;
+            status: components["schemas"]["ActivityDisplayStatus"];
+            plannedCost: components["schemas"]["Money"];
+            committed: components["schemas"]["Money"] | null;
+            actualSpend: components["schemas"]["Money"] | null;
+            variancePercent: string | null;
+            overspend: boolean;
+            lineItems: components["schemas"]["SpaLineItemRow"][];
+            raisePurchaseRequest: components["schemas"]["ActionAvailability"];
+        };
+        /** @description 013 FR-020. */
+        SpaBudgetPanel: {
+            budget: components["schemas"]["Money"] | null;
+            plannedCost: components["schemas"]["Money"];
+            committed: components["schemas"]["Money"] | null;
+            plannedVsBudgetPercent: string | null;
+            overBudget: boolean;
+            noBudgetReason: string | null;
+            linked: components["schemas"]["Money"];
+            notLinked: components["schemas"]["Money"];
+        };
+        SpaPurchaseRequest: {
+            id: string;
+            name: string;
+            vendor: string;
+            status: components["schemas"]["PurchaseRequestStatus"];
+            amount: components["schemas"]["Money"];
+            /** @description False for a Declined request, which counts in none of the amounts. */
+            counted: boolean;
+        };
+        /** @description 013 FR-021 (D-335). */
+        SpaProcurementPanel: {
+            count: number;
+            approved: components["schemas"]["Money"];
+            pendingApproval: components["schemas"]["Money"];
+            draft: components["schemas"]["Money"];
+            invoiced: components["schemas"]["Money"] | null;
+            items: components["schemas"]["SpaPurchaseRequest"][];
+        };
+        /** @description The SP&A view of a plan or campaign (013 data-model §3). */
+        SpaView: {
+            plan: components["schemas"]["SpaPlan"];
+            scope: components["schemas"]["SpaRecordRef"];
+            campaigns: components["schemas"]["SpaRecordRef"][];
+            currency: string;
+            financeAccess: boolean;
+            financeNote: string | null;
+            /** Format: date-time */
+            financeDataAsOf: string | null;
+            headline: components["schemas"]["SpaHeadline"];
+            periods: components["schemas"]["SpaPeriods"];
+            dimension: components["schemas"]["SpaDimensionBreakdown"];
+            dimensions: components["schemas"]["SpaDimension"][];
+            activities: components["schemas"]["SpaActivityRow"][];
+            budget: components["schemas"]["SpaBudgetPanel"];
+            procurement: components["schemas"]["SpaProcurementPanel"];
+            notes: string[];
+            emptyMessage: string | null;
+        };
         SplitLink: {
             /** @example A-1012 */
             id: string;
@@ -9767,6 +9954,8 @@ export interface components {
         AllWorkActivityType: string[];
         /** @description Strategic / AOP plans. */
         AllWorkStrategic: "include" | "only" | "exclude";
+        /** @description BCPIR plans (013 FR-003). */
+        AllWorkBcpir: "include" | "only" | "exclude";
         AllWorkShowLevels: "everything" | "completeBranches" | "campaignsWithoutInitiatives" | "initiativesWithoutActivities";
         /** @description Text searched in name, ID, external name and description at every level, ignoring letter case (at most 200 characters). */
         AllWorkSearch: string;
@@ -12272,6 +12461,8 @@ export interface operations {
                 year?: number;
                 /** @description Part of the name or of the ID, ignoring letter case and surrounding spaces. */
                 q?: string;
+                /** @description BCPIR plans (013 FR-003). */
+                bcpir?: components["parameters"]["AllWorkBcpir"];
                 /** @description First year of the range (inclusive). With yearTo; year is an alias for yearFrom = yearTo. */
                 yearFrom?: components["parameters"]["PlansYearFrom"];
                 /** @description Last year of the range (inclusive); not before yearFrom. */
@@ -14252,6 +14443,8 @@ export interface operations {
                 activityType?: components["parameters"]["AllWorkActivityType"];
                 /** @description Strategic / AOP plans. */
                 strategic?: components["parameters"]["AllWorkStrategic"];
+                /** @description BCPIR plans (013 FR-003). */
+                bcpir?: components["parameters"]["AllWorkBcpir"];
                 /** @description Financials filter (FR-024), tested on activities; values combine with OR. committedAbovePlanned holds when the activity or one of its line items is committed above its planned cost. */
                 finance?: components["parameters"]["AllWorkFinance"];
                 showLevels?: components["parameters"]["AllWorkShowLevels"];
@@ -14359,6 +14552,8 @@ export interface operations {
                 activityType?: components["parameters"]["AllWorkActivityType"];
                 /** @description Strategic / AOP plans. */
                 strategic?: components["parameters"]["AllWorkStrategic"];
+                /** @description BCPIR plans (013 FR-003). */
+                bcpir?: components["parameters"]["AllWorkBcpir"];
                 /** @description Financials filter (FR-024), tested on activities; values combine with OR. committedAbovePlanned holds when the activity or one of its line items is committed above its planned cost. */
                 finance?: components["parameters"]["AllWorkFinance"];
                 showLevels?: components["parameters"]["AllWorkShowLevels"];
@@ -17196,6 +17391,39 @@ export interface operations {
             default: components["responses"]["Error"];
         };
     };
+    getSpaView: {
+        parameters: {
+            query?: {
+                /** @description A campaign of the plan; the whole plan when not sent. */
+                campaignId?: string;
+                /** @description A key of SpaView.dimensions; the default dimension when not sent. */
+                dimension?: string;
+            };
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The view (013 data-model §3). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpaView"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
     getActivitySplitOptions: {
         parameters: {
             query?: never;
@@ -17311,6 +17539,8 @@ export interface operations {
                 activityType?: components["parameters"]["AllWorkActivityType"];
                 /** @description Strategic / AOP plans. */
                 strategic?: components["parameters"]["AllWorkStrategic"];
+                /** @description BCPIR plans (013 FR-003). */
+                bcpir?: components["parameters"]["AllWorkBcpir"];
                 /** @description Plans of these types (tested on plans). */
                 planType?: components["parameters"]["AllWorkPlanType"];
                 /** @description Plans planned in these currencies (tested on plans). */
