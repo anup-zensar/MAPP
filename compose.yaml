@@ -36,6 +36,7 @@ services:
     image: mapp-api:local
     environment:
       DATABASE_URL: postgres://mapp@postgres:5432/mapp?sslmode=disable
+      TRUSTED_PROXIES: 172.16.0.0/12
     depends_on:
       seed:
         condition: service_completed_successfully
