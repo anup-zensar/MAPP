@@ -7,6 +7,7 @@ import (
 	"unicode/utf8"
 
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/record"
 )
 
 // The longest team name and description, in characters (003 data model §2).
@@ -56,6 +57,8 @@ func checkTeamName(problems *errs.Problems, d directory, teamID, name string) st
 		problems.Add("name", enterNameMessage)
 	case utf8.RuneCountInString(name) > maxTeamNameLength:
 		problems.Add("name", use80Message)
+	case record.CheckSingleLine(name) != "":
+		problems.Add("name", record.CheckSingleLine(name))
 	case taken:
 		problems.Add("name", fmt.Sprintf(teamNameTakenMessage, other.Name))
 	}
