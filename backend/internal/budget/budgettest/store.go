@@ -4,6 +4,7 @@ package budgettest
 
 import (
 	"context"
+	"slices"
 
 	"mapp/internal/budget"
 	"mapp/internal/platform/fake"
@@ -47,6 +48,10 @@ func (s Store) ListAllocations(context.Context) ([]budget.Allocation, error) {
 
 func (s Store) AllocationsOf(_ context.Context, globalBudgetID string) ([]budget.Allocation, error) {
 	return s.allocations.Where(func(a budget.Allocation) bool { return a.GlobalBudgetID == globalBudgetID })
+}
+
+func (s Store) AllocationsOfBudgets(_ context.Context, globalBudgetIDs []string) ([]budget.Allocation, error) {
+	return s.allocations.Where(func(a budget.Allocation) bool { return slices.Contains(globalBudgetIDs, a.GlobalBudgetID) })
 }
 
 func (s Store) AllocationOfPlan(_ context.Context, planID string) (budget.Allocation, bool, error) {

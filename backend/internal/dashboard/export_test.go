@@ -19,6 +19,7 @@ func sampleInput(t *testing.T, kind Kind, plan string) *input {
 	in := &input{request: request{kind: kind, query: Query{Year: 2026, Currency: "USD"}, plan: plan}, now: now,
 		today: date.Today(now), display: money.DisplayUSD, data: allwork.YearData{Nodes: nodes}}
 	in.board = newBoard(nodes, in.keeps, true, []string{"P-1"})
+	in.board.countPaid(samplePaid(t), 2026)
 	return in
 }
 
@@ -42,7 +43,7 @@ func TestPlanDeck_FR023(t *testing.T) {
 	}
 	activities := beta.Pages[3].Table.Rows
 	alpha := sampleInput(t, KindExecutive, "P-2").planDeck()
-	same(t, "plan file", texts("1,000.00 USD", true, 2, 3, "Over", "Approved", "200.00 USD", true, financeNote),
+	same(t, "plan file", texts("1,000.00 USD", true, 2, 3, "Over", "Approved", "150.00 USD", true, financeNote),
 		texts(beta.Pages[0].Cards[0].Value, beta.Pages[2].Chart != nil, len(beta.Pages[2].Table.Rows), len(activities),
 			activities[0].Cells[1], activities[0].Cells[2], activities[0].Cells[6], slices.Contains(alpha.Pages[0].Notes, financeNote),
 			alpha.Pages[0].Cards[4].Note))

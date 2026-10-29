@@ -7,6 +7,14 @@ WHERE (sqlc.narg(id)::text IS NULL OR id = sqlc.narg(id))
     AND (sqlc.narg(subject_id)::text IS NULL OR subject_id = sqlc.narg(subject_id))
 ORDER BY CASE WHEN sqlc.narg(subject_id)::text IS NULL THEN 0 ELSE number END, length(id), id COLLATE "C";
 
+-- name: ListRoundsOfSubjects :many
+SELECT id, subject_id, number, workflow_id, workflow_name, levels, current_level, outcome, submitted_at,
+    submitted_by_id, submitted_by_name, comment, ended_at, facts, reminder_days, escalation_days, auto_approved,
+    version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name, subject_kind
+FROM approval_rounds
+WHERE subject_id = ANY(sqlc.arg(subject_ids)::text[])
+ORDER BY length(id), id COLLATE "C";
+
 -- name: ListOpenRounds :many
 SELECT id, subject_id, number, workflow_id, workflow_name, levels, current_level, outcome, submitted_at,
     submitted_by_id, submitted_by_name, comment, ended_at, facts, reminder_days, escalation_days, auto_approved,

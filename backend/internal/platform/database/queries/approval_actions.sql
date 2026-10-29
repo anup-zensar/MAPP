@@ -6,6 +6,14 @@ FROM approval_actions
 WHERE sqlc.narg(subject_id)::text IS NULL OR subject_id = sqlc.narg(subject_id)
 ORDER BY length(id), id COLLATE "C";
 
+-- name: ListActionsOfSubjects :many
+SELECT id, round_id, round_number, subject_id, action, level, level_name, approvers, actor_id, actor_name,
+    on_behalf_of, at, comment, changes, capacity, as_delegate_of_id, as_delegate_of_name, rule, escalated_to_id,
+    escalated_to_name, waited_days, subject_kind, self_approval
+FROM approval_actions
+WHERE subject_id = ANY(sqlc.arg(subject_ids)::text[])
+ORDER BY length(id), id COLLATE "C";
+
 -- name: ListActionsInScope :many
 SELECT id, round_id, round_number, subject_id, action, level, level_name, approvers, actor_id, actor_name,
     on_behalf_of, at, comment, changes, capacity, as_delegate_of_id, as_delegate_of_name, rule, escalated_to_id,

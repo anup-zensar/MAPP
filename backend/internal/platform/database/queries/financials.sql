@@ -7,6 +7,15 @@ FROM financial_transactions
 WHERE sqlc.narg(id)::text IS NULL OR id = sqlc.narg(id)
 ORDER BY length(id), id COLLATE "C";
 
+-- name: ListPaymentsOnLineItems :many
+SELECT id, type, document_number, line_number, po_number, po_line_number, posting_date, accrual_month,
+    amount_minor, currency, vendor_code, vendor_name, description, swbs_code, tracking_key, sent_line_item_id,
+    line_item_id, matched_by, not_linked_reason, manual_link_by_id, manual_link_by_name, manual_link_at, import_id,
+    version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+FROM financial_transactions
+WHERE type = 'payment' AND line_item_id = ANY(sqlc.arg(line_item_ids)::text[])
+ORDER BY length(id), id COLLATE "C";
+
 -- name: ListTransactionsInScope :many
 SELECT t.id, t.type, t.document_number, t.line_number, t.po_number, t.po_line_number, t.posting_date,
     t.accrual_month, t.amount_minor, t.currency, t.vendor_code, t.vendor_name, t.description, t.swbs_code,

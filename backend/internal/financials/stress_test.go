@@ -57,6 +57,12 @@ func (m *memRepository) ListTransactions(context.Context) ([]Transaction, error)
 	return slices.Clone(m.transactions), nil
 }
 
+func (m *memRepository) PaymentsOnLineItems(_ context.Context, lineItemIDs []string) ([]Transaction, error) {
+	return slices.DeleteFunc(slices.Clone(m.transactions), func(t Transaction) bool {
+		return t.Type != TypePayment || !slices.Contains(lineItemIDs, t.LineItemID)
+	}), nil
+}
+
 func (m *memRepository) GetTransaction(_ context.Context, id string) (Transaction, bool, error) {
 	i := slices.IndexFunc(m.transactions, func(t Transaction) bool { return t.ID == id })
 	if i < 0 {

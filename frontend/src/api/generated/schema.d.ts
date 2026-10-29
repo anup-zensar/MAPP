@@ -10086,7 +10086,7 @@ export interface components {
             budget: components["schemas"]["Money"] | null;
             plannedCost: components["schemas"]["Money"] | null;
             committed: components["schemas"]["Money"] | null;
-            /** @description Paid, Shell's actuals (015). */
+            /** @description Paid, Shell's actuals (015), posted in the plan's year as 013's Actual spend (D-357). */
             actual: components["schemas"]["Money"] | null;
             /** @description Planned cost ÷ budget, a whole percent. */
             budgetUsedPercent: number | null;
@@ -10135,7 +10135,7 @@ export interface components {
             noDates: components["schemas"]["Money"] | null;
             /** @description Planned cost spread into months of other years; null when none. */
             otherYears: components["schemas"]["Money"] | null;
-            /** @description Payments posted outside the year; null when none or when financial data is hidden. */
+            /** @description Payments posted outside the year, not counted in Actual (D-357); null when none or when financial data is hidden. */
             paidOutsideYear: components["schemas"]["Money"] | null;
         };
         DashboardMonth: {

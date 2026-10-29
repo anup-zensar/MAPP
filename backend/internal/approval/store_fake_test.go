@@ -63,6 +63,10 @@ func (s fakeStore) RoundsOf(_ context.Context, subjectID string) ([]Round, error
 	return rounds, err
 }
 
+func (s fakeStore) RoundsOfSubjects(_ context.Context, subjectIDs []string) ([]Round, error) {
+	return s.rounds.Where(func(r Round) bool { return slices.Contains(subjectIDs, r.SubjectID) })
+}
+
 func (s fakeStore) OpenRounds(context.Context) ([]Round, error) {
 	return s.rounds.Where(func(r Round) bool { return r.Outcome == OutcomeOpen })
 }
@@ -83,6 +87,10 @@ func (s fakeStore) ListActions(context.Context) ([]Action, error) {
 
 func (s fakeStore) ActionsOf(_ context.Context, subjectID string) ([]Action, error) {
 	return s.actions.Where(func(a Action) bool { return a.SubjectID == subjectID })
+}
+
+func (s fakeStore) ActionsOfSubjects(_ context.Context, subjectIDs []string) ([]Action, error) {
+	return s.actions.Where(func(a Action) bool { return slices.Contains(subjectIDs, a.SubjectID) })
 }
 
 func (s fakeStore) GetNotification(_ context.Context, id string) (Notification, bool, error) {

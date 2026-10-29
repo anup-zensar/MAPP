@@ -4,6 +4,7 @@ package financialstest
 
 import (
 	"context"
+	"slices"
 
 	"mapp/internal/financials"
 	"mapp/internal/platform/fake"
@@ -23,6 +24,12 @@ func NewStore(db *fake.DB) Store {
 
 func (s Store) ListTransactions(context.Context) ([]financials.Transaction, error) {
 	return s.transactions.List()
+}
+
+func (s Store) PaymentsOnLineItems(_ context.Context, lineItemIDs []string) ([]financials.Transaction, error) {
+	return s.transactions.Where(func(t financials.Transaction) bool {
+		return t.Type == financials.TypePayment && slices.Contains(lineItemIDs, t.LineItemID)
+	})
 }
 
 func (s Store) GetTransaction(_ context.Context, id string) (financials.Transaction, bool, error) {

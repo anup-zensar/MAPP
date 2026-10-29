@@ -3,6 +3,7 @@ package dashboard
 import (
 	"cmp"
 	"slices"
+	"strconv"
 	"strings"
 
 	"mapp/internal/allwork"
@@ -16,12 +17,13 @@ type board struct {
 	campaignOf map[string]string // initiative and activity id → campaign id
 	finance    map[string]bool   // plans whose financial figures count
 	own        map[string]sums   // plan and campaign id → its sums
+	paid       map[string]money.Amount
 }
 
 // newBoard keeps the nodes of the plans that keep says to keep; financePlans nil means every plan's finance counts.
 func newBoard(nodes []allwork.Node, keep func(plan *allwork.Node) bool, seesFinance bool, financePlans []string) *board {
 	b := &board{byLevel: map[allwork.Level][]*allwork.Node{}, campaignOf: map[string]string{}, finance: map[string]bool{},
-		own: map[string]sums{}}
+		own: map[string]sums{}, paid: map[string]money.Amount{}}
 	kept := map[string]bool{}
 	for i := range nodes {
 		n := &nodes[i]
@@ -68,10 +70,30 @@ func (b *board) addUp() {
 	}
 	for _, li := range b.byLevel[allwork.LevelLineItem] {
 		if b.finance[li.PlanID] && li.Finance != nil {
-			paid := li.Finance.Paid
-			b.addTo(li, sums{committed: &li.Finance.Committed, actual: &paid})
+			b.addTo(li, sums{committed: &li.Finance.Committed})
 		}
 	}
+}
+
+// countPaid makes each line item's payments posted in year its actual, as 013's Actual spend counts (D-357).
+func (b *board) countPaid(paid map[string]map[string]money.Amount, year int) {
+	for _, li := range b.byLevel[allwork.LevelLineItem] {
+		if !b.finance[li.PlanID] {
+			continue
+		}
+		var actual money.Amount
+		for month, amount := range paid[li.ID] {
+			if inYear(month, year) {
+				actual = actual.Add(amount)
+			}
+		}
+		b.paid[li.ID] = actual
+		b.addTo(li, sums{actual: &actual})
+	}
+}
+
+func inYear(month string, year int) bool {
+	return month[:4] == strconv.Itoa(year)
 }
 
 func (b *board) start(n *allwork.Node) sums {
@@ -133,6 +155,16 @@ func (b *board) lineItemIDs() []string {
 	ids := make([]string, 0, len(b.byLevel[allwork.LevelLineItem]))
 	for _, li := range b.byLevel[allwork.LevelLineItem] {
 		ids = append(ids, li.ID)
+	}
+	return ids
+}
+
+func (b *board) financeLineItemIDs() []string {
+	ids := []string{}
+	for _, li := range b.byLevel[allwork.LevelLineItem] {
+		if b.finance[li.PlanID] {
+			ids = append(ids, li.ID)
+		}
 	}
 	return ids
 }
