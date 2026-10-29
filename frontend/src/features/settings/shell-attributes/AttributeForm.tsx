@@ -111,6 +111,8 @@ export function AttributeForm({ level, attribute }: AttributeFormProps) {
     isNew: !attribute,
     parent,
     optionsToLink: needsLinks ? activeOwnOptions : null,
+    others: attributes.data?.items,
+    ownId: attribute?.id,
   };
   const backTo = attribute
     ? `/settings/shell-attributes/${attribute.id}`
