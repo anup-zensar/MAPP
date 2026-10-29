@@ -3,15 +3,16 @@ import { ApiError, resolvedMessage } from '@/api/errors';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { useToast } from '@/ui/Toast/useToast';
+import { allows } from '@/session/gate-action';
 import { useFormatters } from '@/format/useFormatters';
 import { useRestoreFromBin } from './api';
-import type { RecycleBinEntry } from './api';
+import type { RecycleBinEntry, RecycleBinListItem } from './api';
 import { deletedText, recordTitle } from './sample-text';
 import styles from './SampleRecordsPage.module.css';
 import { useFailureMessage } from './useFailureMessage';
 
 /** What was deleted and is not restored yet, newest first, each with Restore (FR-025). */
-export function RecentlyDeletedCard({ entries }: { entries: RecycleBinEntry[] }) {
+export function RecentlyDeletedCard({ entries }: { entries: RecycleBinListItem[] }) {
   const format = useFormatters();
   const { show } = useToast();
   const showFailure = useFailureMessage();
@@ -42,14 +43,17 @@ export function RecentlyDeletedCard({ entries }: { entries: RecycleBinEntry[] })
         {entries.map((entry) => (
           <li key={entry.id} className={styles.binEntry}>
             <p>{deletedText(entry, format.dateTime)}</p>
-            <Button
-              size="sm"
-              icon={<RotateCcw />}
-              aria-label={`Restore ${entry.recordTypeLabel} ${entry.recordName}`}
-              onClick={() => restore(entry)}
-            >
-              Restore
-            </Button>
+            {/* Only for people who may restore it (038 FR-052). */}
+            {allows(entry.access?.restore) && (
+              <Button
+                size="sm"
+                icon={<RotateCcw />}
+                aria-label={`Restore ${entry.recordTypeLabel} ${entry.recordName}`}
+                onClick={() => restore(entry)}
+              >
+                Restore
+              </Button>
+            )}
           </li>
         ))}
       </ul>
