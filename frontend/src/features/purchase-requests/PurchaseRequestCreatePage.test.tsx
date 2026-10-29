@@ -107,6 +107,25 @@ describe('032 FR-003/FR-053/FR-054: new purchase request', () => {
     expect(field('name')).toHaveAccessibleDescription(/A purchase request with this name exists./);
   });
 
+  it('032 FR-053: a refused Shell attribute of the purchase request shows in the summary and at its field', async () => {
+    const problems = apiError('validation_failed', 'Some fields need attention.', {
+      fields: [{ field: 'attributes.SA-1101', message: 'Enter a vendor e-mail address.' }],
+    });
+    const { user } = renderCreate({ body: defaults() }, [
+      reply(CREATE, { status: 400, body: problems }),
+    ]);
+    await screen.findByLabelText(/^Name/);
+    await chooseWorkflows(user);
+
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    const summary = await screen.findByText('1 problem needs your attention');
+    expect(summary.closest('[role="alert"]')).toHaveTextContent('Enter a vendor e-mail address.');
+    expect(field('attributes.SA-1101')).toHaveAccessibleDescription(
+      /Enter a vendor e-mail address./,
+    );
+  });
+
   it('saves the purchase request and opens it', async () => {
     const { api, router, user } = renderCreate({ body: defaults() }, [
       reply(CREATE, { status: 201, body: purchaseRequest() }),
