@@ -166,9 +166,7 @@ describe('ApprovalWorkflowsPage set inactive, reactivate and delete (feature 008
     await user.click(within(dialog).getByRole('button', { name: 'Delete approval workflow' }));
 
     expect(
-      await screen.findByText(
-        "Approval workflow 'China BC approval workflow' deleted",
-      ),
+      await screen.findByText("Approval workflow 'China BC approval workflow' deleted"),
     ).toBeInTheDocument();
     const messages = await findMessages();
     await user.click(within(messages).getByRole('button', { name: 'Undo' }));

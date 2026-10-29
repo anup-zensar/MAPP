@@ -114,9 +114,7 @@ describe('SampleRecordsPage: delete, Undo and restore', () => {
     await waitFor(() => expect(messages).toHaveTextContent(UNREACHABLE));
     await user.click(within(messages).getByRole('button', { name: 'Try again' }));
 
-    await waitFor(() =>
-      expect(messages).toHaveTextContent("Sample folder 'Ideas' deleted"),
-    );
+    await waitFor(() => expect(messages).toHaveTextContent("Sample folder 'Ideas' deleted"));
   });
 
   it('lists what was deleted, with what went with it, who deleted it and when (plan "Developer pages")', async () => {

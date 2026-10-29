@@ -59,9 +59,7 @@ describe('PlanPage actions and history (US5, US6, FR-026 – FR-031)', () => {
     await user.click(await screen.findByRole('button', { name: 'Delete plan' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans'));
-    expect(
-      await screen.findByText("Plan 'FY2026 Lubricants Europe' deleted"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Plan 'FY2026 Lubricants Europe' deleted")).toBeInTheDocument();
   });
 
   it('copies the plan from More and opens the copy (US6#1–2, FR-026, FR-027)', async () => {

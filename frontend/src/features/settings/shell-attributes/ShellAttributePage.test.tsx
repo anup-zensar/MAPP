@@ -244,8 +244,6 @@ describe('ShellAttributePage (FR-020)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Delete Shell attribute' }));
 
     await waitFor(() => expect(router.state.location.search).toBe('?level=activity'));
-    expect(await findMessages()).toHaveTextContent(
-      "Shell attribute 'PIR' deleted",
-    );
+    expect(await findMessages()).toHaveTextContent("Shell attribute 'PIR' deleted");
   });
 });

@@ -56,9 +56,7 @@ describe('useCampaignTreeContent: row actions (feature 005, US5, US6)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Delete initiative' }));
 
     expect(await screen.findByTestId('empty')).toBeInTheDocument();
-    expect(await findMessages()).toHaveTextContent(
-      "Initiative 'Digital & social' deleted",
-    );
+    expect(await findMessages()).toHaveTextContent("Initiative 'Digital & social' deleted");
   });
 
   it('copies a campaign from its row; the copy appears highlighted (US6#4–5, FR-026, FR-027)', async () => {

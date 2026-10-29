@@ -74,9 +74,7 @@ describe('TeamsPage (feature 003, US2): Delete, Set team inactive and Reactivate
     );
     await user.click(within(dialog).getByRole('button', { name: 'Delete team' }));
 
-    expect(
-      await screen.findByText("Team 'Mobility China' deleted"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Team 'Mobility China' deleted")).toBeInTheDocument();
     const messages = await findMessages();
     await user.click(within(messages).getByRole('button', { name: 'Undo' }));
 

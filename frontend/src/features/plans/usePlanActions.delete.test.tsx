@@ -54,9 +54,7 @@ describe('usePlanActions: delete with Undo (US6, FR-029, FR-030)', () => {
     expect(await within(dialog).findByText('This plan is published.')).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Delete plan' }));
 
-    expect(
-      await screen.findByText("Plan 'FY2025 Lubricants Europe' deleted"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Plan 'FY2025 Lubricants Europe' deleted")).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/plans');
     await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
 

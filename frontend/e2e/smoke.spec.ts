@@ -132,9 +132,7 @@ test('US5: create, rename, delete and Undo a sample folder; the activity log rec
   await page.getByRole('button', { name: `Actions for ${renamed}` }).click();
   await page.getByRole('menuitem', { name: 'Delete' }).click();
   await page.getByRole('button', { name: 'Delete sample folder' }).click();
-  await expect(
-    page.getByText(`Sample folder '${renamed}' deleted`).first(),
-  ).toBeVisible();
+  await expect(page.getByText(`Sample folder '${renamed}' deleted`).first()).toBeVisible();
   await expect(page.getByRole('button', { name: `Actions for ${renamed}` })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Undo' }).click();

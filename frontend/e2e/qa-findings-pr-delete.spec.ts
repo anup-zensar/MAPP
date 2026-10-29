@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/no-csp-violations';
 import { action, expectNoAxeViolations, expectToast, signInAs, uniqueName } from './fixtures';
 import {
   approvedActivity,
@@ -40,7 +40,7 @@ test('038 FR-013 (H-3): delete a purchase request from its page, then Undo', asy
   // Priya may not see the Purchase requests page, so she lands on the line item it was raised from.
   await expect(page).toHaveURL(new RegExp(`/line-items/${lineItem.id}$`));
   await expect(page.getByRole('heading', { name: lineItem.name, level: 1 })).toBeVisible();
-  await expectToast(page, `Purchase request '${prName}' moved to the recycle bin`);
+  await expectToast(page, `Purchase request '${prName}' deleted`);
   await expect(page.getByText("doesn't exist or you don't have access")).toHaveCount(0);
   await expectNoAxeViolations(page);
 

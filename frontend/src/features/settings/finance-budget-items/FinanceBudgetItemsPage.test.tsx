@@ -169,9 +169,7 @@ describe('FinanceBudgetItemsPage: status and delete (US5 scenario 5, FR-004)', (
     await user.click(within(dialog).getByRole('button', { name: 'Delete finance budget item' }));
 
     const messages = await findMessages();
-    expect(messages).toHaveTextContent(
-      "Finance budget item 'Asia – Retail' deleted",
-    );
+    expect(messages).toHaveTextContent("Finance budget item 'Asia – Retail' deleted");
     expect(within(messages).getByRole('button', { name: 'Undo' })).toBeInTheDocument();
   });
 

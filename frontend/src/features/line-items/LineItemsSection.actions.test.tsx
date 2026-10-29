@@ -70,9 +70,7 @@ describe('LineItemsSection, row actions (US1, US4)', () => {
     ).toBeVisible();
     await user.click(within(dialog).getByRole('button', { name: 'Delete line item' }));
 
-    expect(
-      await screen.findByText("Line item 'Agency fee' deleted"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Line item 'Agency fee' deleted")).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1001');
   });
 
