@@ -14,7 +14,14 @@ import { fetchLatestActivity, usePlanActivities } from './api';
 import type { Activity, ActivitySummary } from './api';
 import { ActivityDeleteQuestion } from './ActivityDeleteQuestion';
 import { ActivityRowCost, ActivityRowStatus } from './ActivityRowCells';
-import { activityEditHref, activityHref, datesText, EMPTY, newActivityHref } from './activity-text';
+import {
+  activityEditHref,
+  activityHref,
+  datesText,
+  EMPTY,
+  MOVE_TO,
+  newActivityHref,
+} from './activity-text';
 import type { DateWriters } from './activity-text';
 import { CopyActivityDialog } from './CopyActivityDialog';
 import { MoveActivityDialog } from './MoveActivityDialog';
@@ -115,7 +122,7 @@ export function activityRowsByInitiative(
           access?.editActivities,
         ),
         ...gateItem(
-          { label: 'Move', onSelect: () => rowActions.ask('move', activity.id) },
+          { label: MOVE_TO, onSelect: () => rowActions.ask('move', activity.id) },
           access?.editActivities,
         ),
         // Split off line items and planned cost into a new activity (016 FR-026).
