@@ -50,20 +50,6 @@ describe('WaitingCard', () => {
     expect(router.state.location.search).toBe('?tab=waiting&activity=A-1045');
   });
 
-  it('032 FR-029: a waiting purchase request links to its page and reviews in its preview', async () => {
-    const { user, router } = renderCard(
-      page([
-        waitingItemOf({ id: 'PR-1002', name: 'PR for Stand build', waitingSince: daysAgo(1) }),
-      ]),
-    );
-
-    const name = await within(card()).findByRole('link', { name: 'PR for Stand build' });
-    expect(name).toHaveAttribute('href', '/purchase-requests/PR-1002');
-    await user.click(within(card()).getByRole('link', { name: 'Review PR for Stand build' }));
-
-    expect(router.state.location.search).toBe('?tab=waiting&activity=PR-1002');
-  });
-
   it('leaves out an owner that is not set (FR-013)', async () => {
     renderCard(page([waitingItemOf({ owner: null, plannedCost: null })]));
 

@@ -68,7 +68,9 @@ describe('ApprovalsTable (feature 008, US3)', () => {
     expect(row).toHaveTextContent('Modified purchase request');
     await user.click(within(row).getByRole('button', { name: 'Agency retainer' }));
 
-    expect(onOpen).toHaveBeenCalledWith('PR-1001');
+    expect(onOpen).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'PR-1001', kind: 'modifiedPurchaseRequest' }),
+    );
   });
 
   it('marks a passed start date and an inactive workflow (edge case)', () => {

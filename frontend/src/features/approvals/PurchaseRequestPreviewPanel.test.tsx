@@ -179,12 +179,12 @@ describe('032 FR-029: PR in the approvals inbox', () => {
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeVisible();
   });
 
-  it('opens this preview, not the activity one, for an inbox row of a purchase request', async () => {
+  it('032 FR-029: opens this preview, not the activity one, for an inbox row of a purchase-request kind', async () => {
     const prInboxRow = rowOf({
       activity: null,
       subject: {
-        kind: 'purchaseRequest',
-        label: 'Purchase request',
+        kind: 'modifiedPurchaseRequest',
+        label: 'Modified purchase request',
         id: 'PR-1002',
         name: 'PR for Stand build',
         status: 'submitted',
@@ -199,7 +199,7 @@ describe('032 FR-029: PR in the approvals inbox', () => {
       reply('GET /api/v1/approval-delegations', NO_DELEGATIONS),
       reply(PREVIEW, { body: preview() }, { purchaseRequestId: 'PR-1002' }),
     ]);
-    const { user } = renderWithProviders(<ApprovalsPage />, {
+    const { user, router } = renderWithProviders(<ApprovalsPage />, {
       route: '/approvals?tab=waiting',
       path: '/approvals',
       user: testUser(),
@@ -209,5 +209,8 @@ describe('032 FR-029: PR in the approvals inbox', () => {
 
     const panel = await screen.findByRole('dialog', { name: 'PR for Stand build' });
     expect(within(panel).getByRole('link', { name: 'Open purchase request' })).toBeVisible();
+    expect(router.state.location.search).toBe(
+      '?tab=waiting&activity=PR-1002&kind=modifiedPurchaseRequest',
+    );
   });
 });

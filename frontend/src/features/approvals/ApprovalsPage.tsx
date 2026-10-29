@@ -14,7 +14,6 @@ import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { Tabs } from '@/ui/Tabs/Tabs';
 import type { TabItem } from '@/ui/Tabs/Tabs';
 import type { components } from '@/api/generated/schema';
-import { isPurchaseRequestId } from '@/ui/record-links';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useFormatters } from '@/format/useFormatters';
 import {
@@ -36,8 +35,8 @@ import { DelegationPanel } from './DelegationPanel';
 import { activitiesCount } from './messages';
 import { MonitoringView } from './MonitoringView';
 import { PurchaseRequestPreviewPanel } from './PurchaseRequestPreviewPanel';
-import { approvalsAddressOf } from './schemas';
-import type { PageTab } from './schemas';
+import { approvalsAddressOf, previewParams } from './schemas';
+import type { PageTab, PreviewSubject } from './schemas';
 import { useApprovalSummary } from './useApprovalSummary';
 import { useChosenTabInView } from './useChosenTabInView';
 import styles from './ApprovalsPage.module.css';
@@ -53,7 +52,7 @@ const EMPTY_TAB: Record<ApprovalTab, string> = {
 export function ApprovalsPage() {
   usePageTitle('Approvals');
   const [params, setParams] = useSearchParams();
-  const { tab: chosenTab, previewId, delegationsOpen } = approvalsAddressOf(params);
+  const { tab: chosenTab, previewId, previewKind, delegationsOpen } = approvalsAddressOf(params);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<ApprovalFilterValues>(NO_FILTERS);
   const summary = useApprovalSummary();
@@ -82,10 +81,10 @@ export function ApprovalsPage() {
   }
 
   function moveOn(decidedId: string, before: ApprovalRow[]) {
-    const ids = before.map((row) => row.subject.id);
-    const index = ids.indexOf(decidedId);
-    const next = ids[index + 1] ?? ids.find((id) => id !== decidedId);
-    changeParams({ activity: next ?? null }, true);
+    const subjects = before.map((row) => row.subject);
+    const index = subjects.findIndex((subject) => subject.id === decidedId);
+    const next = subjects[index + 1] ?? subjects.find((subject) => subject.id !== decidedId);
+    changeParams(previewParams(next ?? null), true);
   }
 
   const counts = summary.data;
@@ -99,7 +98,7 @@ export function ApprovalsPage() {
     { value: 'decided', label: 'Decided by me' },
     { value: 'monitoring', label: 'Monitoring' },
   ];
-  const openPreview = (id: string) => changeParams({ activity: id });
+  const openPreview = (subject: PreviewSubject) => changeParams(previewParams(subject));
 
   return (
     <>
@@ -186,16 +185,16 @@ export function ApprovalsPage() {
       </div>
 
       {previewId &&
-        (isPurchaseRequestId(previewId) ? (
-          <PurchaseRequestPreviewPanel
-            purchaseRequestId={previewId}
-            onClose={() => changeParams({ activity: null })}
+        (previewKind === 'activity' ? (
+          <ApprovalPreviewPanel
+            activityId={previewId}
+            onClose={() => changeParams(previewParams(null))}
             onDecided={() => moveOn(previewId, visible)}
           />
         ) : (
-          <ApprovalPreviewPanel
-            activityId={previewId}
-            onClose={() => changeParams({ activity: null })}
+          <PurchaseRequestPreviewPanel
+            purchaseRequestId={previewId}
+            onClose={() => changeParams(previewParams(null))}
             onDecided={() => moveOn(previewId, visible)}
           />
         ))}
