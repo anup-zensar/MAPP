@@ -39,8 +39,9 @@ decision (D-342–D-345) or an open question (Q-022, Q-023).
   Shell (Q-022).
 - Q: What does "actual" mean? → A: what GSAP reports as **paid** — Shell's "actuals are the payments
   released" (015 spec; the Financials page's "Paid (actuals)"). Committed is the purchase-order value (015).
-  A plan's Actual counts the payments posted in the plan's year, as the SP&A view's Actual spend does (013
-  FR-010, D-335), so one plan never shows two actuals (D-357, analysis of 2026-10-29).
+  A plan's Actual counts the payments posted in the plan's year, and its Committed the purchase orders posted
+  in the plan's year, as the SP&A view's Actual spend and Committed do (013 FR-010, D-335), so one plan never
+  shows two actuals or two committed totals (D-357, D-358, analysis of 2026-10-29).
 - Q: How are "remaining" and "utilisation" defined, given that "Remaining budget" already means a parent's
   budget minus its children's? → A: two new words so nothing is defined twice: **Unspent budget** = budget −
   actual (client 017 FR-019 "Remaining Budget") and **Budget spent** = actual ÷ budget as a whole percent
@@ -92,9 +93,9 @@ Approvals monitoring and the Purchase requests page for the same plans.
    **Then** it covers only FY2026 Lubricants Europe: no figure, row, campaign, approval or purchase request of
    Mobility China counts anywhere on it.
 3. **Given** a plan whose line items have GSAP purchase orders and payments, **When** the dashboard is shown,
-   **Then** Committed equals the plan's Committed on the Financials figures (015), Actual equals its Paid posted
-   in the plan's year — the SP&A view's Actual spend (013, D-357) — Unspent budget is budget − actual and Budget
-   spent is actual ÷ budget as a whole percent.
+   **Then** Committed and Actual equal the plan's Committed and Paid (015) posted in the plan's year — the SP&A
+   view's Committed and Actual spend (013, D-357, D-358) — Unspent budget is budget − actual and Budget spent is
+   actual ÷ budget as a whole percent.
 4. **Given** a person who may view plans but not see financial data, **When** they open the dashboard, **Then**
    Committed, Actual, Unspent budget, Budget spent and the actual line of the monthly chart show "—" with
    "You can't see financial data" and every other figure is shown.
@@ -233,6 +234,8 @@ global budgets panels — the same figures as on screen. **Export › PDF** give
   cover 1 of 2 plans".
 - Payments posted outside the chosen year: not counted in Actual (D-357), shown under the monthly chart as "Paid
   outside the year (not counted)".
+- Purchase orders posted outside the chosen year: not counted in Committed (D-358), shown under the monthly chart
+  as "Committed outside the year (not counted)".
 - A currency whose rate was removed from Settings: its transactions are left out of every sum as on the
   Financials page (015 D-257).
 - Purchase requests switched off in Settings: the Purchase requests panel says so instead of showing zeros.
@@ -281,8 +284,9 @@ global budgets panels — the same figures as on screen. **Export › PDF** give
   percent rounded half up; **Left to plan** MUST be budget − planned cost and **Unspent budget** budget −
   actual; all four "—" without a budget. Planned cost above budget MUST be marked "Over budget".
 - **FR-011**: **Committed** and **Actual** MUST be the purchase-order and payment figures of the plans' line items
-  from their GSAP transactions, as feature 015 works them out; **Actual** MUST count only the payments posted in
-  the plan's year, as 013's Actual spend does (013 FR-010, D-357).
+  from their GSAP transactions, as feature 015 works them out; **Committed** MUST count only the purchase orders
+  and **Actual** only the payments posted in the plan's year, as 013's Committed and Actual spend do (013 FR-010,
+  D-357, D-358).
 - **FR-012**: The **By market** table MUST list each team with at least one plan in view, with its number of
   plans and the figures of FR-008–FR-011 for its plans; a plan with several teams counts in each of their rows
   and once in the totals.
@@ -352,8 +356,8 @@ global budgets panels — the same figures as on screen. **Export › PDF** give
 ### Measurable Outcomes
 
 - **SC-001**: For every seeded person and year, each dashboard total equals the sum of the same figure on the
-  plan pages (budget, planned cost), the Financials figures (committed) and the SP&A view (actual spend) of the
-  plans that person may see — in 100% of automated comparisons.
+  plan pages (budget, planned cost) and the SP&A view (committed, actual spend) of the plans that person may see
+  — in 100% of automated comparisons.
 - **SC-002**: A person whose scope is one market never sees a figure, name or count of another market on a
   dashboard or in an exported file (100% of scope tests).
 - **SC-003**: The Executive dashboard for one year of the reference volume (feature 028: 50 plans, 5,000

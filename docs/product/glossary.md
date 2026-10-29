@@ -37,7 +37,7 @@ application use these definitions. Hive9 names are given in brackets where users
 | **Allocation** | The part of a global budget given to one plan; it becomes that plan's budget, which the plan's owner cannot change. |
 | **Finance budget** | Finance's budget for a year (e.g. "2026 Lubricants Budget"), made up of finance budget items. Only the list of items exists in this phase. |
 | **Actuals** | What was really spent: the payments GSAP has released (feature 015's **Paid**). The SP&A view calls it **Actual spend** (feature 013). |
-| **Committed** | The value of the GSAP purchase orders on a record's line items (feature 015). **Not yet committed** is planned cost minus committed; "Committed above planned cost" is said in red words. |
+| **Committed** | The value of the GSAP purchase orders on a record's line items (feature 015). **Not yet committed** is planned cost minus committed; "Committed above planned cost" is said in red words. The SP&A view and the dashboards count only the purchase orders posted in the plan's year (D-335, D-358). |
 | **Invoiced** | The supplier invoices GSAP has received against a record's line items, less credit notes (feature 015). |
 | **Paid** | The payments GSAP has released on a record's line items — Shell's **actuals** (feature 015). |
 | **Accrued** | Money owed for work received but not yet invoiced, as GSAP accrued it for the latest accrual month in the data, e.g. "Accrued (Sep 2026)" (feature 015). |

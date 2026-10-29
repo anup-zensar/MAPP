@@ -121,10 +121,11 @@ type PlanCampaigns struct {
 }
 
 type Months struct {
-	Items           []Month      `json:"items"`
-	NoDates         *money.Money `json:"noDates"`
-	OtherYears      *money.Money `json:"otherYears"`
-	PaidOutsideYear *money.Money `json:"paidOutsideYear"`
+	Items                []Month      `json:"items"`
+	NoDates              *money.Money `json:"noDates"`
+	OtherYears           *money.Money `json:"otherYears"`
+	CommittedOutsideYear *money.Money `json:"committedOutsideYear"`
+	PaidOutsideYear      *money.Money `json:"paidOutsideYear"`
 }
 
 type Month struct {

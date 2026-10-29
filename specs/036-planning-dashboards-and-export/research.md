@@ -8,24 +8,26 @@ Each section states the decision, why, and what was rejected.
 `internal/app/allWorkSource`): plans in the actor's scope (`PlanStore.ListInScope`), with every campaign,
 initiative, activity and line item, their USD budgets and planned costs (016 conversion), line-item spreads in
 USD (007), 015's GSAP facts per line item, completeness (`Missing`), plan type and teams. Sums follow the
-domain model: plan budget (§4.1), planned cost = Σ activities (§4.2), committed = Σ line items' facts
-(015), actual = Σ line items' payments posted in the plan's year (R2, D-357). The monthly planned cost uses All work's Budget & cost rule, exported from `allwork` as
+domain model: plan budget (§4.1), planned cost = Σ activities (§4.2), committed and actual = Σ line
+items' purchase orders and payments posted in the plan's year (R2, D-357, D-358). The monthly planned cost uses All work's Budget & cost rule, exported from `allwork` as
 `PlannedByActivity(nodes, year)` (line-item spreads, the positive unassigned balance spread evenly, No dates and
 Other years apart — 010 FR-023), so the dashboard's months equal the Budget & cost view.
 
 **Rejected**: dedicated SQL aggregates (would redefine planned cost, conversion and spreads in SQL, and drift
 from the record pages); calling the plan, campaign and activity services per plan (N+1).
 
-## R2 — Actuals by month
+## R2 — Committed and actuals by month
 
-**Decision**: a new `financials.Service.PaidByMonth(ctx, lineItemIDs)` returns, for the line items of the plans
-whose financial data the person may see, the payments' USD amounts by posting month (`YYYY-MM`), converted
-with `usdOf` at the current rate and skipping currencies no longer in Settings (D-257), exactly as
-`FactsByLineItem` sums Paid. It reads them in one statement, `financials.Store.PaymentsOnLineItems` (R9).
-A plan's Actual — in the totals, the rows, the campaigns and a plan export's activities — is its payments
-posted in the plan's year, as 013's Actual spend (013 FR-010, D-335), so one plan never shows two actuals
-(D-357, superseding D-342 there); payments posted outside the year count nowhere and appear under the monthly
-chart as "Paid outside the year (not counted)". Committed stays 015's Committed.
+**Decision**: a new `financials.Service.SpendByMonth(ctx, lineItemIDs)` returns, for the line items of the plans
+whose financial data the person may see, their `Facts` (Committed from purchase-order lines, Paid from
+payments) in USD by posting month (`YYYY-MM`), converted with `usdOf` at the current rate and skipping
+currencies no longer in Settings (D-257), exactly as `FactsByLineItem` sums them. It reads them in one
+statement, `financials.Store.SpendOnLineItems` (R9). A plan's Committed and Actual — in the totals, the rows,
+the campaigns and a plan export's activities — are its purchase orders and payments posted in the plan's year,
+as 013's Committed and Actual spend (013 FR-010, D-335), so one plan never shows two committed totals or two
+actuals (D-357, D-358, superseding D-342 there); those posted outside the year count nowhere and appear under
+the monthly chart as "Committed outside the year (not counted)" and "Paid outside the year (not counted)".
+013's own `FactsByLineItemMonth` was not reused: it reads every transaction, unscoped (B5).
 
 **Rejected**: invoices as actuals (Shell: actuals are payments released); monthly exchange rates (Q-023).
 
@@ -103,7 +105,7 @@ with records, 028), the person's choices, then for the records of the plans in v
 
 | Read | Statement | Limited to |
 |---|---|---|
-| Payments | `financials.Store.PaymentsOnLineItems` — `type = 'payment' AND line_item_id = ANY(…)` | the line items of the plans whose financial data the person may see |
+| Purchase orders and payments | `financials.Store.SpendOnLineItems` — `type IN ('purchaseOrder', 'payment') AND line_item_id = ANY(…)` | the line items of the plans whose financial data the person may see |
 | Approval rounds and history | `approval.Store.RoundsOfSubjects`, `ActionsOfSubjects` — `subject_id = ANY(…)` | the plans' activities and the purchase requests below |
 | Purchase requests | 032's `OnLineItems(viewScope, …)` plus their lines | the plans' line items and 032's view scope |
 | Global budgets | `ListBudgets`, then `budget.Store.AllocationsOfBudgets` — `global_budget_id = ANY(…)` | the year's budgets; no plan scope by 014's rule (exception, plan Complexity Tracking) |
@@ -111,7 +113,7 @@ with records, 028), the person's choices, then for the records of the plans in v
 The record IDs come from the scoped plan read in the same snapshot, so each statement returns nothing outside
 the scope, whatever the data; one statement per read, never one per budget or per record (the Global budgets
 page's `List` reads one per budget and is not used). The new scoped reads have PostgreSQL scope-isolation
-tests (`TestPostgresStorePaymentsOnLineItemsScopeIsolation_036_FR002`,
+tests (`TestPostgresStoreSpendOnLineItemsScopeIsolation_036_FR002`,
 `TestPostgresStoreRoundsOfSubjectsScopeIsolation_036_FR002`), as the plan and purchase-request reads already
 do; contract tests on the in-memory demo data prove the dashboard counts nothing outside the person's scope
 (SC-002). A scope function in each statement (`activity_in_scope`, `plan_in_permission_scope`) was rejected:

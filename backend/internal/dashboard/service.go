@@ -48,7 +48,7 @@ func (in *input) view() View {
 		Finance:     Finance{Visible: b.financeCount() > 0, PlanCount: b.financeCount()},
 		FinanceAsOf: in.data.FinanceAsOf, Totals: b.total().figures(d), Markets: []MarketRow{},
 		Plans: b.planRows(in.teams, d), PlanCampaigns: b.planCampaigns(in.query.PlanID, d),
-		Months:           b.months(allwork.PlannedByActivity(in.data.Nodes, in.query.Year), in.paid, in.query.Year, d),
+		Months:           b.months(allwork.PlannedByActivity(in.data.Nodes, in.query.Year), in.query.Year, d),
 		Approvals:        b.approvals(in.rounds, in.purchases.Items),
 		PurchaseRequests: b.purchaseRequests(in.purchases, d), Completeness: b.completeness(),
 		GlobalBudgets: in.global, CanExport: in.canExport,

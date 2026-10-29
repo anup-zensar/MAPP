@@ -37,8 +37,8 @@ func (s *PostgresStore) GetTransaction(ctx context.Context, id string) (Transact
 	return list[0], true, nil
 }
 
-func (s *PostgresStore) PaymentsOnLineItems(ctx context.Context, lineItemIDs []string) ([]Transaction, error) {
-	rows, err := s.db.Queries(ctx).ListPaymentsOnLineItems(ctx, lineItemIDs)
+func (s *PostgresStore) SpendOnLineItems(ctx context.Context, lineItemIDs []string) ([]Transaction, error) {
+	rows, err := s.db.Queries(ctx).ListSpendOnLineItems(ctx, lineItemIDs)
 	return transactionsFromRows(rows, err)
 }
 

@@ -47,8 +47,9 @@ story (US1, US2). Write each new test first and see it fail.
 
 - [X] T007 [P] [US1] `allwork/planned_by_month_test.go`: `TestPlannedByActivity_010_FR023` (spread months, positive
   unassigned spread evenly, negative not, No dates, Other years)
-- [X] T008 [P] [US1] `financials/paid_by_month_test.go`: `TestPaidByMonth_036_FR014` (payments only, linked only,
-  posting month, current rate, currency without a rate left out)
+- [X] T008 [P] [US1] `financials/spend_by_month_test.go` (`paid_by_month_test.go` until T037):
+  `TestSpendByMonth_036_FR014` (purchase orders and payments only, linked only, posting month, current rate,
+  currency without a rate left out)
 - [X] T009 [P] [US1] `approval/round_summaries_test.go`: `TestRoundSummaries_036_FR016` (open round waiting
   since its level start, ended rounds) and `TestAverageDecisionDays` (half-up to one decimal, none decided)
 - [X] T010 [P] [US1] `purchaserequest.Summaries` (USD amount, waiting for GSAP, switched off, scope through the
@@ -67,7 +68,7 @@ story (US1, US2). Write each new test first and see it fail.
 ### Implementation
 
 - [X] T013 [P] [US1] `allwork/planned_by_month.go` `PlannedByActivity`
-- [X] T014 [P] [US1] `financials/paid_by_month.go` `PaidByMonth`
+- [X] T014 [P] [US1] `financials/spend_by_month.go` `SpendByMonth` (`PaidByMonth` until T037)
 - [X] T015 [P] [US1] `approval/round_summaries.go` `RoundSummaries`, `AverageDecisionDays` (monitoring uses it)
 - [X] T016 [P] [US1] `purchaserequest/summaries.go` `Summaries`
 - [X] T017 [US1] `internal/dashboard`: `model.go`, `query.go`, `ports.go` (with the `Transactor`), `input.go`,
@@ -117,9 +118,9 @@ story (US1, US2). Write each new test first and see it fail.
 
 ## Phase 8: Analysis follow-up (2026-10-29)
 
-- [X] T033 Reads scoped in SQL (constitution B5, D-356): new store reads `financials.Store.PaymentsOnLineItems`,
-  `approval.Store.RoundsOfSubjects` and `ActionsOfSubjects` (`= ANY(…)` over the records of the plans in scope)
-  with PostgreSQL tests `TestPostgresStorePaymentsOnLineItemsScopeIsolation_036_FR002` and
+- [X] T033 Reads scoped in SQL (constitution B5, D-356): new store reads `financials.Store.PaymentsOnLineItems`
+  (`SpendOnLineItems` since T037), `approval.Store.RoundsOfSubjects` and `ActionsOfSubjects` (`= ANY(…)` over the
+  records of the plans in scope) with PostgreSQL tests `TestPostgresStoreSpendOnLineItemsScopeIsolation_036_FR002` and
   `TestPostgresStoreRoundsOfSubjectsScopeIsolation_036_FR002`, and `budget.Store.AllocationsOfBudgets` behind the
   new `budget.Service.YearFigures` (`TestYearFigures_AsTheGlobalBudgetsPage_036_FR004`: one statement, not one
   per budget; no plan scope by 014's rule, plan Complexity Tracking); each in both fakes. Done:
@@ -132,11 +133,17 @@ story (US1, US2). Write each new test first and see it fail.
   `go test -run '^$' -bench 'BenchmarkDashboards/volume/' -benchtime 5x -timeout 3h ./internal/platform/apibench/`
   from `backend/` with `TEST_DATABASE_URL` set
 - [X] T035 Actual in the plan's year (D-357, 013 FR-010): failing test first
-  `TestActual_PaidInThePlansYearOnly_D357`, then `board.countPaid` for plans, campaigns and a plan export's
+  `TestActual_PaidInThePlansYearOnly_D357`, then `board.countPaid` (`countSpend` since T037) for plans, campaigns and a plan export's
   activities; "Paid outside the year (not counted)" on screen and in files; spec FR-011, glossary, contract
   descriptions. Done
 - [X] T036 Documents aligned with the code: file, test and port names in tasks.md, plan.md and contracts/api.md;
   spec status Built. Done
+- [X] T037 Committed in the plan's year (D-358, 013 FR-010, D-335): failing test first
+  `TestCommitted_PostedInThePlansYearOnly_D358`, then `financials.Service.SpendByMonth` over the scoped
+  `financials.Store.SpendOnLineItems` (purchase orders and payments of the line items in scope, one statement;
+  replaces `PaidByMonth`/`PaymentsOnLineItems`, both fakes) and `board.countSpend` for plans, campaigns and a plan
+  export's activities; `DashboardMonths.committedOutsideYear` and "Committed outside the year (not counted)" on
+  screen and in files; spec FR-011, scenario 3, SC-001, edge cases; glossary; contract and generated types. Done
 
 ## Dependencies
 
@@ -153,9 +160,9 @@ T017. US4 needs T024's export plumbing.
 | FR-004 | T011, T012, T033 |
 | FR-005 | T017 (read-only), T012 |
 | FR-006, FR-007 | T011, T019, T020, T027 |
-| FR-008–FR-011 | T011, T012, T017, T035 |
+| FR-008–FR-011 | T011, T012, T017, T035, T037 |
 | FR-012, FR-013 | T011, T017 |
-| FR-014 | T007, T008, T011, T013, T014, T035 |
+| FR-014 | T007, T008, T011, T013, T014, T035, T037 |
 | FR-015 | T011 |
 | FR-016 | T009, T011, T015 |
 | FR-017 | T010, T011, T016 |

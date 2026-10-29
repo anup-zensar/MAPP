@@ -22889,6 +22889,7 @@ components:
             - $ref: "#/components/schemas/Money"
             - type: "null"
         committed:
+          description: Purchase orders (015) posted in the plan's year, as 013's Committed (D-358).
           oneOf:
             - $ref: "#/components/schemas/Money"
             - type: "null"
@@ -22992,7 +22993,7 @@ components:
     DashboardMonths:
       type: object
       additionalProperties: false
-      required: [items, noDates, otherYears, paidOutsideYear]
+      required: [items, noDates, otherYears, committedOutsideYear, paidOutsideYear]
       properties:
         items:
           type: array
@@ -23005,6 +23006,11 @@ components:
             - type: "null"
         otherYears:
           description: Planned cost spread into months of other years; null when none.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        committedOutsideYear:
+          description: Purchase orders posted outside the year, not counted in Committed (D-358); null when none or when financial data is hidden.
           oneOf:
             - $ref: "#/components/schemas/Money"
             - type: "null"
