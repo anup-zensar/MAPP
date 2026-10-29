@@ -130,6 +130,17 @@ database `mapp_e2e_b`.
   about 18 statements per row and its time grows faster than the rows (250 rows: 7.8 s, 4,534 statements). Find
   where the per-row reads go (the `app/workbook_*` adapters run each row through the owning service's create in the
   discarded `Write`) and read once per check, then rerun T028. Open: found by T028, not fixed here.
+  Progress 2026-10-29: `app/workbook_create.go` keeps each parent's activity form and line-item form options for
+  the rest of the Write (memo area `workbookForms:`): `NewForm` listed every attribute with its usage (every
+  campaign, initiative, activity, line item and purchase request) and the overspend limits for every row. 1,000-row
+  check on the demo data: before 50.1 s / 18,034 statements, after 17.5 s / 9,043 statements (9 per row). Still
+  open, still over 10 s. Per created activity: 4 writes (PutActivity, AppendLogEntry, two AdvanceCounter) and 5
+  reads — the sibling list of the name check (re-read after every write because a write forgets the memo; it
+  grows with the file, which is where the time goes), the log's path read of the record just written, and the 3
+  reads of the view the adapter discards. Next: a create that returns only the ID (no view), and keeping the
+  written row in the memo instead of forgetting the area. Statements cannot become independent of the row count
+  while the check is the import discarded (D-126): every record keeps its own insert and log entry, and 037's
+  overspend guard refuses each create on its own.
 - [x] T029 Docs: plan.md structure, the rules→tests table and these task texts name the real files and tests;
   FR-027 puts **Download template** in step 1 of the Import page; the stale "deferred" comment on `bulkRoutes`
   removed from `access/routes_planning.go` (file brought within the comment budget).

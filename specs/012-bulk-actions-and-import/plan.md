@@ -221,7 +221,7 @@ Test names end with the feature and requirement IDs (`_012FR008_FR021`); contrac
 | FR-029–FR-033 rows | `workbook/apply_test.go` `TestApply_CreateUpdateUnchanged_012FR029_FR030`, `TestApply_ParentsIDsAndLeftOutBelow_012FR029_FR033`, `TestApply_RefusalsUnderTheirColumns_ApprovedOnScreen_012FR031_FR032`; contract `TestCheck_EveryProblemAtOnce_LeftOutBelow_Contract_012FR031_FR033`, `TestImport_UpdatesByIDApprovedOnScreen_Contract_012FR029_FR032` |
 | FR-034–FR-036 import, list, undo | `workbook/handler_import_test.go` `TestImport_SkeletonListedAndUndone_Contract_012FR034_FR035_FR036`, `TestImport_OtherPeopleSeeNoImportOfAPlanTheyCannotSee_Contract_012FR035` |
 | Scope isolation | `bulk` `TestPostgresStore_GetAction_OnlyTheActor_012FR020`, `workbook` `TestPostgresStore_ImportsInScope_012FR035` |
-| SC-007 time and statements | `platform/apibench/bulk_import_test.go` `BenchmarkBulkAndImport` (500 activities of the grown demo plan, a 1,000-row file); on the demo data the bulk run takes 0.5 s, the 1,000-row check 50 s — not yet met (tasks T030) |
+| SC-007 time and statements | `platform/apibench/bulk_import_test.go` `BenchmarkBulkAndImport` (500 activities of the grown demo plan, a 1,000-row file); on the demo data the bulk run takes 0.5 s, the 1,000-row check 50.1 s / 18,034 statements before T030, 17.5 s / 9,043 after reading each parent's form once — not yet met (tasks T030) |
 
 ### Shared files touched
 
