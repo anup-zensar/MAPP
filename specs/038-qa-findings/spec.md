@@ -13,7 +13,8 @@ the same-origin check, which is L-14). Each finding was traced to the code befor
 ([research.md](research.md) gives file and line). The product owner decided four points on 2026-10-29: who sees
 GSAP transactions that are not linked (H-4), approving while line items exceed an activity's planned cost (M-18),
 security hardening (sign-in limit, headers, referring page) and the date format everywhere (L-18) — recorded as
-D-353 – D-356. Smaller calls made while specifying are D-357, confirmed by the product owner on 2026-10-29.
+D-353 – D-356. Smaller calls made while specifying are D-357, confirmed by the product owner on 2026-10-29. The
+red asterisk on mandatory fields (User Story 18) is a product owner request of the same day (D-358).
 
 **Amends**: [003](../003-people-and-teams/spec.md) FR-024 (clarified) · [009](../009-home-dashboard/spec.md) FR-001
 (wording) · [011](../011-activity-log-and-recycle-bin/spec.md) FR-004 · [013](../013-bcpir-and-spa/spec.md) FR-017 ·
@@ -441,6 +442,32 @@ month and dashboards.
 
 ---
 
+### User Story 18 - Mandatory fields carry a red asterisk (Priority: P2)
+
+A person filling in any form sees at a glance which fields must be filled to save: a red asterisk after the
+label, the convention people know from other business applications. Product owner request of 2026-10-29
+(D-358, constitution 4.7.0).
+
+**Acceptance Scenarios**:
+
+1. **Given** any form with a field required to save (New plan's Name, New team's Name, a PR line's amount),
+   **When** it opens, **Then** the label is followed by a red `*` in both themes, and the word tag "Required"
+   is no longer shown.
+2. **Given** a field "Needed to publish" or "Needed to submit", **When** the form opens, **Then** it keeps its
+   word tag and has no asterisk (it is not needed to save).
+3. **Given** a form with at least one asterisk, **When** it opens, **Then** a legend "* Required" appears once,
+   above the first section or field.
+4. **Given** a screen reader, **When** focus reaches a required field, **Then** it announces the label and
+   "required" once (not "star"), and the control has `aria-required="true"`.
+5. **Given** the dark theme, **When** axe runs on a form, **Then** no contrast violation is reported for the
+   asterisk.
+
+**Why this priority**: a visible, familiar marking for every form; no business rule changes.
+
+**Independent Test**: Open New plan, New team and a purchase request's form in light and dark mode; run axe.
+
+---
+
 ### Edge Cases
 
 - **Change raises one line and lowers another** (C-1): each line reserves its own larger amount; the lowered
@@ -701,6 +728,16 @@ Each requirement names the QA finding(s) it closes and the earlier requirement i
 - **FR-062**: The decision log (D-353 – D-357), the feature map and the amended specs (index below) MUST state
   these rules. [all]
 
+**Mandatory-field marking** (product owner request, D-358)
+
+- **FR-063**: Every field required to save (`FieldShell` marking "Required") MUST show a `*` after its label in
+  Secondary Red, bold and at least 19 px (WCAG large text, so the 3:1 bar holds in the dark theme with Shell's
+  exact red), with no word tag. The asterisk MUST be hidden from screen readers; the control MUST carry
+  `aria-required="true"` and its accessible description "required" once. Fields "Needed to publish" and "Needed
+  to submit" MUST keep their word tags and show no asterisk. [PO request]
+- **FR-064**: A form, dialog or side panel with at least one asterisk MUST show the legend "* Required" once,
+  before its first field, with the asterisk styled as in FR-063. [PO request]
+
 ### Findings that need no change of behaviour
 
 - **L-26** (Home "—" and missing "HOME" eyebrow): intended. The design system (§2 page header: "No eyebrow… Home is
@@ -749,6 +786,8 @@ Each requirement names the QA finding(s) it closes and the earlier requirement i
   system §10.
 - **SC-012**: Re-running QA's reproduction scripts, none of the 53 findings fixed here reproduces, and L-26 and
   L-5 (b) behave as described under "Findings that need no change of behaviour".
+- **SC-013**: 100 % of fields required to save show the red asterisk and 0 show the "Required" word tag; axe
+  reports 0 violations on New plan, New team and a purchase request's form in light and dark mode.
 
 ## Assumptions
 
@@ -825,6 +864,7 @@ Each requirement names the QA finding(s) it closes and the earlier requirement i
 | L-30 | Low | FR-061 | |
 | Security: sign-in brute force | Gap | FR-014 | D-355 |
 | Security: headers | Gap | FR-015 | D-355 |
+| Product owner request: red asterisk on mandatory fields | Request | FR-063, FR-064 | D-358, constitution 4.7.0 |
 
 54 findings: 53 change behaviour (L-2 only gains an explanation; part (b) of L-5 is not a bug); L-26 needs only a
 correction of 009's text.
