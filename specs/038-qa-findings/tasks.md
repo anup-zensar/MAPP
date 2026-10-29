@@ -39,7 +39,7 @@ with `frontend/`.
 - [x] T002 Backend — `platform/errs`: constructors `TooManyAttempts(message, retryAfter)` (429) and
   `TooLarge(message)` (413) with codes `too_many_attempts` and `too_large`, and their status mapping in
   `platform/web/respond.go`; unit test `TestErrorCodes_038_FR014_FR054` in `platform/errs` (write it first)
-- [ ] T003 Frontend — `api/errors.ts`: export `CONFLICT_NEXT_STEP = "Your changes are still here. Save again to
+- [x] T003 Frontend — `api/errors.ts`: export `CONFLICT_NEXT_STEP = "Your changes are still here. Save again to
   replace their changes, or Cancel to see theirs."` next to `conflictMessage` (used by T150; the ten files that copy
   the string switch to it when next touched)
 - [x] T004 Docs — Decision log D-353 – D-357, feature map row 038 "Specified", amendment notes in 003, 009, 011,

@@ -3,7 +3,7 @@ import { mockApi } from '@/testing/mock-api';
 import { apiError, pending, reply } from '@/testing/replies';
 import { ENVIRONMENT_LOCAL } from '@/testing/fixtures/environment';
 import { api, call } from './client';
-import { ApiError, conflictMessage, resolvedMessage } from './errors';
+import { ApiError, CONFLICT_NEXT_STEP, conflictMessage, resolvedMessage } from './errors';
 
 const UNREACHABLE =
   "SP&A One can't reach its server right now. Check that it is running and try again.";
@@ -175,6 +175,14 @@ describe('038 FR-014, FR-054: too many sign-in attempts and too large a request'
       message: 'A message.',
       status,
     });
+  });
+});
+
+describe('038 FR-039 (L-1): the next step after a version conflict', () => {
+  it('says the changes are kept and what Save and Cancel do', () => {
+    expect(CONFLICT_NEXT_STEP).toBe(
+      'Your changes are still here. Save again to replace their changes, or Cancel to see theirs.',
+    );
   });
 });
 

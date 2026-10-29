@@ -108,6 +108,9 @@ export class ApiError extends Error {
   }
 }
 
+export const CONFLICT_NEXT_STEP =
+  'Your changes are still here. Save again to replace their changes, or Cancel to see theirs.';
+
 export function conflictMessage(error: ApiError, noun: string, dateFormat?: DateFormat): string {
   if (!error.conflict) {
     return error.message;
