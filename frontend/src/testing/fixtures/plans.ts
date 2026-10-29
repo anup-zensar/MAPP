@@ -120,6 +120,7 @@ export function planDefaults(overrides: Partial<PlanDefaults> = {}): PlanDefault
     bcpir: false,
     defaultSpread: 'evenly',
     goalStage: 'inq',
+    overspend: 'warn',
     ...overrides,
   };
 }
@@ -133,6 +134,7 @@ export function plan(overrides: Partial<Plan> = {}): Plan {
     name: 'FY2026 Lubricants Europe',
     year: 2026,
     status: 'draft',
+    overspend: { mode: 'warn', canChange: { available: true, reason: '' } },
     model: {
       id: 'MOD-1001',
       name: 'Lubricants 1.0',

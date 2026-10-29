@@ -12,14 +12,15 @@ import (
 )
 
 type Service struct {
-	tx           Transactor
-	repo         Store
-	ids          *ids.Generator
-	history      *history.Service
-	now          clock.Clock
-	deps         Deps
-	displayRates DisplayRates // nil until UseDisplayRates: amounts show in USD
-	purchases    PurchaseRequests
+	tx                Transactor
+	repo              Store
+	ids               *ids.Generator
+	history           *history.Service
+	now               clock.Clock
+	deps              Deps
+	displayRates      DisplayRates // nil until UseDisplayRates: amounts show in USD
+	purchases         PurchaseRequests
+	overspendDefaults OverspendDefaults
 }
 
 func NewService(tools history.Tools, repo Store, deps Deps) *Service {

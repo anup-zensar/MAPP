@@ -1,3 +1,4 @@
+import { budgetCheck, OverspendField } from '@/features/overspend';
 import { useCurrencies } from '@/features/settings';
 import type { useFinanceBudgets } from '@/features/settings';
 import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
@@ -19,21 +20,15 @@ import { PlanFormCard } from './PlanFormCard';
 import { ReadOnlyField } from './ReadOnlyField';
 import type { PlanFormValues } from './schemas';
 
-/** The choice that stands for "no default finance budget" (ChoiceField's empty entry is "Choose…"). */
 const NO_DEFAULT = 'none';
 
 export interface PlanBudgetSectionProps extends SectionProps {
   initial: PlanFormValues;
   financeBudgets: ReturnType<typeof useFinanceBudgets>;
-  /** Why the default finance budget was cleared, after another year was chosen. */
   budgetNote: string | null;
   onFinanceBudgetChange: () => void;
 }
 
-/**
- * Budget: the plan currency and budget (016), the default finance budget and spread, and BCPIR.
- * With 014 an allocated plan's budget is read-only with its reason.
- */
 export function PlanBudgetSection({
   control,
   values,
@@ -59,7 +54,6 @@ export function PlanBudgetSection({
     financeBudgets.isSuccess && budgets.length === 0
       ? `No finance budgets for ${values.year} yet — an administrator adds them in Settings.`
       : null;
-  // 014: an allocated plan's budget is set by its global budget and can't be typed here.
   const allocation = plan?.allocation ?? null;
   const allocationLock = allocation
     ? allocationLockText(allocation, plan?.access?.editBudget.reason)
@@ -103,6 +97,26 @@ export function PlanBudgetSection({
           )}
         />
       )}
+      <FormField
+        control={control}
+        name="overspend"
+        render={(field) => (
+          <OverspendField
+            name="overspend"
+            value={field.value}
+            onChange={field.onChange}
+            lockedReason={
+              plan?.overspend.canChange.available ? '' : plan?.overspend.canChange.reason
+            }
+            check={budgetCheck({
+              mode: field.value,
+              typed: values.budget,
+              stored: plan?.budget?.amount ?? null,
+              planned: plan?.planFigures?.plannedCost ?? null,
+            })}
+          />
+        )}
+      />
       <FormField
         control={control}
         name="defaultFinanceBudgetId"
@@ -173,10 +187,6 @@ interface CurrencyFieldProps extends FieldBinding<string> {
   lock?: string;
 }
 
-/**
- * The plan currency (016 FR-011, FR-012): the active currencies, the plan's own kept even when it
- * was set inactive since; locked with the API's reason once amounts are kept in it.
- */
 function CurrencyField({ name, value, initial, hint, lock, error, onChange }: CurrencyFieldProps) {
   const currencies = useCurrencies();
   const options = (currencies.data?.items ?? [])
@@ -205,10 +215,6 @@ function CurrencyField({ name, value, initial, hint, lock, error, onChange }: Cu
   );
 }
 
-/**
- * The note under the budget (016): what the saved budget is in the reader's display currency, and
- * that clearing a phased budget removes its Budget by month (FR-022).
- */
 function budgetFieldNote(
   values: PlanFormValues,
   initial: PlanFormValues,

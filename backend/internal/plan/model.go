@@ -3,6 +3,7 @@
 package plan
 
 import (
+	"mapp/internal/overspend"
 	"mapp/internal/people"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/errs"
@@ -81,6 +82,7 @@ type Plan struct {
 	Currency               string                   `json:"currency"`
 	PlanType               PlanType                 `json:"planType"`
 	BudgetPhasing          rollup.Phasing           `json:"budgetPhasing"`
+	Overspend              overspend.Mode           `json:"overspend"`
 	record.Meta
 }
 
@@ -93,6 +95,7 @@ func (p Plan) Normalised() Plan {
 		p.PlanType = TypeOperational
 	}
 	p.BudgetPhasing = p.BudgetPhasing.Normalised()
+	p.Overspend = p.Overspend.Normalised()
 	return p
 }
 
@@ -148,22 +151,24 @@ type PlanView struct {
 	BudgetPhasing        rollup.PhasingView       `json:"budgetPhasing"`
 	PlanFigures          Figures                  `json:"planFigures"`
 	CurrencyLock         *string                  `json:"currencyLock"`
+	Overspend            overspend.Control        `json:"overspend"`
 	record.Meta
 }
 
 type Defaults struct {
-	CurrentYear   int       `json:"currentYear"`
-	Years         []int     `json:"years"` // current … current + 10 (D-326)
-	Year          int       `json:"year"`
-	TeamIDs       []string  `json:"teamIds"`
-	OwnerID       *string   `json:"ownerId"`
-	ModelID       *string   `json:"modelId"` // the only active model; null when none or several
-	AOP           bool      `json:"aop"`
-	BCPIR         bool      `json:"bcpir"`
-	DefaultSpread Spread    `json:"defaultSpread"`
-	GoalStage     GoalStage `json:"goalStage"`
-	Currency      string    `json:"currency"`
-	PlanType      PlanType  `json:"planType"`
+	CurrentYear   int            `json:"currentYear"`
+	Years         []int          `json:"years"` // current … current + 10 (D-326)
+	Year          int            `json:"year"`
+	TeamIDs       []string       `json:"teamIds"`
+	OwnerID       *string        `json:"ownerId"`
+	ModelID       *string        `json:"modelId"` // the only active model; null when none or several
+	AOP           bool           `json:"aop"`
+	BCPIR         bool           `json:"bcpir"`
+	DefaultSpread Spread         `json:"defaultSpread"`
+	GoalStage     GoalStage      `json:"goalStage"`
+	Currency      string         `json:"currency"`
+	PlanType      PlanType       `json:"planType"`
+	Overspend     overspend.Mode `json:"overspend"`
 }
 
 // PlanInput takes the enums as texts and the budget as a money input, so every problem becomes a field message.
@@ -184,6 +189,7 @@ type PlanInput struct {
 	Attributes             settings.AttributeValues `json:"attributes"`
 	Currency               *string                  `json:"currency"`
 	PlanType               *string                  `json:"planType"`
+	Overspend              *string                  `json:"overspend"`
 }
 
 // PlanUpdate carries the version the person started from (D-203); a null currency or plan type keeps the plan's.
@@ -204,6 +210,7 @@ type PlanUpdate struct {
 	Attributes             settings.AttributeValues `json:"attributes"`
 	Currency               *string                  `json:"currency"`
 	PlanType               *string                  `json:"planType"`
+	Overspend              *string                  `json:"overspend"`
 }
 
 type UnpublishRequest struct {

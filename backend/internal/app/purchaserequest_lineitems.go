@@ -19,8 +19,9 @@ import (
 // prLineItems implements purchaserequest.LineItems over the planning stores (D-196): each line item with its
 // activity, path, plan, SWBS status (030) and the finance roleCoding of the attribute roles (032 data-model §4).
 type prLineItems struct {
-	set      stores.Set
-	settings *settings.Service
+	set       stores.Set
+	settings  *settings.Service
+	lineItems *lineitem.Service
 }
 
 var _ purchaserequest.LineItems = prLineItems{}
@@ -110,10 +111,16 @@ func (x prLineItems) factsOf(ctx context.Context, items []lineitem.LineItem) (ma
 	if err != nil {
 		return nil, err
 	}
+	overBy, err := x.overspentActivities(ctx, acts)
+	if err != nil {
+		return nil, err
+	}
 	facts := make(map[string]purchaserequest.LineItemFacts, len(items))
 	for _, li := range items {
 		if of, found := parents[li.ActivityID]; found {
-			facts[li.ID] = of.lineItem(li, c)
+			f := of.lineItem(li, c)
+			f.ActivityOverBy = overBy[li.ActivityID]
+			facts[li.ID] = f
 		}
 	}
 	return facts, nil

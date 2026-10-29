@@ -35,6 +35,7 @@ type AddCampaignsParams struct {
 	UpdatedAt      time.Time
 	UpdatedByID    string
 	UpdatedByName  string
+	Overspend      string
 }
 
 const deleteCampaign = `-- name: DeleteCampaign :exec
@@ -86,7 +87,7 @@ func (q *Queries) InsertCampaignPhasingMonths(ctx context.Context, arg InsertCam
 }
 
 const listCampaigns = `-- name: ListCampaigns :many
-SELECT campaigns.id, campaigns.plan_id, campaigns.name, campaigns.description, campaigns.owner_id, campaigns.start_date, campaigns.end_date, campaigns.budget_minor, campaigns.budget_currency, campaigns.attributes, campaigns.phasing_method, campaigns.version, campaigns.created_at, campaigns.created_by_id, campaigns.created_by_name, campaigns.updated_at, campaigns.updated_by_id, campaigns.updated_by_name,
+SELECT campaigns.id, campaigns.plan_id, campaigns.name, campaigns.description, campaigns.owner_id, campaigns.start_date, campaigns.end_date, campaigns.budget_minor, campaigns.budget_currency, campaigns.attributes, campaigns.phasing_method, campaigns.version, campaigns.created_at, campaigns.created_by_id, campaigns.created_by_name, campaigns.updated_at, campaigns.updated_by_id, campaigns.updated_by_name, campaigns.overspend,
     coalesce((SELECT array_agg(m.month ORDER BY m.month) FROM campaign_phasing_months m
         WHERE m.campaign_id = campaigns.id), '{}')::text[] AS phasing_months,
     coalesce((SELECT array_agg(m.amount_minor ORDER BY m.month) FROM campaign_phasing_months m
@@ -136,6 +137,7 @@ func (q *Queries) ListCampaigns(ctx context.Context, arg ListCampaignsParams) ([
 			&i.Campaign.UpdatedAt,
 			&i.Campaign.UpdatedByID,
 			&i.Campaign.UpdatedByName,
+			&i.Campaign.Overspend,
 			&i.PhasingMonths,
 			&i.PhasingAmounts,
 		); err != nil {
@@ -150,7 +152,7 @@ func (q *Queries) ListCampaigns(ctx context.Context, arg ListCampaignsParams) ([
 }
 
 const listCampaignsInScope = `-- name: ListCampaignsInScope :many
-SELECT campaigns.id, campaigns.plan_id, campaigns.name, campaigns.description, campaigns.owner_id, campaigns.start_date, campaigns.end_date, campaigns.budget_minor, campaigns.budget_currency, campaigns.attributes, campaigns.phasing_method, campaigns.version, campaigns.created_at, campaigns.created_by_id, campaigns.created_by_name, campaigns.updated_at, campaigns.updated_by_id, campaigns.updated_by_name,
+SELECT campaigns.id, campaigns.plan_id, campaigns.name, campaigns.description, campaigns.owner_id, campaigns.start_date, campaigns.end_date, campaigns.budget_minor, campaigns.budget_currency, campaigns.attributes, campaigns.phasing_method, campaigns.version, campaigns.created_at, campaigns.created_by_id, campaigns.created_by_name, campaigns.updated_at, campaigns.updated_by_id, campaigns.updated_by_name, campaigns.overspend,
     coalesce((SELECT array_agg(m.month ORDER BY m.month) FROM campaign_phasing_months m
         WHERE m.campaign_id = campaigns.id), '{}')::text[] AS phasing_months,
     coalesce((SELECT array_agg(m.amount_minor ORDER BY m.month) FROM campaign_phasing_months m
@@ -210,6 +212,7 @@ func (q *Queries) ListCampaignsInScope(ctx context.Context, arg ListCampaignsInS
 			&i.Campaign.UpdatedAt,
 			&i.Campaign.UpdatedByID,
 			&i.Campaign.UpdatedByName,
+			&i.Campaign.Overspend,
 			&i.PhasingMonths,
 			&i.PhasingAmounts,
 		); err != nil {
@@ -226,9 +229,10 @@ func (q *Queries) ListCampaignsInScope(ctx context.Context, arg ListCampaignsInS
 const putCampaign = `-- name: PutCampaign :exec
 INSERT INTO campaigns (
     id, plan_id, name, description, owner_id, start_date, end_date, budget_minor, budget_currency, attributes,
-    phasing_method, version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+    phasing_method, version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name,
+    overspend
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
 )
 ON CONFLICT (id) DO UPDATE SET
     plan_id = excluded.plan_id,
@@ -247,7 +251,8 @@ ON CONFLICT (id) DO UPDATE SET
     created_by_name = excluded.created_by_name,
     updated_at = excluded.updated_at,
     updated_by_id = excluded.updated_by_id,
-    updated_by_name = excluded.updated_by_name
+    updated_by_name = excluded.updated_by_name,
+    overspend = excluded.overspend
 `
 
 type PutCampaignParams struct {
@@ -269,6 +274,7 @@ type PutCampaignParams struct {
 	UpdatedAt      time.Time
 	UpdatedByID    string
 	UpdatedByName  string
+	Overspend      string
 }
 
 func (q *Queries) PutCampaign(ctx context.Context, arg PutCampaignParams) error {
@@ -291,6 +297,7 @@ func (q *Queries) PutCampaign(ctx context.Context, arg PutCampaignParams) error 
 		arg.UpdatedAt,
 		arg.UpdatedByID,
 		arg.UpdatedByName,
+		arg.Overspend,
 	)
 	return err
 }

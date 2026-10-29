@@ -10,6 +10,7 @@ import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { TextField } from '@/ui/TextField/TextField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { AttributeForm, AttributeValues } from '@/ui/ShellAttributeFields/rules';
+import { budgetCheck, OverspendField } from '@/features/overspend';
 import { PersonField } from '@/features/people';
 import { useFormatters } from '@/format/useFormatters';
 import { PHASING_REMOVED } from '../plan-text';
@@ -41,14 +42,12 @@ import {
 } from './texts';
 import type { RecordLevel } from './texts';
 
-/** The values a create form starts with; their hints show while they are unchanged (FR-003). */
 export interface FormDefaults {
   ownerId: string;
   startDate: string;
   endDate: string;
 }
 
-/** The campaign an initiative belongs to: shown read-only, its dates are the allowed range (R3). */
 export interface ParentCampaign {
   name: string;
   startDate: string | null;
@@ -58,35 +57,22 @@ export interface ParentCampaign {
 export interface RecordFormProps {
   level: RecordLevel;
   control: Control<RecordFormValues>;
-  /** The field problems of the last save, all at once. */
   problems: FieldProblem[];
-  /** The level's Shell attributes (GET /api/v1/shell-attribute-forms/{level}). */
   attributeForm: AttributeForm;
-  /** The plan's Business unit option ids: they decide the conditional attributes. */
   businessUnit: string[];
-  /** The stored attribute values (edit forms). */
   previousAttributes?: AttributeValues;
   planId: string;
-  /** The plan's year, for the R4 warning (campaigns). */
   planYear: number;
-  /** The initiative's campaign. */
   campaign?: ParentCampaign;
-  /** Create forms: the pre-filled values and their hints. */
   defaults?: FormDefaults;
-  /** The parent's remaining budget as saved, and this record's saved budget (FR-010). */
   parentRemaining: Money | null;
   savedBudget: Money | null;
-  /** The plan currency: the budget is typed in it (016 FR-011). */
   currency: string;
-  /** Edit forms: the saved budget has a Budget by month, which clearing the budget removes. */
   phased?: boolean;
+  overspendLock?: string;
+  planned?: Money | null;
 }
 
-/**
- * The campaign or initiative form (plan "Forms", FR-002): Basics, Budget and the level's Shell
- * attributes from Settings, one column, markings as words, every problem under its field. Field
- * ids are "<level>-<field>" (attributes: "attributes.<id>"), as the error summary links them.
- */
 export function RecordForm({
   level,
   control,
@@ -102,6 +88,8 @@ export function RecordForm({
   savedBudget,
   currency,
   phased = false,
+  overspendLock = '',
+  planned = null,
 }: RecordFormProps) {
   const { date } = useFormatters();
   const campaignFieldId = useId();
@@ -238,6 +226,24 @@ export function RecordForm({
           parentRemaining={parentRemaining}
           savedOwn={savedBudget}
           typed={values.budget}
+        />
+        <FormField
+          control={control}
+          name="overspend"
+          render={(field) => (
+            <OverspendField
+              name={`${level}-overspend`}
+              value={field.value}
+              onChange={field.onChange}
+              lockedReason={overspendLock}
+              check={budgetCheck({
+                mode: field.value,
+                typed: values.budget,
+                stored: savedBudget?.amount ?? null,
+                planned,
+              })}
+            />
+          )}
         />
       </FormSection>
       <FormField

@@ -11,17 +11,14 @@ import (
 	"mapp/internal/stores"
 )
 
-// The adapters between global budgets (014, package budgets) and plans (004): budgets reads plans and sets a
-// plan's budget through budgetPlans; plans learns which plans are allocated through planAllocations.
-
-// budgetPlans is budget.Plans over the plans service and repository.
+// budgetPlans is budget.Plans over the plans service and repository; planAllocations tells plans which
+// plans are allocated (014).
 type budgetPlans struct {
 	plans *plan.Service
 	repo  stores.PlanStore
 	rates func(context.Context) (money.Rates, error) // the current rates (016), for planned costs in USD
 }
 
-// Plan returns the plan id as budgets needs it.
 func (b budgetPlans) Plan(ctx context.Context, id string) (budget.PlanInfo, bool, error) {
 	p, found, err := b.repo.Get(ctx, id)
 	if err != nil || !found {
@@ -30,7 +27,6 @@ func (b budgetPlans) Plan(ctx context.Context, id string) (budget.PlanInfo, bool
 	return planInfoOf(p), true, nil
 }
 
-// PlansOfYear returns the plans of year as budgets needs them.
 func (b budgetPlans) PlansOfYear(ctx context.Context, year int) ([]budget.PlanInfo, error) {
 	ofYear, err := b.repo.PlansOfYear(ctx, year)
 	if err != nil {
@@ -43,9 +39,8 @@ func (b budgetPlans) PlansOfYear(ctx context.Context, year int) ([]budget.PlanIn
 	return infos, nil
 }
 
-// PlannedCosts returns the planned cost in USD of each plan, as the plan page works it out in the plan
-// currency (016), converted at the current rate. Every plan is read once first: its currency here, and the
-// plan levels below find each plan in the transaction instead of reading it on its own.
+// PlannedCosts converts each plan's planned cost to USD at the current rate; every plan is read once first,
+// so the levels below find it in the transaction.
 func (b budgetPlans) PlannedCosts(ctx context.Context, planIDs []string) (map[string]*money.Amount, error) {
 	all, err := b.repo.List(ctx)
 	if err != nil {
@@ -79,32 +74,27 @@ func (b budgetPlans) PlannedCosts(ctx context.Context, planIDs []string) (map[st
 	return costs, nil
 }
 
-// SetBudgetFromAllocation sets the plan's budget through the plans service, its one owner.
-func (b budgetPlans) SetBudgetFromAllocation(ctx context.Context, a actor.Actor, planID string, amount money.Amount,
-	version int, comment string) error {
-	return b.plans.SetBudgetFromAllocation(ctx, a, planID, amount, version, comment)
+func (b budgetPlans) SetBudgetFromAllocation(ctx context.Context, a actor.Actor, in budget.PlanBudget) error {
+	return b.plans.SetBudgetFromAllocation(ctx, a, plan.BudgetFromAllocation{PlanID: in.PlanID, Amount: in.Amount,
+		Overspend: in.Overspend, Version: in.PlanVersion, Comment: in.Comment})
 }
 
-// AllocationRemoved logs on the plan that its allocation was removed.
 func (b budgetPlans) AllocationRemoved(ctx context.Context, a actor.Actor, planID, comment string) error {
 	return b.plans.AllocationRemoved(ctx, a, planID, comment)
 }
 
-// planInfoOf returns what budgets needs to know of the stored plan p, in the plan currency (016).
 func planInfoOf(p plan.Plan) budget.PlanInfo {
 	return budget.PlanInfo{
 		ID: p.ID, Name: p.Name, Year: p.Year, Status: string(p.Status), Version: p.Version,
 		TeamIDs: slices.Clone(p.TeamIDs), OwnerID: p.OwnerID, CreatedByID: p.CreatedBy.ID,
-		Currency: p.Normalised().Currency, Budget: p.Budget,
+		Currency: p.Normalised().Currency, Budget: p.Budget, Overspend: p.Overspend.Normalised(),
 	}
 }
 
-// planAllocations is plan.Allocations over the budgets service.
 type planAllocations struct {
 	budgets *budget.Service
 }
 
-// AllocationOf returns the allocation that sets the budget of the plan planID, and false when it has none.
 func (p planAllocations) AllocationOf(ctx context.Context, planID string) (plan.Allocation, bool, error) {
 	found, allocated, err := p.budgets.AllocationOf(ctx, planID)
 	if err != nil || !allocated {

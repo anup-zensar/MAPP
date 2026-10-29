@@ -43,7 +43,7 @@ func TestPlanDefaults_FR006(t *testing.T) {
 
 	assertAnswer(t, response, http.StatusOK, `{"currentYear":2026,"years":[2026,2027,2028,2029,2030,2031,2032,2033,2034,2035,2036],`+
 		`"year":2026,"teamIds":["T-1001"],"ownerId":"U-1002","modelId":null,"aop":false,"bcpir":false,`+
-		`"defaultSpread":"evenly","goalStage":"inq","currency":"USD","planType":"operational"}`)
+		`"defaultSpread":"evenly","goalStage":"inq","currency":"USD","planType":"operational","overspend":"warn"}`)
 }
 
 // The new plan is P-1005, after the seed's four; a form without name, year and model gets every problem at once.

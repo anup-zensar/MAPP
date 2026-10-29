@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useEffect, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
 import { FormField } from '@/ui/FormField/FormField';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
@@ -11,6 +11,7 @@ import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
+import { budgetCheck, OverspendField, useOverspendConfiguration } from '@/features/overspend';
 import { PersonField } from '@/features/people';
 import { useFormatters } from '@/format/useFormatters';
 import { fetchGlobalBudget, useCreateGlobalBudget, useUpdateGlobalBudget } from './api';
@@ -58,10 +59,22 @@ export function GlobalBudgetForm({ budget, onClose, onCreated }: GlobalBudgetFor
   const [saving, setSaving] = useState(false);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
   const yearLock = budget?.locks.find((lock) => lock.field === 'year')?.reason ?? YEAR_LOCKED;
+  const defaultMode = useOverspendConfiguration().data?.defaultMode;
+  useEffect(() => {
+    if (!budget && defaultMode) {
+      form.resetField('overspend', { defaultValue: defaultMode });
+    }
+  }, [budget, defaultMode, form]);
+  const typedAmount = useWatch({ control: form.control, name: 'amount' });
 
   async function save(values: GlobalBudgetValues) {
     const amount = amountOf(values.amount);
     if (amount === null) {
+      return;
+    }
+    const refused = budget ? overspendCheck(budget, values.overspend, values.amount).error : null;
+    if (refused) {
+      setFailure({ message: refused });
       return;
     }
     setSaving(true);
@@ -175,7 +188,32 @@ export function GlobalBudgetForm({ budget, onClose, onCreated }: GlobalBudgetFor
           name="description"
           render={(field) => <TextAreaField label="Description" maxLength={2000} {...field} />}
         />
+        <FormField
+          control={form.control}
+          name="overspend"
+          render={(field) => (
+            <OverspendField
+              name="overspend"
+              value={field.value}
+              onChange={field.onChange}
+              check={budget ? overspendCheck(budget, field.value, typedAmount) : undefined}
+            />
+          )}
+        />
       </div>
     </FormPanel>
   );
+}
+
+function overspendCheck(
+  budget: GlobalBudget,
+  mode: GlobalBudgetValues['overspend'],
+  typed: string,
+) {
+  return budgetCheck({
+    mode,
+    typed,
+    stored: budget.amount.amount,
+    planned: budget.figures.plannedCost,
+  });
 }

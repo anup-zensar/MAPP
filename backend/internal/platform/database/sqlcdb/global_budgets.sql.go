@@ -32,7 +32,7 @@ func (q *Queries) DeleteGlobalBudget(ctx context.Context, id string) error {
 
 const getGlobalBudget = `-- name: GetGlobalBudget :one
 SELECT id, name, year, amount_minor, owner_id, description, version, created_at, created_by_id, created_by_name,
-    updated_at, updated_by_id, updated_by_name
+    updated_at, updated_by_id, updated_by_name, overspend
 FROM global_budgets
 WHERE id = $1
 `
@@ -54,6 +54,7 @@ func (q *Queries) GetGlobalBudget(ctx context.Context, id string) (GlobalBudget,
 		&i.UpdatedAt,
 		&i.UpdatedByID,
 		&i.UpdatedByName,
+		&i.Overspend,
 	)
 	return i, err
 }
@@ -166,7 +167,7 @@ func (q *Queries) ListAllocationsInScope(ctx context.Context, arg ListAllocation
 
 const listGlobalBudgets = `-- name: ListGlobalBudgets :many
 SELECT id, name, year, amount_minor, owner_id, description, version, created_at, created_by_id, created_by_name,
-    updated_at, updated_by_id, updated_by_name
+    updated_at, updated_by_id, updated_by_name, overspend
 FROM global_budgets
 ORDER BY length(id), id COLLATE "C"
 `
@@ -194,6 +195,7 @@ func (q *Queries) ListGlobalBudgets(ctx context.Context) ([]GlobalBudget, error)
 			&i.UpdatedAt,
 			&i.UpdatedByID,
 			&i.UpdatedByName,
+			&i.Overspend,
 		); err != nil {
 			return nil, err
 		}
@@ -262,9 +264,9 @@ func (q *Queries) PutAllocation(ctx context.Context, arg PutAllocationParams) er
 const putGlobalBudget = `-- name: PutGlobalBudget :exec
 INSERT INTO global_budgets (
     id, name, year, amount_minor, owner_id, description, version, created_at, created_by_id, created_by_name,
-    updated_at, updated_by_id, updated_by_name
+    updated_at, updated_by_id, updated_by_name, overspend
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
 )
 ON CONFLICT (id) DO UPDATE SET
     name = excluded.name,
@@ -278,7 +280,8 @@ ON CONFLICT (id) DO UPDATE SET
     created_by_name = excluded.created_by_name,
     updated_at = excluded.updated_at,
     updated_by_id = excluded.updated_by_id,
-    updated_by_name = excluded.updated_by_name
+    updated_by_name = excluded.updated_by_name,
+    overspend = excluded.overspend
 `
 
 type PutGlobalBudgetParams struct {
@@ -295,6 +298,7 @@ type PutGlobalBudgetParams struct {
 	UpdatedAt     time.Time
 	UpdatedByID   string
 	UpdatedByName string
+	Overspend     string
 }
 
 func (q *Queries) PutGlobalBudget(ctx context.Context, arg PutGlobalBudgetParams) error {
@@ -312,6 +316,7 @@ func (q *Queries) PutGlobalBudget(ctx context.Context, arg PutGlobalBudgetParams
 		arg.UpdatedAt,
 		arg.UpdatedByID,
 		arg.UpdatedByName,
+		arg.Overspend,
 	)
 	return err
 }

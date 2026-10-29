@@ -12,6 +12,7 @@ import (
 	"mapp/internal/history"
 	"mapp/internal/home"
 	"mapp/internal/lineitem"
+	"mapp/internal/overspend"
 	"mapp/internal/plan"
 	"mapp/internal/sample"
 	"mapp/internal/settings"
@@ -21,7 +22,7 @@ import (
 // Settings' records are used is wired last, once every area exists.
 func (w *wiring) areas() error {
 	steps := []func() error{
-		w.settingsArea, w.plansArea, w.planningArea, w.budgetsArea, w.samplesArea, w.approvalsArea, w.financialsArea,
+		w.settingsArea, w.overspendArea, w.plansArea, w.planningArea, w.budgetsArea, w.samplesArea, w.approvalsArea, w.financialsArea,
 		w.swbsArea, w.purchaseRequestsArea,
 	}
 	for _, step := range steps {
@@ -29,6 +30,7 @@ func (w *wiring) areas() error {
 			return err
 		}
 	}
+	w.useOverspend()
 	w.views()
 	w.spaArea()
 	w.dashboards()
@@ -60,9 +62,9 @@ func (w *wiring) rates() error {
 }
 
 func (w *wiring) plansArea() error {
-	tools := history.Tools{Tx: w.set.Tx, IDs: w.generator, Log: w.history, Now: w.now}
+	tools := history.Tools{Tx: w.guard, IDs: w.generator, Log: w.history, Now: w.now}
 	w.plans = plan.NewService(tools, w.set.Plans, w.settings, w.people)
-	if err := w.register(w.plans.Kinds()); err != nil {
+	if err := w.register(overspend.Described(w.plans.Kinds())); err != nil {
 		return err
 	}
 	mount(w.signedIn, plan.NewHandler(w.plans))
@@ -84,7 +86,7 @@ func (w *wiring) planningArea() error {
 
 func (w *wiring) buildActivities() {
 	s := w.set
-	w.activities = activity.NewService(history.Tools{Tx: s.Tx, IDs: w.generator, Log: w.history, Now: w.now}, s.Activities, activity.Deps{
+	w.activities = activity.NewService(history.Tools{Tx: w.guard, IDs: w.generator, Log: w.history, Now: w.now}, s.Activities, activity.Deps{
 		Plans: s.Plans, Hierarchy: s.Campaigns, Settings: w.settings, People: s.People,
 		Workflows: activityWorkflows{repo: s.Approvals},
 	})
@@ -100,7 +102,7 @@ func (w *wiring) buildActivities() {
 }
 
 func (w *wiring) buildCampaigns() {
-	w.campaigns = campaign.NewService(history.Tools{Tx: w.set.Tx, IDs: w.generator, Log: w.history, Now: w.now}, w.set.Campaigns, campaign.Deps{
+	w.campaigns = campaign.NewService(history.Tools{Tx: w.guard, IDs: w.generator, Log: w.history, Now: w.now}, w.set.Campaigns, campaign.Deps{
 		Plans: campaignPlans{repo: w.set.Plans}, People: w.set.People, Settings: w.settings,
 		Activities: activitiesForCampaigns{svc: w.activities},
 	})
@@ -109,7 +111,7 @@ func (w *wiring) buildCampaigns() {
 
 // planningKinds registers the kinds and the plan's levels top-down: campaign, initiative, activity, line item.
 func (w *wiring) planningKinds() error {
-	if err := w.register(w.campaigns.Kinds(), w.activities.Kinds(), w.lineItems.Kinds()); err != nil {
+	if err := w.register(overspend.Described(w.campaigns.Kinds()), w.activities.Kinds(), w.lineItems.Kinds()); err != nil {
 		return err
 	}
 	for _, level := range w.planLevels() {
@@ -127,12 +129,12 @@ func (w *wiring) planLevels() []plan.Level {
 
 // budgetsArea comes after the planning kinds: an allocation is a child of its plan, which takes it along.
 func (w *wiring) budgetsArea() error {
-	tools := history.Tools{Tx: w.set.Tx, IDs: w.generator, Log: w.history, Now: w.now}
+	tools := history.Tools{Tx: w.guard, IDs: w.generator, Log: w.history, Now: w.now}
 	budgetsService := budget.NewService(tools, w.set.Budgets, budget.Deps{
 		Plans:     budgetPlans{plans: w.plans, repo: w.set.Plans, rates: w.settings.Rates},
-		Directory: w.people, Rates: w.settings, Access: budgetAccess{access: w.access},
+		Directory: w.people, Rates: w.settings, Access: budgetAccess{access: w.access}, Overspend: w.overspend,
 	})
-	if err := w.register(budgetsService.Kinds()); err != nil {
+	if err := w.register(overspend.Described(budgetsService.Kinds())); err != nil {
 		return err
 	}
 	w.plans.UseAllocations(planAllocations{budgets: budgetsService})

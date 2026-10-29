@@ -140,6 +140,7 @@ func (r iteratorForAddCampaigns) Values() ([]interface{}, error) {
 		r.rows[0].UpdatedAt,
 		r.rows[0].UpdatedByID,
 		r.rows[0].UpdatedByName,
+		r.rows[0].Overspend,
 	}, nil
 }
 
@@ -148,7 +149,7 @@ func (r iteratorForAddCampaigns) Err() error {
 }
 
 func (q *Queries) AddCampaigns(ctx context.Context, arg []AddCampaignsParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"campaigns"}, []string{"id", "plan_id", "name", "description", "owner_id", "start_date", "end_date", "budget_minor", "budget_currency", "attributes", "phasing_method", "version", "created_at", "created_by_id", "created_by_name", "updated_at", "updated_by_id", "updated_by_name"}, &iteratorForAddCampaigns{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"campaigns"}, []string{"id", "plan_id", "name", "description", "owner_id", "start_date", "end_date", "budget_minor", "budget_currency", "attributes", "phasing_method", "version", "created_at", "created_by_id", "created_by_name", "updated_at", "updated_by_id", "updated_by_name", "overspend"}, &iteratorForAddCampaigns{rows: arg})
 }
 
 // iteratorForAddInitiativePhasingMonths implements pgx.CopyFromSource.
@@ -223,6 +224,7 @@ func (r iteratorForAddInitiatives) Values() ([]interface{}, error) {
 		r.rows[0].UpdatedAt,
 		r.rows[0].UpdatedByID,
 		r.rows[0].UpdatedByName,
+		r.rows[0].Overspend,
 	}, nil
 }
 
@@ -231,7 +233,7 @@ func (r iteratorForAddInitiatives) Err() error {
 }
 
 func (q *Queries) AddInitiatives(ctx context.Context, arg []AddInitiativesParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"initiatives"}, []string{"id", "campaign_id", "name", "description", "owner_id", "start_date", "end_date", "budget_minor", "budget_currency", "attributes", "phasing_method", "version", "created_at", "created_by_id", "created_by_name", "updated_at", "updated_by_id", "updated_by_name"}, &iteratorForAddInitiatives{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"initiatives"}, []string{"id", "campaign_id", "name", "description", "owner_id", "start_date", "end_date", "budget_minor", "budget_currency", "attributes", "phasing_method", "version", "created_at", "created_by_id", "created_by_name", "updated_at", "updated_by_id", "updated_by_name", "overspend"}, &iteratorForAddInitiatives{rows: arg})
 }
 
 // iteratorForAddLineItemSpreadMonths implements pgx.CopyFromSource.

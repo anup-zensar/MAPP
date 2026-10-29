@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { ApiError, conflictMessage } from '@/api/errors';
+import { overLimitMessages } from '@/features/overspend';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { valuesToClear } from '@/ui/ShellAttributeFields/rules';
 import type { AttributeForm, ClearedValue } from '@/ui/ShellAttributeFields/rules';
@@ -52,6 +53,15 @@ export function useActivitySave(options: ActivitySaveOptions) {
 
   function save(values: FormState, addAnother: boolean) {
     if (saving) {
+      return;
+    }
+    const overLimits = overLimitMessages(
+      data.overspendLimits,
+      activity?.plannedCost?.amount ?? null,
+      values.plannedCost,
+    );
+    if (overLimits.length > 0) {
+      setFailure({ message: overLimits.join(' ') });
       return;
     }
     setFailure(null);

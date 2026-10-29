@@ -75,7 +75,7 @@ func (q *Queries) InsertPlanTeams(ctx context.Context, arg InsertPlanTeamsParams
 }
 
 const listPlans = `-- name: ListPlans :many
-SELECT plans.id, plans.name, plans.year, plans.model_id, plans.owner_id, plans.aop, plans.description, plans.budget_minor, plans.default_finance_budget_id, plans.default_spread, plans.bcpir, plans.goal_stage, plans.goal_amount, plans.attributes, plans.status, plans.currency, plans.plan_type, plans.phasing_method, plans.version, plans.created_at, plans.created_by_id, plans.created_by_name, plans.updated_at, plans.updated_by_id, plans.updated_by_name,
+SELECT plans.id, plans.name, plans.year, plans.model_id, plans.owner_id, plans.aop, plans.description, plans.budget_minor, plans.default_finance_budget_id, plans.default_spread, plans.bcpir, plans.goal_stage, plans.goal_amount, plans.attributes, plans.status, plans.currency, plans.plan_type, plans.phasing_method, plans.version, plans.created_at, plans.created_by_id, plans.created_by_name, plans.updated_at, plans.updated_by_id, plans.updated_by_name, plans.overspend,
     coalesce((SELECT array_agg(t.team_id ORDER BY t.position) FROM plan_teams t WHERE t.plan_id = plans.id),
         '{}')::text[] AS team_ids,
     coalesce((SELECT array_agg(m.month ORDER BY m.month) FROM plan_phasing_months m WHERE m.plan_id = plans.id),
@@ -135,6 +135,7 @@ func (q *Queries) ListPlans(ctx context.Context, arg ListPlansParams) ([]ListPla
 			&i.Plan.UpdatedAt,
 			&i.Plan.UpdatedByID,
 			&i.Plan.UpdatedByName,
+			&i.Plan.Overspend,
 			&i.TeamIds,
 			&i.PhasingMonths,
 			&i.PhasingAmounts,
@@ -150,7 +151,7 @@ func (q *Queries) ListPlans(ctx context.Context, arg ListPlansParams) ([]ListPla
 }
 
 const listPlansInScope = `-- name: ListPlansInScope :many
-SELECT plans.id, plans.name, plans.year, plans.model_id, plans.owner_id, plans.aop, plans.description, plans.budget_minor, plans.default_finance_budget_id, plans.default_spread, plans.bcpir, plans.goal_stage, plans.goal_amount, plans.attributes, plans.status, plans.currency, plans.plan_type, plans.phasing_method, plans.version, plans.created_at, plans.created_by_id, plans.created_by_name, plans.updated_at, plans.updated_by_id, plans.updated_by_name,
+SELECT plans.id, plans.name, plans.year, plans.model_id, plans.owner_id, plans.aop, plans.description, plans.budget_minor, plans.default_finance_budget_id, plans.default_spread, plans.bcpir, plans.goal_stage, plans.goal_amount, plans.attributes, plans.status, plans.currency, plans.plan_type, plans.phasing_method, plans.version, plans.created_at, plans.created_by_id, plans.created_by_name, plans.updated_at, plans.updated_by_id, plans.updated_by_name, plans.overspend,
     coalesce((SELECT array_agg(t.team_id ORDER BY t.position) FROM plan_teams t WHERE t.plan_id = plans.id),
         '{}')::text[] AS team_ids,
     coalesce((SELECT array_agg(m.month ORDER BY m.month) FROM plan_phasing_months m WHERE m.plan_id = plans.id),
@@ -220,6 +221,7 @@ func (q *Queries) ListPlansInScope(ctx context.Context, arg ListPlansInScopePara
 			&i.Plan.UpdatedAt,
 			&i.Plan.UpdatedByID,
 			&i.Plan.UpdatedByName,
+			&i.Plan.Overspend,
 			&i.TeamIds,
 			&i.PhasingMonths,
 			&i.PhasingAmounts,
@@ -238,10 +240,10 @@ const putPlan = `-- name: PutPlan :exec
 INSERT INTO plans (
     id, name, year, model_id, owner_id, aop, description, budget_minor, default_finance_budget_id, default_spread,
     bcpir, goal_stage, goal_amount, attributes, status, currency, plan_type, phasing_method, version, created_at,
-    created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+    created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name, overspend
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24,
-    $25
+    $25, $26
 )
 ON CONFLICT (id) DO UPDATE SET
     name = excluded.name,
@@ -267,7 +269,8 @@ ON CONFLICT (id) DO UPDATE SET
     created_by_name = excluded.created_by_name,
     updated_at = excluded.updated_at,
     updated_by_id = excluded.updated_by_id,
-    updated_by_name = excluded.updated_by_name
+    updated_by_name = excluded.updated_by_name,
+    overspend = excluded.overspend
 `
 
 type PutPlanParams struct {
@@ -296,6 +299,7 @@ type PutPlanParams struct {
 	UpdatedAt              time.Time
 	UpdatedByID            string
 	UpdatedByName          string
+	Overspend              string
 }
 
 func (q *Queries) PutPlan(ctx context.Context, arg PutPlanParams) error {
@@ -325,6 +329,7 @@ func (q *Queries) PutPlan(ctx context.Context, arg PutPlanParams) error {
 		arg.UpdatedAt,
 		arg.UpdatedByID,
 		arg.UpdatedByName,
+		arg.Overspend,
 	)
 	return err
 }

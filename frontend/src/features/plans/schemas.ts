@@ -19,6 +19,7 @@ export const planFormSchema = z.object({
   bcpir: z.boolean(),
   goalStage: z.enum(GOAL_STAGES),
   goalAmount: z.string(),
+  overspend: z.enum(['warn', 'refuse']),
   attributes: z.custom<AttributeValues>(),
 });
 

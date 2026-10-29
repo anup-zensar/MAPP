@@ -35,6 +35,7 @@ type AddInitiativesParams struct {
 	UpdatedAt      time.Time
 	UpdatedByID    string
 	UpdatedByName  string
+	Overspend      string
 }
 
 const deleteInitiative = `-- name: DeleteInitiative :exec
@@ -86,7 +87,7 @@ func (q *Queries) InsertInitiativePhasingMonths(ctx context.Context, arg InsertI
 }
 
 const listInitiatives = `-- name: ListInitiatives :many
-SELECT initiatives.id, initiatives.campaign_id, initiatives.name, initiatives.description, initiatives.owner_id, initiatives.start_date, initiatives.end_date, initiatives.budget_minor, initiatives.budget_currency, initiatives.attributes, initiatives.phasing_method, initiatives.version, initiatives.created_at, initiatives.created_by_id, initiatives.created_by_name, initiatives.updated_at, initiatives.updated_by_id, initiatives.updated_by_name,
+SELECT initiatives.id, initiatives.campaign_id, initiatives.name, initiatives.description, initiatives.owner_id, initiatives.start_date, initiatives.end_date, initiatives.budget_minor, initiatives.budget_currency, initiatives.attributes, initiatives.phasing_method, initiatives.version, initiatives.created_at, initiatives.created_by_id, initiatives.created_by_name, initiatives.updated_at, initiatives.updated_by_id, initiatives.updated_by_name, initiatives.overspend,
     coalesce((SELECT array_agg(m.month ORDER BY m.month) FROM initiative_phasing_months m
         WHERE m.initiative_id = initiatives.id), '{}')::text[] AS phasing_months,
     coalesce((SELECT array_agg(m.amount_minor ORDER BY m.month) FROM initiative_phasing_months m
@@ -136,6 +137,7 @@ func (q *Queries) ListInitiatives(ctx context.Context, arg ListInitiativesParams
 			&i.Initiative.UpdatedAt,
 			&i.Initiative.UpdatedByID,
 			&i.Initiative.UpdatedByName,
+			&i.Initiative.Overspend,
 			&i.PhasingMonths,
 			&i.PhasingAmounts,
 		); err != nil {
@@ -150,7 +152,7 @@ func (q *Queries) ListInitiatives(ctx context.Context, arg ListInitiativesParams
 }
 
 const listInitiativesInScope = `-- name: ListInitiativesInScope :many
-SELECT initiatives.id, initiatives.campaign_id, initiatives.name, initiatives.description, initiatives.owner_id, initiatives.start_date, initiatives.end_date, initiatives.budget_minor, initiatives.budget_currency, initiatives.attributes, initiatives.phasing_method, initiatives.version, initiatives.created_at, initiatives.created_by_id, initiatives.created_by_name, initiatives.updated_at, initiatives.updated_by_id, initiatives.updated_by_name,
+SELECT initiatives.id, initiatives.campaign_id, initiatives.name, initiatives.description, initiatives.owner_id, initiatives.start_date, initiatives.end_date, initiatives.budget_minor, initiatives.budget_currency, initiatives.attributes, initiatives.phasing_method, initiatives.version, initiatives.created_at, initiatives.created_by_id, initiatives.created_by_name, initiatives.updated_at, initiatives.updated_by_id, initiatives.updated_by_name, initiatives.overspend,
     coalesce((SELECT array_agg(m.month ORDER BY m.month) FROM initiative_phasing_months m
         WHERE m.initiative_id = initiatives.id), '{}')::text[] AS phasing_months,
     coalesce((SELECT array_agg(m.amount_minor ORDER BY m.month) FROM initiative_phasing_months m
@@ -211,6 +213,7 @@ func (q *Queries) ListInitiativesInScope(ctx context.Context, arg ListInitiative
 			&i.Initiative.UpdatedAt,
 			&i.Initiative.UpdatedByID,
 			&i.Initiative.UpdatedByName,
+			&i.Initiative.Overspend,
 			&i.PhasingMonths,
 			&i.PhasingAmounts,
 		); err != nil {
@@ -227,9 +230,10 @@ func (q *Queries) ListInitiativesInScope(ctx context.Context, arg ListInitiative
 const putInitiative = `-- name: PutInitiative :exec
 INSERT INTO initiatives (
     id, campaign_id, name, description, owner_id, start_date, end_date, budget_minor, budget_currency, attributes,
-    phasing_method, version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+    phasing_method, version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name,
+    overspend
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
 )
 ON CONFLICT (id) DO UPDATE SET
     campaign_id = excluded.campaign_id,
@@ -248,7 +252,8 @@ ON CONFLICT (id) DO UPDATE SET
     created_by_name = excluded.created_by_name,
     updated_at = excluded.updated_at,
     updated_by_id = excluded.updated_by_id,
-    updated_by_name = excluded.updated_by_name
+    updated_by_name = excluded.updated_by_name,
+    overspend = excluded.overspend
 `
 
 type PutInitiativeParams struct {
@@ -270,6 +275,7 @@ type PutInitiativeParams struct {
 	UpdatedAt      time.Time
 	UpdatedByID    string
 	UpdatedByName  string
+	Overspend      string
 }
 
 func (q *Queries) PutInitiative(ctx context.Context, arg PutInitiativeParams) error {
@@ -292,6 +298,7 @@ func (q *Queries) PutInitiative(ctx context.Context, arg PutInitiativeParams) er
 		arg.UpdatedAt,
 		arg.UpdatedByID,
 		arg.UpdatedByName,
+		arg.Overspend,
 	)
 	return err
 }

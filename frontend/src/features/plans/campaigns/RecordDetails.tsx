@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
+import { RefusesOverspending } from '@/features/overspend';
 import { useAttributeForm } from '@/features/settings';
 import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { LinkButton } from '@/ui/Button/Button';
@@ -181,6 +182,7 @@ export function RecordDetails({
               plannedCost: record.display.budgetAndCost.plannedCost,
             }}
           />
+          <RefusesOverspending mode={record.overspend.mode} />
           {/* D-305: 016's Budget by month, then 015's Financials, both open. */}
           <BudgetByMonthCard
             level={level}

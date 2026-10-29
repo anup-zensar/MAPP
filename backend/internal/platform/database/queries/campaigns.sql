@@ -24,9 +24,10 @@ ORDER BY length(id), id COLLATE "C";
 -- name: PutCampaign :exec
 INSERT INTO campaigns (
     id, plan_id, name, description, owner_id, start_date, end_date, budget_minor, budget_currency, attributes,
-    phasing_method, version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+    phasing_method, version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name,
+    overspend
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
 )
 ON CONFLICT (id) DO UPDATE SET
     plan_id = excluded.plan_id,
@@ -45,7 +46,8 @@ ON CONFLICT (id) DO UPDATE SET
     created_by_name = excluded.created_by_name,
     updated_at = excluded.updated_at,
     updated_by_id = excluded.updated_by_id,
-    updated_by_name = excluded.updated_by_name;
+    updated_by_name = excluded.updated_by_name,
+    overspend = excluded.overspend;
 
 -- name: DeleteCampaignPhasingMonths :exec
 DELETE FROM campaign_phasing_months
@@ -64,9 +66,10 @@ WHERE id = $1;
 -- name: AddCampaigns :copyfrom
 INSERT INTO campaigns (
     id, plan_id, name, description, owner_id, start_date, end_date, budget_minor, budget_currency, attributes,
-    phasing_method, version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+    phasing_method, version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name,
+    overspend
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
 );
 
 -- name: AddCampaignPhasingMonths :copyfrom

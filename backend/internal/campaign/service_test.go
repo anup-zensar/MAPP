@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"mapp/internal/overspend"
+
 	"mapp/internal/history"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/record"
@@ -13,9 +15,6 @@ import (
 	"mapp/internal/settings"
 )
 
-// US1 — Add campaigns to a plan.
-
-// A name is all a campaign needs; it is saved without its surrounding spaces (FR-005).
 func TestCreateCampaign_OnlyNameRequired_FR005(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -24,20 +23,18 @@ func TestCreateCampaign_OnlyNameRequired_FR005(t *testing.T) {
 
 	stored, _ := f.storedCampaign(t, view.ID)
 	want := Campaign{ID: "C-1001", PlanID: "P-1001", Name: "Helix launch", Attributes: settings.AttributeValues{},
-		BudgetPhasing: rollup.NotPhased, Meta: record.NewMeta(priya, start)}
+		BudgetPhasing: rollup.NotPhased, Overspend: overspend.Warn, Meta: record.NewMeta(priya, start)}
 	if !reflect.DeepEqual(stored, want) {
 		t.Errorf("stored = %+v\nwant %+v", stored, want)
 	}
 	if view.Owner != nil || view.StartDate != nil || view.Budget != nil || view.Timing != nil {
 		t.Errorf("view = %+v, want no owner, dates, budget or timing", view)
 	}
-	if len(view.Completeness.Missing) != 4 { // owner, dates, cluster, region
+	if len(view.Completeness.Missing) != 4 {
 		t.Errorf("missing = %+v, want owner, dates, cluster and region", view.Completeness.Missing)
 	}
 }
 
-// Every problem of a campaign form is reported in one attempt (FR-005, US1 scenario 5): a taken name, an
-// end before the start, a negative budget and a description of 2,001 characters together.
 func TestCreateCampaign_EveryProblemAtOnce_FR005(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -85,11 +82,8 @@ func TestCreateCampaign_EveryProblemAtOnce_FR005(t *testing.T) {
 	}
 }
 
-// moneyInputEUR is a budget in another currency than USD.
 var moneyInputEUR = moneyInput("100.00", "EUR")
 
-// A name is unique within its plan, ignoring letter case and surrounding spaces, also when a second person
-// adds it (spec edge case); another plan may use it (FR-005).
 func TestCreateCampaign_NameUniqueInPlanIgnoringCaseAndSpaces_FR005(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -104,8 +98,6 @@ func TestCreateCampaign_NameUniqueInPlanIgnoringCaseAndSpaces_FR005(t *testing.T
 	}
 }
 
-// A new campaign gets the next readable ID (C-1001, C-1002, …) and one "created" log entry with the actor
-// and its path (FR-004, FR-030).
 func TestCreateCampaign_ReadableIDAndCreatedEntry_FR004_FR030(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -127,8 +119,6 @@ func TestCreateCampaign_ReadableIDAndCreatedEntry_FR004_FR030(t *testing.T) {
 	}
 }
 
-// The API applies no defaults: it stores exactly what the form sends — owner, dates, budget and attribute
-// values (D-093); the form fills in the defaults of FR-003.
 func TestCreateCampaign_StoresWhatItReceives_DecisionD(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -153,7 +143,6 @@ func TestCreateCampaign_StoresWhatItReceives_DecisionD(t *testing.T) {
 	}
 }
 
-// A newly chosen owner must be an active person (FR-002).
 func TestCreateCampaign_NewOwnerMustBeActive_FR002(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -164,8 +153,6 @@ func TestCreateCampaign_NewOwnerMustBeActive_FR002(t *testing.T) {
 	}
 }
 
-// Problems with Shell attribute values — such as a region of no chosen cluster (R8) — are reported with
-// every other problem (FR-009, FR-005).
 func TestCreateCampaign_AttributeProblemsReportedWithOthers_FR009(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -181,7 +168,6 @@ func TestCreateCampaign_AttributeProblemsReportedWithOthers_FR009(t *testing.T) 
 	))
 }
 
-// Dates outside the plan's year only warn: the campaign is saved and flagged (FR-008, R4, US1 scenario 5).
 func TestCreateCampaign_OutsidePlanYearWarnsOnly_FR008(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -197,8 +183,6 @@ func TestCreateCampaign_OutsidePlanYearWarnsOnly_FR008(t *testing.T) {
 	}
 }
 
-// A budget larger than what the plan has left is saved; the remaining plan budget goes negative and says by
-// how much (FR-010, D-015, US1 scenario 3).
 func TestCreateCampaign_OverAllocationAllowed_FR010(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -215,7 +199,6 @@ func TestCreateCampaign_OverAllocationAllowed_FR010(t *testing.T) {
 	}
 }
 
-// A campaign cannot be added to a plan that no longer exists (404 with the plan's message).
 func TestCreateCampaign_PlanGone_NotFound(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -227,7 +210,6 @@ func TestCreateCampaign_PlanGone_NotFound(t *testing.T) {
 	assertError(t, err, errs.NotFound("This plan no longer exists — someone may have deleted it."))
 }
 
-// GetCampaign answers the campaign with its initiatives, and 404 once it is gone (FR-016).
 func TestGetCampaign_WithInitiatives_FR016(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -243,10 +225,6 @@ func TestGetCampaign_WithInitiatives_FR016(t *testing.T) {
 	assertError(t, err, errs.NotFound("This campaign no longer exists — someone may have deleted it."))
 }
 
-// US2 — Add initiatives to a campaign.
-
-// An initiative's dates must lie inside its campaign's dates; the message names the allowed range with
-// both years (FR-006, R3, US2 scenario 2).
 func TestCreateInitiative_DatesInsideCampaign_FR006(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -282,7 +260,6 @@ func TestCreateInitiative_DatesInsideCampaign_FR006(t *testing.T) {
 	}
 }
 
-// A campaign without dates does not limit its initiatives' dates (spec edge case).
 func TestCreateInitiative_CampaignWithoutDates_NotChecked_EdgeCase(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -295,8 +272,6 @@ func TestCreateInitiative_CampaignWithoutDates_NotChecked_EdgeCase(t *testing.T)
 	}
 }
 
-// An initiative's name is unique within its campaign, ignoring letter case and spaces; another campaign may
-// use it (FR-005). The other field rules are the campaign's.
 func TestCreateInitiative_NameUniqueInCampaign_FR005(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -317,9 +292,6 @@ func TestCreateInitiative_NameUniqueInCampaign_FR005(t *testing.T) {
 	f.createInitiative(t, priya, rimula.ID, InitiativeInput{Name: "Digital & social"})
 }
 
-// A new initiative gets the next I- ID, appears under its campaign with the campaign's remaining budget —
-// negative allowed (US2 scenario 3, D-015) — and one "created" entry with the path plan › campaign (FR-004,
-// FR-030). A campaign that is gone answers 404.
 func TestCreateInitiative_IDRemainingAndCreatedEntry_FR004_FR010(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

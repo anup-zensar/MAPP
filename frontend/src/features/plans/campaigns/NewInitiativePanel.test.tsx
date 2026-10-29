@@ -144,6 +144,7 @@ describe('NewInitiativePanel (feature 005, US2)', () => {
         startDate: '2026-03-01',
         endDate: '2026-12-31',
         budget: null,
+        overspend: 'warn',
         attributes: { 'SA-SMP': false },
       },
     ]);

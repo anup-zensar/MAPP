@@ -36,6 +36,7 @@ import {
   ModelsPage,
   NewCampaignPanel,
   NewInitiativePanel,
+  OverspendSettingsPage,
   PeoplePage,
   PlanCreatePage,
   PlanEditPage,
@@ -225,6 +226,7 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
     element: <PurchaseRequestSettingsPage />,
     ...titled('Purchase requests'),
   },
+  { path: '/settings/overspend-control', element: <OverspendSettingsPage />, ...titled('Overspend control') },
   { path: '/activity-log', element: <ActivityLogPage />, ...titled('Activity log') },
   { path: '/recycle-bin', element: <RecycleBinPage />, ...titled('Recycle bin') },
   {
