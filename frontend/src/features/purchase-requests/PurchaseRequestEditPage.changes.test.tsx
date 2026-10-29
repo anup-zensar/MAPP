@@ -71,7 +71,6 @@ describe('038 FR-028 (M-10): Submit changes asks first', () => {
       'The approved amounts stay reserved until the change is approved.',
     );
     expect(api.bodiesOf(SAVED)).toEqual([]);
-    await expectNoAxeViolations();
 
     await user.click(within(dialog).getByRole('button', { name: 'Submit changes' }));
 
@@ -84,6 +83,8 @@ describe('038 FR-028 (M-10): Submit changes asks first', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Submit changes' }));
     const dialog = await screen.findByRole('alertdialog');
+    await within(dialog).findByText(/^Approval workflow:/);
+    await expectNoAxeViolations();
     await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
 
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
