@@ -73,6 +73,11 @@ func TestCreate_EveryProblemAtOnce_FR029(t *testing.T) { //nolint:tparallel // t
 			{Field: "amount", Message: "Enter an amount of 0 or more."},
 			{Field: "ownerId", Message: "Choose a person who can manage global budgets for all markets."},
 		}},
+		{"038 FR-055 (L-11): name with a tab", func(in *GlobalBudgetInput) {
+			in.Name = "FY2027\tGlobal"
+		}, []errs.FieldError{
+			{Field: "name", Message: "Names can't contain tabs, line breaks or text-direction characters."},
+		}},
 		{"name too long, three decimals, unknown owner", func(in *GlobalBudgetInput) {
 			in.Name, in.Amount, in.OwnerID = tooLong, &money.Input{Amount: "1.005", Currency: "USD"}, "U-9999"
 		}, []errs.FieldError{
