@@ -117,7 +117,7 @@ func TestCreate_NameOnOneLine_Contract_038_FR055_L11(t *testing.T) {
 	s := apitest.New(t)
 	priya := s.SignIn(t, priyasEmail)
 	b := body(standBuild, "EUR", "100.00")
-	b["name"] = "Stand ‮build"
+	b["name"] = "Stand \u202ebuild"
 
 	refused := decoded[apiError](t, priya.Do(t, http.MethodPost, prs, b), http.StatusBadRequest)
 

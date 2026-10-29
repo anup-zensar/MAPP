@@ -15,11 +15,11 @@ func CheckSingleLine(name string) string {
 
 func notSingleLine(r rune) bool {
 	switch {
-	case r == '\t', r == '\n', r == '\r', r == '‎', r == '‏':
+	case r == '\t', r == '\n', r == '\r', r == '\u200e', r == '\u200f':
 		return true
-	case r >= '‪' && r <= '‮':
+	case r >= '\u202a' && r <= '\u202e':
 		return true
 	default:
-		return r >= '⁦' && r <= '⁩'
+		return r >= '\u2066' && r <= '\u2069'
 	}
 }

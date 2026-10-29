@@ -11,7 +11,7 @@ func TestLineItemNameIsOneLine_038_FR055_L11(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
-	for _, name := range []string{"Music\trights", "Music\nrights", "Music rights‏"} {
+	for _, name := range []string{"Music\trights", "Music\nrights", "Music rights\u200f"} {
 		response := priya.Do(t, http.MethodPost, "/api/v1/activities/"+launchFilm+"/line-items", newLineItem(name, "USD", "100"))
 
 		assertOneLineName(t, response)

@@ -20,12 +20,12 @@ func TestCheckSingleLine_038_FR055_L11(t *testing.T) {
 		{"tab", "Helix\tUltra", refused},
 		{"line feed", "Helix\nUltra", refused},
 		{"carriage return", "Helix\rUltra", refused},
-		{"left-to-right embedding U+202A", "Helix‪Ultra", refused},
-		{"right-to-left override U+202E", "Helix‮Ultra", refused},
-		{"left-to-right isolate U+2066", "Helix⁦Ultra", refused},
-		{"pop directional isolate U+2069", "Helix⁩Ultra", refused},
-		{"left-to-right mark U+200E", "Helix‎Ultra", refused},
-		{"right-to-left mark U+200F", "Helix‏Ultra", refused},
+		{"left-to-right embedding U+202A", "Helix\u202aUltra", refused},
+		{"right-to-left override U+202E", "Helix\u202eUltra", refused},
+		{"left-to-right isolate U+2066", "Helix\u2066Ultra", refused},
+		{"pop directional isolate U+2069", "Helix\u2069Ultra", refused},
+		{"left-to-right mark U+200E", "Helix\u200eUltra", refused},
+		{"right-to-left mark U+200F", "Helix\u200fUltra", refused},
 		{"zero-width joiner in an emoji U+200D", "👩‍💻 team", ""},
 	}
 	for _, tt := range tests {

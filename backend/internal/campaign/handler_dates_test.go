@@ -46,7 +46,7 @@ func TestCampaignAndInitiativeNamesAreOneLine_038_FR055_L11(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	want := validationBody(`{"field":"name","message":"Names can't contain tabs, line breaks or text-direction characters."}`)
-	for _, name := range []string{"Helix\tlaunch", "Helix\nlaunch", "Helix ‮launch"} {
+	for _, name := range []string{"Helix\tlaunch", "Helix\nlaunch", "Helix \u202elaunch"} {
 		assertBody(t, priya.Do(t, http.MethodPost, "/api/v1/plans/P-1001/campaigns", map[string]any{"name": name}),
 			http.StatusBadRequest, want)
 		assertBody(t, priya.Do(t, http.MethodPost, "/api/v1/campaigns/C-1001/initiatives", map[string]any{"name": name}),

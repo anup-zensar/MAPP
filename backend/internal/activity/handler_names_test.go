@@ -11,7 +11,7 @@ func TestActivityNameIsOneLine_038_FR055_L11(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
-	for _, name := range []string{"Launch\tvideo", "Launch\r\nvideo", "⁧Launch video"} {
+	for _, name := range []string{"Launch\tvideo", "Launch\r\nvideo", "\u2067Launch video"} {
 		body := map[string]any{"name": name, "activityTypeId": "AT-1002"}
 
 		assertOneLineName(t, priya.Do(t, http.MethodPost, "/api/v1/initiatives/I-1001/activities", body))

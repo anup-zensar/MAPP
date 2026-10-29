@@ -11,7 +11,7 @@ func TestPlanNameIsOneLine_038_FR055_L11(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
-	for _, name := range []string{"FY2026\tLubricants", "FY2026\nLubricants", "FY2026 ‮Lubricants"} {
+	for _, name := range []string{"FY2026\tLubricants", "FY2026\nLubricants", "FY2026 \u202eLubricants"} {
 		body := newPlanBody()
 		body["name"] = name
 
