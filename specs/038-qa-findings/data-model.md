@@ -25,7 +25,7 @@ entry naming every field that changed ("Approval over planned cost: Warn → Ref
 
 ### 1.3 Read changed, no schema change: purchase-request claims (US1, FR-001 – FR-003)
 
-`ListPurchaseRequestClaims` also selects `p.change_pending` and `p.approved_version`. In Go:
+A new query, `ListPurchaseRequestChangesInReview`, reads the approved version of each request with a change in review for the given line items; `Claims` adds it to `ListPurchaseRequestClaims`. In Go:
 
 | Type | Field | Meaning |
 |---|---|---|

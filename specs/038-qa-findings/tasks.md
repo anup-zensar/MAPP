@@ -133,9 +133,9 @@ None beyond Phase 1: every story below depends only on T001 – T003.
   characters → first 200 + "…", FR-010); `TestCheck_ReadsFileOutsideWrite_038_FR009_H2` (fake transactor records that the
   upload was parsed before `Write`, FR-009)
 - [x] T032 [US3] B4 — Fix (after T030, T031): `workbook/service.go` parses before `s.tx.Write`; new
-  `workbook/prepare.go` reads reference data once per check; new `activity/import.go`
-  (`CreateFromImport`/`UpdateFromImport`) and `campaign/import.go` take the prepared context and call the existing
-  rule functions (same messages); `app/workbook_create.go`, `app/workbook_update.go` use them (no `NewForm`, no
+  new `activity/import.go` and `lineitem/import.go` importers read each parent once and call the existing rule
+  functions (same messages); campaigns and initiatives keep their create calls (research R3);
+  `app/workbook_writer.go` uses them (no `NewForm`, no
   overspend limits — 037 FR-012); sibling names kept in memory; `workbook/apply.go` `problem()` cap. All existing
   workbook tests stay green unchanged (FR-008 "same problems")
 - [x] T033 [US3] B4 — Scope isolation: for each store read added by T032, a test in that package's
@@ -228,7 +228,7 @@ None beyond Phase 1: every story below depends only on T001 – T003.
 
 **Goal**: FR-018 – FR-021 (M-18), FR-057 for Overspend control (L-16). **Independent Test**: spec US7.
 
-- [x] T080 [P] [US7] B1 — Failing tests `overspend/service_test.go` and `overspend/handler_test.go`
+- [x] T080 [P] [US7] B1 — Failing tests `overspend/handler_test.go`
   (contract-validated): `approvalOverPlannedCost` defaults to `warn`; saved by `settings.manage` only (403 otherwise);
   version conflict; one log entry "Approval over planned cost: Warn → Refuse"; never-saved → `updatedAt`/`updatedBy`
   null (`038 FR-018, FR-057 (M-18, L-16)`)
@@ -371,7 +371,7 @@ None beyond Phase 1: every story below depends only on T001 – T003.
   labelled region); fixes `features/workbook/CheckResult.tsx` (M-16), `features/plans/PlanCard.module.css` (M-14),
   `features/activities/SplitLinks.module.css` (M-17) — FR-037 (after T140)
 - [x] T142 [P] [US13] F2 — Fixes `features/spa/Spa.module.css` (M-15) and the dashboards' empty-state hint on grey
-  (`features/dashboards/DashboardsPage.module.css`, `--ink-2: var(--ink)`) (M-17) (after T140)
+  (`features/dashboards/Dashboards.module.css`, `--ink-2: var(--ink)`) (M-17) (after T140)
 - [x] T143 [P] [US13] F3 — Fix `ui/FormRail/FormRail.module.css` `.progress` on grey (M-17) (after T140)
 
 ---
