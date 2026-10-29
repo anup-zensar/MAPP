@@ -23,6 +23,11 @@ var seededAt = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 // seededDB is the demo data on PostgreSQL, with Mei named to approve PR-1001 (on the UK plan of Lubricants Europe).
 func seededDB(t *testing.T) *purchaserequest.PostgresStore {
 	t.Helper()
+	return purchaserequest.NewPostgresStore(seededDatabase(t))
+}
+
+func seededDatabase(t *testing.T) *database.DB {
+	t.Helper()
 	db := dbtest.NewFilledDB(t, "pr032", func(db *database.DB) {
 		if err := seed.Load(context.Background(), stores.Postgres(db), func() time.Time { return seededAt }); err != nil {
 			t.Fatalf("seed: %v", err)
@@ -38,7 +43,7 @@ func seededDB(t *testing.T) *purchaserequest.PostgresStore {
 	if err := db.Write(t.Context(), func(ctx context.Context) error { return approval.NewPostgresStore(db).PutRound(ctx, round) }); err != nil {
 		t.Fatalf("round: %v", err)
 	}
-	return purchaserequest.NewPostgresStore(db)
+	return db
 }
 
 func scopeOf(person string, holds bool, teams ...string) authz.Scope {
