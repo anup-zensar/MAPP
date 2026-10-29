@@ -1,8 +1,12 @@
 package workbook
 
 import (
+	"context"
+	"encoding/base64"
 	"errors"
+	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -105,5 +109,67 @@ func TestApply_UnexpectedErrorStopsTheRun_012FR022(t *testing.T) {
 
 	if err := newApplier(priya, f, f.plan).run(t.Context(), sheets); !errors.Is(err, broken) {
 		t.Errorf("run error = %v, want the storage failure", err)
+	}
+}
+
+// A problem shows at most 200 characters of the value found, then "…" — 038 FR-010 (H-2).
+func TestProblemValue_Capped_038_FR010_H2(t *testing.T) {
+	t.Parallel()
+	long := strings.Repeat("é", 4000)
+	f := &fakePlanning{plan: testPlan()}
+	up := uploadOf(t, map[string][][]string{
+		"Activities": {{"Campaign", "Initiative", "Activity name", "Activity type"}, {"Helix launch", "Digital", "Webinar", long}},
+	})
+
+	check := applied(t, f, up)
+
+	if len(check.Problems) != 1 || check.Problems[0].Value != strings.Repeat("é", 200)+"…" {
+		t.Errorf("problems = %d, value of %d characters", len(check.Problems), utf8.RuneCountInString(check.Problems[0].Value))
+	}
+}
+
+// A name holding a tab is a problem of its row, which is left out — 038 FR-055 (L-11).
+func TestApply_NameWithTabLeftOut_038_FR055_L11(t *testing.T) {
+	t.Parallel()
+	f := &fakePlanning{plan: testPlan()}
+	up := uploadOf(t, map[string][][]string{
+		"Activities": {{"Campaign", "Initiative", "Activity name", "Activity type"},
+			{"Helix launch", "Digital", "Web\tinar", "Event"}, {"Helix launch", "Digital", "Webinar", "Event"}},
+	})
+
+	check := applied(t, f, up)
+
+	want := []string{"Activities 2 Activity name: Names can't contain tabs, line breaks or text-direction characters."}
+	if diff := cmp.Diff(want, problemsOf(check)); diff != "" || len(f.created) != 1 {
+		t.Errorf("problems (-want +got):\n%s created %v", diff, f.created)
+	}
+}
+
+// writeCounter is a Transactor that counts the Writes begun.
+type writeCounter struct{ writes int }
+
+func (w *writeCounter) Read(ctx context.Context, fn func(ctx context.Context) error) error {
+	return fn(ctx)
+}
+
+func (w *writeCounter) Write(ctx context.Context, fn func(ctx context.Context) error) error {
+	w.writes++
+	return fn(ctx)
+}
+
+// The upload is read before the Write that holds back other people's saves: a file that can't be read is
+// refused without one — 038 FR-009 (H-2).
+func TestCheck_ReadsFileOutsideWrite_038_FR009_H2(t *testing.T) {
+	t.Parallel()
+	tx := &writeCounter{}
+	s := &Service{tx: tx, planning: &fakePlanning{plan: testPlan()}}
+
+	_, err := s.Check(t.Context(), priya, "P-1", Upload{FileName: "plan.xlsx", Content: base64.StdEncoding.EncodeToString([]byte("PK\x03\x04 broken"))})
+
+	if apiErr, ok := errors.AsType[*errs.Error](err); !ok || apiErr.Code != errs.CodeValidationFailed || tx.writes != 0 {
+		t.Errorf("Check = %v after %d writes, want the file refused before any write", err, tx.writes)
+	}
+	if _, err := s.Check(t.Context(), priya, "P-1", uploadOf(t, map[string][][]string{"Campaigns": {{"Campaign name"}, {"Rimula"}}})); err != nil || tx.writes != 1 {
+		t.Errorf("a readable file: %v after %d writes, want one", err, tx.writes)
 	}
 }

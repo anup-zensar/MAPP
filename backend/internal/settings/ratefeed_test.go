@@ -2,11 +2,13 @@ package settings
 
 import (
 	"encoding/base64"
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
 
 	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
 )
 
 // upload is a rate file of lines, as the web app sends it.
@@ -126,7 +128,7 @@ func TestGSAPRateFile_DateAndRateProblems_FR006(t *testing.T) {
 	t.Parallel()
 	f := feedFixture(t)
 	assertRow(t, checkOne(t, f, "M,USD,EUR,19/10/2026,0.92"), OutcomeProblem, "Row 2: 'valid_from' must be a date such as 2026-10-19.")
-	for _, rate := range []string{"0.1234567", "0", "2000000"} {
+	for _, rate := range []string{"0.1234567", "0", "abc"} {
 		assertRow(t, checkOne(t, f, "M,USD,EUR,2026-10-20,"+rate), OutcomeProblem, "Row 2: the rate must be above 0 with at most 6 decimals.")
 	}
 }
@@ -159,4 +161,60 @@ func TestGSAPRateFile_PresentReplaceAdd_FR006(t *testing.T) {
 	if add.Currency == nil || *add.Currency != "INR" || add.Date == nil || *add.Date != date.MustParse("2026-10-20") {
 		t.Errorf("add row = %+v", add)
 	}
+}
+
+// A row with stray quotes is read as a row and checked like any other; the other rows are still checked —
+// 038 FR-034 (M-13).
+func TestGSAPRateFile_StrayQuotesAreARow_038_FR034_M13(t *testing.T) {
+	t.Parallel()
+	check, err := feedFixture(t).service.CheckRateImport(t.Context(), alex, upload(rateHeader,
+		`=HYPERLINK("x"),USD,EUR,2026-10-20,0.92`, `M,USD,EUR,2026-10-21,0.9"2`, "M,USD,GBP,2026-10-20,0.79"))
+	if err != nil || len(check.Rows) != 3 {
+		t.Fatalf("CheckRateImport = %+v, %v", check, err)
+	}
+	if check.Rows[0].Outcome == OutcomeAdd {
+		t.Errorf("the HYPERLINK row was added: %+v", check.Rows[0])
+	}
+	assertRow(t, check.Rows[1], OutcomeProblem, "Row 3: the rate must be above 0 with at most 6 decimals.")
+	assertRow(t, check.Rows[2], OutcomeAdd, "")
+}
+
+// An empty file says so, and every missing column is named at once — 038 FR-034 (L-21).
+func TestGSAPRateFile_EmptyAndMissingColumns_038_FR034_L21(t *testing.T) {
+	t.Parallel()
+	for _, content := range []string{"", "\xEF\xBB\xBF", " \n\n"} {
+		_, err := GSAPRateFile{}.Read("x.csv", []byte(content))
+		assertError(t, err, problems("content", "This file is empty."))
+	}
+	_, err := GSAPRateFile{}.Read("x.csv", []byte("rate_type,to_currency\nM,EUR\n"))
+	assertError(t, err, problems("content", "The file needs the column 'from_currency'.",
+		"content", "The file needs the column 'valid_from'.", "content", "The file needs the column 'rate'."))
+}
+
+// A rate above 1,000,000 gets the "too large" message; dates before 1 Jan 2000 are refused — 038 FR-034 (L-21).
+func TestGSAPRateFile_TooLargeRateAndEarlyDate_038_FR034_L21(t *testing.T) {
+	t.Parallel()
+	f := feedFixture(t)
+	assertRow(t, checkOne(t, f, "M,USD,EUR,2026-10-20,1000001"), OutcomeProblem, "Row 2: use a rate of 1,000,000 or less.")
+	assertRow(t, checkOne(t, f, "M,USD,EUR,1999-12-31,0.92"), OutcomeProblem, "Row 2: 'valid_from' must be on or after 1 Jan 2000.")
+	assertRow(t, checkOne(t, f, "M,USD,EUR,2000-01-01,0.92"), OutcomeAdd, "")
+}
+
+// FuzzGSAPRateFile: any content is read into rows or refused with a message, never a panic or another error
+// (B9), stray quotes and empty input included.
+func FuzzGSAPRateFile(f *testing.F) {
+	for _, seed := range []string{"", "\xEF\xBB\xBF", rateHeader + "\nM,USD,EUR,2026-10-20,0.92\n",
+		rateHeader + "\n=HYPERLINK(\"x\"),USD,EUR,2026-10-20,0.92\n", rateHeader + "\n\"M,USD,EUR,2026-10-20,0.9\"2\"\n",
+		rateHeader + "\nM,\"USD,EUR\n", "rate\n\"\n"} {
+		f.Add([]byte(seed))
+	}
+	f.Fuzz(func(t *testing.T, content []byte) {
+		rows, err := GSAPRateFile{}.Read("fuzz.csv", content)
+		if _, isProblem := errors.AsType[*errs.Error](err); err != nil && !isProblem {
+			t.Fatalf("Read = %v, want rows or a problem", err)
+		}
+		if err == nil && len(rows) == 0 {
+			t.Fatalf("Read gave no rows and no problem")
+		}
+	})
 }
