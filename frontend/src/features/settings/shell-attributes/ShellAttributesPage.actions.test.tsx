@@ -59,7 +59,7 @@ describe('ShellAttributesPage: row actions (FR-004)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Delete Shell attribute' }));
 
     const messages = await findMessages();
-    expect(messages).toHaveTextContent("Shell attribute 'PIR' moved to the recycle bin");
+    expect(messages).toHaveTextContent("Shell attribute 'PIR' deleted");
     expect(within(messages).getByRole('button', { name: 'Undo' })).toBeInTheDocument();
     expect(api.requests.some((request) => request.method === 'DELETE')).toBe(true);
   });

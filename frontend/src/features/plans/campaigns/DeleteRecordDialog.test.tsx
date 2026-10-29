@@ -154,7 +154,7 @@ describe('DeleteRecordDialog (feature 005, US5)', () => {
       'DELETE /api/v1/campaigns/C-1001',
     );
     const messages = await findMessages();
-    expect(messages).toHaveTextContent("Campaign 'Helix launch' moved to the recycle bin");
+    expect(messages).toHaveTextContent("Campaign 'Helix launch' deleted");
 
     vi.advanceTimersByTime(9000);
     await user.click(within(messages).getByRole('button', { name: 'Undo' }));

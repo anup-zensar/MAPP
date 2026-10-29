@@ -71,7 +71,7 @@ describe('LineItemsSection, row actions (US1, US4)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Delete line item' }));
 
     expect(
-      await screen.findByText("Line item 'Agency fee' moved to the recycle bin"),
+      await screen.findByText("Line item 'Agency fee' deleted"),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1001');
   });

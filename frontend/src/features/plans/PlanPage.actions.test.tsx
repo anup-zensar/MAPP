@@ -60,7 +60,7 @@ describe('PlanPage actions and history (US5, US6, FR-026 – FR-031)', () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans'));
     expect(
-      await screen.findByText("Plan 'FY2026 Lubricants Europe' moved to the recycle bin"),
+      await screen.findByText("Plan 'FY2026 Lubricants Europe' deleted"),
     ).toBeInTheDocument();
   });
 

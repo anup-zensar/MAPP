@@ -138,7 +138,7 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1001'));
     expect(
-      await screen.findByText("Activity 'Launch film' moved to the recycle bin"),
+      await screen.findByText("Activity 'Launch film' deleted"),
     ).toBeVisible();
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
 

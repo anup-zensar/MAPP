@@ -57,7 +57,7 @@ describe('useCampaignTreeContent: row actions (feature 005, US5, US6)', () => {
 
     expect(await screen.findByTestId('empty')).toBeInTheDocument();
     expect(await findMessages()).toHaveTextContent(
-      "Initiative 'Digital & social' moved to the recycle bin",
+      "Initiative 'Digital & social' deleted",
     );
   });
 

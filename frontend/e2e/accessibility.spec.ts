@@ -242,7 +242,7 @@ test('T080 SC-006: keyboard only on the sample page — create, rename, delete a
   await tabTo(page, page.getByRole('button', { name: 'Delete sample folder' }));
   await page.keyboard.press('Enter');
   await expect(
-    page.getByText(`Sample folder '${renamed}' moved to the recycle bin`).first(),
+    page.getByText(`Sample folder '${renamed}' deleted`).first(),
   ).toBeVisible();
   const deletedAt = Date.now();
 

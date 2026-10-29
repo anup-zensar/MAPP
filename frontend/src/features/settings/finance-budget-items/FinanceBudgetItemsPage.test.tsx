@@ -170,7 +170,7 @@ describe('FinanceBudgetItemsPage: status and delete (US5 scenario 5, FR-004)', (
 
     const messages = await findMessages();
     expect(messages).toHaveTextContent(
-      "Finance budget item 'Asia – Retail' moved to the recycle bin",
+      "Finance budget item 'Asia – Retail' deleted",
     );
     expect(within(messages).getByRole('button', { name: 'Undo' })).toBeInTheDocument();
   });

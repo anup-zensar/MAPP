@@ -1057,7 +1057,7 @@ Every user-managed record follows this pattern. Specs refer to it as "the standa
 - A dialog: "Delete campaign 'Helix launch'?" — what goes with it ("3 initiatives, 12 activities and 20
   line items"), the effect ("Plan totals will update") and where it goes ("It moves to the recycle bin;
   you can restore it"). **Cancel** has focus; the red button says **Delete campaign**.
-- After deleting: back to the parent; toast "Campaign 'Helix launch' moved to the recycle bin" with
+- After deleting: back to the parent; toast "Campaign 'Helix launch' deleted" with
   **Undo** (visible at least 10 seconds).
 - The dialog and toast promise the recycle bin only where a person can open it (UI audit A-01, functional
   review P-02).

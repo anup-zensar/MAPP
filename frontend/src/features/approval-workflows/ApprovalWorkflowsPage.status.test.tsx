@@ -167,7 +167,7 @@ describe('ApprovalWorkflowsPage set inactive, reactivate and delete (feature 008
 
     expect(
       await screen.findByText(
-        "Approval workflow 'China BC approval workflow' moved to the recycle bin",
+        "Approval workflow 'China BC approval workflow' deleted",
       ),
     ).toBeInTheDocument();
     const messages = await findMessages();

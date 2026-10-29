@@ -69,7 +69,7 @@ describe('032 FR-040/FR-042/FR-055/FR-056: delete', () => {
 
     const messages = await findMessages();
     expect(messages).toHaveTextContent(
-      "Purchase request 'PR for Stand build' moved to the recycle bin",
+      "Purchase request 'PR for Stand build' deleted",
     );
     expect(within(messages).getByRole('button', { name: 'Undo' })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/purchase-requests');

@@ -195,7 +195,7 @@ describe('activityTreeRows (feature 006)', () => {
     await user.keyboard('{Enter}');
 
     expect(
-      await screen.findByText("Activity 'Launch film' moved to the recycle bin"),
+      await screen.findByText("Activity 'Launch film' deleted"),
     ).toBeVisible();
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/plans/P-1001');

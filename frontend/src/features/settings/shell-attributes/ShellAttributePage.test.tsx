@@ -245,7 +245,7 @@ describe('ShellAttributePage (FR-020)', () => {
 
     await waitFor(() => expect(router.state.location.search).toBe('?level=activity'));
     expect(await findMessages()).toHaveTextContent(
-      "Shell attribute 'PIR' moved to the recycle bin",
+      "Shell attribute 'PIR' deleted",
     );
   });
 });

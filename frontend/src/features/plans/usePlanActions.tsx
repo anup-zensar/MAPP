@@ -150,7 +150,7 @@ export function usePlanActions({ onDeleted }: PlanActionsOptions = {}) {
     try {
       const result = await deletePlan.mutateAsync(plan.id);
       setDeleting({ plan, open: false });
-      // "Plan '<name>' moved to the recycle bin" with Undo for 10 seconds (FR-030).
+      // "Plan '<name>' deleted" with Undo for 10 seconds (FR-030).
       afterDelete(result);
       onDeleted?.();
     } catch (error) {

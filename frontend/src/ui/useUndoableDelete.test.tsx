@@ -55,7 +55,7 @@ const IDEAS_RESTORED = {
 
 const UNDO_IDEAS = 'POST /api/v1/recycle-bin/BIN-1001/undo';
 
-const IDEAS_MOVED = "Sample folder 'Ideas' moved to the recycle bin";
+const IDEAS_TOAST = "Sample folder 'Ideas' deleted";
 
 const UNREACHABLE =
   "SP&A One can't reach its server right now. Check that it is running and try again.";
@@ -102,7 +102,7 @@ type ErrorDetail = components['schemas']['ErrorDetail'];
 type ErrorCode = ErrorDetail['code'];
 
 describe('useUndoableDelete', () => {
-  it('tells screen readers where else to restore it: the recycle bin, unless told otherwise (FR-026)', async () => {
+  it('tells screen readers where else to restore it: the recycle bin, unless told otherwise; the message says "<record> deleted" (FR-026, 038 FR-013)', async () => {
     const { user } = renderWithProviders(
       <>
         <DeleteButton result={IDEAS_DELETED} label="Delete Ideas" />
@@ -118,14 +118,14 @@ describe('useUndoableDelete', () => {
     await user.click(screen.getByRole('button', { name: 'Delete Ideas' }));
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent(
-        `${IDEAS_MOVED} Restore it from the recycle bin`,
+        `${IDEAS_TOAST} Restore it from the recycle bin`,
       ),
     );
 
     await user.click(screen.getByRole('button', { name: 'Delete Agenda' }));
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent(
-        "Sample note 'Agenda' moved to the recycle bin Restore it from Recently deleted on this page",
+        "Sample note 'Agenda' deleted Restore it from Recently deleted on this page",
       ),
     );
   });
@@ -157,8 +157,8 @@ describe('useUndoableDelete', () => {
     await user.click(screen.getByRole('button', { name: 'Delete Agenda' }));
 
     const messages = await findMessages();
-    expect(messages).toHaveTextContent("Sample note 'Agenda' moved to the recycle bin");
-    expect(messages).not.toHaveTextContent(IDEAS_MOVED);
+    expect(messages).toHaveTextContent("Sample note 'Agenda' deleted");
+    expect(messages).not.toHaveTextContent(IDEAS_TOAST);
     expect(within(messages).getAllByRole('button', { name: 'Undo' })).toHaveLength(1);
   });
 
@@ -174,7 +174,7 @@ describe('useUndoableDelete', () => {
     const { messages } = await deleteIdeasAndUndo();
 
     await waitFor(() => expect(messages).toHaveTextContent("Sample folder 'Ideas' restored"));
-    expect(messages).not.toHaveTextContent(IDEAS_MOVED);
+    expect(messages).not.toHaveTextContent(IDEAS_TOAST);
     expect(api.requests).toEqual([
       { method: 'POST', path: '/api/v1/recycle-bin/BIN-1001/undo', search: '', body: undefined },
     ]);

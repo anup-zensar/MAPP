@@ -6,7 +6,7 @@ import { ToastProvider } from './Toast';
 import { useToast } from './useToast';
 import type { ToastOptions } from './useToast';
 
-const DELETED = "Sample folder 'Ideas' moved to the recycle bin";
+const DELETED = "Sample folder 'Ideas' deleted";
 
 /** A page that shows the given message when its button is pressed. */
 function ShowButton({ toast }: { toast: ToastOptions }) {

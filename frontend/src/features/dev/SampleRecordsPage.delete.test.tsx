@@ -47,11 +47,11 @@ describe('SampleRecordsPage: delete, Undo and restore', () => {
     await user.click(within(question).getByRole('button', { name: 'Delete sample folder' }));
 
     const messages = await findMessages();
-    expect(messages).toHaveTextContent("Sample folder 'Ideas' moved to the recycle bin");
+    expect(messages).toHaveTextContent("Sample folder 'Ideas' deleted");
     expect(within(messages).getByRole('button', { name: 'Undo' })).toBeInTheDocument();
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent(
-        "Sample folder 'Ideas' moved to the recycle bin Restore it from Recently deleted on this page",
+        "Sample folder 'Ideas' deleted Restore it from Recently deleted on this page",
       ),
     );
     expect(api.requests).toContainEqual({
@@ -115,7 +115,7 @@ describe('SampleRecordsPage: delete, Undo and restore', () => {
     await user.click(within(messages).getByRole('button', { name: 'Try again' }));
 
     await waitFor(() =>
-      expect(messages).toHaveTextContent("Sample folder 'Ideas' moved to the recycle bin"),
+      expect(messages).toHaveTextContent("Sample folder 'Ideas' deleted"),
     );
   });
 
