@@ -178,3 +178,17 @@ func TestRateImportUpload_Checked(t *testing.T) {
 
 	assertError(t, err, problems("fileName", "Choose a file to import.", "content", "This file can't be read. Save it as a .csv file in UTF-8 and try again."))
 }
+
+// A rate entered by hand is refused before 1 Jan 2000, as an imported one is — 038 FR-034 (L-21).
+func TestAddRate_DateFrom2000_038_FR034_L21(t *testing.T) {
+	t.Parallel()
+	f := feedFixture(t)
+
+	_, early := f.service.AddRate(t.Context(), alex, "EUR", RateInput{Date: "1999-12-31", Rate: "0.92"})
+	_, first := f.service.AddRate(t.Context(), alex, "EUR", RateInput{Date: "2000-01-01", Rate: "0.92"})
+
+	assertError(t, early, problems("date", "Enter a date on or after 1 Jan 2000."))
+	if first != nil {
+		t.Errorf("2000-01-01 refused: %v", first)
+	}
+}

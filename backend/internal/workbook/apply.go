@@ -7,17 +7,22 @@ import (
 	"fmt"
 	"maps"
 	"strings"
+	"unicode/utf8"
 
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
 	"mapp/internal/platform/sheet"
 )
+
+const maxProblemValue = 200
 
 // applier runs the rows of an upload against a plan inside one Write: every row is created, updated, left
 // unchanged or left out with its problems (FR-029 – FR-033). A check and an import run the same applier.
 type applier struct {
 	a       actor.Actor
-	port    Planning
+	port    Writer
 	plan    Plan
 	byID    map[string]Stored
 	names   map[nameKey]string
@@ -51,7 +56,7 @@ type rowWork struct {
 	leftOut  bool
 }
 
-func newApplier(a actor.Actor, port Planning, plan Plan) *applier {
+func newApplier(a actor.Actor, port Writer, plan Plan) *applier {
 	ap := &applier{a: a, port: port, plan: plan, byID: map[string]Stored{}, names: map[nameKey]string{},
 		bad: map[string]rowRef{}, twice: map[rowRef]string{}, counts: map[Level]*LevelCounts{},
 		result: Check{Problems: []Problem{}, IgnoredColumns: []string{}, Levels: []LevelCounts{}}}
@@ -73,8 +78,30 @@ func (ap *applier) run(ctx context.Context, sheets []sheetRows) error {
 				return err
 			}
 		}
+		if err := ap.flush(ctx); err != nil {
+			return err
+		}
 	}
 	ap.finish()
+	return nil
+}
+
+// flush stores what the sheet created, before the next sheet's rows name it, and takes the readable ids.
+func (ap *applier) flush(ctx context.Context) error {
+	readable, err := ap.port.Flush(ctx)
+	if err != nil || len(readable) == 0 {
+		return err
+	}
+	for key, id := range ap.names {
+		if fresh, found := readable[id]; found {
+			ap.names[key] = fresh
+		}
+	}
+	for i, r := range ap.records {
+		if fresh, found := readable[r.RecordID]; found {
+			ap.records[i].RecordID = fresh
+		}
+	}
 	return nil
 }
 
@@ -97,7 +124,15 @@ func (ap *applier) apply(ctx context.Context, s sheetRows, row sheet.Row) error 
 }
 
 func (w *rowWork) problem(column, value, reason string) {
-	w.problems = append(w.problems, Problem{Sheet: w.s.name, Row: w.row.Number, Column: column, Value: value, Reason: reason})
+	w.problems = append(w.problems, Problem{Sheet: w.s.name, Row: w.row.Number, Column: column, Value: shortened(value), Reason: reason})
+}
+
+// shortened is a value found as a problem shows it: at most maxProblemValue characters, then "…" (038 FR-010).
+func shortened(value string) string {
+	if utf8.RuneCountInString(value) <= maxProblemValue {
+		return value
+	}
+	return string([]rune(value)[:maxProblemValue]) + "…"
 }
 
 func (ap *applier) checkRequired(w *rowWork) {
@@ -127,15 +162,36 @@ func (ap *applier) readCells(w *rowWork) {
 			continue
 		}
 		text := w.s.text(w.row, c.field)
-		if w.stored != nil && text == format(c, w.stored.Values, ap.plan.Choices) {
+		if w.stored != nil && ap.unchanged(c, text, w.stored.Values) {
 			continue
 		}
-		if problem := parse(c, text, &w.values, ap.plan.Choices); problem != "" {
+		if problem := checkCell(c, text, &w.values, ap.plan.Choices); problem != "" {
 			w.problem(c.heading, text, problem)
 			continue
 		}
 		w.changed[c.field] = true
 	}
+}
+
+// unchanged reports whether a cell still holds the record's value: the same text, or the same amount written
+// as a number (038 FR-059).
+func (ap *applier) unchanged(c column, text string, stored Values) bool {
+	if text == format(c, stored, ap.plan.Choices) {
+		return true
+	}
+	was, isAmount := amountField(c.field, &stored)
+	var read *money.Amount
+	return isAmount && *was != nil && parseAmount(text, &read) == "" && read != nil && *read == **was
+}
+
+// checkCell reads a cell into values; a name must be a single line (038 FR-055).
+func checkCell(c column, text string, values *Values, ch Choices) string {
+	if c.field == fieldName {
+		if problem := record.CheckSingleLine(text); problem != "" {
+			return problem
+		}
+	}
+	return parse(c, text, values, ch)
 }
 
 func isStructural(field string) bool {

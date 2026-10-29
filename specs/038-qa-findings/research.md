@@ -114,6 +114,21 @@ a 100-row check minus those of a 10-row check are ≤ 4 × 90 (028's method; Pos
 `workbook/apply_test.go` and `handler_import_test.go` keep proving identical problems; `workbook/apply_test.go`
 for the 200-character cap.
 
+**Measured** (`TestWorkbookCheckStatements_038_FR008_H2`, demo plan P-1001, generated rows: one campaign, an
+initiative per 100 rows, half activities, half line items; developer laptop shared with other builds, so the
+times are high):
+
+| | 10 rows | 100 rows | 100 − 10 | 1,000 rows | 1,000 rows time |
+|---|---|---|---|---|---|
+| Before (develop) | 169 | 1,429 | 1,260 (14/row) | 14,006 | 6 min 14 s |
+| After (T032) | — | — | ≤ 360 (test passes) | 2,152 | 23 s (machine under load) |
+
+After T032 activities and line items are checked by `activity.Importer` / `lineitem.Importer`, which read each
+parent once and store each sheet with `AddMany`, one `NextIDs` and one read-back; each row costs its log entry
+(2 statements). No store read was added (only existing `ListByInitiative`, `ListByIDs`, `ListByActivity(ies)`,
+`AddMany`), so T033 has no new scoped read to isolate. The 5,000-row run and the 5 s check on an idle machine
+are still to be recorded.
+
 ## R4 — H-1: unknown dashboard currency or market
 
 **Root cause.** The web parser (`features/dashboards/schemas.ts:16 readFilters`) checks only syntax; `XXX` and

@@ -3,6 +3,7 @@ package settings
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"strings"
 	"unicode/utf8"
@@ -27,6 +28,8 @@ const (
 	currencyNotSetUpMessage = "%s is not set up in Settings › Currencies."
 	rowDateMessage          = "Row %d: 'valid_from' must be a date such as 2026-10-19."
 	rowRateMessage          = "Row %d: the rate must be above 0 with at most 6 decimals."
+	rowRateTooLargeMessage  = "Row %d: use a rate of 1,000,000 or less."
+	rowEarlyDateMessage     = "Row %d: 'valid_from' must be on or after 1 Jan 2000."
 	rowTwiceMessage         = "Row %d: %s on %s appears twice (also row %d)."
 	nothingToImportMessage  = "Nothing to import: every rate is already present or not used."
 	chooseRateFileMessage   = "Choose a file to import."
@@ -231,6 +234,10 @@ func (s *Service) reviewRates(ctx context.Context, rows []FeedRow) (rateReview, 
 			outcome, message = OutcomeNotUsed, fmt.Sprintf(currencyNotSetUpMessage, code)
 		case dayErr != nil:
 			outcome, message = OutcomeProblem, fmt.Sprintf(rowDateMessage, in.Row)
+		case day.Before(firstRateDate):
+			outcome, message = OutcomeProblem, fmt.Sprintf(rowEarlyDateMessage, in.Row)
+		case errors.Is(rateErr, money.ErrOutOfRange):
+			outcome, message = OutcomeProblem, fmt.Sprintf(rowRateTooLargeMessage, in.Row)
 		case rateErr != nil:
 			outcome, message = OutcomeProblem, fmt.Sprintf(rowRateMessage, in.Row)
 		}
