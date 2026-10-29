@@ -1,6 +1,7 @@
 package seed_test
 
 import (
+	"fmt"
 	"slices"
 	"testing"
 
@@ -11,8 +12,9 @@ import (
 )
 
 // The Settings seed: 5 currencies with rates, 6 activity types with default planned costs, 2 models with rates and
-// allowed types (in type-list order), 2026's 2 finance budgets of 3 items each, 35 Shell attributes with 162 options.
-func TestLoad_Settings_FR032(t *testing.T) {
+// allowed types (in type-list order), 2026's 2 finance budgets of 3 items each and 2027's of 2 (038 FR-061, L-30),
+// 35 Shell attributes with 162 options.
+func TestLoad_Settings_FR032_038_FR061_L30(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
 
@@ -71,12 +73,11 @@ func TestLoad_Settings_FR032(t *testing.T) {
 
 	var budgets []string
 	for _, b := range d.budgets {
-		budgets = append(budgets, b.ID+" "+b.Name)
-		if b.Year != 2026 {
-			t.Errorf("budget %s of %d, want 2026", b.ID, b.Year)
-		}
+		budgets = append(budgets, fmt.Sprintf("%s %s %d", b.ID, b.Name, b.Year))
 	}
-	if want := []string{"FB-1001 2026 Lubricants Budget", "FB-1002 2026 Mobility Budget"}; !slices.Equal(budgets, want) {
+	want := []string{"FB-1001 2026 Lubricants Budget 2026", "FB-1002 2026 Mobility Budget 2026",
+		"FB-1003 2027 Lubricants Budget 2027"} // 038 FR-061 (L-30): the FY2027 line items' budget
+	if !slices.Equal(budgets, want) {
 		t.Errorf("finance budgets = %q, want %q", budgets, want)
 	}
 	var items []string
@@ -87,6 +88,7 @@ func TestLoad_Settings_FR032(t *testing.T) {
 		"FBI-1001 FB-1001 Europe – Digital LUB-EU-DIG", "FBI-1002 FB-1001 Europe – Events LUB-EU-EVT",
 		"FBI-1003 FB-1001 Europe – Brand LUB-EU-BRD", "FBI-1004 FB-1002 China – Retail MOB-CN-RET",
 		"FBI-1005 FB-1002 China – Fleet MOB-CN-FLT", "FBI-1006 FB-1002 Delhi MOB-IN-DEL",
+		"FBI-1007 FB-1003 UK & Ireland – Events LUB-UKI-EVT", "FBI-1008 FB-1003 UK & Ireland – Agency LUB-UKI-AGY",
 	}
 	if !slices.Equal(items, wantItems) {
 		t.Errorf("finance budget items = %q, want %q", items, wantItems)
