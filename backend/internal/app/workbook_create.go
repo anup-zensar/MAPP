@@ -12,10 +12,15 @@ import (
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/date"
+	"mapp/internal/platform/memo"
 	"mapp/internal/platform/money"
 	"mapp/internal/settings"
 	"mapp/internal/workbook"
 )
+
+// workbookForms keeps each parent's form for the rest of a check's or import's Write: the defaults taken from it
+// depend on the parent alone, which no later sheet changes, and every create would otherwise read it again.
+const workbookForms = "workbookForms:"
 
 // Create creates a record under parentID with its single create, empty fields taking the on-screen defaults
 // (FR-032): the owner and dates of the parent, the type's planned cost, the line item's form defaults.
@@ -73,7 +78,9 @@ func (p workbookPlanning) createActivity(ctx context.Context, a actor.Actor, ini
 	if err := p.permit(ctx, initiativeID, authz.ActivitiesEdit); err != nil {
 		return "", err
 	}
-	form, err := p.activities.NewForm(ctx, a, initiativeID)
+	form, err := memo.Get(ctx, workbookForms+"activity:"+initiativeID, func(ctx context.Context) (activity.FormView, error) {
+		return p.activities.NewForm(ctx, a, initiativeID)
+	})
 	if err != nil {
 		return "", err
 	}
@@ -100,7 +107,9 @@ func (p workbookPlanning) createLineItem(ctx context.Context, a actor.Actor, act
 	if err := p.permit(ctx, activityID, authz.ActivitiesEdit); err != nil {
 		return "", err
 	}
-	options, err := p.lineItems.FormOptions(ctx, a, activityID)
+	options, err := memo.Get(ctx, workbookForms+"lineItem:"+activityID, func(ctx context.Context) (lineitem.FormOptions, error) {
+		return p.lineItems.FormOptions(ctx, a, activityID)
+	})
 	if err != nil {
 		return "", err
 	}
