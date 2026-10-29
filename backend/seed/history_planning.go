@@ -13,17 +13,20 @@ import (
 )
 
 // addCreated keeps one "created" entry per seeded planning record, by its owner, spread evenly between 14
-// and 10 days before the seed time in tree order, so parents come before their children (step 1).
-func (h *demoHistory) addCreated(context.Context) error {
+// and 10 days before the seed time in tree order, so parents come before their children; each record's created
+// line says the same (step 1, 038 FR-060).
+func (h *demoHistory) addCreated(ctx context.Context) error {
 	first, last := h.at.Add(-createdFrom), h.at.Add(-createdUntil)
 	step := time.Duration(0)
 	if n := len(h.records); n > 1 {
 		step = last.Sub(first) / time.Duration(n-1)
 	}
 	for i, r := range h.records {
-		at := wholeMinuteFrom(first.Add(time.Duration(i) * step))
-		h.add(at, h.ownerOrAlex(r.ownerID), history.ActionCreated, string(history.ActionCreated), r.kind, r.id, r.name,
-			r.path, nil, "", "")
+		at, by := wholeMinuteFrom(first.Add(time.Duration(i)*step)), h.ownerOrAlex(r.ownerID)
+		h.add(at, by, history.ActionCreated, string(history.ActionCreated), r.kind, r.id, r.name, r.path, nil, "", "")
+		if err := r.created(ctx, at, by); err != nil {
+			return err
+		}
 	}
 	return nil
 }

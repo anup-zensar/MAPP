@@ -49,11 +49,15 @@ var demoModels = []struct {
 const demoBudgetYear = 2026
 
 var demoBudgets = []struct {
+	year  int
 	name  string
 	items [][2]string // name, code
 }{
-	{"2026 Lubricants Budget", [][2]string{{"Europe – Digital", "LUB-EU-DIG"}, {"Europe – Events", "LUB-EU-EVT"}, {"Europe – Brand", "LUB-EU-BRD"}}},
-	{"2026 Mobility Budget", [][2]string{{"China – Retail", "MOB-CN-RET"}, {"China – Fleet", "MOB-CN-FLT"}, {"Delhi", "MOB-IN-DEL"}}},
+	{demoBudgetYear, lubricantsBudget,
+		[][2]string{{itemEuropeDigital, "LUB-EU-DIG"}, {itemEuropeEvents, "LUB-EU-EVT"}, {itemEuropeBrand, "LUB-EU-BRD"}}},
+	{demoBudgetYear, mobilityBudget,
+		[][2]string{{itemChinaRetail, "MOB-CN-RET"}, {itemChinaFleet, "MOB-CN-FLT"}, {"Delhi", "MOB-IN-DEL"}}},
+	{ukBudgetYear, ukBudget, [][2]string{{itemUKEvents, "LUB-UKI-EVT"}, {itemUKAgency, "LUB-UKI-AGY"}}}, // 038 FR-061
 }
 
 // demoAttribute's parent is the label of an earlier attribute of its level; condition lists Business unit labels.
