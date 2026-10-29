@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react';
-import { useId } from 'react';
+import { useId, useState } from 'react';
+import type { ClipboardEvent } from 'react';
 import { Button } from '@/ui/Button/Button';
 import { problemOf } from '@/ui/FormPanel/problem-of';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
@@ -8,6 +9,7 @@ import { cx } from '@/ui/cx';
 import { FieldHelpTip } from '@/features/settings';
 import { monthFieldId } from './line-item-form-state';
 import type { CustomMonth } from './line-item-form-state';
+import { leftOutText, pastedValues } from './spread-paste';
 import {
   addMonths,
   amountText,
@@ -180,10 +182,36 @@ function CustomGrid({
   const difference = plannedCost - sum;
   const first = months[0]?.month;
   const last = months[months.length - 1]?.month;
+  const [leftOut, setLeftOut] = useState<string | null>(null);
+
+  // A row pasted from a spreadsheet fills this month and the ones after it (038 FR-042).
+  function paste(event: ClipboardEvent<HTMLDivElement>) {
+    const name = event.target instanceof HTMLInputElement ? event.target.name : '';
+    const index = months.findIndex(({ month }) => monthFieldId(month) === name);
+    const values = pastedValues(event.clipboardData.getData('text'));
+    if (index < 0 || !values) {
+      return;
+    }
+    event.preventDefault();
+    const following = months.slice(index);
+    following.forEach(({ month }, offset) => {
+      const value = values[offset];
+      if (value !== undefined) {
+        onMonthChange(month, value);
+      }
+    });
+    const extra = values.length - following.length;
+    setLeftOut(extra > 0 && last ? leftOutText(extra, last) : null);
+  }
 
   return (
     <div className={styles.custom}>
-      <div className={styles.monthGrid}>
+      {leftOut && (
+        <p className={styles.note} role="status">
+          {leftOut}
+        </p>
+      )}
+      <div className={styles.monthGrid} onPaste={paste}>
         {months.map(({ month, amount }) => {
           const outside = isOutsideDates(month, dates);
           return (
