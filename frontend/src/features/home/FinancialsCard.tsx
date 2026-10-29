@@ -1,6 +1,7 @@
-import { ChevronRight, ReceiptText, TriangleAlert, Unlink } from 'lucide-react';
+import { ChevronRight, Lock, ReceiptText, TriangleAlert, Unlink } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
+import { ApiError } from '@/api/errors';
 import { LinkButton } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { EmptyState } from '@/ui/EmptyState/EmptyState';
@@ -27,13 +28,7 @@ import {
 import { percentText } from './home-text';
 import { SectionError } from './SectionError';
 
-/**
- * Home's Financials card (015 US6, FR-025), right under the summary cards: for the current year
- * and the Home scope, Committed against planned cost with its meter, Invoiced, Paid and Accrued;
- * then "n activities committed above planned cost" (All work with that filter) and "n transactions
- * not linked to a line item" (Financials › Not linked), Open Financials and the source line. It
- * loads and fails on its own, like the other Home cards (009 FR-022).
- */
+/** Home's Financials card for the current year and the Home scope; it loads and fails on its own. */
 export function FinancialsCard({ scope }: { scope: HomeScope }) {
   const { displayCurrency } = useFormatters();
   const overview = useFinancialOverview(scope, displayCurrency);
@@ -47,6 +42,14 @@ export function FinancialsCard({ scope }: { scope: HomeScope }) {
     return (
       <Card title="Financials" actions={open}>
         <Skeleton lines={3} height="18px" />
+      </Card>
+    );
+  }
+  if (overview.error instanceof ApiError && overview.error.kind === 'forbidden') {
+    // No Open Financials here: the page would only refuse too.
+    return (
+      <Card title="Financials">
+        <EmptyState icon={<Lock />} title={FINANCIALS_CARD.noAccess} />
       </Card>
     );
   }
@@ -65,7 +68,6 @@ function Overview({ overview, open }: { overview: FinancialOverview; open: React
   const { figures, source, year } = overview;
   const empty = figures.transactionCount === 0;
 
-  // Without any GSAP data the empty state says so; the source line would only repeat it.
   const subtitle = source.dataAsOf ? sourceText(source, dateTime) : undefined;
 
   return (
@@ -132,12 +134,10 @@ interface FigureProps {
   label: string;
   tip: string;
   value: string;
-  /** Committed above planned cost: the value in red (with words beside it, not colour alone). */
   problem?: boolean;
   children?: ReactNode;
 }
 
-/** One figure: its label with an ⓘ, the amount, and an optional line under it. */
 function Figure({ label, tip, value, problem = false, children }: FigureProps) {
   return (
     <div className={styles.figure}>
@@ -151,11 +151,7 @@ function Figure({ label, tip, value, problem = false, children }: FigureProps) {
   );
 }
 
-/**
- * Committed's lines: "of $460,000.00 planned" and the meter with "8%" after it; above planned cost
- * the meter and the percentage turn red and "Committed above planned cost by $2,000.00" says so in
- * words (015 FR-013); "No planned cost yet" without a planned cost.
- */
+/** Above planned cost the meter turns red and a sentence says so too: never colour alone. */
 function Committed({ overview }: { overview: FinancialOverview }) {
   const { money } = useFormatters();
   const { plannedCost, committedPercent, committedAbovePlanned, notYetCommitted } =

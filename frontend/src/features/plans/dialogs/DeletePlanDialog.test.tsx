@@ -2,13 +2,21 @@ import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
+import { activityRecord, figures } from '@/testing/fixtures/line-item-financials';
 import { plan } from '@/testing/fixtures/plans';
 import { reply } from '@/testing/replies';
 import type { Plan } from '../api';
 import { DeletePlanDialog } from './DeletePlanDialog';
 
-function renderDialog(target: Plan) {
-  mockApi([reply('GET /api/v1/plans/{planId}', { body: target }, { planId: 'P-1001' })]);
+function renderDialog(target: Plan, transactionCount = 0) {
+  mockApi([
+    reply('GET /api/v1/plans/{planId}', { body: target }, { planId: 'P-1001' }),
+    reply(
+      'GET /api/v1/financials/records/{recordId}',
+      { body: activityRecord({ figures: figures({ transactionCount }) }) },
+      { recordId: 'P-1001' },
+    ),
+  ]);
   const onDelete = vi.fn();
   const result = renderWithProviders(
     <DeletePlanDialog
@@ -62,6 +70,18 @@ describe('DeletePlanDialog (US6#3, FR-029)', () => {
 
     expect(await screen.findByText('It holds nothing yet.')).toBeInTheDocument();
     expect(screen.queryByText('This plan is published.')).not.toBeInTheDocument();
+    expect(screen.getByRole('alertdialog')).not.toHaveTextContent('GSAP');
+  });
+
+  it('says the GSAP transactions linked below it stay and leave the figures (015 FR-029)', async () => {
+    renderDialog(plan(), 1);
+
+    expect(
+      await screen.findByText(
+        '1 GSAP transaction is linked to it. It stays in SP&A One and leaves the figures until it is restored.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete plan' })).toBeEnabled();
   });
 
   it('names one approved activity in the singular', async () => {

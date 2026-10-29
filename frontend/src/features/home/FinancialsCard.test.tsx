@@ -5,7 +5,7 @@ import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { emptyOverview, overviewOf, usd } from '@/testing/fixtures/home';
-import { reply } from '@/testing/replies';
+import { apiError, reply } from '@/testing/replies';
 import type { Answer } from '@/testing/replies';
 import { FinancialsCard } from './FinancialsCard';
 import type { FinancialOverview, HomeScope } from './api';
@@ -14,7 +14,10 @@ function renderCard(
   answer: Answer<'GET /api/v1/financials/overview'> = { body: overviewOf() },
   scope: HomeScope = 'myTeams',
 ) {
-  const api = mockApi([reply('GET /api/v1/financials/overview', answer)]);
+  const api = mockApi([
+    reply('GET /api/v1/financials/overview', answer),
+    reply('GET /api/v1/me', { body: testUser() }),
+  ]);
   const rendered = renderWithProviders(<FinancialsCard scope={scope} />, {
     user: testUser(),
     path: '/',
@@ -154,6 +157,21 @@ describe('FinancialsCard (015 US6, FR-025)', () => {
 
     expect(await screen.findByText("This section couldn't load")).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Financials' })).toBeInTheDocument();
+  });
+
+  it('says in place of the figures when the person may not see financial data (FR-028)', async () => {
+    renderCard({
+      status: 403,
+      body: apiError('forbidden', "Seeing financial data isn't part of your role (Viewer)."),
+    });
+
+    const card = await screen.findByRole('region', { name: 'Financials' });
+    expect(
+      await within(card).findByText(
+        "You don't have access to financial data — ask an administrator.",
+      ),
+    ).toBeInTheDocument();
+    expect(within(card).queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
   });
 
   it('asks for the Everything scope when Home shows everything', async () => {

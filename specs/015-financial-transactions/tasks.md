@@ -9,9 +9,7 @@ description: "Task list for feature 015 Financial Transactions"
 > The web tasks were built by the UI lanes, partly under other names: `features/plans/RecordFinancials.tsx`
 > (plan, campaign and initiative), `features/line-items/GsapFigures.tsx` and `FinancialsSection.tsx` (activity
 > and line item), `features/home/FinancialsCard.tsx` (Home) and `features/financials/` (page, details panel,
-> import, import history, link). **Open:** T044 (the Home card has
-> no no-access state yet); T045 (the linked-transactions sentence is in the line-item and activity delete
-> dialogs only, not yet in the campaign, initiative and plan dialogs); T048 (product documents); T049, T050.
+> import, import history, link). T044, T045 and T048–T050 were finished on 29 October 2026; every task is done.
 
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [data-model.md](data-model.md),
 [contracts/openapi.yaml](contracts/openapi.yaml)
@@ -285,20 +283,32 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
 - [x] T043 [P] (B) Access seam (FR-028): in `service_test.go`, a fake `Access` denying view, import and
   link, and `VisiblePlanIDs` scoping lists, counts, totals, the overview and `FactsByLineItem` users (All
   work hides the group).
-- [ ] T044 [P] (W) No-access states: the "You don't have access to financial data" text in
+- [x] T044 [P] (W) No-access states: the "You don't have access to financial data" text in
   `FinancialsCard`, `FinancialsPage`, `FinancialsHomeCard` and `LineItemFinancials`, shown on a 409
   `not_allowed` (tests with `mockApi`).
-- [ ] T045 [P] (W) Delete dialogs (FR-029): add the linked-transactions sentence to
+  - Done 2026-10-29. The refusal is **403 `forbidden`** (Consolidation, D-299), so every state answers that
+    (`FinancialsSection` also keeps 409 `not_allowed`). Already built: the Financials page (tested), the activity
+    and line-item sections (`FinancialsSection.tsx`; the line item's test added) and `RecordFinancials` (test
+    added). Built: Home's card (`features/home/FinancialsCard.tsx`) shows the note in place of its figures,
+    without Open Financials. Bug found by the new test and fixed: `RecordFinancials` retried a refusal twice, so
+    the note came after about 3 s of skeleton; it now follows the app's rule (no retry).
+- [x] T045 [P] (W) Delete dialogs (FR-029): add the linked-transactions sentence to
   `frontend/src/features/line-items/DeleteLineItemDialog.tsx`,
   `frontend/src/features/activities/DeleteActivityDialog.tsx`,
   `frontend/src/features/campaigns/DeleteRecordDialog.tsx` and the plan delete dialog in
   `frontend/src/features/plans/dialogs/`, from the record view's `transactionCount` (+ tests).
+  - Done 2026-10-29. The line-item and activity dialogs already said it (tests in `LineItemPage.test.tsx`,
+    `LineItemsSection.actions.test.tsx`, `DeleteActivityDialog.test.tsx`). Added to
+    `features/plans/campaigns/DeleteRecordDialog.tsx` (campaign and initiative) and
+    `features/plans/dialogs/DeletePlanDialog.tsx`, from the record view (the Financials card's query, so an open
+    panel or page answers from its cache), with a test each; the product name on screen is SP&A One (D-332). The
+    shared test fixtures `plan-actions.tsx` and `campaign-tree.tsx` answer the record view with no transactions.
 - [x] T046 [P] (B) In `service_test.go`, test that copying a plan, campaign, activity or line item copies
   no transaction and the copy's figures are 0.00 (FR-030). Test that deleting a line item drops its
   amounts from every figure and restoring brings them back (FR-012).
 - [x] T047 [P] (B) Stress tests (SC-004) in `backend/internal/financials/stress_test.go`: a 5,000-row
   import under 5 s and a 20,000-transaction list under 1 s, skipped by default as in 010.
-- [ ] T048 [P] Documentation (no decision-log edits; the decisions are D-242–D-257):
+- [x] T048 [P] Documentation (no decision-log edits; the decisions are D-242–D-257):
   - `docs/product/domain-model.md`: rewrite §4.6 as "Financial figures from GSAP" (data-model §5) and add
     the two records to §7;
   - `docs/product/field-catalogue.md` §4.6 and §5 #16–17;
@@ -307,12 +317,40 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
   - `docs/sdd/feature-map.md` (015) and `docs/sdd/plan-module-build.md` §2, §4 and §5 rows for 015;
   - `docs/product/vision-and-scope.md` scope line.
   - Hand the constitution 1.1.0 amendment text of plan *Constitution Check* to the product owner.
-- [ ] T049 Run every check: backend `gofmt -l .` (prints nothing), `go vet ./...`, `go test ./...`;
+  - Done 2026-10-29: domain model §4.6 "Financial figures from GSAP (feature 015)" and the two records in §7;
+    field catalogue §4.6 (now "Financials") and §5 #17 (#16, the SWBS code, stays with 030's card); glossary
+    (Committed, Not yet committed, Invoiced, Paid, Accrued, Purchase order, Invoice, Accrual, GSAP transaction,
+    GSAP extract, Not linked; HX key was already there); plan-module-build §2, §4 and §5 rows for 015;
+    vision-and-scope's in-scope row and out-of-scope line. `docs/sdd/feature-map.md` is left to the lead. The
+    amendment is already in the constitution (Current Phase & Scope lists 015, D-308), so nothing is handed over.
+- [x] T049 Run every check: backend `gofmt -l .` (prints nothing), `go vet ./...`, `go test ./...`;
   frontend `npm run check`. Check that `notYetServed` no longer lists the 10 operations. Run the e2e
   files `financials.spec.ts`, `core-flow.spec.ts`, `module-rest.spec.ts` and `smoke.spec.ts`. Update
   existing expectations only where 015 changes them: the activity page sections, the line-item form
   sections, All work default columns and the sidebar order.
-- [ ] T050 Demonstrate with the seed: the US1–US7 independent tests. Tick the tasks.
+  - Done 2026-10-29 with today's tooling: `golangci-lint fmt ./...` (no diff), `golangci-lint run
+    --new-from-rev=9a3e1ebd ./...` (0 issues), `go vet ./...` (clean), `go test -race ./internal/financials/...
+    ./internal/app/...` with `TEST_DATABASE_URL` (ok); `pnpm run check` (contract types current, typecheck, lint,
+    format, 421 test files / 2,541 tests passed). `notYetServed` is empty. E2E `financials.spec.ts`,
+    `financials-page.spec.ts`, `core-flow.spec.ts` and `smoke.spec.ts` (`module-rest.spec.ts` no longer exists):
+    12 passed. No expectation needed changing.
+- [x] T050 Demonstrate with the seed: the US1–US7 independent tests. Tick the tasks.
+  - Done 2026-10-29 against the API on freshly seeded demo data (signed in as Priya Raman and Alex Morgan), in
+    the order US1, US2, US3, US5, US6, US7, US4 so the import does not change the figures the others read:
+    - US1: A-1002 committed 25,000.00, invoiced 22,500.00, paid 20,000.00, accrued 2,500.00, not yet committed
+      55,000.00, 31 %, rows L-1003 and L-1004; L-1004 has its 4 transactions.
+    - US2: P-1001 committed 35,652.17 (8 %); Helix launch equals the sum of its activities to the cent.
+    - US3: searching 4500001003 finds PO 4500001003 / 10, linked by HX key to Stand build (L-1006).
+    - US4: the sample file with one amount changed checks and imports with the same counts (3 rows, 3 new); the
+      activity of L-1001 goes from 0.00 to 12,000.00 committed.
+    - US5: All work 2026 shows Committed 35,652.17 for FY2026 Lubricants Europe; "Committed above planned cost"
+      keeps Billboard winter wave, and the export keeps the filter.
+    - US6: Priya, My teams: 35,652.17 of 460,000.00 (8 %), 1 activity above planned cost. Her card shows no
+      not-linked link: since 014, not-linked transactions show only to people who may import (Priya may not);
+      Alex sees "1 transaction not linked".
+    - US7: PO 4500001004 / 10 linked by hand to L-1007 counts 12,000.00 in Grand opening Shanghai; unlinking takes
+      it out again.
+    The browser journeys of US1–US4 passed in T049's e2e run.
 
 ---
 

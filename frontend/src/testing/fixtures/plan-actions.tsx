@@ -3,6 +3,8 @@ import type { HttpHandler } from 'msw';
 import type { ActionPlan } from '@/features/plans/usePlanActions';
 import { mockApi } from '../mock-api';
 import { renderWithProviders } from '../render';
+import { reply } from '../replies';
+import { activityRecord } from './line-item-financials';
 import { PlanActionsMenu } from './PlanActionsMenu';
 import { testUser } from './users';
 
@@ -15,7 +17,10 @@ export const PUBLISHED: ActionPlan = {
 
 /** The ⋯ menu of `target` on the Plans list, with `answers` as the fake API. */
 export function renderActions(target: ActionPlan, answers: HttpHandler[]) {
-  const api = mockApi(answers);
+  const api = mockApi([
+    ...answers,
+    reply('GET /api/v1/financials/records/{recordId}', { body: activityRecord() }),
+  ]);
   const result = renderWithProviders(<PlanActionsMenu target={target} />, {
     user: testUser(),
     route: '/plans',

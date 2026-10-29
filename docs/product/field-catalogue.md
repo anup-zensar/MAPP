@@ -158,12 +158,19 @@ Dropped Shell fields: **ShellAllPlans** (greyed out and unused in Shell's form �
 | 33 | Set later stages myself | Override Model | yes/no | — | When on, MQL and revenue become editable |
 | 34 | MQL, Revenue | MQL, Revenue | calc (or typed when overridden) | calc | Domain model §4.5 |
 
-### 4.6 From finance (coming later)
+### 4.6 Financials (feature 015)
+
+The activity page's open **Financials** card, second after Details, with a By line item table, the latest
+5 transactions and "GSAP data as of …". Every figure is calculated from GSAP's transactions on the
+activity's live line items, in the reader's display currency (domain model §4.6).
 
 | # | Label | Shell name | Mark |
 |---|---|---|---|
-| 35 | Total actuals | Activity – Total Actuals | later |
-| 36 | Total invoiced | Total Invoiced Amount | later |
+| 35 | Paid | Activity – Total Actuals | calc — sum of GSAP payments |
+| 36 | Invoiced | Total Invoiced Amount | calc — sum of GSAP invoices, less credit notes |
+| 36a | Committed, with "n % of planned cost committed" | — | calc — sum of GSAP purchase-order lines |
+| 36b | Accrued (Mon YYYY) | — | calc — GSAP accruals of the latest accrual month |
+| 36c | Not yet committed | — | calc — planned cost − Committed; "—" without a planned cost |
 | 37 | Total purchase requests | Total Purchase Request Amount | calc — the activity's Purchase requests section (feature 032) |
 
 ## 5. Line item
@@ -188,7 +195,8 @@ Dropped Shell fields: **ShellAllPlans** (greyed out and unused in Shell's form �
 | 16 | SWBS code | SWBS Code | text, read-only | calc | — | Returned by GSAP — by the simulated GSAP until live integration (`SIM-<company code>-<nnnn>`, feature 030); "Filled by the simulated GSAP once the activity is approved and the request is sent" until then; kept for good once received; never copied |
 | 16a | SWBS requested / received | — | timestamps, read-only | calc | — | When the request was sent and the code received (the run's time while simulated) |
 | 16b | HX key | HX + line-item ID | text, read-only | calc | — | "HX" + the digits of the ID (L-1006 → HX1006), "Generated from the line-item number", with Copy; GSAP matches PR, PO and invoice data on it (feature 030, 015) |
-| 17 | Total actuals, % of actual cost, Actuals at monthly rate, Total invoiced | (same) | money / percent | later | — | Domain model §4.6 |
+| 17 | Committed, Invoiced, Paid, Accrued, Not yet committed, % committed | Total Actuals, Total Invoiced | money / percent, read-only | calc | — | The line item page's open **Financials** section, with all its GSAP transactions paged by 50 (feature 015, domain model §4.6); Committed and Invoiced are also columns of the activity's Line items section. Never on the line-item form |
+| 17b | % of actual cost, Actuals at monthly rate | (same) | money / percent | later | — | Need GSAP's dated rates (feature 015 converts at the current rate, D-303) |
 | 17a | Total purchase requests, Available to request | Total Purchase Request Amount | money, read-only | calc | — | The line item's Purchase requests section (feature 032, domain model §2.4a) |
 
 Not in this phase: the **Purchase requests & purchase orders** section of the Shell line-item form

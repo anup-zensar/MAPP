@@ -1,4 +1,5 @@
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { linkedTransactionsText, useFinancialRecord } from '@/features/line-items';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { usePlan } from '../api';
 import { contentsText } from '../plan-text';
@@ -13,11 +14,7 @@ export interface DeletePlanDialogProps {
   busy: boolean;
 }
 
-/**
- * Delete a plan (FR-029, design system §6.5): what goes with it, whether it is published or holds
- * approved activities (they return as Created if it is restored later, R14), and that it moves to
- * the recycle bin. **Cancel** has the focus; **Delete plan** is red.
- */
+/** Approved activities return as Created if the plan is restored later (R14). */
 export function DeletePlanDialog({
   open,
   planId,
@@ -30,6 +27,8 @@ export function DeletePlanDialog({
   const data = plan.data;
   const approved = data?.contents.approvedActivities ?? 0;
   const holds = data ? contentsText(data.contents) : '';
+  const financials = useFinancialRecord(planId, open);
+  const linked = linkedTransactionsText(financials.data?.figures.transactionCount ?? 0);
 
   return (
     <ConfirmDialog
@@ -58,6 +57,7 @@ export function DeletePlanDialog({
         ) : plan.isError ? null : (
           <Skeleton lines={2} />
         )}
+        {linked && <p>{linked}</p>}
         <p>It moves to the recycle bin; you can restore it.</p>
       </div>
     </ConfirmDialog>

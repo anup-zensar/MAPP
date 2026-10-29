@@ -13,7 +13,7 @@ import {
   transaction,
   transactionPage,
 } from '@/testing/fixtures/line-item-financials';
-import { reply } from '@/testing/replies';
+import { apiError, reply } from '@/testing/replies';
 import { ActivityFinancials, LineItemFinancials } from './FinancialsSection';
 
 function renderActivity(answer: Answer<'GET /api/v1/financials/records/{recordId}'>) {
@@ -30,6 +30,7 @@ function renderLineItem(
   mockApi([
     reply('GET /api/v1/financials/records/{recordId}', answer, { recordId: 'L-1001' }),
     reply('GET /api/v1/financials/transactions', transactions),
+    reply('GET /api/v1/me', { body: testUser() }),
   ]);
   return renderWithProviders(<LineItemFinancials lineItemId="L-1001" />, { user: testUser() });
 }
@@ -124,5 +125,20 @@ describe('LineItemFinancials (015 FR-017)', () => {
     expect(await within(section).findByText('PO 4500001001 / 10')).toBeVisible();
     expect(within(section).getByText('Purchase order · Brightlight Agency')).toBeVisible();
     expect(within(section).queryByText(/from GSAP data/)).not.toBeInTheDocument();
+  });
+
+  it('says in place of the figures when the person may not see financial data (FR-028)', async () => {
+    renderLineItem({
+      status: 403,
+      body: apiError('forbidden', "Seeing financial data isn't part of your role (Viewer)."),
+    });
+
+    const section = await screen.findByRole('region', { name: 'Financials' });
+    expect(
+      await within(section).findByText(
+        'You don’t have access to financial data — ask an administrator.',
+      ),
+    ).toBeVisible();
+    expect(screen.queryByRole('list', { name: 'Transactions' })).not.toBeInTheDocument();
   });
 });
