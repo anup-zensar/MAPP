@@ -101,4 +101,4 @@ the numbering and ledger refusal are unit-tested in `simulatedgsap/purchase_orde
 
 ## Converge (frontend track)
 
-- [ ] T025 [FE] T020: run `e2e/pr-to-po.spec.ts` once the [BE] track is merged (the PO number is read from the page, so the SIM- sequence may be at any value).
+- [x] T025 [FE] T020: run `e2e/pr-to-po.spec.ts` once the [BE] track is merged (the PO number is read from the page, so the SIM- sequence may be at any value). — Run on 2026-10-29 against the real API and PostgreSQL (database `mapp_e2e_032`, ports 18222/14222): passes unchanged (with 032 T100).
