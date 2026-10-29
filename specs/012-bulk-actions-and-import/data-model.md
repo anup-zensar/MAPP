@@ -1,204 +1,98 @@
-# Data Model: Bulk Actions and Import
+# Data Model: Bulk Actions and Excel Import of Plans (012)
 
-**Feature**: `012-bulk-actions-and-import` · **Plan**: [plan.md](plan.md) · **Contract**: [contracts/openapi.yaml](contracts/openapi.yaml)
+Re-written 2026-10-28 for PostgreSQL (the model of 2026-10-19 targeted the JSON store). Business records are
+only ever written by their owning packages; 012 stores records *about* its runs.
 
-This feature creates and changes **no business record type** of its own: campaigns, initiatives and
-activities are created, changed, copied, moved and deleted by their owning features (005, 006, 008), with
-those features' fields, rules and activity-log entries. It stores two **records about actions** — bulk
-actions and imports — so that their deletes and imports can be undone and each plan can list its imports.
-Conventions of feature 001's data model apply.
+## 1. Storage (migration `00023_bulk_and_imports.sql`)
 
----
+```sql
+bulk_actions (
+  id            text PRIMARY KEY CHECK (id ~ '^BLK-[0-9]+$'),
+  action        text NOT NULL CHECK (action IN ('changeOwner','changeField','submit','copy','move','delete')),
+  note          text NOT NULL,
+  actor_id      text NOT NULL, actor_name text NOT NULL,
+  ran_at        timestamptz NOT NULL,
+  undone_at     timestamptz, undone_by_id text, undone_by_name text,
+  CHECK ((undone_at IS NULL) = (undone_by_id IS NULL)),
+  CHECK (undone_at IS NULL OR action = 'delete'))
+bulk_action_bin_entries (
+  bulk_action_id text REFERENCES bulk_actions ON DELETE CASCADE, position integer CHECK (position >= 1),
+  bin_entry_id   text NOT NULL, PRIMARY KEY (bulk_action_id, position))
 
-## 1. Bulk action — table `bulk_actions`
+plan_imports (
+  id            text PRIMARY KEY CHECK (id ~ '^IMP-[0-9]+$'),
+  plan_id       text NOT NULL REFERENCES plans ON DELETE CASCADE,
+  file_name     text NOT NULL CHECK (length(file_name) BETWEEN 1 AND 255),
+  imported_at   timestamptz NOT NULL, imported_by_id text NOT NULL, imported_by_name text NOT NULL,
+  rows_read     integer NOT NULL CHECK (rows_read >= 0), rows_left_out integer NOT NULL CHECK (rows_left_out >= 0),
+  undone_at     timestamptz, undone_by_id text, undone_by_name text,
+  CHECK ((undone_at IS NULL) = (undone_by_id IS NULL)))
+plan_import_records (
+  import_id text REFERENCES plan_imports ON DELETE CASCADE, position integer CHECK (position >= 1),
+  level text NOT NULL CHECK (level IN ('campaign','initiative','activity','lineItem')),
+  record_id text NOT NULL, record_name text NOT NULL, parent_id text NOT NULL,
+  action text NOT NULL CHECK (action IN ('created','updated')), PRIMARY KEY (import_id, position))
+plan_import_problems (
+  import_id text REFERENCES plan_imports ON DELETE CASCADE, position integer CHECK (position >= 1),
+  sheet text NOT NULL, row_number integer NOT NULL CHECK (row_number >= 0), column_heading text NOT NULL,
+  value text NOT NULL, reason text NOT NULL, PRIMARY KEY (import_id, position))
+```
 
-One run (not a preview) of a bulk action. Never edited except to record an Undo; never deleted; no
-version; no history kind.
+Plans are deleted to the recycle bin (their rows are removed), so a plan's imports go with it (`ON DELETE
+CASCADE`); a restored plan starts with no import list (accepted: Undo import needs the records it created, which
+the plan delete took too).
 
-| Field | Type | Rules |
-|---|---|---|
-| `id` | string | `BLK-1001`, … (readable-ID counter `BLK`, proposed prefix); taken at the start of the run |
-| `action` | enum | `changeOwner`, `changeField`, `submit`, `copy`, `move`, `delete` |
-| `note` | string | The log note, e.g. "Bulk change of 20 activities (BLK-1001)" (plan D-129) |
-| `selected` | `{campaigns, initiatives, activities}` | counts of the selection after duplicates were removed |
-| `done`, `skipped`, `failed` | integer | outcome counts (FR-021) |
-| `recycleBinEntryIds` | list of string | `delete` only: one `BIN-…` per top-level deleted record (R14, FR-020) |
-| `at` | timestamp | when it ran |
-| `by` | ActorRef | who ran it |
-| `undo` | `{by, at}` or null | `delete` only: set when Undo succeeded (plan D-130) |
+**Scoped reads** (scope-isolation tests): `GetBulkAction(id, actor_id)` (only the actor who ran it);
+`ListPlanImports(plan_id, scope…)` and `GetPlanImport(id, scope…)` filtered with `plan_in_scope(…)`.
 
-Per-record outcomes are returned to the web app (`BulkActionResult.outcomes`) but not stored; the activity
-log holds every change with its note.
+## 2. Bulk types (`internal/bulk/model.go`, contract `Bulk*`)
 
-### 1.1 Request (`BulkActionRequest`, not stored)
-
-| Field | For | Rules (messages in the plan) |
-|---|---|---|
-| `action` | all | one of the six |
-| `recordIds` | all | 1 – 1,000 IDs of campaigns (`C-`), initiatives (`I-`) or activities (`A-`); the level comes from the prefix; duplicates ignored |
-| `ownerId` | `changeOwner` | an active person |
-| `field` | `changeField` | `{key, value}`; `key` from `GET /api/bulk-actions/fields?level=`; `value` null = **Clear the value** (not for required fields) |
-| `field.value` | | `{date}` for start/end date (`YYYY-MM-DD`); `{optionIds}` for single (one ID) and multiple choices, activity type and approval workflow; `{yesNo}` for yes/no |
-| `targetId` | `copy`, `move` | a plan (campaigns), campaign (initiatives) or initiative (activities) |
-| `restartApproval` | `changeField` | default false = **Leave those unchanged** |
-| `comment` | `submit` | optional, at most 2,000 characters |
-
-`changeField`, `copy` and `move` need one level (FR-007).
-
-### 1.2 Outcome (per selected record, not stored)
-
-| Outcome | Meaning |
+| Type | Fields |
 |---|---|
-| `done` | changed / submitted / copied (with `newRecordId`) / moved / deleted |
-| `skipped` | a business rule prevented it; `reasons` lists every reason in plain language |
-| `failed` | it could not be saved: the record no longer exists ("No longer exists") |
+| `Request` | `Action`, `RecordIDs` (1–1,000), `OwnerID`, `Field *FieldChange{Key, Value *FieldValue{Date, OptionIDs, YesNo}}`, `TargetID`, `RestartApproval`, `Comment` (≤ 2,000) |
+| `Record` (port) | `ID`, `Level` (campaign · initiative · activity), `Name`, `PlanID`, `PlanName`, `Year`, `ParentID`, `Status` (activities), `Version` |
+| `Outcome` | `RecordID`, `Level`, `Name`, `PlanID`, `Outcome` (done · skipped · failed), `Reasons`, `NewRecordID` |
+| `Result` | `ID *string`, `Preview`, `Action`, `Verb`, `Note`, `Selected LevelCounts`, `Counts{Done,Skipped,Failed}`, `Outcomes`, `Reapproval []RecordRef`, `Effects []Effect{Kind,Count,Text}`, `DeleteSummary *{Selected, Below{…,LineItems}, SubmittedOrApproved}`, `RecycleBinEntries`, `UndoAvailableUntil *time.Time` |
+| `Action` (stored) | `ID`, `Kind`, `Note`, `Actor`, `RanAt`, `BinEntryIDs`, `UndoneAt`, `UndoneBy` |
+| `Field`, `FieldList` | key (`startDate`, `endDate`, `activityType`, `approvalWorkflow`, `attr.<SA-id>`), label, kind (date · singleChoice · multipleChoice · yesNo), required, options (id, label, parentOptionIds), dependsOn, condition |
+| `Target`, `TargetPage` | id, level (plan · campaign · initiative), name, path "Plan › Campaign › Initiative", planId, year, dates; `Note` when none |
 
-### 1.3 Delete summary (`deleteSummary`, not stored, FR-019)
+Verbs: changed, submitted, copied, moved, deleted. Notes: "Bulk change of 20 activities (BLK-1001)", "Bulk submit
+of …", "Bulk copy of …", "Bulk move of …", "Bulk delete of …", "Undo of bulk delete (BLK-1003)".
 
-| Part | Rule |
+## 3. Workbook (`internal/workbook`)
+
+### 3.1 Sheets and columns (FR-025, FR-026)
+
+| Sheet | Columns (Required = R; publish/submit markings from Settings and the field catalogue) |
 |---|---|
-| `selected` | the top-level selected records by level (a record under another selected record is counted once, under its ancestor) |
-| `below` | campaigns, initiatives, activities and line items that go with them and were not selected themselves |
-| `submittedOrApproved` | activities among all of them whose status is Submitted or Approved (incl. In progress, Complete) |
+| Campaigns | ID · Campaign name (R) · Owner · Start date · End date · Budget · Description · campaign attributes |
+| Initiatives | ID · Campaign (R) · Initiative name (R) · Owner · Start date · End date · Budget · Description · initiative attributes |
+| Activities | ID · Campaign (R) · Initiative (R) · Activity name (R) · External name · Activity type (R) · Owner · Start date · End date · Ongoing · Planned cost · Approval workflow · Description · activity attributes |
+| Line items | ID · Campaign (R) · Initiative (R) · Activity (R) · Line item name (R) · Owner · Currency · Planned cost · Description · line-item attributes |
+| Allowed values | one column per choice: Campaigns (`Name (C-…)`), Initiatives, Activity types (allowed by the model), Approval workflows, Currencies, People (e-mails), each attribute's options |
+| Instructions | the formats of research R4, the markings, "empty ID = new record", "rows missing from the file are left alone" |
 
-### 1.4 Offered fields (`BulkField`, FR-009)
+Row 1 headings, row 2 markings, data from row 3; a CSV file is the Activities sheet (its row 2 may hold the
+markings). Attribute headings are the attribute labels; a label equal to a base heading gets " (attribute)".
 
-| Level | Fields |
+### 3.2 Values (`workbook.Values`)
+
+`Fields map[string]Value` keyed `name`, `ownerId`, `startDate`, `endDate`, `budget`, `description`,
+`externalName`, `activityTypeId`, `ongoing`, `plannedCost`, `approvalWorkflowId`, `currency`, `attr.<id>` — each
+`Value` the normalised cell (text for comparison and the typed value for the port). `Present` = the columns the
+sheet has: an update changes only those.
+
+### 3.3 Import types (contract `Import*`)
+
+| Type | Fields |
 |---|---|
-| Campaign | Start date, End date; active yes/no, single-choice and multiple-choice campaign attributes (Cluster, Region, Insight session completed, …) |
-| Initiative | Start date, End date; active yes/no, single- and multiple-choice initiative attributes |
-| Activity | Start date, End date, Activity type (required), Approval workflow; active yes/no, single- and multiple-choice activity attributes, never % split ones |
+| `Upload` | `FileName` (1–255), `Content` (base64, ≤ 5 MB decoded) |
+| `Problem` | `Sheet`, `Row`, `Column`, `Value`, `Reason` |
+| `LevelCounts` | `Level`, `Create`, `Update`, `Unchanged`, `LeftOut` |
+| `Check` | `FileName`, `Rows`, `Ready`, `WithProblems`, `Levels [4]`, `Problems`, `IgnoredColumns`, `NeedMoreFields`, `NothingToChange` |
+| `Import` (stored) | `ID`, `PlanID`, `FileName`, `ImportedAt/By`, `RowsRead`, `RowsLeftOut`, `Records []{Level, RecordID, Name, ParentID, Action}`, `Problems`, `UndoneAt/By` |
+| `Summary` | id, planId, fileName, status (imported · undone), importedAt/By, rowsRead, created and updated counts per level, rowsLeftOut, undoneAt/By |
+| `Detail` | `Import Summary`, `Problems`, `Records []{id, level, name, action, exists}`, `Undo *{campaigns, initiatives, activities, lineItems, alreadyDeleted}`, `Kept []{id, level, name, reason}` |
 
-Never offered: names, IDs, money, calculated values, "coming later" values, Ongoing (R6), % split
-attributes (R10), text and number attributes; owner has its own action.
-
----
-
-## 2. Import — table `imports`
-
-One completed import into one plan (FR-033). A check that is never confirmed stores nothing (FR-031).
-
-| Field | Type | Rules |
-|---|---|---|
-| `id` | string | `IMP-1001`, … (readable-ID counter `IMP`, proposed prefix) |
-| `planId` | string | the plan imported into |
-| `fileName` | string | as uploaded, at most 255 characters (longer names are cut) |
-| `createMissing` | boolean | the "Create missing campaigns and initiatives" choice |
-| `rowsRead` | integer | data rows in the file (empty and marking rows not counted) |
-| `activityIds` | list of string | activities created, in row order |
-| `campaignIds`, `initiativeIds` | list of string | containers created by this import |
-| `leftOut` | list of Problem | rows not confirmed (they had problems at the check) with their problems |
-| `failed` | list of Problem | confirmed rows that could not be imported, with their reasons |
-| `importedAt`, `importedBy` | timestamp, ActorRef | |
-| `undoneAt`, `undoneBy` | timestamp, ActorRef or null | set by **Undo import**; then the import cannot be undone again (`already_resolved`) |
-
-**Problem**: `{row, column, value, reason}` — `row` is the spreadsheet's own row number; `column` the
-heading as in the template ("" for a whole-row problem); `value` the text found (at most 200 characters).
-
-Status shown: **Imported** (positive) while `undoneAt` is null, then **Undone** (neutral).
-
-Life cycle: check (nothing stored) → import (stored, records created) → undo (records moved to the recycle
-bin, `undoneAt/By` set).
-
-**Undo preview** (calculated on read, FR-034 edge case): activities, campaigns and initiatives of the
-import that still exist; **changed since the import** = those whose version is above 1 or (activities)
-whose status is no longer Created; **added since the import** = records under them not created by this
-import (line items, other activities, initiatives); **already deleted** = those no longer stored.
-
----
-
-## 3. Import template and file
-
-### 3.1 Columns (sheet "Activities", FR-025)
-
-Row 1 = headings, row 2 = markings, data from row 3. Headings are matched ignoring letter case and
-surrounding spaces, in any order (FR-026).
-
-| Heading | Also accepted | Marking | Value | Activity field (006) | Default when empty (FR-028) |
-|---|---|---|---|---|---|
-| Campaign | Campaign ID | Required | campaign name or ID in the plan | — (resolves the parent) | — |
-| Initiative | Initiative ID | Required | initiative name or ID in that campaign | — (parent `initiativeId`) | — |
-| Activity name | Name | Required | text ≤ 120 | `name` | — |
-| Activity type | Type | Required | type name allowed by the plan's model | `activityTypeId` | — |
-| Owner (e-mail) | Owner, Owner e-mail | Needed to submit | e-mail of an active person | `ownerId` | initiative owner |
-| Start date | Start | Needed to submit | date | `startDate` | initiative start |
-| End date | End | Needed to submit | date (empty when Ongoing) | `endDate` | initiative end |
-| Ongoing | Ongoing (no end date) | Optional | Yes / No | `ongoing` | No |
-| Planned cost (USD) | Planned cost | Needed to submit | amount ≥ 0 | `plannedCost` | the type's default planned cost |
-| Approval workflow | Workflow | Needed to submit | active workflow name | `approvalWorkflowId` | the only active workflow, if just one |
-| Description | — | Optional | text ≤ 2,000 | `description` | — |
-| External name | — | Optional | text ≤ 120 | `externalName` | — |
-| INQ | INQ (inquiries) | Optional | whole number ≥ 0 | `inq` | — |
-| *<attribute label>* (one per active activity-level Shell attribute shown for the plan's business unit, R9, in display order) | — | the attribute's marking (Needed to submit or Optional) | by attribute type (3.2) | `attributes.<attributeId>` | split without shares → even split (R10) |
-
-A column for an attribute of another business-unit group, or any other heading, is **ignored** and listed
-("These columns aren't used and were ignored: …").
-
-### 3.2 Cell formats (decision D-138)
-
-| Type | Accepted | Problem |
-|---|---|---|
-| Date | `2026-02-28`, `28 Feb 2026`, a spreadsheet date cell | "Not a real date" |
-| Yes/No | Yes, No, true, false, y, n, 1, 0 (any case) | "Enter Yes or No" |
-| Amount | `12500`, `12500.5`, `12,500.00`; more than 2 decimals rounded half up | "Enter an amount, e.g. 12500.00" · "Planned cost can't be negative." |
-| Whole number | `250000`, `250,000` | "Enter a whole number of 0 or more." |
-| Single choice | one option label | "Not an option of <column>" · "'<value>' is no longer allowed for <column>" |
-| Multiple choice | labels separated by `;` | as single choice, per label |
-| Multiple choice with % split | `China 60; Hong Kong 40` (shares 0–100, ≤ 2 decimals) or `China; Hong Kong` (even split, remainder on the last) | "Shares must be numbers from 0 to 100"; a total other than 100.00 % is allowed (blocks submitting only) |
-| Dependent choice | an option linked to the row's parent value | "'<value>' doesn't fit <parent column> '<parent value>'" |
-| Text / long text / number attribute | as typed (002 limits) | 002's messages |
-
-### 3.3 Problems from the activity's own rules
-
-`ValidateNewActivity` (006) answers field errors; they are reported on the column of the field
-(table 3.1): `name` → Activity name, `activityTypeId` → Activity type, `ownerId` → Owner (e-mail),
-`startDate` / `endDate` → Start date / End date (R3, R5, end before start), `ongoing` → Ongoing,
-`plannedCost` → Planned cost (USD), `approvalWorkflowId` → Approval workflow, `description`, `externalName`,
-`inq`, `attributes.<id>` → that attribute's column. A taken name reads "Already exists — import only adds
-new activities". Fields whose cell already had a format problem are not reported twice.
-
-### 3.4 Sheets "Allowed values" and "Instructions"
-
-- **Allowed values**: one column per choice column — Campaign ("Helix launch (C-1001)"), Initiative
-  ("Helix launch › Digital & social (I-1001)"), Activity type, Owner (e-mail) ("mei.lin@shell.com —
-  Mei Lin"), Approval workflow, Ongoing (Yes, No), and each choice attribute (dependent options as
-  "<option> (for <parent option>)").
-- **Instructions** (one line each): "Fill one row per activity, starting on row 3. Row 2 says which
-  columns are required." · "Required columns must be filled. Needed-to-submit columns may stay empty; the
-  activity can then be submitted after you add them." · "Campaign and Initiative: use a name or an ID from
-  the Allowed values sheet." · "Dates: 2026-03-01 or 1 Mar 2026. Leave End date empty for an ongoing
-  activity." · "Amounts in US dollars, e.g. 12500.00." · "Several values: separate them with a
-  semicolon, e.g. External; Internal." · "Shares: write each value with its percentage, e.g. China 60;
-  Hong Kong 40. Without percentages the values share equally." · "Import adds new activities only; it
-  never changes existing ones, and it doesn't import line items."
-
-### 3.5 File limits
-
-`.xlsx` or `.csv` (CSV: UTF-8, `,` or `;`), at most 5 MB and 1,000 data rows; empty rows and a markings
-row are skipped.
-
----
-
-## 4. Selection (web app only, not stored)
-
-| Field | Rule |
-|---|---|
-| records | `Map<id, {id, level, name, planId}>`; campaigns, initiatives and activities only |
-| scope | All work: year + filters + search; plan tree: plan + its search. A scope change clears the selection with a message (FR-003) |
-| kept | while paging, scrolling, expanding, collapsing and sorting |
-| cleared | on scope change and after an action completes; **Select failed items** replaces it with the skipped and failed records |
-| limit | more than 1,000 → actions refuse with the FR-006 message |
-
----
-
-## 5. Status effects of bulk actions (domain model §2.3, §2.5)
-
-| Action | Effect on an activity's status |
-|---|---|
-| Change owner, change of type, workflow or attributes | none (D-013) |
-| Change of start or end date on Submitted/Approved | skipped (**Leave those unchanged**) or → Created with the open round ended as "Approval restarted" (**Change and restart approval**, 008 FR-022) |
-| Submit | Created → Submitted; Declined → Submitted (new round, 008) |
-| Copy | the copy is Created (R13) |
-| Move | unchanged (D-023, D-033) |
-| Delete | to the recycle bin; a Submitted activity's round ends "Cancelled — activity deleted" (008 FR-023); Undo restores exactly (D-031) |
-| Import | new activities are Created, without line items: their whole planned cost is unassigned (FR-032) |
+Notes: "Imported from 'plan.xlsx' (IMP-1001)", "Undo of import (IMP-1001)".

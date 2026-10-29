@@ -2570,11 +2570,14 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The plan's imports, newest first, and whether it can take an import now */
+        /** The plan's imports, newest first */
         get: operations["listPlanImports"];
         put?: never;
-        /** Import the confirmed rows of a file as Created activities */
-        post: operations["importActivities"];
+        /**
+         * Import the ready rows of a plan workbook in one step - create rows without ID, update rows with one
+         * @description Runs the same check as imports/check and applies its ready rows; rows with problems, and the rows below them in the file, are left out and listed. Every record created or updated gets an activity-log entry with the note "Imported from '<file>' (IMP-…)".
+         */
+        post: operations["importPlanWorkbook"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2590,7 +2593,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Check a filled template - every problem of every row at once; nothing is created */
+        /** Check a plan workbook - every problem of every row at once, what would be created and updated; nothing changes */
         post: operations["checkImportFile"];
         delete?: never;
         options?: never;
@@ -2605,11 +2608,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * The import template made for this plan (.xlsx)
-         * @description Refused with validation_failed until the plan has a campaign and an initiative.
-         */
+        /** The plan workbook template made for this plan (.xlsx) - the level sheets without rows, allowed values, instructions */
         get: operations["getImportTemplate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plans/{planId}/workbook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The plan as a plan workbook (.xlsx) - every campaign, initiative, activity and line item, ready to edit and import */
+        get: operations["exportPlanWorkbook"];
         put?: never;
         post?: never;
         delete?: never;
@@ -8490,68 +8507,79 @@ export interface components {
             note: string | null;
         };
         ImportUpload: {
-            /** @example mobility-china.xlsx */
+            /** @example fy2026-lubricants-europe.xlsx */
             fileName: string;
-            /** @description The file, base64-encoded (at most 5 MB before encoding). */
+            /** @description The plan workbook (.xlsx) or an Activities sheet (.csv), base64-encoded (at most 5 MB before encoding). */
             content: string;
-            /** @description Create missing campaigns and initiatives. */
-            createMissing: boolean;
         };
-        ImportRun: {
-            fileName: string;
-            content: string;
-            createMissing: boolean;
-            /** @description The row numbers the user confirmed (the ready rows of the check). */
-            rows: number[];
-        };
+        /** @enum {string} */
+        ImportLevel: "campaign" | "initiative" | "activity" | "lineItem";
         ImportProblem: {
-            /** @description The spreadsheet's own row number. */
+            /**
+             * @description The sheet's name ("" for a problem of the whole file).
+             * @example Activities
+             */
+            sheet: string;
+            /** @description The spreadsheet's own row number (0 for a problem of the whole sheet). */
             row: number;
             /** @description The column heading ("" for a problem of the whole row). */
             column: string;
             /** @description The value found. */
             value: string;
             reason: string;
-            /**
-             * @description Import results only.
-             * @enum {string}
-             */
-            outcome?: "leftOut" | "failed";
         };
-        ImportNewInitiative: {
-            campaign: string;
-            name: string;
-        };
-        ImportWillCreate: {
-            campaigns: string[];
-            initiatives: components["schemas"]["ImportNewInitiative"][];
+        ImportLevelCounts: {
+            level: components["schemas"]["ImportLevel"];
+            create: number;
+            update: number;
+            unchanged: number;
+            leftOut: number;
         };
         ImportCheck: {
             fileName: string;
+            /** @description Data rows read, every sheet together. */
             rows: number;
+            /** @description Rows that Import applies (to create, to update or unchanged). */
             ready: number;
+            /** @description Rows left out, with a problem of their own or of the row they belong under. */
             withProblems: number;
-            /** @description Row numbers of the ready rows (sent back by Import N activities). */
-            readyRows: number[];
+            /** @description Per level, campaigns first. */
+            levels: components["schemas"]["ImportLevelCounts"][];
             problems: components["schemas"]["ImportProblem"][];
+            /** @description Headings no column matches, each as the sheet, a colon and the heading. */
             ignoredColumns: string[];
-            willCreate: components["schemas"]["ImportWillCreate"];
-            /** @description Ready rows whose activity will still miss a needed-to-submit field. */
+            /** @description Rows to create or update that leave a needed-to-publish or needed-to-submit column empty. */
             needMoreFields: number;
+            nothingToChange: boolean;
+        };
+        ImportLevelTotals: {
+            campaigns: number;
+            initiatives: number;
+            activities: number;
+            lineItems: number;
         };
         ImportRecordRef: {
             id: string;
+            level: components["schemas"]["ImportLevel"];
             name: string;
+            /** @enum {string} */
+            action: "created" | "updated";
             /** @description false when it has been deleted since. */
             exists: boolean;
         };
         ImportUndoPreview: {
-            activities: number;
+            /** @description Created campaigns still there, which Undo import moves to the recycle bin. */
             campaigns: number;
             initiatives: number;
-            changedSinceImport: number;
-            addedSinceImport: number;
+            activities: number;
+            lineItems: number;
             alreadyDeleted: number;
+        };
+        ImportKept: {
+            id: string;
+            level: components["schemas"]["ImportLevel"];
+            name: string;
+            reason: string;
         };
         ImportSummary: {
             /** @example IMP-1001 */
@@ -8564,30 +8592,26 @@ export interface components {
             importedAt: string;
             importedBy: components["schemas"]["ActorRef"];
             rowsRead: number;
-            activitiesImported: number;
-            campaignsCreated: number;
-            initiativesCreated: number;
             rowsLeftOut: number;
-            rowsFailed: number;
+            created: components["schemas"]["ImportLevelTotals"];
+            updated: components["schemas"]["ImportLevelTotals"];
             undoneAt: string | null;
             undoneBy: components["schemas"]["ActorRef"] | null;
         };
         ImportDetail: {
             import: components["schemas"]["ImportSummary"];
-            /** @description Rows left out and rows that failed, with their reasons. */
+            /** @description The rows left out, with their reasons. */
             problems: components["schemas"]["ImportProblem"][];
-            activities: components["schemas"]["ImportRecordRef"][];
-            campaigns: components["schemas"]["ImportRecordRef"][];
-            initiatives: components["schemas"]["ImportRecordRef"][];
+            /** @description The records the import created and updated, in the file's order. */
+            records: components["schemas"]["ImportRecordRef"][];
             /** @description What Undo import would do; null once undone. */
             undo: components["schemas"]["ImportUndoPreview"] | null;
+            /** @description After Undo import, the created records that could not be deleted, with the reason. */
+            kept: components["schemas"]["ImportKept"][];
         };
         PlanImportPage: {
             items: components["schemas"]["ImportSummary"][];
             total: number;
-            canImport: boolean;
-            /** @example Add at least one campaign and one initiative to this plan before importing activities */
-            cannotImportReason: string | null;
         };
         /**
          * @description A permission of spec Table A.
@@ -15466,7 +15490,7 @@ export interface operations {
             default: components["responses"]["Error"];
         };
     };
-    importActivities: {
+    importPlanWorkbook: {
         parameters: {
             query?: never;
             header?: never;
@@ -15478,7 +15502,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportRun"];
+                "application/json": components["schemas"]["ImportUpload"];
             };
         };
         responses: {
@@ -15553,6 +15577,34 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    exportPlanWorkbook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The workbook. Its name is in Content-Disposition (<plan> – SP&A One.xlsx). */
+            200: {
+                headers: {
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];

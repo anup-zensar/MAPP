@@ -16,6 +16,7 @@ const lineItems = () => import('@/features/line-items');
 const overspend = () => import('@/features/overspend');
 const people = () => import('@/features/people');
 const plans = () => import('@/features/plans');
+const workbook = () => import('@/features/workbook');
 const purchaseRequests = () => import('@/features/purchase-requests');
 const recycleBin = () => import('@/features/recycle-bin');
 const settings = () => import('@/features/settings');
@@ -161,3 +162,9 @@ export const PurchaseRequestSettingsPage = lazy(() =>
   purchaseRequests().then((feature) => ({ default: feature.PurchaseRequestSettingsPage })),
 );
 export const SpaPage = lazy(() => spa().then((feature) => ({ default: feature.SpaPage })));
+export const ImportPage = lazy(() =>
+  workbook().then((feature) => ({ default: feature.ImportPage })),
+);
+export const ImportResultPage = lazy(() =>
+  workbook().then((feature) => ({ default: feature.ImportResultPage })),
+);

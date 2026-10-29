@@ -9,6 +9,7 @@ import { DASHBOARD_ROUTES } from './dashboard-routes';
 import { DevOnly } from './DevOnly';
 import { COMING_SOON_SECTIONS } from './navigation';
 import { NotFoundRoute } from './NotFoundRoute';
+import { WORKBOOK_ROUTES } from './routes-workbook';
 import {
   AccessPage,
   ActivityFormPage,
@@ -271,6 +272,7 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <HomePage />, ...titled('Home') },
           ...PLAN_MODULE_ROUTES,
+          ...WORKBOOK_ROUTES,
           ...COMING_SOON_SECTIONS.map((section) => ({
             path: section.path,
             element: <ComingSoonPage section={section} />,

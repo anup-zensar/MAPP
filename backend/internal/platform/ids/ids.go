@@ -57,6 +57,9 @@ const (
 	PrefixPurchaseRequestRouting = "PRR"
 	PrefixSimulatedGSAPPR        = "GPR"
 	PrefixSimulatedPO            = "GPO"
+
+	PrefixBulkAction = "BLK"
+	PrefixPlanImport = "IMP"
 )
 
 var Prefixes = []string{
@@ -72,6 +75,7 @@ var Prefixes = []string{
 	PrefixExchangeRate, PrefixRateImport,
 	PrefixSwbsRun,
 	PrefixPurchaseRequest, PrefixPurchaseRequestLine, PrefixPurchaseRequestRouting, PrefixSimulatedGSAPPR, PrefixSimulatedPO,
+	PrefixBulkAction, PrefixPlanImport,
 }
 
 const firstNumber = 1001

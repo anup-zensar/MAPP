@@ -49,6 +49,7 @@ var routeRules = joinRules( //nolint:gochecknoglobals // the route table: built 
 	allWorkRoutes(),
 	historyRoutes(),
 	bulkRoutes(),
+	workbookRoutes(),
 	accessRoutes(),
 	financeRoutes(),
 	extensionRoutes(),

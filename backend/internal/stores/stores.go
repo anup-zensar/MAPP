@@ -41,6 +41,8 @@ type Planning struct {
 	Approvals  ApprovalStore
 	AllWork    AllWorkStore
 	Overspend  OverspendStore
+	Bulk       BulkStore
+	Workbook   WorkbookStore
 }
 
 type Finance struct {

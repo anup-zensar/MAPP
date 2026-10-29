@@ -1,0 +1,287 @@
+    ImportUpload:
+      type: object
+      additionalProperties: false
+      required:
+        - fileName
+        - content
+      properties:
+        fileName:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: fy2026-lubricants-europe.xlsx
+        content:
+          type: string
+          contentEncoding: base64
+          description: The plan workbook (.xlsx) or an Activities sheet (.csv), base64-encoded (at most 5 MB before encoding).
+    ImportLevel:
+      type: string
+      enum:
+        - campaign
+        - initiative
+        - activity
+        - lineItem
+    ImportProblem:
+      type: object
+      additionalProperties: false
+      required:
+        - sheet
+        - row
+        - column
+        - value
+        - reason
+      properties:
+        sheet:
+          type: string
+          description: The sheet's name ("" for a problem of the whole file).
+          example: Activities
+        row:
+          type: integer
+          description: The spreadsheet's own row number (0 for a problem of the whole sheet).
+        column:
+          type: string
+          description: The column heading ("" for a problem of the whole row).
+        value:
+          type: string
+          description: The value found.
+        reason:
+          type: string
+    ImportLevelCounts:
+      type: object
+      additionalProperties: false
+      required:
+        - level
+        - create
+        - update
+        - unchanged
+        - leftOut
+      properties:
+        level:
+          $ref: "#/components/schemas/ImportLevel"
+        create:
+          type: integer
+        update:
+          type: integer
+        unchanged:
+          type: integer
+        leftOut:
+          type: integer
+    ImportCheck:
+      type: object
+      additionalProperties: false
+      required:
+        - fileName
+        - rows
+        - ready
+        - withProblems
+        - levels
+        - problems
+        - ignoredColumns
+        - needMoreFields
+        - nothingToChange
+      properties:
+        fileName:
+          type: string
+        rows:
+          type: integer
+          description: Data rows read, every sheet together.
+        ready:
+          type: integer
+          description: Rows that Import applies (to create, to update or unchanged).
+        withProblems:
+          type: integer
+          description: Rows left out, with a problem of their own or of the row they belong under.
+        levels:
+          type: array
+          description: Per level, campaigns first.
+          items:
+            $ref: "#/components/schemas/ImportLevelCounts"
+        problems:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportProblem"
+        ignoredColumns:
+          type: array
+          description: Headings no column matches, each as the sheet, a colon and the heading.
+          items:
+            type: string
+        needMoreFields:
+          type: integer
+          description: Rows to create or update that leave a needed-to-publish or needed-to-submit column empty.
+        nothingToChange:
+          type: boolean
+    ImportLevelTotals:
+      type: object
+      additionalProperties: false
+      required:
+        - campaigns
+        - initiatives
+        - activities
+        - lineItems
+      properties:
+        campaigns:
+          type: integer
+        initiatives:
+          type: integer
+        activities:
+          type: integer
+        lineItems:
+          type: integer
+    ImportRecordRef:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - level
+        - name
+        - action
+        - exists
+      properties:
+        id:
+          type: string
+        level:
+          $ref: "#/components/schemas/ImportLevel"
+        name:
+          type: string
+        action:
+          type: string
+          enum:
+            - created
+            - updated
+        exists:
+          type: boolean
+          description: false when it has been deleted since.
+    ImportUndoPreview:
+      type: object
+      additionalProperties: false
+      required:
+        - campaigns
+        - initiatives
+        - activities
+        - lineItems
+        - alreadyDeleted
+      properties:
+        campaigns:
+          type: integer
+          description: Created campaigns still there, which Undo import moves to the recycle bin.
+        initiatives:
+          type: integer
+        activities:
+          type: integer
+        lineItems:
+          type: integer
+        alreadyDeleted:
+          type: integer
+    ImportKept:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - level
+        - name
+        - reason
+      properties:
+        id:
+          type: string
+        level:
+          $ref: "#/components/schemas/ImportLevel"
+        name:
+          type: string
+        reason:
+          type: string
+    ImportSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - planId
+        - fileName
+        - status
+        - importedAt
+        - importedBy
+        - rowsRead
+        - rowsLeftOut
+        - created
+        - updated
+        - undoneAt
+        - undoneBy
+      properties:
+        id:
+          type: string
+          example: IMP-1001
+        planId:
+          type: string
+        fileName:
+          type: string
+        status:
+          type: string
+          enum:
+            - imported
+            - undone
+        importedAt:
+          type: string
+          format: date-time
+        importedBy:
+          $ref: "#/components/schemas/ActorRef"
+        rowsRead:
+          type: integer
+        rowsLeftOut:
+          type: integer
+        created:
+          $ref: "#/components/schemas/ImportLevelTotals"
+        updated:
+          $ref: "#/components/schemas/ImportLevelTotals"
+        undoneAt:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        undoneBy:
+          oneOf:
+            - $ref: "#/components/schemas/ActorRef"
+            - type: "null"
+    ImportDetail:
+      type: object
+      additionalProperties: false
+      required:
+        - import
+        - problems
+        - records
+        - undo
+        - kept
+      properties:
+        import:
+          $ref: "#/components/schemas/ImportSummary"
+        problems:
+          type: array
+          description: The rows left out, with their reasons.
+          items:
+            $ref: "#/components/schemas/ImportProblem"
+        records:
+          type: array
+          description: The records the import created and updated, in the file's order.
+          items:
+            $ref: "#/components/schemas/ImportRecordRef"
+        undo:
+          description: What Undo import would do; null once undone.
+          oneOf:
+            - $ref: "#/components/schemas/ImportUndoPreview"
+            - type: "null"
+        kept:
+          type: array
+          description: After Undo import, the created records that could not be deleted, with the reason.
+          items:
+            $ref: "#/components/schemas/ImportKept"
+    PlanImportPage:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportSummary"
+        total:
+          type: integer

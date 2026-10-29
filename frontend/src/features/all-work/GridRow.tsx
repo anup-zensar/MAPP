@@ -5,6 +5,9 @@ import type { AllWorkColumn, AllWorkRow } from './all-work-types';
 import { CellValue } from './CellValue';
 import { isControl, isNumeric, isSearched } from './cell-text';
 import { RowName } from './RowName';
+import { RowSelectBox } from './SelectBox';
+import type { GridSelection } from './SelectBox';
+import selectStyles from './SelectBox.module.css';
 import type { VisibleRow } from './view-rows';
 
 export interface GridRowProps {
@@ -15,6 +18,7 @@ export interface GridRowProps {
   statusInName: boolean;
   onToggle: (key: string) => void;
   onOpen: (row: AllWorkRow) => void;
+  selection?: GridSelection;
 }
 
 /** One row of the Grid: a click anywhere but on a control opens the record (FR-016). */
@@ -25,8 +29,18 @@ export function GridRow({
   statusInName,
   onToggle,
   onOpen,
+  selection,
 }: GridRowProps) {
   const { row } = visible;
+  const name = (
+    <RowName
+      visible={visible}
+      search={search}
+      showStatus={statusInName}
+      onToggle={onToggle}
+      onOpen={onOpen}
+    />
+  );
 
   function openFromRow(event: MouseEvent<HTMLTableRowElement>) {
     if (!isControl(event.target)) {
@@ -45,13 +59,14 @@ export function GridRow({
       onClick={openFromRow}
     >
       <th scope="row" className={cx(styles.nameCell, styles[row.level])}>
-        <RowName
-          visible={visible}
-          search={search}
-          showStatus={statusInName}
-          onToggle={onToggle}
-          onOpen={onOpen}
-        />
+        {selection ? (
+          <div className={selectStyles.withSelect}>
+            <RowSelectBox row={row} selection={selection} />
+            {name}
+          </div>
+        ) : (
+          name
+        )}
       </th>
       {columns.map((column, index) => (
         <td key={column.key} className={cx(isNumeric(column) && styles.end)}>
