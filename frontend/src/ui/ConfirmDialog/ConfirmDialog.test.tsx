@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -101,5 +101,26 @@ describe('ConfirmDialog', () => {
     expect(onConfirm).not.toHaveBeenCalled();
     expect(confirm).toHaveAttribute('aria-busy', 'true');
     expect(confirm).toBeEnabled();
+  });
+
+  it('038 FR-044: a dialog that only informs has one Close, which has the focus and closes it', async () => {
+    const user = userEvent.setup();
+    function Informing() {
+      const [open, setOpen] = useState(true);
+      return (
+        <ConfirmDialog acknowledgeOnly open={open} onOpenChange={setOpen} title="Can't delete 'Q4'">
+          It has allocations.
+        </ConfirmDialog>
+      );
+    }
+    render(<Informing />);
+
+    const dialog = screen.getByRole('alertdialog', { name: "Can't delete 'Q4'" });
+    const buttons = within(dialog).getAllByRole('button');
+    expect(buttons.map((button) => button.textContent)).toEqual(['Close']);
+    const close = within(dialog).getByRole('button', { name: 'Close' });
+    expect(close).toHaveFocus();
+    await user.click(close);
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
   });
 });

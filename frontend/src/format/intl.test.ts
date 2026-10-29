@@ -126,6 +126,12 @@ describe('formatMoneyCompact', () => {
   it('shows "—" when there is no amount (FR-021)', () => {
     expect(formatMoneyCompact('', 'USD')).toBe('—');
   });
+
+  it('038 FR-044: never rounds up to "1000T"; the full amount shows instead', () => {
+    expect(formatMoneyCompact('999999999999999.99', 'USD')).toBe('$999,999,999,999,999.99');
+    expect(formatMoneyCompact('-999995000000000', 'EUR')).toBe('-999,995,000,000,000.00 EUR');
+    expect(formatMoneyCompact('999994999999999', 'USD')).toBe('$999.99T');
+  });
 });
 
 describe('date formats (feature 003, FR-024)', () => {

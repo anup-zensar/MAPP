@@ -223,15 +223,21 @@ export function formatMoney(value: string | null | undefined, currency: string):
 
 /**
  * "$1.25M" or "12.5K EUR" for summary cards, which show formatMoney's full value in a tooltip.
- * Amounts under 1,000 are short already and are shown in full.
+ * Amounts under 1,000 are short already and are shown in full, and so are amounts that would round
+ * up to 1000 of the largest unit ("1000T", 038 FR-044).
  */
 export function formatMoneyCompact(value: string | null | undefined, currency: string): string {
   if (!value || Math.abs(Number(value)) < 1000) {
     return formatMoney(value, currency);
   }
-  return currency === 'USD'
-    ? compactDollars.format(exact(value))
-    : `${compactAmount.format(exact(value))} ${currency}`;
+  const format = currency === 'USD' ? compactDollars : compactAmount;
+  const parts = format.formatToParts(exact(value));
+  const integer = parts.filter((part) => part.type === 'integer').map((part) => part.value);
+  if (integer.join('').length > 3) {
+    return formatMoney(value, currency);
+  }
+  const compact = parts.map((part) => part.value).join('');
+  return currency === 'USD' ? compact : `${compact} ${currency}`;
 }
 
 function twoDigits(n: number): string {
