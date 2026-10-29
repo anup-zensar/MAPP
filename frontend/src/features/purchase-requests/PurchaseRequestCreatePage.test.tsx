@@ -107,6 +107,25 @@ describe('032 FR-003/FR-053/FR-054: new purchase request', () => {
     expect(field('name')).toHaveAccessibleDescription(/A purchase request with this name exists./);
   });
 
+  it('032 FR-053: a refused Shell attribute of the purchase request shows in the summary and at its field', async () => {
+    const problems = apiError('validation_failed', 'Some fields need attention.', {
+      fields: [{ field: 'attributes.SA-1101', message: 'Enter a vendor e-mail address.' }],
+    });
+    const { user } = renderCreate({ body: defaults() }, [
+      reply(CREATE, { status: 400, body: problems }),
+    ]);
+    await screen.findByLabelText(/^Name/);
+    await chooseWorkflows(user);
+
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    const summary = await screen.findByText('1 problem needs your attention');
+    expect(summary.closest('[role="alert"]')).toHaveTextContent('Enter a vendor e-mail address.');
+    expect(field('attributes.SA-1101')).toHaveAccessibleDescription(
+      /Enter a vendor e-mail address./,
+    );
+  });
+
   it('saves the purchase request and opens it', async () => {
     const { api, router, user } = renderCreate({ body: defaults() }, [
       reply(CREATE, { status: 201, body: purchaseRequest() }),
@@ -142,16 +161,28 @@ describe('032 FR-003/FR-053/FR-054: new purchase request', () => {
     ]);
   });
 
-  it('asks before leaving with unsaved changes', async () => {
+  it('032 FR-054: leaving with unsaved changes asks Keep editing or Discard changes (design system §2.5)', async () => {
     const { user, router } = renderCreate({ body: defaults() });
     await user.type(await screen.findByLabelText(/^Name/), ' 2');
 
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
     const dialog = await screen.findByRole('alertdialog', { name: 'Discard changes?' });
-    await user.click(within(dialog).getByRole('button', { name: 'Keep editing' }));
+    const answers = within(dialog).getAllByRole('button');
+    expect(answers.map((answer) => answer.textContent)).toEqual([
+      'Keep editing',
+      'Discard changes',
+    ]);
+    const keepEditing = within(dialog).getByRole('button', { name: 'Keep editing' });
+    expect(keepEditing).toHaveFocus();
+    await user.click(keepEditing);
     expect(router.state.location.pathname).toBe('/purchase-requests/new');
     expect(field('name')).toHaveValue('PR for Stand build 2');
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    const again = await screen.findByRole('alertdialog', { name: 'Discard changes?' });
+    await user.click(within(again).getByRole('button', { name: 'Discard changes' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/line-items/L-1006'));
   });
 
   it('shows no access when the person may not raise purchase requests in the plan (403)', async () => {

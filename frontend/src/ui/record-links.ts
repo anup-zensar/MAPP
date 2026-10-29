@@ -19,11 +19,6 @@ export function purchaseRequestHref(id: string): string {
   return `/purchase-requests/${encodeURIComponent(id)}`;
 }
 
-/** Approval rows and notifications name their subject by ID; a purchase request's starts "PR-". */
-export function isPurchaseRequestId(id: string): boolean {
-  return id.startsWith('PR-');
-}
-
 /** Campaigns and initiatives open over their plan (`planId`); else an activity gets its short link. */
 export function recordHref(
   type: PlanningRecordType | PurchaseRecordType,
