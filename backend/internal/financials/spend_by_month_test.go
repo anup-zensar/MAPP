@@ -10,8 +10,8 @@ import (
 )
 
 // Only purchase orders and payments of the line items asked for count, by posting month, at the current rate; a
-// currency no longer in Settings is left out, as Committed and Paid leave it out (036 FR-011, FR-014, D-257, D-358).
-func TestSpendByMonth_036_FR014(t *testing.T) {
+// currency no longer in Settings is left out, as Committed and Paid leave it out (D-257, D-358).
+func TestSpendByMonth_036_FR011_FR014(t *testing.T) {
 	t.Parallel()
 	f := newEmptyFixture(t)
 	transaction := func(id string, typ Type, lineItemID, day, amount, currency string) Transaction {

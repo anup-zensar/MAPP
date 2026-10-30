@@ -9,7 +9,7 @@ import (
 )
 
 // The dashboards' global budgets of a year are those of the Global budgets page, by name, with the same figures;
-// another year's budget is not among them (036 FR-004, D-356).
+// another year's budget is not among them (D-356).
 func TestYearFigures_AsTheGlobalBudgetsPage_036_FR004(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

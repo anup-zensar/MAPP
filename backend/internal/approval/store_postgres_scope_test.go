@@ -54,7 +54,7 @@ func TestPostgresStoreActivitiesInScopeOfIDs_028_FR007(t *testing.T) {
 }
 
 // A dashboard reads the rounds and history of the records in its scope only: those of another market's activity
-// (A-1002, plan P-1002 of team T-1002) are never read (036 FR-002, D-356).
+// (A-1002, plan P-1002 of team T-1002) are never read (D-356).
 func TestPostgresStoreRoundsOfSubjectsScopeIsolation_036_FR002(t *testing.T) {
 	t.Parallel()
 	db, s := pgPlanned(t)

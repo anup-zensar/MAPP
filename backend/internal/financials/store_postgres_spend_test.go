@@ -11,7 +11,7 @@ import (
 )
 
 // A dashboard reads the purchase orders and payments of the line items in its scope only: those on another
-// market's line item (L-1002, plan P-1002 of team T-1002) and invoices are never read (036 FR-002, D-356, D-358).
+// market's line item (L-1002, plan P-1002 of team T-1002) and invoices are never read (D-356, D-358).
 func TestPostgresStoreSpendOnLineItemsScopeIsolation_036_FR002(t *testing.T) {
 	t.Parallel()
 	db, s, _ := pgStore(t)
