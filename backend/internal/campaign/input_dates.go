@@ -43,7 +43,7 @@ func decodeWithTextDates(data []byte, body any, start, end **date.Date) error {
 	}
 	decoder := json.NewDecoder(bytes.NewReader(rest))
 	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(body); err != nil {
+	if err = decoder.Decode(body); err != nil {
 		return err
 	}
 	if *start, err = dateFromText(startText); err != nil {
@@ -63,9 +63,13 @@ func dateFromText(raw json.RawMessage) (*date.Date, error) {
 	if text == nil || *text == "" {
 		return nil, nil
 	}
-	parsed, err := date.Parse(*text)
+	return parsedOrZero(*text), nil
+}
+
+func parsedOrZero(text string) *date.Date {
+	parsed, err := date.Parse(text)
 	if err != nil {
-		return &date.Date{}, nil
+		return &date.Date{}
 	}
-	return &parsed, nil
+	return &parsed
 }
