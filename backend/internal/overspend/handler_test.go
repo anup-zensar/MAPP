@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"mapp/internal/campaign"
+	"mapp/internal/history"
 	"mapp/internal/overspend"
 	"mapp/internal/platform/apitest"
 )
@@ -33,6 +34,67 @@ func TestConfiguration_ReadAndChange_Contract_037_FR006(t *testing.T) {
 	if saved.DefaultMode != overspend.Refuse || saved.Version != 2 || saved.UpdatedBy.Name != "Alex Morgan" {
 		t.Errorf("037 FR-006 saved = %+v", saved)
 	}
+}
+
+// configurationAnswer reads the answer with its last change as pointers, null while never saved.
+type configurationAnswer struct {
+	DefaultMode             overspend.Mode
+	ApprovalOverPlannedCost overspend.Mode
+	Version                 int
+	UpdatedAt               *string
+	UpdatedBy               *struct{ Name string }
+}
+
+func TestApprovalOverPlannedCost_Contract_038_FR018_FR057_M18_L16(t *testing.T) {
+	t.Parallel()
+	server := apitest.New(t)
+	priya, alex := server.SignIn(t, priyasEmail), server.SignIn(t, alexsEmail)
+	refuse := map[string]any{"version": 1, "defaultMode": "warn", "approvalOverPlannedCost": "refuse"}
+
+	fresh := decoded[configurationAnswer](t, priya.Do(t, http.MethodGet, configurationPath, nil), http.StatusOK)
+	forbidden := priya.Do(t, http.MethodPut, configurationPath, refuse)
+	invalid := alex.Do(t, http.MethodPut, configurationPath,
+		map[string]any{"version": 1, "defaultMode": "warn", "approvalOverPlannedCost": "block"})
+	saved := decoded[configurationAnswer](t, alex.Do(t, http.MethodPut, configurationPath, refuse), http.StatusOK)
+	kept := decoded[configurationAnswer](t, alex.Do(t, http.MethodPut, configurationPath,
+		map[string]any{"version": 2, "defaultMode": "refuse"}), http.StatusOK)
+	stale := alex.Do(t, http.MethodPut, configurationPath, refuse)
+	var log history.LogPage
+	alex.Do(t, http.MethodGet, "/api/v1/activity-log?recordType=overspendConfiguration&recordId=overspend", nil).Decode(t, &log)
+
+	checkNeverSaved(t, fresh)
+	if got := []int{forbidden.Status, invalid.Status, stale.Status}; !slices.Equal(got, []int{403, 400, 409}) {
+		t.Errorf("038 FR-018 refusals = %v, want 403, 400, 409", got)
+	}
+	checkSavedThenKept(t, saved, kept)
+	if got := logTexts(log); !slices.Contains(got, "Approval over planned cost: Warn → Refuse") {
+		t.Errorf("038 FR-018 log = %v", got)
+	}
+}
+
+func checkNeverSaved(t *testing.T, fresh configurationAnswer) {
+	t.Helper()
+	if fresh.ApprovalOverPlannedCost != overspend.Warn || fresh.UpdatedAt != nil || fresh.UpdatedBy != nil {
+		t.Errorf("038 FR-018 FR-057 never saved = %+v, want Warn and no last change", fresh)
+	}
+}
+
+func checkSavedThenKept(t *testing.T, saved, kept configurationAnswer) {
+	t.Helper()
+	if saved.ApprovalOverPlannedCost != overspend.Refuse || saved.Version != 2 || saved.UpdatedBy == nil ||
+		kept.ApprovalOverPlannedCost != overspend.Refuse || kept.DefaultMode != overspend.Refuse {
+		t.Errorf("038 FR-018 saved = %+v, then %+v", saved, kept)
+	}
+}
+
+func logTexts(page history.LogPage) []string {
+	texts := []string{}
+	for _, e := range page.Items {
+		for _, c := range e.Changes {
+			texts = append(texts, c.Label+": "+c.OldText+" → "+c.NewText)
+		}
+	}
+	return texts
 }
 
 func TestNewBudgetsStartWithTheDefault_CopiesKeepTheirs_Contract_037_FR007(t *testing.T) {

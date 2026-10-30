@@ -18,7 +18,8 @@ type activity struct {
 	lineItems    []*lineItem
 	planned      money.Amount
 	months       [12]money.Amount
-	notScheduled money.Amount
+	notScheduled money.Amount // planned cost not placed in a month, never below 0
+	above        money.Amount // months above the planned cost: line items exceeding it
 	outside      money.Amount
 	spend        Spend
 	actual       [12]money.Amount
@@ -78,8 +79,7 @@ func (t tree) activitiesUnder(campaigns []*Record) []*activity {
 	return list
 }
 
-// placePlanned spreads the activity's planned cost over the months of year: each line item by its spread, a
-// positive unassigned balance evenly over the activity's months (All work's Budget & cost rule).
+// placePlanned leaves not scheduled what fits no month, and keeps the months above planned cost apart.
 func (a *activity) placePlanned(year int) {
 	typed := amountOf(a.rec.PlannedCost)
 	var onLineItems money.Amount
@@ -98,7 +98,11 @@ func (a *activity) placePlanned(year int) {
 		}
 	}
 	a.planned = typed.Sub(a.outside)
-	a.notScheduled = a.planned.Sub(money.Sum(a.months[:]...))
+	if left := a.planned.Sub(money.Sum(a.months[:]...)); left.Sign() > 0 {
+		a.notScheduled = left
+	} else {
+		a.above = left.Neg()
+	}
 }
 
 // place adds amount to its month when the month is in year and reports true; otherwise it counts as outside.
@@ -112,8 +116,6 @@ func (a *activity) place(year int, month string, amount money.Amount) bool {
 	return true
 }
 
-// placeSpend adds the transactions of the activity's line items posted in year, and returns those posted in
-// other years.
 func (a *activity) placeSpend(year int, byLineItem map[string]map[string]Spend) Spend {
 	var outside Spend
 	for _, li := range a.lineItems {
@@ -130,7 +132,6 @@ func (a *activity) placeSpend(year int, byLineItem map[string]map[string]Spend) 
 	return outside
 }
 
-// monthIndex is 0–11 for a month "2026-03" of year, and false for any other month.
 func monthIndex(year int, month string) (int, bool) {
 	y, m, found := strings.Cut(month, "-")
 	number, err := strconv.Atoi(m)

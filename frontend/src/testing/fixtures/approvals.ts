@@ -113,6 +113,7 @@ export function approvalOf(overrides: Partial<ActivityApproval> = {}): ActivityA
       decline: AVAILABLE,
       recall: AVAILABLE,
     },
+    overPlannedCost: [],
     ...overrides,
   };
 }

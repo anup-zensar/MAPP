@@ -1,6 +1,7 @@
 package home
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -9,8 +10,6 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// The person's own activities count in every plan, also outside their teams and whatever the scope (edge
-// case, FR-003 hint).
 func TestSummary_OwnedActivitiesCoverAllPlans_EdgeCase(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()
@@ -23,14 +22,43 @@ func TestSummary_OwnedActivitiesCoverAllPlans_EdgeCase(t *testing.T) {
 	for _, scope := range []string{"myTeams", "everything"} {
 		got, err := s.Summary(t.Context(), priya, scope)
 
-		if err != nil || got.ActivitiesOwned != (ActivityCounts{Count: 1, Submitted: 1}) {
-			t.Errorf("%s: activities owned = %+v, %v; want the activity outside her teams", scope, got.ActivitiesOwned, err)
+		if c := countsText(got.ActivitiesOwned); err != nil || c != "1 (0 declined, 1 submitted) in 2026–2026" {
+			t.Errorf("%s: activities owned = %s, %v; want the activity outside her teams", scope, c, err)
 		}
 	}
 }
 
-// Budget used is the total planned cost of the plans in scope over their total plan budget, half up to a
-// whole percent; over budget is compared exactly, so 100.4 % shows 100 and is over (FR-006, D-176).
+func countsText(c ActivityCounts) string {
+	years := "no years"
+	if c.YearFrom != nil && c.YearTo != nil {
+		years = fmt.Sprintf("%d–%d", *c.YearFrom, *c.YearTo)
+	}
+	return fmt.Sprintf("%d (%d declined, %d submitted) in %s", c.Count, c.Declined, c.Submitted, years)
+}
+
+// The card covers at most five plan years from the earliest, as All work on those years lists them (D-363).
+func TestSummary_OwnedActivitiesYears_038_FR032_M5(t *testing.T) {
+	t.Parallel()
+	f := newFakeSources()
+	f.plans = []Plan{newPlan("P-1", "FY2026", 2026, lubricantsEurope), newPlan("P-2", "FY2027", 2027, lubricantsEurope),
+		newPlan("P-3", "FY2031", 2031, lubricantsEurope)}
+	in := func(id string) errs.RecordRef { return errs.RecordRef{Type: "plan", ID: id} }
+	f.activities[priya.ID] = []Activity{{ID: "A-1", Plan: in("P-2"), Status: "declined"},
+		{ID: "A-2", Plan: in("P-1"), Status: "created"}, {ID: "A-3", Plan: in("P-3"), Status: "submitted"}}
+	s := newService(t, f)
+
+	got, err := s.Summary(t.Context(), priya, "myTeams")
+	none, noneErr := s.Summary(t.Context(), daniel, "myTeams")
+
+	if c := countsText(got.ActivitiesOwned); err != nil || c != "2 (1 declined, 0 submitted) in 2026–2027" {
+		t.Errorf("activities owned = %s, %v; want 2 in 2026–2027 (2031 is more than four years later)", c, err)
+	}
+	if c := countsText(none.ActivitiesOwned); noneErr != nil || c != "0 (0 declined, 0 submitted) in no years" {
+		t.Errorf("no activities = %s, %v", c, noneErr)
+	}
+}
+
+// Budget used rounds half up to a whole percent, but over budget compares exactly: 100.4 % shows 100 and is over.
 func TestSummary_BudgetUsed_FR006(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()
@@ -63,7 +91,6 @@ func TestSummary_BudgetUsed_FR006(t *testing.T) {
 	}
 }
 
-// Plans without a budget add their planned cost but no budget, and are counted (FR-006, edge case).
 func TestSummary_PlansWithoutBudget_FR006(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()
@@ -84,8 +111,6 @@ func TestSummary_PlansWithoutBudget_FR006(t *testing.T) {
 	}
 }
 
-// Without any plan budget the card shows "—" and "No plan budgets set"; without plans, nothing at all
-// (FR-006).
 func TestSummary_NoBudgetAtAll_FR006(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()
@@ -107,8 +132,7 @@ func TestSummary_NoBudgetAtAll_FR006(t *testing.T) {
 	}
 }
 
-// Totals are added in US dollars and converted once: 1,000.05 + 1,000.05 USD at 0.92 is 1,840.09 EUR, not
-// the 1,840.10 of two converted amounts (FR-017, D-010).
+// 1,000.05 + 1,000.05 USD at 0.92 is 1,840.09 EUR, not the 1,840.10 of two converted amounts.
 func TestSummary_TotalsConvertedOnce_FR017(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()
@@ -129,10 +153,6 @@ func TestSummary_TotalsConvertedOnce_FR017(t *testing.T) {
 	}
 }
 
-// User story 5 — Get started as a new user.
-
-// Getting started shows for a person in no team (notInTeam) and for one whose teams have no plan
-// (noTeamPlans), in both scopes; once one of their teams has a plan it is gone (FR-020, D-170, US5).
 func TestSummary_GettingStarted_FR020(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()
@@ -167,8 +187,6 @@ func TestSummary_GettingStarted_FR020(t *testing.T) {
 	}
 }
 
-// A display currency set inactive in Settings stays in use with its rate, as on every other page (D-201,
-// D-063, D-217).
 func TestSummary_InactiveDisplayCurrencyStaysInUse(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()

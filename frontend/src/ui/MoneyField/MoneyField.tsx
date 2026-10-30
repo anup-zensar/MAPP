@@ -6,26 +6,15 @@ import type { FieldFrameProps } from '../FieldShell/FieldShell';
 import inputs from '../FieldShell/inputs.module.css';
 
 export interface MoneyFieldProps extends FieldFrameProps {
-  /** The field's name and the input's id, so FormErrorSummary can link to it. */
   name: string;
-  /** What is typed, as text ("12,500.00"); read it with parseMoneyInput before sending it. */
   value: string;
   onChange: (value: string) => void;
-  /** The ISO code shown inside the field ("USD"). */
   currency: string;
-  /** A neutral note under the field, such as where a pre-filled amount came from. */
   note?: string;
 }
 
-/**
- * An amount with its currency inside the field (design system §5 "Money input"). It accepts
- * "12500", "12,500.00" and "12.5k", and on leaving the field writes the amount out in full
- * ("12,500.00"). More than two decimals are rounded half-up to the cent, and the field says so
- * ("Rounded to 1,234.57", D-190). Text that is not an amount stays as typed: the form's check or
- * the API says what is wrong.
- *
- * To send it: `parseMoneyInput(value)?.amount` with the currency, as a MoneyInput.
- */
+// Accepts "12500", "12,500.00" and "12.5k" and writes it out in full on leaving; more than two
+// decimals are rounded half-up and the field says so (D-190). Other text stays as typed.
 export function MoneyField({
   name,
   value,
@@ -56,8 +45,8 @@ export function MoneyField({
   const notes = [roundingNote, note].filter(Boolean).join(' · ') || undefined;
 
   return (
-    <FieldShell id={name} error={error} note={notes} {...frame}>
-      {(describedBy) => (
+    <FieldShell id={name} error={error} note={notes} reserveNote {...frame}>
+      {(describedBy, required) => (
         <div className={inputs.withUnit}>
           <input
             id={name}
@@ -71,6 +60,7 @@ export function MoneyField({
             aria-invalid={error ? true : undefined}
             // Screen readers hear the currency with the field, before its hint and problem.
             aria-describedby={[`${name}-currency`, describedBy].filter(Boolean).join(' ')}
+            aria-required={required}
             className={cx(inputs.input, inputs.numeric, error && inputs.invalid)}
           />
           <span id={`${name}-currency`} className={inputs.unit}>

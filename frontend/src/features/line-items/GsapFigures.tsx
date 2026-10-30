@@ -1,6 +1,7 @@
 import { CircleAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
+import { useFormatters } from '@/format/useFormatters';
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
 import { cx } from '@/ui/cx';
@@ -16,7 +17,7 @@ import {
 } from './gsap-financials';
 import type { FinancialFiguresData } from './gsap-financials';
 import styles from './GsapFigures.module.css';
-import { formatMonth, moneyText } from './line-item-math';
+import { moneyText } from './line-item-math';
 
 export interface GsapFiguresProps {
   figures: FinancialFiguresData;
@@ -24,15 +25,9 @@ export interface GsapFiguresProps {
   accrualMonth: string | null;
 }
 
-/**
- * The five GSAP figures of a record (015 FR-011, FR-013, FR-014): Committed with its meter "38% of
- * planned cost committed", Invoiced, Paid, Accrued (of the latest accrual month) and Not yet
- * committed, each with its ⓘ; "Committed above planned cost by X" in red words, and for an
- * activity "Committed above planned cost on n line items" linking to the first. Amounts are in the
- * reader's display currency, as the API answers them.
- */
 export function GsapFigures({ figures, accrualMonth }: GsapFiguresProps) {
-  const month = accrualMonth ? formatMonth(accrualMonth) : null;
+  const { month: monthOf } = useFormatters();
+  const month = accrualMonth ? monthOf(accrualMonth) : null;
   const over = figures.committedAbovePlanned;
   const notYet = figures.notYetCommitted;
   const first = figures.firstLineItemAbovePlanned;

@@ -33,7 +33,8 @@ type Service struct {
 	displayRates DisplayRates // nil shows USD
 	access       Access
 	choices      RuleChoices
-	approvers    Approvers // nil: everyone may approve
+	approvers    Approvers         // nil: everyone may approve
+	overspend    ApprovalOverspend // nil warns
 }
 
 // NewService starts with everyone allowed and nothing for rule conditions to name, until UseAccess and UseRuleChoices.

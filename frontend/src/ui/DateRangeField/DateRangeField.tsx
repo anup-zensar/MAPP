@@ -76,7 +76,7 @@ export function DateRangeField({
         ) : undefined
       }
     >
-      {() => (
+      {(_, required) => (
         <div className={styles.pair}>
           <DateInput
             id={startId}
@@ -85,6 +85,7 @@ export function DateRangeField({
             min={allowed?.start}
             max={end || allowed?.end}
             error={errors.start}
+            required={required}
             onChange={(value) => onChange({ start: value, end })}
           />
           <DateInput
@@ -94,6 +95,7 @@ export function DateRangeField({
             min={start || allowed?.start}
             max={allowed?.end ?? maxEnd}
             error={errors.end}
+            required={required}
             disabled={Boolean(endDisabledReason)}
             onChange={(value) => onChange({ start, end: value })}
           />
@@ -111,10 +113,12 @@ interface DateInputProps {
   max?: string;
   error?: string;
   disabled?: boolean;
+  required?: true;
   onChange: (value: string) => void;
 }
 
-function DateInput({ id, label, value, min, max, error, disabled, onChange }: DateInputProps) {
+function DateInput(props: DateInputProps) {
+  const { id, label, value, min, max, error, disabled, required, onChange } = props;
   const errorId = `${id}-error`;
   return (
     <div className={styles.date}>
@@ -131,6 +135,7 @@ function DateInput({ id, label, value, min, max, error, disabled, onChange }: Da
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
+        aria-required={required}
         className={cx(inputs.input, error && inputs.invalid)}
       />
       {error && (

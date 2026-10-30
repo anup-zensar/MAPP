@@ -1,0 +1,44 @@
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+function themeScriptHash(): string {
+  const html = readFileSync(join(import.meta.dirname, 'index.html'), 'utf8');
+  const script = /<script>([\s\S]*?)<\/script>/.exec(html)?.[1];
+  if (script === undefined) {
+    throw new Error('index.html has no inline theme script to hash');
+  }
+  return createHash('sha256').update(script).digest('base64');
+}
+
+const policy = [
+  "default-src 'self'",
+  `script-src 'self' 'sha256-${themeScriptHash()}'`,
+  "style-src 'self'",
+  // Radix's scroll lock writes a <style> element whose text varies with the scrollbar (ADR-0018).
+  "style-src-elem 'self' 'unsafe-inline'",
+  "img-src 'self' data:",
+  "font-src 'self'",
+  "connect-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join('; ');
+
+const others = {
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'same-origin',
+  'X-Content-Type-Options': 'nosniff',
+};
+
+export const securityHeaders: Record<string, string> = {
+  'Content-Security-Policy': policy,
+  ...others,
+};
+
+/** Vite's dev runtime injects its own inline preamble, so the dev server only reports violations. */
+export const developmentHeaders: Record<string, string> = {
+  'Content-Security-Policy-Report-Only': policy,
+  ...others,
+};

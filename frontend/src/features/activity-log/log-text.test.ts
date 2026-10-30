@@ -199,6 +199,13 @@ describe('day headings and counts (FR-004, FR-003, FR-009)', () => {
     expect(dayLabel('2026-02-28', '2026-03-01')).toBe('Yesterday');
   });
 
+  it("038 FR-058: writes the day in the person's date format; Today and Yesterday stay words", () => {
+    expect(dayLabel('2026-10-27', '2026-11-02', 'YYYY-MM-DD')).toBe('Tuesday 2026-10-27');
+    expect(dayLabel('2026-10-27', '2026-11-02', 'DD/MM/YYYY')).toBe('Tuesday 27/10/2026');
+    expect(dayLabel('2026-11-02', '2026-11-02', 'YYYY-MM-DD')).toBe('Today');
+    expect(dayLabel('2026-11-01', '2026-11-02', 'MM/DD/YYYY')).toBe('Yesterday');
+  });
+
   it('counts all entries, or the matching ones of all while a filter is in use', () => {
     expect(countLine(1204, 1204)).toBe('1,204 of 1,204 entries');
     expect(countLine(1, 1)).toBe('1 of 1 entry');

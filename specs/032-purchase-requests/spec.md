@@ -563,6 +563,9 @@ amounts (no goods-receipt data exists).
 - **FR-037**: System MUST reserve the modified amounts while the change is In review; an approved change
   makes them the PR's values and routes it (Modification); a declined or recalled change restores the last
   approved values and reservation (013 FR-049).
+  *Amended by [038 FR-001 – FR-003](../038-qa-findings/spec.md) (QA C-1): while the change is In review each line
+  reserves the larger of its approved and its modified amount (a removed line keeps its approved amount), so a
+  lowered amount is released only when the change is approved, as FR-017 says.*
 - **FR-038**: System MUST refuse a modified line amount below the line's Total invoiced or above the limit
   of FR-012 (013 FR-050).
 - **FR-039**: Add line on an Approved PR MUST follow Lines on approved purchase requests: Not allowed —

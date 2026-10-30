@@ -50,7 +50,7 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
   it('shows the fields with their markings as words and the defaults labelled (FR-001, FR-002, FR-008, FR-009)', async () => {
     openNewForm();
 
-    expect(await nameField()).toHaveAccessibleDescription('Required');
+    expect(await nameField()).toHaveAccessibleDescription('required');
     expect(screen.getByRole('heading', { level: 1, name: 'New activity' })).toBeVisible();
     // The breadcrumb says where it lives; the count line says how far the form is (P-04).
     expect(screen.getByText(/of \d+ needed fields filled$/)).toBeVisible();
@@ -62,7 +62,7 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
     for (const section of ['Basics', 'Dates & cost', 'More details']) {
       expect(screen.getByRole('heading', { level: 2, name: section })).toBeVisible();
     }
-    expect(screen.getByLabelText('Activity type')).toHaveAccessibleDescription('Required');
+    expect(screen.getByLabelText('Activity type')).toHaveAccessibleDescription('required');
     const campaign = screen.getByText('Campaign');
     expect(campaign.nextElementSibling).toHaveTextContent('Helix launch');
     expect(screen.getByText('Initiative').nextElementSibling).toHaveTextContent('Digital & social');
@@ -163,7 +163,7 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
       expect(within(summary).getByRole('link', { name: message })).toBeVisible();
     }
     expect(screen.getByLabelText('Activity name')).toHaveAccessibleDescription(
-      "Required 'Digital & social' already has an activity called 'Launch film'.",
+      "required 'Digital & social' already has an activity called 'Launch film'.",
     );
     expect(api.bodiesOf('POST /api/v1/initiatives/I-1001/activities')).toEqual([]);
 

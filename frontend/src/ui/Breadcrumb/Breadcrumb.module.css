@@ -34,12 +34,13 @@
   align-items: center;
   min-height: 24px;
   color: var(--link);
-  overflow-wrap: break-word;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .text {
   color: var(--ink-2);
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 /* The back chevron shows only on phones, where the parent stands alone. */

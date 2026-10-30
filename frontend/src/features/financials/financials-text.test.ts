@@ -30,6 +30,11 @@ describe('financialsText (015 plan, "User-visible messages")', () => {
     expect(accruedLabel(null)).toBe('Accrued');
   });
 
+  it("038 FR-058: writes the accrual month in the person's date format", () => {
+    expect(monthText('2026-09', 'YYYY-MM-DD')).toBe('2026-09');
+    expect(accruedLabel('2026-09', 'DD/MM/YYYY')).toBe('Accrued (09/2026)');
+  });
+
   it('writes the tabs with their counts and the count line', () => {
     const tabCounts = {
       all: 11,

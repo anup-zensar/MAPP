@@ -144,7 +144,7 @@ describe('ActivityTypesPage: status and delete (US5 scenario 5, FR-004)', () => 
     await user.click(within(dialog).getByRole('button', { name: 'Delete activity type' }));
 
     const messages = await findMessages();
-    expect(messages).toHaveTextContent("Activity type 'Podcast' moved to the recycle bin");
+    expect(messages).toHaveTextContent("Activity type 'Podcast' deleted");
     expect(within(messages).getByRole('button', { name: 'Undo' })).toBeInTheDocument();
   });
 

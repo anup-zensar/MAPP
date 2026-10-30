@@ -58,11 +58,12 @@ function view(overrides: Partial<FinancialRecordView> = {}): FinancialRecordView
 function renderSection(
   answer: Answer<'GET /api/v1/financials/records/{recordId}'>,
   variant: 'page' | 'panel' = 'page',
+  user = testUser(),
 ) {
   mockApi([reply('GET /api/v1/financials/records/{recordId}', answer, { recordId: 'P-1001' })]);
   return renderWithProviders(
     <RecordFinancials recordId="P-1001" planId="P-1001" variant={variant} />,
-    { user: testUser(), route: '/plans/P-1001', path: '/plans/:planId' },
+    { user, route: '/plans/P-1001', path: '/plans/:planId' },
   );
 }
 
@@ -84,6 +85,17 @@ describe('RecordFinancials (015 FR-018, FR-019)', () => {
       within(section).getByRole('link', { name: 'View all 12 transactions in Financials' }),
     ).toHaveAttribute('href', '/financials?recordId=P-1001');
     expect(within(section).getByText(/GSAP data as of .* · GSAP demo feed/)).toBeInTheDocument();
+  });
+
+  it("038 FR-058: writes the accrual month in the person's date format", async () => {
+    const user = testUser();
+    renderSection({ body: view() }, 'page', {
+      ...user,
+      preferences: { ...user.preferences, dateFormat: 'YYYY-MM-DD' },
+    });
+
+    const section = await screen.findByRole('region', { name: 'Financials' });
+    expect(await within(section).findByText('Accrued (2026-09)')).toBeInTheDocument();
   });
 
   it('says in red words when committed is above the planned cost (FR-013)', async () => {

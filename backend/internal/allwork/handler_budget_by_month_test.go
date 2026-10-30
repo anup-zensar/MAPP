@@ -9,11 +9,8 @@ import (
 	"mapp/internal/platform/apitest"
 )
 
-// Budget by month of the demo plan P-1004 "FY2027 Lubricants UK & Ireland" (016 data-model §8): 600,000.00
-// GBP phased evenly; campaign C-1005 "Helix UK & Ireland" 400,000.00 GBP phased 100,000.00 in March, June,
-// September and November; its initiatives UK and Ireland not phased. UK launch event (Mar – May) costs
-// 40,000.00 GBP — Venue 15,000.00 GBP and Agency fee 23,000.00 EUR = 19,750.00 GBP spread evenly, 5,250.00
-// GBP unassigned spread evenly — and Dealer conference 25,000.00 GBP in September (FR-024).
+// Demo plan P-1004 (016 data-model §8): C-1005 phased 100,000.00 in Mar, Jun, Sep, Nov; UK launch event
+// 40,000.00 GBP over Mar–May (19,750.00 Agency fee and 5,250.00 unassigned spread evenly).
 func TestGetBudgetByMonth_Contract_FR024(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -54,6 +51,9 @@ func TestGetBudgetByMonth_Contract_FR024(t *testing.T) {
 	}
 	if ireland.RecordID != "I-1010" || ireland.Months.PlannedCost[8].Amount.Format() != "25,000.00" {
 		t.Errorf("Ireland = %+v", ireland)
+	}
+	if plan.NegativeBalanceCount != 0 || uk.NegativeBalanceCount != 0 {
+		t.Errorf("negative balance counts = %d, %d; want 0", plan.NegativeBalanceCount, uk.NegativeBalanceCount)
 	}
 	if gone.Status != http.StatusNotFound {
 		t.Errorf("unknown plan = %d %s, want 404", gone.Status, gone.Body)

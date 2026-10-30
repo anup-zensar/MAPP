@@ -5,6 +5,11 @@
   padding-top: var(--space-4);
 }
 
+/* On the grey page, secondary text is Text Strong (design system §3.1). */
+.onGrey {
+  --ink-2: var(--ink);
+}
+
 .filters {
   display: flex;
   flex-wrap: wrap;

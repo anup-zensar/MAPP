@@ -27,6 +27,13 @@ JOIN purchase_requests p ON p.id = l.purchase_request_id
 WHERE l.line_item_id = ANY (sqlc.arg(line_item_ids)::text[])
 ORDER BY length(l.purchase_request_id), l.purchase_request_id COLLATE "C", l.position;
 
+-- name: ListPurchaseRequestChangesInReview :many
+SELECT * FROM purchase_requests
+WHERE change_pending AND EXISTS (
+    SELECT 1 FROM json_array_elements(approved_version -> 'lines') AS v
+    WHERE v ->> 'lineItemId' = ANY (sqlc.arg(line_item_ids)::text[]))
+ORDER BY length(id), id COLLATE "C";
+
 -- name: PutPurchaseRequest :exec
 INSERT INTO purchase_requests (
     id, plan_id, name, description, owner_id, moa_approver_id, approval_workflow_id, modification_workflow_id, status,

@@ -23,4 +23,5 @@ func (w *wiring) useOverspend() {
 	w.plans.UseOverspendDefaults(w.overspend)
 	w.campaigns.UseOverspendDefaults(w.overspend)
 	w.activities.UseOverspend(w.overspend)
+	w.approvals.UseApprovalOverspend(w.overspend)
 }

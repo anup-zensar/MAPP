@@ -88,6 +88,7 @@ export function purchaseRequestApproval(
     owner: { id: 'U-1002', name: 'Priya Raman', initials: 'PR', active: true },
     moaApprover: { id: 'U-1003', name: 'Daniel Okoro', initials: 'DO', active: true },
     sections: [approvalSection()],
+    overPlannedCost: [],
     ...overrides,
   };
 }
@@ -120,6 +121,7 @@ export function submission(
     problems: [],
     workflow: PR_WORKFLOW,
     levels: [APPROVAL_LEVEL],
+    outcomes: [],
     ...overrides,
   };
 }

@@ -123,11 +123,11 @@ func newFixture(t *testing.T) *fixture {
 			{Name: "Global planner", BuiltIn: authz.BuiltInGlobalPlanner, DefaultScope: authz.ScopeAll, Permissions: []authz.Permission{
 				authz.PlansView, authz.PlansCreate, authz.PlansEdit, authz.PlansPublish, authz.PlansDelete, authz.CampaignsEdit,
 				authz.CampaignsDelete, authz.ActivitiesEdit, authz.ActivitiesDelete, authz.ActivitiesSubmit, authz.DataExport,
-				authz.FinanceView, authz.FinanceLink, authz.ApprovalsDecide, authz.GlobalBudgetsView, authz.GlobalBudgetsManage}},
+				authz.FinanceView, authz.ApprovalsDecide, authz.GlobalBudgetsView, authz.GlobalBudgetsManage}},
 			{Name: "Planner", BuiltIn: authz.BuiltInPlanner, DefaultScope: authz.ScopeMyTeams, Permissions: []authz.Permission{
 				authz.PlansView, authz.PlansCreate, authz.PlansEdit, authz.PlansPublish, authz.CampaignsEdit, authz.CampaignsDelete,
 				authz.ActivitiesEdit, authz.ActivitiesDelete, authz.ActivitiesSubmit, authz.DataExport, authz.FinanceView,
-				authz.FinanceLink}},
+			}},
 			{Name: "Approver", BuiltIn: authz.BuiltInApprover, DefaultScope: authz.ScopeMyTeams,
 				Permissions: []authz.Permission{authz.PlansView, authz.DataExport, authz.FinanceView, authz.ApprovalsDecide}},
 			{Name: "Viewer", BuiltIn: authz.BuiltInViewer, DefaultScope: authz.ScopeMyTeams,

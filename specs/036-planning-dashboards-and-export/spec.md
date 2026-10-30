@@ -266,6 +266,8 @@ global budgets panels — the same figures as on screen. **Export › PDF** give
   dashboard also offers **Market** (every team; default the person's first team by name, else the first team).
 - **FR-007**: The filters MUST live in the page address, so Back, a bookmark and a shared link show the same
   dashboard; an unknown value falls back to its default and never breaks the page.
+  *Restored by [038 FR-012](../038-qa-findings/spec.md) (QA H-1): an unknown, inactive or out-of-scope currency or
+  market falls back in the server too; this feature's data model and contract, which refused them, are corrected.*
 
 **Figures** (every amount worked out by SP&A One in US dollars, then converted once to the chosen currency)
 

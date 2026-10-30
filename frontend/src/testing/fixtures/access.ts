@@ -234,8 +234,16 @@ export const CATALOGUE: PermissionCatalogue = {
       })),
     },
     {
+      name: 'Purchase requests',
+      permissions: PERMISSIONS.slice(14, 18).map(({ key, label, scoped }) => ({
+        key,
+        label,
+        scoped,
+      })),
+    },
+    {
       name: 'Approvals',
-      permissions: PERMISSIONS.slice(14, 16).map(({ key, label, scoped }) => ({
+      permissions: PERMISSIONS.slice(18, 20).map(({ key, label, scoped }) => ({
         key,
         label,
         scoped,
@@ -243,7 +251,7 @@ export const CATALOGUE: PermissionCatalogue = {
     },
     {
       name: 'Global budgets',
-      permissions: PERMISSIONS.slice(16, 18).map(({ key, label, scoped }) => ({
+      permissions: PERMISSIONS.slice(20, 22).map(({ key, label, scoped }) => ({
         key,
         label,
         scoped,
@@ -251,7 +259,7 @@ export const CATALOGUE: PermissionCatalogue = {
     },
     {
       name: 'Administration',
-      permissions: PERMISSIONS.slice(18).map(({ key, label, scoped }) => ({ key, label, scoped })),
+      permissions: PERMISSIONS.slice(22).map(({ key, label, scoped }) => ({ key, label, scoped })),
     },
   ],
 };

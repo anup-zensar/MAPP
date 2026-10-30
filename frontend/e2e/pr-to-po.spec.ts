@@ -14,8 +14,7 @@ import {
   submitOnScreen,
 } from './purchase-request-flow';
 
-// The product owner's whole journey (033 FR-012, with 030 and 032): approved activity → SWBS code → PR
-// raised, approved and routed → PR form → simulated GSAP PR and PO → PO on the PR and in Committed.
+// The journey: approved activity → SWBS code → PR approved → simulated GSAP PR and PO → Committed.
 
 const SIM_NUMBER = /SIM-\d{10}/;
 
@@ -82,11 +81,9 @@ test('033 US1: from an approved activity to the purchase order and Committed fig
         .textContent()
     )?.match(/SIM-\d{10}/)?.[0] ?? '';
   expect(poNumber).toMatch(SIM_NUMBER);
-  await expect(
-    page.getByText(
-      'The simulated GSAP already created the PO for this purchase request. Run it again after an approved change of its amounts or lines.',
-    ),
-  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Create GSAP PR and PO (simulated)' })).toHaveCount(
+    0,
+  );
   await expectNoAxeViolations(page);
 
   await page.goto('/purchase-requests?waiting=true');

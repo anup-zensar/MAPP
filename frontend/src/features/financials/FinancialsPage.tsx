@@ -36,11 +36,7 @@ import { TransactionsTable } from './TransactionsTable';
 import { useNarrow } from './useNarrow';
 import styles from './FinancialsPage.module.css';
 
-/**
- * Financials (015 US3, FR-020 – FR-022): GSAP's transactions by type with search, filters, totals and
- * paging, all kept in the address; a row opens its panel in the outlet. Importers also see the
- * simulated GSAP's SWBS runs (030 FR-013).
- */
+/** Financials (015 US3): filters and paging live in the address; importers also see SWBS runs. */
 export function FinancialsPage() {
   usePageTitle('Financials');
   const [params, setParams] = useSearchParams();
@@ -52,6 +48,11 @@ export function FinancialsPage() {
   // 014 FR-011, 030 FR-013: importing and the simulated GSAP only for a person who may import.
   const canImport = useAccess().has('finance.import');
   const data = transactions.data;
+  // The Not linked tab only for people the server gives its count to.
+  const shownTabs = TABS.filter(
+    (tab) => tab !== 'notLinked' || (data ? data.counts.notLinked !== undefined : canImport),
+  );
+  const tab = shownTabs.includes(filters.tab) ? filters.tab : 'all';
   const forbidden =
     transactions.error instanceof ApiError && transactions.error.kind === 'forbidden';
 
@@ -88,12 +89,12 @@ export function FinancialsPage() {
           <FinancialTotals page={data} failed={transactions.isError && !data} />
           <Tabs
             label="Transaction type"
-            tabs={TABS.map((tab): TabItem<FinancialTab> => ({
-              value: tab,
-              label: tabLabel(tab, data?.counts),
+            tabs={shownTabs.map((shown): TabItem<FinancialTab> => ({
+              value: shown,
+              label: tabLabel(shown, data?.counts),
             }))}
-            value={filters.tab}
-            onChange={(tab) => change({ tab })}
+            value={tab}
+            onChange={(next) => change({ tab: next })}
           >
             <section className={styles.panel} aria-label="Transactions">
               <FinancialsToolbar filters={filters} page={data} onChange={change} />
@@ -110,7 +111,7 @@ export function FinancialsPage() {
                       }
                     />
                   ) : (
-                    <EmptyState icon={<ReceiptText />} title={emptyTabText(filters.tab, data)} />
+                    <EmptyState icon={<ReceiptText />} title={emptyTabText(tab, data)} />
                   )
                 ) : (
                   <>
@@ -165,7 +166,6 @@ function SourceLine({ page }: { page: FinancialTransactionPage | undefined }) {
   return <p className={styles.source}>{sourceLine(page.source, dateTime)}</p>;
 }
 
-/** What an empty tab says when no filter is in use. */
 function emptyTabText(tab: FinancialTab, page: FinancialTransactionPage): string {
   if (!page.source.dataAsOf) {
     return NO_DATA;

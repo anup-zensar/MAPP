@@ -13,8 +13,6 @@ import (
 	"mapp/internal/settings"
 )
 
-// A new global budget gets the first ID, version 1 and a "created" entry; its page has no allocation yet,
-// the year lock, and every action for the global planner (FR-029, FR-037).
 func TestCreate_GlobalBudget_FR029(t *testing.T) { //nolint:gocyclo // 11: one create, then its fields, figures, locks, actions and log entry
 	t.Parallel()
 	f := newFixture(t)
@@ -73,6 +71,11 @@ func TestCreate_EveryProblemAtOnce_FR029(t *testing.T) { //nolint:tparallel // t
 			{Field: "amount", Message: "Enter an amount of 0 or more."},
 			{Field: "ownerId", Message: "Choose a person who can manage global budgets for all markets."},
 		}},
+		{"038 FR-055 (L-11): name with a tab", func(in *GlobalBudgetInput) {
+			in.Name = "FY2027\tGlobal"
+		}, []errs.FieldError{
+			{Field: "name", Message: "Names can't contain tabs, line breaks or text-direction characters."},
+		}},
 		{"name too long, three decimals, unknown owner", func(in *GlobalBudgetInput) {
 			in.Name, in.Amount, in.OwnerID = tooLong, &money.Input{Amount: "1.005", Currency: "USD"}, "U-9999"
 		}, []errs.FieldError{
@@ -102,8 +105,6 @@ func TestCreate_EveryProblemAtOnce_FR029(t *testing.T) { //nolint:tparallel // t
 	}
 }
 
-// Creating, changing and deleting a global budget needs "Create global budgets and allocate them to plans"
-// for All markets (FR-029): a local planner is refused with the access rules' message and nothing changes.
 func TestCreateUpdateDelete_NeedManageForAllMarkets_FR029(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

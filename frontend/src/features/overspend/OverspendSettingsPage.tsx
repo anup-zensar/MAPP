@@ -1,5 +1,5 @@
 import { Lock } from 'lucide-react';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { asApiError, conflictMessage, isSessionLost } from '@/api/errors';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
@@ -11,13 +11,18 @@ import { usePageTitle } from '@/ui/usePageTitle';
 import { localDate } from '@/format/intl';
 import { useFormatters } from '@/format/useFormatters';
 import { useOverspendConfiguration, useSaveOverspendConfiguration } from './api';
-import type { OverspendConfiguration, OverspendMode } from './api';
+import type { OverspendApprovalMode, OverspendConfiguration, OverspendMode } from './api';
 import {
+  APPROVAL_HINTS,
+  APPROVAL_LABEL,
+  APPROVAL_MODES,
+  APPROVAL_WORDS,
   DEFAULT_LABEL,
   EXISTING_KEEP,
   MODE_HINTS,
   MODE_WORDS,
   MODES,
+  NEVER_CHANGED,
   OVERSPEND_CONTROL,
   SAVE,
   SETTING_SAVED,
@@ -26,7 +31,11 @@ import {
 } from './overspend-text';
 import styles from './OverspendSettingsPage.module.css';
 
-/** Settings › Overspend control (037 FR-006, FR-007): the setting new budgets start with. */
+/**
+ * Settings › Overspend control: the setting new budgets start
+ * with, and whether approving while an activity's line items exceed its planned cost is warned or
+ * refused.
+ */
 export function OverspendSettingsPage() {
   usePageTitle(OVERSPEND_CONTROL);
   const config = useOverspendConfiguration();
@@ -55,13 +64,18 @@ function SettingForm({ config }: { config: OverspendConfiguration }) {
   const { show } = useToast();
   const { date, dateFormat } = useFormatters();
   const [mode, setMode] = useState<OverspendMode>(config.defaultMode);
+  const [approval, setApproval] = useState<OverspendApprovalMode>(config.approvalOverPlannedCost);
   const [problem, setProblem] = useState('');
   const locked = !config.canChange.available;
 
   async function send() {
     setProblem('');
     try {
-      await save.mutateAsync({ version: config.version, defaultMode: mode });
+      await save.mutateAsync({
+        version: config.version,
+        defaultMode: mode,
+        approvalOverPlannedCost: approval,
+      });
       show({ message: SETTING_SAVED });
     } catch (error) {
       const failure = asApiError(error);
@@ -86,28 +100,27 @@ function SettingForm({ config }: { config: OverspendConfiguration }) {
           {problem}
         </p>
       )}
-      <fieldset className={styles.group} aria-describedby="overspend-default-note">
-        <legend className={styles.legend}>{DEFAULT_LABEL}</legend>
-        {MODES.map((choice) => (
-          <label key={choice} className={styles.radio}>
-            <input
-              type="radio"
-              name="defaultMode"
-              value={choice}
-              checked={mode === choice}
-              disabled={locked}
-              onChange={() => setMode(choice)}
-            />
-            <span>
-              <span className={styles.word}>{MODE_WORDS[choice]}</span>
-              <span className={styles.note}>{MODE_HINTS[choice]}</span>
-            </span>
-          </label>
-        ))}
-        <p id="overspend-default-note" className={styles.note}>
-          {EXISTING_KEEP}
-        </p>
-      </fieldset>
+      <Choices
+        name="defaultMode"
+        legend={DEFAULT_LABEL}
+        choices={MODES}
+        words={MODE_WORDS}
+        hints={MODE_HINTS}
+        value={mode}
+        disabled={locked}
+        onChange={setMode}
+        note={EXISTING_KEEP}
+      />
+      <Choices
+        name="approvalOverPlannedCost"
+        legend={APPROVAL_LABEL}
+        choices={APPROVAL_MODES}
+        words={APPROVAL_WORDS}
+        hints={APPROVAL_HINTS}
+        value={approval}
+        disabled={locked}
+        onChange={setApproval}
+      />
       {locked && (
         <p className={styles.lock} role="note">
           <Lock aria-hidden="true" />
@@ -115,7 +128,9 @@ function SettingForm({ config }: { config: OverspendConfiguration }) {
         </p>
       )}
       <p className={styles.note}>
-        {lastChangedText(config.updatedBy.name, date(localDate(config.updatedAt)))}
+        {config.updatedBy && config.updatedAt
+          ? lastChangedText(config.updatedBy.name, date(localDate(config.updatedAt)))
+          : NEVER_CHANGED}
       </p>
       {!locked && (
         <div className={styles.actions}>
@@ -125,5 +140,47 @@ function SettingForm({ config }: { config: OverspendConfiguration }) {
         </div>
       )}
     </form>
+  );
+}
+
+interface ChoicesProps<T extends string> {
+  name: string;
+  legend: string;
+  choices: readonly T[];
+  words: Record<T, string>;
+  hints: Record<T, string>;
+  value: T;
+  disabled: boolean;
+  onChange: (value: T) => void;
+  note?: string;
+}
+
+function Choices<T extends string>(props: ChoicesProps<T>) {
+  const noteId = useId();
+  return (
+    <fieldset className={styles.group} aria-describedby={props.note ? noteId : undefined}>
+      <legend className={styles.legend}>{props.legend}</legend>
+      {props.choices.map((choice) => (
+        <label key={choice} className={styles.radio}>
+          <input
+            type="radio"
+            name={props.name}
+            value={choice}
+            checked={props.value === choice}
+            disabled={props.disabled}
+            onChange={() => props.onChange(choice)}
+          />
+          <span>
+            <span className={styles.word}>{props.words[choice]}</span>
+            <span className={styles.note}>{props.hints[choice]}</span>
+          </span>
+        </label>
+      ))}
+      {props.note && (
+        <p id={noteId} className={styles.note}>
+          {props.note}
+        </p>
+      )}
+    </fieldset>
   );
 }

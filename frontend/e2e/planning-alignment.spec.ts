@@ -65,7 +65,7 @@ test('034 US1: line items of an approved activity are added and deleted without 
   await expect(dialog).not.toContainText(/approval/i);
   await expectNoAxeViolations(page);
   await dialog.getByRole('button', { name: 'Delete line item' }).click();
-  await expectToast(page, `Line item '${name}' moved to the recycle bin`);
+  await expectToast(page, `Line item '${name}' deleted`);
   await expect(page).toHaveURL(new RegExp(`${escapeRegExp(records.activityPath)}#line-items$`));
   await expect(page.getByText(APPROVED_NOTE)).toBeVisible();
 });

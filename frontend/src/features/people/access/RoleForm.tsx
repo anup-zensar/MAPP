@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
-import { ApiError, conflictMessage } from '@/api/errors';
+import { ApiError, CONFLICT_NEXT_STEP, conflictMessage } from '@/api/errors';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
@@ -205,8 +205,21 @@ function PermissionGroups({ catalogue, value, onChange, error }: PermissionGroup
     );
   }
 
+  // The summary's link focuses the list, which reads out its problem first.
   return (
-    <div className={styles.groups} id="permissions">
+    <div
+      className={styles.groups}
+      id="permissions"
+      role="group"
+      aria-label="Permissions"
+      aria-describedby={error ? 'permissions-problem' : undefined}
+      tabIndex={-1}
+    >
+      {error && (
+        <p className={styles.problem} id="permissions-problem">
+          {error}
+        </p>
+      )}
       {catalogue.groups.map((group) => (
         <fieldset key={group.name} className={styles.group}>
           <legend className={styles.groupTitle}>{group.name}</legend>
@@ -222,7 +235,6 @@ function PermissionGroups({ catalogue, value, onChange, error }: PermissionGroup
           ))}
         </fieldset>
       ))}
-      {error && <p className={styles.problem}>{error}</p>}
     </div>
   );
 }
@@ -243,8 +255,7 @@ function roleFailure(error: unknown, dateFormat: DateFormat): RoleFailure {
   if (apiError.kind === 'conflict') {
     const failure = {
       message: conflictMessage(apiError, 'role', dateFormat),
-      nextStep:
-        'Your changes are still here. Save again to replace their changes, or Cancel to see theirs.',
+      nextStep: CONFLICT_NEXT_STEP,
     };
     return { problems: [], failure, conflict: true };
   }

@@ -581,6 +581,9 @@ next to the written name, it has no contrast requirement.
 - **An amount in another currency than the reader's** (feature 016) shows as an `AmountPair`: the amount in
   its own currency in full, then a muted "≈ 6,645.57 USD" in the display currency with a `RateTip` ⓘ ("1 USD =
   0.79 GBP · rate of 19 Oct 2026 · GSAP import"); one amount only when both currencies are the same.
+- **Grids add up in every display currency** (feature 038 FR-022): a row total is converted once and its
+  months share it, the last month with an amount taking the rounding difference; column and grand totals are
+  sums of the converted cells. A separately converted summary figure may differ by a cent (D-061).
 
 ### 4.5 Dates and times
 
@@ -771,6 +774,8 @@ changes?" before typed values are lost. Save is never disabled.
 - Destructive questions: confirm is `danger` and names the action ("Delete campaign"); **Cancel has the
   focus**. Other questions: confirm is `primary`. `ClearValuesDialog`: "Keep editing" (focused) and "Clear
   and save" (primary).
+- `ConfirmDialog acknowledgeOnly` (feature 038 FR-044): a dialog that only informs ("Can't delete 'Q4'") has
+  one **Close** button (secondary, focused) and no confirm button; it never asks a question it cannot act on.
 - `FormDialog`: the first field has the focus; Enter submits; a second submit while busy is ignored.
 - `role="alertdialog"` for questions, `dialog` for forms; the focus returns where it was.
 
@@ -845,7 +850,7 @@ out; the notes of the form.
 
 | Part | Spec |
 |---|---|
-| Label | Above the control, 14/20 Arial 700 `--ink`; then 8 px and the **marking** as a small tag ("Required", "Needed to publish", "Needed to submit": 20 high, padding 0 6, radius 4, `--chip`, 12/18 bold `--ink`); then an optional ⓘ |
+| Label | Above the control, 14/20 Arial 700 `--ink`. A field required to save: then 2 px and a `*` in `--danger` (Secondary Red), Arial 700 19/20, `aria-hidden`, the control `aria-required` (D-364). A field needed to publish or submit: then 8 px and the **marking** as a small tag ("Needed to publish", "Needed to submit": 20 high, padding 0 6, radius 4, `--chip`, 12/18 bold `--ink`). Then an optional ⓘ |
 | Hint | **Always under the label, above the control** (one rule, UI audit F-02), 14/20 `--ink-2` |
 | Control | 40 high (48 below 600 px), padding 0 12, radius 8, 1 px `--control-border`, `--surface`, text 14 `--ink` (16 below 600 px), placeholder `--muted` |
 | States | Hover: border `--control-border-hover`. Focus: the focus ring. Invalid: 1 px `--danger` border plus the message. Locked: the Disabled tokens (`--disabled-bg`, `--disabled-text`, `--disabled-border`) and a `LockedNote`. Read-only values are shown as text, not as inputs. |
@@ -944,6 +949,12 @@ focused; F8 moves the focus to it; announced at once.
 `role="alert"` for failures. Used for: waiting and declined notices on record pages (with the decline
 reason), failed saves, "view only" notices, "Shown because the plan's business unit includes Lubricants".
 
+**Approve warning** (feature 038, D-360) — when an activity's line items exceed its planned cost, the approval
+section of the activity or purchase request and the Approve dialog show a warning alert above the decision, one
+line per activity: "Line items of activity 'Launch film' are 25,000.00 USD above its planned cost" (Warn the
+approver). With Refuse approval, **Approve** stays visible but disabled, described by that reason; Decline and
+Recall stay enabled.
+
 **`EmptyState`** — centred in its card, padding 48 24; a 48 px outline icon in `--ink-2`; title Jost 600
 20/28; one sentence 14 `--ink-2` (max 480 wide; Text Strong in a not-found or no-access message, which
 sits on the grey page without a card, §3.1); the action. **The action is a secondary button when the
@@ -1021,7 +1032,8 @@ Every user-managed record follows this pattern. Specs refer to it as "the standa
   panel**; long records (plan, activity, line item, Shell attribute) open on a **full page** with sections
   (§2.5).
 - One column; sections in a logical order; defaults pre-filled and labelled ("From the campaign");
-  markings shown as words: **Required**, **Needed to publish**, **Needed to submit**.
+  a field required to save shows a red **\*** after its label, with the legend "\* Required" once before the
+  first field (D-364); **Needed to publish** and **Needed to submit** stay words.
 - Footer: **Cancel** · **Save and add another** (for children) · **Save** (primary, last), right-aligned
   (§5.3, §5.5). Cancel asks before discarding typed values.
 - After saving: toast "Initiative 'Digital & social' created — View"; the new row is highlighted.
@@ -1056,7 +1068,7 @@ Every user-managed record follows this pattern. Specs refer to it as "the standa
 - A dialog: "Delete campaign 'Helix launch'?" — what goes with it ("3 initiatives, 12 activities and 20
   line items"), the effect ("Plan totals will update") and where it goes ("It moves to the recycle bin;
   you can restore it"). **Cancel** has focus; the red button says **Delete campaign**.
-- After deleting: back to the parent; toast "Campaign 'Helix launch' moved to the recycle bin" with
+- After deleting: back to the parent; toast "Campaign 'Helix launch' deleted" with
   **Undo** (visible at least 10 seconds).
 - The dialog and toast promise the recycle bin only where a person can open it (UI audit A-01, functional
   review P-02).
@@ -1250,3 +1262,4 @@ or one component (see the recommendations report for the questions to Shell).
 | 2.1 | 26 Oct 2026 | Feature 020, Shell palette (constitution X): Primary Yellow `#FFC600` (hover `#FFCB14`, press `#EBB600`), Secondary Red `#DD1D21` and every theme colour exactly, light and dark; `--raised`, link states and Disabled tokens added; `--brand-yellow-tint` and `--danger-bg-hover` retired, red and yellow never tinted or shaded; where Text Subtle, links and red text may sit, with Text Strong elsewhere; Text Strong focus ring; problem chips a red fill; the navy and dark-blue roles moved to palette tokens (§3.1, §3.10, §3.11, §4.1, §4.3, §5, §9, §12). |
 | 2.2 | 28 Oct 2026 | Features 032 and 033: the purchase-request screens, their words and confirmations (§2.6); level tags PURCHASE REQUEST and PR LINE in the line items' grey (§4.2). |
 | 2.3 | 28 Oct 2026 | Feature 035, constitution 4.5.0: the product is shown as SP&A One; the name is the logo with "&" Shell dark blue and "One" Shell yellow (`#AD8700` on light surfaces); `LogoTile` with a yellow "1" below 960 px and as the favicon; tokens `--brand-name-amp`, `--brand-name-one`, `--brand-tile`, `--on-brand-tile`; `--brand-mark` and the star retired (§1, §2, §3.1, §3.10, §5.7, §6, §12). |
+| 2.4 | 29 Oct 2026 | Feature 038: grids add up in every display currency (§4.4); `ConfirmDialog acknowledgeOnly` (§5.3); the approve warning and disabled Approve for approval over planned cost (§5.6). |

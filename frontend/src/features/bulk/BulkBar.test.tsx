@@ -82,11 +82,11 @@ describe('012 FR-012, FR-013, FR-021: Submit for approval and the results', () =
 
     const dialog = await screen.findByRole('dialog', { name: 'Submit for approval' });
     expect(
-      await within(dialog).findByText('1 will be submitted · 1 are not ready'),
+      await within(dialog).findByText('1 will be submitted · 1 is not ready'),
     ).toBeInTheDocument();
     expect(within(dialog).getByText('2 fields needed: Owner, Company code')).toBeInTheDocument();
     await expectNoAxeViolations(dialog);
-    await user.click(within(dialog).getByRole('button', { name: 'Submit 1 activities' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Submit 1 activity' }));
 
     const panel = await screen.findByRole('dialog', { name: 'Results' });
     expect(within(panel).getByText('1 submitted · 1 skipped')).toBeInTheDocument();

@@ -466,6 +466,11 @@ Each requirement traces to **BUS.FIN.080** unless another ID is given.
   manually linked transactions. Links made by FR-007's rules cannot be changed in MAPP; the panel
   says why and where to correct them (GSAP). A missing line item, or one in the recycle bin, is refused
   with a reason. A change made meanwhile by someone else is refused as a version conflict (D-030).
+  *Amended by [038 FR-004 – FR-007](../038-qa-findings/spec.md) (D-359): only people who may import GSAP extracts
+  see not-linked transactions, so linking one needs "Import GSAP extracts" and "Link financial transactions" in the
+  target line item's plan; unlinking needs "Link financial transactions" in the plan of the linked line item; a
+  transaction or line item outside the person's scope answers exactly as a missing one, before permission, version
+  and state.*
 
 **Cross-cutting**
 
@@ -483,6 +488,8 @@ Each requirement traces to **BUS.FIN.080** unless another ID is given.
     ask an administrator" in place of every Financials card, column, filter and page, and the API refuses
     their requests.
   - Every figure, list and count covers only the plans the person may see (014 FR-007).
+  *Amended by [038 FR-004, FR-006](../038-qa-findings/spec.md) (D-359): not-linked transactions belong to no plan and
+  are seen only with "Import GSAP extracts"; "Link financial transactions" is granted only together with it.*
 - **FR-029** (changes 007 FR-030, 006 and 005 delete dialogs): Deleting a line item, activity, initiative,
   campaign or plan with linked transactions MUST say, in the delete dialog: "<n> GSAP transactions are
   linked to it. They stay in MAPP and leave the figures until it is restored." Deleting is still
@@ -545,7 +552,7 @@ below.
 - The Budget & cost view of All work is unchanged (no monthly actuals in this feature).
 - PO and invoice documents (PDF copies, BUS.FIN.060) and invoice approval (BUS.FIN.050) are later.
 - Who may see, import and link follows 014 (D-237, D-301): every default role sees financial data; Administrator,
-  Global planner and Planner link; only Administrator imports.
+  Global planner and Planner link; only Administrator imports. *Amended by 038 (D-359): only Administrator links and imports by default.*
 
 ### Questions for Shell (to confirm; the defaults above apply until answered)
 
@@ -554,7 +561,7 @@ below.
 | Q-015 (gap analysis) | Please share **"the note on financial transactions"** that BUS.FIN.080 refers to. It is not in the BRD PDF. Which transaction types and fields must users see, and where? | Four types, the fields of FR-001, the placements of FR-015–FR-025 |
 | Q-015a | Is "Accrued" the latest month's accrual position per PO, or a running total? | Latest accrual month in the data |
 | Q-015b | Which figure do planners compare with planned cost first: committed (PO), invoiced or paid? | Committed, with a meter; all four shown |
-| Q-015c | Is the HX key always "HX" + the MAPP line-item number? Who fixes rows GSAP cannot match? | Yes; people with "Link financial transactions" (Administrator, Global planner, Planner) link them by hand (FR-026) |
+| Q-015c | Is the HX key always "HX" + the MAPP line-item number? Who fixes rows GSAP cannot match? | Yes; people with "Link financial transactions" (Administrator, Global planner, Planner) link them by hand (FR-026). *Superseded by D-359 (038): people who import GSAP extracts (Administrator) link them by hand.* |
 | Q-015d | Which rate converts a transaction: the posting-date rate or the current rate? (with Q-012) | The current rate, as every conversion (D-303) |
 | Q-015e | How often will GSAP extracts arrive during the freeze, and in which layout (PGSI 941 sample files)? | Manual file import in MAPP's documented CSV layout |
 | Q-015f | Who may see POs, invoices and payments (with Q-010)? | Every default role sees them; importing is for Administrators (014 Table B) |

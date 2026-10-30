@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { asApiError } from '@/api/errors';
 import { invalidateAllButSession } from '@/features/approvals';
+import { useAccess } from '@/session/access';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { recordHref } from '@/ui/record-links';
 import { useUndoableDelete } from '@/ui/useUndoableDelete';
@@ -16,10 +17,7 @@ export interface DeletePurchaseRequestDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-/**
- * Delete purchase request (032 FR-042, FR-055): names the lines and the line items whose money is
- * released, then moves it to the recycle bin with Undo and opens its first line item.
- */
+/** Delete purchase request with Undo: never asks for it again. */
 export function DeletePurchaseRequestDialog({
   purchaseRequest,
   open,
@@ -27,22 +25,32 @@ export function DeletePurchaseRequestDialog({
 }: DeletePurchaseRequestDialogProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { has } = useAccess();
   const afterDelete = useUndoableDelete({ invalidate: [purchaseRequestKeys.all] });
-  const remove = useMutation({
-    mutationFn: () => deletePurchaseRequest(purchaseRequest.id),
-    onSettled: () => invalidateAllButSession(queryClient),
-  });
+  const remove = useMutation({ mutationFn: () => deletePurchaseRequest(purchaseRequest.id) });
   const lineItemIds = purchaseRequest.lines.map((line) => line.lineItem.id);
   const [firstLineItem] = lineItemIds;
 
-  function confirm() {
-    remove.mutate(undefined, {
-      onSuccess: (result) => {
-        onOpenChange(false);
-        afterDelete(result);
-        void navigate(firstLineItem ? recordHref('lineItem', firstLineItem) : '/purchase-requests');
-      },
-    });
+  function landing(): string {
+    if (has('purchaseRequests.list') || !firstLineItem) {
+      return '/purchase-requests';
+    }
+    return recordHref('lineItem', firstLineItem);
+  }
+
+  async function confirm() {
+    try {
+      const result = await remove.mutateAsync();
+      onOpenChange(false);
+      await navigate(landing());
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey.includes(purchaseRequest.id),
+      });
+      afterDelete(result);
+    } catch {
+      // The refusal is shown in the dialog (remove.error).
+    }
+    await invalidateAllButSession(queryClient);
   }
 
   return (
@@ -52,7 +60,7 @@ export function DeletePurchaseRequestDialog({
       title={deleteTitle(purchaseRequest.name)}
       confirmLabel={DELETE_PR}
       tone="danger"
-      onConfirm={confirm}
+      onConfirm={() => void confirm()}
       busy={remove.isPending}
     >
       <p>{deleteText(lineItemIds)}</p>

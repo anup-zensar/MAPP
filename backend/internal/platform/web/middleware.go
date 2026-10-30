@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/url"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -40,7 +41,6 @@ func LogRequest() gin.HandlerFunc {
 	}
 }
 
-// countStatements gives the request a statement counter and returns the context that holds it.
 func countStatements(c *gin.Context) context.Context {
 	counted := querycount.With(c.Request.Context())
 	c.Request = c.Request.WithContext(counted)
@@ -64,6 +64,9 @@ func SecurityHeaders() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("Cache-Control", "no-store")
 		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("Referrer-Policy", "no-referrer")
 		c.Next()
 	}
 }
@@ -72,7 +75,8 @@ func SecurityHeaders() gin.HandlerFunc {
 func SameOrigin() gin.HandlerFunc {
 	crossOrigin := http.NewCrossOriginProtection()
 	return func(c *gin.Context) {
-		if !isLocalHost(c.Request.Host) || crossOrigin.Check(c.Request) != nil {
+		r := c.Request
+		if !isLocalHost(r.Host) || crossOrigin.Check(r) != nil || foreignReferer(r) {
 			RespondError(c, errs.BadRequest(otherSiteMessage))
 			return
 		}
@@ -80,7 +84,36 @@ func SameOrigin() gin.HandlerFunc {
 	}
 }
 
-// LimitBody caps every body at defaultMax bytes, or at the limit byOperation gives its operation.
+// foreignReferer covers clients that send neither Origin nor Sec-Fetch-Site, which the standard check lets through.
+func foreignReferer(r *http.Request) bool {
+	referer := r.Header.Get("Referer")
+	if isSafeMethod(r.Method) || referer == "" || r.Header.Get("Origin") != "" || r.Header.Get("Sec-Fetch-Site") != "" {
+		return false
+	}
+	parsed, err := url.Parse(referer)
+	return err != nil || !strings.EqualFold(parsed.Host, r.Host)
+}
+
+func isSafeMethod(method string) bool {
+	return method == http.MethodGet || method == http.MethodHead || method == http.MethodOptions
+}
+
+func RejectControlInPath() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		for _, param := range c.Params {
+			if strings.ContainsFunc(param.Value, isAnyControl) {
+				RespondError(c, errs.NotFound(notFoundMessage))
+				return
+			}
+		}
+		c.Next()
+	}
+}
+
+func isAnyControl(r rune) bool {
+	return r < 0x20 || r == 0x7f
+}
+
 func LimitBody(defaultMax int64, byOperation map[string]int64) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		limit, found := byOperation[Operation(c)]
@@ -99,7 +132,7 @@ func isLocalHost(hostAndPort string) bool {
 	}
 	host = strings.TrimSuffix(strings.TrimPrefix(host, "["), "]")
 	switch strings.ToLower(host) {
-	case "127.0.0.1", "localhost", "::1":
+	case loopbackIPv4, "localhost", loopbackIPv6:
 		return true
 	}
 	return false

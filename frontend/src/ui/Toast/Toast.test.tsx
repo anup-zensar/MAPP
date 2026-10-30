@@ -6,7 +6,7 @@ import { ToastProvider } from './Toast';
 import { useToast } from './useToast';
 import type { ToastOptions } from './useToast';
 
-const DELETED = "Sample folder 'Ideas' moved to the recycle bin";
+const DELETED = "Sample folder 'Ideas' deleted";
 
 /** A page that shows the given message when its button is pressed. */
 function ShowButton({ toast }: { toast: ToastOptions }) {
@@ -136,6 +136,20 @@ describe('ToastProvider and useToast', () => {
     expect(announcement).toHaveAttribute('aria-live', 'assertive');
     await waitFor(() =>
       expect(announcement).toHaveTextContent(`${DELETED} Restore it from the recycle bin`),
+    );
+  });
+
+  it('038 FR-049: a message with an action reads "<message> — <action>"', async () => {
+    const user = userEvent.setup();
+    renderWithToasts({
+      message: "Plan 'FY2026 Lubricants' restored",
+      action: { label: 'View', altText: 'Open the plan', onClick: vi.fn() },
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Show message' }));
+
+    await waitFor(() =>
+      expect(messages()).toHaveTextContent("Plan 'FY2026 Lubricants' restored — View"),
     );
   });
 

@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { ScrollBox } from '@/features/financials';
 import { useFormatters } from '@/format/useFormatters';
 import { Card } from '@/ui/Card/Card';
 import type { SpaView } from './api';
@@ -41,46 +42,48 @@ export function SpaDimension({ view, onDimension, onTrace }: SpaDimensionProps) 
       }
     >
       {breakdown.countsInEach && <p className={styles.note}>{DIMENSION.countsInEach}</p>}
-      <table className={styles.table}>
-        <caption className="visually-hidden">Planned cost by {breakdown.label}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{breakdown.label}</th>
-            <th scope="col" className={styles.numeric}>
-              Planned cost
-            </th>
-            <th scope="col">{DIMENSION.share}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {breakdown.rows.map((row) => (
-            <tr key={row.key}>
-              <th scope="row">{row.label}</th>
-              <td className={styles.numeric}>
-                <FigureButton
-                  figure={`${breakdown.label}: ${row.label}`}
-                  value={row.amount}
-                  trace={row.trace}
-                  onTrace={onTrace}
-                />
-              </td>
-              <td>
-                <div className={styles.barCell}>
-                  <span className={styles.shareText}>{row.share}%</span>
-                  <Bar length={row.bar} series="share" />
-                </div>
-              </td>
+      <ScrollBox label={`Planned cost by ${breakdown.label}`} className={styles.scroll}>
+        <table className={styles.table}>
+          <caption className="visually-hidden">Planned cost by {breakdown.label}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{breakdown.label}</th>
+              <th scope="col" className={styles.numeric}>
+                Planned cost
+              </th>
+              <th scope="col">{DIMENSION.share}</th>
             </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr className={styles.totals}>
-            <th scope="row">Total</th>
-            <td className={styles.numeric}>{money(breakdown.total)}</td>
-            <td />
-          </tr>
-        </tfoot>
-      </table>
+          </thead>
+          <tbody>
+            {breakdown.rows.map((row) => (
+              <tr key={row.key}>
+                <th scope="row">{row.label}</th>
+                <td className={styles.numeric}>
+                  <FigureButton
+                    figure={`${breakdown.label}: ${row.label}`}
+                    value={row.amount}
+                    trace={row.trace}
+                    onTrace={onTrace}
+                  />
+                </td>
+                <td>
+                  <div className={styles.barCell}>
+                    <span className={styles.shareText}>{row.share}%</span>
+                    <Bar length={row.bar} series="share" />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className={styles.totals}>
+              <th scope="row">Total</th>
+              <td className={styles.numeric}>{money(breakdown.total)}</td>
+              <td />
+            </tr>
+          </tfoot>
+        </table>
+      </ScrollBox>
     </Card>
   );
 }

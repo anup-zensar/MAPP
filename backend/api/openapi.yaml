@@ -29,6 +29,12 @@ info:
     - Every response has the header Cache-Control no-store.
     - Every response has the header X-Request-ID, a random ID the server makes and writes in its log
       records (feature 024); an X-Request-ID sent by the client is ignored.
+    - Every response has the headers Content-Security-Policy, X-Frame-Options, Referrer-Policy and
+      X-Content-Type-Options (feature 038, FR-015).
+    - Every operation with a JSON body answers 400 validation_failed naming the field when a string holds a
+      control character or an unpaired surrogate (038 FR-017), and 413 too_large (TooLarge) when the body is
+      larger than the operation's limit (038 FR-054). A path parameter holding a control character answers
+      404 not_found.
 servers:
   - url: http://127.0.0.1:8080
     description: Local API (development)
@@ -187,6 +193,7 @@ paths:
       description: |
         The e-mail is compared ignoring letter case and surrounding spaces; the password exactly.
         On success the session cookie is set. Only available when demo sign-in is enabled.
+        Too many failed attempts answer 429 too_many_attempts, checked before the credentials (038 FR-014).
       security: []
       requestBody:
         required: true
@@ -212,6 +219,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyAttempts"
         default:
           $ref: "#/components/responses/Error"
   /api/v1/auth/sign-out:
@@ -2772,7 +2781,9 @@ paths:
       description: |
         Only the name is required (FR-005). The API stores exactly what it receives: the defaults of
         FR-003 (owner and dates from the plan, yes/no attributes No) are filled in and shown by the form.
-        Every problem is reported at once, including a name already used in the plan.
+        Every problem is reported at once, including a name already used in the plan. startDate and endDate
+        are checked by the service: an impossible date answers validation_failed "Enter a valid date." on
+        that field (038 FR-054).
       requestBody:
         required: true
         content:
@@ -2827,7 +2838,8 @@ paths:
       description: |
         Allowed whatever the plan's status (FR-018). Refused with validation_failed when the new dates
         would leave initiatives outside them (FR-007), naming each. A save that changes nothing answers
-        the campaign unchanged, with no new version and no log entry.
+        the campaign unchanged, with no new version and no log entry. An impossible date answers
+        validation_failed "Enter a valid date." on that field (038 FR-054).
       requestBody:
         required: true
         content:
@@ -2986,7 +2998,7 @@ paths:
       summary: Add an initiative to a campaign
       description: >-
         Only the name is required (FR-005); the dates must lie inside the campaign's dates when it has both (R3,
-        FR-006).
+        FR-006). An impossible date answers validation_failed "Enter a valid date." on that field (038 FR-054).
       requestBody:
         required: true
         content:
@@ -3040,7 +3052,8 @@ paths:
       summary: Save an initiative's form (every editable field and the version it started from)
       description: >-
         Refused with validation_failed when the dates leave the campaign's dates (R3) or would leave activities outside
-        them (FR-007; only the start date of ongoing activities).
+        them (FR-007; only the start date of ongoing activities). An impossible date answers validation_failed
+        "Enter a valid date." on that field (038 FR-054).
       requestBody:
         required: true
         content:
@@ -3980,7 +3993,9 @@ paths:
       summary: Approve the current level of the open round (FR-014, FR-015, FR-017, FR-018)
       description: >-
         Any signed-in person may approve (D-020); a person who is not an approver of the level is recorded as acting on
-        behalf of the level's approvers. Approving the last level makes the activity Approved.
+        behalf of the level's approvers. Approving the last level makes the activity Approved. A person holding
+        neither approvals permission is refused with 403 forbidden first (038 FR-056); 409 not_allowed when
+        approval over planned cost is set to refuse (038 FR-020).
       parameters:
         - $ref: "#/components/parameters/ActivityId"
       requestBody:
@@ -5218,6 +5233,8 @@ paths:
       tags: [Roles and access]
       operationId: createRole
       summary: Create a role (the web app fills the form from another role for "Copy of …")
+      description: >-
+        finance.link without finance.import answers 400 validation_failed on the field "permissions" (038 FR-006).
       requestBody:
         required: true
         content:
@@ -5267,7 +5284,8 @@ paths:
       summary: Change a role's name, description, permissions or default scope
       description: >-
         Only the fields to change, plus the version (D-203). The Administrator role refuses every change with 409
-        not_allowed ("The Administrator role always has every permission and can't be changed.").
+        not_allowed ("The Administrator role always has every permission and can't be changed."). finance.link
+        without finance.import answers 400 validation_failed on the field "permissions" (038 FR-006).
       requestBody:
         required: true
         content:
@@ -5748,6 +5766,9 @@ paths:
       tags: [Financials]
       operationId: getFinancialTransaction
       summary: One transaction with every field, its link and its import
+      description: >-
+        A transaction the person may not see (a not-linked one without finance.import, or one outside their scope)
+        answers 404 not_found before any other check (038 FR-004, FR-007).
       parameters:
         - $ref: "#/components/parameters/FinancialTransactionId"
       responses:
@@ -5774,6 +5795,9 @@ paths:
         Only for transactions whose link state is notLinked. A rule-based link answers 409 not_allowed
         ("Linked by GSAP data (HX key HX1006) — correct it in GSAP."). A missing line item, or one in
         the recycle bin, answers 400 validation_failed on lineItemId. Logged (verb "linked").
+        Checks in this order (038 FR-005, FR-007): a transaction the person may not see answers 404 not_found;
+        then finance.import and finance.link in the target plan; then the version; then the state. A target
+        line item outside the person's scope answers the same 400 as a missing one.
       parameters:
         - $ref: "#/components/parameters/FinancialTransactionId"
       requestBody:
@@ -5810,6 +5834,8 @@ paths:
         Only when matchedBy is manual; otherwise 409 not_allowed ("Only links made by a person can be
         undone here."). The transaction is matched again by the rules and usually becomes notLinked
         with its reason. Logged (verb "unlinked").
+        Checks in this order (038 FR-005, FR-007): a transaction the person may not see answers 404 not_found;
+        then finance.link in the linked line item's plan; then the version; then the state.
       parameters:
         - $ref: "#/components/parameters/FinancialTransactionId"
       requestBody:
@@ -6470,6 +6496,9 @@ paths:
       tags: [Purchase requests]
       operationId: approvePurchaseRequest
       summary: Approve the waiting level as one of its approvers (self-approval allowed, FR-027)
+      description: >-
+        A person holding neither approvals permission is refused with 403 forbidden first (038 FR-056); 409
+        not_allowed when approval over planned cost is set to refuse (038 FR-020).
       requestBody:
         required: true
         content:
@@ -6681,7 +6710,10 @@ paths:
     put:
       tags: [Settings]
       operationId: saveOverspendConfiguration
-      summary: Change the setting new budgets start with (needs settings.manage); existing budgets keep theirs
+      summary: >-
+        Change the setting new budgets start with and whether approving is refused while an activity's line items
+        exceed its planned cost (needs settings.manage)
+      description: Existing budgets keep their setting.
       requestBody:
         required: true
         content:
@@ -7588,7 +7620,9 @@ paths:
       description: |
         Every figure covers only the plans of the year the person may see; committed and actual cover only the
         plans whose financial data they may see; global budgets appear only to holders of globalBudgets.view.
-        Amounts are in the chosen currency (default the person's display currency).
+        Amounts are in the chosen currency (default the person's display currency). A well-formed but unknown,
+        inactive or out-of-scope currency is not refused: the default is used and the answer's filters show it
+        (036 FR-007, 038 FR-012).
       parameters:
         - $ref: "#/components/parameters/DashboardYear"
         - $ref: "#/components/parameters/DashboardPlanType"
@@ -7614,6 +7648,9 @@ paths:
         - Dashboards
       operationId: getRegionalDashboard
       summary: The Regional dashboard of one market (team), with a plan's campaigns (feature 036, FR-020 – FR-022)
+      description: >-
+        A well-formed but unknown, inactive or out-of-scope currency or teamId is not refused: the default is used
+        and the answer's filters show it (036 FR-007, 038 FR-012).
       parameters:
         - $ref: "#/components/parameters/DashboardYear"
         - $ref: "#/components/parameters/DashboardPlanType"
@@ -7641,6 +7678,9 @@ paths:
         - Dashboards
       operationId: exportExecutiveDashboard
       summary: The Executive dashboard as a PowerPoint or PDF file (feature 036, FR-024)
+      description: >-
+        A well-formed but unknown, inactive or out-of-scope currency is not refused: the default is used (036 FR-007,
+        038 FR-012).
       parameters:
         - $ref: "#/components/parameters/ExportFormat"
         - $ref: "#/components/parameters/DashboardYear"
@@ -7663,6 +7703,9 @@ paths:
         - Dashboards
       operationId: exportRegionalDashboard
       summary: The Regional dashboard as a PowerPoint or PDF file (feature 036, FR-024)
+      description: >-
+        A well-formed but unknown, inactive or out-of-scope currency or teamId is not refused: the default is used
+        (036 FR-007, 038 FR-012).
       parameters:
         - $ref: "#/components/parameters/ExportFormat"
         - $ref: "#/components/parameters/DashboardYear"
@@ -8567,6 +8610,27 @@ components:
           schema:
             type: string
             format: binary
+    # Feature 038 QA findings
+    TooManyAttempts:
+      description: >-
+        Too many failed sign-ins for this e-mail (5) or from this client (20) within 15 minutes; refused for 15 minutes
+        from the failure that reached the limit, also with the right password (too_many_attempts, FR-014).
+      headers:
+        Retry-After:
+          description: Seconds until sign-in may be tried again.
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    TooLarge:
+      description: The request body is larger than the operation's limit (too_large, FR-054).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
   schemas:
     # Feature 037 Overspend control
     OverspendMode:
@@ -8591,21 +8655,34 @@ components:
           $ref: "#/components/schemas/RecordRef"
         leftToPlan:
           $ref: "#/components/schemas/Money"
+    OverspendApprovalMode:
+      type: string
+      description: >-
+        What happens when someone approves an activity, a purchase request or its change while an activity's line
+        items exceed its planned cost (038 FR-018): warn the approver (default) or refuse the approval.
+      enum: [warn, refuse]
     OverspendConfiguration:
       type: object
       additionalProperties: false
-      required: [defaultMode, version, updatedAt, updatedBy, canChange]
+      required: [defaultMode, approvalOverPlannedCost, version, updatedAt, updatedBy, canChange]
       properties:
         defaultMode:
           $ref: "#/components/schemas/OverspendMode"
+        approvalOverPlannedCost:
+          $ref: "#/components/schemas/OverspendApprovalMode"
         version:
           type: integer
           minimum: 1
         updatedAt:
-          type: string
-          format: date-time
+          description: Null while the setting has never been saved (038 FR-057).
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
         updatedBy:
-          $ref: "#/components/schemas/ActorRef"
+          oneOf:
+            - $ref: "#/components/schemas/ActorRef"
+            - type: "null"
         canChange:
           $ref: "#/components/schemas/ActionAvailability"
     OverspendConfigurationInput:
@@ -8617,6 +8694,21 @@ components:
           type: integer
         defaultMode:
           type: string
+        approvalOverPlannedCost:
+          description: Absent keeps the stored value.
+          type: string
+    ActivityOverage:
+      type: object
+      additionalProperties: false
+      description: >-
+        An activity of the round whose line items exceed its planned cost (negative unassigned planned cost, domain
+        model §4.3), in the plan currency (038 FR-019, FR-021).
+      required: [activity, overBy]
+      properties:
+        activity:
+          $ref: "#/components/schemas/RecordRef"
+        overBy:
+          $ref: "#/components/schemas/Money"
     # Features 032 and 033 Purchase requests and the simulated GSAP purchase order
     PurchaseRequestStatus:
       type: string
@@ -8648,10 +8740,15 @@ components:
           type: integer
           minimum: 1
         updatedAt:
-          type: string
-          format: date-time
+          description: Null while the setting has never been saved (038 FR-057).
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
         updatedBy:
-          $ref: "#/components/schemas/ActorRef"
+          oneOf:
+            - $ref: "#/components/schemas/ActorRef"
+            - type: "null"
         canChange:
           $ref: "#/components/schemas/ActionAvailability"
     PurchaseRequestConfigurationInput:
@@ -9351,7 +9448,7 @@ components:
     PurchaseRequestApproval:
       type: object
       additionalProperties: false
-      required: [purchaseRequestId, purchaseRequestName, purchaseRequestVersion, status, changePending, owner, moaApprover, sections]
+      required: [purchaseRequestId, purchaseRequestName, purchaseRequestVersion, status, changePending, owner, moaApprover, sections, overPlannedCost]
       properties:
         purchaseRequestId:
           type: string
@@ -9379,10 +9476,15 @@ components:
           maxItems: 2
           items:
             $ref: "#/components/schemas/PurchaseRequestApprovalSection"
+        overPlannedCost:
+          type: array
+          description: The activities whose line items exceed their planned cost (038 FR-019); empty when none.
+          items:
+            $ref: "#/components/schemas/ActivityOverage"
     PurchaseRequestSubmission:
       type: object
       additionalProperties: false
-      required: [purchaseRequestId, version, kind, roundKind, available, reason, ready, problems, workflow, levels]
+      required: [purchaseRequestId, version, kind, roundKind, available, reason, ready, problems, workflow, levels, outcomes]
       properties:
         purchaseRequestId:
           type: string
@@ -9411,6 +9513,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ApprovalWorkflowLevel"
+        outcomes:
+          type: array
+          description: The same outcomes as getApprovalSubmission (038 FR-027).
+          items:
+            $ref: "#/components/schemas/ApprovalSubmissionLevel"
     PurchaseRequestSubmitRequest:
       type: object
       additionalProperties: false
@@ -9561,6 +9668,8 @@ components:
             - not_ready
             - forbidden
             - over_budget
+            - too_many_attempts
+            - too_large
         message:
           type: string
           description: Plain-language message for the user (never technical details).
@@ -9582,7 +9691,7 @@ components:
             submitting an activity).
           items:
             $ref: "#/components/schemas/ReadinessGroup"
-      description: "Every failure. Codes added by 002-014: in_use, cannot_restore (002), not_allowed (003), not_ready with missing (004), parent_deleted_permanently (011), forbidden (014: 403, refused by permission or scope; D-299). A record outside the person's access answers 404 not_found, like a missing one (022)."
+      description: "Every failure. Codes added by 002-014: in_use, cannot_restore (002), not_allowed (003), not_ready with missing (004), parent_deleted_permanently (011), forbidden (014: 403, refused by permission or scope; D-299), too_many_attempts (038: 429 on sign-in, with Retry-After), too_large (038: 413, the body is over the operation's limit). A record outside the person's access answers 404 not_found, like a missing one (022)."
     FieldError:
       type: object
       additionalProperties: false
@@ -16301,6 +16410,7 @@ components:
         - latestDecline
         - viewer
         - actions
+        - overPlannedCost
       properties:
         activityId:
           type: string
@@ -16348,6 +16458,11 @@ components:
           $ref: "#/components/schemas/ApprovalViewer"
         actions:
           $ref: "#/components/schemas/ApprovalActionSet"
+        overPlannedCost:
+          type: array
+          description: The activities whose line items exceed their planned cost (038 FR-019); empty when none.
+          items:
+            $ref: "#/components/schemas/ActivityOverage"
     SubmitProblem:
       type: object
       additionalProperties: false
@@ -17005,6 +17120,8 @@ components:
         - count
         - declined
         - submitted
+        - yearFrom
+        - yearTo
       properties:
         count:
           type: integer
@@ -17015,6 +17132,18 @@ components:
         submitted:
           type: integer
           minimum: 0
+        yearFrom:
+          description: >-
+            The first plan year the count covers — the earliest plan year of the person's activities; All work opens
+            on yearFrom – yearTo (038 FR-032). Null when there are none.
+          oneOf:
+            - type: integer
+            - type: "null"
+        yearTo:
+          description: The last plan year the count covers — at most four after yearFrom; null when there are none.
+          oneOf:
+            - type: integer
+            - type: "null"
     HomeWaitingCounts:
       type: object
       additionalProperties: false
@@ -20714,7 +20843,7 @@ components:
     FinancialTypeCounts:
       type: object
       additionalProperties: false
-      required: [all, purchaseOrder, invoice, payment, accrual, notLinked]
+      required: [all, purchaseOrder, invoice, payment, accrual]
       properties:
         all:
           type: integer
@@ -20727,6 +20856,7 @@ components:
         accrual:
           type: integer
         notLinked:
+          description: Omitted for people who may not see not-linked transactions (without finance.import, 038 FR-004).
           type: integer
     FinancialPlanChoice:
       type: object
@@ -21575,6 +21705,7 @@ components:
         - otherYears
         - noDates
         - childrenNotPhased
+        - negativeBalanceCount
       properties:
         recordType:
           type: string
@@ -21602,6 +21733,12 @@ components:
             - $ref: "#/components/schemas/Money"
             - type: "null"
         childrenNotPhased:
+          type: integer
+          minimum: 0
+        negativeBalanceCount:
+          description: >-
+            How many activities below the row have line items above their planned cost, so their months add up to
+            more than it (038 FR-024).
           type: integer
           minimum: 0
     BudgetByMonth:
@@ -21754,7 +21891,7 @@ components:
     SpaPeriods:
       type: object
       additionalProperties: false
-      required: [quarters, months, notScheduled, notScheduledTrace]
+      required: [quarters, months, notScheduled, notScheduledTrace, linesAbovePlannedCost, linesAbovePlannedCostTrace]
       properties:
         quarters:
           type: array
@@ -21765,11 +21902,24 @@ components:
           items:
             $ref: "#/components/schemas/SpaPeriod"
         notScheduled:
-          description: Planned cost not placed in a month (no dates, line items above planned cost); null when 0.00.
+          description: >-
+            Planned cost not placed in a month; never negative (line items above planned cost are in
+            linesAbovePlannedCost, 038 FR-023); null when 0.00.
           oneOf:
             - $ref: "#/components/schemas/Money"
             - type: "null"
         notScheduledTrace:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpaContribution"
+        linesAbovePlannedCost:
+          description: >-
+            The total by which activities' line items exceed their planned cost (038 FR-023); quarters + notScheduled −
+            linesAbovePlannedCost = planned cost. notScheduled is never negative. Null when none.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        linesAbovePlannedCostTrace:
           type: array
           items:
             $ref: "#/components/schemas/SpaContribution"
@@ -22992,7 +23142,7 @@ components:
     DashboardMonths:
       type: object
       additionalProperties: false
-      required: [items, noDates, otherYears, paidOutsideYear]
+      required: [items, noDates, otherYears, paidOutsideYear, negativeBalanceCount]
       properties:
         items:
           type: array
@@ -23013,6 +23163,12 @@ components:
           oneOf:
             - $ref: "#/components/schemas/Money"
             - type: "null"
+        negativeBalanceCount:
+          description: >-
+            How many activities in scope have line items above their planned cost, so their months add up to more
+            than it (038 FR-024).
+          type: integer
+          minimum: 0
     DashboardMonth:
       type: object
       additionalProperties: false

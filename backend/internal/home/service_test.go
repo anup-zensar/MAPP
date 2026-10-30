@@ -15,8 +15,7 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// My teams covers the plans with at least one of the person's teams, each once even when two of its teams
-// are the person's; Everything covers every plan (FR-003, FR-004).
+// A plan with two of the person's teams is covered once.
 func TestPlansInScope_MyTeamsAndEverything_FR003_FR004(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()
@@ -49,7 +48,6 @@ func TestPlansInScope_MyTeamsAndEverything_FR003_FR004(t *testing.T) {
 	}
 }
 
-// Only myTeams and everything are scopes; anything else is refused on the field scope.
 func TestScope_Invalid(t *testing.T) {
 	t.Parallel()
 	for _, text := range []string{"myTeams", "everything"} {
@@ -67,10 +65,6 @@ func TestScope_Invalid(t *testing.T) {
 	assertError(t, err, scopeRefused)
 }
 
-// User story 1 — See my work at a glance.
-
-// The cards count the plans in scope by status, the activities the person owns with the Declined and
-// Submitted ones, and what waits for their approval with the oldest "waiting since" (FR-005, D-175).
 func TestSummary_Counts_FR005(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()
@@ -78,9 +72,10 @@ func TestSummary_Counts_FR005(t *testing.T) {
 	published.Status = "published"
 	f.plans = []Plan{published, newPlan("P-1002", "FY2026 Mobility China", 2026, mobilityChina),
 		newPlan("P-1003", "FY2027 Global Brand", 2027, globalMarketingOps)}
+	plan := errs.RecordRef{Type: "plan", ID: "P-1001"} // the card counts by plan year
 	f.activities[priya.ID] = []Activity{
-		{ID: "A-1001", Status: "created"}, {ID: "A-1004", Status: "submitted"}, {ID: "A-1005", Status: "declined"},
-		{ID: "A-1002", Status: "approved", DisplayStatus: "inProgress"},
+		{ID: "A-1001", Plan: plan, Status: "created"}, {ID: "A-1004", Plan: plan, Status: "submitted"},
+		{ID: "A-1005", Plan: plan, Status: "declined"}, {ID: "A-1002", Plan: plan, Status: "approved", DisplayStatus: "inProgress"},
 	}
 	f.waiting[priya.ID] = []Waiting{
 		{ActivityID: "A-1009", WaitingSince: now.Add(-2 * time.Hour)}, // submitted first, but reached its level later
@@ -100,8 +95,8 @@ func TestSummary_Counts_FR005(t *testing.T) {
 	if all.Scope != ScopeEverything || all.Plans != (PlanCounts{Count: 3, Published: 1, Draft: 2}) {
 		t.Errorf("Everything: scope %q, plans %+v; want 1 published, 2 draft", all.Scope, all.Plans)
 	}
-	if mine.ActivitiesOwned != (ActivityCounts{Count: 4, Declined: 1, Submitted: 1}) {
-		t.Errorf("activities owned = %+v, want 4 with 1 declined and 1 submitted", mine.ActivitiesOwned)
+	if c := countsText(mine.ActivitiesOwned); c != "4 (1 declined, 1 submitted) in 2026–2026" {
+		t.Errorf("activities owned = %s, want 4 with 1 declined and 1 submitted", c)
 	}
 	if w := mine.WaitingForMe; w.Count != 2 || w.OldestWaitingSince == nil || !w.OldestWaitingSince.Equal(now.Add(-50*time.Hour)) {
 		t.Errorf("waiting for me = %+v, want 2, the oldest waiting for 50 hours", w)
@@ -112,9 +107,7 @@ func TestSummary_Counts_FR005(t *testing.T) {
 	}
 }
 
-// Waiting for my approval is the Waiting for me tab of the Approvals page, in its order (oldest first): the
-// first 5 with "Level n of m", owner, plan, planned cost in the display currency and since when each waits,
-// and how many wait in all (FR-013, US3 scenario 5).
+// Waiting for my approval is the Approvals page's Waiting for me tab, oldest first: the first 5, and the total.
 func TestWaiting_SameListOldestFirst_FR013(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()
@@ -148,8 +141,7 @@ func TestWaiting_SameListOldestFirst_FR013(t *testing.T) {
 	}
 }
 
-// With 50 plans in scope and 5,000 activities, all owned by the person and each needing attention, every
-// Home operation answers within 300 ms on the fakes: each is one pass over its inputs (SC-004).
+// Every Home operation is one pass over its inputs: 50 plans and 5,000 activities answer within 300 ms.
 func TestHome_LargeScope_SC004(t *testing.T) {
 	if testing.Short() || race.Enabled {
 		t.Skip("a timing test: it runs without -short and without the race detector, in CI's Timing tests step")
@@ -195,9 +187,7 @@ func TestHome_LargeScope_SC004(t *testing.T) {
 	}
 }
 
-// Recent changes asks the activity log for the 10 newest entries of the plans in scope: My teams names the
-// person's team plans, Everything every plan (nil); My teams without team plans answers an empty page
-// without asking; another scope is refused (FR-015).
+// My teams without team plans answers an empty page without asking the activity log.
 func TestRecentChanges_Scope_FR015(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()

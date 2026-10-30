@@ -20,7 +20,7 @@ import type {
   FinancialTransactionRow,
 } from './gsap-financials';
 import styles from './FinancialsSection.module.css';
-import { formatMonth, moneyText } from './line-item-math';
+import { moneyText } from './line-item-math';
 
 /** The four GSAP figures as table cells, numbers right-aligned under their headers. */
 function FigureCells({ figures }: { figures: FinancialFiguresData }) {
@@ -98,7 +98,7 @@ function TableBlock({ title, children }: { title: string; children: ReactNode })
 }
 
 function TransactionRows({ rows }: { rows: FinancialTransactionRow[] }) {
-  const { date } = useFormatters();
+  const { date, month } = useFormatters();
   return (
     <tbody>
       {rows.map((row) => (
@@ -107,7 +107,7 @@ function TransactionRows({ rows }: { rows: FinancialTransactionRow[] }) {
             <span className={styles.rowName}>{row.name}</span>
             <span className={styles.rowMeta}>
               {TYPE_WORD[row.type]}
-              {row.accrualMonth ? ` · ${formatMonth(row.accrualMonth)}` : ''}
+              {row.accrualMonth ? ` · ${month(row.accrualMonth)}` : ''}
               {row.vendor ? ` · ${row.vendor.name}` : ''}
             </span>
           </td>

@@ -1,7 +1,6 @@
 package dashboard
 
 import (
-	"cmp"
 	"context"
 	"slices"
 	"time"
@@ -12,7 +11,6 @@ import (
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/date"
-	"mapp/internal/platform/errs"
 	"mapp/internal/platform/money"
 	"mapp/internal/purchaserequest"
 )
@@ -69,7 +67,7 @@ func (s *Service) read(ctx context.Context, a actor.Actor, r request) (*input, e
 	return in, err
 }
 
-// readChoices reads the filters' choices and checks the currency and the market against them.
+// readChoices reads the filters' choices and takes the currency and the market from them.
 func (s *Service) readChoices(ctx context.Context, a actor.Actor, in *input, work allwork.Choices) error {
 	currencies, err := s.deps.Directory.Currencies(ctx, a.ID)
 	if err != nil {
@@ -80,15 +78,11 @@ func (s *Service) readChoices(ctx context.Context, a actor.Actor, in *input, wor
 		return err
 	}
 	in.choices = Choices{Years: yearChoices(years, in.today.Year(), in.query.Year), Teams: teamChoices(work.Teams)}
-	if err = in.chooseCurrency(currencies); err != nil {
-		return err
-	}
+	in.chooseCurrency(currencies)
 	if in.kind != KindRegional {
 		return nil
 	}
-	if err = in.chooseTeam(); err != nil {
-		return err
-	}
+	in.chooseTeam()
 	refs, err := s.deps.Directory.TeamRefs(ctx, []string{in.query.TeamID})
 	ref := teamRef(refs, in.query.TeamID)
 	in.team = &ref
@@ -118,42 +112,33 @@ func (s *Service) readPanels(ctx context.Context, a actor.Actor, in *input) erro
 	return err
 }
 
-func (in *input) chooseCurrency(c Currencies) error {
+// chooseCurrency takes the asked currency of Settings, else the display currency, else US dollars.
+func (in *input) chooseCurrency(c Currencies) {
 	asked := in.query.Currency
-	code := cmp.Or(asked, c.Default)
-	found := false
+	in.query.Currency, in.display = money.BaseCurrency, money.DisplayUSD
 	for _, currency := range c.Items {
 		in.choices.Currencies = append(in.choices.Currencies, CurrencyChoice{Code: currency.Code, Name: currency.Name})
-		if currency.Code == code {
-			found, in.display = true, money.DisplayIn(code, currency.Rate)
+	}
+	for _, code := range []string{asked, c.Default} {
+		if i := slices.IndexFunc(c.Items, func(x Currency) bool { return x.Code == code }); code != "" && i >= 0 {
+			in.query.Currency, in.display = code, money.DisplayIn(code, c.Items[i].Rate)
+			return
 		}
 	}
-	switch {
-	case found:
-		in.query.Currency = code
-	case asked != "":
-		return errs.Validation(errs.FieldError{Field: fieldCurrency, Message: msgCurrency})
-	default:
-		in.query.Currency, in.display = money.BaseCurrency, money.DisplayUSD
-	}
-	return nil
 }
 
-// chooseTeam takes the asked market, else the person's first team by name, else the first team.
-func (in *input) chooseTeam() error {
+// chooseTeam takes the asked market of the choices, else the person's first team by name, else the first team.
+func (in *input) chooseTeam() {
 	teams := in.choices.Teams
-	if in.query.TeamID != "" {
-		if !slices.ContainsFunc(teams, func(t TeamChoice) bool { return t.ID == in.query.TeamID }) {
-			return errs.Validation(errs.FieldError{Field: fieldTeam, Message: msgTeam})
-		}
-		return nil
+	if slices.ContainsFunc(teams, func(t TeamChoice) bool { return t.ID == in.query.TeamID }) {
+		return
 	}
+	in.query.TeamID = ""
 	if i := slices.IndexFunc(teams, func(t TeamChoice) bool { return t.Mine }); i >= 0 {
 		in.query.TeamID = teams[i].ID
 	} else if len(teams) > 0 {
 		in.query.TeamID = teams[0].ID
 	}
-	return nil
 }
 
 // keeps says whether a plan of the year is on the dashboard: its type, its market and, for an export, the plan.

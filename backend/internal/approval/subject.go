@@ -28,6 +28,7 @@ type subject struct {
 	ActivityTypeID string
 	TypeName       string
 	BusinessUnits  []Choice
+	Overages       []Overage
 }
 
 func activitySubject(f ActivityFacts) subject {
@@ -35,14 +36,22 @@ func activitySubject(f ActivityFacts) subject {
 		Kind: KindActivity, ID: f.ID, Name: f.Name, Status: f.Status, DisplayStatus: f.DisplayStatus, Path: f.Path,
 		OwnerID: f.OwnerID, Amount: f.PlannedCost, WorkflowID: f.WorkflowID, StartDate: f.StartDate, Meta: f.Meta,
 		Access: f.Access, Plan: f.Plan, ActivityTypeID: f.ActivityTypeID, TypeName: f.TypeName, BusinessUnits: f.BusinessUnits,
+		Overages: activityOverages(f),
 	}
+}
+
+func activityOverages(f ActivityFacts) []Overage {
+	if f.OverPlannedCost == nil {
+		return nil
+	}
+	return []Overage{{Activity: errs.RecordRef{Type: activityKind, ID: f.ID, Name: f.Name}, OverBy: *f.OverPlannedCost}}
 }
 
 func purchaseSubject(kind SubjectKind, f PurchaseRequestFacts) subject {
 	return subject{
 		Kind: kind, ID: f.ID, Name: f.Name, Status: f.Status, DisplayStatus: f.Status, Path: f.Path, OwnerID: f.OwnerID,
 		MoAApproverID: f.MoAApproverID, Amount: f.Amount, WorkflowID: f.WorkflowID,
-		ModificationWorkflowID: f.ModificationWorkflowID, Meta: f.Meta, Access: f.Access, Plan: f.Plan,
+		ModificationWorkflowID: f.ModificationWorkflowID, Meta: f.Meta, Access: f.Access, Plan: f.Plan, Overages: f.Overages,
 	}
 }
 

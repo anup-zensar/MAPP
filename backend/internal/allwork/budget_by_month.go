@@ -10,17 +10,11 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// Budget by month (feature 016, FR-024, data-model §3.4, D-266): for a plan and each of its campaigns and
-// initiatives, the phased budget against the planned cost by month and by quarter, in the plan currency.
-// All work serves it because it already gathers every record and spread of a plan; the planned cost by month
-// follows the same rules as Budget & cost (010 FR-023): line items by their spread, a positive unassigned
-// balance spread evenly over its activity's months, a negative one never.
+// The planned cost by month follows Budget & cost: line items by their spread, a positive
+// unassigned balance spread evenly over its activity's months, a negative one never.
 
-// msgPlanGone answers a plan that is not stored.
 const msgPlanGone = "This plan no longer exists — someone may have deleted it."
 
-// BudgetByMonth is the Budget by month card of a plan and the panels of its campaigns and initiatives
-// (contract BudgetByMonth): every amount in the plan currency.
 type BudgetByMonth struct {
 	PlanID   string             `json:"planId"`
 	Year     int                `json:"year"`
@@ -29,34 +23,31 @@ type BudgetByMonth struct {
 	Rows     []BudgetByMonthRow `json:"rows"`   // the plan, then each campaign followed by its initiatives
 }
 
-// BudgetByMonthRow is one record of the card (contract BudgetByMonthRow).
 type BudgetByMonthRow struct {
 	RecordType        Level         `json:"recordType"`
 	RecordID          string        `json:"recordId"`
 	ParentID          *string       `json:"parentId"`
 	Name              string        `json:"name"`
-	Method            string        `json:"method"` // none, evenly or custom
+	Method            string        `json:"method"`
 	Months            PhasedPeriods `json:"months"`
 	Quarters          PhasedPeriods `json:"quarters"`
 	OtherYears        *money.Money  `json:"otherYears"` // planned cost outside the plan's year; null when none
 	NoDates           *money.Money  `json:"noDates"`    // planned cost of activities without dates; null when none
 	ChildrenNotPhased int           `json:"childrenNotPhased"`
+
+	NegativeBalanceCount int `json:"negativeBalanceCount"`
 }
 
-// PhasedPeriods are the rows of the card over 12 months or 4 quarters (contract BudgetByMonthPeriods).
 type PhasedPeriods struct {
-	Budget      []*money.Money  `json:"budget"`      // null entries when not phased
-	PlannedCost []money.Money   `json:"plannedCost"` // the planned cost of each period
-	Difference  []*money.Money  `json:"difference"`  // budget − planned cost; null entries when not phased
-	Allocated   *[]*money.Money `json:"allocated"`   // plans and campaigns: the children's phased budgets; null for initiatives
-	Over        []bool          `json:"over"`        // planned cost or allocated above the phased budget
+	Budget      []*money.Money  `json:"budget"` // null entries when not phased
+	PlannedCost []money.Money   `json:"plannedCost"`
+	Difference  []*money.Money  `json:"difference"` // budget − planned cost; null entries when not phased
+	Allocated   *[]*money.Money `json:"allocated"`  // plans and campaigns: the children's phased budgets; null for initiatives
+	Over        []bool          `json:"over"`       // planned cost or allocated above the phased budget
 }
 
-// The phasing methods as stored (rollup.PhasingMethod).
 const methodNone = "none"
 
-// BudgetByMonth returns the Budget by month of the plan planID (FR-024), read in one transaction; a plan that
-// is not stored is not found.
 func (s *Service) BudgetByMonth(ctx context.Context, a actor.Actor, planID string) (BudgetByMonth, error) {
 	var result BudgetByMonth
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -89,7 +80,6 @@ func (s *Service) BudgetByMonth(ctx context.Context, a actor.Actor, planID strin
 	return result, nil
 }
 
-// budgetByMonth works out the card of the one plan of t, of year (data-model §3.4).
 func budgetByMonth(t *tree, year int) BudgetByMonth {
 	plan := t.plans[0]
 	currency := plan.n.PlanCurrency
@@ -118,7 +108,6 @@ func budgetByMonth(t *tree, year int) BudgetByMonth {
 	return result
 }
 
-// monthKeysOf returns the 12 month keys of year.
 func monthKeysOf(year int) []string {
 	keys := make([]string, 0, 12)
 	for m := 1; m <= 12; m++ {
@@ -127,8 +116,6 @@ func monthKeysOf(year int) []string {
 	return keys
 }
 
-// plannedByMonth works out the planned cost of n and of every container below it, in the plan currency, by
-// month of the year, periodOther and periodNoDates (data-model §3.4), and returns n's.
 func plannedByMonth(n *tnode, keys []string, out map[*tnode]buckets) buckets {
 	own := buckets{}
 	if n.n.Level == LevelActivity {
@@ -164,7 +151,26 @@ func plannedByMonth(n *tnode, keys []string, out map[*tnode]buckets) buckets {
 	return own
 }
 
-// bucketIn returns month itself when it is one of the year's keys, periodOther otherwise.
+func negativeBelow(n *tnode) int {
+	if n.n.Level != LevelActivity {
+		count := 0
+		for _, c := range n.children {
+			count += negativeBelow(c)
+		}
+		return count
+	}
+	var assigned money.Amount
+	for _, li := range n.children {
+		if li.n.PlannedCostPlan != nil {
+			assigned = assigned.Add(li.n.PlannedCostPlan.Amount)
+		}
+	}
+	if n.n.PlannedCostPlan == nil || assigned.Cmp(n.n.PlannedCostPlan.Amount) <= 0 {
+		return 0
+	}
+	return 1
+}
+
 func bucketIn(keys []string, month string) string {
 	for _, k := range keys {
 		if k == month {
@@ -174,9 +180,9 @@ func bucketIn(keys []string, month string) string {
 	return periodOther
 }
 
-// phasedRow is the card's row of the container n with its planned cost by month (FR-024).
 func phasedRow(n *tnode, planned buckets, keys []string, currency string) BudgetByMonthRow {
-	row := BudgetByMonthRow{RecordType: n.n.Level, RecordID: n.n.ID, Name: n.n.Name, Method: methodNone}
+	row := BudgetByMonthRow{RecordType: n.n.Level, RecordID: n.n.ID, Name: n.n.Name, Method: methodNone,
+		NegativeBalanceCount: negativeBelow(n)}
 	if n.parent != nil {
 		parent := n.parent.n.ID
 		row.ParentID = &parent
@@ -227,9 +233,6 @@ func phasedRow(n *tnode, planned buckets, keys []string, currency string) Budget
 	return row
 }
 
-// periodsOfMonths adds up the 12 months in periods of size months (1: months, 3: quarters) and works out the
-// difference and the over flags (data-model §3.4): over when the planned cost, or the allocated budgets,
-// exceed the phased budget of the period.
 func periodsOfMonths(budget, planned, allocated []money.Amount, hasAllocated bool, size int,
 	inPlan func(money.Amount) money.Money) PhasedPeriods {
 	n := 12 / size

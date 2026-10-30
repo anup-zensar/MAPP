@@ -2,6 +2,7 @@ import { screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
+import { ChoiceField } from '../ChoiceField/ChoiceField';
 import { TextField } from '../TextField/TextField';
 import { FormPanel } from './FormPanel';
 import { problemOf } from './problem-of';
@@ -79,5 +80,40 @@ describe('FormPanel', () => {
     expect(screen.getAllByRole('alert')[0]).toHaveTextContent(
       'Not saved — Daniel changed this team.Save again.',
     );
+  });
+
+  it('038 FR-047: Enter in a choice list saves, as in a text field', async () => {
+    const onSave = vi.fn();
+    function Preferences() {
+      const [format, setFormat] = useState('a');
+      return (
+        <FormPanel
+          title="Display preferences"
+          isDirty={false}
+          saving={false}
+          problems={[]}
+          failure={null}
+          onSave={onSave}
+          onClose={vi.fn()}
+        >
+          <ChoiceField
+            label="Date format"
+            name="dateFormat"
+            options={[
+              { id: 'a', label: 'DD MMM YYYY', active: true },
+              { id: 'b', label: 'YYYY-MM-DD', active: true },
+            ]}
+            value={format}
+            onChange={setFormat}
+          />
+        </FormPanel>
+      );
+    }
+    const { user } = renderWithProviders(<Preferences />);
+
+    await user.click(screen.getByRole('combobox', { name: 'Date format' }));
+    await user.keyboard('{Enter}');
+
+    expect(onSave).toHaveBeenCalledTimes(1);
   });
 });

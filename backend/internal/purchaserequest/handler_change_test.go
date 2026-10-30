@@ -161,3 +161,67 @@ func TestGuards_CampaignKeepsItsPlan_Contract_032_FR019(t *testing.T) {
 		t.Errorf("move = %+v", moved)
 	}
 }
+
+func TestChangeInReview_KeepsApprovedReserved_038_FR001_FR003_C1(t *testing.T) {
+	t.Parallel()
+	for _, end := range []string{"decline", "recall", "approve"} {
+		t.Run(end, func(t *testing.T) {
+			t.Parallel()
+			s := apitest.New(t)
+			pr := approved(t, s)
+			priya, daniel := s.SignIn(t, priyasEmail), s.SignIn(t, danielsEmail)
+			decoded[purchaserequest.View](t, priya.Do(t, http.MethodPut, prs+"/"+pr.ID, saveBody(pr, "8000.00", "submitChanges")),
+				http.StatusOK)
+
+			refused := decoded[apiError](t, priya.Do(t, http.MethodPost, prs, body(standBuild, "EUR", "1200.00")),
+				http.StatusBadRequest)
+			same(t, "038 FR-001 during the review", []string{"0.00 EUR", "0.00 EUR", "0.00 EUR", "9,200.00 EUR"},
+				reservedOnStandBuild(t, priya))
+			same(t, "038 FR-002 the save's room check", true, hasMessage(refused,
+				"Only 0.00 EUR of line item L-1006 is not yet requested."))
+
+			at := decoded[purchaserequest.ApprovalView](t, priya.Do(t, http.MethodGet, prs+"/"+pr.ID+"/approval", nil), http.StatusOK)
+			if end == "recall" {
+				decoded[purchaserequest.ApprovalView](t, priya.Do(t, http.MethodPost, prs+"/"+pr.ID+"/approval/recall",
+					map[string]any{"roundId": openRound(t, at).ID}), http.StatusOK)
+			} else {
+				decide(t, daniel, end, at)
+			}
+			want := map[string]string{"decline": "0.00 EUR", "recall": "0.00 EUR", "approve": "1,200.00 EUR"}[end]
+			same(t, "038 FR-003 after "+end, want, reservedOnStandBuild(t, priya)[0])
+		})
+	}
+}
+
+// reservedOnStandBuild is Available to request on Stand build's section, its activity's section and its line-item
+// option, then the section's Total requested.
+func reservedOnStandBuild(t *testing.T, c *apitest.Client) []string {
+	t.Helper()
+	section := decoded[purchaserequest.LineItemSection](t, c.Do(t, http.MethodGet, "/api/v1/line-items/"+standBuild+
+		"/purchase-requests", nil), http.StatusOK)
+	activity := decoded[purchaserequest.ActivitySection](t, c.Do(t, http.MethodGet, "/api/v1/activities/A-1003/purchase-requests",
+		nil), http.StatusOK)
+	options := decoded[purchaserequest.OptionPage](t, c.Do(t, http.MethodGet, prs+"/line-item-options?search=L-1006", nil),
+		http.StatusOK)
+	got := []string{section.AvailableToRequest.Format(), "", "", section.Requested.Format()}
+	for _, li := range activity.LineItems {
+		if li.LineItemID == standBuild {
+			got[1] = li.AvailableToRequest.Format()
+		}
+	}
+	for _, o := range options.Items {
+		if o.LineItem.ID == standBuild {
+			got[2] = o.AvailableToRequest.Format()
+		}
+	}
+	return got
+}
+
+func hasMessage(e apiError, message string) bool {
+	for _, f := range e.Error.Fields {
+		if f.Message == message {
+			return true
+		}
+	}
+	return e.Error.Message == message
+}

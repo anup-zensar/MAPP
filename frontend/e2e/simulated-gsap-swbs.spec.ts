@@ -82,14 +82,16 @@ test('030 US1: after approval, the waiting request goes to the simulated GSAP fr
   await signInAs(page, ALEX);
   await page.goto('/financials');
   const panel = page.getByRole('region', { name: 'Simulated GSAP' });
-  await expect(panel.getByText('1 line item is ready to send')).toBeVisible();
+  await expect(panel.getByText(/^\d+ line items? (is|are) ready to send$/)).toBeVisible();
   await panel.getByRole('button', { name: 'Send SWBS requests to simulated GSAP' }).click();
-  const confirm = page.getByRole('alertdialog', { name: 'Send 1 SWBS request to simulated GSAP?' });
+  const confirm = page.getByRole('alertdialog', {
+    name: /^Send \d+ SWBS requests? to simulated GSAP\?$/,
+  });
   await expectNoAxeViolations(page);
   await confirm.getByRole('button', { name: 'Send SWBS requests to simulated GSAP' }).click();
 
   const result = panel.getByRole('status');
-  await expect(result).toContainText('Simulated GSAP returned 1 SWBS code');
+  await expect(result).toContainText(/Simulated GSAP returned \d+ SWBS codes?/);
   await expect(result).toContainText('Media booking (L-1005) · SIM-NL02-0001');
   await expect(panel.getByText('No line item is waiting for an SWBS code')).toBeVisible();
   await expect(

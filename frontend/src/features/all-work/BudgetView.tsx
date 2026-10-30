@@ -3,7 +3,7 @@ import type { MouseEvent } from 'react';
 import { cx } from '@/ui/cx';
 import { useFormatters } from '@/format/useFormatters';
 import gridStyles from './AllWorkGrid.module.css';
-import { NOT_PHASED, PHASED_BUDGET_ROW, totalText } from './all-work-text';
+import { monthsAboveText, NOT_PHASED, PHASED_BUDGET_ROW, totalText } from './all-work-text';
 import type { AllWorkResult, AllWorkRow, Money } from './all-work-types';
 import styles from './BudgetView.module.css';
 import { isControl, NOTHING } from './cell-text';
@@ -12,7 +12,6 @@ import { ScrollBox } from './ScrollBox';
 import type { VisibleRow } from './view-rows';
 
 export interface BudgetViewProps {
-  /** The answer for view=budget: its periods and each row's amounts. */
   result: AllWorkResult;
   /** The rows of the page on screen (D-115). */
   rows: VisibleRow[];
@@ -22,20 +21,17 @@ export interface BudgetViewProps {
   onOpen: (row: AllWorkRow) => void;
 }
 
-/**
- * Budget & cost (US4, FR-022 – FR-024): the Grid's rows with Plan budget, the months, quarters or
- * years of the range (016 FR-035; then Other years and No dates when they hold an amount) and
- * Total. With Compare with phased budget (016 FR-038) a "Phased budget" row follows each plan,
- * campaign and initiative, and a planned cost above its period's phased budget is red with a
- * warning sign. Every amount comes from the API, already spread and added up (D-114). Read-only;
- * a row opens its record.
- */
+// Every amount comes from the API, already spread and added up (D-114); with Compare with phased
+// budget a planned cost above its period's phased budget is red with a warning sign.
 export function BudgetView({ result, rows, continued, search, onToggle, onOpen }: BudgetViewProps) {
-  const { periods, totals } = result;
+  const { periods, totals, summary } = result;
 
   return (
     <div className={gridStyles.grid}>
       <p className={styles.note}>To change how a cost is spread, open its line item</p>
+      {summary.negativeBalanceCount > 0 && (
+        <p className={styles.note}>{monthsAboveText(summary.negativeBalanceCount)}</p>
+      )}
       {continued && <p className={gridStyles.continued}>Continued: {continued}</p>}
       <ScrollBox label="Budget & cost">
         <table className={gridStyles.table}>
@@ -102,7 +98,6 @@ interface BudgetRowProps {
   onOpen: (row: AllWorkRow) => void;
 }
 
-/** A row, and its Phased budget row when the comparison is on (016 FR-038). */
 function BudgetRows(props: BudgetRowProps) {
   const { row } = props.visible;
   return (
@@ -187,10 +182,7 @@ interface AmountProps {
   abovePhased?: boolean;
 }
 
-/**
- * An amount of the view, "—" when there is none (FR-024), red with a minus sign when negative;
- * above its phased budget red with a warning sign and the words for screen readers.
- */
+/** "—" when there is none, red with a minus sign when negative, red with a sign above phased budget. */
 function Amount({ value, abovePhased = false }: AmountProps) {
   const { money } = useFormatters();
   if (!value) {

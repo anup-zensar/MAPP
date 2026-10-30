@@ -70,6 +70,19 @@ func (s *Service) roundOf(ctx context.Context, sub subject, roundID string) (Rou
 	return round, nil
 }
 
+// mayDecide refuses a person holding neither approvals permission in the plan before any word on the round.
+func (s *Service) mayDecide(ctx context.Context, a actor.Actor, sub subject) error {
+	decide, err := s.access.Check(ctx, a.ID, PermissionDecide, &sub.Plan)
+	if err != nil || decide.Allowed {
+		return err
+	}
+	onBehalf, err := s.access.Check(ctx, a.ID, PermissionDecideOnBehalf, &sub.Plan)
+	if err != nil || onBehalf.Allowed {
+		return err
+	}
+	return errs.Forbidden(decide.Refusal)
+}
+
 func (s *Service) roundToDecide(ctx context.Context, sub subject, in DecisionInput) (Round, error) {
 	round, err := s.roundOf(ctx, sub, in.RoundID)
 	if err != nil {
@@ -120,6 +133,9 @@ func (s *Service) recordDecision(ctx context.Context, dg deciding) (subject, err
 	round, logEntry, event, err := s.decisionOutcome(ctx, dg)
 	if err != nil {
 		return subject{}, err
+	}
+	if dg.kind == ActionApproved {
+		logEntry.details += overageDetails(dg.sub)
 	}
 	round.Touch(dg.a, dg.now)
 	if err = s.repo.PutRound(ctx, round); err != nil {

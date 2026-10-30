@@ -116,6 +116,7 @@ export async function createPlan(
   page: Page,
   label: string,
   year = new Date().getUTCFullYear() + 1,
+  name = uniqueName(`${label} plan`),
 ): Promise<Named & { year: number }> {
   const [modelId, teamId, ownerId, planForm] = await Promise.all([
     idOf(page, '/api/v1/models', 'Mobility 1.0'),
@@ -128,7 +129,7 @@ export async function createPlan(
     throw new Error('The plan form has no business unit Mobility');
   }
   const plan = await callApi<Named>(page, 'POST', '/api/v1/plans', {
-    name: uniqueName(`${label} plan`),
+    name,
     year,
     modelId,
     teamIds: [teamId],

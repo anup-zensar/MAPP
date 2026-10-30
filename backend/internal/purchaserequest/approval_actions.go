@@ -36,9 +36,10 @@ func (s *Service) Submission(ctx context.Context, a actor.Actor, id string) (Sub
 		if err != nil {
 			return err
 		}
-		sec, err := s.engine.SectionOf(ctx, a, approval.SubjectKind(kind), pr.ID)
+		check, err := s.engine.SubmissionOf(ctx, a, approval.SubjectKind(kind), pr.ID)
 		view = SubmissionView{PurchaseRequestID: pr.ID, Version: pr.Version, Kind: "submit", RoundKind: kind,
-			Ready: len(problems) == 0, Problems: problems, Workflow: sec.Workflow, Levels: sec.UpcomingLevels}
+			Ready: len(problems) == 0, Problems: problems, Workflow: check.Workflow, Levels: check.Levels,
+			Outcomes: check.Outcomes}
 		view.Available, view.Reason = submitAllowed(pr)
 		if pr.Status != StatusCreated && pr.Status != StatusApproved {
 			view.Kind = "resubmit"

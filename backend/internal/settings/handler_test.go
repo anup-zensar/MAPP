@@ -31,7 +31,7 @@ func TestOverview_API_FR001(t *testing.T) {
 
 	response := alex.Do(t, http.MethodGet, "/api/v1/settings/overview", nil)
 
-	assertAnswer(t, response, http.StatusOK, `{"models":2,"activityTypes":6,"shellAttributes":56,"currencies":5,"financeBudgetItems":6}`)
+	assertAnswer(t, response, http.StatusOK, `{"models":2,"activityTypes":6,"shellAttributes":56,"currencies":5,"financeBudgetItems":8}`)
 }
 
 func TestSettings_ChangedWithSettingsManage_FR008(t *testing.T) {

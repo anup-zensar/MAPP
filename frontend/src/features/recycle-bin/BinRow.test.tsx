@@ -65,13 +65,19 @@ describe('BinRow', () => {
     expect(screen.queryByRole('button', { name: 'Show contents' })).not.toBeInTheDocument();
   });
 
-  it('shows another record type as a chip with its name', () => {
-    renderRow({
-      item: binItem({ recordType: 'currency', recordTypeLabel: 'currency', contents: [] }),
-    });
+  it.each([
+    ['currency', 'currency', 'CURRENCY'],
+    ['globalBudget', 'global budget', 'GLOBAL BUDGET'],
+    ['purchaseRequest', 'purchase request', 'PURCHASE REQUEST'],
+  ])(
+    '038 FR-049 (L-23): shows a %s with the same tag as the levels',
+    (recordType, recordTypeLabel, tag) => {
+      renderRow({ item: binItem({ recordType, recordTypeLabel, contents: [] }) });
 
-    expect(screen.getByText('Currency')).toBeInTheDocument();
-  });
+      // The level tag's look: its CSS module class "tag", as LevelTag gives INITIATIVE.
+      expect(screen.getByText(tag).className).toMatch(/_tag_/);
+    },
+  );
 
   it('shows and hides its contents as a tree (FR-015)', async () => {
     const { user } = renderRow();

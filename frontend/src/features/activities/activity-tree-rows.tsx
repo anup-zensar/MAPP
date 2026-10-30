@@ -14,7 +14,14 @@ import { fetchLatestActivity, usePlanActivities } from './api';
 import type { Activity, ActivitySummary } from './api';
 import { ActivityDeleteQuestion } from './ActivityDeleteQuestion';
 import { ActivityRowCost, ActivityRowStatus } from './ActivityRowCells';
-import { activityEditHref, activityHref, datesText, EMPTY, newActivityHref } from './activity-text';
+import {
+  activityEditHref,
+  activityHref,
+  datesText,
+  EMPTY,
+  MOVE_TO,
+  newActivityHref,
+} from './activity-text';
 import type { DateWriters } from './activity-text';
 import { CopyActivityDialog } from './CopyActivityDialog';
 import { MoveActivityDialog } from './MoveActivityDialog';
@@ -23,7 +30,6 @@ import { SPLIT_ACTIVITY } from './split-text';
 
 type PlanContentAccess = components['schemas']['PlanContentAccess'];
 
-/** What an initiative row or panel tells feature 006 about itself. */
 export interface InitiativeRow {
   id: string;
   name: string;
@@ -32,13 +38,8 @@ export interface InitiativeRow {
   addActivity?: components['schemas']['ActionAvailability'];
 }
 
-/** The dialogs a row's ⋯ menu opens (FR-029 – FR-031). */
 export type RowDialog = 'copy' | 'move' | 'split' | 'delete';
 
-/**
- * Copy, Move, Split activity and Delete of the rows' ⋯ menus: the open dialog, and how to open and
- * close it.
- */
 export interface RowActions {
   /** The open dialog and its activity as stored now; null when none is open. */
   open: { dialog: RowDialog; activity: Activity } | null;
@@ -46,16 +47,6 @@ export interface RowActions {
   close: () => void;
 }
 
-/**
- * The activity rows of a plan's tree, by initiative id (006 plan, "Plan tree rows and Add
- * activity", FR-033); feature 005 places them under its initiative rows through extensions.ts.
- * Each row: the level bar and tag, the name as a link to the activity page with the ID beside it,
- * the owner, the dates, the status and completeness chips, the planned cost (marked red when line
- * items exceed it) and the ⋯ menu: View, Edit, Copy, Move (FR-029, FR-030) and Delete (FR-031),
- * which asks first and offers Undo.
- *
- * The cells use the plan tree's column keys: name (the ID), owner, dates, status, plannedCost.
- */
 export function useActivityRows(planId: string): Map<string, TreeNode[]> {
   const query = usePlanActivities(planId);
   const navigate = useNavigate();
@@ -115,10 +106,9 @@ export function activityRowsByInitiative(
           access?.editActivities,
         ),
         ...gateItem(
-          { label: 'Move', onSelect: () => rowActions.ask('move', activity.id) },
+          { label: MOVE_TO, onSelect: () => rowActions.ask('move', activity.id) },
           access?.editActivities,
         ),
-        // Split off line items and planned cost into a new activity (016 FR-026).
         ...gateItem(
           { label: SPLIT_ACTIVITY, onSelect: () => rowActions.ask('split', activity.id) },
           access?.editActivities,
@@ -180,10 +170,6 @@ export function activityRowsByInitiative(
   return rows;
 }
 
-/**
- * The actions feature 006 adds to an initiative's ⋯ menu and its panel's More menu (FR-001):
- * **Add activity**, which opens the new-activity page of the initiative.
- */
 export function activityActionsForInitiative(
   initiative: InitiativeRow,
   navigate: NavigateFunction,

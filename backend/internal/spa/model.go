@@ -60,6 +60,9 @@ type Periods struct {
 	Months            []Period       `json:"months"`
 	NotScheduled      *money.Money   `json:"notScheduled"`
 	NotScheduledTrace []Contribution `json:"notScheduledTrace"`
+
+	LinesAbovePlannedCost      *money.Money   `json:"linesAbovePlannedCost"`
+	LinesAbovePlannedCostTrace []Contribution `json:"linesAbovePlannedCostTrace"`
 }
 
 type DimensionChoice struct {

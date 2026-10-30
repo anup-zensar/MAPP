@@ -12,24 +12,24 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// addCreated keeps one "created" entry per seeded planning record, by its owner, spread evenly between 14
-// and 10 days before the seed time in tree order, so parents come before their children (step 1).
-func (h *demoHistory) addCreated(context.Context) error {
+// addCreated spreads the "created" entries evenly from 14 to 10 days before, in tree order, so parents come first.
+func (h *demoHistory) addCreated(ctx context.Context) error {
 	first, last := h.at.Add(-createdFrom), h.at.Add(-createdUntil)
 	step := time.Duration(0)
 	if n := len(h.records); n > 1 {
 		step = last.Sub(first) / time.Duration(n-1)
 	}
 	for i, r := range h.records {
-		at := wholeMinuteFrom(first.Add(time.Duration(i) * step))
-		h.add(at, h.ownerOrAlex(r.ownerID), history.ActionCreated, string(history.ActionCreated), r.kind, r.id, r.name,
-			r.path, nil, "", "")
+		at, by := wholeMinuteFrom(first.Add(time.Duration(i)*step)), h.ownerOrAlex(r.ownerID)
+		h.add(at, by, history.ActionCreated, string(history.ActionCreated), r.kind, r.id, r.name, r.path, nil, "", "")
+		if err := r.created(ctx, at, by); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-// wholeMinuteFrom returns t, or the next whole minute when t has seconds: a time on the minute that is never
-// earlier than t, so the first entry stays within the 14 days whatever the seed time's seconds are.
+// wholeMinuteFrom keeps the first entry within the 14 days whatever the seed time's seconds are.
 func wholeMinuteFrom(t time.Time) time.Time {
 	if minute := t.Truncate(time.Minute); minute.Before(t) {
 		return minute.Add(time.Minute)
@@ -53,8 +53,6 @@ func (h *demoHistory) addPublished(context.Context) error {
 	return nil
 }
 
-// statusChange is the change of a record's "status" field from one stored status to another, with the
-// words people read.
 func statusChange[S ~string](from, to S, words map[S]string) (history.Change, error) {
 	oldValue, err := json.Marshal(from)
 	if err != nil {
@@ -67,8 +65,7 @@ func statusChange[S ~string](from, to S, words map[S]string) (history.Change, er
 	return history.Change{Field: "status", Label: "Status", Old: oldValue, New: newValue, OldText: words[from], NewText: words[to]}, nil
 }
 
-// addCostChange keeps one "changed" entry by Priya Raman 5 days before: the planned cost of her first
-// FY2026 Lubricants Europe activity with a planned cost went up by 5,000.00 USD to what is stored (step 4).
+// addCostChange: Priya's first FY2026 Lubricants Europe activity went up by 5,000.00 USD, 5 days before (step 4).
 func (h *demoHistory) addCostChange(context.Context) error {
 	var r resolver
 	priyaID := r.id(h.demo.people, "person", "Priya Raman")

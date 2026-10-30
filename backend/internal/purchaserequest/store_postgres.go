@@ -122,7 +122,19 @@ func (s *PostgresStore) Claims(ctx context.Context, lineItemIDs []string) ([]Cla
 			LineItemID: r.LineItemID, Status: Status(r.Status),
 			Amount: money.Money{Amount: money.FromCents(r.AmountMinor), Currency: r.Currency}})
 	}
-	return claims, nil
+	changing, err := s.db.Queries(ctx).ListPurchaseRequestChangesInReview(ctx, nonNil(lineItemIDs))
+	if err != nil {
+		return nil, fmt.Errorf("select purchase requests with a change in review: %w", err)
+	}
+	prs := make([]PurchaseRequest, 0, len(changing))
+	for _, r := range changing {
+		pr, err := fromRow(r)
+		if err != nil {
+			return nil, err
+		}
+		prs = append(prs, pr)
+	}
+	return WithChangesInReview(claims, prs, lineItemIDs), nil
 }
 
 func (s *PostgresStore) Put(ctx context.Context, pr PurchaseRequest) error {

@@ -7,10 +7,16 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// unassigned is the activity's planned cost (0.00 when empty) minus its line items' planned costs in the plan
-// currency at the current rates (domain model §4.3, 016 FR-015), converted to USD once — approvals works in
-// USD and shows the reader's display currency (D-213); nil when it has neither a planned cost nor a line item.
+// unassigned is unassignedInPlan converted to USD once: approvals works in USD and shows the display currency.
 func (p *approvalsActivities) unassigned(ctx context.Context, act activity.Activity) (*money.Money, error) {
+	inPlan, err := p.unassignedInPlan(ctx, act)
+	if err != nil {
+		return nil, err
+	}
+	return p.inUSD(ctx, inPlan)
+}
+
+func (p *approvalsActivities) unassignedInPlan(ctx context.Context, act activity.Activity) (*money.Money, error) {
 	items, err := p.lineItems.ListByActivity(ctx, act.ID)
 	if err != nil {
 		return nil, err
@@ -37,7 +43,16 @@ func (p *approvalsActivities) unassigned(ctx context.Context, act activity.Activ
 		}
 		balance = balance.Sub(inPlan.Amount)
 	}
-	return p.inUSD(ctx, &money.Money{Amount: balance, Currency: currency})
+	return &money.Money{Amount: balance, Currency: currency}, nil
+}
+
+// overPlannedCost is a negative unassigned planned cost made positive; nil when the line items fit.
+func overPlannedCost(unassigned *money.Money) *money.Money {
+	if unassigned == nil || unassigned.Amount.Sign() >= 0 {
+		return nil
+	}
+	over := money.Money{Amount: unassigned.Amount.Neg(), Currency: unassigned.Currency}
+	return &over
 }
 
 // inUSD converts an amount of a plan currency to USD at the current rate (016 FR-014); nil stays nil.
@@ -56,7 +71,6 @@ func (p *approvalsActivities) inUSD(ctx context.Context, m *money.Money) (*money
 	return &usd, nil
 }
 
-// planCurrency returns the plan currency of the initiative initiativeID's plan (016 FR-011).
 func (p *approvalsActivities) planCurrency(ctx context.Context, initiativeID string) (string, error) {
 	initiative, found, err := p.campaigns.GetInitiative(ctx, initiativeID)
 	if err != nil || !found {

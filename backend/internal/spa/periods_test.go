@@ -67,13 +67,42 @@ func TestPeriods_FR017_AnActivityWithoutDatesIsNot(t *testing.T) {
 	}
 }
 
-func TestPeriods_FR017_LineItemsAboveThePlannedCost(t *testing.T) {
+// Line items above an activity's planned cost are their own row, never a negative "Not yet scheduled"
+// (D-363).
+func TestPeriods_LineItemsAboveThePlannedCost_038_FR023_M2(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 	f.record("A-2").PlannedCost = ptr(amt(t, "50000.00"))
 	v := f.view(t, Query{})
-	if moneyText(v.Periods.NotScheduled) != "-10,000.00 USD" || v.Headline.PlannedCost != usd(t, "390000.00") {
-		t.Errorf("not scheduled %v, planned %v", v.Periods.NotScheduled, v.Headline.PlannedCost)
+	p := v.Periods
+	if p.NotScheduled != nil || moneyText(p.LinesAbovePlannedCost) != "10,000.00 USD" ||
+		v.Headline.PlannedCost != usd(t, "390000.00") {
+		t.Errorf("not scheduled %v, above %v, planned %v", p.NotScheduled, p.LinesAbovePlannedCost, v.Headline.PlannedCost)
+	}
+	if len(p.LinesAbovePlannedCostTrace) != 1 || p.LinesAbovePlannedCostTrace[0].ActivityID != "A-2" ||
+		len(p.NotScheduledTrace) != 0 {
+		t.Errorf("traces: above %+v, not scheduled %+v", p.LinesAbovePlannedCostTrace, p.NotScheduledTrace)
+	}
+}
+
+// One activity's unscheduled cost is not netted against another's excess: periods + Not yet scheduled −
+// excess = planned cost.
+func TestPeriods_NoNettingAcrossActivities_038_FR023_M2(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	f.record("A-1").Months, f.record("A-1").PlannedCost = nil, ptr(amt(t, "345000.00"))
+	f.record("A-2").PlannedCost = ptr(amt(t, "50000.00"))
+	v := f.view(t, Query{})
+	p := v.Periods
+	var months money.Amount
+	for _, m := range p.Months {
+		months = months.Add(m.Planned.Amount)
+	}
+	if moneyText(p.NotScheduled) != "5,000.00 USD" || moneyText(p.LinesAbovePlannedCost) != "10,000.00 USD" {
+		t.Fatalf("not scheduled %v, above %v", p.NotScheduled, p.LinesAbovePlannedCost)
+	}
+	if got := months.Add(p.NotScheduled.Amount).Sub(p.LinesAbovePlannedCost.Amount); got != v.Headline.PlannedCost.Amount {
+		t.Errorf("periods + not scheduled − above = %s, planned cost %s", got, v.Headline.PlannedCost.Amount)
 	}
 }
 

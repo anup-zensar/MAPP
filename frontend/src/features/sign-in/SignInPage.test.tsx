@@ -141,6 +141,34 @@ describe('SignInPage', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans'));
   });
 
+  it('038 FR-014: says that there were too many attempts, also for a demo person, and clears the password', async () => {
+    const tooMany = {
+      error: {
+        code: 'too_many_attempts' as const,
+        message: 'Too many sign-in attempts. Try again in 15 minutes.',
+        fields: [],
+      },
+    };
+    mockApi([
+      reply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
+      reply('POST /api/v1/auth/sign-in', { status: 429, body: tooMany }),
+    ]);
+    const { user, router } = renderSignInPage();
+
+    await user.click(emailField());
+    await user.paste('priya.raman@shell.com');
+    await user.type(passwordField(), 'mapp');
+    await user.click(signInButton());
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(tooMany.error.message);
+    expect(emailField()).toHaveValue('priya.raman@shell.com');
+    expect(passwordField()).toHaveValue('');
+
+    await user.click(screen.getByRole('button', { name: 'Sign in as Priya Raman, Marketer' }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(tooMany.error.message));
+    expect(router.state.location.pathname).toBe('/sign-in');
+  });
+
   it('explains what to do when no demo people exist, and keeps the form (FR-028)', async () => {
     mockApi([reply('GET /api/v1/auth/demo-people', { body: { password: 'mapp', people: [] } })]);
     renderSignInPage();

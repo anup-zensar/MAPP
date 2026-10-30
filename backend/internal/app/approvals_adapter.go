@@ -19,28 +19,22 @@ import (
 	"mapp/internal/stores"
 )
 
-// submitCheck is feature 006's ready-to-submit check of one activity, line items included (006 plan
-// "Provides": (*activity.Service).SubmitCheck).
 type submitCheck func(ctx context.Context, a actor.Actor, activityID string) (activity.SubmitCheck, error)
 
-// approvalsActivities implements approval.Activities (feature 008) over the stored activities (006),
-// their line items (007), the plans, campaigns and initiatives above them (004, 005) and Settings (002).
-// Every method runs inside the caller's transaction, which ctx carries.
+// approvalsActivities implements approval.Activities; every method runs inside the caller's transaction.
 type approvalsActivities struct {
 	activities stores.ActivityStore
 	lineItems  stores.LineItemStore
 	campaigns  stores.CampaignStore
 	plans      stores.PlanStore
 	settings   stores.SettingsStore
-	rates      func(context.Context) (money.Rates, error) // the current rates (016: dated rates), settings.Service.Rates
+	rates      func(context.Context) (money.Rates, error)
 	check      submitCheck
 	now        clock.Clock
 }
 
-// The compiler checks here that approvalsActivities implements approval.Activities.
 var _ approval.Activities = (*approvalsActivities)(nil)
 
-// Activity returns the stored activity id as approvals needs it.
 func (p *approvalsActivities) Activity(ctx context.Context, id string) (approval.ActivityFacts, bool, error) {
 	act, found, err := p.activities.Get(ctx, id)
 	if err != nil || !found {
@@ -50,7 +44,6 @@ func (p *approvalsActivities) Activity(ctx context.Context, id string) (approval
 	return facts, err == nil, err
 }
 
-// ListOf returns the stored activities among ids as approvals needs them.
 func (p *approvalsActivities) ListOf(ctx context.Context, ids []string) ([]approval.ActivityFacts, error) {
 	stored, err := p.activities.ListByIDs(ctx, ids)
 	if err != nil {
@@ -59,12 +52,10 @@ func (p *approvalsActivities) ListOf(ctx context.Context, ids []string) ([]appro
 	return p.factsOf(ctx, stored)
 }
 
-// WorkflowFields returns the Approval workflow field of every stored activity.
 func (p *approvalsActivities) WorkflowFields(ctx context.Context) (map[string]string, error) {
 	return p.activities.WorkflowIDs(ctx)
 }
 
-// ListInScope returns the stored activities among ids that the scope sees as approvals needs them.
 func (p *approvalsActivities) ListInScope(ctx context.Context, scope authz.Scope, ids []string) ([]approval.ActivityFacts, error) {
 	seen, err := p.activities.ListInScopeOf(ctx, scope, ids)
 	if err != nil {
@@ -88,7 +79,6 @@ func (p *approvalsActivities) factsOf(ctx context.Context, all []activity.Activi
 	return list, nil
 }
 
-// SetStatus stores the activity's new status with a new version, last changed by a.
 func (p *approvalsActivities) SetStatus(ctx context.Context, a actor.Actor, id, status string) (approval.ActivityFacts, error) {
 	act, found, err := p.activities.Get(ctx, id)
 	if err != nil {
@@ -108,9 +98,8 @@ func (p *approvalsActivities) SetStatus(ctx context.Context, a actor.Actor, id, 
 // neededToSubmit ends the message of an empty needed-to-submit field: "Owner — needed to submit".
 const neededToSubmit = " — needed to submit"
 
-// ReadyCheck runs 006's ready-to-submit check and adds a positive unassigned planned cost as the note of
-// the confirmation (FR-011). A line item's problem is keyed lineItems.<id>.<field> (contract SubmitProblem).
-// The activity's empty needed-to-submit fields are its completeness, which the preview lists (FR-032).
+// ReadyCheck adds a positive unassigned planned cost as the confirmation's note; a line item's problem is
+// keyed lineItems.<id>.<field>.
 func (p *approvalsActivities) ReadyCheck(ctx context.Context, a actor.Actor, id string) (approval.ReadyCheck, error) {
 	check, err := p.check(ctx, a, id)
 	if err != nil {
@@ -157,8 +146,7 @@ func missingToSubmit(check activity.SubmitCheck) []approval.MissingFieldRef {
 	return fields
 }
 
-// facts returns act as approvals needs it: with its plan, campaign and initiative, type name, display
-// status and unassigned planned cost, all derived now (D-041).
+// facts derives what approvals needs of act now: its path, type name, display status and costs.
 func (p *approvalsActivities) facts(ctx context.Context, act activity.Activity) (approval.ActivityFacts, error) {
 	place, err := p.placeOf(ctx, act.InitiativeID)
 	if err != nil {
@@ -169,7 +157,11 @@ func (p *approvalsActivities) facts(ctx context.Context, act activity.Activity) 
 	if err != nil {
 		return approval.ActivityFacts{}, err
 	}
-	unassigned, err := p.unassigned(ctx, act)
+	inPlan, err := p.unassignedInPlan(ctx, act)
+	if err != nil {
+		return approval.ActivityFacts{}, err
+	}
+	unassigned, err := p.inUSD(ctx, inPlan)
 	if err != nil {
 		return approval.ActivityFacts{}, err
 	}
@@ -180,12 +172,12 @@ func (p *approvalsActivities) facts(ctx context.Context, act activity.Activity) 
 	facts := approval.ActivityFacts{
 		ID: act.ID, Name: act.Name, Status: string(act.Status), DisplayStatus: displayStatus(act, date.Today(p.now())),
 		Path: path, OwnerID: act.OwnerID, StartDate: act.StartDate, EndDate: act.EndDate, Ongoing: act.Ongoing,
-		PlannedCost: planned, UnassignedPlannedCost: unassigned, Description: act.Description,
-		WorkflowID: act.ApprovalWorkflowID, Meta: act.Meta,
-		// 017: what the approval rules and 014's scopes look at (data-model §3).
+		PlannedCost: planned, UnassignedPlannedCost: unassigned, OverPlannedCost: overPlannedCost(inPlan),
+		Description: act.Description,
+		WorkflowID:  act.ApprovalWorkflowID, Meta: act.Meta,
 		Plan:           approval.PlanFacts{ID: pl.ID, TeamIDs: slices.Clone(pl.TeamIDs), OwnerID: pl.OwnerID, CreatedByID: pl.CreatedBy.ID},
 		ActivityTypeID: act.ActivityTypeID, BusinessUnits: units,
-		Access: plan.AccessFacts(pl), // 014: who sees the activity and who may submit, recall or decide
+		Access: plan.AccessFacts(pl),
 	}
 	if act.ActivityTypeID != "" {
 		activityType, found, err := p.settings.GetActivityType(ctx, act.ActivityTypeID)
@@ -214,8 +206,6 @@ func displayStatus(act activity.Activity, today date.Date) string {
 	}
 }
 
-// path returns the plan, campaign and initiative of the initiative initiativeID, top level first, and the
-// plan itself.
 func (p *approvalsActivities) path(ctx context.Context, initiativeID string) ([]errs.RecordRef, plan.Plan, error) {
 	initiative, found, err := p.campaigns.GetInitiative(ctx, initiativeID)
 	if err != nil {
@@ -245,32 +235,25 @@ func (p *approvalsActivities) path(ctx context.Context, initiativeID string) ([]
 	}, pl, nil
 }
 
-// activityApprovalHooks implements activity.ApprovalHooks (feature 006) over the approvals service (008
-// plan, Reconciliation): a re-approval change ends the activity's approval (FR-022) and a restore from the
-// recycle bin ends the round that was open at the delete (FR-023). Every call runs inside the activities
-// Write that caused it.
+// activityApprovalHooks: a re-approval change ends the activity's approval and a restore ends the round open
+// at the delete, inside the activities Write that caused it.
 type activityApprovalHooks struct {
 	svc *approval.Service
 }
 
-// The compiler checks here that activityApprovalHooks implements activity.ApprovalHooks.
 var _ activity.ApprovalHooks = activityApprovalHooks{}
 
-// ApprovalRestarted ends the approval of after, which a re-approval change sent back from before's status
-// to Created.
 func (h activityApprovalHooks) ApprovalRestarted(ctx context.Context, a actor.Actor, before, after activity.Activity, changes []history.Change) error { //nolint:revive // argument-limit 5: the signature of activity.ApprovalHooks
 	return h.svc.ApprovalRestarted(ctx, a, after.ID, string(before.Status), changes)
 }
 
-// ActivityDeleting changes nothing: the open round of a deleted activity stays stored as it is, so that an
-// Undo brings the activity back exactly, still Submitted (008-P3, D-031). The activity simply leaves every
-// approvals list while it is not stored.
+// ActivityDeleting changes nothing: the open round stays stored so that Undo brings the activity back exactly,
+// still Submitted.
 func (activityApprovalHooks) ActivityDeleting(context.Context, actor.Actor, activity.Activity) error {
 	return nil
 }
 
-// ActivityRestored ends the round that was open at the delete, now that a restore brings the activity back
-// Created, and returns the note for the "restored" log entry.
+// ActivityRestored ends the round open at the delete and returns the note of the restore's log entry.
 func (h activityApprovalHooks) ActivityRestored(ctx context.Context, rc history.RestoreContext, activityID string) ([]string, error) {
 	return h.svc.ActivityRestored(ctx, rc, activityID)
 }

@@ -91,6 +91,7 @@ export interface paths {
          * Sign in with a demo e-mail and the demo password
          * @description The e-mail is compared ignoring letter case and surrounding spaces; the password exactly.
          *     On success the session cookie is set. Only available when demo sign-in is enabled.
+         *     Too many failed attempts answer 429 too_many_attempts, checked before the credentials (038 FR-014).
          */
         post: operations["signIn"];
         delete?: never;
@@ -1344,7 +1345,9 @@ export interface paths {
          * Add a campaign to a plan
          * @description Only the name is required (FR-005). The API stores exactly what it receives: the defaults of
          *     FR-003 (owner and dates from the plan, yes/no attributes No) are filled in and shown by the form.
-         *     Every problem is reported at once, including a name already used in the plan.
+         *     Every problem is reported at once, including a name already used in the plan. startDate and endDate
+         *     are checked by the service: an impossible date answers validation_failed "Enter a valid date." on
+         *     that field (038 FR-054).
          */
         post: operations["createCampaign"];
         delete?: never;
@@ -1375,7 +1378,8 @@ export interface paths {
          * Save a campaign's form (every editable field and the version it started from)
          * @description Allowed whatever the plan's status (FR-018). Refused with validation_failed when the new dates
          *     would leave initiatives outside them (FR-007), naming each. A save that changes nothing answers
-         *     the campaign unchanged, with no new version and no log entry.
+         *     the campaign unchanged, with no new version and no log entry. An impossible date answers
+         *     validation_failed "Enter a valid date." on that field (038 FR-054).
          */
         patch: operations["updateCampaign"];
         trace?: never;
@@ -1473,7 +1477,7 @@ export interface paths {
         put?: never;
         /**
          * Add an initiative to a campaign
-         * @description Only the name is required (FR-005); the dates must lie inside the campaign's dates when it has both (R3, FR-006).
+         * @description Only the name is required (FR-005); the dates must lie inside the campaign's dates when it has both (R3, FR-006). An impossible date answers validation_failed "Enter a valid date." on that field (038 FR-054).
          */
         post: operations["createInitiative"];
         delete?: never;
@@ -1502,7 +1506,7 @@ export interface paths {
         head?: never;
         /**
          * Save an initiative's form (every editable field and the version it started from)
-         * @description Refused with validation_failed when the dates leave the campaign's dates (R3) or would leave activities outside them (FR-007; only the start date of ongoing activities).
+         * @description Refused with validation_failed when the dates leave the campaign's dates (R3) or would leave activities outside them (FR-007; only the start date of ongoing activities). An impossible date answers validation_failed "Enter a valid date." on that field (038 FR-054).
          */
         patch: operations["updateInitiative"];
         trace?: never;
@@ -1990,7 +1994,7 @@ export interface paths {
         put?: never;
         /**
          * Approve the current level of the open round (FR-014, FR-015, FR-017, FR-018)
-         * @description Any signed-in person may approve (D-020); a person who is not an approver of the level is recorded as acting on behalf of the level's approvers. Approving the last level makes the activity Approved.
+         * @description Any signed-in person may approve (D-020); a person who is not an approver of the level is recorded as acting on behalf of the level's approvers. Approving the last level makes the activity Approved. A person holding neither approvals permission is refused with 403 forbidden first (038 FR-056); 409 not_allowed when approval over planned cost is set to refuse (038 FR-020).
          */
         post: operations["approveActivityLevel"];
         delete?: never;
@@ -2730,7 +2734,10 @@ export interface paths {
         /** Every role, Administrator first, then by name ignoring letter case */
         get: operations["listRoles"];
         put?: never;
-        /** Create a role (the web app fills the form from another role for "Copy of …") */
+        /**
+         * Create a role (the web app fills the form from another role for "Copy of …")
+         * @description finance.link without finance.import answers 400 validation_failed on the field "permissions" (038 FR-006).
+         */
         post: operations["createRole"];
         delete?: never;
         options?: never;
@@ -2761,7 +2768,7 @@ export interface paths {
         head?: never;
         /**
          * Change a role's name, description, permissions or default scope
-         * @description Only the fields to change, plus the version (D-203). The Administrator role refuses every change with 409 not_allowed ("The Administrator role always has every permission and can't be changed.").
+         * @description Only the fields to change, plus the version (D-203). The Administrator role refuses every change with 409 not_allowed ("The Administrator role always has every permission and can't be changed."). finance.link without finance.import answers 400 validation_failed on the field "permissions" (038 FR-006).
          */
         patch: operations["updateRole"];
         trace?: never;
@@ -2984,7 +2991,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** One transaction with every field, its link and its import */
+        /**
+         * One transaction with every field, its link and its import
+         * @description A transaction the person may not see (a not-linked one without finance.import, or one outside their scope) answers 404 not_found before any other check (038 FR-004, FR-007).
+         */
         get: operations["getFinancialTransaction"];
         put?: never;
         post?: never;
@@ -3008,6 +3018,9 @@ export interface paths {
          * @description Only for transactions whose link state is notLinked. A rule-based link answers 409 not_allowed
          *     ("Linked by GSAP data (HX key HX1006) — correct it in GSAP."). A missing line item, or one in
          *     the recycle bin, answers 400 validation_failed on lineItemId. Logged (verb "linked").
+         *     Checks in this order (038 FR-005, FR-007): a transaction the person may not see answers 404 not_found;
+         *     then finance.import and finance.link in the target plan; then the version; then the state. A target
+         *     line item outside the person's scope answers the same 400 as a missing one.
          */
         post: operations["linkFinancialTransaction"];
         delete?: never;
@@ -3030,6 +3043,8 @@ export interface paths {
          * @description Only when matchedBy is manual; otherwise 409 not_allowed ("Only links made by a person can be
          *     undone here."). The transaction is matched again by the rules and usually becomes notLinked
          *     with its reason. Logged (verb "unlinked").
+         *     Checks in this order (038 FR-005, FR-007): a transaction the person may not see answers 404 not_found;
+         *     then finance.link in the linked line item's plan; then the version; then the state.
          */
         post: operations["unlinkFinancialTransaction"];
         delete?: never;
@@ -3407,7 +3422,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Approve the waiting level as one of its approvers (self-approval allowed, FR-027) */
+        /**
+         * Approve the waiting level as one of its approvers (self-approval allowed, FR-027)
+         * @description A person holding neither approvals permission is refused with 403 forbidden first (038 FR-056); 409 not_allowed when approval over planned cost is set to refuse (038 FR-020).
+         */
         post: operations["approvePurchaseRequest"];
         delete?: never;
         options?: never;
@@ -3542,7 +3560,10 @@ export interface paths {
         };
         /** Settings › Overspend control — the setting new budgets start with (037 FR-006) */
         get: operations["getOverspendConfiguration"];
-        /** Change the setting new budgets start with (needs settings.manage); existing budgets keep theirs */
+        /**
+         * Change the setting new budgets start with and whether approving is refused while an activity's line items exceed its planned cost (needs settings.manage)
+         * @description Existing budgets keep their setting.
+         */
         put: operations["saveOverspendConfiguration"];
         post?: never;
         delete?: never;
@@ -4134,7 +4155,9 @@ export interface paths {
          * The Executive dashboard of every market the person may see (feature 036, FR-001 – FR-019)
          * @description Every figure covers only the plans of the year the person may see; committed and actual cover only the
          *     plans whose financial data they may see; global budgets appear only to holders of globalBudgets.view.
-         *     Amounts are in the chosen currency (default the person's display currency).
+         *     Amounts are in the chosen currency (default the person's display currency). A well-formed but unknown,
+         *     inactive or out-of-scope currency is not refused: the default is used and the answer's filters show it
+         *     (036 FR-007, 038 FR-012).
          */
         get: operations["getExecutiveDashboard"];
         put?: never;
@@ -4152,7 +4175,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The Regional dashboard of one market (team), with a plan's campaigns (feature 036, FR-020 – FR-022) */
+        /**
+         * The Regional dashboard of one market (team), with a plan's campaigns (feature 036, FR-020 – FR-022)
+         * @description A well-formed but unknown, inactive or out-of-scope currency or teamId is not refused: the default is used and the answer's filters show it (036 FR-007, 038 FR-012).
+         */
         get: operations["getRegionalDashboard"];
         put?: never;
         post?: never;
@@ -4169,7 +4195,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The Executive dashboard as a PowerPoint or PDF file (feature 036, FR-024) */
+        /**
+         * The Executive dashboard as a PowerPoint or PDF file (feature 036, FR-024)
+         * @description A well-formed but unknown, inactive or out-of-scope currency is not refused: the default is used (036 FR-007, 038 FR-012).
+         */
         get: operations["exportExecutiveDashboard"];
         put?: never;
         post?: never;
@@ -4186,7 +4215,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The Regional dashboard as a PowerPoint or PDF file (feature 036, FR-024) */
+        /**
+         * The Regional dashboard as a PowerPoint or PDF file (feature 036, FR-024)
+         * @description A well-formed but unknown, inactive or out-of-scope currency or teamId is not refused: the default is used (036 FR-007, 038 FR-012).
+         */
         get: operations["exportRegionalDashboard"];
         put?: never;
         post?: never;
@@ -4230,17 +4262,30 @@ export interface components {
             budget: components["schemas"]["RecordRef"];
             leftToPlan: components["schemas"]["Money"];
         };
+        /**
+         * @description What happens when someone approves an activity, a purchase request or its change while an activity's line items exceed its planned cost (038 FR-018): warn the approver (default) or refuse the approval.
+         * @enum {string}
+         */
+        OverspendApprovalMode: "warn" | "refuse";
         OverspendConfiguration: {
             defaultMode: components["schemas"]["OverspendMode"];
+            approvalOverPlannedCost: components["schemas"]["OverspendApprovalMode"];
             version: number;
-            /** Format: date-time */
-            updatedAt: string;
-            updatedBy: components["schemas"]["ActorRef"];
+            /** @description Null while the setting has never been saved (038 FR-057). */
+            updatedAt: string | null;
+            updatedBy: components["schemas"]["ActorRef"] | null;
             canChange: components["schemas"]["ActionAvailability"];
         };
         OverspendConfigurationInput: {
             version: number;
             defaultMode: string;
+            /** @description Absent keeps the stored value. */
+            approvalOverPlannedCost?: string;
+        };
+        /** @description An activity of the round whose line items exceed its planned cost (negative unassigned planned cost, domain model §4.3), in the plan currency (038 FR-019, FR-021). */
+        ActivityOverage: {
+            activity: components["schemas"]["RecordRef"];
+            overBy: components["schemas"]["Money"];
         };
         /** @enum {string} */
         PurchaseRequestStatus: "created" | "submitted" | "inReview" | "declined" | "approved" | "closed";
@@ -4262,9 +4307,9 @@ export interface components {
             purchaseSupport: boolean;
             linesOnApprovedPurchaseRequests: components["schemas"]["LinesOnApprovedPurchaseRequests"];
             version: number;
-            /** Format: date-time */
-            updatedAt: string;
-            updatedBy: components["schemas"]["ActorRef"];
+            /** @description Null while the setting has never been saved (038 FR-057). */
+            updatedAt: string | null;
+            updatedBy: components["schemas"]["ActorRef"] | null;
             canChange: components["schemas"]["ActionAvailability"];
         };
         PurchaseRequestConfigurationInput: {
@@ -4605,6 +4650,8 @@ export interface components {
             moaApprover: components["schemas"]["ApprovalPerson"] | null;
             /** @description The section in focus first (the open round's kind, else the kind a submission would start), then the other kind when it has rounds. */
             sections: components["schemas"]["PurchaseRequestApprovalSection"][];
+            /** @description The activities whose line items exceed their planned cost (038 FR-019); empty when none. */
+            overPlannedCost: components["schemas"]["ActivityOverage"][];
         };
         PurchaseRequestSubmission: {
             purchaseRequestId: string;
@@ -4618,6 +4665,8 @@ export interface components {
             problems: components["schemas"]["PurchaseRequestProblem"][];
             workflow: components["schemas"]["WorkflowRef"] | null;
             levels: components["schemas"]["ApprovalWorkflowLevel"][];
+            /** @description The same outcomes as getApprovalSubmission (038 FR-027). */
+            outcomes: components["schemas"]["ApprovalSubmissionLevel"][];
         };
         PurchaseRequestSubmitRequest: {
             version: number;
@@ -4674,10 +4723,10 @@ export interface components {
         Error: {
             error: components["schemas"]["ErrorDetail"];
         };
-        /** @description Every failure. Codes added by 002-014: in_use, cannot_restore (002), not_allowed (003), not_ready with missing (004), parent_deleted_permanently (011), forbidden (014: 403, refused by permission or scope; D-299). A record outside the person's access answers 404 not_found, like a missing one (022). */
+        /** @description Every failure. Codes added by 002-014: in_use, cannot_restore (002), not_allowed (003), not_ready with missing (004), parent_deleted_permanently (011), forbidden (014: 403, refused by permission or scope; D-299), too_many_attempts (038: 429 on sign-in, with Retry-After), too_large (038: 413, the body is over the operation's limit). A record outside the person's access answers 404 not_found, like a missing one (022). */
         ErrorDetail: {
             /** @enum {string} */
-            code: "validation_failed" | "bad_request" | "sign_in_required" | "session_expired" | "incorrect_credentials" | "not_found" | "version_conflict" | "restore_parent_first" | "undo_expired" | "already_resolved" | "name_taken" | "internal_error" | "parent_deleted_permanently" | "in_use" | "cannot_restore" | "not_allowed" | "not_ready" | "forbidden" | "over_budget";
+            code: "validation_failed" | "bad_request" | "sign_in_required" | "session_expired" | "incorrect_credentials" | "not_found" | "version_conflict" | "restore_parent_first" | "undo_expired" | "already_resolved" | "name_taken" | "internal_error" | "parent_deleted_permanently" | "in_use" | "cannot_restore" | "not_allowed" | "not_ready" | "forbidden" | "over_budget" | "too_many_attempts" | "too_large";
             /** @description Plain-language message for the user (never technical details). */
             message: string;
             /** @description Every field problem (validation_failed); always present, empty otherwise. */
@@ -7478,6 +7527,8 @@ export interface components {
             latestDecline: components["schemas"]["DeclineNote"] | null;
             viewer: components["schemas"]["ApprovalViewer"];
             actions: components["schemas"]["ApprovalActionSet"];
+            /** @description The activities whose line items exceed their planned cost (038 FR-019); empty when none. */
+            overPlannedCost: components["schemas"]["ActivityOverage"][];
         };
         SubmitProblem: {
             /**
@@ -7736,6 +7787,10 @@ export interface components {
             count: number;
             declined: number;
             submitted: number;
+            /** @description The first plan year the count covers — the earliest plan year of the person's activities; All work opens on yearFrom – yearTo (038 FR-032). Null when there are none. */
+            yearFrom: number | null;
+            /** @description The last plan year the count covers — at most four after yearFrom; null when there are none. */
+            yearTo: number | null;
         };
         HomeWaitingCounts: {
             count: number;
@@ -9180,7 +9235,8 @@ export interface components {
             invoice: number;
             payment: number;
             accrual: number;
-            notLinked: number;
+            /** @description Omitted for people who may not see not-linked transactions (without finance.import, 038 FR-004). */
+            notLinked?: number;
         };
         FinancialPlanChoice: {
             id: string;
@@ -9544,6 +9600,8 @@ export interface components {
             /** @description Planned cost of activities without dates; null when none. */
             noDates: components["schemas"]["Money"] | null;
             childrenNotPhased: number;
+            /** @description How many activities below the row have line items above their planned cost, so their months add up to more than it (038 FR-024). */
+            negativeBalanceCount: number;
         };
         BudgetByMonth: {
             planId: string;
@@ -9605,9 +9663,12 @@ export interface components {
         SpaPeriods: {
             quarters: components["schemas"]["SpaPeriod"][];
             months: components["schemas"]["SpaPeriod"][];
-            /** @description Planned cost not placed in a month (no dates, line items above planned cost); null when 0.00. */
+            /** @description Planned cost not placed in a month; never negative (line items above planned cost are in linesAbovePlannedCost, 038 FR-023); null when 0.00. */
             notScheduled: components["schemas"]["Money"] | null;
             notScheduledTrace: components["schemas"]["SpaContribution"][];
+            /** @description The total by which activities' line items exceed their planned cost (038 FR-023); quarters + notScheduled − linesAbovePlannedCost = planned cost. notScheduled is never negative. Null when none. */
+            linesAbovePlannedCost: components["schemas"]["Money"] | null;
+            linesAbovePlannedCostTrace: components["schemas"]["SpaContribution"][];
         };
         SpaDimension: {
             /** @example activityType */
@@ -10137,6 +10198,8 @@ export interface components {
             otherYears: components["schemas"]["Money"] | null;
             /** @description Payments posted outside the year; null when none or when financial data is hidden. */
             paidOutsideYear: components["schemas"]["Money"] | null;
+            /** @description How many activities in scope have line items above their planned cost, so their months add up to more than it (038 FR-024). */
+            negativeBalanceCount: number;
         };
         DashboardMonth: {
             month: string;
@@ -10255,6 +10318,26 @@ export interface components {
             content: {
                 "application/vnd.openxmlformats-officedocument.presentationml.presentation": string;
                 "application/pdf": string;
+            };
+        };
+        /** @description Too many failed sign-ins for this e-mail (5) or from this client (20) within 15 minutes; refused for 15 minutes from the failure that reached the limit, also with the right password (too_many_attempts, FR-014). */
+        TooManyAttempts: {
+            headers: {
+                /** @description Seconds until sign-in may be tried again. */
+                "Retry-After"?: number;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description The request body is larger than the operation's limit (too_large, FR-054). */
+        TooLarge: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
             };
         };
     };
@@ -10573,6 +10656,7 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
+            429: components["responses"]["TooManyAttempts"];
             default: components["responses"]["Error"];
         };
     };

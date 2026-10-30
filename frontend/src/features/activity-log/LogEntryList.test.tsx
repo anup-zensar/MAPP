@@ -14,7 +14,7 @@ const ENTRIES = [
   logEntry({ id: 'LOG-2', seq: 2, at: '2026-10-12T10:00:00Z', recordName: 'Two' }),
 ];
 
-function renderList(props: Partial<LogEntryListProps> = {}) {
+function renderList(props: Partial<LogEntryListProps> = {}, user = testUser()) {
   return renderWithProviders(
     <LogEntryList
       entries={ENTRIES}
@@ -24,7 +24,7 @@ function renderList(props: Partial<LogEntryListProps> = {}) {
       isLoadingMore={false}
       {...props}
     />,
-    { user: testUser() },
+    { user },
   );
 }
 
@@ -53,6 +53,17 @@ describe('LogEntryList', () => {
         .getAllByRole('listitem')
         .map((item) => within(item).getByRole('link').textContent),
     ).toEqual(['Five', 'Four']);
+  });
+
+  it("038 FR-058: day headings follow the person's date format", () => {
+    const user = testUser();
+    renderList({}, { ...user, preferences: { ...user.preferences, dateFormat: 'YYYY-MM-DD' } });
+
+    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
+      'Today · 2 entries',
+      'Yesterday · 1 entry',
+      'Monday 2026-10-12 · 1 entry',
+    ]);
   });
 
   it('says how many are loaded and offers Load more while there are more (FR-009)', async () => {

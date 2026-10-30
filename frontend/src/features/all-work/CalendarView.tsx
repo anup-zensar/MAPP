@@ -13,16 +13,13 @@ import { statusWord } from './status-words';
 import { legendOf, timelineOf } from './timeline';
 import type { VisibleRow } from './view-rows';
 
-/**
- * The narrowest one year of the timeline gets (CalendarView.module.css); a bar too short for its
- * words at this width writes them beside it instead of cutting them (UI audit AW-06).
- */
+// The narrowest one year gets (CalendarView.module.css); a bar too short for its words at this width
+// writes them beside it instead of cutting them.
 const YEAR_MIN_PX = 720;
 /** In a range, each year gets at least this much: four quarters of 80 px. */
 const RANGE_YEAR_MIN_PX = 320;
 
 export interface CalendarViewProps {
-  /** The answer for view=calendar (no line-item or unassigned rows). */
   result: AllWorkResult;
   /** The rows of the page on screen (D-115). */
   rows: VisibleRow[];
@@ -32,14 +29,8 @@ export interface CalendarViewProps {
   onOpen: (row: AllWorkRow) => void;
 }
 
-/**
- * The Calendar's timeline (US5, FR-025 – FR-027): the year with its months across the top — or,
- * for a range of years, the years with their quarters (016 FR-036) — a bar per campaign,
- * initiative and activity from its start to its end date in its status colour with the status
- * word, the Today line, cut and open ends said in words, and "No dates yet (N)". Bars open their
- * record and cannot be dragged: dates change on the record's page (FR-027). The legend shows each
- * status word once, in its one colour (UI audit X-14).
- */
+// Bars open their record and cannot be dragged: dates change on the record's page. The legend shows
+// each status word once, in its one colour.
 export function CalendarView({
   result,
   rows,
@@ -140,9 +131,7 @@ export function CalendarView({
                   {row.name}
                 </RecordLink>
                 {row.status && (
-                  <StatusChip tone={row.status.tone}>
-                    {statusWord(row.status.label, row.status.tone)}
-                  </StatusChip>
+                  <StatusChip tone={row.status.tone}>{statusWord(row.status.label)}</StatusChip>
                 )}
               </li>
             ))}

@@ -76,7 +76,7 @@ export function useCreateLineItem(activityId: string) {
           body,
         }),
       ),
-    onSettled: refresh,
+    onSettled: () => refresh(),
   });
 }
 
@@ -88,7 +88,7 @@ export function useUpdateLineItem(lineItemId: string) {
       call(
         api.PATCH('/api/v1/line-items/{lineItemId}', { params: { path: { lineItemId } }, body }),
       ),
-    onSettled: refresh,
+    onSettled: () => refresh(),
   });
 }
 
@@ -102,7 +102,7 @@ export function useDuplicateLineItem() {
           body: {},
         }),
       ),
-    onSettled: refresh,
+    onSettled: () => refresh(),
   });
 }
 
@@ -111,8 +111,11 @@ export function useDeleteLineItem() {
   return useMutation({
     mutationFn: (lineItemId: string) =>
       call(api.DELETE('/api/v1/line-items/{lineItemId}', { params: { path: { lineItemId } } })),
-    // Not waited for: the page that deleted leaves at once, before its own record answers 404.
-    onSettled: () => {
+    // The deleted line item's own queries are left out: asked again they answer 404.
+    onSuccess: (_result, lineItemId) => {
+      void refresh(lineItemId);
+    },
+    onError: () => {
       void refresh();
     },
   });
@@ -120,9 +123,14 @@ export function useDeleteLineItem() {
 
 function useRefresh() {
   const queryClient = useQueryClient();
-  return () =>
+  return (deletedId?: string) =>
     Promise.all(
-      LINE_ITEM_CHANGE_KEYS.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      LINE_ITEM_CHANGE_KEYS.map((queryKey) =>
+        queryClient.invalidateQueries({
+          queryKey,
+          predicate: (query) => deletedId === undefined || !query.queryKey.includes(deletedId),
+        }),
+      ),
     );
 }
 

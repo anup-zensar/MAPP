@@ -135,14 +135,34 @@ func TestExecutive_Validation_FR006(t *testing.T) {
 	c := apitest.New(t).SignIn(t, carlos)
 
 	wrong := get(t, c, executive+"?year=1999&planType=other&currency=eur", http.StatusBadRequest)
-	unknown := get(t, c, executive+"?currency=XYZ", http.StatusBadRequest)
 
-	same(t, "refusals", texts(true, true, true, true), texts(strings.Contains(string(wrong.Body), `"year"`),
-		strings.Contains(string(wrong.Body), `"planType"`), strings.Contains(string(wrong.Body), `"currency"`),
-		strings.Contains(string(unknown.Body), "Choose a currency of Settings.")))
+	same(t, "refusals", texts(true, true, true), texts(strings.Contains(string(wrong.Body), `"year"`),
+		strings.Contains(string(wrong.Body), `"planType"`), strings.Contains(string(wrong.Body), `"currency"`)))
 }
 
-// Own market by default, a plan's campaigns, a market row's equal, scope kept, unknown refused (US3, FR-020 – FR-022).
+func TestUnknownFilters_FallBack_038_FR012_H1(t *testing.T) {
+	t.Parallel()
+	server := apitest.New(t)
+	c, d := server.SignIn(t, carlos), server.SignIn(t, daniel)
+
+	currency := view(t, c, executive+"?year=2026&currency=XYZ")
+	team := view(t, d, regional+"?year=2026&teamId=T-9999")
+	own := view(t, d, regional+"?year=2026")
+
+	same(t, "fallback", texts("USD", *own.Filters.TeamID, own.Team.Name),
+		texts(currency.Filters.Currency, *team.Filters.TeamID, team.Team.Name))
+	get(t, c, executive+"/export?format=pdf&year=2026&currency=XYZ", http.StatusOK)
+	get(t, d, regional+"/export?format=pptx&year=2026&teamId=T-9999", http.StatusOK)
+}
+
+func TestMonths_NegativeBalanceCount_038_FR024_L2(t *testing.T) {
+	t.Parallel()
+	v := view(t, apitest.New(t).SignIn(t, carlos), executive+"?year=2026")
+
+	same(t, "negative balance count", texts(1), texts(v.Months.NegativeBalanceCount))
+}
+
+// Own market by default, a plan's campaigns, a market row's equal, scope kept.
 func TestRegional_FR020_FR022(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -156,7 +176,6 @@ func TestRegional_FR020_FR022(t *testing.T) {
 	same(t, "regional", texts("Lubricants Europe", 1, 0, 2, "Helix launch", amount(row.Figures.PlannedCost), 0),
 		texts(own.Team.Name, own.PlanCount, len(own.Markets), len(own.PlanCampaigns.Items),
 			own.PlanCampaigns.Items[0].Campaign.Name, amount(mobility.Totals.PlannedCost), outside.PlanCount))
-	get(t, d, regional+"?teamId=T-9999", http.StatusBadRequest)
 }
 
 // A plan as .pptx and .pdf; refused without data.export, not found out of scope (US2, FR-023, FR-025).

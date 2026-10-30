@@ -23,7 +23,7 @@ var ErrNotEmpty = errors.New("seed: the store already has data")
 
 // Loaded says what Load loads, for the seed command's message; a test checks it against the store.
 const Loaded = "7 people, 3 teams, 2 models, 6 activity types, 56 Shell attributes with 185 options, " +
-	"5 currencies, 6 finance budget items, 4 plans, 5 campaigns, 10 initiatives, 12 activities, 10 line items, " +
+	"5 currencies, 8 finance budget items, 4 plans, 5 campaigns, 10 initiatives, 12 activities, 10 line items, " +
 	"5 approval workflows, 8 approval rounds, 1 approval delegation, 6 roles, 8 role assignments, 1 purchase request, " +
 	"54 activity-log entries, 1 recycle-bin entry"
 

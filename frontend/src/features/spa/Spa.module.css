@@ -14,7 +14,6 @@
   font-size: var(--text-sm);
 }
 
-/* On the grey page, secondary text is Text Strong (design system §3.1). */
 .scopeBar,
 .page > .note {
   --ink-2: var(--ink);
@@ -29,7 +28,10 @@
 
 .picker {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
+  min-width: 0;
+  max-width: 100%;
   gap: var(--space-2);
   color: var(--ink);
   font-size: var(--text-sm);
@@ -38,7 +40,8 @@
 
 .select {
   height: var(--control-md);
-  min-width: 200px;
+  min-width: min(200px, 100%);
+  max-width: 100%;
   padding: 0 var(--space-3);
   border: 1px solid var(--control-border);
   border-radius: var(--radius-control);
@@ -201,6 +204,7 @@
 .scroll {
   max-width: 100%;
   overflow-x: auto;
+  position: relative;
 }
 
 .scroll:focus-visible {

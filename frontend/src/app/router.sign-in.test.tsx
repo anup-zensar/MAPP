@@ -5,6 +5,7 @@ import { mockApi } from '@/testing/mock-api';
 import { renderRoutes } from '@/testing/render';
 import type { CurrentUser } from '@/session/useSession';
 import { NO_DELEGATIONS } from '@/testing/fixtures/approvals';
+import { DEMO_PEOPLE as DEMO_PEOPLE_FIXTURE } from '@/testing/fixtures/sign-in';
 import { testUser } from '@/testing/fixtures/users';
 import { apiError, reply } from '@/testing/replies';
 import '@/testing/pages';
@@ -102,6 +103,34 @@ describe('RequireSignIn', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Sign in to SP&A One' }),
     ).toBeInTheDocument();
+  });
+
+  it('038 FR-031 (L-28): keeps the fragment in the return address and goes back to it after signing in', async () => {
+    let signedIn = false;
+    mockApi([
+      reply('GET /api/v1/me', () =>
+        signedIn ? { body: PRIYA } : { status: 401, body: SIGN_IN_REQUIRED },
+      ),
+      reply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE_FIXTURE }),
+      reply('POST /api/v1/auth/sign-in', () => {
+        signedIn = true;
+        return { body: PRIYA };
+      }),
+      ...NO_PLANS,
+    ]);
+    const { router, user } = renderRoutes(routes, { route: '/plans?status=draft#cost' });
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/sign-in'));
+    expect(new URLSearchParams(router.state.location.search).get('next')).toBe(
+      '/plans?status=draft#cost',
+    );
+    await user.click(
+      await screen.findByRole('button', { name: 'Sign in as Priya Raman, Marketer' }),
+    );
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/plans'));
+    expect(router.state.location.search).toBe('?status=draft');
+    expect(router.state.location.hash).toBe('#cost');
   });
 
   it('checks the session again on every navigation (research R15)', async () => {

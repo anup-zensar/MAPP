@@ -66,9 +66,7 @@ export function RowName({ visible, search, showStatus, onToggle, onOpen, childre
           {row.strategic && <span className={styles.aop}>AOP</span>}
           {row.bcpir && <span className={styles.aop}>BCPIR</span>}
           {showStatus && row.status && (
-            <StatusChip tone={row.status.tone}>
-              {statusWord(row.status.label, row.status.tone)}
-            </StatusChip>
+            <StatusChip tone={row.status.tone}>{statusWord(row.status.label)}</StatusChip>
           )}
         </div>
         {row.role === 'context' && (

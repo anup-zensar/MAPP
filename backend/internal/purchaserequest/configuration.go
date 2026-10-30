@@ -59,8 +59,13 @@ func (s *Service) SaveConfiguration(ctx context.Context, a actor.Actor, in Confi
 	return view, err
 }
 
+// configurationView has no last change while only SP&A One has saved the setting.
 func configurationView(ctx context.Context, c Configuration) ConfigurationView {
-	return ConfigurationView{PurchaseSupport: c.PurchaseSupport, LinesOnApprovedPurchaseRequests: c.LinesOnApproved,
-		Version: c.Version, UpdatedAt: c.UpdatedAt, UpdatedBy: c.UpdatedBy,
-		CanChange: authz.AvailableAnywhere(ctx, authz.SettingsManage)}
+	view := ConfigurationView{PurchaseSupport: c.PurchaseSupport, LinesOnApprovedPurchaseRequests: c.LinesOnApproved,
+		Version: c.Version, CanChange: authz.AvailableAnywhere(ctx, authz.SettingsManage)}
+	if !c.UpdatedAt.IsZero() && c.UpdatedBy.ID != actor.System.ID {
+		at, by := c.UpdatedAt, c.UpdatedBy
+		view.UpdatedAt, view.UpdatedBy = &at, &by
+	}
+	return view
 }

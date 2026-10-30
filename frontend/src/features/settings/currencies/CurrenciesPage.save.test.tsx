@@ -16,7 +16,7 @@ describe('CurrenciesPage: create and edit (US4 scenarios 1, 3, 4, 5)', () => {
     await user.click(screen.getByRole('button', { name: 'New currency' }));
     const form = await screen.findByRole('dialog', { name: 'New currency' });
     expect(within(form).getByRole('textbox', { name: /^Code/ })).toHaveAccessibleDescription(
-      'Required Three letters, as in ISO 4217 (EUR, JPY).',
+      'required Three letters, as in ISO 4217 (EUR, JPY).',
     );
     await user.type(within(form).getByRole('textbox', { name: /^Code/ }), 'JPY');
     await user.type(within(form).getByRole('textbox', { name: /^Name/ }), 'Japanese yen');

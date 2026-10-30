@@ -5,10 +5,20 @@ import type { PurchaseRequest } from './api';
 
 const RECORD = 'record:';
 
+/** The breadcrumb's first step: Purchase requests for a person who may see it, else Plans. */
+export function breadcrumbRoot(seesList: boolean): BreadcrumbItem {
+  return seesList
+    ? { label: 'Purchase requests', to: '/purchase-requests' }
+    : { label: 'Plans', to: '/plans' };
+}
+
 /** Where the PR's lines live (plan › campaign › initiative › activity), then the PR itself. */
-export function purchaseRequestBreadcrumb(pr: PurchaseRequest): BreadcrumbItem[] {
+export function purchaseRequestBreadcrumb(
+  pr: PurchaseRequest,
+  seesList: boolean,
+): BreadcrumbItem[] {
   return [
-    { label: 'Plans', to: '/plans' },
+    breadcrumbRoot(seesList),
     ...pr.path.map((step) => ({
       label: step.name,
       to: isPlanningType(step.type) ? recordHref(step.type, step.id, pr.plan.id) : undefined,

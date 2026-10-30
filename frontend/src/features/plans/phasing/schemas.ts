@@ -1,17 +1,14 @@
 import { z } from 'zod';
 import type { PhasingMethod } from './api';
-import { readAmount } from './phasing-math';
+import { monthLabel, readAmount } from './phasing-math';
 
 const PHASING_METHODS: readonly PhasingMethod[] = ['none', 'evenly', 'custom'];
 
-/** The problem of one month whose text is not an amount of 0.00 or more. */
 export const MONTH_PROBLEM = 'Type an amount of 0.00 or more.';
 
-/** The Budget by month editor (016 FR-020 – FR-023): Custom months must all be amounts. */
 export const phasingSchema = z
   .object({
     method: z.enum(PHASING_METHODS),
-    /** The text typed for each month of the year. */
     months: z.array(z.string()),
     /** The quarters as typed while typing by quarter; null while they follow the months. */
     quarters: z.array(z.string()).nullable(),
@@ -23,3 +20,25 @@ export const phasingSchema = z
   );
 
 export type PhasingValues = z.infer<typeof phasingSchema>;
+
+export function monthProblems(months: string[], keys: string[]): string {
+  return keys
+    .flatMap((key, index) =>
+      readAmount(months[index] ?? '') === null ? [`${monthLabel(key)}: ${MONTH_PROBLEM}`] : [],
+    )
+    .join(' ');
+}
+
+/** The API's problems, "months[2].amount" naming the month of the sent months it is about. */
+export function namedProblems(
+  fields: { field: string; message: string }[],
+  sent: { month: string }[],
+): string {
+  return fields
+    .map(({ field, message }) => {
+      const index = /^months\[(\d+)\]/.exec(field)?.[1];
+      const month = index === undefined ? undefined : sent[Number(index)]?.month;
+      return month ? `${monthLabel(month)}: ${message}` : message;
+    })
+    .join(' ');
+}

@@ -7,14 +7,13 @@ import { useFailureMessage } from './useFailureMessage';
 
 type DeleteResult = components['schemas']['DeleteResult'];
 
-/** "Sample folder 'Ideas' moved to the recycle bin" with Undo, restorable on this page too. */
+/** "Sample folder 'Ideas' deleted" with Undo, restorable on this page too. */
 const UNDO_OPTIONS = {
   invalidate: SAMPLE_PAGE_LISTS,
   altText: 'Restore it from Recently deleted on this page',
 };
 
 interface DeleteDialogProps {
-  /** The question: "Delete sample folder 'Ideas'?" */
   title: string;
   /** What goes to the recycle bin with it. */
   text: string;
@@ -24,10 +23,6 @@ interface DeleteDialogProps {
   onClose: () => void;
 }
 
-/**
- * Asks before a delete (design system §6.5); afterwards the message offers Undo (FR-026), or says
- * why the delete did not work.
- */
 export function DeleteDialog({ title, text, confirmLabel, remove, onClose }: DeleteDialogProps) {
   const [busy, setBusy] = useState(false);
   const afterDelete = useUndoableDelete(UNDO_OPTIONS);

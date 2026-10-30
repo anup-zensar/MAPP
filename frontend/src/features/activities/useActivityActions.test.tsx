@@ -49,13 +49,13 @@ function openMenu(answers: HttpHandler[] = []) {
 }
 
 describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
-  it('offers Copy, Move, Split activity, View history and Delete, last after a line', async () => {
+  it('038 FR-041 (L-6): offers Copy, Move to…, Split activity, View history and Delete, last after a line', async () => {
     const { user } = openMenu();
 
     await user.click(screen.getByRole('button', { name: 'Actions for Launch film' }));
     expect((await screen.findAllByRole('menuitem')).map((item) => item.textContent)).toEqual([
       'Copy',
-      'Move',
+      'Move to…',
       'Split activity',
       'View history',
       'Delete',
@@ -111,7 +111,7 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
     ]);
 
     await user.click(screen.getByRole('button', { name: 'Actions for Launch film' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Move' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Move to…' }));
     const dialog = await screen.findByRole('dialog', { name: "Move activity 'Launch film'" });
     await user.click(await within(dialog).findByRole('radio', { name: 'Print & outdoor' }));
     await user.click(within(dialog).getByRole('button', { name: 'Move activity' }));
@@ -137,9 +137,7 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
     await user.click(within(question).getByRole('button', { name: 'Delete activity' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1001'));
-    expect(
-      await screen.findByText("Activity 'Launch film' moved to the recycle bin"),
-    ).toBeVisible();
+    expect(await screen.findByText("Activity 'Launch film' deleted")).toBeVisible();
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
 
     const messages = await findMessages();

@@ -3,7 +3,7 @@ import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { Avatar } from '@/ui/Avatar/Avatar';
 import { Button } from '@/ui/Button/Button';
 import { LevelTag } from '@/ui/LevelTag/LevelTag';
-import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import type { LevelTagProps } from '@/ui/LevelTag/LevelTag';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import { isPlanningType } from '@/ui/record-links';
@@ -32,11 +32,7 @@ export interface BinRowProps {
   onPurge: () => void;
 }
 
-/**
- * One recycle-bin entry (FR-015, FR-017): its level, name and ID, where it was, what was inside,
- * who deleted it and when, why it cannot simply come back, **Restore** and ⋯ **Delete
- * permanently**, and its contents as a tree under **Show contents**.
- */
+/** One recycle-bin entry: Restore, ⋯ Delete permanently, and its contents under Show contents. */
 export function BinRow({
   item,
   containsText,
@@ -46,8 +42,7 @@ export function BinRow({
   onPurge,
 }: BinRowProps) {
   const { dateTime, relativeTime } = useFormatters();
-  // What the person's roles allow here (feature 014, FR-011): an action they may not take moves
-  // into the menu, shown with the server's reason; one without a reason is left out.
+  // An action the roles forbid moves into the menu with the server's reason, or is left out.
   const restoreOk = !item.access || item.access.restore.available;
   const menu: ActionsMenuItem[] = [
     ...(!restoreOk && isShown(item.access?.restore)
@@ -81,14 +76,16 @@ export function BinRow({
     }
   }, [highlighted]);
 
+  const level = levelOf(item.recordType);
+
   return (
     <li className={styles.row} data-highlighted={highlighted || undefined}>
       <div className={styles.main}>
         <div className={styles.title}>
-          {isPlanningType(item.recordType) ? (
-            <LevelTag level={item.recordType} />
+          {level ? (
+            <LevelTag level={level} />
           ) : (
-            <StatusChip tone="neutral">{capitalise(item.recordTypeLabel)}</StatusChip>
+            <span className={styles.tag}>{item.recordTypeLabel.toUpperCase()}</span>
           )}
           <h2 ref={heading} tabIndex={-1} className={styles.name}>
             {item.recordName}
@@ -158,4 +155,14 @@ function ContentsTree({ records, parentId }: { records: BinRecord[]; parentId: s
       ))}
     </ul>
   );
+}
+
+/** The LevelTag of a planning or purchase-request record; null for other record types. */
+function levelOf(recordType: string): LevelTagProps['level'] | null {
+  if (isPlanningType(recordType)) {
+    return recordType;
+  }
+  return recordType === 'purchaseRequest' || recordType === 'purchaseRequestLine'
+    ? recordType
+    : null;
 }

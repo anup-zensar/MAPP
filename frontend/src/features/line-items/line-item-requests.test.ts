@@ -45,7 +45,7 @@ describe('request bodies', () => {
     expect(body.version).toBe(4);
   });
 
-  it('maps custom month problems to their inputs', () => {
+  it('038 FR-040 (L-4): maps custom month problems to their inputs, naming the month', () => {
     let state = changeSpreadMethod(newFormState(formOptions()), 'custom', MAR_MAY, 2026);
     state = changeCustomMonth(state, '2026-04', '-1');
     const body = toCreateBody(state);
@@ -56,7 +56,7 @@ describe('request bodies', () => {
       ],
     });
     expect(formProblems(error, body)).toEqual([
-      { field: 'spread.month.2026-04', message: "Month amounts can't be negative." },
+      { field: 'spread.month.2026-04', message: "Apr 2026: Month amounts can't be negative." },
       { field: 'name', message: 'Enter a name for the line item.' },
     ]);
   });

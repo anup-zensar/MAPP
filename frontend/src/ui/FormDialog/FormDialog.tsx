@@ -3,32 +3,26 @@ import { Dialog } from 'radix-ui';
 import { useRef } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Button } from '../Button/Button';
+import { RequiredLegend } from '../RequiredLegend/RequiredLegend';
 import styles from './FormDialog.module.css';
 
 export interface FormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Says what the form does: "Copy plan 'FY2026 Lubricants Europe'". */
   title: string;
   description?: string;
-  /** The form's fields (or, for a message with one button, its text). */
   children: ReactNode;
-  /** Names the action, never "OK": "Copy plan", "Unpublish plan". */
   submitLabel: string;
   /** Runs the action; the dialog stays open until you close it, so it can show `busy`. */
   onSubmit: () => void;
-  /** The action is running: a second submit is ignored. */
   busy?: boolean;
   cancelLabel?: string;
   /** Only the submit button: a dialog that only tells something ("Close"). */
   hideCancel?: boolean;
 }
 
-/**
- * A centred dialog with a short form (feature 004; copy, unpublish, decline, move to…): the first
- * field has the focus, Enter submits, a second submit while busy is ignored and the focus goes back
- * where it was when the dialog closes. ConfirmDialog stays for questions whose text is the content.
- */
+// The first field has the focus, Enter submits and the focus goes back where it was on close.
+// ConfirmDialog stays for questions whose text is the content.
 export function FormDialog({
   open,
   onOpenChange,
@@ -84,7 +78,10 @@ export function FormDialog({
             <Dialog.Description className={styles.description}>{description}</Dialog.Description>
           )}
           <form noValidate aria-busy={busy} onSubmit={submit}>
-            <div className={styles.form}>{children}</div>
+            <div className={styles.form}>
+              <RequiredLegend />
+              {children}
+            </div>
             <div className={styles.actions}>
               {!hideCancel && (
                 <Dialog.Close asChild>

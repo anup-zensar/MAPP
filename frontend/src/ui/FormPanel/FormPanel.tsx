@@ -1,6 +1,6 @@
 import { CircleAlert } from 'lucide-react';
 import { useId } from 'react';
-import type { FormEvent, ReactNode } from 'react';
+import type { FormEvent, KeyboardEvent, ReactNode } from 'react';
 import { useUnsavedChanges } from '../useUnsavedChanges';
 import { Button } from '../Button/Button';
 import { FormErrorSummary } from '../FormErrorSummary/FormErrorSummary';
@@ -12,27 +12,17 @@ import type { SaveFailure } from './problem-of';
 export interface FormPanelProps {
   title: string;
   description?: string;
-  /** Something was typed that is not saved yet. */
   isDirty: boolean;
-  /** A save is on its way; another Save is ignored meanwhile. */
   saving: boolean;
-  /** The field problems of the last save, all at once. */
   problems: FieldProblem[];
   failure: SaveFailure | null;
   onSave: () => void;
   onClose: () => void;
-  /** The primary button's label ("Save" when left out). */
   saveLabel?: string;
-  /** The form's fields. */
   children: ReactNode;
 }
 
-/**
- * A side-panel form (design system §6.2, moved here from feature 001's developer page for 002, 003,
- * 005 and 008): Save and Cancel at the bottom, a failure and the error summary above the fields,
- * and the "Discard changes?" question before typed changes are lost — on Cancel, Close, Escape, a
- * click beside the panel, or when leaving the page. Save is never disabled.
- */
+/** A side-panel form: Save is never disabled; "Discard changes?" before typed changes are lost. */
 export function FormPanel({
   title,
   description,
@@ -45,7 +35,7 @@ export function FormPanel({
   saveLabel = 'Save',
   children,
 }: FormPanelProps) {
-  const { dialog, confirmDiscard } = useUnsavedChanges(isDirty);
+  const { dialog, confirmDiscard } = useUnsavedChanges(isDirty, title);
   // Save sits in the panel's footer, outside the form; the form attribute connects them.
   const formId = useId();
 
@@ -77,7 +67,15 @@ export function FormPanel({
           </>
         }
       >
-        <form id={formId} noValidate aria-busy={saving} className={styles.form} onSubmit={submit}>
+        {/* eslint-disable-next-line jsx-a11y-x/no-noninteractive-element-interactions -- Enter from a select inside saves the form; the controls stay the interactive elements */}
+        <form
+          id={formId}
+          noValidate
+          aria-busy={saving}
+          className={styles.form}
+          onSubmit={submit}
+          onKeyDown={submitOnEnterInSelect}
+        >
           {failure && <FailureMessage failure={failure} />}
           <FormErrorSummary errors={problems} />
           {children}
@@ -86,6 +84,14 @@ export function FormPanel({
       {dialog}
     </>
   );
+}
+
+/** Enter saves from a choice list too, as browsers do only from text fields. */
+function submitOnEnterInSelect(event: KeyboardEvent<HTMLFormElement>) {
+  if (event.key === 'Enter' && event.target instanceof HTMLSelectElement) {
+    event.preventDefault();
+    event.currentTarget.requestSubmit();
+  }
 }
 
 /** A failure that is not about one field, such as a conflict; screen readers hear it at once. */

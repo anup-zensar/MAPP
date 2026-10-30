@@ -12,6 +12,7 @@ import { useDecide } from './api';
 import type { ActivityApproval } from './api';
 import { alreadyDecidedMessage, approvedToast, capacitySentence } from './decision-messages';
 import { levelOf, names } from './messages';
+import { OverPlannedCostAlert } from './OverPlannedCost';
 import { commentSchema, declineSchema } from './schemas';
 import type { CommentValues } from './schemas';
 import styles from './approval-dialogs.module.css';
@@ -118,6 +119,7 @@ export function DecisionDialog({ mode, approval, onClose, onDecided }: DecisionD
       onConfirm={confirm}
     >
       <div className={styles.body}>
+        {approve && <OverPlannedCostAlert overages={approval.overPlannedCost} />}
         {round && level && (
           <p className={styles.levels}>
             {`${levelOf(levelNumber, round.levelCount)} · ${names(level.approvers)}`}

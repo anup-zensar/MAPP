@@ -22,15 +22,12 @@ interface BarLinkProps {
   onOpen: (row: AllWorkRow) => void;
 }
 
-/**
- * A bar: a link to the record with its name, status and dates in a tip (FR-026, FR-027). Its
- * words sit on the bar when they fit, else beside it — after it, or before it near the end of the
- * timeline — so they are never cut while the row has room (UI audit AW-06).
- */
+// A bar linking to its record. Its words sit on the bar when they fit, else beside it, so they are
+// never cut while the row has room.
 export function BarLink({ row, bar, year, yearTo, trackPx, onOpen }: BarLinkProps) {
   const { date, dateRange, money } = useFormatters();
   const tone = row.status?.tone ?? 'neutral';
-  const word = row.status ? statusWord(row.status.label, row.status.tone) : '';
+  const word = row.status ? statusWord(row.status.label) : '';
   const from = bar.continuesFrom ? `Continues from ${year - 1}` : '';
   const into = bar.continuesInto ? `Continues into ${yearTo + 1}` : '';
   const ongoing = bar.ongoing ? 'Ongoing' : '';

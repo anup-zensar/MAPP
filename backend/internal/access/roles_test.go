@@ -106,9 +106,8 @@ func TestCreateRole_Rules_FR018(t *testing.T) {
 	}
 }
 
-// Changing a role keeps the fields not sent, refuses an out-of-date version, logs every changed field with
-// permissions as labels and "Added: …; removed: …", and writes nothing when nothing changes (FR-018,
-// FR-037, data model §3).
+// Changing a role keeps unsent fields, refuses an old version, logs permissions as labels, and writes nothing
+// when nothing changes.
 func TestUpdateRole_ChangedFieldsLogged_FR018_FR037(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -176,9 +175,7 @@ func TestAdministratorRole_Locked_FR018(t *testing.T) {
 	}
 }
 
-// A role someone holds can't be deleted (409 in_use, message 13); an unused role goes to the recycle bin and
-// Undo brings it back; when it was the role for new people, the rule becomes "No role", logged (FR-018,
-// data model §1.3).
+// When the deleted role was the role for new people, the rule becomes "No role", logged.
 func TestDeleteRole_InUseThenBinAndUndo_FR018(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -245,5 +242,27 @@ func TestRestoreRole_NameTaken_FR018(t *testing.T) {
 	role, _ := f.service.GetRole(t.Context(), alex, analyst.ID)
 	if role.Name != "Analyst (restored)" || restored.Details != "Renamed to 'Analyst (restored)' because the name was taken." {
 		t.Errorf("restored role %q with details %q", role.Name, restored.Details)
+	}
+}
+
+// "Link financial transactions" is saved only together with "Import GSAP extracts", on create and on
+// change; with both the role is saved.
+func TestRole_LinkNeedsImport_038_FR006_H4(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	want := []errs.FieldError{{Field: "permissions", Message: "Linking financial transactions needs Import GSAP extracts too — only people who import see transactions that are not linked."}}
+	linkAlone := []authz.Permission{authz.FinanceView, authz.FinanceLink}
+
+	_, createErr := f.service.CreateRole(t.Context(), alex, RoleInput{Name: "Linker", Permissions: linkAlone, DefaultScope: authz.ScopeAll})
+	_, updateErr := f.service.UpdateRole(t.Context(), alex, viewerID, RoleUpdate{Version: version(1), Permissions: &linkAlone})
+
+	for _, err := range []error{createErr, updateErr} {
+		if got := apiError(t, err); got.Status != http.StatusBadRequest || !reflect.DeepEqual(got.Fields, want) {
+			t.Errorf("link alone = %d %+v, want 400 %+v", got.Status, got.Fields, want)
+		}
+	}
+	both := append(slices.Clone(linkAlone), authz.FinanceImport)
+	if _, err := f.service.CreateRole(t.Context(), alex, RoleInput{Name: "Linker", Permissions: both, DefaultScope: authz.ScopeAll}); err != nil {
+		t.Errorf("link with import: %v", err)
 	}
 }

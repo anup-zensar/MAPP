@@ -72,6 +72,8 @@ export function spaView(overrides: Partial<SpaView> = {}): SpaView {
       })),
       notScheduled: null,
       notScheduledTrace: [],
+      linesAbovePlannedCost: null,
+      linesAbovePlannedCostTrace: [],
     },
     dimension: {
       key: 'attr:SA-1013',

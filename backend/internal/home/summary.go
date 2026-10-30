@@ -9,10 +9,6 @@ import (
 	"mapp/internal/rollup"
 )
 
-// Summary returns the four summary cards for the scope (FR-005, FR-006, FR-017): the plans in scope by
-// status; the activities a owns, in every plan, with how many are Declined and Submitted; how many wait for
-// a's approval and since when the oldest waits; and the planned cost of the plans in scope against their
-// plan budgets, added up in US dollars and converted once.
 func (s *Service) Summary(ctx context.Context, a actor.Actor, scopeText string) (SummaryView, error) {
 	scope, scopeErr := ParseScope(scopeText)
 	if scopeErr != nil {
@@ -39,7 +35,7 @@ func (s *Service) Summary(ctx context.Context, a actor.Actor, scopeText string) 
 		inScope := ps.in(scope)
 		view = SummaryView{
 			Scope: scope, DisplayCurrency: c.code, GettingStarted: gettingStarted(ps),
-			Plans: planCounts(inScope), ActivitiesOwned: activityCounts(owned), WaitingForMe: waitingCounts(waiting),
+			Plans: planCounts(inScope), ActivitiesOwned: activityCounts(owned, ps.all), WaitingForMe: waitingCounts(waiting),
 			PlannedCost: plannedCostOf(inScope, c),
 		}
 		return nil
@@ -50,7 +46,6 @@ func (s *Service) Summary(ctx context.Context, a actor.Actor, scopeText string) 
 	return view, nil
 }
 
-// The reasons to show the Getting started card (HomeSummary.gettingStarted, FR-020).
 const (
 	notInTeam   = "notInTeam"
 	noTeamPlans = "noTeamPlans"
@@ -71,7 +66,6 @@ func gettingStarted(ps planScope) *string {
 	return &reason
 }
 
-// planCounts counts plans by status (FR-005 card 1).
 func planCounts(plans []Plan) PlanCounts {
 	counts := PlanCounts{Count: len(plans)}
 	for _, p := range plans {
@@ -84,23 +78,46 @@ func planCounts(plans []Plan) PlanCounts {
 	return counts
 }
 
-// activityCounts counts the person's activities, and the Declined and Submitted ones by stored status
-// (FR-005 card 2).
-func activityCounts(owned []Activity) ActivityCounts {
-	counts := ActivityCounts{Count: len(owned)}
+const maxYears = 5
+
+// activityCounts counts the person's activities in the plan years All work opens on — the earliest year of
+// their plans and at most four more, and the Declined and Submitted ones (card 2).
+func activityCounts(owned []Activity, plans []Plan) ActivityCounts {
+	yearOf := make(map[string]int, len(plans))
+	for _, p := range plans {
+		yearOf[p.ID] = p.Year
+	}
+	years := make([]int, 0, len(owned))
 	for _, act := range owned {
-		switch act.Status {
-		case activityDeclined:
-			counts.Declined++
-		case activitySubmitted:
-			counts.Submitted++
+		if year, found := yearOf[act.Plan.ID]; found {
+			years = append(years, year)
+		}
+	}
+	var counts ActivityCounts
+	if len(years) == 0 {
+		return counts
+	}
+	from := slices.Min(years)
+	to := slices.Max(slices.DeleteFunc(years, func(y int) bool { return y >= from+maxYears }))
+	counts.YearFrom, counts.YearTo = &from, &to
+	for _, act := range owned {
+		if year, found := yearOf[act.Plan.ID]; found && year <= to {
+			counts.add(act.Status)
 		}
 	}
 	return counts
 }
 
-// waitingCounts counts what waits for the person and finds the earliest "waiting since" (FR-005 card 3,
-// D-175).
+func (c *ActivityCounts) add(status string) {
+	c.Count++
+	switch status {
+	case activityDeclined:
+		c.Declined++
+	case activitySubmitted:
+		c.Submitted++
+	}
+}
+
 func waitingCounts(waiting []Waiting) WaitingCounts {
 	counts := WaitingCounts{Count: len(waiting)}
 	for _, w := range waiting {
@@ -112,9 +129,6 @@ func waitingCounts(waiting []Waiting) WaitingCounts {
 	return counts
 }
 
-// plannedCostOf adds up the planned cost and the plan budgets of plans in US dollars and converts the totals
-// once (FR-005 card 4, FR-006, FR-017): budget used is the total planned cost over the total budget of the
-// plans that have one; plans without a budget are counted.
 func plannedCostOf(plans []Plan, c converter) PlannedCostTotal {
 	total := PlannedCostTotal{PlanCount: len(plans)}
 	var planned money.Amount // a plan with nothing planned adds 0.00

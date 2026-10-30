@@ -36,8 +36,8 @@ import styles from './TransactionPanel.module.css';
  * /financials/transactions/<id> over the Financials page: every field as GSAP sent it, its USD and
  * display amounts, the linked path with a link per level, how it was matched or why it is not
  * linked, the import it came from, and when it was added and last updated. A not-linked
- * transaction offers Link to a line item; a manual link offers Unlink; a link made by GSAP data
- * says where to correct it.
+ * transaction offers Link to a line item and a manual link Unlink, when the server says the person
+ * may; a link made by GSAP data says where to correct it.
  */
 export function TransactionPanel() {
   const { transactionId = '' } = useParams();
@@ -70,13 +70,13 @@ export function TransactionPanel() {
 
   const footer = data ? (
     <>
-      {data.link.state === 'notLinked' && (
+      {data.link.state === 'notLinked' && data.canLink && (
         <Button ref={linkButton} variant="primary" onClick={() => setDialog('link')}>
           Link to a line item
         </Button>
       )}
       <Button onClick={close}>Close</Button>
-      {data.link.matchedBy === 'manual' && (
+      {data.link.matchedBy === 'manual' && data.canUnlink && (
         <Button ref={unlinkButton} onClick={() => setDialog('unlink')}>
           Unlink
         </Button>
@@ -126,7 +126,7 @@ export function TransactionPanel() {
 }
 
 function Details({ transaction }: { transaction: FinancialTransaction }) {
-  const { date, dateTime, money, displayCurrency } = useFormatters();
+  const { date, dateTime, money, displayCurrency, dateFormat } = useFormatters();
   const t = transaction;
   const day = (timestamp: string) => date(localDate(timestamp));
   const poReference = t.poNumber ? [t.poNumber, t.poLineNumber].filter(Boolean).join(' / ') : '';
@@ -146,7 +146,9 @@ function Details({ transaction }: { transaction: FinancialTransaction }) {
             <Item label="PO number / PO line">{poReference || '—'}</Item>
           )}
           <Item label="Posting date">{date(t.postingDate)}</Item>
-          {t.accrualMonth && <Item label="Accrual month">{monthText(t.accrualMonth)}</Item>}
+          {t.accrualMonth && (
+            <Item label="Accrual month">{monthText(t.accrualMonth, dateFormat)}</Item>
+          )}
           <Item label="Amount">
             <span className={styles.money}>{money(t.amount)}</span>
             {t.currencyMissing && (

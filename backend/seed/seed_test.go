@@ -57,8 +57,8 @@ func TestLoad_IDsComeFromTheCounters_FR027_FR040(t *testing.T) {
 
 	want := map[string]string{
 		ids.PrefixPerson: "U-1008", ids.PrefixActivityType: "AT-1007", ids.PrefixModel: "MOD-1003",
-		ids.PrefixShellAttribute: "SA-1057", ids.PrefixShellOption: "SO-1186", ids.PrefixFinanceBudget: "FB-1003",
-		ids.PrefixFinanceBudgetItem: "FBI-1007", ids.PrefixTeam: "T-1004", ids.PrefixTeamMembership: "TM-1010",
+		ids.PrefixShellAttribute: "SA-1057", ids.PrefixShellOption: "SO-1186", ids.PrefixFinanceBudget: "FB-1004",
+		ids.PrefixFinanceBudgetItem: "FBI-1009", ids.PrefixTeam: "T-1004", ids.PrefixTeamMembership: "TM-1010",
 		ids.PrefixPlan: "P-1005", ids.PrefixCampaign: "C-1006", ids.PrefixInitiative: "I-1012", ids.PrefixActivity: "A-1014",
 		ids.PrefixLineItem: "L-1012", ids.PrefixLogEntry: "LOG-1055", ids.PrefixBinEntry: "BIN-1002",
 		ids.PrefixApprovalWorkflow: "WF-1006", ids.PrefixApprovalRound: "AR-1009",

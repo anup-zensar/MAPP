@@ -198,6 +198,7 @@ export function RecordDetails({
             record={record}
             year={record.plan.year}
             currency={record.budget?.currency ?? 'USD'}
+            access={record.access?.edit}
             variant="panel"
           />
           <RecordFinancials recordId={record.id} planId={planId} variant="panel" />

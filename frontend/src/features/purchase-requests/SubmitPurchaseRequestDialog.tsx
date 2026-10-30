@@ -6,7 +6,7 @@ import { Link } from 'react-router';
 import { z } from 'zod';
 import type { components } from '@/api/generated/schema';
 import { asApiError, isSessionLost } from '@/api/errors';
-import { ApprovalChain } from '@/features/approvals';
+import { ApprovalChain, SubmissionOutcomes } from '@/features/approvals';
 import { Button } from '@/ui/Button/Button';
 import { FormDialog } from '@/ui/FormDialog/FormDialog';
 import { FormField } from '@/ui/FormField/FormField';
@@ -14,6 +14,7 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { useToast } from '@/ui/Toast/useToast';
 import { CHECK_ON_SAVE } from '@/ui/useFormProblems';
+import { useHidesUnavailable } from '@/ui/ViewOnlyNote/view-only-context';
 import { missingLinks, problemLinks } from './approval-links';
 import type { ProblemLink } from './approval-links';
 import {
@@ -51,11 +52,12 @@ export function SubmitPurchaseRequestButton({
 }: SubmitPurchaseRequestButtonProps) {
   const [open, setOpen] = useState(false);
   const reasonId = useId();
+  const hidesUnavailable = useHidesUnavailable();
   const { submit, resubmit } = actions ?? purchaseRequest.access;
   const label = submit.available || (!resubmit.available && submit.reason) ? SUBMIT : RESUBMIT;
 
   if (!submit.available && !resubmit.available) {
-    const reason = actions ? '' : submit.reason || resubmit.reason;
+    const reason = actions || hidesUnavailable ? '' : submit.reason || resubmit.reason;
     return reason ? (
       <span className={styles.withReason}>
         <Button icon={<Send />} disabled aria-describedby={reasonId}>
@@ -166,7 +168,11 @@ function SubmitPurchaseRequestDialog({ purchaseRequest: pr, onClose }: DialogPro
         ) : (
           <>
             <p>{workflowText(data.workflow)}</p>
-            {data.levels.length > 0 && <ApprovalChain upcomingLevels={data.levels} />}
+            {data.outcomes.length > 0 ? (
+              <SubmissionOutcomes outcomes={data.outcomes} />
+            ) : (
+              data.levels.length > 0 && <ApprovalChain upcomingLevels={data.levels} />
+            )}
             {problem && (
               <p role="alert" className={styles.problem}>
                 {problem}

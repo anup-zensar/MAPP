@@ -166,9 +166,7 @@ describe('ApprovalWorkflowsPage set inactive, reactivate and delete (feature 008
     await user.click(within(dialog).getByRole('button', { name: 'Delete approval workflow' }));
 
     expect(
-      await screen.findByText(
-        "Approval workflow 'China BC approval workflow' moved to the recycle bin",
-      ),
+      await screen.findByText("Approval workflow 'China BC approval workflow' deleted"),
     ).toBeInTheDocument();
     const messages = await findMessages();
     await user.click(within(messages).getByRole('button', { name: 'Undo' }));
@@ -207,8 +205,14 @@ describe('ApprovalWorkflowsPage set inactive, reactivate and delete (feature 008
       }),
     );
 
+    const cantDelete = await screen.findByRole('alertdialog', {
+      name: "Can't delete 'China BC approval workflow'",
+    });
+    // A dialog that only informs has one Close.
     expect(
-      await screen.findByRole('alertdialog', { name: "Can't delete 'China BC approval workflow'" }),
-    ).toBeInTheDocument();
+      within(cantDelete)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['Close']);
   });
 });

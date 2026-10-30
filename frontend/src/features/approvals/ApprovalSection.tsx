@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { Card } from '@/ui/Card/Card';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
@@ -10,8 +11,9 @@ import { useActivityApproval } from './api';
 import type { ActivityApproval } from './api';
 import type { ApprovalActivity, ShowSubmitProblems } from './approval-types';
 import { DecisionButtons, OwnerDecisionMenu } from './DecisionActions';
-import { decisionRole } from './decision-role';
+import { approveRefusal, decisionRole } from './decision-role';
 import { declineBoxText } from './decision-messages';
+import { OverPlannedCostAlert } from './OverPlannedCost';
 import { RecallButton } from './RecallButton';
 import { SubmitButton } from './SubmitButton';
 import styles from './ApprovalSection.module.css';
@@ -21,13 +23,6 @@ export interface ApprovalSectionProps {
   onShowProblems: ShowSubmitProblems;
 }
 
-/**
- * The Approval section of feature 006's activity page (008 plan, "Activity page parts"; FR-016,
- * FR-021, FR-024, FR-025): the status and workflow, the approval chain (or "Not submitted yet" with
- * the levels to come), the actions and the approval history. The latest decline and its reason
- * show in the notice under the page header (design system §2.4 B, UI audit AC-02), so they are not
- * repeated here. 006's page places it inside the element with id "approval".
- */
 export function ApprovalSection({ activity, onShowProblems }: ApprovalSectionProps) {
   const approval = useActivityApproval(activity.id);
   const round = approval.data?.rounds[0];
@@ -72,6 +67,8 @@ function ApprovalBody({ approval, activity, onShowProblems }: ApprovalBodyProps)
     !actions.recall.available ? actions.recall.reason : '',
   ].filter((reason, index, all) => reason !== '' && all.indexOf(reason) === index);
   const canSubmit = actions.submit.available || actions.resubmit.available;
+  const refusal = approveRefusal(actions);
+  const refusalId = useId();
 
   return (
     <div className={styles.body}>
@@ -95,18 +92,20 @@ function ApprovalBody({ approval, activity, onShowProblems }: ApprovalBodyProps)
         </div>
       )}
 
+      {actions.approve.available && <OverPlannedCostAlert overages={approval.overPlannedCost} />}
+
       {(canSubmit || role !== 'none' || actions.recall.available) && (
         <div className={styles.actions}>
           {canSubmit && (
             <SubmitButton activity={current} onShowProblems={onShowProblems} variant="secondary" />
           )}
-          {role === 'decide' && <DecisionButtons approval={approval} />}
+          {role === 'decide' && <DecisionButtons approval={approval} refusalId={refusalId} />}
           {actions.recall.available && <RecallButton approval={approval} />}
           {role === 'owner' && <OwnerDecisionMenu approval={approval} />}
         </div>
       )}
       {reasons.map((reason) => (
-        <p key={reason} className={styles.reason}>
+        <p key={reason} id={reason === refusal ? refusalId : undefined} className={styles.reason}>
           {reason}
         </p>
       ))}
