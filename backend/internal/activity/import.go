@@ -12,12 +12,9 @@ import (
 	"mapp/internal/platform/record"
 )
 
-// provisionalPrefix starts the id an imported activity has until Flush gives it its readable one.
 const provisionalPrefix = "new-activity-"
 
-// Importer creates the activities of one plan workbook import with the rules of Create, reading each
-// initiative's context and activities once, and stores them together on Flush (038 FR-008). Imports are
-// never refused for overspend (037 FR-012), so it reads no overspend limits.
+// Importer creates the activities of one workbook import with the rules of Create and stores them on Flush.
 type Importer struct {
 	s       *Service
 	a       actor.Actor
@@ -25,16 +22,13 @@ type Importer struct {
 	pending []Activity
 }
 
-// importPlace is an initiative of the import: its plan context, the activities under it and the defaults
-// of a new one.
 type importPlace struct {
 	pc       planContext
 	siblings []Activity
 	defaults ImportDefaults
 }
 
-// ImportDefaults are what a new activity of an initiative starts with, as the new form fills it in: its
-// Defaults and the default planned cost of each allowed type in the plan currency.
+// ImportDefaults are what a new activity of an initiative starts with, as the new form fills it in.
 type ImportDefaults struct {
 	Defaults
 	TypeCosts map[string]money.Money
@@ -76,8 +70,7 @@ func (im *Importer) Create(ctx context.Context, initiativeID string, in Input) (
 	return activity.ID, nil
 }
 
-// Flush stores the kept activities with their readable ids in one statement, logs each as created and
-// returns the readable id of each provisional one.
+// Flush stores the kept activities under readable ids, logs each and maps every provisional id to its own.
 func (im *Importer) Flush(ctx context.Context) (map[string]string, error) {
 	if len(im.pending) == 0 {
 		return map[string]string{}, nil
@@ -152,8 +145,6 @@ func (im *Importer) place(ctx context.Context, initiativeID string) (*importPlac
 	return p, nil
 }
 
-// importDefaults are the new form's defaults (FormView.Defaults and the types' planned costs) without the
-// rest of the form.
 func (s *Service) importDefaults(ctx context.Context, pc planContext) (ImportDefaults, error) {
 	active, err := s.activeWorkflows(ctx)
 	if err != nil {
@@ -202,8 +193,6 @@ func (s *Service) typeCosts(ctx context.Context, pc planContext) (map[string]mon
 	return costs, nil
 }
 
-// placeSiblings is the Store a check of an import reads the initiative's activities from: those stored and
-// those the import keeps so far.
 type placeSiblings struct {
 	Store
 	place *importPlace
