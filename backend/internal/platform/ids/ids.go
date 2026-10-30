@@ -60,6 +60,15 @@ const (
 
 	PrefixBulkAction = "BLK"
 	PrefixPlanImport = "IMP"
+
+	PrefixPerformanceSource    = "PS"
+	PrefixPerformanceMapping   = "PSM"
+	PrefixPerformanceImport    = "PIM"
+	PrefixPerformanceFact      = "PF"
+	PrefixPerformanceReviewRow = "PRV"
+	PrefixMediaCode            = "MC"
+	PrefixExternalNameAlias    = "XN"
+	PrefixIntegrationID        = "IID"
 )
 
 var Prefixes = []string{
@@ -76,6 +85,8 @@ var Prefixes = []string{
 	PrefixSwbsRun,
 	PrefixPurchaseRequest, PrefixPurchaseRequestLine, PrefixPurchaseRequestRouting, PrefixSimulatedGSAPPR, PrefixSimulatedPO,
 	PrefixBulkAction, PrefixPlanImport,
+	PrefixPerformanceSource, PrefixPerformanceMapping, PrefixPerformanceImport, PrefixPerformanceFact,
+	PrefixPerformanceReviewRow, PrefixMediaCode, PrefixExternalNameAlias, PrefixIntegrationID,
 }
 
 const firstNumber = 1001

@@ -3,6 +3,8 @@ package stores
 import (
 	"context"
 
+	"mapp/internal/performance"
+
 	"mapp/internal/access"
 	"mapp/internal/activity"
 	"mapp/internal/allwork"
@@ -61,6 +63,7 @@ func postgresPlanning(db *database.DB) Planning {
 func postgresFinance(db *database.DB) Finance {
 	return Finance{
 		Budgets: budget.NewPostgresStore(db), Financials: financials.NewPostgresStore(db), SwbsRuns: swbs.NewPostgresStore(db),
+		Performance:      performance.NewPostgresStore(db),
 		PurchaseRequests: purchaserequest.NewPostgresStore(db),
 	}
 }

@@ -84,6 +84,9 @@ linters:
       lines: -1 # length is measured in statements, so comments, literals, and SQL do not count
     gocyclo:
       min-complexity: 9 # 9..14 needs justification
+    misspell:
+      ignore-rules:
+        - performancetest # feature 046's <area>test fake; not a misspelling of "performances"
     nakedret:
       max-func-lines: 5
     goconst:

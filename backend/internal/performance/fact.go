@@ -46,24 +46,6 @@ func (c Counts) Reconciles() bool {
 	return c.Read == c.Matched+c.Held+c.Unattributed+c.Rejected+c.Unmatched
 }
 
-func (c Counts) add(o Outcome) Counts {
-	next := c
-	next.Read++
-	switch o {
-	case OutcomeMatched:
-		next.Matched++
-	case OutcomeHeld:
-		next.Held++
-	case OutcomeUnattributed:
-		next.Unattributed++
-	case OutcomeRejected:
-		next.Rejected++
-	case OutcomeUnmatched:
-		next.Unmatched++
-	}
-	return next
-}
-
 type Import struct {
 	ID          string       `json:"id"`
 	SourceID    string       `json:"sourceId"`

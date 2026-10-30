@@ -98,7 +98,11 @@ stored (FR-012).
    folders.
 3. **The activity copy path must not carry** aliases, integration IDs, media codes or facts (FR-038) — a
    change in the activity area, reported here rather than made.
-4. **Generation of the external name on approval** (client 020 FR-030 – FR-036) belongs to feature 006's
+4. **`app.go` must call `performanceArea()`** once this feature serves its first operation. The wiring file
+   `internal/app/performance.go` is this lane's, but the one line that calls it is in `app.go`, which no lane
+   edits. Until that line exists the wiring function would be unused and fail the linter, so it is written
+   with US1 rather than now.
+5. **Generation of the external name on approval** (client 020 FR-030 – FR-036) belongs to feature 006's
    lane: `activities.external_name` is its field, edited today by a person under its own "Edit External
    Name" permission, with a 120-character limit. Making it generated from the model's rule, behind
    `performance.link` and with the rule's length, changes 006's field, permission and package, none of which

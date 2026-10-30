@@ -12,3 +12,13 @@ const (
 	msgStageSupplied   = "Not saved — %s already supplies %s for this model. Deactivate that source first, or choose another stage."
 	msgRevenueSupplied = "Not saved — %s already supplies revenue for this model. Deactivate that source first."
 )
+
+const (
+	msgNameLength  = "Give the data source a name of 1 to 120 characters."
+	msgOwnerNeeded = "Choose an owner for this data source."
+)
+
+const (
+	deactivatedVerb = "deactivated"
+	reactivatedVerb = "reactivated"
+)

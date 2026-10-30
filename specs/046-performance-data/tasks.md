@@ -22,8 +22,8 @@ Every test name mentions the requirement ID it proves.
 
 **Purpose**: the package skeleton and its reserved numbers, before any rule exists.
 
-- [ ] T001 Create `backend/internal/performance/` with `model.go`, `store.go`, `service.go`, `handler.go`, `ports.go` as empty-but-compiling files following the area pattern of `backend/internal/bulk/`
-- [ ] T002 [P] Create `backend/internal/performance/performancetest/store.go` as the area's fake, in the shape of `backend/internal/bulk/bulktest/`
+- [X] T001 Create `backend/internal/performance/` with `model.go`, `store.go`, `service.go`, `handler.go`, `ports.go` as empty-but-compiling files following the area pattern of `backend/internal/bulk/`
+- [X] T002 [P] Create `backend/internal/performance/performancetest/store.go` as the area's fake, in the shape of `backend/internal/bulk/bulktest/`
 - [ ] T003 [P] Create `backend/internal/performance/simulatedfeed/` with its port defined in the parent's `ports.go` (research R1)
 - [ ] T004 [P] Create `frontend/src/features/performance/` with `api.ts`, `schemas.ts` and an `index.ts` exporting nothing yet
 
@@ -35,18 +35,18 @@ Every test name mentions the requirement ID it proves.
 
 **⚠️ CRITICAL**: no user story may begin until this phase is complete.
 
-- [ ] T005 Write migration `backend/internal/platform/database/migrations/00030_performance_sources.sql` for `performance_sources` and `performance_source_mappings`, with the partial unique index enforcing "at most one **active** source per (model, stage) and per (model, revenue)" (FR-003)
-- [ ] T006 Write migration `.../00031_performance_facts.sql` for `performance_imports`, `performance_facts` and `performance_review_rows`, with the CHECK `rows_read = matched + held + unattributed + rejected + unmatched` (FR-022), the unique index on (`source_id`, `source_reference`) among rows not yet replaced (research R3), the index on `held` (research R4), and the CHECK requiring `comment` when `status = 'dismissed'` (FR-024)
-- [ ] T007 Write migration `.../00032_media_codes.sql` for `media_codes` (`code` bigint unique, never reused), `activity_external_names` (unique across names **and** aliases, one `is_current` per activity) and `activity_integration_ids` (unique together on `activity_id`, `source_id`)
-- [ ] T008 Write `backend/internal/platform/database/queries/performance.sql` with the six queries named in plan.md *Queries*, each carrying its scope filter; run `sqlc generate && sqlc vet`
-- [ ] T009 [P] Write `backend/internal/performance/model.go`: the eight entities of [data-model.md](./data-model.md), each embedding `record.Meta`, with money as integer minor units plus currency (FR-014), never a float
-- [ ] T010 [P] Write `backend/internal/performance/store.go` declaring the small `Store` the service calls and its `Transactor`, then `store_postgres.go` implementing it
-- [ ] T011 Register the `history.Kind` values for data source, fact, import, review row and media code so every change writes one activity-log entry inside the same `Write` transaction
-- [ ] T012 [P] Write `backend/internal/app/performance.go` wiring the service, stores and handler — wiring only, no rules
-- [ ] T013 [P] Write `backend/internal/performance/performancetest/store.go` fully, and add the new `Store` methods to the in-memory set in `backend/internal/stores/`
+- [X] T005 Write migration `backend/internal/platform/database/migrations/00030_performance_sources.sql` for `performance_sources` and `performance_source_mappings`, with the partial unique index enforcing "at most one **active** source per (model, stage) and per (model, revenue)" (FR-003)
+- [X] T006 Write migration `.../00031_performance_facts.sql` for `performance_imports`, `performance_facts` and `performance_review_rows`, with the CHECK `rows_read = matched + held + unattributed + rejected + unmatched` (FR-022), the unique index on (`source_id`, `source_reference`) among rows not yet replaced (research R3), the index on `held` (research R4), and the CHECK requiring `comment` when `status = 'dismissed'` (FR-024)
+- [X] T007 Write migration `.../00032_media_codes.sql` for `media_codes` (`code` bigint unique, never reused), `activity_external_names` (unique across names **and** aliases, one `is_current` per activity) and `activity_integration_ids` (unique together on `activity_id`, `source_id`)
+- [X] T008 Write `backend/internal/platform/database/queries/performance.sql` with the six queries named in plan.md *Queries*, each carrying its scope filter; run `sqlc generate && sqlc vet`
+- [X] T009 [P] Write `backend/internal/performance/model.go`: the eight entities of [data-model.md](./data-model.md), each embedding `record.Meta`, with money as integer minor units plus currency (FR-014), never a float
+- [X] T010 [P] Write `backend/internal/performance/store.go` declaring the small `Store` the service calls and its `Transactor`, then `store_postgres.go` implementing it
+- [X] T011 Register the `history.Kind` values for data source, fact, import, review row and media code so every change writes one activity-log entry inside the same `Write` transaction
+- [ ] T012 [P] Write `backend/internal/app/performance.go` wiring the service, stores and handler — **deferred to US1**: `app.go` holds the call and no lane edits it, so the function would be unused and fail the linter (integrator item 4). The store is already registered in `stores.Set`
+- [X] T013 [P] Write `backend/internal/performance/performancetest/store.go` fully, and add the new `Store` methods to the in-memory set in `backend/internal/stores/`
 - [ ] T014 Write the scope-isolation test file `backend/internal/performance/store_postgres_scope_test.go` covering every scoped read in T008 on a fresh PostgreSQL database per test (FR-044): a record outside scope answers as missing, never as a refusal
-- [ ] T015 Write `backend/internal/performance/authz_test.go`: every operation refuses without its permission and **fails closed** — `performance.import` for loading, configuration and review actions, `performance.link` for external names, integration IDs and media codes (FR-043). A record outside the actor's scope answers as **missing**, while `forbidden` refuses only an action on a record the actor can see (constitution non-negotiable 7)
-- [ ] T016 Write `backend/internal/performance/records_test.go`: one activity-log entry per change on each of the eight record types, a stale update refused with `version_conflict`, and a delete routed to the recycle bin through `history.MoveToBin` (FR-045, CLAUDE.md "Every new record type")
+- [X] T015 Write `backend/internal/performance/authz_test.go`: every operation refuses without its permission and **fails closed** — `performance.import` for loading, configuration and review actions, `performance.link` for external names, integration IDs and media codes (FR-043). A record outside the actor's scope answers as **missing**, while `forbidden` refuses only an action on a record the actor can see (constitution non-negotiable 7)
+- [X] T016 Write `backend/internal/performance/records_test.go`: one activity-log entry per change on each of the eight record types, a stale update refused with `version_conflict`, and a delete routed to the recycle bin through `history.MoveToBin` (FR-045, CLAUDE.md "Every new record type")
 
 **Checkpoint**: schema, stores and fakes exist; the six stories can now proceed in parallel.
 

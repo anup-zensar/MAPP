@@ -5,6 +5,8 @@ package storestest
 import (
 	"context"
 
+	"mapp/internal/performance/performancetest"
+
 	"mapp/internal/access/accesstest"
 	"mapp/internal/activity/activitytest"
 	"mapp/internal/allwork/allworktest"
@@ -57,6 +59,7 @@ func planning(db *fake.DB) stores.Planning {
 func finance(db *fake.DB) stores.Finance {
 	return stores.Finance{
 		Budgets: budgettest.NewStore(db), Financials: financialstest.NewStore(db), SwbsRuns: swbstest.NewStore(db),
+		Performance:      performancetest.NewStore(db),
 		PurchaseRequests: purchaserequesttest.NewStore(db),
 	}
 }
