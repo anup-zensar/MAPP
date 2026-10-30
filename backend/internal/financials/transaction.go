@@ -12,7 +12,7 @@ import (
 )
 
 // Transaction needs access to a linked transaction's plan (forbidden otherwise) and the right to import for a
-// not-linked one; a plan outside a's access, or a not-linked one without import, answers not_found (D-301, D-353).
+// not-linked one; a plan outside a's access, or a not-linked one without import, answers not_found (D-301, D-359).
 func (s *Service) Transaction(ctx context.Context, a actor.Actor, id string) (TransactionView, error) {
 	var view TransactionView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {

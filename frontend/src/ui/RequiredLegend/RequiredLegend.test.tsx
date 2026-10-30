@@ -34,7 +34,7 @@ function Panel({ marking }: { marking?: FieldMarking }) {
   );
 }
 
-describe('RequiredLegend (038 FR-064, D-358)', () => {
+describe('RequiredLegend (038 FR-064, D-364)', () => {
   it('038 FR-064: a side panel with a required field shows "* Required" once, before its first field', async () => {
     renderWithProviders(<Panel marking="Required" />);
 

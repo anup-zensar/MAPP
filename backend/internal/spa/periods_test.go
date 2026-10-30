@@ -68,7 +68,7 @@ func TestPeriods_FR017_AnActivityWithoutDatesIsNot(t *testing.T) {
 }
 
 // Line items above an activity's planned cost are their own row, never a negative "Not yet scheduled"
-// (038 FR-023, M-2; D-357).
+// (038 FR-023, M-2; D-363).
 func TestPeriods_LineItemsAboveThePlannedCost_038_FR023_M2(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

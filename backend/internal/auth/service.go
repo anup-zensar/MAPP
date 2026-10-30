@@ -55,7 +55,7 @@ type SignInAttempt struct {
 	Email, Password, Client, OldToken string
 }
 
-// SignIn checks the lock before the credentials and outside the write lock (D-355); it ends OldToken's
+// SignIn checks the lock before the credentials and outside the write lock (D-361); it ends OldToken's
 // session and every expired one of anyone, so old sessions do not pile up.
 func (s *Service) SignIn(ctx context.Context, in SignInAttempt) (string, people.Person, error) {
 	email := strings.ToLower(strings.TrimSpace(in.Email))

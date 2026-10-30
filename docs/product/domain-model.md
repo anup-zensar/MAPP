@@ -257,7 +257,7 @@ cost exceeds the budget).
   - Negative: shown in red, "Line items exceed the activity's planned cost by X". It warns but does not
     block saving; it **does** block submitting (decision D-016) and submitting a purchase request that draws
     on the activity's line items (decision D-349).
-  - **Approval over planned cost** (feature 038 FR-019 – FR-021, D-354): Settings › Overspend control says what
+  - **Approval over planned cost** (feature 038 FR-019 – FR-021, D-360): Settings › Overspend control says what
     happens when an activity's line items exceed its planned cost while it, or a purchase request drawing on it, is
     approved: **Warn the approver** (the default) or **Refuse approval**. The overage is the negative unassigned
     balance in the plan currency, worked out when approving. With Warn, the approval section and the Approve dialog

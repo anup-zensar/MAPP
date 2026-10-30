@@ -850,7 +850,7 @@ out; the notes of the form.
 
 | Part | Spec |
 |---|---|
-| Label | Above the control, 14/20 Arial 700 `--ink`. A field required to save: then 2 px and a `*` in `--danger` (Secondary Red), Arial 700 19/20, `aria-hidden`, the control `aria-required` (D-358). A field needed to publish or submit: then 8 px and the **marking** as a small tag ("Needed to publish", "Needed to submit": 20 high, padding 0 6, radius 4, `--chip`, 12/18 bold `--ink`). Then an optional ⓘ |
+| Label | Above the control, 14/20 Arial 700 `--ink`. A field required to save: then 2 px and a `*` in `--danger` (Secondary Red), Arial 700 19/20, `aria-hidden`, the control `aria-required` (D-364). A field needed to publish or submit: then 8 px and the **marking** as a small tag ("Needed to publish", "Needed to submit": 20 high, padding 0 6, radius 4, `--chip`, 12/18 bold `--ink`). Then an optional ⓘ |
 | Hint | **Always under the label, above the control** (one rule, UI audit F-02), 14/20 `--ink-2` |
 | Control | 40 high (48 below 600 px), padding 0 12, radius 8, 1 px `--control-border`, `--surface`, text 14 `--ink` (16 below 600 px), placeholder `--muted` |
 | States | Hover: border `--control-border-hover`. Focus: the focus ring. Invalid: 1 px `--danger` border plus the message. Locked: the Disabled tokens (`--disabled-bg`, `--disabled-text`, `--disabled-border`) and a `LockedNote`. Read-only values are shown as text, not as inputs. |
@@ -949,7 +949,7 @@ focused; F8 moves the focus to it; announced at once.
 `role="alert"` for failures. Used for: waiting and declined notices on record pages (with the decline
 reason), failed saves, "view only" notices, "Shown because the plan's business unit includes Lubricants".
 
-**Approve warning** (feature 038, D-354) — when an activity's line items exceed its planned cost, the approval
+**Approve warning** (feature 038, D-360) — when an activity's line items exceed its planned cost, the approval
 section of the activity or purchase request and the Approve dialog show a warning alert above the decision, one
 line per activity: "Line items of activity 'Launch film' are 25,000.00 USD above its planned cost" (Warn the
 approver). With Refuse approval, **Approve** stays visible but disabled, described by that reason; Decline and
@@ -1033,7 +1033,7 @@ Every user-managed record follows this pattern. Specs refer to it as "the standa
   (§2.5).
 - One column; sections in a logical order; defaults pre-filled and labelled ("From the campaign");
   a field required to save shows a red **\*** after its label, with the legend "\* Required" once before the
-  first field (D-358); **Needed to publish** and **Needed to submit** stay words.
+  first field (D-364); **Needed to publish** and **Needed to submit** stay words.
 - Footer: **Cancel** · **Save and add another** (for children) · **Save** (primary, last), right-aligned
   (§5.3, §5.5). Cancel asks before discarding typed values.
 - After saving: toast "Initiative 'Digital & social' created — View"; the new row is highlighted.

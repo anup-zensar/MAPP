@@ -60,7 +60,7 @@ access.Import(...) == nil`; `placed.inFilters` (`financials/list.go:124`) drops 
 `00007_access.sql:11`), who can never see a row to link. In the web app `TransactionPanel.tsx:73-83` shows Link and
 Unlink from the link state only and ignores `canLink` / `canUnlink` (`financials/transaction.go:109-110`).
 
-**Decision (D-353).** Keep visibility as built (product owner). Order in `Link` and `Unlink`: find → `mayOpen` with
+**Decision (D-359).** Keep visibility as built (product owner). Order in `Link` and `Unlink`: find → `mayOpen` with
 not-linked rows answering **404** (hidden, `NotFound(msgTransactionGone)`) for people without import → permission
 → `CheckVersion` → state rules. `financialAccess.Link` adds `RequireView` and maps "hidden" to the same
 `missingLineItem` field problem as a missing ID (`orGone`). Link needs `finance.import` (to see) and `finance.link`
@@ -165,7 +165,7 @@ when `purchaseRequests.list` is held, else the line item.
 **Tests.** `PurchaseRequestPage.test.tsx` (delete from the full page; MSW fails on an unexpected GET of the deleted
 record), `usePlanActions.delete.test.tsx`, line-item page test.
 
-## R6 — Sign-in rate limit (D-355)
+## R6 — Sign-in rate limit (D-361)
 
 **Where.** `auth/handler.go:55 signIn` → `auth/service.go:51 SignIn` → `:85 checkCredentials`; one
 `IncorrectCredentials` (`auth/errs.go:138`, 401) for every failure; routes exist only with demo sign-in
@@ -189,7 +189,7 @@ exponential back-off (harder to explain on screen); CAPTCHA (no).
 `auth/handler_test.go` (contract: 429 with envelope and `Retry-After`), frontend `SignInPage.test.tsx` (message),
 e2e journey.
 
-## R7 — Security headers and CSP (D-355)
+## R7 — Security headers and CSP (D-361)
 
 **Where.** API: `platform/web/middleware.go:63 SecurityHeaders` sets only `Cache-Control: no-store` and
 `X-Content-Type-Options: nosniff`. Web: `frontend/vite.config.ts` sets no headers on `server` or `preview`;
@@ -254,7 +254,7 @@ telling them).
 **Tests.** `platform/web/web_test.go` (fuzz test of the scan, F7/B9 parsers; table of fields), contract test of
 sign-in with NUL, `platform/record` unit test of the helper, one name test per package.
 
-## R10 — M-18: approving over planned cost (D-354)
+## R10 — M-18: approving over planned cost (D-360)
 
 **Where.** Activity: `approval.Service.Approve` → `decideActivity` → `DecideSubject` (`approval/rounds_decide.go:13`,
 `approval/subject_api.go:70`). Purchase request: `purchaserequest.Service.Decide` (`approval_actions.go:103`) →
@@ -377,7 +377,7 @@ minimum date. GSAP extract: `financials/feed_csv.go:144 readRecords` never sets 
   `purchaserequest/model_routing.go:60`. Views send `updatedAt`/`updatedBy` as null when never saved; pages show
   FR-057's text (`OverspendSettingsPage.tsx:118`, `PurchaseRequestSettingsPage.tsx:87`).
 
-## R18 — L-18: date format in headings and month labels (D-356)
+## R18 — L-18: date format in headings and month labels (D-362)
 
 `format/intl.ts:161 formatWeekdayDate` takes no format (used by `features/activity-log/log-text.ts:185 dayLabel`,
 `LogEntryList.tsx:47`). Month labels ignore the preference in six places: `financials/financials-text.ts:63-75`,

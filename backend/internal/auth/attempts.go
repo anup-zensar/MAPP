@@ -20,7 +20,7 @@ const (
 	retryWording = "Too many sign-in attempts. Try again in %d %s."
 )
 
-// attempts lives in memory: one API process serves every sign-in in this phase (D-355).
+// attempts lives in memory: one API process serves every sign-in in this phase (D-361).
 type attempts struct {
 	mu   sync.Mutex
 	now  clock.Clock

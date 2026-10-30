@@ -141,7 +141,7 @@
   --text-md: 16px;
   --text-lg: 18px;
   --text-xl: 20px;
-  /* The asterisk of a field required to save: large text when bold (WCAG 1.4.3, D-358). */
+  /* The asterisk of a field required to save: large text when bold (WCAG 1.4.3, D-364). */
   --text-required-mark: 19px;
   --text-2xl: 28px;
   --text-3xl: 32px;

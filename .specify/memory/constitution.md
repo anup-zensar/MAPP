@@ -3,7 +3,7 @@ Sync Impact Report
 - Version change: 4.6.0 → 4.7.0 (MINOR: one exception added to Principle X; no principle removed or
   redefined)
 - Modified principles: X Shell Colour Palette — Red also marks a field required to save, as a bold asterisk of
-  at least 19 px after its label (D-358)
+  at least 19 px after its label (D-364)
 - Modified sections: X "How the palette is used" (Red); Amendment History
 - Added sections: none
 - Removed sections: none
@@ -434,7 +434,7 @@ changes.
   or a thin line on a light surface (1.45:1), except in the product name (below).
 - **Red** means danger or error, and marks a field required to save: a Secondary Red asterisk after
   the field's label, bold and at least 19 px so it is large text (4.9:1 light, 3.0:1 dark, both
-  meeting the large-text bar), never the only carrier of "required" (D-358). Nothing else is red.
+  meeting the large-text bar), never the only carrier of "required" (D-364). Nothing else is red.
   A destructive button is a red fill with white text
   (4.9:1). In the light theme, error text may be red (4.9:1 on Surface, 4.5:1 on Foundation Base).
   In the dark theme red is a fill carrying white text or a white icon only, never text or a thin
@@ -1162,6 +1162,6 @@ amended to match.
 
 | 4.5.0 | 2026-10-28 | X: the product name SP&A One is the logo, "&" in Shell dark blue and "One" in Shell yellow (a darker shade, `#AD8700`, on light surfaces), with a blue tile and a yellow "1" where the name does not fit; the only yellow text. VIII: feature 035 is exempt from the file-wide comment rule except in the files it redesigns. Opening: people see the product as SP&A One; MAPP stays the project's name | D-332; client requirement of 2026-10-28 |
 | 4.6.0 | 2026-10-28 | Current Phase & Scope: bulk actions and Excel import (012), the SP&A view and BCPIR marker of Shell's spec 006 (013), executive and regional planning dashboards from plan and finance data with PowerPoint and PDF export (036), and overspend control per budget owner (037) come into scope; out of scope narrowed to Measure's performance reporting | D-333; product owner instruction of 2026-10-28 (sandbox readiness) |
-| 4.7.0 | 2026-10-29 | X: a field required to save is marked by a Secondary Red asterisk after its label, bold and at least 19 px (large text), with "required" still given to screen readers; "Needed to publish" and "Needed to submit" stay words | D-358; product owner instruction of 2026-10-29 |
+| 4.7.0 | 2026-10-29 | X: a field required to save is marked by a Secondary Red asterisk after its label, bold and at least 19 px (large text), with "required" still given to screen readers; "Needed to publish" and "Needed to submit" stay words | D-364; product owner instruction of 2026-10-29 |
 
 **Version**: 4.7.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-29

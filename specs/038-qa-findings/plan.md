@@ -19,7 +19,7 @@ approach per area (research):
    mapping, one balance function (R1).
 2. **H-4/H-5** — financials link/unlink reorder their checks (visible → permission → version → state), hidden =
    missing; `finance.link` requires `finance.import` (migration 00027, role validation, access check); the panel
-   follows `canLink`/`canUnlink` (R2, D-353).
+   follows `canLink`/`canUnlink` (R2, D-359).
 3. **H-2** — the workbook reads the file outside the write lock, prepares reference data once per check and calls
    import entry points of the activity and campaign services that reuse their rule functions without rebuilding
    context or overspend limits; problem values capped (R3).
@@ -28,7 +28,7 @@ approach per area (research):
 6. **Security** — `auth.Attempts` limiter (R6); one header map for API, Vite preview/dev and nginx with the theme
    script's hash (R7); Referer check (R8); control characters refused while binding, IDs with them 404 (R9).
 7. **M-18** — `overspend_configuration.approval_over_planned_cost` (00026); `DecideSubject` consults it; approval
-   views carry `overPlannedCost` (R10, D-354).
+   views carry `overPlannedCost` (R10, D-360).
 8. Mediums and lows — local fixes listed in R11–R19.
 
 ## Technical Context
@@ -73,7 +73,7 @@ brought within budget); functions within the metrics; shared files touched only 
 |---|---|---|
 | I Spec-first | 038 FR-001 – FR-062, a traceability row for each of the 54 findings, amendments noted in the earlier specs | Pass |
 | II Plain language | Messages in the spec; "Warn the approver / Refuse approval"; no Hive9 terms | Pass |
-| III Documented design | research R1–R19 with file:line, data model, contract fragment, routes, quickstart; D-353 – D-357 | Pass |
+| III Documented design | research R1–R19 with file:line, data model, contract fragment, routes, quickstart; D-359 – D-363 | Pass |
 | IV Server source of truth | Reservation, scope, limits, approval rule, dashboard fallback and period figures all in the API; the web app shows the API's figures (the grid, SP&A rows, counts) | Pass |
 | V Simplicity | One query and one function for C-1; one header map for three servers; no new package (helpers go in existing `platform/record` and `auth`) | Pass |
 | VI Meaningful tests | A failing test first for every finding (tasks: each fix task depends on its test task); test names cite `038 FR-xxx` and the finding ID; contract tests for every changed operation; scope-isolation tests for the new scoped reads; e2e for US1–US7 | Pass |
@@ -107,7 +107,7 @@ brought within budget); functions within the metrics; shared files touched only 
 | Radix injects a `<style>` element the CSP blocks | T072 verifies on the built app; hash or style-only exception with ADR | Lane F3 |
 | Theme script hash drifts (editor CRLF, comment edits) | hash computed from `index.html` at build; test fails on mismatch; `.gitattributes` LF | Lane F3 |
 | Workbook import refactor changes problem messages | existing workbook tests unchanged must stay green; new entry points call the same rule functions | Lane B4 |
-| Built-in role change surprises planners who linked | D-353 recorded; release note in quickstart | Product owner |
+| Built-in role change surprises planners who linked | D-359 recorded; release note in quickstart | Product owner |
 | In-memory limiter resets on restart | accepted for local phase (assumption) | Product owner |
 
 ## Lanes — parallel implementation without collisions

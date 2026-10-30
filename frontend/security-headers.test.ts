@@ -30,7 +30,7 @@ function webLocations(): Map<string, Map<string, string>> {
   return locations;
 }
 
-describe('security headers of the web app (038 FR-015, D-355)', () => {
+describe('security headers of the web app (038 FR-015, D-361)', () => {
   it('038 FR-015: admits the one inline theme script by its sha256 and nothing else inline', () => {
     const scripts = inlineScripts();
     expect(scripts).toHaveLength(1);
