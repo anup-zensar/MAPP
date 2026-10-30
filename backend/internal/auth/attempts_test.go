@@ -22,16 +22,16 @@ func newTestAttempts() (*attempts, *testClock) {
 	return newAttempts(clock.Now), clock
 }
 
-func failTimes(a *attempts, n int, email, from string) {
+func failTimes(a *attempts, n int, email string) {
 	for range n {
-		a.failed(email, from)
+		a.failed(email, client)
 	}
 }
 
 func TestAttempts_038_FR014_FiveFailuresOfOneEmailLockIt(t *testing.T) {
 	t.Parallel()
 	a, clock := newTestAttempts()
-	failTimes(a, 4, priya.Email, client)
+	failTimes(a, 4, priya.Email)
 	if wait := a.wait(priya.Email, client); wait != 0 {
 		t.Fatalf("after 4 failures wait = %v, want none", wait)
 	}
@@ -65,7 +65,7 @@ func TestAttempts_038_FR014_EmailIgnoresCaseAndSpaces(t *testing.T) {
 func TestAttempts_038_FR014_UnknownEmailsCountAlike(t *testing.T) {
 	t.Parallel()
 	a, _ := newTestAttempts()
-	failTimes(a, 5, "nobody@shell.com", client)
+	failTimes(a, 5, "nobody@shell.com")
 
 	if wait := a.wait("nobody@shell.com", otherClient); wait != lockFor {
 		t.Errorf("wait = %v, want %v", wait, lockFor)
@@ -98,7 +98,7 @@ func TestAttempts_038_FR014_TwentyFailuresOfOneClientLockIt(t *testing.T) {
 func TestAttempts_038_FR014_OnlyFailuresWithinTheWindowCount(t *testing.T) {
 	t.Parallel()
 	a, clock := newTestAttempts()
-	failTimes(a, 4, priya.Email, client)
+	failTimes(a, 4, priya.Email)
 	clock.Advance(window)
 
 	a.failed(priya.Email, client)
@@ -111,7 +111,7 @@ func TestAttempts_038_FR014_OnlyFailuresWithinTheWindowCount(t *testing.T) {
 func TestAttempts_038_FR014_TheLockEndsAfterFifteenMinutesAndIsNotExtended(t *testing.T) {
 	t.Parallel()
 	a, clock := newTestAttempts()
-	failTimes(a, 5, priya.Email, client)
+	failTimes(a, 5, priya.Email)
 	clock.Advance(10*time.Minute + 30*time.Second)
 
 	if wait := a.wait(priya.Email, client); wait != 4*time.Minute+30*time.Second {
@@ -130,14 +130,14 @@ func TestAttempts_038_FR014_TheLockEndsAfterFifteenMinutesAndIsNotExtended(t *te
 func TestAttempts_038_FR014_SuccessClearsTheEmailAndTheClient(t *testing.T) {
 	t.Parallel()
 	a, _ := newTestAttempts()
-	failTimes(a, 4, priya.Email, client)
+	failTimes(a, 4, priya.Email)
 	for i := range 15 {
 		a.failed(fmt.Sprintf("person%d@shell.com", i), client)
 	}
 
 	a.succeeded(" Priya.Raman@shell.com", client)
 
-	failTimes(a, 4, priya.Email, client)
+	failTimes(a, 4, priya.Email)
 	if wait := a.wait(priya.Email, client); wait != 0 {
 		t.Errorf("wait = %v, want none: the success cleared both counts", wait)
 	}
@@ -146,7 +146,7 @@ func TestAttempts_038_FR014_SuccessClearsTheEmailAndTheClient(t *testing.T) {
 func TestAttempts_038_FR014_ForgetsKeysWithNothingToRemember(t *testing.T) {
 	t.Parallel()
 	a, clock := newTestAttempts()
-	failTimes(a, 5, priya.Email, client)
+	failTimes(a, 5, priya.Email)
 	clock.Advance(lockFor)
 
 	a.failed(daniel.Email, otherClient)

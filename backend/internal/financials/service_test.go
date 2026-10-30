@@ -132,7 +132,7 @@ func TestAccess_NoImportHidesNotLinked_FR028_038_FR004(t *testing.T) {
 	assertCode(t, err, http.StatusForbidden, errs.CodeForbidden)
 	_, err = f.service.Transaction(ctx, priya, "FT-1004")
 	_, missing := f.service.Transaction(ctx, priya, "FT-9999")
-	assertCode(t, err, http.StatusNotFound, errs.CodeNotFound)
+	_ = assertCode(t, err, http.StatusNotFound, errs.CodeNotFound)
 	sameAnswer(t, err, missing)
 
 	page := f.list(t, priya, Query{})

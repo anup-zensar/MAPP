@@ -34,6 +34,7 @@ func TestImpossibleDateIsAFieldProblem_038_FR054_L5(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			response := priya.Do(t, tt.method, tt.path, tt.body, skip)
 
 			assertBody(t, response, http.StatusBadRequest, dateProblem(tt.field))

@@ -5,6 +5,8 @@ import "fmt"
 // The status chips of All work (data model §9) as words, tones and lifecycle sort order (data model §7); the
 // values come from the owning features (Node.Status, Timing, Swbs).
 
+const statusInProgress = "inProgress"
+
 type chip struct {
 	label string
 	tone  Tone
@@ -17,9 +19,9 @@ var planStatuses = map[string]chip{
 }
 
 var progressStatuses = map[string]chip{
-	"noActivities": {"No activities", ToneNeutral, 0},
-	"inProgress":   {"Partly approved", ToneReview, 1},
-	"allApproved":  {"All approved", TonePositive, 2},
+	"noActivities":   {"No activities", ToneNeutral, 0},
+	statusInProgress: {"Partly approved", ToneReview, 1},
+	"allApproved":    {"All approved", TonePositive, 2},
 }
 
 var timingStatuses = map[string]chip{
@@ -29,12 +31,12 @@ var timingStatuses = map[string]chip{
 }
 
 var activityStatuses = map[string]chip{
-	"created":    {"Created", ToneNeutral, 0},
-	"submitted":  {"Submitted", ToneReview, 1},
-	"declined":   {"Declined", ToneProblem, 2},
-	"approved":   {"Approved", TonePositive, 3},
-	"inProgress": {"In progress", ToneActive, 4},
-	"complete":   {"Complete", ToneDone, 5},
+	"created":        {"Created", ToneNeutral, 0},
+	"submitted":      {"Submitted", ToneReview, 1},
+	"declined":       {"Declined", ToneProblem, 2},
+	"approved":       {"Approved", TonePositive, 3},
+	statusInProgress: {"In progress", ToneActive, 4},
+	"complete":       {"Complete", ToneDone, 5},
 }
 
 var swbsStatuses = map[string]chip{
@@ -62,7 +64,7 @@ func statusOf(n *Node) *Status {
 		return completenessOf(n.Missing)
 	}
 	s := chipOf(statusFamily(n.Level), n.Status)
-	if s != nil && n.Status == "inProgress" && (n.Level == LevelCampaign || n.Level == LevelInitiative) {
+	if s != nil && n.Status == statusInProgress && (n.Level == LevelCampaign || n.Level == LevelInitiative) {
 		s.Detail = fmt.Sprintf("%d of %d activities approved", n.Approved, n.Total)
 	}
 	return s

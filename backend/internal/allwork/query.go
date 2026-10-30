@@ -33,8 +33,8 @@ const (
 
 var (
 	planStatusValues      = []string{"draft", "published"}
-	containerStatusValues = []string{"noActivities", "inProgress", "allApproved", "notStarted", "running", "finished"}
-	activityStatusValues  = []string{"created", "submitted", "declined", "approved", "inProgress", "complete"}
+	containerStatusValues = []string{"noActivities", statusInProgress, "allApproved", "notStarted", "running", "finished"}
+	activityStatusValues  = []string{"created", "submitted", "declined", "approved", statusInProgress, "complete"}
 	strategicValues       = []string{StrategicInclude, StrategicOnly, StrategicExclude}
 	showLevelsValues      = []string{ShowEverything, ShowCompleteBranches, ShowCampaignsWithoutInitiatives, ShowInitiativesWithoutActivities}
 	periodValues          = []string{PeriodMonth, PeriodQuarter, PeriodYear}
