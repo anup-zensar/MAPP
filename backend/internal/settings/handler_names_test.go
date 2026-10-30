@@ -11,7 +11,7 @@ func TestSettingsNamesAreOneLine_038_FR055_L11(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
-	for _, name := range []string{"Web\tinar", "Web\ninar", "‪Webinar"} {
+	for _, name := range []string{"Web\tinar", "Web\ninar", "\u202aWebinar"} {
 		activityType := webinarBody("MOD-1001")
 		activityType["name"] = name
 		model := map[string]any{}

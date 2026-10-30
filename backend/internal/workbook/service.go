@@ -70,15 +70,15 @@ func (s *Service) file(ctx context.Context, a actor.Actor, planID string, withRe
 // Check runs the import and discards it: every problem of every row and what Import would do (FR-031).
 // The file is read before the Write, which holds back other people's saves (038 FR-009).
 func (s *Service) Check(ctx context.Context, a actor.Actor, planID string, up Upload) (Check, error) {
-	tables, err := tablesOf(up)
+	file, err := readFileOf(up)
 	if err != nil {
 		return Check{}, err
 	}
 	var result Check
 	err = s.tx.Write(ctx, func(ctx context.Context) error {
-		ap, err := s.apply(ctx, a, planID, up.FileName, tables)
-		if err != nil {
-			return err
+		ap, applyErr := s.apply(ctx, a, planID, file)
+		if applyErr != nil {
+			return applyErr
 		}
 		result = ap.result
 		return errDiscard
@@ -91,7 +91,7 @@ func (s *Service) Check(ctx context.Context, a actor.Actor, planID string, up Up
 
 // Import applies the ready rows of the check in one Write and keeps the import for its plan (FR-034, FR-035).
 func (s *Service) Import(ctx context.Context, a actor.Actor, planID string, up Upload) (Detail, error) {
-	tables, err := tablesOf(up)
+	file, err := readFileOf(up)
 	if err != nil {
 		return Detail{}, err
 	}
@@ -101,7 +101,7 @@ func (s *Service) Import(ctx context.Context, a actor.Actor, planID string, up U
 		if err != nil {
 			return err
 		}
-		ap, err := s.apply(history.WithNote(ctx, fmt.Sprintf(noteImported, up.FileName, id)), a, planID, up.FileName, tables)
+		ap, err := s.apply(history.WithNote(ctx, fmt.Sprintf(noteImported, up.FileName, id)), a, planID, file)
 		if err != nil {
 			return err
 		}
@@ -115,12 +115,22 @@ func (s *Service) Import(ctx context.Context, a actor.Actor, planID string, up U
 	return s.Get(ctx, a, imp.ID)
 }
 
-func (s *Service) apply(ctx context.Context, a actor.Actor, planID, fileName string, tables []sheet.Table) (*applier, error) {
+type readFile struct {
+	name   string
+	tables []sheet.Table
+}
+
+func readFileOf(up Upload) (readFile, error) {
+	tables, err := tablesOf(up)
+	return readFile{name: up.FileName, tables: tables}, err
+}
+
+func (s *Service) apply(ctx context.Context, a actor.Actor, planID string, file readFile) (*applier, error) {
 	plan, err := s.planning.Plan(ctx, a, planID)
 	if err != nil {
 		return nil, err
 	}
-	sheets, ignored, err := levelSheets(tables, plan.Choices)
+	sheets, ignored, err := levelSheets(file.tables, plan.Choices)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +139,7 @@ func (s *Service) apply(ctx context.Context, a actor.Actor, planID, fileName str
 		return nil, err
 	}
 	ap := newApplier(a, writer, plan)
-	ap.result.FileName, ap.result.IgnoredColumns = fileName, ignored
+	ap.result.FileName, ap.result.IgnoredColumns = file.name, ignored
 	return ap, ap.run(ctx, sheets)
 }
 

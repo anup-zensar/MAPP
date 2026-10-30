@@ -88,7 +88,7 @@ func TestCreateTeam_SingleLineName_038_FR055_L11(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
-	for _, name := range []string{"Mobility\tChina", "Mobility\nChina", "Mobility ‮China"} {
+	for _, name := range []string{"Mobility\tChina", "Mobility\nChina", "Mobility \u202eChina"} {
 		_, err := f.service.CreateTeam(t.Context(), alex.Actor(), TeamInput{Name: name})
 		assertError(t, err, errs.Validation(errs.FieldError{Field: "name",
 			Message: "Names can't contain tabs, line breaks or text-direction characters."}))

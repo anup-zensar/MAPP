@@ -16,47 +16,56 @@ import (
 // run in the order of 038 FR-007: a transaction a may not see is missing; then import and link in the target
 // line item's plan, a target a may not see answering as a missing one; then the version; then the state.
 func (s *Service) Link(ctx context.Context, a actor.Actor, id string, req LinkRequest) (TransactionView, error) {
-	var problems errs.Problems
-	if req.Version == nil {
-		problems.Add("version", msgEnterVersion)
-	}
-	if !lineItemIDForm.MatchString(req.LineItemID) {
-		problems.Add("lineItemId", msgLineItemIDForm)
-	}
-	if err := problems.Err(); err != nil {
+	if err := checkLinkRequest(req); err != nil {
 		return TransactionView{}, err
 	}
 	var view TransactionView
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
-		b, t, err := s.visible(ctx, a, id)
-		if err != nil {
-			return err
-		}
-		target, err := s.linkTarget(ctx, a, b, req.LineItemID)
-		if err != nil {
-			return err
-		}
-		if err := t.CheckVersion(*req.Version, transactionNoun); err != nil {
-			return err
-		}
-		switch {
-		case t.MatchedBy == MatchedByManual:
-			return errs.NotAllowed(fmt.Sprintf(msgLinkedByPerson, t.ManualLink.By.Name, dayText(t.ManualLink.At)))
-		case t.linked():
-			return errs.NotAllowed(fmt.Sprintf(msgLinkedByGSAP, matchedWords(*t)))
-		}
-		t.LineItemID, t.MatchedBy, t.NotLinkedReason = target.ID, MatchedByManual, ""
-		t.ManualLink = &ManualLink{By: a, At: s.now()}
-		if err := s.save(ctx, a, t, linkedVerb, "", target.ID); err != nil {
-			return err
-		}
-		view = s.transactionView(ctx, a, b, t)
-		return nil
+		var err error
+		view, err = s.link(ctx, a, id, req)
+		return err
 	})
 	if err != nil {
 		return TransactionView{}, err
 	}
 	return view, nil
+}
+
+func checkLinkRequest(req LinkRequest) error {
+	var problems errs.Problems
+	if req.Version == nil {
+		problems.Add("version", msgEnterVersion)
+	}
+	if !lineItemIDForm.MatchString(req.LineItemID) {
+		problems.Add(lineItemIDField, msgLineItemIDForm)
+	}
+	return problems.Err()
+}
+
+func (s *Service) link(ctx context.Context, a actor.Actor, id string, req LinkRequest) (TransactionView, error) {
+	b, t, err := s.visible(ctx, a, id)
+	if err != nil {
+		return TransactionView{}, err
+	}
+	target, err := s.linkTarget(ctx, a, b, req.LineItemID)
+	if err != nil {
+		return TransactionView{}, err
+	}
+	if err := t.CheckVersion(*req.Version, transactionNoun); err != nil {
+		return TransactionView{}, err
+	}
+	switch {
+	case t.MatchedBy == MatchedByManual:
+		return TransactionView{}, errs.NotAllowed(fmt.Sprintf(msgLinkedByPerson, t.ManualLink.By.Name, dayText(t.ManualLink.At)))
+	case t.linked():
+		return TransactionView{}, errs.NotAllowed(fmt.Sprintf(msgLinkedByGSAP, matchedWords(*t)))
+	}
+	t.LineItemID, t.MatchedBy, t.NotLinkedReason = target.ID, MatchedByManual, ""
+	t.ManualLink = &ManualLink{By: a, At: s.now()}
+	if err := s.save(ctx, a, t, linkChange{verb: linkedVerb, after: target.ID}); err != nil {
+		return TransactionView{}, err
+	}
+	return s.transactionView(ctx, a, b, t), nil
 }
 
 // visible loads the book and finds the transaction id, which answers as missing when a may not open it.
@@ -102,9 +111,9 @@ func (s *Service) missingLineItem(ctx context.Context, id string) error {
 		return err
 	}
 	if slices.Contains(inBin, id) {
-		return fieldProblem("lineItemId", fmt.Sprintf(msgLineItemInBin, id))
+		return fieldProblem(lineItemIDField, fmt.Sprintf(msgLineItemInBin, id))
 	}
-	return fieldProblem("lineItemId", fmt.Sprintf(msgNoLineItem, id))
+	return fieldProblem(lineItemIDField, fmt.Sprintf(msgNoLineItem, id))
 }
 
 // Unlink undoes only a link made by a person; the rules then match the transaction again. The checks run in
@@ -115,38 +124,43 @@ func (s *Service) Unlink(ctx context.Context, a actor.Actor, id string, req Unli
 	}
 	var view TransactionView
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
-		b, t, err := s.visible(ctx, a, id)
-		if err != nil {
-			return err
-		}
-		planID := ""
-		if li := b.lineItemOf(t); li != nil {
-			planID = li.PlanID
-		}
-		if err := s.access.Link(ctx, a, planID); err != nil {
-			return orGone(err, errs.NotFound(msgTransactionGone))
-		}
-		if err := t.CheckVersion(*req.Version, transactionNoun); err != nil {
-			return err
-		}
-		if t.MatchedBy != MatchedByManual {
-			return errs.NotAllowed(msgOnlyManualUnlink)
-		}
-		before := t.LineItemID
-		t.LineItemID, t.MatchedBy, t.ManualLink = "", MatchedByNone, nil
-		if err := s.rematch(ctx, b, t); err != nil {
-			return err
-		}
-		if err := s.save(ctx, a, t, unlinkedVerb, before, t.LineItemID); err != nil {
-			return err
-		}
-		view = s.transactionView(ctx, a, b, t)
-		return nil
+		var err error
+		view, err = s.unlink(ctx, a, id, req)
+		return err
 	})
 	if err != nil {
 		return TransactionView{}, err
 	}
 	return view, nil
+}
+
+func (s *Service) unlink(ctx context.Context, a actor.Actor, id string, req UnlinkRequest) (TransactionView, error) {
+	b, t, err := s.visible(ctx, a, id)
+	if err != nil {
+		return TransactionView{}, err
+	}
+	planID := ""
+	if li := b.lineItemOf(t); li != nil {
+		planID = li.PlanID
+	}
+	if err := s.access.Link(ctx, a, planID); err != nil {
+		return TransactionView{}, orGone(err, errs.NotFound(msgTransactionGone))
+	}
+	if err := t.CheckVersion(*req.Version, transactionNoun); err != nil {
+		return TransactionView{}, err
+	}
+	if t.MatchedBy != MatchedByManual {
+		return TransactionView{}, errs.NotAllowed(msgOnlyManualUnlink)
+	}
+	before := t.LineItemID
+	t.LineItemID, t.MatchedBy, t.ManualLink = "", MatchedByNone, nil
+	if err := s.rematch(ctx, b, t); err != nil {
+		return TransactionView{}, err
+	}
+	if err := s.save(ctx, a, t, linkChange{verb: unlinkedVerb, before: before, after: t.LineItemID}); err != nil {
+		return TransactionView{}, err
+	}
+	return s.transactionView(ctx, a, b, t), nil
 }
 
 func (s *Service) rematch(ctx context.Context, b *book, t *Transaction) error {
@@ -175,14 +189,21 @@ func (s *Service) rematch(ctx context.Context, b *book, t *Transaction) error {
 	return nil
 }
 
-func (s *Service) save(ctx context.Context, a actor.Actor, t *Transaction, verb, before, after string) error {
+const lineItemIDField = "lineItemId"
+
+// linkChange is the history entry of a link or unlink: its verb and the line item before and after.
+type linkChange struct {
+	verb, before, after string
+}
+
+func (s *Service) save(ctx context.Context, a actor.Actor, t *Transaction, change linkChange) error {
 	t.Touch(a, s.now())
 	if err := s.repo.PutTransaction(ctx, *t); err != nil {
 		return err
 	}
 	_, err := s.history.Log(ctx, a, history.LogInput{
-		Kind: transactionKind, RecordID: t.ID, RecordName: t.Name(), Action: history.ActionChanged, Verb: verb,
-		Changes: []history.Change{{Field: "lineItemId", Old: idValue(before), New: idValue(after)}},
+		Kind: transactionKind, RecordID: t.ID, RecordName: t.Name(), Action: history.ActionChanged, Verb: change.verb,
+		Changes: []history.Change{{Field: lineItemIDField, Old: idValue(change.before), New: idValue(change.after)}},
 	})
 	return err
 }
