@@ -20,6 +20,7 @@ import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { useHidesUnavailable } from '@/ui/ViewOnlyNote/view-only-context';
 import { useFormatters } from '@/format/useFormatters';
 import {
   APPROVAL_TITLE,
@@ -91,6 +92,9 @@ function SectionView({ approval, section, purchaseRequest, titled }: SectionView
   const round = section.rounds[0];
   const { actions } = section;
   const canSubmit = actions.submit.available || actions.resubmit.available;
+  const refusal = approveRefusal(actions);
+  // Where the View only note already says why, only the Approve refusal keeps its reason (038 FR-025).
+  const viewOnly = useHidesUnavailable();
   const reasons = [
     actions.submit,
     actions.resubmit,
@@ -100,11 +104,11 @@ function SectionView({ approval, section, purchaseRequest, titled }: SectionView
   ]
     .filter((action) => !action.available && action.reason !== '')
     .map((action) => action.reason)
-    .filter((reason, index, all) => all.indexOf(reason) === index);
+    .filter((reason, index, all) => all.indexOf(reason) === index)
+    .filter((reason) => !viewOnly || reason === refusal);
   // Edit stays the page's one primary action for a person who may edit (design system §6.3).
   const approveVariant = allows(purchaseRequest.access.edit) ? 'secondary' : 'primary';
   const decline = section.latestDecline;
-  const refusal = approveRefusal(actions);
 
   return (
     <section className={styles.section} aria-labelledby={titled ? headingId : undefined}>

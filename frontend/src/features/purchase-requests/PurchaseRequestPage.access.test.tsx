@@ -35,7 +35,15 @@ const VIEW_ONLY_ACCESS: components['schemas']['PurchaseRequestAccess'] = {
   gsapOrder: refused('Importing financial data'),
 };
 
-function renderPage(answer: Answer<typeof GET>, user: CurrentUser) {
+const HIDDEN_ACTIONS = {
+  submit: HIDDEN,
+  resubmit: HIDDEN,
+  approve: HIDDEN,
+  decline: HIDDEN,
+  recall: HIDDEN,
+};
+
+function renderPage(answer: Answer<typeof GET>, user: CurrentUser, actions = HIDDEN_ACTIONS) {
   mockApi([
     ...HISTORY_ANSWERS,
     reply('GET /api/v1/shell-attribute-forms/{level}', {
@@ -48,17 +56,7 @@ function renderPage(answer: Answer<typeof GET>, user: CurrentUser) {
     }),
     reply('GET /api/v1/purchase-requests/{purchaseRequestId}/approval', {
       body: purchaseRequestApproval({
-        sections: [
-          approvalSection({
-            actions: {
-              submit: HIDDEN,
-              resubmit: HIDDEN,
-              approve: HIDDEN,
-              decline: HIDDEN,
-              recall: HIDDEN,
-            },
-          }),
-        ],
+        sections: [approvalSection({ actions })],
       }),
     }),
     reply(GET, answer, { purchaseRequestId: 'PR-1002' }),
@@ -95,6 +93,17 @@ describe('038 FR-025 (M-7): a person who may change nothing on a purchase reques
     expect(disabledControls()).toEqual([]);
     await user.keyboard('{Escape}');
     await expectNoAxeViolations();
+  });
+
+  it("038 FR-025 (M-7): has no second note beside View only for the approval it can't submit", async () => {
+    const pr = routedPurchaseRequest({ access: VIEW_ONLY_ACCESS });
+    const submit = refused('Submitting purchase requests');
+    renderPage({ body: pr }, VIEWER, { ...HIDDEN_ACTIONS, submit });
+
+    await screen.findByRole('heading', { level: 1, name: 'PR for Stand build' });
+    await screen.findByText(VIEW_ONLY_NOTE);
+    expect(screen.queryByText(submit.reason)).not.toBeInTheDocument();
+    expect(disabledControls()).toEqual([]);
   });
 });
 
