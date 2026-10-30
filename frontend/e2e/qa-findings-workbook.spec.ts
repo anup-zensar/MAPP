@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { expect, test } from './support/no-csp-violations';
 import { expectNoAxeViolations, expectToast, signInAs } from './fixtures';
 
-// 038 US3: the 5,000-row workbook written by platform/apibench TestWorkbookCheckStatements_038_FR008_H2.
+// The 5,000-row workbook written by platform/apibench TestWorkbookFixture.
 
 const PRIYA = 'priya.raman@shell.com';
 const PLAN = 'P-1001';

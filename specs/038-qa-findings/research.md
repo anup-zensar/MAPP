@@ -114,7 +114,7 @@ a 100-row check minus those of a 10-row check are ≤ 4 × 90 (028's method; Pos
 `workbook/apply_test.go` and `handler_import_test.go` keep proving identical problems; `workbook/apply_test.go`
 for the 200-character cap.
 
-**Measured** (`TestWorkbookCheckStatements_038_FR008_H2`, demo plan P-1001, generated rows: one campaign, an
+**Measured** (`BenchmarkWorkbookCheck`, demo plan P-1001, generated rows: one campaign, an
 initiative per 100 rows, half activities, half line items; developer laptop shared with other builds, so the
 times are high):
 

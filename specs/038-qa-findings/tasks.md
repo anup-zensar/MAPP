@@ -126,7 +126,7 @@ None beyond Phase 1: every story below depends only on T001 – T003.
 **Goal**: FR-008 – FR-011 (H-2). **Independent Test**: spec US3.
 
 - [x] T030 [P] [US3] B4 — Failing measurement: `platform/apibench/workbook_test.go` with `BenchmarkWorkbookCheck`
-  (250, 1,000, 5,000 rows generated with `platform/sheet`) and `TestWorkbookCheckStatements_038_FR008_H2`
+  (250, 1,000, 5,000 rows generated with `platform/sheet`) and the per-row statement bound at the start of `BenchmarkWorkbookCheck` (fakes do not count statements; constitution VI keeps the database out of tests)
   (statements of a 100-row check − a 10-row check ≤ 4 × 90; a 1,000-row check ≤ 4,150 statements and ≤ 5 s); record
   the "before" numbers in research.md R3; the generator also writes `frontend/e2e/fixtures/workbook-5000.xlsx`
 - [x] T031 [P] [US3] B4 — Failing tests in `workbook/apply_test.go`: `TestProblemValue_Capped_038_FR010_H2` (4,000

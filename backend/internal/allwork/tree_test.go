@@ -18,7 +18,6 @@ func matched(r Result, level Level) []string {
 	return keys
 }
 
-// rolesOf writes the rows as "key role", for comparisons.
 func rolesOf(r Result) []string {
 	rows := []string{}
 	for _, row := range r.Rows {
@@ -27,8 +26,7 @@ func rolesOf(r Result) []string {
 	return rows
 }
 
-// Each filter of FR-004 is tested on its level (FR-004, FR-005): the matching activities of each filter on
-// its own, on the demo year (with FY2026 Mobility China made a Strategic / AOP plan).
+// Each filter on its own level, on the demo year with FY2026 Mobility China made a Strategic / AOP plan.
 func TestFilter_EachFilterOnItsLevel_FR004(t *testing.T) {
 	t.Parallel()
 	b := seedYear()
@@ -63,8 +61,7 @@ func TestFilter_EachFilterOnItsLevel_FR004(t *testing.T) {
 	}
 }
 
-// "Activity status: Declined" shows only the branches that lead to a declined activity (FR-005, US2
-// scenario 2): the containers above it hold the filter through it, and the cards count only the matches.
+// "Activity status: Declined" keeps only branches leading to a declined activity; cards count only matches.
 func TestFilter_ActivityStatusShowsOnlyBranchesToMatches_FR005(t *testing.T) {
 	t.Parallel()
 	r := view(seedYear(), Query{ActivityStatuses: []string{"declined"}})
@@ -82,8 +79,7 @@ func TestFilter_ActivityStatusShowsOnlyBranchesToMatches_FR005(t *testing.T) {
 	}
 }
 
-// Filtering by owner shows that person's records; their parents appear as context rows, which the cards do
-// not count (FR-005, US2 scenario 3).
+// Filtering by owner shows that person's records; parents are context rows the cards do not count.
 func TestFilter_OwnerParentsAreContext_FR005(t *testing.T) {
 	t.Parallel()
 	r := view(seedYear(), Query{Owners: []string{daniel.ID}})
@@ -100,8 +96,7 @@ func TestFilter_OwnerParentsAreContext_FR005(t *testing.T) {
 	assertTotalsEqualCards(t, r)
 }
 
-// A filter tested only on higher levels holds for a record when its nearest ancestor at a tested level meets
-// it (FR-005, D-113): an activity follows its initiative's status and its plan's status.
+// A filter on higher levels holds through the nearest tested ancestor: an activity follows its initiative.
 func TestFilter_HigherLevelFilterInheritedFromNearestAncestor_FR005(t *testing.T) {
 	t.Parallel()
 	b := seedYear()
@@ -116,8 +111,7 @@ func TestFilter_HigherLevelFilterInheritedFromNearestAncestor_FR005(t *testing.T
 	}
 }
 
-// Campaign / initiative status: values of one group — Approval progress or Timing — combine with OR, and
-// the two groups with AND; a record without dates has no Timing (FR-005, D-113).
+// Status values combine with OR inside Approval progress or Timing, and the two groups with AND.
 func TestFilter_ContainerStatusOrWithinGroupAndAcross_FR005(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -141,8 +135,7 @@ func TestFilter_ContainerStatusOrWithinGroupAndAcross_FR005(t *testing.T) {
 	}
 }
 
-// The count reads "Showing N of M activities", M being every activity of the year's plans, or counts
-// campaigns or initiatives under the last two Show levels choices (FR-008).
+// The count reads "Showing N of M activities", or counts campaigns or initiatives for the higher Show levels.
 func TestCount_ShowingNOfMWithNoun_FR008(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -163,8 +156,7 @@ func TestCount_ShowingNOfMWithNoun_FR008(t *testing.T) {
 	}
 }
 
-// For every combination of filters, search and Show levels tried, in every view, the totals row equals
-// the summary cards (FR-014, SC-003).
+// For every filter, search and Show levels combination, in every view, the totals row equals the cards.
 func TestRollup_TotalsEqualSummaryCards_EveryFilterCombination_SC003(t *testing.T) {
 	t.Parallel()
 	b := seedYear()
@@ -186,9 +178,7 @@ func TestRollup_TotalsEqualSummaryCards_EveryFilterCombination_SC003(t *testing.
 	}
 }
 
-// The Grid is the plan tree (FR-011): plans by name ignoring letter case, children in their plan tree's
-// order (not in the order they were read), line items in creation order, the unassigned row last under its
-// activity; each row has its parent, depth and level.
+// The Grid is the plan tree in tree order (not read order), with the unassigned row last under its activity.
 func TestTree_PlansByNameChildrenInPlanTreeOrder_FR011(t *testing.T) {
 	t.Parallel()
 	b := newYear()
@@ -203,7 +193,7 @@ func TestTree_PlansByNameChildrenInPlanTreeOrder_FR011(t *testing.T) {
 	b.lineItem(a, "L-1001", "Earlier", "20.00")
 	b.node("L-1001").Order, b.node("L-1002").Order = 0, 1
 	data := b.data()
-	slices.Reverse(data.Nodes) // read in another order
+	slices.Reverse(data.Nodes)
 
 	r := viewOf(data, Query{}).result
 
@@ -225,9 +215,7 @@ func TestTree_PlansByNameChildrenInPlanTreeOrder_FR011(t *testing.T) {
 	}
 }
 
-// An activity whose balance is not zero gets the row "Unassigned planned cost (Sys_Gen_Balance)" after its
-// line items, with the amount, negative when its line items exceed its planned cost; an activity with a
-// balance of 0.00, or with neither a planned cost nor a line item, gets none (FR-012).
+// A non-zero balance adds an "Unassigned planned cost (Sys_Gen_Balance)" row, negative when line items exceed it.
 func TestUnassignedRows_OnlyNonZeroBalances_FR012(t *testing.T) {
 	t.Parallel()
 	r := view(seedYear(), Query{})
