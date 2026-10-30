@@ -38,7 +38,9 @@ test('Home: the summary cards and sections for a planner and an approver, with w
   await expect(
     summary.getByRole('link', { name: /^Activities I own: \d+ — open your activities$/ }),
   ).toBeVisible();
-  await expect(summary.getByText(/^\d+ declined · \d+ submitted$/)).toBeVisible();
+  await expect(
+    summary.getByText(/^in \d{4}(–\d{4})? · \d+ declined · \d+ submitted$/),
+  ).toBeVisible();
   await expect(
     summary.getByRole('link', { name: /^Waiting for my approval: \d+ — open Approvals$/ }),
   ).toBeVisible();

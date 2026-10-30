@@ -139,7 +139,7 @@ test('US1: an approved activity restored from the bin comes back as Created (FR-
     .click();
   const dialog = page.getByRole('alertdialog', { name: `Restore activity '${name}'?` });
   await expect(
-    dialog.getByText('It comes back as Created and must be submitted for approval again.'),
+    dialog.getByText('Status reset to Created because it was restored from the recycle bin.'),
   ).toBeVisible();
   await dialog.getByRole('button', { name: 'Restore activity' }).click();
   await expectToast(page, `Activity '${name}' restored`);
