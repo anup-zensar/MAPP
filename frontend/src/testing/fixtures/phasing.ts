@@ -56,6 +56,7 @@ export function budgetByMonth(overrides: Partial<BudgetByMonth> = {}): BudgetByM
         otherYears: null,
         noDates: null,
         childrenNotPhased: 1,
+        negativeBalanceCount: 0,
       },
       {
         recordType: 'campaign',
@@ -71,6 +72,7 @@ export function budgetByMonth(overrides: Partial<BudgetByMonth> = {}): BudgetByM
         otherYears: gbp('5000.00'),
         noDates: null,
         childrenNotPhased: 0,
+        negativeBalanceCount: 0,
       },
     ],
     ...overrides,

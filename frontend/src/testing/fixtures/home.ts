@@ -1,7 +1,5 @@
-/**
- * Answers of the Home endpoints for tests (feature 009). `HOME_ANSWERS` answers every request Home
- * makes with an empty dashboard, for tests of other parts of the app that land on Home.
- */
+// Answers of the Home endpoints for tests (feature 009); HOME_ANSWERS answers every request Home makes with an
+// empty dashboard, for tests of other parts of the app that land on Home.
 import type { HttpHandler } from 'msw';
 import type { components } from '@/api/generated/schema';
 import type {
@@ -20,7 +18,6 @@ import { reply } from '../replies';
 
 type DisplayCurrencyOption = components['schemas']['DisplayCurrencyOption'];
 
-/** An amount in US dollars ("1200.00" → $1,200.00). */
 export function usd(amount: string): Money {
   return { amount, currency: 'USD' };
 }
@@ -32,7 +29,7 @@ export function summaryOf(overrides: Partial<HomeSummary> = {}): HomeSummary {
     displayCurrency: 'USD',
     gettingStarted: null,
     plans: { count: 1, published: 1, draft: 0 },
-    activitiesOwned: { count: 6, declined: 1, submitted: 2 },
+    activitiesOwned: { count: 6, declined: 1, submitted: 2, yearFrom: null, yearTo: null },
     waitingForMe: { count: 0, oldestWaitingSince: null },
     plannedCost: {
       planCount: 1,
@@ -46,17 +43,12 @@ export function summaryOf(overrides: Partial<HomeSummary> = {}): HomeSummary {
   };
 }
 
-/**
- * GET /api/v1/me/display-currencies for a person who shows USD: the active currencies, by code (003
- * FR-023). A person whose display currency was set inactive also gets theirs, marked inactive.
- */
 export const DISPLAY_CURRENCIES: DisplayCurrencyOption[] = [
   { code: 'EUR', name: 'Euro', active: true },
   { code: 'GBP', name: 'Pound sterling', active: true },
   { code: 'USD', name: 'US dollar', active: true },
 ];
 
-/** A row of Plans at a glance: FY2026 Lubricants Europe with the seed's figures. */
 export function planRowOf(overrides: Partial<HomePlanRow> = {}): HomePlanRow {
   return {
     id: 'P-1001',
@@ -76,10 +68,8 @@ export function planRowOf(overrides: Partial<HomePlanRow> = {}): HomePlanRow {
   };
 }
 
-/** The plan of the seed's Lubricants Europe activities. */
 export const LUBRICANTS_PLAN = { type: 'plan', id: 'P-1001', name: 'FY2026 Lubricants Europe' };
 
-/** A reason a record needs attention; the fields that do not apply are empty. */
 export function reasonOf(
   kind: HomeAttentionReason['kind'],
   overrides: Partial<HomeAttentionReason> = {},
@@ -136,7 +126,6 @@ export function waitingItemOf(overrides: Partial<WaitingItem> = {}): WaitingItem
   };
 }
 
-/** One of Priya's activities in My activities: "Launch film", approved, with dates. */
 export function myActivityOf(overrides: Partial<MyActivityRow> = {}): MyActivityRow {
   return {
     id: 'A-1042',
@@ -155,7 +144,6 @@ export function myActivityOf(overrides: Partial<MyActivityRow> = {}): MyActivity
   };
 }
 
-/** A group of My activities holding the given rows. */
 export function groupOf(
   status: MyActivityGroup['status'],
   items: MyActivityRow[],
@@ -195,14 +183,8 @@ export function logEntryOf(overrides: Partial<ActivityLogEntry> = {}): ActivityL
   };
 }
 
-/** An empty page of a list. */
 export const EMPTY_PAGE = { items: [], total: 0 };
 
-/**
- * Priya's Financials card with the seed (015 US6 scenario 1): Committed 35,652.17 of 460,000.00
- * planned (8 %), Invoiced 33,152.17, Paid 30,652.17, Accrued (Sep 2026) 2,500.00; one activity
- * committed above planned cost and one transaction not linked.
- */
 export function overviewOf(overrides: Partial<FinancialOverview> = {}): FinancialOverview {
   return {
     year: 2026,
@@ -250,10 +232,9 @@ export function emptyOverview(): FinancialOverview {
   };
 }
 
-/** The summary of a person who has nothing yet. */
 export const EMPTY_SUMMARY = summaryOf({
   plans: { count: 0, published: 0, draft: 0 },
-  activitiesOwned: { count: 0, declined: 0, submitted: 0 },
+  activitiesOwned: { count: 0, declined: 0, submitted: 0, yearFrom: null, yearTo: null },
   plannedCost: {
     planCount: 0,
     plannedCost: usd('0.00'),
@@ -264,7 +245,6 @@ export const EMPTY_SUMMARY = summaryOf({
   },
 });
 
-/** Every request of Home, answered with a dashboard that has nothing in it yet. */
 export const HOME_ANSWERS: HttpHandler[] = [
   reply('GET /api/v1/home/summary', {
     body: EMPTY_SUMMARY,

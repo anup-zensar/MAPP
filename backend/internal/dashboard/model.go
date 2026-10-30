@@ -126,6 +126,8 @@ type Months struct {
 	OtherYears           *money.Money `json:"otherYears"`
 	CommittedOutsideYear *money.Money `json:"committedOutsideYear"`
 	PaidOutsideYear      *money.Money `json:"paidOutsideYear"`
+
+	NegativeBalanceCount int `json:"negativeBalanceCount"`
 }
 
 type Month struct {

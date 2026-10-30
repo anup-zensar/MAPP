@@ -16,9 +16,12 @@ import {
 import { apiError, reply } from '@/testing/replies';
 import { ActivityFinancials, LineItemFinancials } from './FinancialsSection';
 
-function renderActivity(answer: Answer<'GET /api/v1/financials/records/{recordId}'>) {
+function renderActivity(
+  answer: Answer<'GET /api/v1/financials/records/{recordId}'>,
+  user = testUser(),
+) {
   mockApi([reply('GET /api/v1/financials/records/{recordId}', answer, { recordId: 'A-1001' })]);
-  return renderWithProviders(<ActivityFinancials activityId="A-1001" />, { user: testUser() });
+  return renderWithProviders(<ActivityFinancials activityId="A-1001" />, { user });
 }
 
 function renderLineItem(
@@ -36,6 +39,17 @@ function renderLineItem(
 }
 
 describe('ActivityFinancials (015 US1, FR-011 – FR-015)', () => {
+  it("038 FR-058: names the accrual month in the person's date format", async () => {
+    const user = testUser();
+    renderActivity(
+      { body: activityRecord() },
+      { ...user, preferences: { ...user.preferences, dateFormat: 'DD/MM/YYYY' } },
+    );
+
+    const tiles = await screen.findByRole('list', { name: 'Financial figures' });
+    expect(tiles).toHaveTextContent('Accrued (03/2026)');
+  });
+
   it('shows the figures, the warning, the line items and the latest transactions, open', async () => {
     renderActivity({ body: activityRecord() });
 

@@ -41,6 +41,7 @@ function months(): PlanningDashboard['months'] {
     otherYears: null,
     committedOutsideYear: null,
     paidOutsideYear: null,
+    negativeBalanceCount: 0,
   };
 }
 

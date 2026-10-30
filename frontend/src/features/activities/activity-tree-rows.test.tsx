@@ -147,7 +147,7 @@ describe('activityTreeRows (feature 006)', () => {
       within(menu)
         .getAllByRole('menuitem')
         .map((item) => item.textContent),
-    ).toEqual(['View', 'Edit', 'Copy', 'Move', 'Split activity', 'Delete']);
+    ).toEqual(['View', 'Edit', 'Copy', 'Move to…', 'Split activity', 'Delete']);
     await user.click(within(menu).getByRole('menuitem', { name: 'Edit' }));
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1042/edit'),
@@ -194,9 +194,7 @@ describe('activityTreeRows (feature 006)', () => {
     expect(within(question).getByRole('button', { name: 'Delete activity' })).toHaveFocus();
     await user.keyboard('{Enter}');
 
-    expect(
-      await screen.findByText("Activity 'Launch film' moved to the recycle bin"),
-    ).toBeVisible();
+    expect(await screen.findByText("Activity 'Launch film' deleted")).toBeVisible();
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/plans/P-1001');
 
@@ -270,7 +268,7 @@ describe('activityTreeRows (feature 006)', () => {
     ]);
 
     await user.click(await screen.findByRole('button', { name: 'Actions for Launch film' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Move' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Move to…' }));
     const dialog = await screen.findByRole('dialog', { name: "Move activity 'Launch film'" });
     await user.click(await within(dialog).findByRole('radio', { name: 'Print & outdoor' }));
     await user.click(within(dialog).getByRole('button', { name: 'Move activity' }));

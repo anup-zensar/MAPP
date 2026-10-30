@@ -2,6 +2,7 @@ package financials_test
 
 import (
 	"net/http"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -71,18 +72,19 @@ func TestTransactions_Contract_FR021(t *testing.T) {
 	alex := server.SignIn(t, alexsEmail)
 
 	all := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions")
-	want := financials.TypeCounts{All: 11, PurchaseOrder: 4, Invoice: 3, Payment: 2, Accrual: 2, NotLinked: 1}
-	if all.Counts != want || all.Total != 11 || len(all.Items) != 11 || all.Year != 2026 || all.Page != 1 || all.PageSize != 50 {
+	one := 1
+	want := financials.TypeCounts{All: 11, PurchaseOrder: 4, Invoice: 3, Payment: 2, Accrual: 2, NotLinked: &one}
+	if !reflect.DeepEqual(all.Counts, want) || all.Total != 11 || len(all.Items) != 11 || all.Year != 2026 || all.Page != 1 || all.PageSize != 50 {
 		t.Errorf("counts %+v, total %d, %d items, year %d, page %d of %d", all.Counts, all.Total, len(all.Items), all.Year,
 			all.Page, all.PageSize)
 	}
 	pos := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions?type=purchaseOrder&sort=amount:desc")
-	if pos.Total != 4 || pos.Items[0].ID != "FT-1001" || pos.Counts != want || pos.Totals.Invoiced != dollars(t, "33152.17") {
+	if pos.Total != 4 || pos.Items[0].ID != "FT-1001" || !reflect.DeepEqual(pos.Counts, want) || pos.Totals.Invoiced != dollars(t, "33152.17") {
 		t.Errorf("purchase orders: total %d, first %s, counts %+v", pos.Total, pos.Items[0].ID, pos.Counts)
 	}
 	speakerFees := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions?recordId=L-1004&pageSize=100")
 	if speakerFees.Total != 4 || speakerFees.RecordFilter == nil || speakerFees.RecordFilter.Name != "Speaker fees" ||
-		speakerFees.Counts.NotLinked != 0 || speakerFees.PageSize != 100 {
+		*speakerFees.Counts.NotLinked != 0 || speakerFees.PageSize != 100 {
 		t.Errorf("Speaker fees: total %d, record %+v, counts %+v", speakerFees.Total, speakerFees.RecordFilter, speakerFees.Counts)
 	}
 }

@@ -60,6 +60,22 @@ describe('MoneyField', () => {
     expect(screen.queryByText(/Rounded to/)).not.toBeInTheDocument();
   });
 
+  it('038 FR-046: keeps a row for the rounding note, so the fields below never move', async () => {
+    const { user } = renderWithProviders(<Example />);
+    const field = screen.getByRole('textbox', { name: 'Plan budget' });
+    const noteRow = () => document.getElementById('budget-note');
+
+    expect(noteRow()).toBeInTheDocument();
+    expect(noteRow()).toBeEmptyDOMElement();
+    expect(field).toHaveAccessibleDescription('USD Needed to publish');
+
+    await user.type(field, '1234.567');
+    await user.tab();
+
+    expect(noteRow()).toHaveTextContent('Rounded to 1,234.57');
+    expect(field).toHaveAccessibleDescription('USD Needed to publish Rounded to 1,234.57');
+  });
+
   it('keeps text that is not an amount as typed', async () => {
     const { user } = renderWithProviders(<Example start="twelve" />);
     const field = screen.getByRole('textbox', { name: 'Plan budget' });

@@ -515,15 +515,16 @@ type Notification struct {
 }
 
 type OverspendConfiguration struct {
-	ID            string
-	DefaultMode   string
-	Version       int
-	CreatedAt     time.Time
-	CreatedByID   string
-	CreatedByName string
-	UpdatedAt     time.Time
-	UpdatedByID   string
-	UpdatedByName string
+	ID                      string
+	DefaultMode             string
+	Version                 int
+	CreatedAt               time.Time
+	CreatedByID             string
+	CreatedByName           string
+	UpdatedAt               time.Time
+	UpdatedByID             string
+	UpdatedByName           string
+	ApprovalOverPlannedCost string
 }
 
 type Person struct {

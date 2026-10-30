@@ -16,6 +16,7 @@ import (
 	"mapp/internal/platform/clock"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/ids"
+	"mapp/internal/platform/record"
 )
 
 // The names of the records as they read mid-sentence: "Not saved — Alex Morgan changed this model".
@@ -111,6 +112,9 @@ func checkText(problems *errs.Problems, field, text, empty string, max int) {
 		return
 	}
 	checkLength(problems, field, text, max)
+	if message := record.CheckSingleLine(text); message != "" {
+		problems.Add(field, message)
+	}
 }
 
 func checkLength(problems *errs.Problems, field, text string, max int) {

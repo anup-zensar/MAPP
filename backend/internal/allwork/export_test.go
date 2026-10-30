@@ -12,8 +12,7 @@ import (
 	"mapp/internal/platform/actor"
 )
 
-// exportOf exports the view of q over the year of b on 18 Oct 2026 as Priya, in US dollars unless cur says
-// otherwise.
+// exportOf exports the view of q on 18 Oct 2026 as Priya, in US dollars unless cur says otherwise.
 func exportOf(t *testing.T, b *yearBuilder, q Query, format string, unassigned bool, cur ...Currency) File {
 	t.Helper()
 	c := usd
@@ -31,13 +30,14 @@ func exportOf(t *testing.T, b *yearBuilder, q Query, format string, unassigned b
 	return file
 }
 
+// csvLines reads a CSV export: its notes, then its table (heading, rows, totals).
 func csvLines(t *testing.T, f File) (notes, table [][]string) {
 	t.Helper()
 	body := string(f.Body)
 	if !strings.HasPrefix(body, "\xEF\xBB\xBF") {
 		t.Fatalf("no byte-order mark: %q", body[:min(len(body), 20)])
 	}
-	before, after, found := strings.Cut(strings.TrimPrefix(body, "\xEF\xBB\xBF"), "\n\n") // the empty line after the notes
+	before, after, found := strings.Cut(strings.TrimPrefix(body, "\xEF\xBB\xBF"), "\n\n")
 	if !found {
 		t.Fatalf("no empty line after the notes: %q", body)
 	}
@@ -64,6 +64,7 @@ func rowNamed(t *testing.T, table [][]string, name string) []string {
 	return nil
 }
 
+// The file holds every matching and context row, collapsed branches too; context rows are marked.
 func TestExport_GridHasEveryRowLevelPathColumnsTotals_FR032(t *testing.T) {
 	t.Parallel()
 	b := seedYear()
@@ -80,7 +81,7 @@ func TestExport_GridHasEveryRowLevelPathColumnsTotals_FR032(t *testing.T) {
 		t.Errorf("%d lines, want the heading, %d rows and the totals", len(table), rows)
 	}
 	want := map[string][]string{
-		"Digital & social": {"Initiative", "FY2026 Lubricants Europe › Helix launch", "Digital & social", "I-1001", "In progress",
+		"Digital & social": {"Initiative", "FY2026 Lubricants Europe › Helix launch", "Digital & social", "I-1001", "Partly approved",
 			"Priya Raman", "2026-01-01", "2026-06-30", "300000.00", "200000.00", "125000.00", "75000.00", "0.00", "0.00"},
 		"Film production": {"Line item", "FY2026 Lubricants Europe › Helix launch › Digital & social › Launch film", "Film production",
 			"L-1002", "All filled in", "Priya Raman", "", "", "", "50000.00", "", "", "0.00", "0.00"},
@@ -259,5 +260,24 @@ func TestExport_UnassignedFollowsSwitch_FR012(t *testing.T) {
 
 	if on, off := count(true), count(false); on != 8 || off != 0 {
 		t.Errorf("unassigned rows: %d with the switch on, %d off; want 8 and 0", on, off)
+	}
+}
+
+// A running activity keeps "In progress"; its partly approved containers read "Partly approved".
+func TestExport_ContainerStatusPartlyApproved_038_FR033_M11(t *testing.T) {
+	t.Parallel()
+	b := seedYear()
+
+	notes, table := csvLines(t, exportOf(t, b, Query{ContainerStatuses: []string{"inProgress"}}, FormatCSV, true))
+
+	if got := rowNamed(t, table, "Digital & social"); got[4] != "Partly approved" {
+		t.Errorf("Digital & social status = %q, want Partly approved", got[4])
+	}
+	if notes[2][1] != "Campaign / initiative status: Partly approved" {
+		t.Errorf("filter note = %q", notes[2])
+	}
+	_, all := csvLines(t, exportOf(t, b, Query{}, FormatCSV, true))
+	if got := rowNamed(t, all, "Partner co-marketing fund"); got[4] != "In progress" {
+		t.Errorf("running activity status = %q, want In progress", got[4])
 	}
 }

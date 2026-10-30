@@ -124,18 +124,25 @@ export function ApprovalWorkflowsPage() {
         <WorkflowFormPanel workflow={form.workflow} onClose={() => setForm(null)} />
       )}
 
-      {dialog?.kind === 'cantDelete' && (
+      {dialog?.kind === 'cantDelete' && dialog.workflow.active && (
         <ConfirmDialog
           open
           onOpenChange={(open) => !open && setDialog(null)}
           title={`Can't delete '${dialog.workflow.name}'`}
-          confirmLabel={dialog.workflow.active ? 'Set inactive' : 'Close'}
+          confirmLabel="Set inactive"
           busy={status.busy}
-          onConfirm={() =>
-            dialog.workflow.active
-              ? void status.applyInactive(dialog.workflow).then(() => setDialog(null))
-              : setDialog(null)
-          }
+          onConfirm={() => void status.applyInactive(dialog.workflow).then(() => setDialog(null))}
+        >
+          {cantDeleteText(dialog.workflow)}
+        </ConfirmDialog>
+      )}
+      {/* Already inactive: the dialog only informs, with one Close. */}
+      {dialog?.kind === 'cantDelete' && !dialog.workflow.active && (
+        <ConfirmDialog
+          open
+          onOpenChange={(open) => !open && setDialog(null)}
+          title={`Can't delete '${dialog.workflow.name}'`}
+          acknowledgeOnly
         >
           {cantDeleteText(dialog.workflow)}
         </ConfirmDialog>

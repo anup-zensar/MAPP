@@ -222,6 +222,24 @@ describe('BudgetView (US4)', () => {
 
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ key: 'L-1001' }));
   });
+
+  it('says why the months add up to more than planned cost (038 FR-024, L-2)', () => {
+    const result = budgetResult();
+    renderBudget({ ...result, summary: { ...result.summary, negativeBalanceCount: 2 } });
+
+    expect(
+      screen.getByText(
+        '2 activities have line items above their planned cost, so their months add up to more than their planned cost.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('says nothing of it when no activity is above its planned cost (038 FR-024)', () => {
+    const result = budgetResult();
+    renderBudget({ ...result, summary: { ...result.summary, negativeBalanceCount: 0 } });
+
+    expect(screen.queryByText(/so their months add up/)).not.toBeInTheDocument();
+  });
 });
 
 function cellsOfRow(name: RegExp): HTMLElement[] {

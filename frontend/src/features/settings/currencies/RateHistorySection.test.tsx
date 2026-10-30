@@ -86,9 +86,7 @@ describe('RateHistorySection (016 FR-001, FR-003)', () => {
 
     const messages = await findMessages();
     expect(
-      await within(messages).findByText(
-        "Exchange rate 'EUR, 18 Oct 2026' moved to the recycle bin",
-      ),
+      await within(messages).findByText("Exchange rate 'EUR, 18 Oct 2026' deleted"),
     ).toBeInTheDocument();
     expect(within(messages).getByRole('button', { name: 'Undo' })).toBeInTheDocument();
     expect(api.requests.some((r) => r.method === 'DELETE')).toBe(true);

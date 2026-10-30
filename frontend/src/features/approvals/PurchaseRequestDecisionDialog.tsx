@@ -9,6 +9,7 @@ import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { useToast } from '@/ui/Toast/useToast';
 import { CHECK_ON_SAVE } from '@/ui/useFormProblems';
 import { levelOf, names } from './messages';
+import { OverPlannedCostAlert } from './OverPlannedCost';
 import { usePurchaseRequestDecision } from './purchase-request-api';
 import type {
   PurchaseRequestApproval,
@@ -115,6 +116,7 @@ export function PurchaseRequestDecisionDialog({
       onConfirm={confirm}
     >
       <div className={styles.body}>
+        {approve && <OverPlannedCostAlert overages={approval.overPlannedCost} />}
         {round && level && (
           <p className={styles.levels}>
             {`${levelOf(levelNumber, round.levelCount)} · ${names(level.approvers)}`}

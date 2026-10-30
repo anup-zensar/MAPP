@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { ApiError, conflictMessage } from '@/api/errors';
+import { ApiError, CONFLICT_NEXT_STEP, conflictMessage } from '@/api/errors';
 import { overLimitMessages } from '@/features/overspend';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { valuesToClear } from '@/ui/ShellAttributeFields/rules';
@@ -135,7 +135,10 @@ export function useActivitySave(options: ActivitySaveOptions) {
       if (latest) {
         setVersion(latest.version);
       }
-      setFailure({ message: conflictMessage(error, 'activity', dateFormat) });
+      setFailure({
+        message: conflictMessage(error, 'activity', dateFormat),
+        nextStep: CONFLICT_NEXT_STEP,
+      });
       return;
     }
     setFailure({ message: error.message });

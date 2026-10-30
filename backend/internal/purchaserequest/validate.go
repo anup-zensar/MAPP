@@ -8,6 +8,7 @@ import (
 	"unicode/utf8"
 
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/record"
 	"mapp/internal/settings"
 )
 
@@ -92,6 +93,8 @@ func (c *checker) header(ctx context.Context, in Input, pr *PurchaseRequest) err
 		c.problems.Add("name", msgEnterName)
 	case utf8.RuneCountInString(pr.Name) > maxNameLength:
 		c.problems.Add("name", msgNameTooLong)
+	case record.CheckSingleLine(pr.Name) != "":
+		c.problems.Add("name", record.CheckSingleLine(pr.Name))
 	}
 	c.tooLong("description", pr.Description)
 	c.tooLong("comment", in.Comment)
@@ -194,7 +197,6 @@ func first(list []string) string {
 	return list[0]
 }
 
-// businessUnit returns the Business unit of the plan of the line items, for attribute conditions.
 func (p PlanFacts) businessUnit(facts map[string]LineItemFacts) []string {
 	for _, f := range facts {
 		if f.Plan.Access.ID == p.Access.ID {

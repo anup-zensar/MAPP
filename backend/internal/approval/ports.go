@@ -31,6 +31,7 @@ type ActivityFacts struct {
 	Ongoing               bool
 	PlannedCost           *money.Money
 	UnassignedPlannedCost *money.Money
+	OverPlannedCost       *money.Money // line items above the planned cost, in the plan currency; nil when within
 	TypeName, Description string
 	WorkflowID            string
 	record.Meta

@@ -11,8 +11,41 @@ import {
   TEAMS,
   VIEWER,
 } from '@/testing/fixtures/access';
-import { andList, orList, peopleText, rolesText, summariseAccess } from './access-words';
+import {
+  andList,
+  orList,
+  peopleText,
+  PERMISSIONS,
+  permissionLabel,
+  rolesText,
+  summariseAccess,
+} from './access-words';
 import { draftsDiffer, needsImpactCheck, previewPermissions, rolesBody } from './role-drafts';
+
+describe('038 FR-045 (L-17): every permission in the words of 014 Table A', () => {
+  it('names the four purchase-request permissions, after the financial ones', () => {
+    expect(permissionLabel('purchaseRequests.edit')).toBe('Raise and edit purchase requests');
+    expect(permissionLabel('purchaseRequests.delete')).toBe('Delete purchase requests');
+    expect(permissionLabel('purchaseRequests.submit')).toBe(
+      'Submit purchase requests for approval and recall them',
+    );
+    expect(permissionLabel('purchaseRequests.list')).toBe('See the Purchase requests page');
+    const keys = PERMISSIONS.map((permission) => permission.key);
+    expect(keys.slice(13, 18)).toEqual([
+      'finance.import',
+      'purchaseRequests.edit',
+      'purchaseRequests.delete',
+      'purchaseRequests.submit',
+      'purchaseRequests.list',
+    ]);
+  });
+
+  it('writes a purchase-request permission in Your access', () => {
+    expect(summariseAccess([{ key: 'purchaseRequests.list', all: true, teams: [] }])).toEqual([
+      'In all markets: see the Purchase requests page.',
+    ]);
+  });
+});
 
 describe('feature 014 words', () => {
   it('joins names with "and" and "or"', () => {

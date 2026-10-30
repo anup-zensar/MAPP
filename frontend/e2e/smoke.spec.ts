@@ -43,14 +43,14 @@ test('US1: wrong password is refused; e-mail case and spaces are ignored (FR-003
 
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('heading', { name: 'Welcome back, Priya.' })).toBeVisible();
-  // Priya's teams have plans, so Home shows them at a glance instead of Getting started.
+  // Priya's teams have plans, so Home shows them at a glance (Getting started is for people in no
+  // team, or in teams without plans: feature 009).
   await expect(page.getByRole('region', { name: 'Plans at a glance' })).toBeVisible();
 });
 
 test('US2: every navigation item opens its page with its tab title (FR-010, FR-015, FR-017, SC-003)', async ({
   page,
 }) => {
-  // Global budgets and Financials are shown only to people whose role includes them, such as Alex.
   await signInAs(page, 'alex.morgan@shell.com');
   await page.goto('/');
   const nav = page.getByRole('navigation', { name: 'Main' });
@@ -85,7 +85,7 @@ test('US4: sign out returns to the sign-in page and Back does not show the previ
   await signInAs(page, 'mei.lin@shell.com');
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Welcome back, Mei.' })).toBeVisible();
-  // Open another page inside the app first, so that Back has an app page to go back to.
+  // Open another page inside the app first, so that Back has a MAPP page to go back to.
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Plans' }).click();
   await expect(page).toHaveTitle('Plans · SP&A One');
 
@@ -125,9 +125,7 @@ test('US5: create, rename, delete and Undo a sample folder; the activity log rec
   await page.getByRole('button', { name: `Actions for ${renamed}` }).click();
   await page.getByRole('menuitem', { name: 'Delete' }).click();
   await page.getByRole('button', { name: 'Delete sample folder' }).click();
-  await expect(
-    page.getByText(`Sample folder '${renamed}' moved to the recycle bin`).first(),
-  ).toBeVisible();
+  await expect(page.getByText(`Sample folder '${renamed}' deleted`).first()).toBeVisible();
   await expect(page.getByRole('button', { name: `Actions for ${renamed}` })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Undo' }).click();

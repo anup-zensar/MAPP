@@ -78,6 +78,9 @@ func (s *Service) DecideSubject(ctx context.Context, a actor.Actor, kind Subject
 		if err != nil {
 			return err
 		}
+		if err = s.mayDecide(ctx, a, sub); err != nil {
+			return err
+		}
 		round, err := s.roundToDecide(ctx, sub, decision.DecisionInput)
 		if err != nil {
 			return err
@@ -87,6 +90,9 @@ func (s *Service) DecideSubject(ctx context.Context, a actor.Actor, kind Subject
 			return err
 		}
 		dg.kind, dg.comment, dg.now = decision.Action, comment, s.now()
+		if err = s.refuseOverage(ctx, dg); err != nil {
+			return err
+		}
 		updated, err := s.recordDecision(ctx, dg)
 		if err != nil {
 			return err
@@ -116,4 +122,19 @@ func (s *Service) SectionOf(ctx context.Context, a actor.Actor, kind SubjectKind
 		return Section{}, err
 	}
 	return sec, nil
+}
+
+// SubmissionOf is the record's submission check as for an activity: the approvers of each level resolved as if a
+// submitted now, those named by a field of the record included.
+func (s *Service) SubmissionOf(ctx context.Context, a actor.Actor, kind SubjectKind, id string) (Submission, error) {
+	var submission Submission
+	err := s.tx.Read(ctx, func(ctx context.Context) error {
+		sub, err := s.subjectOf(ctx, kind, id)
+		if err != nil {
+			return err
+		}
+		submission, err = s.submission(ctx, a, sub)
+		return err
+	})
+	return submission, err
 }

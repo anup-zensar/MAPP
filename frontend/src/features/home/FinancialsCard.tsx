@@ -10,6 +10,7 @@ import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { cx } from '@/ui/cx';
 import { useFormatters } from '@/format/useFormatters';
+import { useAccess } from '@/session/access';
 import styles from './FinancialsCard.module.css';
 import { useFinancialOverview } from './api';
 import type { FinancialOverview, HomeScope } from './api';
@@ -28,7 +29,7 @@ import {
 import { percentText } from './home-text';
 import { SectionError } from './SectionError';
 
-/** Home's Financials card for the current year and the Home scope; it loads and fails on its own. */
+/** Home's Financials card; loads and fails on its own, like the other cards. */
 export function FinancialsCard({ scope }: { scope: HomeScope }) {
   const { displayCurrency } = useFormatters();
   const overview = useFinancialOverview(scope, displayCurrency);
@@ -64,8 +65,10 @@ export function FinancialsCard({ scope }: { scope: HomeScope }) {
 }
 
 function Overview({ overview, open }: { overview: FinancialOverview; open: ReactNode }) {
-  const { money, dateTime } = useFormatters();
+  const { money, dateTime, dateFormat } = useFormatters();
   const { figures, source, year } = overview;
+  // Not-linked transactions only for people who may import.
+  const notLinked = useAccess().has('finance.import') ? overview.notLinked : 0;
   const empty = figures.transactionCount === 0;
 
   const subtitle = source.dataAsOf ? sourceText(source, dateTime) : undefined;
@@ -98,13 +101,13 @@ function Overview({ overview, open }: { overview: FinancialOverview; open: React
             value={money(figures.paid)}
           />
           <Figure
-            label={accruedLabel(source.accrualMonth)}
-            tip={accruedTip(source.accrualMonth)}
+            label={accruedLabel(source.accrualMonth, dateFormat)}
+            tip={accruedTip(source.accrualMonth, dateFormat)}
             value={money(figures.accrued)}
           />
         </dl>
       )}
-      {(overview.activitiesAbovePlanned > 0 || overview.notLinked > 0) && (
+      {(overview.activitiesAbovePlanned > 0 || notLinked > 0) && (
         <ul className={styles.links}>
           {overview.activitiesAbovePlanned > 0 && (
             <li>
@@ -115,11 +118,11 @@ function Overview({ overview, open }: { overview: FinancialOverview; open: React
               </Link>
             </li>
           )}
-          {overview.notLinked > 0 && (
+          {notLinked > 0 && (
             <li>
               <Link to={NOT_LINKED_HREF} className={styles.link}>
                 <Unlink aria-hidden="true" className={styles.icon} />
-                {notLinkedText(overview.notLinked)}
+                {notLinkedText(notLinked)}
                 <ChevronRight aria-hidden="true" className={styles.chevron} />
               </Link>
             </li>
@@ -151,7 +154,7 @@ function Figure({ label, tip, value, problem = false, children }: FigureProps) {
   );
 }
 
-/** Above planned cost the meter turns red and a sentence says so too: never colour alone. */
+/** Above planned cost the meter and percentage turn red, and words say so too. */
 function Committed({ overview }: { overview: FinancialOverview }) {
   const { money } = useFormatters();
   const { plannedCost, committedPercent, committedAbovePlanned, notYetCommitted } =

@@ -16,7 +16,7 @@ func TestGrantsFor_UnionOfRoles_FR002(t *testing.T) {
 
 	danielG, saraG := f.grants(t, daniel.ID), f.grants(t, sara.ID)
 
-	for _, p := range []authz.Permission{authz.PlansCreate, authz.ActivitiesEdit, authz.ApprovalsDecide, authz.FinanceLink} {
+	for _, p := range []authz.Permission{authz.PlansCreate, authz.ActivitiesEdit, authz.ApprovalsDecide} {
 		if !danielG.InScope(p, planOf(lubricants.ID)) {
 			t.Errorf("Daniel does not hold %s in Lubricants Europe", p)
 		}

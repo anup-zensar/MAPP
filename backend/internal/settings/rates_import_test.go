@@ -10,7 +10,6 @@ import (
 	"mapp/internal/platform/date"
 )
 
-// rateHeader is the header of the GSAP daily rate extract.
 const rateHeader = "rate_type,from_currency,to_currency,valid_from,rate"
 
 // ninetyTwoRows is the file of US1-2: 87 rates to add (EUR, GBP and the inactive INR for the 29 days of
@@ -29,7 +28,6 @@ func ninetyTwoRows() RateImportUpload {
 	return upload(append([]string{rateHeader}, rows...)...)
 }
 
-// importFixture is feedFixture with INR's stored rate of 19 Oct.
 func importFixture(t *testing.T) *fixture {
 	t.Helper()
 	f := feedFixture(t)
@@ -37,7 +35,6 @@ func importFixture(t *testing.T) *fixture {
 	return f
 }
 
-// The review answers every row with its outcome and row number before anything is saved (US1-2).
 func TestCheckRateImport_Review_FR006(t *testing.T) {
 	t.Parallel()
 	f := importFixture(t)
@@ -63,7 +60,6 @@ func TestCheckRateImport_Review_FR006(t *testing.T) {
 	}
 }
 
-// The import saves exactly the rows the review counts as to add and replace (FR-006).
 func TestApplyRateImport_SameCountsAsCheck_FR006(t *testing.T) {
 	t.Parallel()
 	f := importFixture(t)
@@ -84,7 +80,6 @@ func TestApplyRateImport_SameCountsAsCheck_FR006(t *testing.T) {
 	assertError(t, again, problems("content", "Nothing to import: every rate is already present or not used."))
 }
 
-// Every import is recorded — file, feed, who, when, dates, counts — and writes one log entry (FR-007, US1-3).
 func TestApplyRateImport_RecordAndLog_FR007(t *testing.T) {
 	t.Parallel()
 	f := importFixture(t)
@@ -150,8 +145,6 @@ func TestApplyRateRows_SharedCore_FR008(t *testing.T) {
 	}
 }
 
-// The sample file has one M row per active currency but USD, dated today, at the current rate + 0.5 %, and
-// imports as it is (FR-006).
 func TestImportSample_TodayRates(t *testing.T) {
 	t.Parallel()
 	f := feedFixture(t)
@@ -169,7 +162,6 @@ func TestImportSample_TodayRates(t *testing.T) {
 	}
 }
 
-// The upload needs a file name of at most 200 characters and base64 content (FR-006).
 func TestRateImportUpload_Checked(t *testing.T) {
 	t.Parallel()
 	f := feedFixture(t)
@@ -177,4 +169,18 @@ func TestRateImportUpload_Checked(t *testing.T) {
 	_, err := f.service.CheckRateImport(t.Context(), alex, RateImportUpload{FileName: " ", Content: "not base64!"})
 
 	assertError(t, err, problems("fileName", "Choose a file to import.", "content", "This file can't be read. Save it as a .csv file in UTF-8 and try again."))
+}
+
+// A rate entered by hand is refused before 1 Jan 2000, as an imported one is.
+func TestAddRate_DateFrom2000_038_FR034_L21(t *testing.T) {
+	t.Parallel()
+	f := feedFixture(t)
+
+	_, early := f.service.AddRate(t.Context(), alex, "EUR", RateInput{Date: "1999-12-31", Rate: "0.92"})
+	_, first := f.service.AddRate(t.Context(), alex, "EUR", RateInput{Date: "2000-01-01", Rate: "0.92"})
+
+	assertError(t, early, problems("date", "Enter a date on or after 1 Jan 2000."))
+	if first != nil {
+		t.Errorf("2000-01-01 refused: %v", first)
+	}
 }

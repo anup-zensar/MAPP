@@ -1,4 +1,4 @@
-import type { operations } from '@/api/generated/schema';
+import type { components, operations } from '@/api/generated/schema';
 
 export type DashboardKind = 'executive' | 'regional';
 export type PlanType = 'operational' | 'strategic' | 'crossMarket';
@@ -57,4 +57,32 @@ export function writeFilters(filters: DashboardFilters): URLSearchParams {
 export function dashboardHref(kind: DashboardKind, filters: DashboardFilters): string {
   const search = writeFilters(filters).toString();
   return `/dashboards/${kind}${search ? `?${search}` : ''}`;
+}
+
+type UsedFilters = components['schemas']['DashboardFilters'];
+
+/**
+ * The address's filters corrected to those the answer used, as an unknown currency, market or plan
+ * falls back to the default; null when every filter in the address was used.
+ */
+export function correctedFilters(
+  asked: DashboardFilters,
+  used: UsedFilters,
+): DashboardFilters | null {
+  const answer: DashboardFilters = {
+    year: used.year,
+    planType: used.planType ?? '',
+    currency: used.currency,
+    team: used.teamId ?? '',
+    plan: used.planId ?? '',
+  };
+  const corrected = { ...asked };
+  let changed = false;
+  for (const key of ['year', 'planType', 'currency', 'team', 'plan'] as const) {
+    if (asked[key] !== DEFAULT_FILTERS[key] && asked[key] !== answer[key]) {
+      Object.assign(corrected, { [key]: answer[key] });
+      changed = true;
+    }
+  }
+  return changed ? corrected : null;
 }

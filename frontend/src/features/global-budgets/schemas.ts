@@ -24,11 +24,17 @@ export function amountOf(text: string): string | null {
 
 const amountSchema = z.string().refine((text) => amountOf(text) !== null, AMOUNT_PROBLEM);
 
+// The API's own checks, so the first Save names every problem.
 export const globalBudgetSchema = z.object({
-  name: z.string(),
+  name: z
+    .string()
+    .refine((name) => name.trim() !== '', 'Enter a name for the global budget.')
+    .refine((name) => [...name.trim()].length <= 120, 'Use 120 characters or fewer.'),
   year: z.string(),
   amount: amountSchema,
-  ownerId: z.string(),
+  ownerId: z
+    .string()
+    .refine((id) => id !== '', 'Choose a person who can manage global budgets for all markets.'),
   description: z.string(),
   overspend: z.enum(['warn', 'refuse']),
 });

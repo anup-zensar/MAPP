@@ -284,6 +284,8 @@ overage; lower the line items: Submit goes through.
 
 - **FR-006**: Settings MUST offer **Overspend control** with "New budgets start with": Warn (as delivered) or
   Refuse, changed only by people who may change Settings, versioned, and logged.
+  *Amended by [038 FR-018](../038-qa-findings/spec.md) (D-360): the page also offers "When an activity's line items
+  exceed its planned cost, approving it or its purchase requests": Warn the approver (default) or Refuse approval.*
 - **FR-007**: A new plan, campaign, initiative or global budget MUST start with the organisation default unless
   its form says otherwise; a copy MUST keep its source's setting; changing the default MUST NOT change any
   existing budget, and the page MUST say so before saving.
@@ -332,6 +334,8 @@ overage; lower the line items: Submit goes through.
   while any line's activity has line items exceeding its planned cost, whatever the setting of its budgets,
   naming each such activity once with the overage in the plan currency, reported with every other problem of
   032 FR-021.
+  *Extended by [038 FR-019 – FR-021](../038-qa-findings/spec.md) (D-360): approving a round of the activity, its
+  purchase requests or their changes warns the approver (default) or is refused, as Settings › Overspend control says.*
 
 **Records and traceability**
 

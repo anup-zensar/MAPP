@@ -5,6 +5,7 @@ import { isShown } from '@/session/access';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { useFormatters } from '@/format/useFormatters';
+import { useHidesUnavailable } from '@/ui/ViewOnlyNote/view-only-context';
 import { downloadPurchaseRequestForm } from './api';
 import type { FormFormat, PurchaseRequest, PurchaseRequestRouting } from './api';
 import {
@@ -29,6 +30,7 @@ export function RoutingHistory({ purchaseRequest }: { purchaseRequest: PurchaseR
   const reasonId = useId();
   const { resend } = purchaseRequest.access;
   const resendBlocked = !resend.available;
+  const hidesUnavailable = useHidesUnavailable();
 
   async function download(routing: PurchaseRequestRouting, format: FormFormat) {
     setProblem(null);
@@ -39,24 +41,26 @@ export function RoutingHistory({ purchaseRequest }: { purchaseRequest: PurchaseR
     }
   }
 
-  const actions = isShown(resend) && purchaseRequest.routings.length > 0 && (
-    <span className={styles.withReason}>
-      <Button
-        size="sm"
-        icon={<Send />}
-        disabled={resendBlocked}
-        aria-describedby={resendBlocked ? reasonId : undefined}
-        onClick={() => setResending(true)}
-      >
-        {RESEND_FORM}
-      </Button>
-      {resendBlocked && (
-        <span id={reasonId} className={styles.reason}>
-          {resend.reason}
-        </span>
-      )}
-    </span>
-  );
+  const actions = isShown(resend) &&
+    !(hidesUnavailable && resendBlocked) &&
+    purchaseRequest.routings.length > 0 && (
+      <span className={styles.withReason}>
+        <Button
+          size="sm"
+          icon={<Send />}
+          disabled={resendBlocked}
+          aria-describedby={resendBlocked ? reasonId : undefined}
+          onClick={() => setResending(true)}
+        >
+          {RESEND_FORM}
+        </Button>
+        {resendBlocked && (
+          <span id={reasonId} className={styles.reason}>
+            {resend.reason}
+          </span>
+        )}
+      </span>
+    );
 
   return (
     <Card title={ROUTING_TITLE} subtitle={ROUTING_SUBTITLE} actions={actions || undefined}>

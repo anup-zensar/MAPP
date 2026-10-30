@@ -3,6 +3,7 @@ package settings
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"strings"
 	"unicode/utf8"
@@ -20,13 +21,14 @@ import (
 // the rates to add and replace in one step. The rows come from a RateFeed; ApplyRateRows is the core a later
 // automatic feed calls with the same rules.
 
-// Messages of a reviewed row and of an import (data-model §2.4, plan "User-visible messages").
 const (
 	rateTypeNotUsedMessage  = "Rate type %s is not used — only M rates are imported."
 	notFromUSDMessage       = "Only rates quoted from USD are used."
 	currencyNotSetUpMessage = "%s is not set up in Settings › Currencies."
 	rowDateMessage          = "Row %d: 'valid_from' must be a date such as 2026-10-19."
 	rowRateMessage          = "Row %d: the rate must be above 0 with at most 6 decimals."
+	rowRateTooLargeMessage  = "Row %d: use a rate of 1,000,000 or less."
+	rowEarlyDateMessage     = "Row %d: 'valid_from' must be on or after 1 Jan 2000."
 	rowTwiceMessage         = "Row %d: %s on %s appears twice (also row %d)."
 	nothingToImportMessage  = "Nothing to import: every rate is already present or not used."
 	chooseRateFileMessage   = "Choose a file to import."
@@ -62,8 +64,6 @@ func readUpload(feed RateFeed, upload RateImportUpload) (string, []FeedRow, erro
 	return name, rows, err
 }
 
-// CheckRateImport reviews a rate file without saving anything (FR-006): every row's outcome with its row
-// number. A file that can't be read at all answers validation_failed on content.
 func (s *Service) CheckRateImport(ctx context.Context, a actor.Actor, upload RateImportUpload) (RateImportCheck, error) {
 	feed := s.rateFeed()
 	name, rows, err := readUpload(feed, upload)
@@ -147,7 +147,6 @@ func (s *Service) ApplyRateRows(ctx context.Context, a actor.Actor, feedName, so
 	return view, err
 }
 
-// importedRates returns the rates as saved: new ones get the next IDs in their order, replaced ones are touched.
 func (s *Service) importedRates(ctx context.Context, a actor.Actor, rates []ExchangeRate, importID string) ([]ExchangeRate, error) {
 	added := 0
 	for _, r := range rates {
@@ -172,7 +171,6 @@ func (s *Service) importedRates(ctx context.Context, a actor.Actor, rates []Exch
 	return written, nil
 }
 
-// dateSpan writes the dates of an import: "19 Oct 2026", or "19 Sep – 19 Oct 2026".
 func dateSpan(first, last date.Date) string {
 	if first == last {
 		return date.Format(first)
@@ -180,8 +178,6 @@ func dateSpan(first, last date.Date) string {
 	return date.FormatRange(first, last)
 }
 
-// rateReview is the outcome of every row, with the rates to write: new ones without an id, replaced ones
-// with their stored id and meta.
 type rateReview struct {
 	rows   []RateImportRow
 	counts RateImportCounts
@@ -231,6 +227,10 @@ func (s *Service) reviewRates(ctx context.Context, rows []FeedRow) (rateReview, 
 			outcome, message = OutcomeNotUsed, fmt.Sprintf(currencyNotSetUpMessage, code)
 		case dayErr != nil:
 			outcome, message = OutcomeProblem, fmt.Sprintf(rowDateMessage, in.Row)
+		case day.Before(firstRateDate):
+			outcome, message = OutcomeProblem, fmt.Sprintf(rowEarlyDateMessage, in.Row)
+		case errors.Is(rateErr, money.ErrOutOfRange):
+			outcome, message = OutcomeProblem, fmt.Sprintf(rowRateTooLargeMessage, in.Row)
 		case rateErr != nil:
 			outcome, message = OutcomeProblem, fmt.Sprintf(rowRateMessage, in.Row)
 		}
@@ -266,7 +266,6 @@ func (s *Service) reviewRates(ctx context.Context, rows []FeedRow) (rateReview, 
 	return review, nil
 }
 
-// count adds a row of outcome to the counts.
 func (r *rateReview) count(outcome RateOutcome) {
 	switch outcome {
 	case OutcomeAdd:
@@ -282,7 +281,6 @@ func (r *rateReview) count(outcome RateOutcome) {
 	}
 }
 
-// parseRateDate reads a valid_from: "2026-10-19" or "20261019".
 func parseRateDate(text string) (date.Date, error) {
 	text = strings.TrimSpace(text)
 	if len(text) == 8 && !strings.Contains(text, "-") {

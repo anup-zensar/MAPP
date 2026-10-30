@@ -23,6 +23,7 @@ application use these definitions. Hive9 names are given in brackets where users
 | **Budget used** | Planned cost as a percentage of the budget. |
 | **Left to plan** | Budget minus planned cost — how much of a budget is not yet planned. Negative means planned cost is over the budget. |
 | **Unassigned planned cost** (Sys_Gen_Balance) | The part of an activity's planned cost not yet split into line items. Aim for zero. |
+| **Approval over planned cost** | Approving an activity, or a purchase request drawing on it, while its line items add up to more than its planned cost. Settings › Overspend control decides whether the approver is warned (default) or approval is refused (feature 038). |
 | **Spread** (Hive9: allocation) | How a line item's planned cost is divided over the months: Evenly, All in first month, All in last month, or Custom amounts. |
 | **Local currency** | The currency a line item's cost is entered in. MAPP converts it to USD using the rate in Settings. |
 | **Base currency** | USD — the currency all totals are calculated in. |

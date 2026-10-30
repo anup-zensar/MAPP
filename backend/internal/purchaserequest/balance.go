@@ -18,13 +18,29 @@ func (b balance) requested(li LineItemFacts, except string) (money.Amount, error
 		if c.LineItemID != li.ID || (except != "" && c.PurchaseRequestID == except) {
 			continue
 		}
-		converted, err := b.rates.Convert(c.Amount, li.Currency)
+		reserved, err := b.reserved(c, li.Currency)
 		if err != nil {
 			return money.Amount{}, err
 		}
-		total = total.Add(converted.Amount)
+		total = total.Add(reserved)
 	}
 	return total, nil
+}
+
+// reserved is the larger of a claim's amount and its approved amount, both at today's rate.
+func (b balance) reserved(c Claim, currency string) (money.Amount, error) {
+	converted, err := b.rates.Convert(c.Amount, currency)
+	if err != nil || c.Approved == nil {
+		return converted.Amount, err
+	}
+	approved, err := b.rates.Convert(*c.Approved, currency)
+	if err != nil {
+		return money.Amount{}, err
+	}
+	if approved.Amount.Cmp(converted.Amount) > 0 {
+		return approved.Amount, nil
+	}
+	return converted.Amount, nil
 }
 
 // available is the planned cost of li minus what other purchase requests than except request; negative when

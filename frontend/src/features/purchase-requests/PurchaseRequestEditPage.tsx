@@ -1,4 +1,5 @@
 import { useNavigate, useParams, useSearchParams } from 'react-router';
+import { useAccess } from '@/session/access';
 import type { BreadcrumbItem } from '@/ui/Breadcrumb/Breadcrumb';
 import { purchaseRequestHref } from '@/ui/record-links';
 import { useToast } from '@/ui/Toast/useToast';
@@ -48,8 +49,8 @@ export function PurchaseRequestEditPage() {
   );
 }
 
-function breadcrumbOf(pr: PurchaseRequest): BreadcrumbItem[] {
-  const path = purchaseRequestBreadcrumb(pr).slice(0, -1);
+function breadcrumbOf(pr: PurchaseRequest, seesList: boolean): BreadcrumbItem[] {
+  const path = purchaseRequestBreadcrumb(pr, seesList).slice(0, -1);
   return [
     ...path,
     { label: pr.name, to: purchaseRequestHref(pr.id) },
@@ -69,7 +70,8 @@ function Loaded({ pr, options, onReload }: LoadedProps) {
   const { show } = useToast();
   const save = useSavePurchaseRequest(pr.id);
   const href = purchaseRequestHref(pr.id);
-  const breadcrumb = breadcrumbOf(pr);
+  const { has } = useAccess();
+  const breadcrumb = breadcrumbOf(pr, has('purchaseRequests.list'));
 
   if (pr.status === 'closed' || !pr.access.edit.available) {
     const reason = pr.status === 'closed' ? CLOSED_NO_CHANGE : pr.access.edit.reason || NOT_YOURS;

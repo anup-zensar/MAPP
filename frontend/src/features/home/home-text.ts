@@ -1,15 +1,16 @@
-// Every text of Home built from data lives here, so the cards and their tests read the same.
 import { formatWhole } from '@/format/decimal';
 import { joinWithAnd, midSentence } from '@/format/text';
 import { formatWaitingTime } from '@/format/intl';
 import type { ActivityLogEntry, HomeScope, Money, MyActivityRow } from './api';
 
+/** "Welcome back, Priya.": Home is the only page whose title greets (design system §2.3). */
 export function greetingText(firstName: string): string {
   return `Welcome back, ${firstName}.`;
 }
 
 export const NO_ROLE_TITLE = 'No access to plans yet';
 
+/** 014 text 36; without any administrator the brackets go. */
 export function noRoleText(administrators: string[]): string {
   const who = administrators.length > 0 ? ` (${joinWithAnd(administrators)})` : '';
   return `You don't have access to any plans yet. Ask an administrator${who} to give you a role.`;
@@ -33,6 +34,13 @@ export function planCountsText(published: number, draft: number): string {
 
 export function activityCountsText(declined: number, submitted: number): string {
   return `${formatWhole(declined)} declined · ${formatWhole(submitted)} submitted`;
+}
+
+export function ownedYearsText(yearFrom: number | null, yearTo: number | null): string {
+  if (yearFrom === null) {
+    return '';
+  }
+  return yearTo !== null && yearTo > yearFrom ? `in ${yearFrom}–${yearTo}` : `in ${yearFrom}`;
 }
 
 export function oldestWaitingText(since: string | null, now: Date = new Date()): string {
@@ -113,6 +121,7 @@ export function waitingText(since: string, now: Date = new Date()): string {
 
 export const NO_ACTIVITIES = "You don't own any activities yet.";
 
+/** As every date range reads (D-216), plus "No dates yet", or "—" for one missing date. */
 export function datesText(
   row: Pick<MyActivityRow, 'startDate' | 'endDate' | 'ongoing'>,
   format: { date: (date: string) => string; dateRange: (start: string, end: string) => string },
@@ -144,6 +153,7 @@ export const RECENT_CHANGES = {
   empty: 'No changes yet in these plans.',
 };
 
+/** "planned cost", "name and GL code", "a, b and c"; over three: "a, b, c and 2 more fields". */
 export function changedFieldsText(labels: string[]): string {
   const fields = labels.map(midSentence);
   if (fields.length <= 3) {
@@ -160,7 +170,6 @@ export interface RecentSentence {
   id: string;
 }
 
-/** "<person> changed <fields> of <type>" for a change of fields, else "<person> <verb> <type>". */
 export function recentSentence(entry: ActivityLogEntry): RecentSentence {
   const { actor, recordTypeLabel, recordName, recordId } = entry;
   const what =
@@ -170,7 +179,6 @@ export function recentSentence(entry: ActivityLogEntry): RecentSentence {
   return { lead: `${actor.name} ${what} ${recordTypeLabel}`, name: recordName, id: recordId };
 }
 
-/** "PR" for Priya Raman: the first letters of the first and the last name. */
 export function initialsOf(name: string): string {
   const [first, ...others] = name.trim().split(/\s+/).filter(Boolean);
   if (first === undefined) {

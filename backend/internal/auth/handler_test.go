@@ -37,7 +37,7 @@ var priyaBody = `{"id":"U-1002","name":"Priya Raman","firstName":"Priya","email"
 	`"scope":{"type":"myTeams","teams":[` + lubricantsEurope + `],"text":"My teams"},"scopeEmpty":false}],` +
 	`"permissions":[` + inLubricantsEurope("plans.view", "plans.create", "plans.edit", "plans.publish", "campaigns.edit",
 	"campaigns.delete", "activities.edit", "activities.delete", "activities.submit", "data.export", "finance.view",
-	"finance.link", "purchaseRequests.edit", "purchaseRequests.delete", "purchaseRequests.submit") + `],` + // 032 FR-049
+	"purchaseRequests.edit", "purchaseRequests.delete", "purchaseRequests.submit") + `],` +
 	`"administrators":[{"id":"U-1001","name":"Alex Morgan","initials":"AM","jobTitle":"Marketing administrator","active":true}],` +
 	`"noSelfApproval":true}}`
 
@@ -184,7 +184,7 @@ func TestRequireSignIn_HandlerCanWrite_FR007(t *testing.T) {
 	now := func() time.Time { return time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC) }
 	service := auth.NewService(db, authtest.NewStore(db), peopletest.NewStore(db),
 		auth.Options{DemoMode: true, DemoPassword: demoPassword, Now: now})
-	token, _, err := service.SignIn(t.Context(), priyasEmail, demoPassword, "")
+	token, _, err := service.SignIn(t.Context(), auth.SignInAttempt{Email: priyasEmail, Password: demoPassword})
 	if err != nil {
 		t.Fatalf("SignIn: %v", err)
 	}

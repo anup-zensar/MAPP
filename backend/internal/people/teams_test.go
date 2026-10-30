@@ -10,9 +10,6 @@ import (
 	"mapp/internal/platform/record"
 )
 
-// A new team is saved active, with its name and description trimmed, its members (a repeated id counts
-// once) and the least-used colour; the log gets the team's "created" entry and a "changed" entry for each
-// member, whose teams changed (FR-010, FR-012, FR-028, D-057).
 func TestCreateTeam_SavedWithMembersAndLogged_FR010_FR028(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -83,6 +80,19 @@ func TestCreateTeam_AllProblemsAtOnce_FR011(t *testing.T) {
 	assertLog(t, f, nil)
 }
 
+// A team name with a tab, a line break or a text-direction character is refused.
+func TestCreateTeam_SingleLineName_038_FR055_L11(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	alex := f.addPerson(t, "Alex Morgan", "", true)
+	for _, name := range []string{"Mobility\tChina", "Mobility\nChina", "Mobility \u202eChina"} {
+		_, err := f.service.CreateTeam(t.Context(), alex.Actor(), TeamInput{Name: name})
+		assertError(t, err, errs.Validation(errs.FieldError{Field: "name",
+			Message: "Names can't contain tabs, line breaks or text-direction characters."}))
+	}
+	assertLog(t, f, nil)
+}
+
 // Without a colour, a new team gets the palette colour the fewest teams have, the first in palette order
 // on a tie; a chosen colour is kept (D-025, D-065).
 func TestCreateTeam_ColourLeastUsed_D025(t *testing.T) {
@@ -107,9 +117,6 @@ func TestCreateTeam_ColourLeastUsed_D025(t *testing.T) {
 	}
 }
 
-// The Teams list shows every team, active or not, sorted by name ignoring letter case, with its members
-// (inactive ones included, by name) and every plan that uses it, plans in the recycle bin included and
-// marked (FR-010, FR-014, D-067).
 func TestListTeams_MembersAndPlans_FR010(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

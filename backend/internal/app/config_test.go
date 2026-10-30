@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"log/slog"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -22,7 +23,7 @@ func TestLoadConfig_Defaults(t *testing.T) {
 		LogLevel: slog.LevelInfo, ShutdownTimeout: 10 * time.Second,
 		Telemetry: telemetry.Config{Traces: telemetry.None, Metrics: telemetry.None},
 	}
-	if cfg != want {
+	if !reflect.DeepEqual(cfg, want) {
 		t.Errorf("LoadConfig = %+v, want %+v", cfg, want)
 	}
 }
@@ -39,6 +40,7 @@ func TestLoadConfig_ReadsEveryVariable(t *testing.T) {
 		"SHUTDOWN_TIMEOUT":      "25s",
 		"OTEL_TRACES_EXPORTER":  "console",
 		"OTEL_METRICS_EXPORTER": "console",
+		"TRUSTED_PROXIES":       " 10.0.0.0/8, 172.18.0.2 ",
 	}))
 	if err != nil {
 		t.Fatalf("LoadConfig: %v", err)
@@ -47,9 +49,10 @@ func TestLoadConfig_ReadsEveryVariable(t *testing.T) {
 	want := app.Config{
 		Env: "development", Host: "0.0.0.0", Port: 18080, DatabaseURL: "postgres://planner@127.0.0.1:5433/mapp_dev", DemoPassword: "open sesame",
 		LogLevel: slog.LevelDebug, ShutdownTimeout: 25 * time.Second,
-		Telemetry: telemetry.Config{Traces: telemetry.Console, Metrics: telemetry.Console},
+		Telemetry:      telemetry.Config{Traces: telemetry.Console, Metrics: telemetry.Console},
+		TrustedProxies: []string{"10.0.0.0/8", "172.18.0.2"},
 	}
-	if cfg != want {
+	if !reflect.DeepEqual(cfg, want) {
 		t.Errorf("LoadConfig = %+v, want %+v", cfg, want)
 	}
 }
@@ -76,6 +79,8 @@ func TestLoadConfig_RefusesInvalidValues_024_FR012(t *testing.T) {
 		{"shutdown timeout above 60s", "SHUTDOWN_TIMEOUT", "61s", shutdownMessage("61s")},
 		{"traces sent to a collector", "OTEL_TRACES_EXPORTER", "otlp", "OTEL_TRACES_EXPORTER must be none or console (it is 'otlp')."},
 		{"metrics sent to a collector", "OTEL_METRICS_EXPORTER", "otlp", "OTEL_METRICS_EXPORTER must be none or console (it is 'otlp')."},
+		{"038 FR-014 proxy named by host", "TRUSTED_PROXIES", "10.0.0.1,proxy.local", proxiesMessage("10.0.0.1,proxy.local")},
+		{"038 FR-014 empty proxy in the list", "TRUSTED_PROXIES", "10.0.0.1,,10.0.0.2", proxiesMessage("10.0.0.1,,10.0.0.2")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -137,6 +142,10 @@ func TestDemoMode_OnlyLocalAndDevelopment_FR009(t *testing.T) {
 			t.Errorf("APP_ENV=%s: DemoMode() = %v, want %v", env, got, want)
 		}
 	}
+}
+
+func proxiesMessage(value string) string {
+	return "TRUSTED_PROXIES must list IP addresses or CIDR ranges separated by commas (it is '" + value + "')."
 }
 
 func shutdownMessage(value string) string {

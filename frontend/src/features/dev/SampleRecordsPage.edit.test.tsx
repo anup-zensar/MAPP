@@ -34,7 +34,7 @@ describe('SampleRecordsPage: create and edit', () => {
 
     await user.click(screen.getByRole('button', { name: 'New sample folder' }));
     const panel = await screen.findByRole('dialog', { name: 'New sample folder' });
-    expect(within(panel).getByText('Required')).toBeInTheDocument();
+    expect(within(panel).getByLabelText('Name')).toHaveAttribute('aria-required', 'true');
     await user.type(within(panel).getByLabelText('Name'), 'Ideas 3');
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
@@ -71,7 +71,7 @@ describe('SampleRecordsPage: create and edit', () => {
     const summary = await within(panel).findByRole('alert');
     expect(summary).toHaveTextContent('1 problem needs your attention');
     expect(within(panel).getByLabelText('Name')).toHaveAccessibleDescription(
-      "Required There is already a sample folder called 'Ideas'. Choose another name.",
+      "required There is already a sample folder called 'Ideas'. Choose another name.",
     );
     expect(within(panel).getByLabelText('Name')).toHaveValue('ideas');
   });
@@ -132,7 +132,7 @@ describe('SampleRecordsPage: create and edit', () => {
     expect(summary).toHaveTextContent('Enter a name.');
     expect(summary).toHaveTextContent('Reload the page and try again.');
     expect(within(panel).getByLabelText('Name')).toHaveAccessibleDescription(
-      'Required Enter a name.',
+      'required Enter a name.',
     );
   });
 

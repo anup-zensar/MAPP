@@ -11,7 +11,13 @@ export function CheckResult({ check }: { check: ImportCheck }) {
     <div aria-live="polite">
       <p className={styles.summary}>{checkSummary(check)}</p>
       <p className={styles.text}>{changeSummary(check)}</p>
-      <div className={styles.tableScroll}>
+      {/* A scrolling region the keyboard can reach. */}
+      <div
+        className={styles.tableScroll}
+        role="region"
+        aria-label="What the import does, scrolls sideways"
+        tabIndex={0}
+      >
         <table className={styles.table}>
           <caption className="visually-hidden">What the import does per level</caption>
           <thead>
@@ -81,7 +87,12 @@ export function ProblemsTable({
           Download problem list
         </Button>
       </div>
-      <div className={styles.tableScroll}>
+      <div
+        className={styles.tableScroll}
+        role="region"
+        aria-label="Problems, scrolls sideways"
+        tabIndex={0}
+      >
         <table className={styles.table}>
           <caption className="visually-hidden">Problems</caption>
           <thead>

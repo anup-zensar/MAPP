@@ -17,7 +17,7 @@ func TestSignIn_EmailIgnoresCaseAndSpaces_FR003(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 
-	_, person, err := f.service.SignIn(t.Context(), "  PRIYA.Raman@SHELL.com ", demoPassword, "")
+	_, person, err := f.service.SignIn(t.Context(), SignInAttempt{Email: "  PRIYA.Raman@SHELL.com ", Password: demoPassword})
 
 	if err != nil {
 		t.Fatalf("SignIn: %v", err)
@@ -34,7 +34,7 @@ func TestSignIn_WrongPassword_FR004(t *testing.T) {
 
 	for _, password := range []string{"Mapp", "mapp ", " mapp", "map", "mapp!"} {
 		t.Run(password, func(t *testing.T) {
-			_, _, err := f.service.SignIn(t.Context(), priya.Email, password, "")
+			_, _, err := f.service.SignIn(t.Context(), SignInAttempt{Email: priya.Email, Password: password})
 
 			assertError(t, err, errs.IncorrectCredentials())
 		})
@@ -59,7 +59,7 @@ func TestSignIn_SameErrorForUnknownWrongOrInactive_FR004(t *testing.T) {
 
 	for _, attempt := range attempts {
 		t.Run(attempt.name, func(t *testing.T) {
-			_, _, err := f.service.SignIn(t.Context(), attempt.email, attempt.password, "")
+			_, _, err := f.service.SignIn(t.Context(), SignInAttempt{Email: attempt.email, Password: attempt.password})
 
 			assertError(t, err, errs.IncorrectCredentials())
 		})
@@ -83,7 +83,7 @@ func TestSignIn_EmptyFieldsAllReported_FR004(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, _, err := f.service.SignIn(t.Context(), tt.email, tt.password, "")
+			_, _, err := f.service.SignIn(t.Context(), SignInAttempt{Email: tt.email, Password: tt.password})
 
 			assertError(t, err, tt.want)
 		})

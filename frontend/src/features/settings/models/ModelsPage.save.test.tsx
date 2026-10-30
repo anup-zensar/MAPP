@@ -70,7 +70,7 @@ describe('ModelsPage: create and edit (US1 scenarios 1, 4, 5, 6)', () => {
 
     expect(await within(form).findByText('3 problems need your attention')).toBeInTheDocument();
     expect(within(form).getByRole('textbox', { name: /^Name/ })).toHaveAccessibleDescription(
-      'Required Enter a name.',
+      'required Enter a name.',
     );
     expect(within(form).getByRole('textbox', { name: /^INQ→MQL rate/ })).toHaveAttribute(
       'aria-invalid',

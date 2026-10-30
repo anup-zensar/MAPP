@@ -39,7 +39,11 @@ func (f accessFacts) edit(ctx context.Context) authz.Availability {
 	return authz.Available(ctx, authz.PurchaseRequestsEdit, f.plan)
 }
 
+// delete gives the permission reason before any status guidance.
 func (f accessFacts) delete(ctx context.Context) authz.Availability {
+	if permission := authz.Available(ctx, authz.PurchaseRequestsDelete, f.plan); !permission.Available {
+		return permission
+	}
 	switch f.pr.Status {
 	case StatusApproved:
 		return authz.Unavailable(msgApprovedNoDelete)
@@ -49,7 +53,7 @@ func (f accessFacts) delete(ctx context.Context) authz.Availability {
 		return authz.Unavailable(msgClosedNoChange)
 	case StatusCreated, StatusDeclined:
 	}
-	return authz.Available(ctx, authz.PurchaseRequestsDelete, f.plan)
+	return authz.Allowed
 }
 
 func (f accessFacts) submit(ctx context.Context) authz.Availability {
@@ -57,6 +61,9 @@ func (f accessFacts) submit(ctx context.Context) authz.Availability {
 	case StatusCreated:
 		return authz.Available(ctx, authz.PurchaseRequestsSubmit, f.plan)
 	case StatusApproved:
+		if changes := f.submitChanges(ctx); !changes.Available {
+			return changes
+		}
 		return authz.Unavailable(msgEditToChange)
 	case StatusSubmitted, StatusInReview, StatusDeclined, StatusClosed:
 	}

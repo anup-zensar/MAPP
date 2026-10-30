@@ -145,7 +145,8 @@ describe('RestoreDialog', () => {
     await user.click(await screen.findByRole('button', { name: 'Restore initiative' }));
 
     const messages = await findMessages();
-    expect(messages).toHaveTextContent("Initiative 'Trade shows' restored");
+    // "<Level> '<name>' restored — View".
+    expect(messages).toHaveTextContent("Initiative 'Trade shows' restored — View");
     await waitFor(() => expect(queryClient.getQueryState(['plans'])?.isInvalidated).toBe(true));
     expect(queryClient.getQueryState(SESSION_KEY)?.isInvalidated).toBe(false);
 

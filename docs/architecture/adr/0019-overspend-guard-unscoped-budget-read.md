@@ -1,4 +1,4 @@
-# ADR-0018: The overspend guard reads every budget without the actor's scope
+# ADR-0019: The overspend guard reads every budget without the actor's scope
 
 **Status:** Proposed (awaiting the product owner's approval) · **Date:** 2026-10-29
 

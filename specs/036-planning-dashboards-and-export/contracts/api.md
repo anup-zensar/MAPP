@@ -7,8 +7,8 @@ The schemas are in `backend/api/openapi.yaml` (tag **Dashboards**): `PlanningDas
 
 | Operation | Query | Answer | Access rule (`access/routes_dashboards.go`) |
 |---|---|---|---|
-| `GET /api/v1/dashboards/executive` (`getExecutiveDashboard`) | `year`, `planType`, `currency` | 200 `PlanningDashboard`; 400 `validation_failed` (fields `year`, `planType`, `currency`) | `need(plans.view)` |
-| `GET /api/v1/dashboards/regional` (`getRegionalDashboard`) | `year`, `planType`, `currency`, `teamId`, `planId` | 200 `PlanningDashboard`; 400 (also `teamId`) | `need(plans.view)` |
+| `GET /api/v1/dashboards/executive` (`getExecutiveDashboard`) | `year`, `planType`, `currency` | 200 `PlanningDashboard`; 400 `validation_failed` (fields `year`, `planType`, `currency`) for a malformed value only — an unknown currency falls back to the default and `filters` says which (038 FR-012) | `need(plans.view)` |
+| `GET /api/v1/dashboards/regional` (`getRegionalDashboard`) | `year`, `planType`, `currency`, `teamId`, `planId` | 200 `PlanningDashboard`; 400 (also a malformed `teamId`); an unknown or out-of-scope team falls back to the default market (038 FR-012) | `need(plans.view)` |
 | `GET /api/v1/dashboards/executive/export` (`exportExecutiveDashboard`) | `format` (`pptx`, `pdf`) + the view's query | 200 file; 400 | `need(data.export)` |
 | `GET /api/v1/dashboards/regional/export` (`exportRegionalDashboard`) | `format` + the view's query | 200 file; 400 | `need(data.export)` |
 | `GET /api/v1/plans/{planId}/export` (`exportPlan`) | `format`, `currency` | 200 file; 400; 403 (no `data.export` in the plan); 404 (missing or not visible) | `inPlan(data.export)` |

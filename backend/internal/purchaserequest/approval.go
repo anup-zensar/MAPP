@@ -8,13 +8,13 @@ import (
 	"mapp/internal/platform/authz"
 )
 
-// Engine is the approval engine of feature 031 as purchase requests use it; *approval.Service implements it.
-// Its calls join the caller's Write.
+// Engine is feature 031's approval engine (*approval.Service); its calls join the caller's Write.
 type Engine interface {
 	SubmitSubject(ctx context.Context, a actor.Actor, kind approval.SubjectKind, id, comment string) (approval.Section, error)
 	RecallSubject(ctx context.Context, a actor.Actor, kind approval.SubjectKind, id string) (approval.Section, error)
 	DecideSubject(ctx context.Context, a actor.Actor, kind approval.SubjectKind, id string, d approval.SubjectDecision) (approval.Section, error)
 	SectionOf(ctx context.Context, a actor.Actor, kind approval.SubjectKind, id string) (approval.Section, error)
+	SubmissionOf(ctx context.Context, a actor.Actor, kind approval.SubjectKind, id string) (approval.Submission, error)
 }
 
 func (s *Service) UseApprovals(e Engine) {
@@ -52,19 +52,21 @@ type ApprovalView struct {
 	Owner                  *approval.PersonView `json:"owner"`
 	MoAApprover            *approval.PersonView `json:"moaApprover"`
 	Sections               []ApprovalSection    `json:"sections"`
+	OverPlannedCost        []approval.Overage   `json:"overPlannedCost"`
 }
 
 type SubmissionView struct {
-	PurchaseRequestID string                `json:"purchaseRequestId"`
-	Version           int                   `json:"version"`
-	Kind              string                `json:"kind"`
-	RoundKind         RoundKind             `json:"roundKind"`
-	Available         bool                  `json:"available"`
-	Reason            string                `json:"reason"`
-	Ready             bool                  `json:"ready"`
-	Problems          []Problem             `json:"problems"`
-	Workflow          *approval.WorkflowRef `json:"workflow"`
-	Levels            []approval.LevelView  `json:"levels"`
+	PurchaseRequestID string                     `json:"purchaseRequestId"`
+	Version           int                        `json:"version"`
+	Kind              string                     `json:"kind"`
+	RoundKind         RoundKind                  `json:"roundKind"`
+	Available         bool                       `json:"available"`
+	Reason            string                     `json:"reason"`
+	Ready             bool                       `json:"ready"`
+	Problems          []Problem                  `json:"problems"`
+	Workflow          *approval.WorkflowRef      `json:"workflow"`
+	Levels            []approval.LevelView       `json:"levels"`
+	Outcomes          []approval.SubmissionLevel `json:"outcomes"`
 }
 
 type PreviewView struct {
@@ -95,7 +97,7 @@ func (s *Service) approvalOf(ctx context.Context, a actor.Actor, pr PurchaseRequ
 	}
 	view := ApprovalView{PurchaseRequestID: pr.ID, PurchaseRequestName: pr.Name, PurchaseRequestVersion: pr.Version,
 		Status: pr.Status, ChangePending: pr.ChangePending, Owner: first.Owner,
-		Sections: []ApprovalSection{sectionOf(focus, first)}}
+		Sections: []ApprovalSection{sectionOf(focus, first)}, OverPlannedCost: append([]approval.Overage{}, first.OverPlannedCost...)}
 	found, err := s.deps.People.People(ctx, []string{pr.MoAApproverID})
 	if err != nil {
 		return ApprovalView{}, err
@@ -108,7 +110,7 @@ func (s *Service) approvalOf(ctx context.Context, a actor.Actor, pr PurchaseRequ
 		return ApprovalView{}, err
 	}
 	if rest := sectionOf(other, second); len(rest.Rounds) > 0 {
-		view.Sections = append(view.Sections, withoutSubmit(rest))
+		view.Sections = append(view.Sections, historyOnly(rest))
 	}
 	return s.withSubmitRules(ctx, pr, view)
 }
@@ -126,8 +128,8 @@ func (s *Service) withSubmitRules(ctx context.Context, pr PurchaseRequest, view 
 	return view, nil
 }
 
-func withoutSubmit(sec ApprovalSection) ApprovalSection {
-	sec.Actions.Submit, sec.Actions.Resubmit = approval.ActionAvailability{}, approval.ActionAvailability{}
+func historyOnly(sec ApprovalSection) ApprovalSection {
+	sec.Actions = approval.ActionSet{}
 	return sec
 }
 

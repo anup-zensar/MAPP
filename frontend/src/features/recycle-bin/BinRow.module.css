@@ -14,8 +14,7 @@
   border-top: 1px solid var(--row-divider);
 }
 
-/* The row a link from the activity log points at: the highlighted row of the table standard,
-   with Text Strong text on the hover grey (constitution X). */
+/* The row a link from the activity log points at: the table standard's highlighted row. */
 .row[data-highlighted] {
   --ink-2: var(--ink);
   --link: var(--ink);
@@ -39,6 +38,24 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
+}
+
+/* A record type without a level colour, in LevelTag's shape (design system §4.2). */
+.tag {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 var(--space-1);
+  border-left: 3px solid var(--status-neutral);
+  border-radius: var(--radius-chip);
+  background: color-mix(in srgb, var(--status-neutral) 12%, transparent);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
+  white-space: nowrap;
 }
 
 /* The record's name: the row's heading, in the body face like a table's name column. */

@@ -6,10 +6,8 @@ import (
 	"strings"
 )
 
-// The choices of the filter bar (FR-004) and the column chooser (FR-018), as GET /api/v1/all-work/options
-// answers them.
+// The choices of the filter bar and the column chooser, as GET /api/v1/all-work/options answers them.
 
-// groupLabels are the column groups of the chooser, in order, with their names (FR-018).
 var groupLabels = []struct{ group, label string }{
 	{GroupStandard, "Standard"},
 	{GroupPlan, "Plan"},
@@ -17,19 +15,16 @@ var groupLabels = []struct{ group, label string }{
 	{GroupInitiative, "Initiative"},
 	{GroupActivity, "Activity"},
 	{GroupLineItem, "Line item"},
-	{GroupFinancials, "Financials"}, // feature 015 (FR-023)
+	{GroupFinancials, "Financials"},
 }
 
-// optionsOf returns the choices for year (FR-004): the years with plans and the current year, newest first;
-// the plans of the year by name; the people who own a plan, campaign, initiative or activity of the year,
-// by name; the teams, the person's own first; the Business unit options and activity types as Settings
-// lists them; the column catalogue in its groups and the default columns.
+// optionsOf returns the year's choices: years newest first, then plans, owners and teams (own first) by name.
 func optionsOf(year, currentYear int, years []int, data YearData, c Choices, catalogue []Column) Options {
 	o := Options{
 		Year: year, CurrentYear: currentYear, Years: []int{currentYear}, Plans: []PlanOption{}, Owners: []Option{},
 		Teams: slices.Clone(c.Teams), BusinessUnits: orNone(c.BusinessUnits), ActivityTypes: orNone(c.ActivityTypes),
 		ColumnGroups: columnGroupsOf(catalogue), DefaultColumns: defaultColumnsIn(catalogueOf(catalogue)),
-		YearFrom: year, YearTo: year, PlanTypes: slices.Clone(planTypeValues), PlanCurrencies: []string{},
+		YearFrom: year, YearTo: year, PlanTypes: slices.Clone(planTypeValues()), PlanCurrencies: []string{},
 		Attributes: []FilterableAttribute{},
 	}
 	for _, y := range years {
@@ -70,8 +65,7 @@ func optionsOf(year, currentYear int, years []int, data YearData, c Choices, cat
 	return o
 }
 
-// filterableAttributes are the Shell attributes the attribute filters offer (016 FR-039): every active choice
-// or yes/no attribute, level by level top-down in Settings' order, with its active options, or Yes and No.
+// filterableAttributes are the active choice or yes/no attributes, top-down in Settings' order, with their options.
 func filterableAttributes(attributes []Attribute) []FilterableAttribute {
 	list := []FilterableAttribute{}
 	for _, a := range attributes {
@@ -92,7 +86,6 @@ func filterableAttributes(attributes []Attribute) []FilterableAttribute {
 	return list
 }
 
-// columnGroupsOf returns the catalogue in the groups of the chooser; a group without columns is left out.
 func columnGroupsOf(catalogue []Column) []ColumnGroup {
 	groups := []ColumnGroup{}
 	for _, g := range groupLabels {
@@ -109,12 +102,10 @@ func columnGroupsOf(catalogue []Column) []ColumnGroup {
 	return groups
 }
 
-// compareNames orders by name ignoring letter case, then by ID.
 func compareNames(xName, xID, yName, yID string) int {
 	return cmp.Or(strings.Compare(strings.ToLower(xName), strings.ToLower(yName)), compareIDs(xID, yID))
 }
 
-// orNone returns options, or an empty list for nil.
 func orNone(options []Option) []Option {
 	if options == nil {
 		return []Option{}

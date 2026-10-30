@@ -94,6 +94,59 @@ func (q *Queries) GetPurchaseRequestConfiguration(ctx context.Context) ([]Purcha
 	return items, nil
 }
 
+const listPurchaseRequestChangesInReview = `-- name: ListPurchaseRequestChangesInReview :many
+SELECT id, plan_id, name, description, owner_id, moa_approver_id, approval_workflow_id, modification_workflow_id, status, change_pending, attributes, vendor, approved_version, gsap_pr_number, gsap_pr_date, gsap_source, closed_at, version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name FROM purchase_requests
+WHERE change_pending AND EXISTS (
+    SELECT 1 FROM json_array_elements(approved_version -> 'lines') AS v
+    WHERE v ->> 'lineItemId' = ANY ($1::text[]))
+ORDER BY length(id), id COLLATE "C"
+`
+
+func (q *Queries) ListPurchaseRequestChangesInReview(ctx context.Context, lineItemIds []string) ([]PurchaseRequest, error) {
+	rows, err := q.db.Query(ctx, listPurchaseRequestChangesInReview, lineItemIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PurchaseRequest{}
+	for rows.Next() {
+		var i PurchaseRequest
+		if err := rows.Scan(
+			&i.ID,
+			&i.PlanID,
+			&i.Name,
+			&i.Description,
+			&i.OwnerID,
+			&i.MoaApproverID,
+			&i.ApprovalWorkflowID,
+			&i.ModificationWorkflowID,
+			&i.Status,
+			&i.ChangePending,
+			&i.Attributes,
+			&i.Vendor,
+			&i.ApprovedVersion,
+			&i.GsapPrNumber,
+			&i.GsapPrDate,
+			&i.GsapSource,
+			&i.ClosedAt,
+			&i.Version,
+			&i.CreatedAt,
+			&i.CreatedByID,
+			&i.CreatedByName,
+			&i.UpdatedAt,
+			&i.UpdatedByID,
+			&i.UpdatedByName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPurchaseRequestClaims = `-- name: ListPurchaseRequestClaims :many
 SELECT l.id, l.purchase_request_id, l.line_item_id, l.currency, l.amount_minor, p.status, p.name
 FROM purchase_request_lines l

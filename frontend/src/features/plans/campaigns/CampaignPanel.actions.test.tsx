@@ -41,9 +41,7 @@ describe('CampaignPanel — Delete, Move to… and Copy (feature 005, US5, US6)'
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1001'));
     expect(api.bodiesOf('DELETE /api/v1/campaigns/C-1001')).toHaveLength(1);
-    expect(await findMessages()).toHaveTextContent(
-      "Campaign 'Helix launch' moved to the recycle bin",
-    );
+    expect(await findMessages()).toHaveTextContent("Campaign 'Helix launch' deleted");
   });
 
   it('moves from More and opens the plan it moved to, with the campaign highlighted (US6, FR-025)', async () => {

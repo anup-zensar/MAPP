@@ -5,6 +5,7 @@ import type { components } from '@/api/generated/schema';
 
 type Schemas = components['schemas'];
 export type OverspendMode = Schemas['OverspendMode'];
+export type OverspendApprovalMode = Schemas['OverspendApprovalMode'];
 export type OverspendControl = Schemas['OverspendControl'];
 export type OverspendLimit = Schemas['OverspendLimit'];
 export type OverspendConfiguration = Schemas['OverspendConfiguration'];

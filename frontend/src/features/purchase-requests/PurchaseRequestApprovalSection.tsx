@@ -5,7 +5,10 @@ import {
   ApprovalAlert,
   ApprovalChain,
   ApprovalHistory,
+  OverPlannedCostAlert,
   PurchaseRequestDecisionDialog,
+  RefusedApprove,
+  approveRefusal,
   declineBoxText,
 } from '@/features/approvals';
 import type {
@@ -17,6 +20,7 @@ import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { useHidesUnavailable } from '@/ui/ViewOnlyNote/view-only-context';
 import { useFormatters } from '@/format/useFormatters';
 import {
   APPROVAL_TITLE,
@@ -82,11 +86,15 @@ type Dialog = 'approve' | 'decline' | 'recall' | null;
 
 function SectionView({ approval, section, purchaseRequest, titled }: SectionViewProps) {
   const headingId = useId();
+  const refusalId = useId();
   const { dateFormat } = useFormatters();
   const [dialog, setDialog] = useState<Dialog>(null);
   const round = section.rounds[0];
   const { actions } = section;
   const canSubmit = actions.submit.available || actions.resubmit.available;
+  const refusal = approveRefusal(actions);
+  // Where the View only note already says why, only the Approve refusal keeps its reason.
+  const viewOnly = useHidesUnavailable();
   const reasons = [
     actions.submit,
     actions.resubmit,
@@ -96,7 +104,8 @@ function SectionView({ approval, section, purchaseRequest, titled }: SectionView
   ]
     .filter((action) => !action.available && action.reason !== '')
     .map((action) => action.reason)
-    .filter((reason, index, all) => all.indexOf(reason) === index);
+    .filter((reason, index, all) => all.indexOf(reason) === index)
+    .filter((reason) => !viewOnly || reason === refusal);
   // Edit stays the page's one primary action for a person who may edit (design system §6.3).
   const approveVariant = allows(purchaseRequest.access.edit) ? 'secondary' : 'primary';
   const decline = section.latestDecline;
@@ -124,6 +133,7 @@ function SectionView({ approval, section, purchaseRequest, titled }: SectionView
           )}
         </div>
       )}
+      {actions.approve.available && <OverPlannedCostAlert overages={approval.overPlannedCost} />}
       <div className={styles.actions}>
         {canSubmit && (
           <SubmitPurchaseRequestButton purchaseRequest={purchaseRequest} actions={actions} />
@@ -133,6 +143,7 @@ function SectionView({ approval, section, purchaseRequest, titled }: SectionView
             {APPROVE}
           </Button>
         )}
+        {refusal && <RefusedApprove reason={refusal} reasonId={refusalId} />}
         {actions.decline.available && (
           <Button icon={<X />} onClick={() => setDialog('decline')}>
             {DECLINE}
@@ -145,7 +156,7 @@ function SectionView({ approval, section, purchaseRequest, titled }: SectionView
         )}
       </div>
       {reasons.map((reason) => (
-        <p key={reason} className={styles.reason}>
+        <p key={reason} id={reason === refusal ? refusalId : undefined} className={styles.reason}>
           {reason}
         </p>
       ))}

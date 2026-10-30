@@ -52,6 +52,11 @@ func readUpload(up Upload, ch Choices) ([]sheetRows, []string, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	return levelSheets(tables, ch)
+}
+
+// levelSheets finds the level sheets among the tables of a file and their columns.
+func levelSheets(tables []sheet.Table, ch Choices) ([]sheetRows, []string, error) {
 	var sheets []sheetRows
 	ignored := []string{}
 	var problems errs.Problems

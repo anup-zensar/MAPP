@@ -1,8 +1,8 @@
-// Package web is the API's HTTP transport on Gin: the engine and its middleware, strict JSON decoding, and
-// the one place where errors become answers in the error envelope.
+// Package web is the API's HTTP transport on Gin: middleware, strict JSON decoding and the error envelope.
 package web
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,19 +29,45 @@ type errorEnvelope struct {
 	Error *errs.Error `json:"error"`
 }
 
+// readBody scans for control characters before decoding, because the decoder hides unpaired surrogates.
 func readBody(r *http.Request, body io.Reader, dst any) error {
-	if err := decode(r.Header.Get("Content-Type"), body, dst); err != nil {
+	raw, err := io.ReadAll(body)
+	if tooLarge, isTooLarge := errors.AsType[*http.MaxBytesError](err); isTooLarge {
+		return errs.TooLarge(fmt.Sprintf("This request is larger than %s.", sizeInWords(tooLarge.Limit)))
+	}
+	if err == nil {
+		err = checkJSONType(r.Header.Get("Content-Type"))
+	}
+	if err == nil {
+		if field, found := controlField(raw); found {
+			return errs.Validation(errs.FieldError{Field: field, Message: controlMessage})
+		}
+		err = decode(raw, dst)
+	}
+	if err != nil {
 		slog.WarnContext(r.Context(), "unreadable request body", "method", r.Method, "path", r.URL.Path, "error", err)
 		return errs.BadRequest(unreadableMessage)
 	}
 	return nil
 }
 
-func decode(contentType string, body io.Reader, dst any) error {
+func sizeInWords(limit int64) string {
+	const megabyte, kilobyte = 1 << 20, 1 << 10
+	if limit >= megabyte {
+		return fmt.Sprintf("%d MB", limit/megabyte)
+	}
+	return fmt.Sprintf("%d KB", max(limit/kilobyte, 1))
+}
+
+func checkJSONType(contentType string) error {
 	if mediaType, _, err := mime.ParseMediaType(contentType); err != nil || mediaType != jsonType {
 		return fmt.Errorf("content type %q is not application/json", contentType)
 	}
-	decoder := json.NewDecoder(body)
+	return nil
+}
+
+func decode(raw []byte, dst any) error {
+	decoder := json.NewDecoder(bytes.NewReader(raw))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(dst); err != nil {
 		return fmt.Errorf("decode the body: %w", err)
@@ -52,6 +78,7 @@ func decode(contentType string, body io.Reader, dst any) error {
 	return nil
 }
 
+// encode falls back to the internal_error envelope when v cannot be encoded, a programming mistake.
 func encode(status int, v any) (int, []byte, error) {
 	body, err := json.Marshal(v)
 	if err != nil {

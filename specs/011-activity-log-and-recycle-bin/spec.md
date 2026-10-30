@@ -192,6 +192,8 @@ result and the activity-log entries.
   chip, with **Clear all** and "Showing N of M entries".
 - **FR-004**: Entries MUST be listed newest first and grouped by day in the user's local time ("Today",
   "Yesterday", then "Monday 12 Oct 2026"), each group header showing its count.
+  *Amended by [038 FR-058](../038-qa-findings/spec.md) (D-362): the date in the heading follows the person's date
+  format (003 FR-024); "Monday 12 Oct 2026" is the default format's example ("Monday 2026-10-12" in YYYY-MM-DD).*
 - **FR-005**: Each entry MUST show the person's avatar, a sentence "<person> <verb> <record type>
   '<name>'", the record's ID, its path at the time ("in FY2026 Lubricants Europe › Helix launch"), the
   time, and an action chip with word and colour (design system §4):

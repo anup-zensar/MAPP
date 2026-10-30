@@ -75,4 +75,6 @@ type Claim struct {
 	LineItemID        string
 	Status            Status
 	Amount            money.Money
+	Approved          *money.Money
+	RemovedByChange   bool
 }

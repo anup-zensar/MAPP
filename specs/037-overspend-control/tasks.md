@@ -98,7 +98,7 @@ parallel with the other `[P]` tasks of its phase.
   refused activity create under a campaign set to Refuse, on the demo and volume databases (plan, Performance
   Goals).
   Note: results recorded in plan.md
-- [x] T030 Record the unscoped guard read as a deviation: plan.md Complexity Tracking, D-355, ADR-0018 (proposed,
+- [x] T030 Record the unscoped guard read as a deviation: plan.md Complexity Tracking, D-355, ADR-0019 (proposed,
   for the product owner's approval) (constitution VII, B5)
 - [x] T031 Test US1 scenario 4 on an initiative budget: Print & outdoor set to Refuse with 100.00 of room
   takes an activity of 100.00 and refuses one more cent, naming the initiative

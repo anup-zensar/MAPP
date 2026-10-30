@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"slices"
 	"strconv"
 	"strings"
@@ -37,6 +38,7 @@ type Config struct {
 	LogLevel        slog.Level
 	ShutdownTimeout time.Duration
 	Telemetry       telemetry.Config
+	TrustedProxies  []string
 }
 
 type reader struct {
@@ -60,6 +62,7 @@ func LoadConfig(getenv func(name string) string) (Config, error) {
 			Traces:  env.exporter("OTEL_TRACES_EXPORTER"),
 			Metrics: env.exporter("OTEL_METRICS_EXPORTER"),
 		},
+		TrustedProxies: env.proxies("TRUSTED_PROXIES"),
 	}
 	if len(env.problems) > 0 {
 		return Config{}, errors.New(strings.Join(env.problems, "\n"))
@@ -123,6 +126,24 @@ func (r *reader) shutdownTimeout(name string) time.Duration {
 		r.problem("%s must be a duration from 1s to 60s, such as 10s (it is '%s').", name, value)
 	}
 	return timeout
+}
+
+func (r *reader) proxies(name string) []string {
+	value := r.getenv(name)
+	if strings.TrimSpace(value) == "" {
+		return nil
+	}
+	var list []string
+	for part := range strings.SplitSeq(value, ",") {
+		part = strings.TrimSpace(part)
+		_, _, cidrErr := net.ParseCIDR(part)
+		if net.ParseIP(part) == nil && cidrErr != nil {
+			r.problem("%s must list IP addresses or CIDR ranges separated by commas (it is '%s').", name, value)
+			return nil
+		}
+		list = append(list, part)
+	}
+	return list
 }
 
 func (r *reader) exporter(name string) telemetry.Exporter {

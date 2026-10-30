@@ -24,7 +24,7 @@ describe('ModelsPage: status and delete (US1 scenario 7, FR-004)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Delete model' }));
 
     const messages = await findMessages();
-    expect(messages).toHaveTextContent("Model 'Mobility 1.0' moved to the recycle bin");
+    expect(messages).toHaveTextContent("Model 'Mobility 1.0' deleted");
     expect(within(messages).getByRole('button', { name: 'Undo' })).toBeInTheDocument();
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(api.requests.filter((r) => r.method === 'DELETE')).toHaveLength(1);

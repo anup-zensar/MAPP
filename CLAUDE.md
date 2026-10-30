@@ -1,6 +1,6 @@
 # CLAUDE.md — guidance for AI agents working on MAPP
 
-Read this with `.specify/memory/constitution.md` (the rules, version 4.6) before doing anything. Where
+Read this with `.specify/memory/constitution.md` (the rules, version 4.7) before doing anything. Where
 this file and the constitution disagree, the constitution wins and this file is corrected. Working in
 `backend/`? `backend/CLAUDE.md` loads the Go standards (`backend/docs/GO_STANDARDS.md`).
 
@@ -65,7 +65,7 @@ Software Design & Construction Policy and SEMS, which are mandatory.
 12. **Shell colour palette, non-negotiable** (constitution X): every colour comes from a token with
     Shell's exact values — Primary Yellow `#FFC600` (hover `#FFCB14`, press `#EBB600`), Secondary Red
     `#DD1D21`, and the light and dark theme tokens listed there. Yellow means "act here" or "you are
-    here"; red only for danger and errors; respect the contrast limits listed with the palette.
+    here"; red only for danger and errors, and the bold red asterisk of a field required to save (D-364); respect the contrast limits listed with the palette.
     `tokens.css` and `docs/product/design-system.md` §3.1 carry these values (feature 020); on a grey
     background secondary text, links and red text switch to Text Strong (`--ink-2: var(--ink)`).
 13. **Out of scope:** the Finance budgets module, accrual calculation, invoice approval, supporting

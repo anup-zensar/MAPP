@@ -9,9 +9,10 @@ import (
 )
 
 const (
-	labelDefaultMode = "New budgets start with"
-	labelOverspend   = "Overspend"
-	fieldOverspend   = "overspend"
+	labelDefaultMode  = "New budgets start with"
+	labelApprovalMode = "Approval over planned cost"
+	labelOverspend    = "Overspend"
+	fieldOverspend    = "overspend"
 )
 
 var errConfigurationKept = errors.New("overspend: the Overspend control setting is never removed")
@@ -41,11 +42,14 @@ func (s *Service) put(ctx context.Context, snap history.Snapshot) error {
 }
 
 func describe(_ context.Context, field string, value any) (string, string, error) {
-	if field != fieldDefaultMode {
-		return "", "", nil
-	}
 	text, _ := value.(string)
-	return labelDefaultMode, ModeWord(Mode(text)), nil
+	switch field {
+	case fieldDefaultMode:
+		return labelDefaultMode, ModeWord(Mode(text)), nil
+	case fieldApprovalMode:
+		return labelApprovalMode, ModeWord(Mode(text)), nil
+	}
+	return "", "", nil
 }
 
 // ModeWord is a mode as people read it, in the activity log of every budget.

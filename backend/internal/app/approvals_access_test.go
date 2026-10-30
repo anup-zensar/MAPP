@@ -65,7 +65,7 @@ func TestAdapter_RuleFacts_FR010(t *testing.T) {
 	}
 
 	// FY2026 Mobility China has no business unit on purpose (seed/plans.go).
-	if fleet.Plan.ID != "P-1002" || len(fleet.Plan.TeamIDs) == 0 || fleet.Plan.OwnerID != "U-1004" || fleet.Plan.CreatedByID != "system" ||
+	if fleet.Plan.ID != "P-1002" || len(fleet.Plan.TeamIDs) == 0 || fleet.Plan.OwnerID != "U-1004" || fleet.Plan.CreatedByID != "U-1004" ||
 		fleet.ActivityTypeID == "" || fleet.BusinessUnits == nil || len(fleet.BusinessUnits) != 0 {
 		t.Errorf("Fleet card launch = plan %+v, type %q, business units %+v; want FY2026 Mobility China's", fleet.Plan, fleet.ActivityTypeID, fleet.BusinessUnits)
 	}

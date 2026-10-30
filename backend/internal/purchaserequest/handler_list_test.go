@@ -82,3 +82,21 @@ func TestConfiguration_SwitchedOff_Contract_032_FR004(t *testing.T) {
 	off := "Purchase requests are switched off for your organisation."
 	same(t, "switched off", []any{off, false, off}, []any{created.Error.Message, seen.Access.Edit.Available, seen.Notice})
 }
+
+func TestConfiguration_NeverChanged_HasNoLastChange_Contract_038_FR057_L16(t *testing.T) {
+	t.Parallel()
+	s := apitest.New(t)
+	alex := s.SignIn(t, alexsEmail)
+	type lastChange struct {
+		Version   int
+		UpdatedAt *string
+		UpdatedBy *struct{ Name string }
+	}
+	fresh := decoded[lastChange](t, alex.Do(t, http.MethodGet, "/api/v1/purchase-request-configuration", nil), http.StatusOK)
+	saved := decoded[lastChange](t, alex.Do(t, http.MethodPut, "/api/v1/purchase-request-configuration",
+		map[string]any{"version": fresh.Version, "purchaseSupport": true, "linesOnApprovedPurchaseRequests": "notAllowed"}),
+		http.StatusOK)
+
+	same(t, "038 FR-057 never changed", true, fresh.UpdatedAt == nil && fresh.UpdatedBy == nil)
+	same(t, "038 FR-057 changed by Alex", true, saved.UpdatedAt != nil && saved.UpdatedBy != nil && saved.UpdatedBy.Name == "Alex Morgan")
+}

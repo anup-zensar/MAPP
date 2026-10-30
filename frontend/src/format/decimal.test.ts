@@ -1,3 +1,4 @@
+import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
   formatAmount,
@@ -48,6 +49,37 @@ describe('parseMoneyInput', () => {
   it('refuses amounts beyond the API limit (D-010)', () => {
     expect(parseMoneyInput('1000000000000000')).toBeNull();
     expect(parseMoneyInput('1000000000000k')).toBeNull();
+  });
+
+  it.each([
+    ['$1,234.50', '1234.50'],
+    ['€ 12,500', '12500.00'],
+    ['£250', '250.00'],
+    ['USD 1,000', '1000.00'],
+    ['eur1000.5', '1000.50'],
+    ['-$250', '-250.00'],
+    ['$-250', '-250.00'],
+    ['GBP 12.5k', '12500.00'],
+  ])('038 FR-042: reads "%s" with a leading currency as %s', (typed, amount) => {
+    expect(parseMoneyInput(typed)).toEqual({ amount, rounded: false });
+  });
+
+  it.each(['$', 'USD', '$$5', 'US 5', 'ABCD 5', '5 USD', '$ 1 2'])(
+    '038 FR-042: refuses "%s"',
+    (typed) => {
+      expect(parseMoneyInput(typed)).toBeNull();
+    },
+  );
+
+  it('038 FR-042: a currency prefix and grouping never change the amount read', () => {
+    const prefix = fc.constantFrom('', '$', '€', '£', '¥', 'USD', 'eur', 'GBP ', '$ ');
+    fc.assert(
+      fc.property(fc.bigInt({ min: 0n, max: 99_999_999_999_999_999n }), prefix, (cents, symbol) => {
+        const plain = formatCents(cents);
+        const grouped = formatAmount(plain);
+        expect(parseMoneyInput(`${symbol}${grouped}`)).toEqual(parseMoneyInput(plain));
+      }),
+    );
   });
 });
 

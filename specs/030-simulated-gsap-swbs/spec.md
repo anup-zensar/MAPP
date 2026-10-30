@@ -298,7 +298,7 @@ already uses it (feature 015), but nothing breaks without it today.
   on the Financials panel) MUST first show a short progress animation — "Simulated GSAP is processing the
   request…" — for at least 1.5 s, and only then the SWBS code, so the request reads as a call to an outside
   system. The animation is a status for screen readers and stands still when the person prefers reduced
-  motion (D-359).
+  motion (D-365).
 
 #### Demo data
 

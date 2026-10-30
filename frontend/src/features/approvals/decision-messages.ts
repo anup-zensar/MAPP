@@ -1,5 +1,6 @@
 import type { ApiError } from '@/api/errors';
 import type { components } from '@/api/generated/schema';
+import { formatMoneyText } from '@/format/decimal';
 import { formatDate, formatTime, localDate } from '@/format/intl';
 import type { DateFormat } from '@/format/intl';
 import { actorText, capitalise, names } from './messages';
@@ -24,10 +25,6 @@ export function capacitySentence(
   return '';
 }
 
-/**
- * The result of "Run reminders and escalations now" (017 FR-028): "2 reminders sent, 1
- * escalation", "1 reminder sent, no escalations", "No reminders, no escalations".
- */
 export function escalationRunText(result: Pick<EscalationRunResult, 'reminded' | 'escalated'>) {
   const reminders =
     result.reminded === 0
@@ -44,10 +41,7 @@ export function escalationRunText(result: Pick<EscalationRunResult, 'reminded' |
   return capitalise(`${reminders}, ${escalations}`);
 }
 
-/**
- * "Not escalated: 'Trade magazine ads' (A-1004), level 1: no backup approver can take it." — the
- * levels due for escalation that nobody could take, one sentence each joined by a space.
- */
+/** One sentence per level due for escalation that no backup approver could take. */
 export function notEscalatedText(events: EscalationEvent[]): string {
   return `Not escalated: ${events
     .map(
@@ -57,7 +51,6 @@ export function notEscalatedText(events: EscalationEvent[]): string {
     .join(' ')}`;
 }
 
-/** "Declined by Alex Morgan on behalf of Daniel Okoro on 12 Mar 2026, 14:32". */
 export function declineBoxText(
   decline: { actor: ActorRef; onBehalfOf: ActorRef[]; at: string },
   dateFormat?: DateFormat,
@@ -66,10 +59,7 @@ export function declineBoxText(
   return `Declined by ${actorText(decline.actor, decline.onBehalfOf)} on ${day}, ${formatTime(decline.at)}`;
 }
 
-/**
- * "Level 1 was already approved by Carlos Mendes at 14:32." — the API's message with the time of
- * the decision in the viewer's own time zone ("on 12 Mar 2026 at 14:32." when not today).
- */
+/** The API's message with the time in the viewer's time zone ("on 12 Mar 2026 at 14:32." if not today). */
 export function alreadyDecidedMessage(error: ApiError, dateFormat?: DateFormat): string {
   if (!error.conflict) {
     return error.message;
@@ -77,10 +67,6 @@ export function alreadyDecidedMessage(error: ApiError, dateFormat?: DateFormat):
   return `${error.message} ${when(error.conflict.changedAt, dateFormat)}.`;
 }
 
-/**
- * "Not submitted — Daniel Okoro changed this activity at 14:32. Check the changes and submit
- * again." ("on 12 Mar 2026 at 14:32" when not today).
- */
 export function submitConflictMessage(error: ApiError, dateFormat?: DateFormat): string {
   if (!error.conflict) {
     return error.message;
@@ -89,7 +75,6 @@ export function submitConflictMessage(error: ApiError, dateFormat?: DateFormat):
   return `Not submitted — ${changedBy} changed this activity ${when(changedAt, dateFormat)}. Check the changes and submit again.`;
 }
 
-/** The message after a level is approved, from the activity's approval as the API answered it. */
 export function approvedToast(
   name: string,
   decidedLevel: number,
@@ -108,4 +93,11 @@ function when(timestamp: string, dateFormat?: DateFormat): string {
   const time = `at ${formatTime(timestamp)}`;
   const day = localDate(timestamp);
   return day === localDate(new Date()) ? time : `on ${formatDate(day, dateFormat)} ${time}`;
+}
+
+export function overPlannedCostText({
+  activity,
+  overBy,
+}: components['schemas']['ActivityOverage']): string {
+  return `Line items of activity '${activity.name}' are ${formatMoneyText(overBy)} above its planned cost`;
 }

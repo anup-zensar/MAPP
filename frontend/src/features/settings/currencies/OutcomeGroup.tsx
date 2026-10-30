@@ -1,3 +1,4 @@
+import { ChevronRight } from 'lucide-react';
 import { formatRate, formatWhole } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
 import settingsStyles from '@/ui/settings-table.module.css';
@@ -8,7 +9,6 @@ import styles from './rates.module.css';
 /** A group of the review lists at most this many rows; the counts above cover all of them. */
 const ROWS_SHOWN = 200;
 
-/** The groups open at first: the rows that need a look. */
 const OPEN_AT_FIRST: RateImportOutcome[] = ['problem', 'notUsed', 'replace'];
 
 export interface OutcomeGroupProps {
@@ -23,7 +23,11 @@ export function OutcomeGroup({ outcome, rows }: OutcomeGroupProps) {
 
   return (
     <details className={styles.group} open={OPEN_AT_FIRST.includes(outcome)}>
-      <summary>{`${OUTCOME_WORDS[outcome]} (${formatWhole(rows.length)})`}</summary>
+      <summary>
+        {/* The open/closed marker the flex summary loses; it turns when open. */}
+        <ChevronRight aria-hidden="true" className={styles.marker} />
+        {`${OUTCOME_WORDS[outcome]} (${formatWhole(rows.length)})`}
+      </summary>
       <div className={styles.groupBody}>
         {/* Nothing in the table takes the focus: the scrolling area does, for the keyboard. */}
         <div

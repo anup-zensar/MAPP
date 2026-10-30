@@ -1,4 +1,6 @@
 import { plural } from '@/format/text';
+import { formatMonth } from '@/format/intl';
+import type { DateFormat } from '@/format/intl';
 
 export const FINANCIALS_CARD = {
   open: 'Open Financials',
@@ -20,23 +22,20 @@ export function financialsTitle(year: number): string {
   return `Financials · ${year}`;
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-/** "Sep 2026" for the accrual month "2026-09" (or a date in it); the text itself otherwise. */
-export function monthText(month: string): string {
-  const match = /^(\d{4})-(\d{2})/.exec(month);
-  const name = match ? MONTHS[Number(match[2]) - 1] : undefined;
-  return match && name ? `${name} ${match[1]}` : month;
+/** "Sep 2026" (or "09/2026") for "2026-09" or a date in it; the text otherwise. */
+export function monthText(month: string, format?: DateFormat): string {
+  const match = /^(\d{4})-(0[1-9]|1[0-2])/.exec(month);
+  return match ? formatMonth(match[0], format) : month;
 }
 
-/** Accrued counts only the latest accrual month in the data, so the label names it. */
-export function accruedLabel(accrualMonth: string | null): string {
-  return accrualMonth ? `Accrued (${monthText(accrualMonth)})` : 'Accrued';
+/** "Accrued (Sep 2026)": Accrued counts only the latest accrual month in the data. */
+export function accruedLabel(accrualMonth: string | null, format?: DateFormat): string {
+  return accrualMonth ? `Accrued (${monthText(accrualMonth, format)})` : 'Accrued';
 }
 
-export function accruedTip(accrualMonth: string | null): string {
+export function accruedTip(accrualMonth: string | null, format?: DateFormat): string {
   return accrualMonth
-    ? `Money owed for work received but not yet invoiced, as GSAP accrued it for ${monthText(accrualMonth)}.`
+    ? `Money owed for work received but not yet invoiced, as GSAP accrued it for ${monthText(accrualMonth, format)}.`
     : 'Money owed for work received but not yet invoiced, as GSAP accrued it.';
 }
 

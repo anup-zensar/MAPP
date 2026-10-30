@@ -1,7 +1,8 @@
 import { Card } from '@/ui/Card/Card';
+import { ScrollBox } from '@/features/financials';
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
-import type { SpaPeriod, SpaView } from './api';
+import type { Money, SpaContribution, SpaPeriod, SpaView } from './api';
 import { Bar } from './Bar';
 import { FigureButton } from './FigureButton';
 import type { TraceRequest } from './FigureButton';
@@ -34,24 +35,39 @@ export function SpaPeriods({ view, period, onPeriod, onTrace }: SpaPeriodsProps)
       }
     >
       <p className={styles.note}>{PERIODS.tip}</p>
-      <table className={styles.table}>
-        <caption className="visually-hidden">
-          {PERIODS.title} by {period}, {view.plan.year}
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Period</th>
-            <th scope="col">{PERIODS.planned}</th>
-            <th scope="col">{PERIODS.actual}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <PeriodRow key={row.key} row={row} onTrace={onTrace} />
-          ))}
-          <NotScheduledRow view={view} onTrace={onTrace} />
-        </tbody>
-      </table>
+      <ScrollBox label={PERIODS.title} className={styles.scroll}>
+        <table className={styles.table}>
+          <caption className="visually-hidden">
+            {PERIODS.title} by {period}, {view.plan.year}
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Period</th>
+              <th scope="col">{PERIODS.planned}</th>
+              <th scope="col">{PERIODS.actual}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <PeriodRow key={row.key} row={row} onTrace={onTrace} />
+            ))}
+            <ExtraRow
+              label={PERIODS.notScheduled}
+              tip={PERIODS.notScheduledTip}
+              value={view.periods.notScheduled}
+              trace={view.periods.notScheduledTrace}
+              onTrace={onTrace}
+            />
+            <ExtraRow
+              label={PERIODS.linesAbove}
+              tip={PERIODS.linesAboveTip}
+              value={view.periods.linesAbovePlannedCost}
+              trace={view.periods.linesAbovePlannedCostTrace}
+              onTrace={onTrace}
+            />
+          </tbody>
+        </table>
+      </ScrollBox>
     </Card>
   );
 }
@@ -86,32 +102,27 @@ function PeriodRow({ row, onTrace }: { row: SpaPeriod; onTrace: (request: TraceR
   );
 }
 
-function NotScheduledRow({
-  view,
-  onTrace,
-}: {
-  view: SpaView;
+interface ExtraRowProps {
+  label: string;
+  tip: string;
+  value: Money | null;
+  trace: SpaContribution[];
   onTrace: (request: TraceRequest) => void;
-}) {
-  const { notScheduled, notScheduledTrace } = view.periods;
-  if (!notScheduled) {
+}
+
+/** Not yet scheduled, or line items above planned cost: shown only when not zero. */
+function ExtraRow({ label, tip, value, trace, onTrace }: ExtraRowProps) {
+  if (!value) {
     return null;
   }
-  const negative = notScheduled.amount.startsWith('-');
   return (
     <tr>
       <th scope="row">
-        {PERIODS.notScheduled}
-        <InfoTip label={PERIODS.notScheduled} text={PERIODS.notScheduledTip} />
+        {label}
+        <InfoTip label={label} text={tip} />
       </th>
       <td>
-        <FigureButton
-          figure={PERIODS.notScheduled}
-          value={notScheduled}
-          trace={notScheduledTrace}
-          onTrace={onTrace}
-          problem={negative}
-        />
+        <FigureButton figure={label} value={value} trace={trace} onTrace={onTrace} />
       </td>
       <td />
     </tr>

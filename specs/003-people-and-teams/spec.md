@@ -219,6 +219,8 @@ in from another browser and see the same preferences.
 - **FR-024**: The date format MUST be one of DD MMM YYYY (default, "12 Mar 2026"), DD/MM/YYYY, MM/DD/YYYY or
   YYYY-MM-DD, each shown with an example, and MUST be used for every date shown and typed (replacing feature
   001's default, FR-021).
+  *Clarified by [038 FR-058](../038-qa-findings/spec.md) (D-362): "every date shown" includes day headings and month
+  labels with a year ("Sep 2026", "09/2026", "2026-09").*
 - **FR-025**: Preferences MUST belong to the person and apply in any browser they sign in from.
 
 **Visibility, permissions, log and seed**

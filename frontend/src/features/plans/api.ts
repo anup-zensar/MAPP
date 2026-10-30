@@ -153,7 +153,9 @@ export function useDeletePlan() {
   return useMutation({
     mutationFn: (planId: string) =>
       call(api.DELETE('/api/v1/plans/{planId}', { params: { path: { planId } } })),
-    onSettled: () => refresh(),
+    // The deleted plan's own queries are left out: asked again they would answer 404.
+    onSuccess: (_result, planId) => refresh(undefined, planId),
+    onError: () => refresh(),
   });
 }
 
@@ -163,11 +165,14 @@ function fetchPlan(planId: string) {
 
 function useRefresh() {
   const queryClient = useQueryClient();
-  return (planId?: string) =>
-    Promise.all([
-      queryClient.invalidateQueries({ queryKey: PLAN_KEYS.all }),
+  return (planId?: string, deletedId?: string) => {
+    const predicate = (query: { queryKey: readonly unknown[] }) =>
+      deletedId === undefined || !query.queryKey.includes(deletedId);
+    return Promise.all([
+      queryClient.invalidateQueries({ queryKey: PLAN_KEYS.all, predicate }),
       planId && queryClient.invalidateQueries({ queryKey: PLAN_KEYS.plan(planId) }),
       queryClient.invalidateQueries({ queryKey: ['recycle-bin'] }),
       queryClient.invalidateQueries({ queryKey: ['activity-log'] }),
     ]);
+  };
 }

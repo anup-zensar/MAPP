@@ -68,7 +68,7 @@ export function ComponentGalleryPage() {
 
   function showUndoMessage() {
     show({
-      message: "Campaign 'Helix launch' moved to the recycle bin",
+      message: "Campaign 'Helix launch' deleted",
       action: {
         label: 'Undo',
         altText: 'Restore it from the recycle bin',

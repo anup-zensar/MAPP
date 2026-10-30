@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { findMessages } from '@/testing/render';
 import { choose, PUBLISHED, renderActions } from '@/testing/fixtures/plan-actions';
+import { renderPlanPage } from '@/testing/fixtures/plan-page';
 import { plan } from '@/testing/fixtures/plans';
 import { reply } from '@/testing/replies';
 
@@ -53,9 +54,7 @@ describe('usePlanActions: delete with Undo (US6, FR-029, FR-030)', () => {
     expect(await within(dialog).findByText('This plan is published.')).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Delete plan' }));
 
-    expect(
-      await screen.findByText("Plan 'FY2025 Lubricants Europe' moved to the recycle bin"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Plan 'FY2025 Lubricants Europe' deleted")).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/plans');
     await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
 
@@ -99,5 +98,31 @@ describe('usePlanActions: delete with Undo (US6, FR-029, FR-030)', () => {
     expect(
       await screen.findByText('This plan no longer exists — someone may have deleted it.'),
     ).toBeInTheDocument();
+  });
+});
+
+describe('038 FR-013 (L-3): delete from the plan page', () => {
+  it('never asks for the deleted plan again', async () => {
+    const { user, router, api } = renderPlanPage({ body: plan() }, [
+      reply(
+        'DELETE /api/v1/plans/{planId}',
+        {
+          body: {
+            recycleBinEntry: { ...DELETED.recycleBinEntry, recordId: 'P-1001' },
+          },
+        },
+        { planId: 'P-1001' },
+      ),
+    ]);
+
+    await user.click(await screen.findByRole('button', { name: 'More' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));
+    await user.click(await screen.findByRole('button', { name: 'Delete plan' }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/plans'));
+    await findMessages();
+    const deleted = api.requests.findIndex((request) => request.method === 'DELETE');
+    const after = api.requests.slice(deleted + 1).map((r) => `${r.method} ${r.path}`);
+    expect(after.filter((request) => request.includes('/P-1001'))).toEqual([]);
   });
 });

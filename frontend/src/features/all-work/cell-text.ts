@@ -3,13 +3,9 @@ import type { Formatters } from '@/format/useFormatters';
 import type { AllWorkCell, AllWorkColumn } from './all-work-types';
 import { statusWord } from './status-words';
 
-/** Shown for an empty value on the column's own level (FR-020). */
 export const NOTHING = '—';
 
-/**
- * A cell as plain text, in the person's date format (plan "Grid"): for tips such as the
- * unfiltered value of a Filtered mark. Blank cells (other levels) are "".
- */
+/** A cell as plain text in the person's date format, for tips; blank cells (other levels) are "". */
 export function cellText(
   cell: AllWorkCell | null | undefined,
   formatters: Pick<Formatters, 'money' | 'date' | 'dateTime'>,
@@ -31,13 +27,12 @@ export function cellText(
     case 'text':
       return `${cell.text ?? NOTHING}${cell.inactive ? ' (inactive)' : ''}`;
     case 'status':
-      return `${cell.text ? statusWord(cell.text, cell.tone) : NOTHING}${cell.inactive ? ' (inactive)' : ''}`;
+      return `${cell.text ? statusWord(cell.text) : NOTHING}${cell.inactive ? ' (inactive)' : ''}`;
     default:
       return NOTHING;
   }
 }
 
-/** Whether a money or percent cell is shown in red (a negative amount, or above 100 %). */
 export function isProblem(cell: AllWorkCell): boolean {
   if (cell.tone === 'problem') {
     return true;
@@ -64,7 +59,6 @@ export function isControl(target: EventTarget): boolean {
   );
 }
 
-/** Whether search looks at a column's text: the ID, external names and descriptions (FR-006). */
 export function isSearched(columnKey: string): boolean {
   return (
     columnKey === 'id' ||

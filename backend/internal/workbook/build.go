@@ -1,6 +1,7 @@
 package workbook
 
 import (
+	"mapp/internal/platform/money"
 	"mapp/internal/platform/sheet"
 )
 
@@ -49,11 +50,21 @@ func recordRow(plan Plan, columns []column, r Stored, byID map[string]Stored) []
 			cells[i] = sheet.Date(*r.Values.StartDate)
 		case c.field == fieldEnd && r.Values.EndDate != nil:
 			cells[i] = sheet.Date(*r.Values.EndDate)
+		case moneyIn(c, r.Values) != nil:
+			cells[i] = sheet.Money(*moneyIn(c, r.Values)) // a number people can add up
 		default:
 			cells[i] = sheet.Text(format(c, r.Values, plan.Choices))
 		}
 	}
 	return cells
+}
+
+// moneyIn is the budget or planned cost a column shows, or nil.
+func moneyIn(c column, v Values) *money.Amount {
+	if amount, isAmount := amountField(c.field, &v); isAmount && c.attr == nil {
+		return *amount
+	}
+	return nil
 }
 
 // allowedValues lists, one column each, the values a choice column takes (FR-025).

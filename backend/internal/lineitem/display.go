@@ -7,20 +7,14 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// The amounts the line-item section and page show — a line item's planned cost in USD, the unassigned
-// balance and the spread grid — are answered in the reader's display currency (007 FR-005, D-061, D-213):
-// worked out first (the balance and the grid in the plan currency, 016 FR-015), then each amount converted
-// once at the current rates, half up to the cent. The line-item form keeps the plan currency (its "After
-// saving" figure is calculated from what is typed, and the web app never converts), so FormOptions answers
-// its balance unconverted.
+// The section and page answer amounts in the reader's display currency, worked out in the plan currency and
+// then converted once, half up to the cent (D-061, D-213). The form's balance stays in the plan currency:
+// the web app never converts what is typed.
 
-// display converts amounts of any currency with a current rate into one display currency.
 type display struct {
 	money.Display
 }
 
-// displayOf returns the display currency of the person a, with the current rates of every currency; an
-// unusable rate shows USD.
 func (s *Service) displayOf(ctx context.Context, a actor.Actor) (display, error) {
 	d, err := s.deps.People.DisplayRateOf(ctx, a.ID)
 	if err != nil {
@@ -36,23 +30,19 @@ func (s *Service) displayOf(ctx context.Context, a actor.Actor) (display, error)
 	return display{money.DisplayIn(d.Code, d.Rate).WithRates(rates)}, nil
 }
 
-// money converts m.
 func (d display) money(m money.Money) money.Money {
 	return d.Money(m)
 }
 
-// optional converts m, or gives nil when there is no amount.
 func (d display) optional(m *money.Money) *money.Money {
 	return d.Optional(m)
 }
 
-// view returns v with its USD planned cost in the display currency (View.PlannedCostDisplay).
 func (d display) view(v View) View {
 	v.PlannedCostDisplay = d.money(v.PlannedCostUSD)
 	return v
 }
 
-// views converts every view of views; never nil.
 func (d display) views(views []View) []View {
 	converted := make([]View, 0, len(views))
 	for _, v := range views {
@@ -70,24 +60,37 @@ func (d display) balance(b UnassignedBalance) UnassignedBalance {
 	return b
 }
 
-// grid returns g, built in the plan currency, with every cell and total converted on its own: in the plan
-// currency the cells add up exactly; converted, a total can differ by a cent from the sum of its cells.
 func (d display) grid(g SpreadGrid) SpreadGrid {
-	converted := SpreadGrid{Columns: g.Columns, Rows: make([]SpreadGridRow, 0, len(g.Rows)), Total: d.money(g.Total)}
-	converted.Totals = d.cells(g.Totals)
+	converted := SpreadGrid{Columns: g.Columns, Rows: make([]SpreadGridRow, 0, len(g.Rows)),
+		Totals: make([]*money.Money, len(g.Totals)), Total: d.money(money.Money{Currency: g.Total.Currency})}
 	for _, row := range g.Rows {
-		converted.Rows = append(converted.Rows, SpreadGridRow{
-			LineItemID: row.LineItemID, Name: row.Name, Cells: d.cells(row.Cells), Total: d.money(row.Total),
-		})
+		r := d.row(row)
+		converted.Rows = append(converted.Rows, r)
+		converted.Total.Amount = converted.Total.Amount.Add(r.Total.Amount)
+		for i, cell := range r.Cells {
+			if cell == nil {
+				continue
+			}
+			if converted.Totals[i] == nil {
+				converted.Totals[i] = &money.Money{Currency: cell.Currency}
+			}
+			converted.Totals[i].Amount = converted.Totals[i].Amount.Add(cell.Amount)
+		}
 	}
 	return converted
 }
 
-// cells converts each amount of cells, keeping the empty ones empty.
-func (d display) cells(cells []*money.Money) []*money.Money {
-	converted := make([]*money.Money, len(cells))
-	for i, cell := range cells {
-		converted[i] = d.optional(cell)
+func (d display) row(row SpreadGridRow) SpreadGridRow {
+	columns := make([]int, 0, len(row.Cells))
+	parts := make([]money.Money, 0, len(row.Cells))
+	for i, cell := range row.Cells {
+		if cell != nil {
+			columns, parts = append(columns, i), append(parts, *cell)
+		}
 	}
-	return converted
+	cells := make([]*money.Money, len(row.Cells))
+	for j, part := range d.Parts(parts) {
+		cells[columns[j]] = &part
+	}
+	return SpreadGridRow{LineItemID: row.LineItemID, Name: row.Name, Cells: cells, Total: d.money(row.Total)}
 }

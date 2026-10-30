@@ -36,6 +36,21 @@ func TestMonths_FR014(t *testing.T) {
 			text(hidden.CommittedOutsideYear), text(hidden.PaidOutsideYear)))
 }
 
+func TestMonths_NegativeBalanceCount_038_FR024_L2(t *testing.T) {
+	t.Parallel()
+	planned := map[string]allwork.Months{
+		"A-1": {ByMonth: map[string]money.Amount{"2026-01": amount(t, "100.00"), "2026-03": amount(t, "600.00")},
+			OtherYears: amount(t, "50.00")},
+		"A-3": {ByMonth: map[string]money.Amount{}, NoDates: amount(t, "100.00")},
+		"A-4": {ByMonth: map[string]money.Amount{"2026-03": amount(t, "50.00")}},
+	}
+
+	got := sampleBoard(t, nil).months(planned, 2026, money.DisplayUSD)
+	exact := sampleBoard(t, func(p *allwork.Node) bool { return p.ID == "P-2" }).months(planned, 2026, money.DisplayUSD)
+
+	same(t, "negative balance counts", texts(1, 0), texts(got.NegativeBalanceCount, exact.NegativeBalanceCount))
+}
+
 // The rounds of the board's activities and purchase requests only: waiting since the oldest level start, decided by
 // a person, approved automatically, and the average days to decide (FR-016).
 func TestApprovals_FR016(t *testing.T) {

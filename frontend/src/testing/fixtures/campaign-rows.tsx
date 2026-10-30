@@ -13,7 +13,9 @@ import {
   formatDateTime,
   formatMoney,
   formatMoneyCompact,
+  formatMonth,
   formatRelativeTime,
+  formatWeekdayDate,
   parseDate,
 } from '@/format/intl';
 import type { Formatters } from '@/format/useFormatters';
@@ -28,6 +30,8 @@ export const FORMATTERS: Formatters = {
   dateFormat: DEFAULT_DATE_FORMAT,
   displayCurrency: 'USD',
   date: (date) => formatDate(date),
+  weekdayDate: (date) => formatWeekdayDate(date),
+  month: (month) => formatMonth(month),
   dateTime: (timestamp) => formatDateTime(timestamp),
   dateRange: (start, end) => formatDateRange(start, end),
   relativeTime: (timestamp) => formatRelativeTime(timestamp, NOW),

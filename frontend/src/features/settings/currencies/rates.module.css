@@ -1,9 +1,3 @@
-/*
- * The exchange-rate screens (feature 016, US1): the rate history in the currency's details, the
- * rate dialog, Recent imports and the GSAP rate import. Tables follow the Settings table standard
- * (SettingsTable.module.css); these are the parts only rates have.
- */
-
 /* A heading row inside a side panel: the title, then its action at the end. */
 .sectionHead {
   display: flex;
@@ -135,7 +129,6 @@
   margin: 0;
 }
 
-/* The import page: the cards one under the other. */
 .stack {
   display: flex;
   flex-direction: column;
@@ -212,6 +205,27 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-bold);
   cursor: pointer;
+}
+
+.group summary::-webkit-details-marker {
+  display: none;
+}
+
+.marker {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  transition: transform 0.15s ease;
+}
+
+.group[open] .marker {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marker {
+    transition: none;
+  }
 }
 
 .group summary:focus-visible {

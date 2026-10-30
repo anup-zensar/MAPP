@@ -1,0 +1,19 @@
+/* "* Required" once before a form's first field; the asterisk as in FieldShell (D-364). */
+.legend {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: 20px;
+}
+
+.legend[hidden] {
+  display: none;
+}
+
+.asterisk {
+  color: var(--danger);
+  font-size: var(--text-required-mark);
+  font-weight: var(--weight-bold);
+  line-height: 20px;
+  vertical-align: top;
+}

@@ -23,6 +23,10 @@ func (s shower) financial(sees bool, usd money.Amount) *money.Money {
 	return &m
 }
 
+func (s shower) nonZero(usd money.Amount) *money.Money {
+	return s.financial(!usd.IsZero(), usd)
+}
+
 // trace lists the activities whose value is not zero, in table order (FR-007).
 func (s shower) trace(acts []*activity, value func(*activity) money.Amount) []Contribution {
 	list := []Contribution{}

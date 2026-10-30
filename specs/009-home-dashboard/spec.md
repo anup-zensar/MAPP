@@ -163,6 +163,9 @@ empty screen.
   (design system §2) in MAPP's Home layout: blue eyebrow "HOME", title "Welcome back," with the
   user's first name as the grey highlight ("Welcome back, Priya."), subtitle "Your plans, your activities
   and what needs you today.", and a **Currency** picker on the right.
+  *Corrected by [038](../038-qa-findings/spec.md) (QA L-26): the design system (§2) dropped the eyebrow — "Home is
+  the only exception: its title greets" — and the subtitle shows only to people with a role; the code is right.
+  038 FR-032 (QA M-5): "Activities I own" opens All work on the plan years of those activities.*
 - **FR-002**: The currency picker MUST list active currencies (feature 002), start on the user's display
   currency (feature 003) and, when changed, save it as the user's display currency and redraw every
   amount on Home in that currency.

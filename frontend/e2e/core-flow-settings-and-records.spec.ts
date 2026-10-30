@@ -192,7 +192,7 @@ test('E: deleting an activity moves it to the recycle bin with its cost, and Und
   await dialog.getByRole('button', { name: 'Delete activity' }).click();
 
   await expect(page).toHaveURL(new RegExp(`/plans/${records.planId}$`));
-  await expectToast(page, `Activity '${name}' moved to the recycle bin`);
+  await expectToast(page, `Activity '${name}' deleted`);
   await page.getByRole('button', { name: 'Expand all' }).click();
   await expect(treeRow(page, records.initiativeName)).toBeVisible();
   await expect(treeRow(page, name)).toHaveCount(0);

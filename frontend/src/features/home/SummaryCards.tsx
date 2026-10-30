@@ -14,6 +14,7 @@ import {
   ofPlanBudgetText,
   oldestWaitingText,
   percentUsedText,
+  ownedYearsText,
   planCountsText,
   plansWithoutBudgetText,
 } from './home-text';
@@ -22,12 +23,6 @@ import { SectionError } from './SectionError';
 import styles from './SummaryCards.module.css';
 import { SummaryLinkCard } from './SummaryLinkCard';
 
-/**
- * The four summary cards of Home (FR-005 – FR-007, design system §2.4 E): my teams' plans,
- * activities I own, waiting for my approval and planned cost against plan budget, each opening its
- * list with the same filter. Four in a row on wide screens, 2 × 2 below (UI audit H-06). While
- * loading each shows a placeholder; a failure shows "This section couldn't load".
- */
 export function SummaryCards({ scope }: { scope: HomeScope }) {
   const person = useCurrentUser();
   const { money, moneyCompact } = useFormatters();
@@ -69,12 +64,19 @@ export function SummaryCards({ scope }: { scope: HomeScope }) {
       />
       <SummaryLinkCard
         label="Activities I own"
-        tip="Activities you own, in every plan."
+        tip="Activities you own, in the plans of these years."
         value={formatWhole(activitiesOwned.count)}
         detail={
-          <span>{activityCountsText(activitiesOwned.declined, activitiesOwned.submitted)}</span>
+          <span>
+            {[
+              ownedYearsText(activitiesOwned.yearFrom, activitiesOwned.yearTo),
+              activityCountsText(activitiesOwned.declined, activitiesOwned.submitted),
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </span>
         }
-        to={myActivitiesHref(person.id)}
+        to={myActivitiesHref(person.id, activitiesOwned.yearFrom, activitiesOwned.yearTo)}
         linkLabel="open your activities"
       />
       <SummaryLinkCard

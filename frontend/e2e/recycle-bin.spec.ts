@@ -10,8 +10,8 @@ import {
 import { approveThroughApi } from './planning-changes';
 import { createPlanningRecords } from './planning';
 
-// In the demo data Priya deleted the initiative "Trade shows" of Rimula fleet with its activity
-// "Fleet expo stand" and its line item "Stand build". The last test empties the bin, so stays last.
+// The demo bin (seed/history.go) holds Priya's deleted initiative "Trade shows" with its activity
+// "Fleet expo stand" and line item "Stand build". The last test empties the bin, so it stays last.
 
 const PRIYA = 'priya.raman@shell.com';
 const MEI = 'mei.lin@shell.com';
@@ -39,7 +39,10 @@ function binRow(page: Page, name: string): Locator {
     .filter({ has: page.getByRole('heading', { level: 2, name, exact: true }) });
 }
 
-/** "Nothing matches these filters", or the empty bin when the searched rows were its last. */
+/**
+ * What the bin shows once the searched rows left it: "Nothing matches these filters", or the empty bin
+ * when they were its last entries.
+ */
 function gone(page: Page): Locator {
   return page
     .getByText('Nothing matches these filters')
@@ -86,7 +89,6 @@ test('US1: the seeded initiative is found by its activity’s ID and restored in
   ).toBeVisible();
   await expectNoAxeViolations(page);
 
-  // Step 2: confirm. Step 3: View opens it in its plan.
   await dialog.getByRole('button', { name: 'Restore initiative' }).click();
   await expectToast(page, "Initiative 'Trade shows' restored");
   await page.getByRole('button', { name: 'View', exact: true }).click();
@@ -95,7 +97,6 @@ test('US1: the seeded initiative is found by its activity’s ID and restored in
   );
   await expect(page.getByRole('dialog', { name: 'Trade shows' })).toBeVisible();
 
-  // Its activity is back, Created, with the same ID.
   await page.goto(`/activities/${stand.recordId}`);
   await expect(page.getByRole('heading', { level: 1, name: 'Fleet expo stand' })).toBeVisible();
   await expect(page.getByText('Created', { exact: true }).first()).toBeVisible();
@@ -112,7 +113,6 @@ test('US1: an approved activity restored from the bin comes back as Created (FR-
   });
   await approveThroughApi(page, records);
   await signInAs(page, MEI);
-  // Deleted from its page, after the Undo message closed: it is in the bin.
   await callApi(page, 'DELETE', `/api/v1/activities/${records.activityId}`);
 
   await searchBin(page, records.activityName);
@@ -122,7 +122,7 @@ test('US1: an approved activity restored from the bin comes back as Created (FR-
     .click();
   const dialog = page.getByRole('alertdialog', { name: `Restore activity '${name}'?` });
   await expect(
-    dialog.getByText('It comes back as Created and must be submitted for approval again.'),
+    dialog.getByText('Status reset to Created because it was restored from the recycle bin.'),
   ).toBeVisible();
   await dialog.getByRole('button', { name: 'Restore activity' }).click();
   await expectToast(page, `Activity '${name}' restored`);
@@ -188,7 +188,8 @@ test('US5: Delete permanently and Empty recycle bin, both in the activity log (F
   await callApi(page, 'DELETE', `/api/v1/activities/${records.activityId}`);
   const name = records.activityName;
 
-  // Delete permanently: Cancel has the focus; the red button deletes it for good.
+  // Delete permanently: Cancel has the focus; the red button deletes it for good (FR-028). Alex's
+  // Administrator role holds "Delete permanently and empty the recycle bin" (014).
   await signInAs(page, ALEX);
   await searchBin(page, name);
   await binRow(page, name)

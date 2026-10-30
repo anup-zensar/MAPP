@@ -3,7 +3,7 @@ import { mockApi } from '@/testing/mock-api';
 import { apiError, pending, reply } from '@/testing/replies';
 import { ENVIRONMENT_LOCAL } from '@/testing/fixtures/environment';
 import { api, call } from './client';
-import { ApiError, conflictMessage, resolvedMessage } from './errors';
+import { ApiError, CONFLICT_NEXT_STEP, conflictMessage, resolvedMessage } from './errors';
 
 const UNREACHABLE =
   "SP&A One can't reach its server right now. Check that it is running and try again.";
@@ -162,6 +162,27 @@ describe('call()', () => {
         }),
       ),
     ).rejects.toMatchObject({ kind, message: 'A message.', status });
+  });
+});
+
+describe('038 FR-014, FR-054: too many sign-in attempts and too large a request', () => {
+  it.each([
+    ['too_many_attempts', 429, 'tooManyAttempts'],
+    ['too_large', 413, 'tooLarge'],
+  ] as const)('turns the code %s (%i) into the kind %s', (code, status, kind) => {
+    expect(ApiError.fromBody(status, apiError(code, 'A message.'))).toMatchObject({
+      kind,
+      message: 'A message.',
+      status,
+    });
+  });
+});
+
+describe('038 FR-039 (L-1): the next step after a version conflict', () => {
+  it('says the changes are kept and what Save and Cancel do', () => {
+    expect(CONFLICT_NEXT_STEP).toBe(
+      'Your changes are still here. Save again to replace their changes, or Cancel to see theirs.',
+    );
   });
 });
 

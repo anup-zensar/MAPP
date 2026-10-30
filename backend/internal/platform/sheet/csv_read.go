@@ -9,16 +9,15 @@ import (
 	"unicode/utf8"
 )
 
-// ReadCSV reads a CSV file in UTF-8, with or without the byte-order mark, separated by commas, semicolons or
-// tabs (whichever the first line holds most of), as one table without a name. More than maxRows rows
-// holding text is ErrTooManyRows; a file that is not UTF-8 text is ErrUnreadable.
+// ReadCSV reads UTF-8 CSV (byte-order mark optional) separated by whichever of comma, semicolon or tab the first
+// line holds most of. More than maxRows rows holding text is ErrTooManyRows; text not in UTF-8 is ErrUnreadable.
 func ReadCSV(data []byte, maxRows int) (Table, error) {
 	data = bytes.TrimPrefix(data, []byte(byteOrderMark))
 	if !utf8.Valid(data) || bytes.IndexByte(data, 0) >= 0 {
 		return Table{}, ErrUnreadable
 	}
 	r := csv.NewReader(bytes.NewReader(data))
-	r.Comma = delimiterOf(data)
+	r.Comma = DelimiterOf(data)
 	r.FieldsPerRecord = -1
 	r.LazyQuotes = true
 	table := Table{Rows: []Row{}}
@@ -46,7 +45,7 @@ func ReadCSV(data []byte, maxRows int) (Table, error) {
 	}
 }
 
-func delimiterOf(data []byte) rune {
+func DelimiterOf(data []byte) rune {
 	first, _, _ := bytes.Cut(data, []byte("\n"))
 	best, bestCount := ',', bytes.Count(first, []byte(","))
 	for _, d := range []rune{';', '\t'} {

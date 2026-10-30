@@ -32,8 +32,8 @@ func TestSeed_RolesAssignmentsAndRules_FR040(t *testing.T) {
 	}
 	wantRoles := []role{
 		{"RL-1001", "Administrator", authz.BuiltInAdministrator, 29, authz.ScopeAll},
-		{"RL-1002", "Global planner", authz.BuiltInGlobalPlanner, 20, authz.ScopeAll},
-		{"RL-1003", "Planner", authz.BuiltInPlanner, 15, authz.ScopeMyTeams},
+		{"RL-1002", "Global planner", authz.BuiltInGlobalPlanner, 19, authz.ScopeAll},
+		{"RL-1003", "Planner", authz.BuiltInPlanner, 14, authz.ScopeMyTeams},
 		{"RL-1004", "Approver", authz.BuiltInApprover, 4, authz.ScopeMyTeams},
 		{"RL-1005", "Viewer", authz.BuiltInViewer, 3, authz.ScopeMyTeams},
 		{"RL-1006", "Requisitioner", "", 3, authz.ScopeAll},
@@ -57,7 +57,7 @@ func TestSeed_RolesAssignmentsAndRules_FR040(t *testing.T) {
 		{authz.ActivitiesSubmit, true, true, true, false, false},
 		{authz.DataExport, true, true, true, true, true},
 		{authz.FinanceView, true, true, true, true, true},
-		{authz.FinanceLink, true, true, true, false, false},
+		{authz.FinanceLink, true, false, false, false, false},
 		{authz.FinanceImport, true, false, false, false, false},
 		{authz.ApprovalsDecide, true, true, false, true, false},
 		{authz.ApprovalsDecideOnBehalf, true, false, false, false, false},

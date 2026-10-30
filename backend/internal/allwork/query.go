@@ -31,17 +31,37 @@ const (
 	maxRangeYears   = 5
 )
 
-var (
-	planStatusValues      = []string{"draft", "published"}
-	containerStatusValues = []string{"noActivities", "inProgress", "allApproved", "notStarted", "running", "finished"}
-	activityStatusValues  = []string{"created", "submitted", "declined", "approved", "inProgress", "complete"}
-	strategicValues       = []string{StrategicInclude, StrategicOnly, StrategicExclude}
-	showLevelsValues      = []string{ShowEverything, ShowCompleteBranches, ShowCampaignsWithoutInitiatives, ShowInitiativesWithoutActivities}
-	periodValues          = []string{PeriodMonth, PeriodQuarter, PeriodYear}
-	viewValues            = []string{ViewGrid, ViewCalendar, ViewBudget, ViewBreakdown}
-	planTypeValues        = []string{"operational", "strategic", "crossMarket"} // 016 FR-032
-	amountsInValues       = []string{AmountsInDisplay, AmountsInPlan}
+const (
+	planTypeOperational = "operational"
+	planTypeStrategic   = "strategic"
+	planTypeCrossMarket = "crossMarket"
 )
+
+func planStatusValues() []string { return []string{statusDraft, statusPublished} }
+
+func strategicValues() []string { return []string{StrategicInclude, StrategicOnly, StrategicExclude} }
+
+func showLevelsValues() []string {
+	return []string{ShowEverything, ShowCompleteBranches, ShowCampaignsWithoutInitiatives, ShowInitiativesWithoutActivities}
+}
+
+func periodValues() []string { return []string{PeriodMonth, PeriodQuarter, PeriodYear} }
+
+func viewValues() []string { return []string{ViewGrid, ViewCalendar, ViewBudget, ViewBreakdown} }
+
+func planTypeValues() []string {
+	return []string{planTypeOperational, planTypeStrategic, planTypeCrossMarket}
+}
+
+func amountsInValues() []string { return []string{AmountsInDisplay, AmountsInPlan} }
+
+func containerStatusValues() []string {
+	return append(progressValues(), statusNotStarted, statusRunning, statusFinished)
+}
+
+func activityStatusValues() []string {
+	return []string{statusCreated, statusSubmitted, statusDeclined, statusApproved, statusInProgress, statusComplete}
+}
 
 func ParseQuery(values url.Values) (Query, error) {
 	var problems errs.Problems
@@ -88,20 +108,20 @@ func parseQuery(values url.Values, problems *errs.Problems) Query {
 	}
 	q.YearFrom, q.YearTo = parseRange(values, problems)
 	q.Year = q.YearFrom
-	q.View = single(values, "view", viewValues, ViewGrid, msgChooseView, problems)
+	q.View = single(values, "view", viewValues(), ViewGrid, msgChooseView, problems)
 	q.Plans = list(values, "plan")
-	q.PlanStatuses = listOf(values, "planStatus", planStatusValues, problems)
-	q.ContainerStatuses = listOf(values, "containerStatus", containerStatusValues, problems)
-	q.ActivityStatuses = listOf(values, "activityStatus", activityStatusValues, problems)
+	q.PlanStatuses = listOf(values, "planStatus", planStatusValues(), problems)
+	q.ContainerStatuses = listOf(values, "containerStatus", containerStatusValues(), problems)
+	q.ActivityStatuses = listOf(values, "activityStatus", activityStatusValues(), problems)
 	q.Owners = list(values, "owner")
 	q.Teams = list(values, "team")
 	q.BusinessUnits = list(values, "businessUnit")
 	q.ActivityTypes = list(values, "activityType")
 	q.Finance = listOf(values, "finance", financeValues, problems)
-	q.Strategic = single(values, "strategic", strategicValues, StrategicInclude, msgChooseListed, problems)
-	q.BCPIR = single(values, "bcpir", strategicValues, StrategicInclude, msgChooseListed, problems)
-	q.ShowLevels = single(values, "showLevels", showLevelsValues, ShowEverything, msgChooseListed, problems)
-	q.Period = single(values, "period", periodValues, PeriodMonth, msgChooseListed, problems)
+	q.Strategic = single(values, "strategic", strategicValues(), StrategicInclude, msgChooseListed, problems)
+	q.BCPIR = single(values, "bcpir", strategicValues(), StrategicInclude, msgChooseListed, problems)
+	q.ShowLevels = single(values, "showLevels", showLevelsValues(), ShowEverything, msgChooseListed, problems)
+	q.Period = single(values, "period", periodValues(), PeriodMonth, msgChooseListed, problems)
 	q.Search = strings.TrimSpace(values.Get("search"))
 	if utf8.RuneCountInString(q.Search) > maxSearchLength {
 		problems.Add("search", msgSearchTooLong)
@@ -120,7 +140,7 @@ func parseQuery(values url.Values, problems *errs.Problems) Query {
 			q.Sort = &Sort{Column: column, Direction: direction}
 		}
 	}
-	q.PlanTypes = listOf(values, "planType", planTypeValues, problems)
+	q.PlanTypes = listOf(values, "planType", planTypeValues(), problems)
 	q.PlanCurrencies = list(values, "planCurrency")
 	for _, code := range q.PlanCurrencies {
 		if !isCurrencyCode(code) {
@@ -138,7 +158,7 @@ func parseQuery(values url.Values, problems *errs.Problems) Query {
 		problems.Add("comparePhased", msgChooseListed)
 	}
 	q.By, q.ThenBy = strings.TrimSpace(values.Get("by")), strings.TrimSpace(values.Get("thenBy"))
-	q.AmountsIn = single(values, "amountsIn", amountsInValues, AmountsInDisplay, msgChooseListed, problems)
+	q.AmountsIn = single(values, "amountsIn", amountsInValues(), AmountsInDisplay, msgChooseListed, problems)
 	return q
 }
 

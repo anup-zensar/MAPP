@@ -5,7 +5,6 @@ import { statusWord } from './status-words';
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4'];
 
-/** The level of a bar, as a word in its tip. */
 export const LEVEL_WORDS: Partial<Record<AllWorkRow['level'], string>> = {
   campaign: 'Campaign',
   initiative: 'Initiative',
@@ -17,7 +16,7 @@ export function legendOf(rows: AllWorkRow[]): AllWorkStatus[] {
   const seen = new Map<string, AllWorkStatus>();
   for (const row of rows) {
     if (row.status && LEVEL_WORDS[row.level]) {
-      const label = statusWord(row.status.label, row.status.tone);
+      const label = statusWord(row.status.label);
       if (!seen.has(label)) {
         seen.set(label, { ...row.status, label });
       }
@@ -31,7 +30,6 @@ export interface Timeline {
   /** The CSS grid columns of the months or quarters, each as wide as its days. */
   columns: string;
   labels: string[];
-  /** The CSS grid columns of the year band (a range only). */
   years?: string;
 }
 

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { components } from '@/api/generated/schema';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import { isChoiceType, LEVELS, linkOptionText } from './attribute-words';
+import { isChoiceType, LEVEL_WORDS, LEVELS, linkOptionText } from './attribute-words';
 import type { AttributeLevel, FormAttribute } from './attribute-words';
 
 type FormOption = components['schemas']['FormOption'];
@@ -38,7 +38,12 @@ export interface AttributeRules {
   parent?: FormAttribute;
   /** An edited attribute that starts depending on another: its options, each needing a link. */
   optionsToLink: FormOption[] | null;
+  /** Every attribute, for the API's "already has a Shell attribute called" check. */
+  others?: { id: string; label: string; level: AttributeLevel }[];
+  ownId?: string;
 }
+
+const MAX_HELP_TEXT = 300;
 
 /** The editor's checks, with the problems' names as the API gives them ("options[2].label"). */
 export function attributeSchema(rules: AttributeRules) {
@@ -52,8 +57,21 @@ export function attributeSchema(rules: AttributeRules) {
 /** Instant feedback, in the form's order and the API's words (FR-018, FR-022); the API checks all. */
 export function attributeProblems(values: AttributeValues, rules: AttributeRules): FieldProblem[] {
   const found: FieldProblem[] = [];
-  if (values.label.trim() === '') {
+  const label = values.label.trim();
+  const taken = rules.others?.find(
+    (other) =>
+      other.id !== rules.ownId &&
+      other.level === values.level &&
+      other.label.trim().toLowerCase() === label.toLowerCase(),
+  );
+  if (label === '') {
     found.push({ field: 'label', message: 'Enter a label.' });
+  } else if (taken) {
+    const message = `The ${LEVEL_WORDS[values.level]} form already has a Shell attribute called '${taken.label}'.`;
+    found.push({ field: 'label', message });
+  }
+  if ([...values.helpText].length > MAX_HELP_TEXT) {
+    found.push({ field: 'helpText', message: `Use ${MAX_HELP_TEXT} characters or fewer.` });
   }
   if (values.type === '') {
     found.push({ field: 'type', message: 'Choose a type.' });
@@ -138,7 +156,6 @@ const helpSchema = z.enum(['all', 'missing']);
 export type StatusFilter = z.infer<typeof statusSchema>;
 export type HelpFilter = z.infer<typeof helpSchema>;
 
-/** The level of the address (`?level=`); null when it names none. */
 export function levelOf(params: URLSearchParams): AttributeLevel | null {
   const parsed = levelSchema.safeParse(params.get('level'));
   return parsed.success ? parsed.data : null;

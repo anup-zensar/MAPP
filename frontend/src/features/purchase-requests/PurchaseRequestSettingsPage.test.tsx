@@ -103,3 +103,12 @@ describe('032 FR-004: Settings › Purchase requests', () => {
     expect(screen.getByRole('checkbox', { name: 'Purchase Support' })).not.toBeChecked();
   });
 });
+
+describe('038 FR-057 (L-16): a setting never changed', () => {
+  it('says "Not changed since SP&A One was set up" instead of who changed it', async () => {
+    renderPage([reply(GET, { body: configuration({ updatedAt: null, updatedBy: null }) })]);
+
+    expect(await screen.findByText('Not changed since SP&A One was set up')).toBeVisible();
+    expect(screen.queryByText(/Last changed by/)).not.toBeInTheDocument();
+  });
+});

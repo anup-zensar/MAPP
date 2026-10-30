@@ -12,6 +12,8 @@ export const SAVE = 'Save';
 export const CONFIG_SAVED = 'Purchase request settings saved';
 export const CONFIG_NOUN = 'purchase request configuration';
 
+export const NEVER_CHANGED = 'Not changed since SP&A One was set up';
+
 export function lastChangedText(name: string, when: string): string {
   return `Last changed by ${name} on ${when}`;
 }

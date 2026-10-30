@@ -241,9 +241,7 @@ test('T080 SC-006: keyboard only on the sample page — create, rename, delete a
   await chooseMenuItem(page, 'Delete');
   await tabTo(page, page.getByRole('button', { name: 'Delete sample folder' }));
   await page.keyboard.press('Enter');
-  await expect(
-    page.getByText(`Sample folder '${renamed}' moved to the recycle bin`).first(),
-  ).toBeVisible();
+  await expect(page.getByText(`Sample folder '${renamed}' deleted`).first()).toBeVisible();
   const deletedAt = Date.now();
 
   // F8 takes the focus to the messages, where Undo is the next stop.

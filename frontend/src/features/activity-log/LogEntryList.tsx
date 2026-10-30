@@ -1,6 +1,7 @@
 import { LoaderCircle } from 'lucide-react';
 import { Button } from '@/ui/Button/Button';
 import { localDate } from '@/format/intl';
+import { useFormatters } from '@/format/useFormatters';
 import { LogEntry } from './LogEntry';
 import { dayLabel, entriesText, loadedLine } from './log-text';
 import type { ActivityLogEntry } from './log-text';
@@ -9,25 +10,15 @@ import styles from './LogEntryList.module.css';
 const HEADINGS = { 2: 'h2', 3: 'h3', 4: 'h4' } as const;
 
 export interface LogEntryListProps {
-  /** The entries loaded so far, newest first. */
   entries: ActivityLogEntry[];
-  /** How many entries match in all. */
   total: number;
   hasMore: boolean;
   onLoadMore: () => void;
   isLoadingMore: boolean;
-  /**
-   * The level of the day headings: 2 on the log page, 3 inside a History card, 4 inside the History
-   * part of a side panel (whose own heading is an h3).
-   */
+  /** Day heading level: 2 on the log page, 3 in a History card, 4 in a side panel's History. */
   headingLevel?: 2 | 3 | 4;
 }
 
-/**
- * The entries grouped by day in the person's time zone — "Today · 3 entries", "Yesterday",
- * "Monday 12 Oct 2026" (FR-004) — and, while more can be loaded, "Showing the last 50 of 1,204"
- * with **Load more** (FR-009).
- */
 export function LogEntryList({
   entries,
   total,
@@ -37,6 +28,7 @@ export function LogEntryList({
   headingLevel = 2,
 }: LogEntryListProps) {
   const today = localDate(new Date());
+  const { dateFormat } = useFormatters();
   const Heading = HEADINGS[headingLevel];
 
   return (
@@ -44,7 +36,7 @@ export function LogEntryList({
       {groupByDay(entries).map(([day, dayEntries]) => (
         <section key={day} className={styles.day}>
           <Heading className={styles.heading}>
-            {dayLabel(day, today)}
+            {dayLabel(day, today, dateFormat)}
             {/* The space stays outside the span, so screen readers keep it between the words. */}{' '}
             <span className={styles.count}>· {entriesText(dayEntries.length)}</span>
           </Heading>

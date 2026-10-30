@@ -73,7 +73,6 @@ func (d *demo) addRateHistory(ctx context.Context, repo stores.SettingsStore) er
 	})
 }
 
-// addActivityTypes creates the six activity types, AT-1001 … AT-1006.
 func (d *demo) addActivityTypes(ctx context.Context, repo stores.SettingsStore) error {
 	for _, t := range demoActivityTypes {
 		id, err := d.next(ctx, ids.PrefixActivityType)
@@ -96,8 +95,6 @@ func (d *demo) addActivityTypes(ctx context.Context, repo stores.SettingsStore) 
 	return nil
 }
 
-// addModels creates the two models, MOD-1001 and MOD-1002, with their allowed activity types in the order
-// of the activity-type list (by name).
 func (d *demo) addModels(ctx context.Context, repo stores.SettingsStore) error {
 	for _, m := range demoModels {
 		var r resolver
@@ -129,19 +126,19 @@ func (d *demo) addModels(ctx context.Context, repo stores.SettingsStore) error {
 	return nil
 }
 
-// addFinanceBudgets creates the two 2026 finance budgets, FB-1001 and FB-1002, each with three items,
-// FBI-1001 … FBI-1006.
+// addFinanceBudgets creates the 2026 finance budgets FB-1001 and FB-1002 with three items each, FBI-1001 … FBI-1006,
+// and the 2027 one FB-1003 with FBI-1007 and FBI-1008 for the FY2027 line items.
 func (d *demo) addFinanceBudgets(ctx context.Context, repo stores.SettingsStore) error {
 	for _, b := range demoBudgets {
 		budgetID, err := d.next(ctx, ids.PrefixFinanceBudget)
 		if err != nil {
 			return err
 		}
-		budget := settings.FinanceBudget{ID: budgetID, Year: demoBudgetYear, Name: b.name, Meta: d.meta()}
+		budget := settings.FinanceBudget{ID: budgetID, Year: b.year, Name: b.name, Meta: d.meta()}
 		if err := repo.PutFinanceBudget(ctx, budget); err != nil {
 			return err
 		}
-		d.settings.Budgets[fmt.Sprintf("%d/%s", demoBudgetYear, b.name)] = budgetID
+		d.settings.Budgets[fmt.Sprintf("%d/%s", b.year, b.name)] = budgetID
 		for _, item := range b.items {
 			itemID, err := d.next(ctx, ids.PrefixFinanceBudgetItem)
 			if err != nil {
@@ -151,7 +148,7 @@ func (d *demo) addFinanceBudgets(ctx context.Context, repo stores.SettingsStore)
 			if err := repo.PutFinanceBudgetItem(ctx, stored); err != nil {
 				return err
 			}
-			d.settings.Items[fmt.Sprintf("%d/%s/%s", demoBudgetYear, b.name, item[0])] = itemID
+			d.settings.Items[fmt.Sprintf("%d/%s/%s", b.year, b.name, item[0])] = itemID
 		}
 	}
 	return nil

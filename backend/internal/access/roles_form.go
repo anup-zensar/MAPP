@@ -2,6 +2,7 @@ package access
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -15,8 +16,6 @@ const (
 	maxDescriptionLength = 300
 )
 
-// checkRoleName returns name trimmed and adds its problem: required, at most 60 characters, and no other role
-// than exceptID has it, ignoring letter case (message 14).
 func checkRoleName(problems *errs.Problems, w world, name, exceptID string) string {
 	name = strings.TrimSpace(name)
 	switch {
@@ -30,7 +29,6 @@ func checkRoleName(problems *errs.Problems, w world, name, exceptID string) stri
 	return name
 }
 
-// checkDescription returns the description trimmed and adds its problem: at most 300 characters.
 func checkDescription(problems *errs.Problems, description string) string {
 	description = strings.TrimSpace(description)
 	if utf8.RuneCountInString(description) > maxDescriptionLength {
@@ -40,7 +38,7 @@ func checkDescription(problems *errs.Problems, description string) string {
 }
 
 // checkPermissions returns the permissions without repeats in Table A order and adds their problems: at
-// least one (message 15), each a key of Table A.
+// least one (message 15), each a key of Table A, and finance.link only with finance.import.
 func checkPermissions(problems *errs.Problems, keys []authz.Permission) []authz.Permission {
 	for _, key := range keys {
 		if _, known := authz.Lookup(string(key)); !known {
@@ -51,10 +49,12 @@ func checkPermissions(problems *errs.Problems, keys []authz.Permission) []authz.
 	if len(ordered) == 0 && len(keys) == 0 {
 		problems.Add("permissions", msgChoosePermission)
 	}
+	if slices.Contains(ordered, authz.FinanceLink) && !slices.Contains(ordered, authz.FinanceImport) {
+		problems.Add("permissions", msgLinkNeedsImport)
+	}
 	return ordered
 }
 
-// checkDefaultScope adds the problem of a default scope that is neither All markets nor My teams.
 func checkDefaultScope(problems *errs.Problems, scope authz.ScopeType) authz.ScopeType {
 	if scope != authz.ScopeAll && scope != authz.ScopeMyTeams {
 		problems.Add("defaultScope", msgChooseDefaultScope)

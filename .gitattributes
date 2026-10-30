@@ -1,5 +1,7 @@
 * text=auto eol=lf
 *.ps1 text eol=crlf
+# The content security policy admits the inline theme script by the hash of its exact bytes.
+frontend/index.html text eol=lf
 *.png binary
 *.jpg binary
 *.pdf binary

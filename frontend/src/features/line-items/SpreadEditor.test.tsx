@@ -51,6 +51,24 @@ function preview() {
   return screen.getByRole('list', { name: 'Preview of the spread' }).textContent;
 }
 
+describe('038 FR-042 (L-7): pasting a row of amounts', () => {
+  it('fills the month and the ones after it, and says what did not fit', async () => {
+    const user = userEvent.setup();
+    const start = changeSpreadMethod(tenThousandEuros(), 'custom', MAR_MAY, 2026);
+    renderWithProviders(<Harness start={start} />);
+
+    await user.click(screen.getByRole('textbox', { name: /Mar 2026/ }));
+    await user.paste('1000\t2000\t3000\t4000');
+
+    expect(screen.getByRole('textbox', { name: /Mar 2026/ })).toHaveValue('1000.00');
+    expect(screen.getByRole('textbox', { name: /Apr 2026/ })).toHaveValue('2000.00');
+    expect(screen.getByRole('textbox', { name: /May 2026/ })).toHaveValue('3000.00');
+    expect(
+      screen.getByText('1 pasted value was left out: there is no month after May 2026.'),
+    ).toBeInTheDocument();
+  });
+});
+
 describe('SpreadEditor (US3, FR-017 – FR-021)', () => {
   it('previews Evenly, All in first month and All in last month (scenario 1)', async () => {
     const user = userEvent.setup();

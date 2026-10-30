@@ -9,6 +9,7 @@ import (
 
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
 	"mapp/internal/settings"
 )
 
@@ -26,6 +27,8 @@ func (s *Service) checkName(ctx context.Context, name, exceptID string, problems
 		problems.Add("name", msgEnterName)
 	case utf8.RuneCountInString(name) > maxNameLength:
 		problems.Add("name", msgNameTooLong)
+	case record.CheckSingleLine(name) != "":
+		problems.Add("name", record.CheckSingleLine(name))
 	default:
 		all, err := s.repo.List(ctx)
 		if err != nil {
