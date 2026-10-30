@@ -91,13 +91,26 @@ func (im *Importer) Flush(ctx context.Context) (map[string]string, error) {
 	if _, err = im.s.repo.ListByIDs(ctx, fresh); err != nil { // one read the log entries below find kept
 		return nil, err
 	}
+	if err = im.logCreated(ctx); err != nil {
+		return nil, err
+	}
+	im.renameSiblings(readable)
+	im.pending = nil
+	return readable, nil
+}
+
+func (im *Importer) logCreated(ctx context.Context) error {
 	for _, li := range im.pending {
-		if _, err = im.s.history.Log(ctx, im.a, history.LogInput{
+		if _, err := im.s.history.Log(ctx, im.a, history.LogInput{
 			Kind: lineItemKind, RecordID: li.ID, RecordName: li.Name, Action: history.ActionCreated,
 		}); err != nil {
-			return nil, err
+			return err
 		}
 	}
+	return nil
+}
+
+func (im *Importer) renameSiblings(readable map[string]string) {
 	for _, p := range im.places {
 		for i := range p.siblings {
 			if id, found := readable[p.siblings[i].ID]; found {
@@ -105,8 +118,6 @@ func (im *Importer) Flush(ctx context.Context) (map[string]string, error) {
 			}
 		}
 	}
-	im.pending = nil
-	return readable, nil
 }
 
 // Forget has the activities read again, after a change made beside the importer; nothing may be kept.

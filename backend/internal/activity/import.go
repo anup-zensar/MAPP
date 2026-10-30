@@ -96,13 +96,26 @@ func (im *Importer) Flush(ctx context.Context) (map[string]string, error) {
 	if _, err = im.s.repo.ListByIDs(ctx, fresh); err != nil { // one read the log entries below find kept
 		return nil, err
 	}
+	if err = im.logCreated(ctx); err != nil {
+		return nil, err
+	}
+	im.renameSiblings(readable)
+	im.pending = nil
+	return readable, nil
+}
+
+func (im *Importer) logCreated(ctx context.Context) error {
 	for _, activity := range im.pending {
-		if _, err = im.s.history.Log(ctx, im.a, history.LogInput{
+		if _, err := im.s.history.Log(ctx, im.a, history.LogInput{
 			Kind: kindName, RecordID: activity.ID, RecordName: activity.Name, Action: history.ActionCreated,
 		}); err != nil {
-			return nil, err
+			return err
 		}
 	}
+	return nil
+}
+
+func (im *Importer) renameSiblings(readable map[string]string) {
 	for _, p := range im.places {
 		for i := range p.siblings {
 			if id, found := readable[p.siblings[i].ID]; found {
@@ -110,8 +123,6 @@ func (im *Importer) Flush(ctx context.Context) (map[string]string, error) {
 			}
 		}
 	}
-	im.pending = nil
-	return readable, nil
 }
 
 // Forget has the initiatives read again, after a change made beside the importer; nothing may be kept.
@@ -144,9 +155,25 @@ func (im *Importer) place(ctx context.Context, initiativeID string) (*importPlac
 // importDefaults are the new form's defaults (FormView.Defaults and the types' planned costs) without the
 // rest of the form.
 func (s *Service) importDefaults(ctx context.Context, pc planContext) (ImportDefaults, error) {
-	workflows, err := s.workflows.ListWorkflows(ctx)
+	active, err := s.activeWorkflows(ctx)
 	if err != nil {
 		return ImportDefaults{}, err
+	}
+	defaults, err := s.defaults(ctx, pc, active)
+	if err != nil {
+		return ImportDefaults{}, err
+	}
+	costs, err := s.typeCosts(ctx, pc)
+	if err != nil {
+		return ImportDefaults{}, err
+	}
+	return ImportDefaults{Defaults: *defaults, TypeCosts: costs}, nil
+}
+
+func (s *Service) activeWorkflows(ctx context.Context) ([]WorkflowOption, error) {
+	workflows, err := s.workflows.ListWorkflows(ctx)
+	if err != nil {
+		return nil, err
 	}
 	var active []WorkflowOption
 	for _, w := range workflows {
@@ -154,25 +181,25 @@ func (s *Service) importDefaults(ctx context.Context, pc planContext) (ImportDef
 			active = append(active, WorkflowOption{ID: w.ID})
 		}
 	}
-	defaults, err := s.defaults(ctx, pc, active)
-	if err != nil {
-		return ImportDefaults{}, err
-	}
-	out := ImportDefaults{Defaults: *defaults, TypeCosts: map[string]money.Money{}}
+	return active, nil
+}
+
+func (s *Service) typeCosts(ctx context.Context, pc planContext) (map[string]money.Money, error) {
 	types, err := s.settings.ActivityTypes(ctx)
 	if err != nil {
-		return ImportDefaults{}, err
+		return nil, err
 	}
 	rates, err := s.settings.Rates(ctx)
 	if err != nil {
-		return ImportDefaults{}, err
+		return nil, err
 	}
+	costs := map[string]money.Money{}
 	for _, t := range types {
 		if cost := inPlanCurrency(t.DefaultPlannedCost, pc.plan.Currency, rates); t.Active && pc.model.Allows(t.ID) && cost != nil {
-			out.TypeCosts[t.ID] = *cost
+			costs[t.ID] = *cost
 		}
 	}
-	return out, nil
+	return costs, nil
 }
 
 // placeSiblings is the Store a check of an import reads the initiative's activities from: those stored and
