@@ -26,3 +26,4 @@ Consequences. Add a new ADR (next number) instead of editing an accepted one; ma
 | [0018](0018-web-content-security-policy.md) | The web app's content security policy, with inline style elements allowed | Accepted |
 | [0019](0019-overspend-guard-unscoped-budget-read.md) | The overspend guard reads every budget without the actor's scope | Proposed |
 | [0020](0020-simulated-performance-feed.md) | Performance data arrives only by upload or a simulated feed behind an adapter | Proposed |
+| [0021](0021-one-active-source-rule-in-the-service.md) | One active source per model stage is a service rule, not a database constraint | Proposed |
