@@ -78,6 +78,8 @@ type Review interface {
 
 type Codes interface {
 	ListMediaCodes(ctx context.Context, scope authz.Scope, activityID string) ([]MediaCode, error)
+	PutMediaCode(ctx context.Context, c MediaCode) error
+	PutIntegrationID(ctx context.Context, k IntegrationID) error
 	TakeNextCode(ctx context.Context, by actor.Actor, at time.Time) (int64, error)
 }
 

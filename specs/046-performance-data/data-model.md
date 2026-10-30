@@ -37,8 +37,11 @@ and the resulting *Current · Stale · Failed · Inactive*. Storing it would go 
 | `stage` / `web_metric` | text, nullable | `web_metric` ∈ sessions, visits, engagement touches (046-C11) |
 | `model_id` | text, nullable → `models` | which model this column supplies |
 
-**Constraint**: at most one *active* source per (model, stage) and per (model, revenue) — FR-003. Enforced by a
-partial unique index so the refusal is true in the database, not only in the service.
+**Not a constraint**: FR-003 (at most one *active* source per model stage, and per model revenue) spans
+this table and `performance_sources.status`, and an index predicate may not contain a subquery. A plain
+unique index would wrongly refuse a mapping whose only rival is inactive, which FR-004 allows. The rule is
+enforced in the service and recorded in **ADR-0021**; the indexes below only make that check a single
+indexed read.
 
 ## 00031 — imports, facts and the review queue
 

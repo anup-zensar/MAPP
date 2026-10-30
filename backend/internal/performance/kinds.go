@@ -7,9 +7,7 @@ import (
 	"mapp/internal/history"
 )
 
-// Kinds registers the data source, the one record of this feature people create, edit and delete. Facts,
-// imports, review rows and media codes are never moved to the recycle bin: a fact is replaced or undone
-// with its import, and a used media code is deactivated rather than deleted (FR-042).
+// Only the data source reaches the recycle bin: a fact is replaced or undone with its import (FR-042).
 func (s *Service) Kinds() []history.Kind {
 	return []history.Kind{{
 		Name: sourceKind, Singular: sourceKindSingular, Plural: sourceKindPlural,

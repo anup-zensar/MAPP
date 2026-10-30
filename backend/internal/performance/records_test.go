@@ -78,3 +78,21 @@ func TestKinds_RegistersTheDataSource_FR045(t *testing.T) {
 		t.Error("the kind must carry Snapshot, Remove and Put so the recycle bin can hold a data source")
 	}
 }
+
+func TestDeleteSource_LogsAndGoesToTheRecycleBin_FR045(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	src := f.createSource(t, "Marketing automation")
+
+	if err := f.service.DeleteSource(t.Context(), alex, src.ID); err != nil {
+		t.Fatalf("DeleteSource: %v", err)
+	}
+
+	entries := f.log(t)
+	if len(entries) != 2 {
+		t.Fatalf("after create and delete the log holds %d entries, want 2", len(entries))
+	}
+	if entries[0].Action != history.ActionDeleted || entries[0].RecordID != src.ID {
+		t.Errorf("newest entry = %s/%s, want %s/deleted", entries[0].RecordID, entries[0].Action, src.ID)
+	}
+}

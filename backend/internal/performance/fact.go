@@ -21,7 +21,6 @@ const (
 	ImportUndone    ImportStatus = "undone"
 )
 
-// Outcome is where a row ended up. The five always account for every row read (FR-022).
 type Outcome string
 
 const (

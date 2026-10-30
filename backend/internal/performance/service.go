@@ -87,18 +87,11 @@ func (s *Service) CreateSource(ctx context.Context, a actor.Actor, in SourceInpu
 
 // DeleteSource refuses while the source holds facts and says Deactivate instead, because deleting it would
 // silently restate every figure its data fed (FR-002).
-func (s *Service) DeleteSource(ctx context.Context, _ actor.Actor, id string) error {
+func (s *Service) DeleteSource(ctx context.Context, a actor.Actor, id string) error {
 	if err := authz.Require(ctx, PermissionImport); err != nil {
 		return err
 	}
 	return s.tx.Write(ctx, func(ctx context.Context) error {
-		deleted, err := s.repo.DeleteSource(ctx, id)
-		if err != nil {
-			return err
-		}
-		if deleted {
-			return nil
-		}
 		found, err := s.repo.ListSources(ctx, id)
 		if err != nil {
 			return err
@@ -106,7 +99,12 @@ func (s *Service) DeleteSource(ctx context.Context, _ actor.Actor, id string) er
 		if len(found) == 0 {
 			return errs.NotFound(msgSourceNotFound)
 		}
-		return errs.InUse(fmt.Sprintf(msgHoldsFacts, found[0].Name))
+		if found[0].FactCount > 0 {
+			return errs.InUse(fmt.Sprintf(msgHoldsFacts, found[0].Name))
+		}
+		// MoveToBin writes the ActionDeleted entry itself, so this must not log again (one entry per change).
+		_, err = s.history.MoveToBin(ctx, a, sourceKind, id)
+		return err
 	})
 }
 

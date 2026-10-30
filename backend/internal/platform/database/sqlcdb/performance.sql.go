@@ -678,6 +678,93 @@ func (q *Queries) MatchActivitiesByMediaCode(ctx context.Context, arg MatchActiv
 	return items, nil
 }
 
+const putIntegrationID = `-- name: PutIntegrationID :exec
+INSERT INTO activity_integration_ids (
+    id, activity_id, source_id, value,
+    version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+ON CONFLICT (id) DO UPDATE SET
+    value = excluded.value, version = excluded.version, updated_at = excluded.updated_at,
+    updated_by_id = excluded.updated_by_id, updated_by_name = excluded.updated_by_name
+`
+
+type PutIntegrationIDParams struct {
+	ID            string
+	ActivityID    string
+	SourceID      string
+	Value         string
+	Version       int
+	CreatedAt     time.Time
+	CreatedByID   string
+	CreatedByName string
+	UpdatedAt     time.Time
+	UpdatedByID   string
+	UpdatedByName string
+}
+
+func (q *Queries) PutIntegrationID(ctx context.Context, arg PutIntegrationIDParams) error {
+	_, err := q.db.Exec(ctx, putIntegrationID,
+		arg.ID,
+		arg.ActivityID,
+		arg.SourceID,
+		arg.Value,
+		arg.Version,
+		arg.CreatedAt,
+		arg.CreatedByID,
+		arg.CreatedByName,
+		arg.UpdatedAt,
+		arg.UpdatedByID,
+		arg.UpdatedByName,
+	)
+	return err
+}
+
+const putMediaCode = `-- name: PutMediaCode :exec
+INSERT INTO media_codes (
+    id, code, activity_id, attributes, landing_page, status,
+    version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+ON CONFLICT (id) DO UPDATE SET
+    attributes = excluded.attributes, landing_page = excluded.landing_page, status = excluded.status,
+    version = excluded.version, updated_at = excluded.updated_at,
+    updated_by_id = excluded.updated_by_id, updated_by_name = excluded.updated_by_name
+`
+
+type PutMediaCodeParams struct {
+	ID            string
+	Code          int64
+	ActivityID    string
+	Attributes    []byte
+	LandingPage   string
+	Status        string
+	Version       int
+	CreatedAt     time.Time
+	CreatedByID   string
+	CreatedByName string
+	UpdatedAt     time.Time
+	UpdatedByID   string
+	UpdatedByName string
+}
+
+func (q *Queries) PutMediaCode(ctx context.Context, arg PutMediaCodeParams) error {
+	_, err := q.db.Exec(ctx, putMediaCode,
+		arg.ID,
+		arg.Code,
+		arg.ActivityID,
+		arg.Attributes,
+		arg.LandingPage,
+		arg.Status,
+		arg.Version,
+		arg.CreatedAt,
+		arg.CreatedByID,
+		arg.CreatedByName,
+		arg.UpdatedAt,
+		arg.UpdatedByID,
+		arg.UpdatedByName,
+	)
+	return err
+}
+
 const putPerformanceFact = `-- name: PutPerformanceFact :exec
 INSERT INTO performance_facts (
     id, source_id, import_id, source_reference, activity_id, matched_on, fact_date, stage, web_metric,

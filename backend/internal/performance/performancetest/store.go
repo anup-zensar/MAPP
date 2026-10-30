@@ -283,3 +283,17 @@ func (s *Store) TakeNextCode(_ context.Context, _ actor.Actor, _ time.Time) (int
 	s.NextCode++
 	return code, nil
 }
+
+func (s *Store) PutMediaCode(ctx context.Context, c performance.MediaCode) error {
+	return s.codes.Put(ctx, c)
+}
+
+func (s *Store) PutIntegrationID(_ context.Context, k performance.IntegrationID) error {
+	key := strings.ToLower(strings.TrimSpace(k.Value))
+	if s.Keys[performance.MatchedIntegrationID] == nil {
+		s.Keys[performance.MatchedIntegrationID] = map[string][]string{}
+	}
+	s.Keys[performance.MatchedIntegrationID][key] = append(
+		s.Keys[performance.MatchedIntegrationID][key], k.ActivityID)
+	return nil
+}

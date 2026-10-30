@@ -175,3 +175,22 @@ SELECT sqlc.embed(performance_facts)
 FROM performance_facts
 WHERE source_id = sqlc.arg(source_id) AND source_reference = sqlc.arg(source_reference)
     AND replaced_by_id IS NULL;
+
+-- name: PutMediaCode :exec
+INSERT INTO media_codes (
+    id, code, activity_id, attributes, landing_page, status,
+    version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+ON CONFLICT (id) DO UPDATE SET
+    attributes = excluded.attributes, landing_page = excluded.landing_page, status = excluded.status,
+    version = excluded.version, updated_at = excluded.updated_at,
+    updated_by_id = excluded.updated_by_id, updated_by_name = excluded.updated_by_name;
+
+-- name: PutIntegrationID :exec
+INSERT INTO activity_integration_ids (
+    id, activity_id, source_id, value,
+    version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+ON CONFLICT (id) DO UPDATE SET
+    value = excluded.value, version = excluded.version, updated_at = excluded.updated_at,
+    updated_by_id = excluded.updated_by_id, updated_by_name = excluded.updated_by_name;

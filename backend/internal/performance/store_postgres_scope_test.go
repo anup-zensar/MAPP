@@ -65,10 +65,16 @@ func pgPerformance(t *testing.T) *performance.PostgresStore {
 			FileName: "feed.csv", Origin: performance.OriginUpload, Status: performance.ImportCompleted,
 			Counts: performance.Counts{Read: 2, Matched: 2}, Meta: pgMeta}))
 		for _, n := range []string{"1", "2"} {
-			err = errors.Join(err, store.PutFact(ctx, performance.Fact{ID: "PF-" + n, SourceID: "PS-1",
-				ImportID: "PIM-1", SourceReference: "r" + n, ActivityID: "A-100" + n,
-				MatchedOn: performance.MatchedActivityID, FactDate: pgMeta.CreatedAt, Stage: "inq",
-				Count: countOf(5), Meta: pgMeta}))
+			err = errors.Join(err,
+				store.PutFact(ctx, performance.Fact{ID: "PF-" + n, SourceID: "PS-1",
+					ImportID: "PIM-1", SourceReference: "r" + n, ActivityID: "A-100" + n,
+					MatchedOn: performance.MatchedActivityID, FactDate: pgMeta.CreatedAt, Stage: "inq",
+					Count: countOf(5), Meta: pgMeta}),
+				store.PutMediaCode(ctx, performance.MediaCode{ID: "MC-" + n, Code: int64(9000000 + atoiOf(n)),
+					ActivityID: "A-100" + n, Attributes: map[string]string{}, Status: performance.StatusActive,
+					Meta: pgMeta}),
+				store.PutIntegrationID(ctx, performance.IntegrationID{ID: "IID-" + n, ActivityID: "A-100" + n,
+					SourceID: "PS-1", Value: "ext-" + n, Meta: pgMeta}))
 		}
 		return err
 	})
@@ -76,6 +82,13 @@ func pgPerformance(t *testing.T) *performance.PostgresStore {
 }
 
 func countOf(n int) *int { return &n }
+
+func atoiOf(n string) int {
+	if n == "2" {
+		return 2
+	}
+	return 1
+}
 
 func pgWrite(t *testing.T, db *database.DB, fn func(ctx context.Context) error) {
 	t.Helper()
@@ -142,11 +155,51 @@ func TestPostgresStore_MediaCodesOutsideTheScopeAreInvisible_FR044(t *testing.T)
 	t.Parallel()
 	store := pgPerformance(t)
 
-	codes, err := store.ListMediaCodes(t.Context(), team1Only, "A-1002")
+	mine, err := store.ListMediaCodes(t.Context(), team1Only, "A-1001")
 	if err != nil {
-		t.Fatalf("ListMediaCodes() error: %v", err)
+		t.Fatalf("ListMediaCodes(A-1001) error: %v", err)
 	}
-	if len(codes) != 0 {
-		t.Errorf("outside my scope I see %d media codes, want 0", len(codes))
+	if len(mine) != 1 {
+		t.Fatalf("in my own team I see %d media codes, want 1: without a row here the test proves nothing", len(mine))
+	}
+
+	theirs, err := store.ListMediaCodes(t.Context(), team1Only, "A-1002")
+	if err != nil {
+		t.Fatalf("ListMediaCodes(A-1002) error: %v", err)
+	}
+	if len(theirs) != 0 {
+		t.Errorf("outside my scope I see %d media codes, want 0", len(theirs))
+	}
+}
+
+func TestPostgresStore_MatchByMediaCodeStaysInScope_FR044(t *testing.T) {
+	t.Parallel()
+	store := pgPerformance(t)
+
+	found, err := store.MatchByMediaCode(t.Context(), team1Only, []int64{9000001, 9000002})
+	if err != nil {
+		t.Fatalf("MatchByMediaCode() error: %v", err)
+	}
+	if _, reached := found["9000001"]; !reached {
+		t.Error("a media code inside the scope did not resolve")
+	}
+	if _, reached := found["9000002"]; reached {
+		t.Error("a media code outside the scope resolved: matching must not reach it")
+	}
+}
+
+func TestPostgresStore_MatchByIntegrationIDStaysInScope_FR044(t *testing.T) {
+	t.Parallel()
+	store := pgPerformance(t)
+
+	found, err := store.MatchByIntegrationID(t.Context(), team1Only, "PS-1", []string{"ext-1", "ext-2"})
+	if err != nil {
+		t.Fatalf("MatchByIntegrationID() error: %v", err)
+	}
+	if _, reached := found["ext-1"]; !reached {
+		t.Error("an integration id inside the scope did not resolve")
+	}
+	if _, reached := found["ext-2"]; reached {
+		t.Error("an integration id outside the scope resolved: matching must not reach it")
 	}
 }

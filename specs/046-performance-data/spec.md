@@ -30,7 +30,7 @@ Hive9 functional analysis §E4.1, §E7.2–E7.4, §G7 ·
 [Measure metrics](../../docs/product/measure-metrics.md) §2 (*Actual INQ / MQL / Deals / Revenue*,
 *Is integrated*) · [Measure module build guide](../../docs/sdd/measure-module-build.md) §2 (the 046 row),
 §4 (ownership), §7 (words) · Feature 015 (import, matching and review pattern) · Feature 030 (external keys,
-simulated GSAP) · ADR-0016 (simulated GSAP) and the ADR-0019 this feature writes (simulated performance feed) ·
+simulated GSAP) · ADR-0016 (simulated GSAP) and the ADR-0020 this feature writes (simulated performance feed) ·
 Decisions D-367 (permissions `performance.import`, `performance.link`) and D-370 (performance data only from a
 simulated feed behind an adapter) · Constitution 4.8.0 non-negotiable 13 (live performance connectors are out
 of scope).
@@ -72,7 +72,7 @@ these into the decision log at the end of wave B.
   "simulated pull"? → A: An adapter in the shape of the simulated GSAP (ADR-0016): it produces rows on demand
   for a source whose delivery route says so, and those rows then travel **the same validation, matching and
   review path as an uploaded file** (client 020 FR-008: "any future automated feed passes through the same
-  rules"). No network call, no scheduler, no external credential. ADR-0019 records this.
+  rules"). No network call, no scheduler, no external credential. ADR-0020 records this.
 
 - **046-C6** — Q: How is personal data handled? → A: A file carrying personal-data columns is refused **in
   full** — not row by row — and nothing from it is stored (client 020 FR-010). Journey rows carry only a
@@ -115,7 +115,7 @@ these into the decision log at the end of wave B.
   action on the data source**, by someone holding `performance.import` — never a schedule and never
   automatically. This follows the simulated GSAP precedent exactly (feature 033: the requisitioner opens the
   record and chooses "Create GSAP PR and PO (simulated)", a single operation behind a permission), which
-  ADR-0016 set and ADR-0019 restates for this feed. A scheduler would be a live connector in all but name,
+  ADR-0016 set and ADR-0020 restates for this feed. A scheduler would be a live connector in all but name,
   which constitution non-negotiable 13 puts out of scope.
 
 

@@ -152,3 +152,34 @@ func (s *PostgresStore) TakeNextCode(ctx context.Context, by actor.Actor, at tim
 	}
 	return code, nil
 }
+
+func (s *PostgresStore) PutMediaCode(ctx context.Context, c MediaCode) error {
+	attributes, err := json.Marshal(c.Attributes)
+	if err != nil {
+		return fmt.Errorf("write the attributes of media code %s: %w", c.ID, err)
+	}
+	err = s.db.Queries(ctx).PutMediaCode(ctx, sqlcdb.PutMediaCodeParams{
+		ID: c.ID, Code: c.Code, ActivityID: c.ActivityID, Attributes: attributes,
+		LandingPage: c.LandingPage, Status: string(c.Status),
+		Version: c.Version, CreatedAt: c.CreatedAt, CreatedByID: c.CreatedBy.ID,
+		CreatedByName: c.CreatedBy.Name, UpdatedAt: c.UpdatedAt, UpdatedByID: c.UpdatedBy.ID,
+		UpdatedByName: c.UpdatedBy.Name,
+	})
+	if err != nil {
+		return fmt.Errorf("save media code %s: %w", c.ID, err)
+	}
+	return nil
+}
+
+func (s *PostgresStore) PutIntegrationID(ctx context.Context, k IntegrationID) error {
+	err := s.db.Queries(ctx).PutIntegrationID(ctx, sqlcdb.PutIntegrationIDParams{
+		ID: k.ID, ActivityID: k.ActivityID, SourceID: k.SourceID, Value: k.Value,
+		Version: k.Version, CreatedAt: k.CreatedAt, CreatedByID: k.CreatedBy.ID,
+		CreatedByName: k.CreatedBy.Name, UpdatedAt: k.UpdatedAt, UpdatedByID: k.UpdatedBy.ID,
+		UpdatedByName: k.UpdatedBy.Name,
+	})
+	if err != nil {
+		return fmt.Errorf("save integration id %s: %w", k.ID, err)
+	}
+	return nil
+}
