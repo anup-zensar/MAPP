@@ -11,7 +11,7 @@ export function plansListHref(scope: HomeScope): string {
 
 /**
  * Where "Activities I own" leads (D-174): All work (feature 010) filtered to the person once, on the
- * plan years of those activities (038 FR-032); All work then drops the filter from its address (D-122).
+ * plan years of those activities; All work then drops the filter from its address (D-122).
  */
 export function myActivitiesHref(
   personId: string,

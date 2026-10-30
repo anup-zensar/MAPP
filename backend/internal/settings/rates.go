@@ -233,7 +233,7 @@ func (s *Service) DeleteRate(ctx context.Context, a actor.Actor, id string) (his
 	return entry, err
 }
 
-// setTodaysRate adds or replaces today's rate by hand (FR-004); before is the rate in use before it.
+// setTodaysRate adds or replaces today's rate by hand; before is the rate in use before it.
 func (s *Service) setTodaysRate(ctx context.Context, a actor.Actor, c Currency, rate, before money.Rate) error {
 	book, err := s.rateBook(ctx)
 	if err != nil {

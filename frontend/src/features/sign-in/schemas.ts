@@ -19,7 +19,7 @@ export function noticeOf(routerState: unknown): SessionEnd | null {
   return parsed.success ? parsed.data.notice : null;
 }
 
-/** The title of the form whose typed changes the lost session took (038 FR-031); null for none. */
+/** The title of the form whose typed changes the lost session took; null for none. */
 export function lostChangesOf(routerState: unknown): string | null {
   const parsed = noticeStateSchema.safeParse(routerState);
   return parsed.success ? (parsed.data.lostChanges ?? null) : null;

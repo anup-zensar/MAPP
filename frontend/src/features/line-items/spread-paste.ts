@@ -2,7 +2,7 @@ import { parseMoneyInput } from '@/format/decimal';
 import { plural } from '@/format/text';
 import { formatMonth } from './line-item-math';
 
-/** Pasted cells, each as an amount when it reads as one; null for a single value (038 FR-042). */
+/** Pasted cells, each as an amount when it reads as one; null for a single value. */
 export function pastedValues(text: string): string[] | null {
   const cells = text
     .split(/[\t\r\n]+/)

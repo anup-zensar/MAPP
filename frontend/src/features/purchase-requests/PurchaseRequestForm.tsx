@@ -64,8 +64,8 @@ export interface PurchaseRequestFormProps {
 }
 
 /**
- * New and edit purchase request (032 FR-003, FR-005 – FR-016, FR-053, FR-054): one form. Submit
- * changes asks first (038 FR-028).
+ * New and edit purchase request: one form. Submit
+ * changes asks first.
  */
 export function PurchaseRequestForm(props: PurchaseRequestFormProps) {
   const { stored, options } = props;

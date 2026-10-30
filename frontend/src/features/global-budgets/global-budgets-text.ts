@@ -59,7 +59,7 @@ export const toasts = {
   removed: (plan: string) => `Allocation to '${plan}' removed`,
 };
 
-/** "63%" of the budget used, a whole percent (038 FR-044); "—" when the allocation is 0.00. */
+/** "63%" of the budget used, a whole percent; "—" when the allocation is 0.00. */
 export function budgetUsedText(percent: string | null): string {
   return percent === null ? '—' : `${Math.round(Number(percent))}%`;
 }

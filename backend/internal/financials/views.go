@@ -170,7 +170,7 @@ type TypeCounts struct {
 	Invoice       int  `json:"invoice"`
 	Payment       int  `json:"payment"`
 	Accrual       int  `json:"accrual"`
-	NotLinked     *int `json:"notLinked,omitempty"` // nil for people who may not see not-linked transactions (038 FR-004)
+	NotLinked     *int `json:"notLinked,omitempty"` // nil for people who may not see not-linked transactions
 }
 
 type PlanChoice struct {

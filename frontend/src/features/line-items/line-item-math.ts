@@ -53,7 +53,7 @@ export function centsInput(cents: bigint): string {
   return formatAmount(formatCents(cents));
 }
 
-/** "Mar 2026" for "2026-03", or in the person's date format ("03/2026", 038 FR-058). */
+/** "Mar 2026" for "2026-03", or in the person's date format ("03/2026"). */
 export function formatMonth(month: string, format?: DateFormat): string {
   return formatMonthLabel(month, format);
 }

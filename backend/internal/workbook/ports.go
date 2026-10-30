@@ -16,7 +16,7 @@ type Planning interface {
 	Exists(ctx context.Context, level Level, id string) (bool, error)
 }
 
-// Writer applies the single operations' rules, reading what they share once (038 FR-008). A created record may
+// Writer applies the single operations' rules, reading what they share once. A created record may
 // have a provisional id until Flush stores what is kept; the applier flushes after each sheet.
 type Writer interface {
 	Create(ctx context.Context, a actor.Actor, r NewRecord) (string, error)

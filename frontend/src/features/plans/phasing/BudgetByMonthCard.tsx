@@ -31,7 +31,7 @@ export interface BudgetByMonthCardProps {
   };
   year: number;
   currency: string;
-  /** Whether the reader may edit the record: Edit is offered only then (038 FR-029). */
+  /** Whether the reader may edit the record: Edit is offered only then. */
   access?: Availability;
   /** 'page' on the plan page (a card, h2), 'panel' in a campaign or initiative panel (h3). */
   variant?: 'page' | 'panel';
@@ -235,7 +235,7 @@ export function BudgetByMonthCard({
   );
 }
 
-/** Why the months add up to more than the planned cost (038 FR-024). */
+/** Why the months add up to more than the planned cost. */
 function aboveCostNote(count: number): string {
   return count === 1
     ? '1 activity has line items above its planned cost, so its months add up to more than its planned cost.'

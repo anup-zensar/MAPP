@@ -86,7 +86,7 @@ export function FormPanel({
   );
 }
 
-/** Enter saves from a choice list too, as browsers do only from text fields (038 FR-047). */
+/** Enter saves from a choice list too, as browsers do only from text fields. */
 function submitOnEnterInSelect(event: KeyboardEvent<HTMLFormElement>) {
   if (event.key === 'Enter' && event.target instanceof HTMLSelectElement) {
     event.preventDefault();

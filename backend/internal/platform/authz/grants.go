@@ -98,7 +98,7 @@ func NewGrants(personID string, roles []GrantedRole, myTeamIDs []string, permsBy
 		}
 	}
 	if _, imports := g.perms[FinanceImport]; !imports {
-		delete(g.perms, FinanceLink) // 038 FR-006: linking is only for people who see not-linked transactions
+		delete(g.perms, FinanceLink) // linking is only for people who see not-linked transactions
 	}
 	for p, r := range g.perms {
 		if r.all {

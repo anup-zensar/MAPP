@@ -184,7 +184,7 @@ function CustomGrid({
   const last = months[months.length - 1]?.month;
   const [leftOut, setLeftOut] = useState<string | null>(null);
 
-  // A row pasted from a spreadsheet fills this month and the ones after it (038 FR-042).
+  // A row pasted from a spreadsheet fills this month and the ones after it.
   function paste(event: ClipboardEvent<HTMLDivElement>) {
     const name = event.target instanceof HTMLInputElement ? event.target.name : '';
     const index = months.findIndex(({ month }) => monthFieldId(month) === name);

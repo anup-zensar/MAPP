@@ -1,7 +1,7 @@
 /**
  * One word per status colour (design system §4.1, §11 rule 6; functional review A-02, UI audit
  * X-14): the API writes the approval roll-up of plans, campaigns and initiatives as "Partly
- * approved" (038 FR-033), so every label is shown as sent.
+ * approved", so every label is shown as sent.
  */
 
 /** The word shown for a status chip of All work. */

@@ -33,7 +33,7 @@ let closeShownUndo: (() => void) | null = null;
  *   const afterDelete = useUndoableDelete({ invalidate: [['sample-folders']] });
  *   afterDelete(await deleteFolder(id));
  *
- * It shows "Sample folder 'Ideas' deleted" (038 FR-013) with Undo for 10 seconds, in place of
+ * It shows "Sample folder 'Ideas' deleted" with Undo for 10 seconds, in place of
  * any earlier Undo message. Undo puts the record back exactly as it was — or says why it cannot —
  * and refreshes the given lists.
  */

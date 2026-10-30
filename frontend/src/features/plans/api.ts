@@ -153,7 +153,7 @@ export function useDeletePlan() {
   return useMutation({
     mutationFn: (planId: string) =>
       call(api.DELETE('/api/v1/plans/{planId}', { params: { path: { planId } } })),
-    // The deleted plan's own queries are left out: asked again they would answer 404 (038 FR-013).
+    // The deleted plan's own queries are left out: asked again they would answer 404.
     onSuccess: (_result, planId) => refresh(undefined, planId),
     onError: () => refresh(),
   });

@@ -10,7 +10,7 @@ import (
 const monthsInYear = 12
 
 // months is the planned cost by month as All work's Budget & cost view spreads it, and the payments by posting
-// month of the plans whose financial figures count (FR-014), and the activities above planned cost (038 FR-024).
+// month of the plans whose financial figures count, and the activities above planned cost.
 func (b *board) months(planned map[string]allwork.Months, paid map[string]map[string]money.Amount, year int,
 	d money.Display) Months {
 	plannedBy, actualBy := map[string]money.Amount{}, map[string]money.Amount{}

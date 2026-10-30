@@ -1,5 +1,5 @@
 // Package home is the read-only Home dashboard (feature 009): every figure is calculated on the server, so it
-// equals the one on the record's own page (FR-017), and each card has its own endpoint (FR-022).
+// equals the one on the record's own page, and each card has its own endpoint.
 package home
 
 import (

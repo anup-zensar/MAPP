@@ -42,7 +42,7 @@ export function percentText(percent: number | null): string {
   return percent === null ? NOTHING : `${percent}%`;
 }
 
-/** "Sep 2026" (never "Sept"), or in the person's date format ("09/2026", 038 FR-058). */
+/** "Sep 2026" (never "Sept"), or in the person's date format ("09/2026"). */
 export function monthLabel(month: string, format?: DateFormat): string {
   return formatMonth(month, format);
 }

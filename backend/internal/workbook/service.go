@@ -68,7 +68,7 @@ func (s *Service) file(ctx context.Context, a actor.Actor, planID string, withRe
 }
 
 // Check runs the import and discards it: every problem of every row and what Import would do (FR-031).
-// The file is read before the Write, which holds back other people's saves (038 FR-009).
+// The file is read before the Write, which holds back other people's saves.
 func (s *Service) Check(ctx context.Context, a actor.Actor, planID string, up Upload) (Check, error) {
 	file, err := readFileOf(up)
 	if err != nil {

@@ -72,7 +72,7 @@
   font-size: var(--text-xs);
 }
 
-/* One line of note, kept free for a note that comes and goes (038 FR-046). */
+/* One line of note, kept free for a note that comes and goes. */
 .reserved {
   min-height: 1lh;
 }

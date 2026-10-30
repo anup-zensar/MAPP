@@ -13,7 +13,7 @@ import (
 )
 
 // Link links a not-linked transaction by hand: one the rules linked is corrected in GSAP instead. The checks
-// run in the order of 038 FR-007: a transaction a may not see is missing; then import and link in the target
+// run in this order: a transaction a may not see is missing; then import and link in the target
 // line item's plan, a target a may not see answering as a missing one; then the version; then the state.
 func (s *Service) Link(ctx context.Context, a actor.Actor, id string, req LinkRequest) (TransactionView, error) {
 	if err := checkLinkRequest(req); err != nil {
@@ -84,7 +84,7 @@ func (s *Service) visible(ctx context.Context, a actor.Actor, id string) (*book,
 	return b, t, nil
 }
 
-// linkTarget checks that a may link into the line item lineItemID and returns it (038 FR-005).
+// linkTarget checks that a may link into the line item lineItemID and returns it.
 func (s *Service) linkTarget(ctx context.Context, a actor.Actor, b *book, lineItemID string) (*tnode, error) {
 	if err := s.access.Import(ctx, a); err != nil {
 		return nil, err
@@ -117,7 +117,7 @@ func (s *Service) missingLineItem(ctx context.Context, id string) error {
 }
 
 // Unlink undoes only a link made by a person; the rules then match the transaction again. The checks run in
-// the order of 038 FR-007: visible, link in the linked line item's plan, version, state.
+// this order: visible, link in the linked line item's plan, version, state.
 func (s *Service) Unlink(ctx context.Context, a actor.Actor, id string, req UnlinkRequest) (TransactionView, error) {
 	if req.Version == nil {
 		return TransactionView{}, fieldProblem("version", msgEnterVersion)

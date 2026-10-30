@@ -18,7 +18,7 @@ type activity struct {
 	lineItems    []*lineItem
 	planned      money.Amount
 	months       [12]money.Amount
-	notScheduled money.Amount // planned cost not placed in a month, never below 0 (038 FR-023)
+	notScheduled money.Amount // planned cost not placed in a month, never below 0
 	above        money.Amount // months above the planned cost: line items exceeding it
 	outside      money.Amount
 	spend        Spend
@@ -79,7 +79,7 @@ func (t tree) activitiesUnder(campaigns []*Record) []*activity {
 	return list
 }
 
-// placePlanned leaves not scheduled what fits no month, and keeps the months above planned cost apart (038 FR-023).
+// placePlanned leaves not scheduled what fits no month, and keeps the months above planned cost apart.
 func (a *activity) placePlanned(year int) {
 	typed := amountOf(a.rec.PlannedCost)
 	var onLineItems money.Amount

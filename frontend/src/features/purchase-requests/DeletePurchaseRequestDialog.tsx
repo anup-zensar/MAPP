@@ -17,7 +17,7 @@ export interface DeletePurchaseRequestDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-/** Delete purchase request with Undo (032 FR-042, FR-055; 038 FR-013): never asks for it again. */
+/** Delete purchase request with Undo: never asks for it again. */
 export function DeletePurchaseRequestDialog({
   purchaseRequest,
   open,

@@ -47,7 +47,7 @@ func (d *demo) loadTree(ctx context.Context) ([]treeRecord, error) {
 	return t.records, nil
 }
 
-// stamp returns what makes the record of meta created at by, as its first History entry says (038 FR-060).
+// stamp returns what makes the record of meta created at by, as its first History entry says.
 func stamp(meta *record.Meta, put func(context.Context) error) func(context.Context, time.Time, actor.Actor) error {
 	return func(ctx context.Context, at time.Time, by actor.Actor) error {
 		if meta.Version == 1 {

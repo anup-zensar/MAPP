@@ -36,7 +36,7 @@ func TestHomeSummary_Contract(t *testing.T) {
 		t.Errorf("plans = %+v (everything %+v); want 1 published, 1 draft (4: 1 published, 3 draft)", got.Plans, everything.Plans)
 	}
 	if o := got.ActivitiesOwned; o.Count != 9 || o.Declined != 1 || o.Submitted != 1 || o.YearFrom == nil ||
-		*o.YearFrom != 2026 || o.YearTo == nil || *o.YearTo != 2027 { // 038 FR-032: her plans' years
+		*o.YearFrom != 2026 || o.YearTo == nil || *o.YearTo != 2027 { // her plans' years
 		t.Errorf("activities owned = %+v, want 9 in 2026–2027: 1 declined, 1 submitted", o)
 	}
 	if got.WaitingForMe != (home.WaitingCounts{}) {

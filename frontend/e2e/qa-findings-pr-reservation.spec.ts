@@ -17,7 +17,7 @@ import {
 } from './purchase-request-flow';
 
 // 038 US1 on the real API: lowering an approved purchase request keeps the approved amount reserved
-// until the change is approved (FR-001 – FR-003, C-1).
+// until the change is approved.
 
 const nextYear = new Date().getUTCFullYear() + 1;
 
@@ -54,7 +54,7 @@ test('038 FR-001 (C-1): a change in review keeps the approved amount reserved', 
   await submitOnScreen(page, prName);
   await approveFromInbox(page, prName);
 
-  // Priya lowers it to 12,000.00 USD and submits the change (FR-028 confirmation first).
+  // Priya lowers it to 12,000.00 USD and submits the change (confirmation first).
   await signInAs(page, PRIYA);
   await page.goto(`/purchase-requests/${prId}/edit`);
   await amountField(page).fill('12000.00');

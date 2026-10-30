@@ -29,7 +29,7 @@ func TestFinanceAPI_ListYear_FR015(t *testing.T) {
 	gone := alex.Do(t, http.MethodGet, "/api/v1/finance-budget-items/FBI-9999", nil)
 
 	assertBudgets2026(t, current)
-	if next.Year != 2027 || next.Total != 1 || len(next.Items) != 1 || next.Items[0].Name != "2027 Lubricants Budget" { // 038 L-30 seed
+	if next.Year != 2027 || next.Total != 1 || len(next.Items) != 1 || next.Items[0].Name != "2027 Lubricants Budget" {
 		t.Errorf("2027 = %+v", next)
 	}
 	if item.BudgetName != "2026 Lubricants Budget" || item.Year != 2026 || len(item.Locks) != 1 || item.Locks[0].Field != "year" {

@@ -21,7 +21,7 @@ export function useDecidesNow(activity: Pick<ApprovalActivity, 'id' | 'status'>)
   return submitted && approval.data !== undefined && decisionRole(approval.data) === 'decide';
 }
 
-/** Why a person who may decide cannot approve now (038 FR-020); "" otherwise. */
+/** Why a person who may decide cannot approve now; "" otherwise. */
 export function approveRefusal(actions: { approve: Availability; decline: Availability }): string {
   const { approve, decline } = actions;
   return !approve.available && approve.reason !== '' && decline.available ? approve.reason : '';

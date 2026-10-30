@@ -42,7 +42,7 @@ export function RecentlyDeletedCard({ entries }: { entries: RecycleBinListItem[]
         {entries.map((entry) => (
           <li key={entry.id} className={styles.binEntry}>
             <p>{deletedText(entry, format.dateTime)}</p>
-            {/* Only for people who may restore it (038 FR-052). */}
+            {/* Only for people who may restore it. */}
             {allows(entry.access?.restore) && (
               <Button
                 size="sm"

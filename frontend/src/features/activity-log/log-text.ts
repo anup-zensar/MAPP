@@ -74,7 +74,7 @@ export type RecordLink =
   | { kind: 'recycleBin'; href: string }
   | { kind: 'text'; suffix: string };
 
-/** Where the name leads (FR-008): the record's page, the bin with its row highlighted, or text. */
+/** Where the name leads: the record's page, the bin with its row highlighted, or text. */
 export function recordLink(entry: ActivityLogEntry): RecordLink {
   const now = entry.recordNow;
   if (!now) {
@@ -125,7 +125,7 @@ function pageOf(type: string, id: string, path: RecordRef[]): string | undefined
   return recordHref(type, id, planId);
 }
 
-/** **Show details** (FR-007): "<label>: <old> → <new>", the comment, action details, bin items. */
+/** **Show details**: "<label>: <old> → <new>", the comment, action details, bin items. */
 export function detailLines(entry: ActivityLogEntry): string[] {
   const lines = entry.changes.map(
     (change) => `${change.label}: ${change.oldText} → ${change.newText}`,
@@ -143,7 +143,7 @@ export function detailLines(entry: ActivityLogEntry): string[] {
   return lines;
 }
 
-/** "Today", "Yesterday" or "Monday 12 Oct 2026" in the person's date format (038 FR-058). */
+/** "Today", "Yesterday" or "Monday 12 Oct 2026" in the person's date format. */
 export function dayLabel(date: string, today: string, format?: DateFormat): string {
   if (date === today) {
     return 'Today';

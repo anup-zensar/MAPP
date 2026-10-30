@@ -53,7 +53,7 @@ function renderPage(user: CurrentUser) {
   };
 }
 
-/** The requests made for the deleted record after its DELETE: none may be made (FR-013, L-3). */
+/** The requests made for the deleted record after its DELETE: none may be made. */
 function askedAgain(requests: RecordedRequest[]): string[] {
   const at = requests.findIndex((r) => r.method === 'DELETE');
   return requests

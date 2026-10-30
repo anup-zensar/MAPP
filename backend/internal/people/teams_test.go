@@ -83,7 +83,7 @@ func TestCreateTeam_AllProblemsAtOnce_FR011(t *testing.T) {
 	assertLog(t, f, nil)
 }
 
-// A team name with a tab, a line break or a text-direction character is refused (038 FR-055, L-11).
+// A team name with a tab, a line break or a text-direction character is refused.
 func TestCreateTeam_SingleLineName_038_FR055_L11(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

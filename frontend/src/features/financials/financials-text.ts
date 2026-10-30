@@ -54,7 +54,7 @@ export const TILE_TIPS = {
       : 'Money owed for work received but not yet invoiced, as GSAP accrued it.',
 };
 
-/** "Sep 2026", or the month in the person's date format ("09/2026", 038 FR-058). */
+/** "Sep 2026", or the month in the person's date format ("09/2026"). */
 export function monthText(month: string, format?: DateFormat): string {
   return formatMonth(month, format);
 }

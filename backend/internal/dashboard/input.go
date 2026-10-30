@@ -112,7 +112,7 @@ func (s *Service) readPanels(ctx context.Context, a actor.Actor, in *input) erro
 	return err
 }
 
-// chooseCurrency takes the asked currency of Settings, else the display currency, else US dollars (038 FR-012).
+// chooseCurrency takes the asked currency of Settings, else the display currency, else US dollars.
 func (in *input) chooseCurrency(c Currencies) {
 	asked := in.query.Currency
 	in.query.Currency, in.display = money.BaseCurrency, money.DisplayUSD

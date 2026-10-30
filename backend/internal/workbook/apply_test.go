@@ -112,7 +112,7 @@ func TestApply_UnexpectedErrorStopsTheRun_012FR022(t *testing.T) {
 	}
 }
 
-// A problem shows at most 200 characters of the value found, then "…" — 038 FR-010 (H-2).
+// A problem shows at most 200 characters of the value found, then "…".
 func TestProblemValue_Capped_038_FR010_H2(t *testing.T) {
 	t.Parallel()
 	long := strings.Repeat("é", 4000)
@@ -128,7 +128,7 @@ func TestProblemValue_Capped_038_FR010_H2(t *testing.T) {
 	}
 }
 
-// A name holding a tab is a problem of its row, which is left out — 038 FR-055 (L-11).
+// A name holding a tab is a problem of its row, which is left out.
 func TestApply_NameWithTabLeftOut_038_FR055_L11(t *testing.T) {
 	t.Parallel()
 	f := &fakePlanning{plan: testPlan()}
@@ -158,7 +158,7 @@ func (w *writeCounter) Write(ctx context.Context, fn func(ctx context.Context) e
 }
 
 // The upload is read before the Write that holds back other people's saves: a file that can't be read is
-// refused without one — 038 FR-009 (H-2).
+// refused without one.
 func TestCheck_ReadsFileOutsideWrite_038_FR009_H2(t *testing.T) {
 	t.Parallel()
 	tx := &writeCounter{}

@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './support/no-csp-violations';
 import { expectNoAxeViolations, signInAs } from './fixtures';
 
-// 038 US4 (H-1): an unusable currency or market in the address falls back to the default and says so.
+// An unusable currency or market in the address falls back to the default and says so.
 
 const CARLOS = 'carlos.mendes@shell.com';
 

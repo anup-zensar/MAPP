@@ -39,7 +39,7 @@ func (f accessFacts) edit(ctx context.Context) authz.Availability {
 	return authz.Available(ctx, authz.PurchaseRequestsEdit, f.plan)
 }
 
-// delete gives the permission reason before any status guidance (038 FR-025).
+// delete gives the permission reason before any status guidance.
 func (f accessFacts) delete(ctx context.Context) authz.Availability {
 	if permission := authz.Available(ctx, authz.PurchaseRequestsDelete, f.plan); !permission.Available {
 		return permission

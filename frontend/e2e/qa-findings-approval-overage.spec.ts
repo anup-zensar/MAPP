@@ -16,7 +16,7 @@ import {
 } from './purchase-request-flow';
 
 // 038 US7 on the real API: approving while an activity's line items exceed its planned cost — Warn
-// (default) shows the overage, Refuse disables Approve with the reason (FR-018 – FR-021, D-360).
+// (default) shows the overage, Refuse disables Approve with the reason (D-360).
 
 test.describe.configure({ mode: 'serial' });
 

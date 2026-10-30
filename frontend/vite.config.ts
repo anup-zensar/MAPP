@@ -12,7 +12,7 @@ if (process.env.VITEST) {
   process.env.TZ = 'UTC';
 }
 
-// xfwd: the API counts sign-in attempts per client, so it must see the browser's address (038 FR-014).
+// xfwd: the API counts sign-in attempts per client, so it must see the browser's address.
 const proxy = { '/api': { target: apiTarget, xfwd: true } };
 
 export default defineConfig({

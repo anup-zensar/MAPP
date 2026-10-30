@@ -70,7 +70,7 @@ func (d display) balance(b UnassignedBalance) UnassignedBalance {
 	return b
 }
 
-// grid converts g so that it still adds up: each row total once, its cells as its parts (038 FR-022).
+// grid converts g so that it still adds up: each row total once, its cells as its parts.
 func (d display) grid(g SpreadGrid) SpreadGrid {
 	converted := SpreadGrid{Columns: g.Columns, Rows: make([]SpreadGridRow, 0, len(g.Rows)),
 		Totals: make([]*money.Money, len(g.Totals)), Total: d.money(money.Money{Currency: g.Total.Currency})}

@@ -41,7 +41,7 @@ func checkDescription(problems *errs.Problems, description string) string {
 }
 
 // checkPermissions returns the permissions without repeats in Table A order and adds their problems: at
-// least one (message 15), each a key of Table A, and finance.link only with finance.import (038 FR-006).
+// least one (message 15), each a key of Table A, and finance.link only with finance.import.
 func checkPermissions(problems *errs.Problems, keys []authz.Permission) []authz.Permission {
 	for _, key := range keys {
 		if _, known := authz.Lookup(string(key)); !known {

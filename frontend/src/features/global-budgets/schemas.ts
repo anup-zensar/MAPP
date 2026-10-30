@@ -24,7 +24,7 @@ export function amountOf(text: string): string | null {
 
 const amountSchema = z.string().refine((text) => amountOf(text) !== null, AMOUNT_PROBLEM);
 
-// The API's own checks, so the first Save names every problem (038 FR-030).
+// The API's own checks, so the first Save names every problem.
 export const globalBudgetSchema = z.object({
   name: z
     .string()

@@ -242,7 +242,7 @@ func TestAccessRules_ChangeAndNewPeople_FR019_FR023(t *testing.T) {
 }
 
 // createRole and updateRole refuse "Link financial transactions" without "Import GSAP extracts" on the
-// field permissions (038 FR-006, H-4).
+// field permissions.
 func TestRoles_LinkNeedsImport_038_FR006_H4(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)

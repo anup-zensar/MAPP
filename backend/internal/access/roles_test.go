@@ -246,7 +246,7 @@ func TestRestoreRole_NameTaken_FR018(t *testing.T) {
 }
 
 // "Link financial transactions" is saved only together with "Import GSAP extracts", on create and on
-// change; with both the role is saved (038 FR-006, H-4).
+// change; with both the role is saved.
 func TestRole_LinkNeedsImport_038_FR006_H4(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

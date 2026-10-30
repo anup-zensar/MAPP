@@ -18,7 +18,7 @@ func NewHandler(s *Service, peopleService *people.Service) *Handler {
 	return &Handler{service: s, people: peopleService}
 }
 
-// RegisterRoutes leaves out demo-people and sign-in when demo sign-in is off, so they answer 404 (FR-009).
+// RegisterRoutes leaves out demo-people and sign-in when demo sign-in is off, so they answer 404.
 func (h *Handler) RegisterRoutes(r gin.IRoutes) {
 	if h.service.DemoMode() {
 		r.GET("/auth/demo-people", h.demoPeople)

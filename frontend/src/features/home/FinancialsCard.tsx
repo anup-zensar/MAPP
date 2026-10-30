@@ -28,7 +28,7 @@ import {
 import { percentText } from './home-text';
 import { SectionError } from './SectionError';
 
-/** Home's Financials card (015 FR-025); loads and fails on its own, like the other cards (009 FR-022). */
+/** Home's Financials card; loads and fails on its own, like the other cards. */
 export function FinancialsCard({ scope }: { scope: HomeScope }) {
   const { displayCurrency } = useFormatters();
   const overview = useFinancialOverview(scope, displayCurrency);
@@ -58,7 +58,7 @@ export function FinancialsCard({ scope }: { scope: HomeScope }) {
 function Overview({ overview, open }: { overview: FinancialOverview; open: ReactNode }) {
   const { money, dateTime, dateFormat } = useFormatters();
   const { figures, source, year } = overview;
-  // 038 FR-004: not-linked transactions only for people who may import.
+  // Not-linked transactions only for people who may import.
   const notLinked = useAccess().has('finance.import') ? overview.notLinked : 0;
   const empty = figures.transactionCount === 0;
 
@@ -147,7 +147,7 @@ function Figure({ label, tip, value, problem = false, children }: FigureProps) {
   );
 }
 
-/** Above planned cost the meter and percentage turn red, and words say so too (015 FR-013). */
+/** Above planned cost the meter and percentage turn red, and words say so too. */
 function Committed({ overview }: { overview: FinancialOverview }) {
   const { money } = useFormatters();
   const { plannedCost, committedPercent, committedAbovePlanned, notYetCommitted } =

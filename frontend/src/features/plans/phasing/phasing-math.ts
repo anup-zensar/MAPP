@@ -28,7 +28,7 @@ export function monthKeys(year: number): string[] {
   return MONTH_NAMES.map((_, index) => `${year}-${String(index + 1).padStart(2, '0')}`);
 }
 
-/** "Mar 2027" for "2027-03", or in the person's date format ("2027-03", 038 FR-058). */
+/** "Mar 2027" for "2027-03", or in the person's date format ("2027-03"). */
 export function monthLabel(key: string, format?: DateFormat): string {
   return formatMonth(key, format);
 }

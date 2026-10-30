@@ -111,7 +111,7 @@ export function useDeleteLineItem() {
   return useMutation({
     mutationFn: (lineItemId: string) =>
       call(api.DELETE('/api/v1/line-items/{lineItemId}', { params: { path: { lineItemId } } })),
-    // The deleted line item's own queries are left out: asked again they answer 404 (038 FR-013).
+    // The deleted line item's own queries are left out: asked again they answer 404.
     onSuccess: (_result, lineItemId) => {
       void refresh(lineItemId);
     },

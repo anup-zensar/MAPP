@@ -14,7 +14,7 @@ import {
   submitOnScreen,
 } from './purchase-request-flow';
 
-// 033 FR-012 journey: approved activity → SWBS code → PR approved → simulated GSAP PR and PO → Committed.
+// The journey: approved activity → SWBS code → PR approved → simulated GSAP PR and PO → Committed.
 
 const SIM_NUMBER = /SIM-\d{10}/;
 
