@@ -10,8 +10,6 @@ import (
 
 const meisEmail = "mei.lin@shell.com"
 
-// sameBody checks that a probe of a record outside the person's scope answers byte for byte what the probe of
-// a missing record answers.
 func sameBody(t *testing.T, probe string, hidden, missing *apitest.Response) {
 	t.Helper()
 	if hidden.Status != missing.Status || !bytes.Equal(hidden.Body, missing.Body) {
@@ -19,10 +17,8 @@ func sameBody(t *testing.T, probe string, hidden, missing *apitest.Response) {
 	}
 }
 
-// Mei, a planner of Mobility China who does not import, gets for a not-linked transaction and for one of
-// another market exactly the answers of a missing transaction, and no Not linked count; with a role that
-// imports and links in her teams, a line item of another market answers as a missing one
-// (038 FR-004, FR-007, H-5).
+// Mei, a planner without import, gets the answers of a missing transaction for a not-linked one and one of
+// another market; with a role that links in her teams, a line item of another market answers as missing.
 func TestLinkScopeParity_038_FR007_H5(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -62,4 +58,41 @@ func TestLinkScopeParity_038_FR007_H5(t *testing.T) {
 		return mei.Do(t, http.MethodPost, base+id+"/unlink", map[string]any{"version": 1})
 	}
 	sameBody(t, "unlink other market", unlink("FT-1001"), unlink("FT-9999"))
+}
+
+// Without "Link financial transactions", a transaction outside the person's scope answers exactly as a missing
+// one and one inside it is refused for permission; with it, one outside still answers as missing (038 FR-007, H-5).
+func TestLinkWithoutPermission_ScopeBeforePermission_038_FR007_H5(t *testing.T) {
+	t.Parallel()
+	server := apitest.New(t)
+	alex, mei, priya := server.SignIn(t, alexsEmail), server.SignIn(t, meisEmail), server.SignIn(t, priyasEmail)
+	post := func(who *apitest.Client, id, verb string) *apitest.Response {
+		body := map[string]any{"version": 1}
+		if verb == "link" {
+			body["lineItemId"] = "L-1007"
+		}
+		return who.Do(t, http.MethodPost, "/api/v1/financials/transactions/"+id+"/"+verb, body)
+	}
+
+	for _, verb := range []string{"link", "unlink"} {
+		missing := post(mei, "FT-9999", verb)
+		refused(t, missing, http.StatusNotFound, "not_found")
+		sameBody(t, verb+" other market", post(mei, "FT-1001", verb), missing)
+		refused(t, post(priya, "FT-1001", verb), http.StatusForbidden, "forbidden")
+	}
+
+	role := alex.Do(t, http.MethodPost, "/api/v1/roles", map[string]any{"name": "Linker", "defaultScope": "myTeams",
+		"permissions": []string{"plans.view", "finance.view", "finance.import", "finance.link"}})
+	var created struct{ ID string }
+	role.Decode(t, &created)
+	given := alex.Do(t, http.MethodPut, "/api/v1/people/U-1004/roles", map[string]any{"version": 1, "roles": []map[string]any{
+		{"roleId": "RL-1003", "scope": map[string]any{"type": "myTeams"}},
+		{"roleId": created.ID, "scope": map[string]any{"type": "myTeams"}},
+	}})
+	if given.Status != http.StatusOK {
+		t.Fatalf("giving Mei the Linker role = %d %s", given.Status, given.Body)
+	}
+	missing := post(mei, "FT-9999", "link")
+	refused(t, missing, http.StatusNotFound, "not_found")
+	sameBody(t, "link other market with link", post(mei, "FT-1001", "link"), missing)
 }
