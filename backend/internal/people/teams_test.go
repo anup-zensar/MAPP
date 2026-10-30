@@ -10,9 +10,6 @@ import (
 	"mapp/internal/platform/record"
 )
 
-// A new team is saved active, with its name and description trimmed, its members (a repeated id counts
-// once) and the least-used colour; the log gets the team's "created" entry and a "changed" entry for each
-// member, whose teams changed (FR-010, FR-012, FR-028, D-057).
 func TestCreateTeam_SavedWithMembersAndLogged_FR010_FR028(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -120,9 +117,6 @@ func TestCreateTeam_ColourLeastUsed_D025(t *testing.T) {
 	}
 }
 
-// The Teams list shows every team, active or not, sorted by name ignoring letter case, with its members
-// (inactive ones included, by name) and every plan that uses it, plans in the recycle bin included and
-// marked (FR-010, FR-014, D-067).
 func TestListTeams_MembersAndPlans_FR010(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

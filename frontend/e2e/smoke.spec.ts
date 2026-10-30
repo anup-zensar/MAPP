@@ -1,8 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { DEMO_PASSWORD, expectNoAxeViolations, signInAs, uniqueName } from './fixtures';
 
-// A short end-to-end smoke test of feature 001's main journeys, against the real API with the demo data.
-
 test('US1: a visitor is sent to sign in and comes back after choosing a demo person (FR-001–FR-005)', async ({
   page,
 }) => {
@@ -53,16 +51,11 @@ test('US1: wrong password is refused; e-mail case and spaces are ignored (FR-003
 test('US2: every navigation item opens its page with its tab title (FR-010, FR-015, FR-017, SC-003)', async ({
   page,
 }) => {
-  // Alex Morgan, the administrator: Global budgets and Financials are shown only to people whose
-  // role includes them (014 FR-011).
   await signInAs(page, 'alex.morgan@shell.com');
   await page.goto('/');
   const nav = page.getByRole('navigation', { name: 'Main' });
   const main = page.getByRole('main');
 
-  // Every section is built: Plans, Approvals, Settings (features 002–008), Home (009), All work (010),
-  // Recycle bin and Activity log (011), Global budgets (014), Financials (015). No page shows
-  // "Coming soon" any more.
   const pages: { item: string; heading: string }[] = [
     { item: 'Plans', heading: 'Plans' },
     { item: 'Global budgets', heading: 'Global budgets' },

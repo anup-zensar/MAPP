@@ -17,12 +17,6 @@ export interface ActivityActions {
   dialogs: ReactNode;
 }
 
-/**
- * The More actions of an activity (006 plan, "Actions"; FR-029 – FR-032): **Copy**, **Move** and
- * **Split activity** (016 FR-026), each in its dialog; **View history**, which brings the page's History section into view;
- * and **Delete**, which asks first, moves the activity and its line items to the recycle bin,
- * opens the plan page and offers **Undo** for 10 seconds.
- */
 export function useActivityActions(
   activity: Activity,
   /** What View history does; by default it brings the History section into view. */
@@ -30,16 +24,13 @@ export function useActivityActions(
 ): ActivityActions {
   const [open, setOpen] = useState<'copy' | 'move' | 'split' | 'delete' | null>(null);
   const close = () => setOpen(null);
-  // What the person may do with the activity (014 FR-011): disabled with the reason, or left out.
   const access = activity.access;
 
   return {
     items: [
       ...gateItem({ label: 'Copy', onSelect: () => setOpen('copy') }, access?.copy),
       ...gateItem({ label: MOVE_TO, onSelect: () => setOpen('move') }, access?.move),
-      // Split off line items and planned cost into a new activity (016 FR-026).
       ...gateItem({ label: SPLIT_ACTIVITY, onSelect: () => setOpen('split') }, access?.edit),
-      // Brings the page's History into view and focuses it (feature 011, FR-011).
       { label: 'View history', onSelect: onViewHistory },
       ...gateItem(
         {

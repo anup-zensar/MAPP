@@ -14,16 +14,11 @@ const LONG_TEXT = 40;
 export interface CellValueProps {
   /** null: blank, the column belongs to another level (FR-020). */
   cell: AllWorkCell | null | undefined;
-  /** The searched text, marked in a text cell that search looks at (ID, descriptions; FR-006). */
   search?: string;
 }
 
-/**
- * One value of All work (plan "Grid", FR-017, FR-020): "—" for an empty value; money in the
- * display currency, red with a minus sign when negative; per cent red above 100; statuses as
- * chips; long text cut with the full text on hover and focus; inactive values labelled; and the
- * Filtered mark of a roll-up that filters make smaller (FR-013).
- */
+// "—" for an empty value; money red with a minus sign when negative; per cent red above 100; long
+// text cut with the full text on hover and focus; the Filtered mark of a roll-up filters make smaller.
 export function CellValue({ cell, search = '' }: CellValueProps) {
   const formatters = useFormatters();
   if (!cell) {

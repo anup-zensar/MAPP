@@ -11,13 +11,9 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// Transactions returns one page of the Financials page (FR-021) for the query q: the transactions a may see
-// that match every filter, sorted and paged; the counts of the tabs (every filter but the tab and the link
-// filter; Not linked counts the not-linked ones); the totals (every filter but the tab); the record of the
-// record filter; the choices of the filters; and where the data comes from.
-//
-// The year is the linked plan's year; a transaction that is not linked to a live line item counts in its
-// posting year (D-256). Without a year, the record filter's plan year is used, otherwise the current year.
+// Transactions returns one page of the Financials page. A transaction counts in its linked plan's year, or
+// its posting year when not linked to a live line item (D-256); without a year, the record filter's plan
+// year is used, otherwise the current year.
 func (s *Service) Transactions(ctx context.Context, a actor.Actor, q Query) (TransactionPage, error) {
 	var page TransactionPage
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -67,14 +63,12 @@ func (s *Service) Transactions(ctx context.Context, a actor.Actor, q Query) (Tra
 	return page, nil
 }
 
-// placed is a transaction with the live line item it is linked to (nil when none) and its link state.
 type placed struct {
 	t     *Transaction
 	li    *tnode
 	state LinkState
 }
 
-// page works out the answer of Transactions.
 func (b *book) page(q Query, year int, record *tnode, sc scope, currentYear int) TransactionPage {
 	search := lower(q.Search)
 	var base []placed // every filter but the tab and the link filter
@@ -132,8 +126,6 @@ func (p placed) inFilters(q Query, year int, record *tnode, sc scope) bool {
 		(record == nil || p.li.under(record.ID))
 }
 
-// holds reports whether the search text (lower case) is in the transaction's numbers, vendor, SWBS code,
-// HX key or description, or in the name or ID of its line item or activity (FR-021).
 func (p placed) holds(search string) bool {
 	t := p.t
 	texts := []string{t.DocumentNumber, t.PONumber, t.VendorCode, t.VendorName, t.SwbsCode, t.TrackingKey, t.Description}
@@ -158,7 +150,6 @@ func (p placed) linkMatches(filter string) bool {
 	return true
 }
 
-// add counts p in its tabs.
 func (c *TypeCounts) add(p placed) {
 	c.All++
 	switch p.t.Type {
@@ -192,7 +183,7 @@ func (b *book) sort(list []placed, column string, desc bool) {
 			c = compareUSD(b.usd[x.t.ID], b.usd[y.t.ID])
 		case sortLinkedTo:
 			c = strings.Compare(lower(x.linkedName()), lower(y.linkedName()))
-		default: // posting date, ties by ID
+		default:
 			c = cmp.Or(x.t.PostingDate.Compare(y.t.PostingDate), compareIDs(x.t.ID, y.t.ID))
 		}
 		if desc {
@@ -215,7 +206,6 @@ func compareUSD(x, y *money.Amount) int {
 	return x.Cmp(*y)
 }
 
-// linkedName is the name of the live line item the transaction is linked to; "" otherwise.
 func (p placed) linkedName() string {
 	if p.li == nil {
 		return ""
@@ -223,9 +213,6 @@ func (p placed) linkedName() string {
 	return p.li.Name
 }
 
-// choices returns the values of the filters (FinancialChoices): the years of the plans a may see and, for
-// people who may import, the posting years of transactions not linked to a live line item, plus the
-// current year, newest first; and the live plans of year a may see, by name.
 func (b *book) choices(year int, sc scope, currentYear int) Choices {
 	c := Choices{Years: []int{currentYear}, CurrentYear: currentYear, Plans: []PlanChoice{}}
 	addYear := func(y int) {
@@ -233,7 +220,7 @@ func (b *book) choices(year int, sc scope, currentYear int) Choices {
 			c.Years = append(c.Years, y)
 		}
 	}
-	for _, p := range b.tree.plans { // by name
+	for _, p := range b.tree.plans {
 		if !sc.sees(p.ID) {
 			continue
 		}

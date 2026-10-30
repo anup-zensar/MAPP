@@ -97,7 +97,6 @@ func TestSeed_FinancialsStory_015(t *testing.T) {
 
 	var all financials.TransactionPage
 	get("/api/v1/financials/transactions?year=2026", &all)
-	// Priya does not see the not-linked PO nor its count: not-linked transactions show only to people who may import (014).
 	if all.Counts != (financials.TypeCounts{All: 10, PurchaseOrder: 3, Invoice: 3, Payment: 2, Accrual: 2}) ||
 		all.Totals.Committed != usd("35652.17") || all.Totals.Invoiced != usd("33152.17") ||
 		all.Totals.Paid != usd("30652.17") || all.Totals.Accrued != usd("2500.00") {

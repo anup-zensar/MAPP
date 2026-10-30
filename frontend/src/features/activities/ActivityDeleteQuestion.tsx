@@ -13,12 +13,6 @@ export interface ActivityDeleteQuestionProps {
   onOpenChange: (open: boolean) => void;
 }
 
-/**
- * "Delete activity '<name>'?" and what follows the answer (006 plan, "Actions", FR-031): the
- * activity and its line items move to the recycle bin, the plan page opens (when it is not open
- * already) and "Activity '<name>' deleted" offers **Undo** for 10 seconds. A
- * refusal is said in a message. Used by the activity page's More menu and the plan tree's rows.
- */
 export function ActivityDeleteQuestion({
   activity,
   open,

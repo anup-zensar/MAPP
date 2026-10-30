@@ -9,34 +9,23 @@ import styles from './TextField.module.css';
 
 export interface TextFieldProps {
   label: string;
-  /** The field's name. It is also the input's id, so FormErrorSummary can link to the field. */
   name: string;
   value: string;
   onChange: (value: string) => void;
-  /** What is wrong with the value, shown under the field. */
   error?: string;
-  /** A short help text under the label. */
   hint?: string;
   /** A red asterisk for "Required", otherwise a word next to the label (design system §6.2). */
   marking?: FieldMarking;
   maxLength?: number;
   type?: 'text' | 'email' | 'password';
-  /** The browser's autofill hint, for example "username" or "current-password". */
   autoComplete?: string;
-  /** A plain explanation in an ⓘ tip next to the label (Shell attributes' help text). */
   tip?: string;
-  /**
-   * Values the browser offers while typing, which can still be ignored (a <datalist>): the budget
-   * names of a year on the finance budget item form (feature 002).
-   */
+  /** Values the browser offers while typing, which can still be ignored (a <datalist>). */
   suggestions?: string[];
 }
 
-/**
- * A labelled text input (design system §7): the label above, then the marking, the problem
- * under the field. Screen readers hear the marking, the hint and the problem with the field.
- * A password field also gets the eye button that shows what was typed (use PasswordField).
- */
+// Screen readers hear the marking, the hint and the problem with the field. A password field also
+// gets the eye button that shows what was typed (use PasswordField).
 export function TextField({
   label,
   name,
@@ -114,10 +103,8 @@ export function TextField({
   );
 }
 
-/**
- * The eye button of a password field. Its name stays "Show password"; whether the password is
- * shown is told by aria-pressed (research R17).
- */
+// The eye button's name stays "Show password"; whether the password is shown is told by
+// aria-pressed.
 function ShowPasswordButton({ pressed, onToggle }: { pressed: boolean; onToggle: () => void }) {
   return (
     <Tooltip content="Show password">

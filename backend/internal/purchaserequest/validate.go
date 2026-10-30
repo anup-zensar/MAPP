@@ -197,7 +197,6 @@ func first(list []string) string {
 	return list[0]
 }
 
-// businessUnit returns the Business unit of the plan of the line items, for attribute conditions.
 func (p PlanFacts) businessUnit(facts map[string]LineItemFacts) []string {
 	for _, f := range facts {
 		if f.Plan.Access.ID == p.Access.ID {

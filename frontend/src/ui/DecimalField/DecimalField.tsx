@@ -5,30 +5,18 @@ import type { FieldFrameProps } from '../FieldShell/FieldShell';
 import inputs from '../FieldShell/inputs.module.css';
 
 export interface DecimalFieldProps extends FieldFrameProps {
-  /** The field's name and the input's id, so FormErrorSummary can link to it. */
   name: string;
   /** What is typed, as text; read it with parseDecimalInput (or parseWholeInput) before sending it. */
   value: string;
   onChange: (value: string) => void;
-  /**
-   * The decimals it takes: 0 for whole numbers (INQ goals, number attributes), 2 for percentages
-   * (model rates, split shares), 6 for exchange rates.
-   */
   decimals: 0 | 2 | 6;
-  /** A unit inside the field on the right: "%", "per USD". */
   suffix?: string;
-  /** A neutral note under the field. */
   note?: string;
-  /** A shorter field, for a table cell (split shares). */
   compact?: boolean;
 }
 
-/**
- * A number field (feature 002): whole numbers, percentages with two decimals or rates with six.
- * On leaving the field, whole numbers are written with grouping ("250,000") and percentages with
- * two decimals ("2.00"); rates stay as typed. More decimals than it takes are never rounded: the
- * form's check or the API says so.
- */
+// On leaving the field whole numbers get grouping ("250,000") and percentages two decimals ("2.00");
+// rates stay as typed. Extra decimals are never rounded: the form's check or the API says so.
 export function DecimalField({
   name,
   value,

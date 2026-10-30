@@ -23,12 +23,6 @@ import { SectionError } from './SectionError';
 import styles from './SummaryCards.module.css';
 import { SummaryLinkCard } from './SummaryLinkCard';
 
-/**
- * The four summary cards of Home (FR-005 – FR-007, design system §2.4 E): my teams' plans,
- * activities I own, waiting for my approval and planned cost against plan budget, each opening its
- * list with the same filter. Four in a row on wide screens, 2 × 2 below (UI audit H-06). While
- * loading each shows a placeholder; a failure shows "This section couldn't load".
- */
 export function SummaryCards({ scope }: { scope: HomeScope }) {
   const person = useCurrentUser();
   const { money, moneyCompact } = useFormatters();

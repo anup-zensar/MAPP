@@ -18,7 +18,6 @@ import type { PlanStatus } from './plan-text';
 type ReadinessGroup = components['schemas']['ReadinessGroup'];
 type PlanAccess = components['schemas']['PlanAccess'];
 
-/** What the actions need to know of a plan (a list row or the plan itself). */
 export interface ActionPlan {
   id: string;
   name: string;
@@ -32,11 +31,6 @@ export interface PlanActionsOptions {
   onDeleted?: () => void;
 }
 
-/**
- * The actions on a plan, shared by the Plans list and the plan page (plan "Dialogs"): View, Edit,
- * Copy, Publish or Unpublish, and Delete with Undo, with their dialogs. Render `dialogs` once on
- * the page.
- */
 export function usePlanActions({ onDeleted }: PlanActionsOptions = {}) {
   const navigate = useNavigate();
   const { show } = useToast();
@@ -60,7 +54,6 @@ export function usePlanActions({ onDeleted }: PlanActionsOptions = {}) {
   // A new key each time the copy dialog opens, so it starts from the API's suggestion.
   const [copyKey, setCopyKey] = useState(0);
 
-  /** Publishes a Draft plan, or lists every field it still needs (FR-024). */
   async function publish(plan: ActionPlan) {
     if (publishPlan.isPending) {
       return;
@@ -78,7 +71,6 @@ export function usePlanActions({ onDeleted }: PlanActionsOptions = {}) {
     }
   }
 
-  /** Asks why, then returns a Published plan to Draft (FR-025). */
   function unpublish(plan: ActionPlan) {
     setUnpublishKey((key) => key + 1);
     setUnpublishing({ plan, open: true });
@@ -102,16 +94,11 @@ export function usePlanActions({ onDeleted }: PlanActionsOptions = {}) {
     }
   }
 
-  /** Asks for the name, the year and the contents, then copies the plan (FR-026). */
   function copy(plan: ActionPlan) {
     setCopyKey((key) => key + 1);
     setCopying({ plan, open: true });
   }
 
-  /**
-   * Makes the copy; on success its plan page opens with the message and one message per note, such
-   * as a cleared default finance budget (FR-027, FR-028).
-   */
   async function confirmCopy(
     plan: ActionPlan,
     request: PlanCopyRequest,
@@ -141,7 +128,6 @@ export function usePlanActions({ onDeleted }: PlanActionsOptions = {}) {
     }
   }
 
-  /** Asks first, then moves the plan and everything in it to the recycle bin (FR-029). */
   function remove(plan: ActionPlan) {
     setDeleting({ plan, open: true });
   }
@@ -150,7 +136,6 @@ export function usePlanActions({ onDeleted }: PlanActionsOptions = {}) {
     try {
       const result = await deletePlan.mutateAsync(plan.id);
       setDeleting({ plan, open: false });
-      // "Plan '<name>' deleted" with Undo for 10 seconds.
       afterDelete(result);
       onDeleted?.();
     } catch (error) {
@@ -159,10 +144,7 @@ export function usePlanActions({ onDeleted }: PlanActionsOptions = {}) {
     }
   }
 
-  /**
-   * The ⋯ Delete item: last, after a line, in red (design system §6.1). Disabled with the reason, or
-   * left out, when the person may not delete the plan (014 FR-011): spread it into the menu.
-   */
+  /** Disabled with the reason, or left out, when the person may not delete the plan: spread it in. */
   function deleteItem(plan: ActionPlan): ActionsMenuItem[] {
     return gateItem(
       { label: 'Delete', tone: 'danger', separatorBefore: true, onSelect: () => remove(plan) },
@@ -170,12 +152,10 @@ export function usePlanActions({ onDeleted }: PlanActionsOptions = {}) {
     );
   }
 
-  /** The ⋯ Copy item, on the list and the plan page (FR-026), as the person's access allows it. */
   function copyItem(plan: ActionPlan): ActionsMenuItem[] {
     return gateItem({ label: 'Copy', onSelect: () => copy(plan) }, plan.access?.copy);
   }
 
-  /** The list's ⋯ Actions menu: View, Edit, Copy, Publish or Unpublish, Delete (FR-001). */
   function menuItems(plan: ActionPlan): ActionsMenuItem[] {
     const path = `/plans/${encodeURIComponent(plan.id)}`;
     return [

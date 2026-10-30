@@ -18,17 +18,14 @@ export interface ChoiceOption {
 interface ChoiceFieldBase extends FieldFrameProps {
   /** The field's name and the control's id, so FormErrorSummary can link to it. */
   name: string;
-  /** Every option in the order to show them, inactive ones included. */
   options: ChoiceOption[];
   /** Locks the field and says why under it ("Choose a cluster first."). */
   disabledReason?: string;
-  /** A neutral note under the field. */
   note?: ReactNode;
 }
 
 export interface SingleChoiceFieldProps extends ChoiceFieldBase {
   multiple?: false;
-  /** The chosen option's id; "" for none. */
   value: string;
   onChange: (value: string) => void;
 }
@@ -46,12 +43,8 @@ const SEARCHABLE_ABOVE = 10;
 /** The searchable list shows at most this many matches (SC-007: 5,000 options stay fast). */
 const LIST_LIMIT = 50;
 
-/**
- * A single or multiple choice (feature 002, FR-024, SC-007). Up to 10 options: a select whose
- * first entry is "Choose…", or a group of check boxes. More: a searchable list (Combobox) that
- * finds any part of a label, shows at most 50 matches and the chosen values as chips. Inactive
- * options are offered only while chosen, and read "<label> (inactive)".
- */
+// Up to 10 options: a select starting "Choose…" or check boxes; more: a searchable Combobox
+// showing at most 50 matches. Inactive options are offered only while chosen, as "<label> (inactive)".
 export function ChoiceField(props: ChoiceFieldProps) {
   const { name, options, disabledReason, note, error, ...frameAndValue } = props;
   const chosen = props.multiple ? props.value : props.value ? [props.value] : [];
@@ -148,7 +141,6 @@ export function ChoiceField(props: ChoiceFieldProps) {
   );
 }
 
-/** The frame's props, without the value props of either variant. */
 function withoutValue(
   props: Omit<ChoiceFieldProps, 'name' | 'options' | 'disabledReason' | 'note' | 'error'>,
 ): FieldFrameProps {

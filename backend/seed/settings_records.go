@@ -73,7 +73,6 @@ func (d *demo) addRateHistory(ctx context.Context, repo stores.SettingsStore) er
 	})
 }
 
-// addActivityTypes creates the six activity types, AT-1001 … AT-1006.
 func (d *demo) addActivityTypes(ctx context.Context, repo stores.SettingsStore) error {
 	for _, t := range demoActivityTypes {
 		id, err := d.next(ctx, ids.PrefixActivityType)
@@ -96,8 +95,6 @@ func (d *demo) addActivityTypes(ctx context.Context, repo stores.SettingsStore) 
 	return nil
 }
 
-// addModels creates the two models, MOD-1001 and MOD-1002, with their allowed activity types in the order
-// of the activity-type list (by name).
 func (d *demo) addModels(ctx context.Context, repo stores.SettingsStore) error {
 	for _, m := range demoModels {
 		var r resolver
