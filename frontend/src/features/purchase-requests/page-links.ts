@@ -5,10 +5,7 @@ import type { PurchaseRequest } from './api';
 
 const RECORD = 'record:';
 
-/**
- * The first step of a purchase request's breadcrumb (038 FR-050): Purchase requests for a person who
- * may see that page, else Plans.
- */
+/** The breadcrumb's first step: Purchase requests for a person who may see it, else Plans. */
 export function breadcrumbRoot(seesList: boolean): BreadcrumbItem {
   return seesList
     ? { label: 'Purchase requests', to: '/purchase-requests' }

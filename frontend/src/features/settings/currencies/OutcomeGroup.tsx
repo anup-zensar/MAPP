@@ -9,7 +9,6 @@ import styles from './rates.module.css';
 /** A group of the review lists at most this many rows; the counts above cover all of them. */
 const ROWS_SHOWN = 200;
 
-/** The groups open at first: the rows that need a look. */
 const OPEN_AT_FIRST: RateImportOutcome[] = ['problem', 'notUsed', 'replace'];
 
 export interface OutcomeGroupProps {

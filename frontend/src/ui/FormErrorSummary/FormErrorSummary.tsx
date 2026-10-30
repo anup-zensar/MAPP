@@ -2,24 +2,17 @@ import { useEffect, useRef } from 'react';
 import { RequiredLegend } from '../RequiredLegend/RequiredLegend';
 import styles from './FormErrorSummary.module.css';
 
-/** One problem with one field, as the API reports it in `fields`. */
 export interface FieldProblem {
   field: string;
   message: string;
 }
 
 export interface FormErrorSummaryProps {
-  /** Every problem of the last attempt. Give a new list for each attempt. */
   errors: FieldProblem[];
-  /** The input id of a field; the field name itself when left out (as TextField does). */
   fieldId?: (field: string) => string;
 }
 
-/**
- * The box at the top of a form that lists every problem at once, each one a link to its field
- * (FR-020, design system §6.4). It takes the focus when it appears, so the problems are read out.
- * The form's "* Required" legend follows it (038 FR-064).
- */
+/** Lists every problem as a link to its field and takes the focus, so the problems are read out. */
 export function FormErrorSummary({ errors, fieldId = (field) => field }: FormErrorSummaryProps) {
   const summary = useRef<HTMLDivElement>(null);
 

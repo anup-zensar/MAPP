@@ -5,7 +5,6 @@ import type { Permission } from '@/session/access';
 import type { HomeSummary } from './api';
 import styles from './GettingStartedCard.module.css';
 
-/** One step of the Plan module, in the order people do them (001 plan "Home"). */
 interface Step {
   title: string;
   to: string;
@@ -48,17 +47,12 @@ const STEPS: Step[] = [
 ];
 
 export interface GettingStartedCardProps {
-  /** Why the card is shown: the person is in no team, or none of their teams has a plan. */
   reason: NonNullable<HomeSummary['gettingStarted']>;
 }
 
 const COUNT_WORDS = ['', 'one step', 'two steps', 'three steps', 'four steps', 'five steps'];
 
-/**
- * Feature 001's five steps of the Plan module (001 FR-018), shown on Home only to new people: in
- * no team, or in teams without a plan (009 FR-020, D-170) — only the steps the person's roles allow
- * (038 FR-051). A person in no team also reads how to join one, or whom to ask.
- */
+/** Only for new people (009 FR-020, D-170), with the steps their roles allow (038 FR-051). */
 export function GettingStartedCard({ reason }: GettingStartedCardProps) {
   const access = useAccess();
   const steps = STEPS.filter((step) => access.has(step.needs));

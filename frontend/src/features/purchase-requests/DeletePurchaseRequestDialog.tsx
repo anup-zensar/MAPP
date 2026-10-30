@@ -17,12 +17,7 @@ export interface DeletePurchaseRequestDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-/**
- * Delete purchase request (032 FR-042, FR-055; 038 FR-013): names the lines and the line items whose
- * money is released, then moves it to the recycle bin with Undo and opens Purchase requests (its
- * first line item when the person may not see that page). The deleted record is never asked for
- * again: its queries are dropped and the lists refreshed only once the page has gone.
- */
+/** The deleted record is never asked for again: its queries are dropped once the page has gone. */
 export function DeletePurchaseRequestDialog({
   purchaseRequest,
   open,

@@ -11,7 +11,6 @@ import { deletedText, recordTitle } from './sample-text';
 import styles from './SampleRecordsPage.module.css';
 import { useFailureMessage } from './useFailureMessage';
 
-/** What was deleted and is not restored yet, newest first, each with Restore (FR-025). */
 export function RecentlyDeletedCard({ entries }: { entries: RecycleBinListItem[] }) {
   const format = useFormatters();
   const { show } = useToast();

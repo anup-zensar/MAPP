@@ -1,15 +1,9 @@
-/**
- * How dates, times and money look on screen (FR-021, design system §4, research R18), in the date
- * format a person chose (feature 003, FR-024). Pages read the person's format through
- * useFormatters(); these functions default to "DD MMM YYYY" ("12 Mar 2026").
- */
+/** How dates, times and money look on screen (design system §4), in the person's date format. */
 import type { components } from '@/api/generated/schema';
 import { exact } from './decimal';
 
-/** How dates are shown and typed (feature 003, contract DateFormat). */
 export type DateFormat = components['schemas']['DateFormat'];
 
-/** The default date format: "12 Mar 2026". */
 export const DEFAULT_DATE_FORMAT: DateFormat = 'DD MMM YYYY';
 
 /** A fixed list, because browsers' own "en-GB" short months now print "Sept". */
@@ -29,7 +23,6 @@ const MONTH_NAMES = [
   'december',
 ];
 
-/** Every date format with 12 March 2026 written in it, as the profile page offers them. */
 export const DATE_FORMATS: { value: DateFormat; example: string; label: string }[] = (
   ['DD MMM YYYY', 'DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD'] as const
 ).map((value) => {
@@ -40,11 +33,7 @@ export const DATE_FORMATS: { value: DateFormat; example: string; label: string }
 /** Shown instead of a missing amount or date. Never 0, which would look like a real value. */
 const NOTHING = '—';
 
-/**
- * Money arrives as a decimal string ("12500.00"). Intl.NumberFormat formats such a string exactly,
- * so no floating-point rounding happens (constitution VI). TypeScript only lets it take strings
- * that look like numbers, hence the casts below.
- */
+/** Intl.NumberFormat formats decimal strings exactly (constitution VI); TS needs the casts. */
 const dollars = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const amount = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
@@ -61,11 +50,7 @@ const compactAmount = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2,
 });
 
-/**
- * The calendar date "2026-03-12" as "12 Mar 2026" (or in the given format: "12/03/2026",
- * "03/12/2026", "2026-03-12"). The text is split by hand: new Date("2026-03-12") means midnight in
- * London, which is still the day before in the Americas.
- */
+/** Split by hand: new Date("2026-03-12") is London midnight, the day before in the Americas. */
 export function formatDate(date: string, format: DateFormat = DEFAULT_DATE_FORMAT): string {
   const [year, month, day] = date.split('-');
   switch (format) {
@@ -80,11 +65,7 @@ export function formatDate(date: string, format: DateFormat = DEFAULT_DATE_FORMA
   }
 }
 
-/**
- * Reads a date typed in the person's format and returns it as "YYYY-MM-DD", or null when it is not
- * a real calendar date. Days and months may have one or two digits; in "DD MMM YYYY" the month may
- * be written short or in full, in any case ("12 mar 2026", "12 March 2026").
- */
+/** A date typed in the person's format as "YYYY-MM-DD"; null when it is not a real date. */
 export function parseDate(text: string, format: DateFormat = DEFAULT_DATE_FORMAT): string | null {
   const typed = text.trim();
   let parts: { day: string; month: number; year: string } | null;
@@ -113,10 +94,7 @@ export function parseDate(text: string, format: DateFormat = DEFAULT_DATE_FORMAT
   return `${parts.year}-${twoDigits(parts.month)}-${twoDigits(day)}`;
 }
 
-/**
- * "01 Feb – 30 Nov 2026" within one year, "01 Dec 2025 – 31 Jan 2026" across years, "—" when a
- * date is missing (feature 005, the server's FormatRange). Other formats write both dates in full.
- */
+/** "01 Feb – 30 Nov 2026" in one year, both dates in full across years; "—" for a missing date. */
 export function formatDateRange(
   start: string | null | undefined,
   end: string | null | undefined,
@@ -132,19 +110,16 @@ export function formatDateRange(
   return `${formatDate(start, format)} – ${formatDate(end, format)}`;
 }
 
-/** The calendar date ("2026-03-12") on which a timestamp falls in the user's own time zone. */
 export function localDate(timestamp: string | Date): string {
   const at = new Date(timestamp);
   return `${at.getFullYear()}-${twoDigits(at.getMonth() + 1)}-${twoDigits(at.getDate())}`;
 }
 
-/** "14:32": the time of a timestamp in the user's own time zone, on a 24-hour clock. */
 export function formatTime(timestamp: string): string {
   const at = new Date(timestamp);
   return `${twoDigits(at.getHours())}:${twoDigits(at.getMinutes())}`;
 }
 
-/** "12 Mar 2026, 14:32": a timestamp in the user's own time zone. */
 export function formatDateTime(
   timestamp: string,
   format: DateFormat = DEFAULT_DATE_FORMAT,
@@ -154,20 +129,12 @@ export function formatDateTime(
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-/**
- * The calendar date "2026-10-12" as "Monday 12 Oct 2026", or with the date in the given format
- * ("Monday 2026-10-12"; the activity log's day headings, 038 FR-058). The weekday is worked out in
- * UTC, so the time zone cannot move it to another day.
- */
+/** "Monday 12 Oct 2026"; the weekday is worked out in UTC so the time zone cannot move it. */
 export function formatWeekdayDate(date: string, format: DateFormat = DEFAULT_DATE_FORMAT): string {
   const weekday = WEEKDAYS[new Date(`${date}T00:00:00Z`).getUTCDay()];
   return `${weekday} ${formatDate(date, format)}`;
 }
 
-/**
- * The month "2026-09" (or a date in it) as "Sep 2026", or in the given format: "09/2026",
- * "2026-09" (038 FR-058, D-356). Every month label with a year is written by this function.
- */
 export function formatMonth(month: string, format: DateFormat = DEFAULT_DATE_FORMAT): string {
   const [year = '', number = ''] = month.split('-');
   switch (format) {
@@ -181,11 +148,7 @@ export function formatMonth(month: string, format: DateFormat = DEFAULT_DATE_FOR
   }
 }
 
-/**
- * How long ago something happened (feature 008, notifications): "just now", "1 minute ago",
- * "5 hours ago", "yesterday", "3 days ago" (by calendar day, in the user's time zone), and from
- * 7 days on the date itself.
- */
+/** "just now", "5 hours ago", "yesterday", "3 days ago" by calendar day, from 7 days the date. */
 export function formatRelativeTime(
   timestamp: string,
   now: Date = new Date(),
@@ -213,10 +176,6 @@ export function formatRelativeTime(
   return formatDate(day, format);
 }
 
-/**
- * How long something has been waiting (feature 008, approvals): "less than an hour", "1 hour",
- * "5 hours", "1 day", "3 days".
- */
 export function formatWaitingTime(since: string, now: Date = new Date()): string {
   const hours = Math.floor((now.getTime() - new Date(since).getTime()) / 3_600_000);
   if (hours < 1) {
@@ -229,7 +188,6 @@ export function formatWaitingTime(since: string, now: Date = new Date()): string
   return days === 1 ? '1 day' : `${days} days`;
 }
 
-/** "$12,500.00" for US dollars, "12,500.00 EUR" for other currencies, "—" without an amount. */
 export function formatMoney(value: string | null | undefined, currency: string): string {
   if (!value) {
     return NOTHING;
@@ -239,11 +197,7 @@ export function formatMoney(value: string | null | undefined, currency: string):
     : `${amount.format(exact(value))} ${currency}`;
 }
 
-/**
- * "$1.25M" or "12.5K EUR" for summary cards, which show formatMoney's full value in a tooltip.
- * Amounts under 1,000 are short already and are shown in full, and so are amounts that would round
- * up to 1000 of the largest unit ("1000T", 038 FR-044).
- */
+/** "$1.25M"; amounts under 1,000, or that would round up to "1000T", are shown in full. */
 export function formatMoneyCompact(value: string | null | undefined, currency: string): string {
   if (!value || Math.abs(Number(value)) < 1000) {
     return formatMoney(value, currency);
@@ -262,7 +216,6 @@ function twoDigits(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-/** 1–12 for a month name written short or in full ("mar", "March", "Sept"); 0 for anything else. */
 function monthOfName(name: string): number {
   const lower = name.toLowerCase();
   return MONTH_NAMES.findIndex((full) => full.startsWith(lower)) + 1;
@@ -273,7 +226,6 @@ function daysInMonth(year: number, month: number): number {
   return new Date(Date.UTC(year, month, 0)).getUTCDate();
 }
 
-/** Whole calendar days from one "YYYY-MM-DD" to another. */
 function calendarDaysBetween(from: string, to: string): number {
   return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
 }

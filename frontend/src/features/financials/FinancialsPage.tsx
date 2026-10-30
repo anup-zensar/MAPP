@@ -36,11 +36,7 @@ import { TransactionsTable } from './TransactionsTable';
 import { useNarrow } from './useNarrow';
 import styles from './FinancialsPage.module.css';
 
-/**
- * Financials (015 US3, FR-020 – FR-022): GSAP's transactions by type with search, filters, totals and
- * paging, all kept in the address; a row opens its panel in the outlet. Importers also see the
- * simulated GSAP's SWBS runs (030 FR-013).
- */
+/** Financials (015 US3): filters and paging live in the address; importers also see SWBS runs. */
 export function FinancialsPage() {
   usePageTitle('Financials');
   const [params, setParams] = useSearchParams();
@@ -170,7 +166,6 @@ function SourceLine({ page }: { page: FinancialTransactionPage | undefined }) {
   return <p className={styles.source}>{sourceLine(page.source, dateTime)}</p>;
 }
 
-/** What an empty tab says when no filter is in use. */
 function emptyTabText(tab: FinancialTab, page: FinancialTransactionPage): string {
   if (!page.source.dataAsOf) {
     return NO_DATA;

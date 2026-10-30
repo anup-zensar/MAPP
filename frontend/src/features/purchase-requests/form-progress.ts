@@ -28,10 +28,7 @@ function plus(a: Counts, b: Counts): Counts {
   return { needed: a.needed + b.needed, missing: a.missing + b.missing };
 }
 
-/**
- * The rail's sections: the required and needed-to-submit fields still empty — the standard fields
- * and the Shell attributes of the header and of each line (038 FR-026).
- */
+/** The rail's sections: the required and needed-to-submit fields still empty, header and lines. */
 export function railSections(
   values: PurchaseRequestFormValues,
   attributeForm: AttributeForm,

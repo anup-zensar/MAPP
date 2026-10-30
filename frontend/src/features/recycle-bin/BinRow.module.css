@@ -14,8 +14,7 @@
   border-top: 1px solid var(--row-divider);
 }
 
-/* The row a link from the activity log points at: the highlighted row of the table standard,
-   with Text Strong text on the hover grey (constitution X). */
+/* The row a link from the activity log points at: the table standard's highlighted row. */
 .row[data-highlighted] {
   --ink-2: var(--ink);
   --link: var(--ink);

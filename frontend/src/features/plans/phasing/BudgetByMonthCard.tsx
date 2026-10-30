@@ -29,9 +29,7 @@ export interface BudgetByMonthCardProps {
     budget: Money | null;
     budgetPhasing?: BudgetPhasing;
   };
-  /** The plan's year: its 12 months. */
   year: number;
-  /** The plan currency: every amount of the card is in it (016 FR-013). */
   currency: string;
   /** Whether the reader may edit the record: Edit is offered only then (038 FR-029). */
   access?: Availability;

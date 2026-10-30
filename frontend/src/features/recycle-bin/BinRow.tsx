@@ -32,11 +32,7 @@ export interface BinRowProps {
   onPurge: () => void;
 }
 
-/**
- * One recycle-bin entry (FR-015, FR-017): its level, name and ID, where it was, what was inside,
- * who deleted it and when, why it cannot simply come back, **Restore** and ⋯ **Delete
- * permanently**, and its contents as a tree under **Show contents**.
- */
+/** One recycle-bin entry: Restore, ⋯ Delete permanently, and its contents under Show contents. */
 export function BinRow({
   item,
   containsText,
@@ -46,8 +42,7 @@ export function BinRow({
   onPurge,
 }: BinRowProps) {
   const { dateTime, relativeTime } = useFormatters();
-  // What the person's roles allow here (feature 014, FR-011): an action they may not take moves
-  // into the menu, shown with the server's reason; one without a reason is left out.
+  // An action the roles forbid moves into the menu with the server's reason, or is left out.
   const restoreOk = !item.access || item.access.restore.available;
   const menu: ActionsMenuItem[] = [
     ...(!restoreOk && isShown(item.access?.restore)
@@ -87,7 +82,6 @@ export function BinRow({
     <li className={styles.row} data-highlighted={highlighted || undefined}>
       <div className={styles.main}>
         <div className={styles.title}>
-          {/* One tag style for every record type (038 FR-049). */}
           {level ? (
             <LevelTag level={level} />
           ) : (

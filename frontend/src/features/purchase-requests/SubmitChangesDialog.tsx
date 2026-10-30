@@ -19,11 +19,7 @@ export interface SubmitChangesDialogProps {
   onConfirm: () => void;
 }
 
-/**
- * Submit changes on an approved purchase request (038 FR-028): before anything is saved, says that a
- * change approval round starts, with its workflow and approvers as the server works them out, and
- * that the approved amounts stay reserved until it is approved.
- */
+/** Says before saving that a change approval round starts and approved amounts stay reserved. */
 export function SubmitChangesDialog(props: SubmitChangesDialogProps) {
   const check = usePurchaseRequestSubmission(props.purchaseRequestId, props.open);
   const data = check.data;

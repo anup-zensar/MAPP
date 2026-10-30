@@ -40,7 +40,6 @@ export interface AttributeRules {
   optionsToLink: FormOption[] | null;
   /** Every attribute, for the API's "already has a Shell attribute called" check (038 FR-030). */
   others?: { id: string; label: string; level: AttributeLevel }[];
-  /** The edited attribute, which keeps its own label. */
   ownId?: string;
 }
 
@@ -157,7 +156,6 @@ const helpSchema = z.enum(['all', 'missing']);
 export type StatusFilter = z.infer<typeof statusSchema>;
 export type HelpFilter = z.infer<typeof helpSchema>;
 
-/** The level of the address (`?level=`); null when it names none. */
 export function levelOf(params: URLSearchParams): AttributeLevel | null {
   const parsed = levelSchema.safeParse(params.get('level'));
   return parsed.success ? parsed.data : null;
