@@ -1,4 +1,4 @@
-# Feature Map — MAPP (Plan module phase)
+# Feature Map — MAPP (Plan module phase, then the Measure module)
 
 Every feature of this phase, one Spec Kit folder each under `specs/`. **Numbers are the build order** for 001–013;
 014–017 close the MVP gaps of Shell's BRD and are built in the order of D-307
@@ -49,6 +49,33 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
 | 037 | [037-overspend-control](../../specs/037-overspend-control/spec.md) | Overspend control: each budget owner chooses whether going over a plan, campaign, initiative or global budget warns (default) or is refused, enforced by the API for every save that adds cost; Settings › Overspend control; purchase requests refused while line items exceed the activity's planned cost (D-333, D-346 – D-349) | P2 | 004, 005, 014, 016, 032 | Built — Go, unit, contract and e2e tests green (D-346 – D-349; Q-024, Q-025 open for Shell) |
 | 038 | [038-qa-findings](../../specs/038-qa-findings/spec.md) | QA findings: fixes for the 54 findings of exploratory QA on `develop@85a3d495` — purchase-request reservation during a change, financial-transaction scope and the link permission, workbook import at 5,000 rows, dashboard link fallback, delete with Undo, sign-in limit and security headers, approval over planned cost (warn or refuse), money grids that add up, and the medium and low fixes (D-359 – D-363) | P1 | 012, 013, 015, 032, 036, 037 | Built |
 
+## Measure module (features 039–050, constitution 4.8.0, D-366)
+
+Read-only reports, shown as **Reports**. Built on the `measure-module` branch by four lanes (A–D) following
+[measure-module-build.md](measure-module-build.md); the figures are defined once in
+[measure-metrics.md](../product/measure-metrics.md); the GitHub issues are in [measure-issues.md](measure-issues.md).
+**Wave A** uses only data MAPP holds; **wave B** adds performance data from a simulated feed (D-370).
+
+| # | Folder | Feature | Wave · lane · hours | Depends on | Status |
+|---|---|---|---|---|---|
+| 039 | `039-measure-foundation` | Reports area, report frame, filter panel, periods, display currency, saved report views, table view and export of every widget, `reports.view`, route rules and wiring hub with one stub per report | A · A · 28 | 010, 014, 016, 036 | Planned |
+| 040 | `040-plan-budget-report` | Budget, planned cost, committed and actual by period split at today; summary cards; the ranked list with group by, sort, drill and record links | A · A · 16 | 039, 036, 010, 015 | Planned |
+| 041 | `041-approvals-report` | Status mix by record type, average days to a decision, approvals grid with filters and export | A · C · 10 | 039, 008, 017, 031 | Planned |
+| 042 | `042-purchase-request-report` | Counts and amounts by status, commitment by vendor and owner per delivery month, invoiced per line, vendor › request › line › line item grid | A · C · 14 | 039, 032, 033, 015 | Planned |
+| 043 | `043-plan-details-report` | Per Shell attribute and level: records and planned cost per value, Not filled in; Planned cost entered, Goal entered | A · D · 10 | 039, 002, 006 | Planned |
+| 044 | `044-gsap-link-reports` | SWBS not received, purchase requests waiting for GSAP, purchase orders per line item | A · D · 10 | 039, 030, 032, 033 | Planned |
+| 045 | `045-user-access-report` | People with role, teams and last sign-in; the sign-in time recorded | A · D · 6 | 039, 003, 014 | Planned |
+| 046 | `046-performance-data` | Data sources and mappings, performance facts from a simulated feed or file, matching to activities, rows to review, media codes, external names, Is integrated | B · B · 30 | 006, 008, 015 | Planned |
+| 047 | `047-projections` | Velocity and allowed goal stages on models, activity categories, projected INQ, MQL and revenue per period | B · B · 14 | 002, 046 | Planned |
+| 048 | `048-summary-report` | Projected against goal, four league tables, funnel stages and conversion against goal | B · C · 14 | 039, 046, 047 | Planned |
+| 049 | `049-revenue-and-funnel-reports` | Summary cards per stage and category, actual, projected and goal split at today, the ranked list by revenue or a stage | B · B · 14 | 040, 046, 047 | Planned |
+| 050 | `050-attribution-and-roi` | A chosen attribution model credits revenue to activities; ROI with its model and cost basis named | B · A · 16 | 046, 048, 049 | Planned |
+
+**Wave C (out of scope, future integration points):** the Finance budget report (needs the Finance budgets
+module), AR invoice details (accrual requests), the China budget pack (budget release figures), vendor delivery
+reliability (goods receipts, Q-030), the custom dashboard engine and self-service builder (client 019, 025),
+report sharing and scheduling by e-mail.
+
 ## Scope boundaries
 
 | Topic | Owned by | Not in |
@@ -73,6 +100,11 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
 | GSAP transactions, their simulated import and matching, financial figures | 015 | Creating POs or invoices (GSAP owns them) |
 | Exchange-rate history and rate import, plan currency, budget phasing, split activity, plan type, multi-year views, attribute filters and Breakdown, field help | 016 | A line item's own currency (007) |
 | Approval rules, delegation, reminders and escalation, Monitoring | 017 | The check order of who may decide (014, extended by 017) |
+| Reports area, report frame, filter panel, saved report views, widget export, `reports.view` | 039 | The figures (each report); the 036 dashboards stay as they are |
+| Each report's figures, widgets, grid and export | 040–045, 048, 049 | Figure definitions (measure-metrics.md); the frame (039) |
+| Performance facts, data sources, matching, review, media codes, external names | 046 | Projections (047), attribution (050) |
+| Model velocity, activity categories, projection calculation | 047 | Goals themselves (004, 006) |
+| Attribution model and ROI | 050 | Revenue facts (046) |
 
 ## Cross-cutting rules every spec follows
 
@@ -86,17 +118,20 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
    specs 015–017 name the permission each action needs.
 5. **Every change is logged** with the actor (mechanism from 001).
 6. **Out of scope:** Finance budgets module, accrual calculation, invoice approval, supporting documents on
-   purchase requests, Measure's performance reporting, live GSAP integration, e-mail and sharing to Outlook or
+   purchase requests, live performance connectors, live GSAP integration, e-mail and sharing to Outlook or
    Teams, real sign-in (SSO), AI. Purchase requests on
    MAPP's side and a simulated GSAP for SWBS codes, GSAP PRs and POs are in scope since constitution 4.4.0
-   (features 030–034); planning dashboards, PowerPoint/PDF export and overspend control since 4.6.0 (036, 037).
+   (features 030–034); planning dashboards, PowerPoint/PDF export and overspend control since 4.6.0 (036, 037);
+   the Measure reports since 4.8.0 (039–050, D-366), with performance data only from a simulated feed (D-370).
    GSAP transactions and daily rates come from simulated feeds
    behind adapters (015, 016; D-242, D-259, D-308). Mention the rest only as future integration points.
 
 ## Later (not in this phase)
 
-Finance module (finance budgets, accrual calculation, invoice approval, PR supporting documents), Measure
-performance dashboards (revenue, attribution, waterfall, ROI), live GSAP integration (the real SWBS request/response, PR/PO/invoice sync and rate feed behind the
+Finance module (finance budgets, accrual calculation, invoice approval, PR supporting documents), the Measure
+reports of wave C (Finance budget report, AR invoice details, China budget pack, vendor delivery reliability, a
+dashboard builder, report sharing by e-mail), live performance connectors behind the adapter the simulated feed
+uses (046), live GSAP integration (the real SWBS request/response, PR/PO/invoice sync and rate feed behind the
 adapters the simulated GSAP uses), Microsoft Entra ID sign-in (roles from Entra),
 Azure hosting, templates, snapshots, related plans/activities, multi-year activity linking,
-custom goals, latest estimates, media codes, calendar feeds, AI assistant.
+custom goals, latest estimates, calendar feeds, AI assistant.

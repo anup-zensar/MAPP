@@ -24,3 +24,5 @@ Thumbs.db
 *.log
 
 /context
+
+/docs/measure-module

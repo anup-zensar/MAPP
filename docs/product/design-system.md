@@ -253,6 +253,26 @@ panel "What makes up …" with the activities and their total. Scope, dimension,
 address, so Back keeps them. The BCPIR tag (outlined, like the plan type) also marks BCPIR plans on the Plans
 list, the plan header and All work's plan rows.
 
+### 2.8 Report pages (the Measure module, features 039–050)
+
+`/reports` lists the reports the person may open, each with a one-line purpose; `/reports/<report>` is one
+report. Every report uses the **report frame** (039): breadcrumb Reports › report, the title, a meta row with
+the year and "Figures as of …", **Export** (secondary, the whole report as Excel) and **Saved views** (a menu:
+the person's views with a star for the default, *Save current filters*, *Reset*); no primary button — a report
+acts on nothing. Under the header, a left **filter panel** (year, plans, a tab per level for Shell attributes
+with *Not filled in*, owner, activity type, status, team; counters "(selected / all)"; a search box above ten
+values; Select all / Clear all per group; **Apply** at the bottom) that collapses on narrow screens; the page
+keeps the filters in its address. Above the widgets: **Period** (Months · Quarters), **Show** (Plan · Campaign ·
+Initiative · Activity where the report ranks records) and the display currency. Widgets are cards: summary
+cards first, then charts, then tables; every chart has a **Table** toggle and its own export (CSV · Excel); time
+charts carry the **today marker** with actual to its left and planned or projected to its right, in the 036
+chart tokens (§4.7) and never yellow or red. A **ranked list** shows two levels: opening a row puts it on top
+and lists its level below; **Back** steps up; every row carries a link to its record. Empty states say why:
+"No plans you may see for 2027", "You can't see financial data", "No performance data yet — upload a file in
+Settings › Performance data", "Your filters exclude everything" with **Reset filters**. Financial figures the
+person may not see show "—" and the count of plans the figure covers. Reports are read-only for everyone;
+there is no View-only note because there is nothing to change.
+
 ---
 
 ## 3. Visual tokens
@@ -1263,3 +1283,4 @@ or one component (see the recommendations report for the questions to Shell).
 | 2.2 | 28 Oct 2026 | Features 032 and 033: the purchase-request screens, their words and confirmations (§2.6); level tags PURCHASE REQUEST and PR LINE in the line items' grey (§4.2). |
 | 2.3 | 28 Oct 2026 | Feature 035, constitution 4.5.0: the product is shown as SP&A One; the name is the logo with "&" Shell dark blue and "One" Shell yellow (`#AD8700` on light surfaces); `LogoTile` with a yellow "1" below 960 px and as the favicon; tokens `--brand-name-amp`, `--brand-name-one`, `--brand-tile`, `--on-brand-tile`; `--brand-mark` and the star retired (§1, §2, §3.1, §3.10, §5.7, §6, §12). |
 | 2.4 | 29 Oct 2026 | Feature 038: grids add up in every display currency (§4.4); `ConfirmDialog acknowledgeOnly` (§5.3); the approve warning and disabled Approve for approval over planned cost (§5.6). |
+| 2.5 | 30 Oct 2026 | Measure module kick-off (constitution 4.8.0): report pages — the report frame, filter panel, saved views, today marker, ranked list and the empty states that say why (§2.8). |

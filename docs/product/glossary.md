@@ -132,3 +132,28 @@ application use these definitions. Hive9 names are given in brackets where users
 | **Plan type** | Operational, Strategic or Cross-market; plans stay one year, and views can cover up to five years. |
 | **Breakdown** | The All work view and plan card that add up planned cost by a Shell attribute or another grouping, optionally "then by" a second. |
 | **Field help** | The ⓘ text of a built-in field, kept in Settings › Field help so administrators can change it without a release. |
+
+## Reports (the Measure module, features 039–050)
+
+| Term | Meaning |
+|---|---|
+| **Reports** (Hive9: Measure) | The read-only reporting area. Every figure is worked out by the server from plan, finance and performance data; a report changes nothing. |
+| **Report frame** | What every report shares: the filter panel, the period and display-currency controls, saved views, the "as of" line, and a table view and export for every widget. |
+| **Filter panel** | Year, plans, Shell attributes per level, owner, activity type, status and team. Filters live in the page address, so Back keeps them and a link shares them; nothing persists silently. |
+| **Not filled in** (Hive9: (Not Completed)) | The value in a filter and a chart that counts records where an attribute has no value. |
+| **Period** (Hive9: Monthly/Quarterly) | The buckets of a time chart: Months or Quarters of the plan year. |
+| **Today marker** | The line on a time chart left of which figures are actual and right of which they are planned or projected. |
+| **Saved view** (report) | A named set of filters a person saves for a report; one can be starred as the default. Saved views are personal; the address is how a view is shared. |
+| **Summary cards** (Hive9: HUD) | The strip of figure cards at the top of a report. |
+| **Ranked list** (Hive9: stack ranking) | A list of plans, campaigns, initiatives or activities sorted by a figure, with group by, page size and order; opening a row shows the level below with the row on top, and every row links to its record. |
+| **Activity category** (Hive9: Tactic Category) | A named group of activity types the reports use to split goals and ROI (feature 047). |
+| **Funnel stages** (Hive9: Waterfall) | INQ → MQL → Revenue, as the model's goal waterfall (domain model §4.5). |
+| **Performance data** | Facts from outside systems — inquiries, MQLs, deals, revenue, web metrics — matched to activities (feature 046). In this phase they come from a simulated feed behind an adapter. |
+| **Data source** | A named feed of performance data with its column mappings, kept in Settings › Performance data. |
+| **Media code** | A code generated per activity and placed in campaign links so web data can be matched back to the activity. |
+| **External name** · **Integration ID** | The keys that match an activity with outside systems; the external name is set when the activity is approved. |
+| **Is integrated** | Whether an activity has a data source matched to it. |
+| **Projection** | Projected stage volumes and revenue from an activity's goal through the model's conversion rates, placed in time by its **velocity** (months between stages), up to the end of the plan year (feature 047). |
+| **Attribution model** | The rule that shares revenue credit between the activities that touched a deal (first touch, last touch, equally distributed, linear time decay, U-shaped). The chosen model is named next to every credited figure (feature 050). |
+| **ROI** | (Attributed revenue − cost) ÷ cost as a whole per cent, with its cost basis named. |
+| **GSAP link reports** | SWBS codes requested and not received, purchase requests waiting for GSAP, and the purchase orders per line item (feature 044). |

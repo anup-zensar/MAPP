@@ -17,6 +17,8 @@ from **the Hive9 application itself** — Shell's live Hive9 sandbox, analysed i
 | [hive9-replacement-project-plan.md](hive9-replacement-project-plan.md) | PP | Zensar project plan: personas (19 roles), in-scope features, roadmap | Oct 2026 | Scope |
 | [prism-findings-summary.md](prism-findings-summary.md) | PRISM | Sidekick for Shell, *PRISM Phase 1 Findings and Future-State Requirements* | May 2026 | Priorities: foundations before features |
 | [shell-target-architecture.md](shell-target-architecture.md) | ARCH | *Application and Azure Deployment Architecture* deck (v3, 6 slides) | Oct 2026 | Target platform (later) |
+| [hive9-measure-summary.md](hive9-measure-summary.md) | MA | Zensar analysis of the Measure module of the Shell Hive9 sandbox (16 pages, every control, metric and API), condensed; Part E of FA has the full text | 11 Sep 2026 | Measure as-is (features 039–050) |
+| [shell-measure-requirements.md](shell-measure-requirements.md) | CS | Shell's client specifications 016–020 and 025 for the Measure module, condensed with every FR and SC identifier | 17 Oct 2026 | Requirements the Measure specs cite ("client 017 FR-005") |
 
 **Precedence when sources disagree on behaviour (D-007):** PM > FA (Live) > WS > FA (Guide).
 **The design system decides layout, look and interaction (D-005).**
@@ -28,3 +30,8 @@ from **the Hive9 application itself** — Shell's live Hive9 sandbox, analysed i
 - `Application_and_Azure_Deployment_Architecture_Enterprise_Updated_v3.pdf` — summarised here
   (supersedes `Hive9_Final_Architecture.pptx`).
 - `Business Requirements.pdf` — transcribed in `brd-requirements.md`.
+- `Hive9_Measure_Module_Analysis.docx` — condensed in `hive9-measure-summary.md`; its full text is FA Part E.
+- Shell's client specifications `016-measure-performance-reports` … `025-self-service-dashboard-builder`
+  (spec.md each, 17 Oct 2026) — condensed in `shell-measure-requirements.md`.
+- `Shell_Hive9_Finance_Discovery_v8_internal.pdf` (Zensar internal, 8 Oct 2026) — the programme plan: Measure
+  build 10 Nov – 4 Dec 2026; seven Measure screens read Finance objects.

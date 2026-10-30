@@ -1,8 +1,10 @@
 # CLAUDE.md — guidance for AI agents working on MAPP
 
-Read this with `.specify/memory/constitution.md` (the rules, version 4.7) before doing anything. Where
+Read this with `.specify/memory/constitution.md` (the rules, version 4.8) before doing anything. Where
 this file and the constitution disagree, the constitution wins and this file is corrected. Working in
-`backend/`? `backend/CLAUDE.md` loads the Go standards (`backend/docs/GO_STANDARDS.md`).
+`backend/`? `backend/CLAUDE.md` loads the Go standards (`backend/docs/GO_STANDARDS.md`). Working on the
+**Measure module** (features 039–050)? Read `docs/sdd/measure-module-build.md` first — it names your lane, the
+files you own and the files you never edit.
 
 ## Project
 
@@ -11,7 +13,9 @@ MAPP is Shell's marketing planning application replacing the Hive9 Plan module; 
 This phase covers only the **Plan module**: demo sign-in, application shell, home dashboard, settings, people and teams,
 plans, campaigns, initiatives, activities, line items, approvals, planning views, activity log and
 recycle bin, and Shell's purchase-request process on MAPP's side up to the purchase order, with SWBS codes,
-GSAP PRs and POs from a simulated GSAP (features 030–034). Spec-driven development with GitHub Spec Kit. The
+GSAP PRs and POs from a simulated GSAP (features 030–034). Since constitution 4.8.0 the **Measure module** —
+read-only reports, shown as Reports (features 039–050) — is in scope too, built on the `measure-module` branch
+by four lanes. Spec-driven development with GitHub Spec Kit. The
 constitution applies Shell's
 Software Design & Construction Policy and SEMS, which are mandatory.
 
@@ -69,12 +73,15 @@ Software Design & Construction Policy and SEMS, which are mandatory.
     `tokens.css` and `docs/product/design-system.md` §3.1 carry these values (feature 020); on a grey
     background secondary text, links and red text switch to Text Strong (`--ink-2: var(--ink)`).
 13. **Out of scope:** the Finance budgets module, accrual calculation, invoice approval, supporting
-    documents on purchase requests, Measure's performance reporting, live GSAP integration, e-mail and sharing
+    documents on purchase requests, live performance connectors, live GSAP integration, e-mail and sharing
     to Outlook or Teams, real sign-in (SSO), AI. Do not
     build them. GSAP rates and transactions come only from simulated feeds behind adapters (ADR-0009); SWBS
     codes, GSAP PR numbers and purchase orders come only from the simulated GSAP (ADR-0016). Purchase requests
     on MAPP's side are in scope since constitution 4.4.0 (features 030–034, D-320); planning dashboards from
-    plan and finance data, PowerPoint/PDF export and overspend control since 4.6.0 (features 036–037, D-333).
+    plan and finance data, PowerPoint/PDF export and overspend control since 4.6.0 (features 036–037, D-333);
+    the Measure reports since 4.8.0 (features 039–050, D-366), with performance data only from a simulated feed
+    behind an adapter (D-370). The Finance budget report, AR invoice details, the China budget pack, vendor
+    delivery reliability, a dashboard builder and report sharing by e-mail stay out.
 14. **Local only:** servers listen on `127.0.0.1`; no cloud services at run time; Docker or Podman only
     optionally, for PostgreSQL or for reviewers running the whole app from `compose.yaml` (ADR-0012);
     developing MAPP never needs them; no secrets in the repository.
@@ -98,6 +105,8 @@ Software Design & Construction Policy and SEMS, which are mandatory.
 | Features, order, scope boundaries | `docs/sdd/feature-map.md` |
 | Decisions and open questions | `docs/sdd/decision-log.md` |
 | Process, branches, Definition of Done | `docs/sdd/sdd-process.md` |
+| Measure module: lanes, ownership, build order, report pattern (read first for 039–050) | `docs/sdd/measure-module-build.md` |
+| Every report figure, defined once | `docs/product/measure-metrics.md` |
 | Records, statuses, money rules | `docs/product/domain-model.md` |
 | Fields per level | `docs/product/field-catalogue.md` |
 | Screens and wording | `docs/product/design-system.md` |
@@ -109,7 +118,8 @@ Software Design & Construction Policy and SEMS, which are mandatory.
 ## Conventions
 
 - Branches: `main` (production), `release` (stabilisation), `develop` (integration). `plan-module` is
-  the Plan module's branch and merges into `develop` when the module is ready. Feature branches are
+  the Plan module's branch and `measure-module` the Measure module's; each merges into `develop` when its
+  module (or wave) is ready. Feature branches are
   `feature/NNN-short-name`, matching `specs/NNN-short-name/`, and start from the module branch.
 - Never push directly to `main`, `release` or `develop`. Every change reaches them through a reviewed
   pull request from a working branch (`feature/NNN-short-name`, or `docs/…` / `fix/…` for work without a
