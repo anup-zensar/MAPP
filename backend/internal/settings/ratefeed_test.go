@@ -187,8 +187,16 @@ func TestGSAPRateFile_EmptyAndMissingColumns_038_FR034_L21(t *testing.T) {
 		assertError(t, err, problems("content", "This file is empty."))
 	}
 	_, err := GSAPRateFile{}.Read("x.csv", []byte("rate_type,to_currency\nM,EUR\n"))
-	assertError(t, err, problems("content", "The file needs the column 'from_currency'.",
-		"content", "The file needs the column 'valid_from'.", "content", "The file needs the column 'rate'."))
+	assertError(t, err, problems("content", "The file needs the columns 'from_currency', 'valid_from' and 'rate'."))
+}
+
+// Three missing columns are named in the one message the field shows, not one message each — 038 FR-034 (L-21).
+func TestGSAPRateFile_ThreeMissingColumnsOneMessage_038_FR034_L21(t *testing.T) {
+	t.Parallel()
+	_, err := GSAPRateFile{}.Read("x.csv", []byte("rate_type,from_currency\nM,USD\n"))
+	assertError(t, err, problems("content", "The file needs the columns 'to_currency', 'valid_from' and 'rate'."))
+	_, err = GSAPRateFile{}.Read("x.csv", []byte("rate_type,from_currency,to_currency,valid_from\nM,USD,EUR,2026-03-13\n"))
+	assertError(t, err, problems("content", "The file needs the column 'rate'."))
 }
 
 // A rate above 1,000,000 gets the "too large" message; dates before 1 Jan 2000 are refused — 038 FR-034 (L-21).
