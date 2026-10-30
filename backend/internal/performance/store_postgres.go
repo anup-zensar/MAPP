@@ -11,6 +11,8 @@ import (
 	"mapp/internal/platform/record"
 )
 
+var _ Store = (*PostgresStore)(nil)
+
 type PostgresStore struct {
 	db *database.DB
 }
