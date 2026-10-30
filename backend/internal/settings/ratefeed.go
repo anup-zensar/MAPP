@@ -8,16 +8,11 @@ import (
 	"io"
 	"strings"
 	"unicode/utf8"
-
-	"mapp/internal/platform/errs"
 )
 
-// The rate feed seam (016 FR-008, D-259): GSAPRateFile reads an uploaded GSAP daily rate extract; a later
-// automatic feed implements RateFeed (or calls ApplyRateRows) and the import's rules stay the same.
-
+// RateFeed is the seam for GSAP rates (016 FR-008): GSAPRateFile reads uploads; MAPP calls no external system.
 type RateFeed interface {
 	Name() string
-	// Read returns the rows in order; an error (an *errs.Error) means the delivery can't be read at all.
 	Read(fileName string, content []byte) ([]FeedRow, error)
 }
 
@@ -27,7 +22,7 @@ type FeedRow struct {
 	From      string
 	To        string
 	ValidFrom string
-	Rate      string // units of To per 1 From: "0.9214"
+	Rate      string
 }
 
 const (
@@ -42,6 +37,7 @@ var gsapColumns = []string{"rate_type", "from_currency", "to_currency", "valid_f
 
 const (
 	rateFileColumnMessage     = "The file needs the column '%s'."
+	rateFileColumnsMessage    = "The file needs the columns %s and '%s'."
 	rateFileTooLargeMessage   = "The file is larger than 2 MB. Split it and import each part."
 	rateFileTooManyMessage    = "The file has %s rows — import at most 20,000 rows at a time."
 	rateFileUnreadableMessage = "This file can't be read. Save it as a .csv file in UTF-8 and try again."
@@ -49,11 +45,11 @@ const (
 	rateFileNothingMessage    = "This file is empty."
 )
 
+// GSAPRateFile reads the GSAP daily rate extract (data-model §2.4): UTF-8 CSV, header in any order and case.
 type GSAPRateFile struct{}
 
 func (GSAPRateFile) Name() string { return gsapFeedName }
 
-// Read never logs the file, which holds business data.
 func (GSAPRateFile) Read(_ string, content []byte) ([]FeedRow, error) {
 	if len(content) > maxRateFileBytes {
 		return nil, contentProblem(rateFileTooLargeMessage)
@@ -66,7 +62,6 @@ func (GSAPRateFile) Read(_ string, content []byte) ([]FeedRow, error) {
 		return nil, contentProblem(rateFileNothingMessage)
 	}
 	reader := csv.NewReader(bytes.NewReader(content))
-	reader.FieldsPerRecord = -1 // short rows are read and checked cell by cell
 	reader.TrimLeadingSpace = true
 	reader.LazyQuotes = true // a stray quote makes a row's cell wrong, not the file unreadable (038 FR-034)
 	header, err := reader.Read()
@@ -110,6 +105,7 @@ func (GSAPRateFile) Read(_ string, content []byte) ([]FeedRow, error) {
 	return rows, nil
 }
 
+// headerIndex names every missing column in one message, since a field shows one message (038 FR-034).
 func headerIndex(header []string) (map[string]int, error) {
 	index := map[string]int{}
 	for i, cell := range header {
@@ -118,13 +114,20 @@ func headerIndex(header []string) (map[string]int, error) {
 			index[name] = i
 		}
 	}
-	var problems errs.Problems
+	var missing []string
 	for _, column := range gsapColumns {
 		if _, found := index[column]; !found {
-			problems.Add("content", fmt.Sprintf(rateFileColumnMessage, column))
+			missing = append(missing, column)
 		}
 	}
-	return index, problems.Err()
+	switch len(missing) {
+	case 0:
+		return index, nil
+	case 1:
+		return nil, contentProblem(fmt.Sprintf(rateFileColumnMessage, missing[0]))
+	}
+	last := len(missing) - 1
+	return nil, contentProblem(fmt.Sprintf(rateFileColumnsMessage, "'"+strings.Join(missing[:last], "', '")+"'", missing[last]))
 }
 
 func blank(record []string) bool {
@@ -143,6 +146,7 @@ func (s *Service) rateFeed() RateFeed {
 	return s.feed
 }
 
+// UseRateFeed sets the feed rate files are read with (FR-008).
 func (s *Service) UseRateFeed(feed RateFeed) {
 	s.feed = feed
 }

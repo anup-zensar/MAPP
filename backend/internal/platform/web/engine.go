@@ -12,7 +12,11 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-const serviceName = "mapp-api"
+const (
+	serviceName  = "mapp-api"
+	loopbackIPv4 = "127.0.0.1"
+	loopbackIPv6 = "::1"
+)
 
 type Options struct {
 	Tracer         trace.TracerProvider
@@ -23,12 +27,12 @@ type Options struct {
 
 // NewEngine puts recovery inside tracing, request ID and log, so a panic keeps their attributes and is a 500.
 func NewEngine(o Options) (*gin.Engine, error) {
-	gin.SetMode(gin.ReleaseMode) // debug mode prints to standard output, which carries only JSON logs
+	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
 	engine.RedirectTrailingSlash = false
 	engine.RedirectFixedPath = false
 	// Only these proxies may report the client's address, which the sign-in attempt limit counts by.
-	if err := engine.SetTrustedProxies(append([]string{"127.0.0.1", "::1"}, o.TrustedProxies...)); err != nil {
+	if err := engine.SetTrustedProxies(append([]string{loopbackIPv4, loopbackIPv6}, o.TrustedProxies...)); err != nil {
 		return nil, fmt.Errorf("trusted proxies: %w", err)
 	}
 	engine.Use(

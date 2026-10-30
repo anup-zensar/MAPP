@@ -106,38 +106,24 @@ func hasUnpairedSurrogate(raw []byte) bool {
 		if raw[i] != '\\' {
 			continue
 		}
+		unit := unicodeEscape(raw, i)
 		i++
-		if i >= len(raw) || raw[i] != 'u' {
+		if unit < 0xd800 || unit > 0xdfff {
 			continue
 		}
-		unit := escapedUnit(raw, i+1)
-		switch {
-		case unit >= 0xdc00 && unit <= 0xdfff:
+		if low := unicodeEscape(raw, i+5); unit >= 0xdc00 || low < 0xdc00 || low > 0xdfff {
 			return true
-		case unit >= 0xd800 && unit <= 0xdbff:
-			if !isLowSurrogateEscape(raw, i+5) {
-				return true
-			}
-			i += 6
 		}
-		i += 4
+		i += 10
 	}
 	return false
 }
 
-func isLowSurrogateEscape(raw []byte, at int) bool {
-	if at+1 >= len(raw) || raw[at] != '\\' || raw[at+1] != 'u' {
-		return false
-	}
-	unit := escapedUnit(raw, at+2)
-	return unit >= 0xdc00 && unit <= 0xdfff
-}
-
-func escapedUnit(raw []byte, at int) int {
-	if at+4 > len(raw) {
+func unicodeEscape(raw []byte, at int) int {
+	if at+6 > len(raw) || raw[at] != '\\' || raw[at+1] != 'u' {
 		return -1
 	}
-	unit, err := strconv.ParseUint(string(raw[at:at+4]), 16, 16)
+	unit, err := strconv.ParseUint(string(raw[at+2:at+6]), 16, 16)
 	if err != nil {
 		return -1
 	}
