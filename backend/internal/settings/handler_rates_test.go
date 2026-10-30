@@ -10,11 +10,6 @@ import (
 	"mapp/internal/platform/apitest"
 )
 
-// The handler tests of 016's exchange rates and Field help run the real API on the demo data — EUR, GBP, CNY
-// and INR with 31 days of simulated GSAP rates up to the seed day, 12 Mar 2026 (data-model §8) — and check
-// every request and answer against the contract.
-
-// rateRecord is the part of an ExchangeRateRecord the tests read.
 type rateRecord struct {
 	ID, Currency, Date, Rate, Source string
 	ImportFileName                   *string
@@ -70,8 +65,6 @@ func TestRatesAPI_HistoryAndCurrent_FR003_FR009(t *testing.T) {
 	}
 }
 
-// Add rate answers 201; its impact check, Edit (with its impact check and a stale version) and Delete with
-// Undo follow the rules of the service (FR-003, FR-005).
 func TestRatesAPI_AddUpdateDelete_FR003_FR005(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -115,8 +108,6 @@ func TestRatesAPI_AddUpdateDelete_FR003_FR005(t *testing.T) {
 	}
 }
 
-// The sample file is a CSV of today's rates; its review and import answer every row and the import record;
-// Recent imports lists the newest first; a second import has nothing to import (FR-006, FR-007).
 func TestRatesAPI_ImportCheckAndImport_FR006_FR007(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -165,7 +156,7 @@ func TestRatesAPI_ImportCheckAndImport_FR006_FR007(t *testing.T) {
 	assertAnswer(t, again, http.StatusBadRequest,
 		validationBody(`{"field":"content","message":"Nothing to import: every rate is already present or not used."}`))
 	assertAnswer(t, unreadable, http.StatusBadRequest, validationBody(
-		`{"field":"content","message":"The file needs the columns 'from_currency', 'to_currency' and 'valid_from'."}`)) // every missing column (038 FR-034)
+		`{"field":"content","message":"The file needs the columns 'from_currency', 'to_currency' and 'valid_from'."}`))
 	if recent.Total != 2 || recent.Items[0].ID != "RI-1002" || recent.Items[1].ID != "RI-1001" {
 		t.Errorf("recent imports = %+v", recent)
 	}
@@ -174,9 +165,6 @@ func TestRatesAPI_ImportCheckAndImport_FR006_FR007(t *testing.T) {
 	}
 }
 
-// Field help lists every entry with its default and, with the demo data, no Shell attribute without help;
-// an edit answers the edited entry, a stale version 409, a reset the default again, an unknown key 404
-// (FR-045, FR-046, FR-048).
 func TestFieldHelpAPI_ListAndUpdate_FR045_FR046_FR048(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)

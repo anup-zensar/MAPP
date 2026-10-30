@@ -132,7 +132,7 @@ func isLocalHost(hostAndPort string) bool {
 	}
 	host = strings.TrimSuffix(strings.TrimPrefix(host, "["), "]")
 	switch strings.ToLower(host) {
-	case "127.0.0.1", "localhost", "::1":
+	case loopbackIPv4, "localhost", loopbackIPv6:
 		return true
 	}
 	return false
