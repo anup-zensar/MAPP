@@ -29,26 +29,38 @@ func TestGrid_AddsUp_038_FR022_M1(t *testing.T) {
 		money.DisplayIn("GBP", "0.79").WithRates(rates)} {
 		plan := a1011Grid()
 		g := display{d}.grid(plan)
-		rowTotals := make([]money.Money, 0, len(g.Rows))
-		for i, row := range g.Rows {
-			want := d.Money(plan.Rows[i].Total)
-			if sum := sumCells(row.Cells); row.Total != want || sum != want.Amount {
-				t.Errorf("%s: row %s = %s with months adding up to %s, want %s", d.Currency(), row.Name,
-					row.Total.Format(), sum, want.Format())
-			}
-			rowTotals = append(rowTotals, row.Total)
-		}
-		for col := range g.Totals {
-			column := make([]*money.Money, 0, len(g.Rows))
-			for _, row := range g.Rows {
-				column = append(column, row.Cells[col])
-			}
-			if got := sumCells(g.Totals[col : col+1]); got != sumCells(column) {
-				t.Errorf("%s: column %d total = %s, its cells add up to %s", d.Currency(), col, got, sumCells(column))
-			}
-		}
+		rowTotals := checkGridRows(t, d, plan, g)
+		checkGridColumns(t, d, g)
 		if sumCells(g.Totals) != g.Total.Amount || money.Sum(amountsOf(rowTotals)...) != g.Total.Amount {
 			t.Errorf("%s: grand total %s, columns add up to %s", d.Currency(), g.Total.Format(), sumCells(g.Totals))
+		}
+	}
+}
+
+// checkGridRows checks each row total is its planned cost converted once and its months add up to it.
+func checkGridRows(t *testing.T, d money.Display, plan, g SpreadGrid) []money.Money {
+	t.Helper()
+	rowTotals := make([]money.Money, 0, len(g.Rows))
+	for i, row := range g.Rows {
+		want := d.Money(plan.Rows[i].Total)
+		if sum := sumCells(row.Cells); row.Total != want || sum != want.Amount {
+			t.Errorf("%s: row %s = %s with months adding up to %s, want %s", d.Currency(), row.Name,
+				row.Total.Format(), sum, want.Format())
+		}
+		rowTotals = append(rowTotals, row.Total)
+	}
+	return rowTotals
+}
+
+func checkGridColumns(t *testing.T, d money.Display, g SpreadGrid) {
+	t.Helper()
+	for col := range g.Totals {
+		column := make([]*money.Money, 0, len(g.Rows))
+		for _, row := range g.Rows {
+			column = append(column, row.Cells[col])
+		}
+		if got := sumCells(g.Totals[col : col+1]); got != sumCells(column) {
+			t.Errorf("%s: column %d total = %s, its cells add up to %s", d.Currency(), col, got, sumCells(column))
 		}
 	}
 }

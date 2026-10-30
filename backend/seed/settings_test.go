@@ -14,14 +14,29 @@ import (
 func TestLoad_Settings_FR032_038_FR061_L30(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
+	checkSeededCurrencies(t, d)
+	checkSeededActivityTypes(t, d)
+	checkSeededModels(t, d)
+	checkSeededFinanceBudgets(t, d)
+	if len(d.attributes) != 56 || len(d.options) != 185 {
+		t.Errorf("%d Shell attributes and %d options, want 56 and 185 (032 FR-006)", len(d.attributes), len(d.options))
+	}
+}
 
-	// The current rate of each currency is its latest dated rate on or before the seed day.
+// latestRates are the current rate of each currency: its latest dated rate on or before the seed day.
+func latestRates(rates []settings.ExchangeRate) map[string]settings.ExchangeRate {
 	current := map[string]settings.ExchangeRate{}
-	for _, r := range d.rates {
+	for _, r := range rates {
 		if latest, found := current[r.Currency]; r.Date.Compare(date.Today(loadedAt)) <= 0 && (!found || r.Date.After(latest.Date)) {
 			current[r.Currency] = r
 		}
 	}
+	return current
+}
+
+func checkSeededCurrencies(t *testing.T, d demoData) {
+	t.Helper()
+	current := latestRates(d.rates)
 	var currencies []string
 	for _, c := range d.currencies {
 		rate := "1"
@@ -36,7 +51,10 @@ func TestLoad_Settings_FR032_038_FR061_L30(t *testing.T) {
 	if want := []string{"CNY 7.1 ¥", "EUR 0.92 €", "GBP 0.79 £", "INR 83.5 ₹", "USD 1 $"}; !slices.Equal(currencies, want) {
 		t.Errorf("currencies = %q, want %q", currencies, want)
 	}
+}
 
+func checkSeededActivityTypes(t *testing.T, d demoData) {
+	t.Helper()
 	var types []string
 	for _, at := range d.activityTypes {
 		text := at.ID + " " + at.Name
@@ -52,28 +70,41 @@ func TestLoad_Settings_FR032_038_FR061_L30(t *testing.T) {
 	if !slices.Equal(types, wantTypes) {
 		t.Errorf("activity types = %q, want %q", types, wantTypes)
 	}
+}
 
+type wantModel struct {
+	id, name, inqToMql, mqlToDeal, dealSize string
+	activityTypeIDs                         []string
+}
+
+func checkSeededModels(t *testing.T, d demoData) {
+	t.Helper()
 	if len(d.models) != 2 {
 		t.Fatalf("%d models, want 2", len(d.models))
 	}
-	lubricants, mobility := d.models[0], d.models[1]
-	if lubricants.ID != "MOD-1001" || lubricants.Name != "Lubricants 1.0" || lubricants.InqToMqlRate.String() != "2.00" ||
-		lubricants.MqlToDealRate.String() != "5.00" || lubricants.AverageDealSize.Format() != "10,000.00 USD" ||
-		!slices.Equal(lubricants.ActivityTypeIDs, []string{"AT-1001", "AT-1004", "AT-1003", "AT-1002", "AT-1005"}) {
-		t.Errorf("Lubricants 1.0 = %+v", lubricants)
-	}
-	if mobility.ID != "MOD-1002" || mobility.Name != "Mobility 1.0" || mobility.InqToMqlRate.String() != "3.00" ||
-		mobility.MqlToDealRate.String() != "4.00" || mobility.AverageDealSize.Format() != "5,000.00 USD" ||
-		!slices.Equal(mobility.ActivityTypeIDs, []string{"AT-1001", "AT-1004", "AT-1003", "AT-1002", "AT-1006", "AT-1005"}) {
-		t.Errorf("Mobility 1.0 = %+v", mobility)
-	}
+	checkModel(t, d.models[0], wantModel{"MOD-1001", "Lubricants 1.0", "2.00", "5.00", "10,000.00 USD",
+		[]string{"AT-1001", "AT-1004", "AT-1003", "AT-1002", "AT-1005"}})
+	checkModel(t, d.models[1], wantModel{"MOD-1002", "Mobility 1.0", "3.00", "4.00", "5,000.00 USD",
+		[]string{"AT-1001", "AT-1004", "AT-1003", "AT-1002", "AT-1006", "AT-1005"}})
+}
 
+func checkModel(t *testing.T, m settings.Model, want wantModel) {
+	t.Helper()
+	if m.ID != want.id || m.Name != want.name || m.InqToMqlRate.String() != want.inqToMql ||
+		m.MqlToDealRate.String() != want.mqlToDeal || m.AverageDealSize.Format() != want.dealSize ||
+		!slices.Equal(m.ActivityTypeIDs, want.activityTypeIDs) {
+		t.Errorf("%s = %+v", want.name, m)
+	}
+}
+
+func checkSeededFinanceBudgets(t *testing.T, d demoData) {
+	t.Helper()
 	var budgets []string
 	for _, b := range d.budgets {
 		budgets = append(budgets, fmt.Sprintf("%s %s %d", b.ID, b.Name, b.Year))
 	}
 	want := []string{"FB-1001 2026 Lubricants Budget 2026", "FB-1002 2026 Mobility Budget 2026",
-		"FB-1003 2027 Lubricants Budget 2027"} // 038 FR-061 (L-30): the FY2027 line items' budget
+		"FB-1003 2027 Lubricants Budget 2027"} // the FY2027 line items' budget
 	if !slices.Equal(budgets, want) {
 		t.Errorf("finance budgets = %q, want %q", budgets, want)
 	}
@@ -89,10 +120,6 @@ func TestLoad_Settings_FR032_038_FR061_L30(t *testing.T) {
 	}
 	if !slices.Equal(items, wantItems) {
 		t.Errorf("finance budget items = %q, want %q", items, wantItems)
-	}
-
-	if len(d.attributes) != 56 || len(d.options) != 185 {
-		t.Errorf("%d Shell attributes and %d options, want 56 and 185 (032 FR-006)", len(d.attributes), len(d.options))
 	}
 }
 

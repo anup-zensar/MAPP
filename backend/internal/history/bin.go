@@ -19,7 +19,7 @@ const (
 var errDryRun = errors.New("history: dry run of a restore")
 
 // ListBinItems returns the unresolved entries, newest first, each with its restore state, dependants and what
-// the person may do; entries of unknown kinds (D-186) or out of their sight are left out (014 FR-007).
+// the person may do; entries of unknown kinds (D-186) or out of their sight are left out.
 func (s *Service) ListBinItems(ctx context.Context, a actor.Actor) ([]BinListItem, error) {
 	var items []BinListItem
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -61,7 +61,7 @@ func (s *Service) binItems(ctx context.Context, index binIndex) ([]BinListItem, 
 		}
 		items = append(items, item)
 	}
-	// An entry waiting for this one can no longer be restored once this one is deleted permanently (FR-028).
+	// An entry waiting for this one can no longer be restored once this one is deleted permanently.
 	for i := range items {
 		for _, other := range items {
 			if other.RestoreState == ParentInRecycleBin && slices.Contains(other.ParentEntryIDs, items[i].ID) {
@@ -72,7 +72,7 @@ func (s *Service) binItems(ctx context.Context, index binIndex) ([]BinListItem, 
 	return items, nil
 }
 
-// unresolvedEntry refuses an entry unknown, out of sight, of an unknown kind or already left the bin (FR-032).
+// unresolvedEntry refuses an entry unknown, out of sight, of an unknown kind or already left the bin.
 func (s *Service) unresolvedEntry(ctx context.Context, entryID string) (BinEntry, error) {
 	entry, found, err := s.repo.GetBinEntry(ctx, entryID)
 	if err != nil {
@@ -111,7 +111,7 @@ func (s *Service) PreviewRestore(ctx context.Context, a actor.Actor, entryID str
 		if err != nil {
 			return err
 		}
-		if err := s.canRestoreAll(ctx, append(state.chain, entry)); err != nil {
+		if err = s.canRestoreAll(ctx, append(state.chain, entry)); err != nil {
 			return err
 		}
 		preview = RestorePreview{
@@ -193,7 +193,7 @@ func (s *Service) describePreview(ctx context.Context, preview *RestorePreview, 
 	return nil
 }
 
-// unstated drops the rename and status reset that the restore notes already state (038 FR-049).
+// unstated drops the rename and status reset that the restore notes already state.
 func unstated(changes []Change, notes []string) []Change {
 	if len(notes) == 0 {
 		return changes
@@ -214,7 +214,7 @@ func (s *Service) restoreChain(ctx context.Context, a actor.Actor, chain []BinEn
 }
 
 // RestoreWithParents is Restore both / Restore all N: parents first, each with its own log entry, in the
-// caller's Write. A parent, or a record above it, deleted permanently refuses it (FR-024).
+// caller's Write. A parent, or a record above it, deleted permanently refuses it.
 func (s *Service) RestoreWithParents(ctx context.Context, a actor.Actor, entryID string) (RestoreResult, error) {
 	var result RestoreResult
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -238,7 +238,7 @@ func (s *Service) RestoreWithParents(ctx context.Context, a actor.Actor, entryID
 				return errs.NotFound(kindUnknownMessage)
 			}
 		}
-		if err := s.canRestoreAll(ctx, append(state.chain, entry)); err != nil {
+		if err = s.canRestoreAll(ctx, append(state.chain, entry)); err != nil {
 			return err
 		}
 		done, err := s.restoreChain(ctx, a, append(state.chain, entry), s.now())

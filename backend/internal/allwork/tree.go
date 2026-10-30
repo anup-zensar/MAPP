@@ -14,7 +14,9 @@ type filter struct {
 	test   func(t *tnode) bool
 }
 
-var progressValues = []string{"noActivities", statusInProgress, "allApproved"}
+func progressValues() []string {
+	return []string{statusNoActivities, statusInProgress, statusAllApproved}
+}
 
 func filtersOf(q Query) []filter {
 	plans := []Level{LevelPlan}
@@ -54,7 +56,7 @@ func filtersOf(q Query) []filter {
 func containerStatusTest(values []string) func(n *Node) bool {
 	var progress, timing []string
 	for _, v := range values {
-		if slices.Contains(progressValues, v) {
+		if slices.Contains(progressValues(), v) {
 			progress = append(progress, v)
 		} else {
 			timing = append(timing, v)

@@ -62,18 +62,28 @@ func TestApprovalOverPlannedCost_Contract_038_FR018_FR057_M18_L16(t *testing.T) 
 	var log history.LogPage
 	alex.Do(t, http.MethodGet, "/api/v1/activity-log?recordType=overspendConfiguration&recordId=overspend", nil).Decode(t, &log)
 
-	if fresh.ApprovalOverPlannedCost != overspend.Warn || fresh.UpdatedAt != nil || fresh.UpdatedBy != nil {
-		t.Errorf("038 FR-018 FR-057 never saved = %+v, want Warn and no last change", fresh)
-	}
+	checkNeverSaved(t, fresh)
 	if got := []int{forbidden.Status, invalid.Status, stale.Status}; !slices.Equal(got, []int{403, 400, 409}) {
 		t.Errorf("038 FR-018 refusals = %v, want 403, 400, 409", got)
 	}
+	checkSavedThenKept(t, saved, kept)
+	if got := logTexts(log); !slices.Contains(got, "Approval over planned cost: Warn → Refuse") {
+		t.Errorf("038 FR-018 log = %v", got)
+	}
+}
+
+func checkNeverSaved(t *testing.T, fresh configurationAnswer) {
+	t.Helper()
+	if fresh.ApprovalOverPlannedCost != overspend.Warn || fresh.UpdatedAt != nil || fresh.UpdatedBy != nil {
+		t.Errorf("038 FR-018 FR-057 never saved = %+v, want Warn and no last change", fresh)
+	}
+}
+
+func checkSavedThenKept(t *testing.T, saved, kept configurationAnswer) {
+	t.Helper()
 	if saved.ApprovalOverPlannedCost != overspend.Refuse || saved.Version != 2 || saved.UpdatedBy == nil ||
 		kept.ApprovalOverPlannedCost != overspend.Refuse || kept.DefaultMode != overspend.Refuse {
 		t.Errorf("038 FR-018 saved = %+v, then %+v", saved, kept)
-	}
-	if got := logTexts(log); !slices.Contains(got, "Approval over planned cost: Warn → Refuse") {
-		t.Errorf("038 FR-018 log = %v", got)
 	}
 }
 

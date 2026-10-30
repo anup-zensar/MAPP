@@ -25,25 +25,11 @@ func TestLoad_LineItems_FR009_038_FR061_L30(t *testing.T) {
 
 	var got []string
 	for _, l := range d.lineItems {
-		var months []string
-		for _, m := range l.Spread.Months {
-			months = append(months, m.Month+"="+m.Amount.Format())
-		}
-		coding := []string{l.FinanceBudgetItemID}
-		for _, attribute := range []string{spendType, glCode} {
-			for _, id := range optionIDs(t, d.attributeByID[attribute], l.Attributes[attribute]) {
-				coding = append(coding, d.label(id))
-			}
-		}
-		got = append(got, fmt.Sprintf("%s %s %s %s %s %s[%s] swbs=%v %s", l.ID, activityByID[l.ActivityID].Name, l.Name,
-			l.Currency, l.PlannedCost.Format(), l.Spread.Method, strings.Join(months, " "), l.RequestSwbs, strings.Join(coding, " / ")))
-		year := 2026
-		if strings.HasPrefix(activityByID[l.ActivityID].StartDate.String(), "2027") { // the GBP plan of 016
-			year = 2027
-		}
-		if l.OwnerID != activityByID[l.ActivityID].OwnerID || l.FinanceBudgetYear == nil || *l.FinanceBudgetYear != year {
-			t.Errorf("%s: owner %q, finance budget year %v", l.Name, l.OwnerID, l.FinanceBudgetYear)
-		}
+		a := activityByID[l.ActivityID]
+		got = append(got, fmt.Sprintf("%s %s %s %s %s %s[%s] swbs=%v %s", l.ID, a.Name, l.Name,
+			l.Currency, l.PlannedCost.Format(), l.Spread.Method, monthsText(l), l.RequestSwbs,
+			lineItemCoding(t, d, l, []string{spendType, glCode})))
+		checkOwnerAndBudgetYear(t, l, a)
 	}
 	want := []string{
 		"L-1001 Launch film Agency fee USD 50,000.00 evenly[] swbs=true FBI-1001 / ATL - Digital / 7250080 - Advertising - Digital",
@@ -55,12 +41,43 @@ func TestLoad_LineItems_FR009_038_FR061_L30(t *testing.T) {
 		"L-1006 Billboard winter wave Stand build EUR 9,200.00 evenly[] swbs=true FBI-1003 / BTL - Event / 7250150 - Sponsorship programmes",
 		"L-1007 Grand opening Shanghai Station signage USD 1,000.00 custom[2026-04=450.00 2026-05=450.00] swbs=true FBI-1004 / BTL - Event",
 		"L-1008 Grand opening Shanghai Fleet card promotion CNY 280,450.00 evenly[] swbs=true FBI-1005 / ATL - Digital / 7250080 - Advertising - Digital",
-		// 038 FR-061 (L-30): the FY2027 line items carry an item of the 2027 finance budget.
+		// the FY2027 line items carry an item of the 2027 finance budget.
 		"L-1009 UK launch event Venue GBP 15,000.00 evenly[] swbs=true FBI-1007 / BTL - Event / 7250150 - Sponsorship programmes",
 		"L-1010 UK launch event Agency fee (Ireland) EUR 23,000.00 evenly[] swbs=true FBI-1008 / BTL - Agency Fees / 7250060 - Advertising - Corp/Agency/Production",
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("line items =\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
+	}
+}
+
+func monthsText(l lineitem.LineItem) string {
+	var months []string
+	for _, m := range l.Spread.Months {
+		months = append(months, m.Month+"="+m.Amount.Format())
+	}
+	return strings.Join(months, " ")
+}
+
+// lineItemCoding is the line item's finance budget item, then the labels of its options of the attributes.
+func lineItemCoding(t *testing.T, d demoData, l lineitem.LineItem, attributes []string) string {
+	t.Helper()
+	coding := []string{l.FinanceBudgetItemID}
+	for _, attribute := range attributes {
+		for _, id := range optionIDs(t, d.attributeByID[attribute], l.Attributes[attribute]) {
+			coding = append(coding, d.label(id))
+		}
+	}
+	return strings.Join(coding, " / ")
+}
+
+func checkOwnerAndBudgetYear(t *testing.T, l lineitem.LineItem, a activity.Activity) {
+	t.Helper()
+	year := 2026
+	if strings.HasPrefix(a.StartDate.String(), "2027") { // the GBP plan of 016
+		year = 2027
+	}
+	if l.OwnerID != a.OwnerID || l.FinanceBudgetYear == nil || *l.FinanceBudgetYear != year {
+		t.Errorf("%s: owner %q, finance budget year %v", l.Name, l.OwnerID, l.FinanceBudgetYear)
 	}
 }
 

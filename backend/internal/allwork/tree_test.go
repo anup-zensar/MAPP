@@ -172,9 +172,9 @@ func TestRollup_TotalsEqualSummaryCards_EveryFilterCombination_SC003(t *testing.
 	for _, statuses := range [][]string{nil, {"declined"}, {"approved", "complete", "inProgress"}} {
 		for _, owners := range [][]string{nil, {daniel.ID}, {priya.ID, mei.ID}} {
 			for _, containers := range [][]string{nil, {"inProgress"}, {"finished", "running"}} {
-				for _, show := range showLevelsValues {
+				for _, show := range showLevelsValues() {
 					for _, search := range []string{"", "fleet"} {
-						for _, v := range viewValues {
+						for _, v := range viewValues() {
 							q := Query{View: v, ActivityStatuses: statuses, Owners: owners, ContainerStatuses: containers,
 								ShowLevels: show, Search: search, Columns: allColumns()}
 							assertTotalsEqualCards(t, viewOf(data, q).result)

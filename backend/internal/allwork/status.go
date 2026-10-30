@@ -5,7 +5,21 @@ import "fmt"
 // The status chips of All work (data model §9) as words, tones and lifecycle sort order (data model §7); the
 // values come from the owning features (Node.Status, Timing, Swbs).
 
-const statusInProgress = "inProgress"
+const (
+	statusDraft        = "draft"
+	statusPublished    = "published"
+	statusNoActivities = "noActivities"
+	statusInProgress   = "inProgress"
+	statusAllApproved  = "allApproved"
+	statusNotStarted   = "notStarted"
+	statusRunning      = "running"
+	statusFinished     = "finished"
+	statusCreated      = "created"
+	statusSubmitted    = "submitted"
+	statusDeclined     = "declined"
+	statusApproved     = "approved"
+	statusComplete     = "complete"
+)
 
 type chip struct {
 	label string
@@ -14,29 +28,29 @@ type chip struct {
 }
 
 var planStatuses = map[string]chip{
-	"draft":     {"Draft", ToneNeutral, 0},
-	"published": {"Published", TonePositive, 1},
+	statusDraft:     {"Draft", ToneNeutral, 0},
+	statusPublished: {"Published", TonePositive, 1},
 }
 
 var progressStatuses = map[string]chip{
-	"noActivities":   {"No activities", ToneNeutral, 0},
-	statusInProgress: {"Partly approved", ToneReview, 1},
-	"allApproved":    {"All approved", TonePositive, 2},
+	statusNoActivities: {"No activities", ToneNeutral, 0},
+	statusInProgress:   {"Partly approved", ToneReview, 1},
+	statusAllApproved:  {"All approved", TonePositive, 2},
 }
 
 var timingStatuses = map[string]chip{
-	"notStarted": {"Not started", ToneNeutral, 0},
-	"running":    {"Running", ToneActive, 1},
-	"finished":   {"Finished", ToneDone, 2},
+	statusNotStarted: {"Not started", ToneNeutral, 0},
+	statusRunning:    {"Running", ToneActive, 1},
+	statusFinished:   {"Finished", ToneDone, 2},
 }
 
 var activityStatuses = map[string]chip{
-	"created":        {"Created", ToneNeutral, 0},
-	"submitted":      {"Submitted", ToneReview, 1},
-	"declined":       {"Declined", ToneProblem, 2},
-	"approved":       {"Approved", TonePositive, 3},
+	statusCreated:    {"Created", ToneNeutral, 0},
+	statusSubmitted:  {"Submitted", ToneReview, 1},
+	statusDeclined:   {"Declined", ToneProblem, 2},
+	statusApproved:   {"Approved", TonePositive, 3},
 	statusInProgress: {"In progress", ToneActive, 4},
-	"complete":       {"Complete", ToneDone, 5},
+	statusComplete:   {"Complete", ToneDone, 5},
 }
 
 var swbsStatuses = map[string]chip{
@@ -81,7 +95,7 @@ func swbsOf(n *Node) *Status {
 func completenessOf(missing int) *Status {
 	switch missing {
 	case 0:
-		return &Status{Value: "complete", Label: "All filled in", Tone: TonePositive}
+		return &Status{Value: statusComplete, Label: "All filled in", Tone: TonePositive}
 	case 1:
 		return &Status{Value: "incomplete", Label: "1 field needed", Tone: ToneProblem}
 	}

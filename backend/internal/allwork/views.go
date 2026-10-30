@@ -187,17 +187,17 @@ func checkState(problems *errs.Problems, s ViewState) ViewState {
 	var state errs.Problems
 	checkColumns(&state, "state", s.Columns)
 	valid := len(state) == 0 &&
-		slices.Contains(viewValues, s.View) && s.Year >= firstYear && s.Year <= lastYear &&
-		s.YearTo >= s.YearFrom && s.YearTo-s.YearFrom < maxRangeYears && allIn(f.PlanTypes, planTypeValues) &&
+		slices.Contains(viewValues(), s.View) && s.Year >= firstYear && s.Year <= lastYear &&
+		s.YearTo >= s.YearFrom && s.YearTo-s.YearFrom < maxRangeYears && allIn(f.PlanTypes, planTypeValues()) &&
 		!slices.ContainsFunc(f.Attributes, func(a AttrFilter) bool { return a.AttributeID == "" || len(a.Values) == 0 }) &&
 		(s.Breakdown == nil || s.Breakdown.By != "") &&
-		allIn(f.PlanStatuses, planStatusValues) && allIn(f.ContainerStatuses, containerStatusValues) &&
-		allIn(f.ActivityStatuses, activityStatusValues) && slices.Contains(strategicValues, f.Strategic) &&
-		(f.BCPIR == "" || slices.Contains(strategicValues, f.BCPIR)) &&
-		slices.Contains(showLevelsValues, f.ShowLevels) && utf8.RuneCountInString(s.Search) <= maxSearchLength &&
+		allIn(f.PlanStatuses, planStatusValues()) && allIn(f.ContainerStatuses, containerStatusValues()) &&
+		allIn(f.ActivityStatuses, activityStatusValues()) && slices.Contains(strategicValues(), f.Strategic) &&
+		(f.BCPIR == "" || slices.Contains(strategicValues(), f.BCPIR)) &&
+		slices.Contains(showLevelsValues(), f.ShowLevels) && utf8.RuneCountInString(s.Search) <= maxSearchLength &&
 		(s.Sort == nil || (s.Sort.Column != "" && validDirection(s.Sort.Direction))) &&
 		slices.Contains([]string{"default", "allExpanded", "allCollapsed"}, s.Expansion.Mode) &&
-		slices.Contains(periodValues, s.Period) && slices.Contains([]string{"timeline", "month"}, s.CalendarLayout)
+		slices.Contains(periodValues(), s.Period) && slices.Contains([]string{"timeline", "month"}, s.CalendarLayout)
 	if !valid {
 		problems.Add("state", msgViewState)
 	}

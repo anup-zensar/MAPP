@@ -29,7 +29,7 @@ func optionsOf(year, currentYear int, years []int, data YearData, c Choices, cat
 		Year: year, CurrentYear: currentYear, Years: []int{currentYear}, Plans: []PlanOption{}, Owners: []Option{},
 		Teams: slices.Clone(c.Teams), BusinessUnits: orNone(c.BusinessUnits), ActivityTypes: orNone(c.ActivityTypes),
 		ColumnGroups: columnGroupsOf(catalogue), DefaultColumns: defaultColumnsIn(catalogueOf(catalogue)),
-		YearFrom: year, YearTo: year, PlanTypes: slices.Clone(planTypeValues), PlanCurrencies: []string{},
+		YearFrom: year, YearTo: year, PlanTypes: slices.Clone(planTypeValues()), PlanCurrencies: []string{},
 		Attributes: []FilterableAttribute{},
 	}
 	for _, y := range years {
