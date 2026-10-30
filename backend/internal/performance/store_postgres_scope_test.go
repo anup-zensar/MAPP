@@ -29,6 +29,12 @@ var team1Only = authz.Scope{PersonID: "U-2001", Holds: true, TeamIDs: []string{"
 // a fact, a media code, an integration id and an external name of its own.
 func pgPerformance(t *testing.T) *performance.PostgresStore {
 	t.Helper()
+	store, _ := pgPerformanceDB(t)
+	return store
+}
+
+func pgPerformanceDB(t *testing.T) (*performance.PostgresStore, *database.DB) {
+	t.Helper()
 	db := dbtest.NewDB(t)
 	store := performance.NewPostgresStore(db)
 	directory, catalogue := people.NewPostgresStore(db), settings.NewPostgresStore(db)
@@ -78,7 +84,7 @@ func pgPerformance(t *testing.T) *performance.PostgresStore {
 		}
 		return err
 	})
-	return store
+	return store, db
 }
 
 func countOf(n int) *int { return &n }

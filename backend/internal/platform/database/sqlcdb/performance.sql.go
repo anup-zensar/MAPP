@@ -424,20 +424,14 @@ func (q *Queries) ListPerformanceReviewRows(ctx context.Context, arg ListPerform
 
 const listPerformanceSources = `-- name: ListPerformanceSources :many
 SELECT performance_sources.id, performance_sources.name, performance_sources.description, performance_sources.owner_id, performance_sources.category, performance_sources.status, performance_sources.delivery_route, performance_sources.cadence, performance_sources.integration_id, performance_sources.version, performance_sources.created_at, performance_sources.created_by_id, performance_sources.created_by_name, performance_sources.updated_at, performance_sources.updated_by_id, performance_sources.updated_by_name,
-    (SELECT max(i.created_at) FROM performance_imports i
-        WHERE i.source_id = performance_sources.id AND i.status = 'completed')::timestamptz AS last_loaded_at,
-    (SELECT max(i.data_through) FROM performance_imports i
-        WHERE i.source_id = performance_sources.id AND i.status = 'completed')::date AS data_through,
     (SELECT count(*) FROM performance_facts f WHERE f.source_id = performance_sources.id)::integer AS fact_count
 FROM performance_sources
-WHERE $1::text IS NULL OR id = $1
-ORDER BY lower(name COLLATE "C"), id COLLATE "C"
+WHERE $1::text IS NULL OR performance_sources.id = $1
+ORDER BY lower(performance_sources.name COLLATE "C"), performance_sources.id COLLATE "C"
 `
 
 type ListPerformanceSourcesRow struct {
 	PerformanceSource PerformanceSource
-	LastLoadedAt      time.Time
-	DataThrough       time.Time
 	FactCount         int
 }
 
@@ -467,8 +461,6 @@ func (q *Queries) ListPerformanceSources(ctx context.Context, id *string) ([]Lis
 			&i.PerformanceSource.UpdatedAt,
 			&i.PerformanceSource.UpdatedByID,
 			&i.PerformanceSource.UpdatedByName,
-			&i.LastLoadedAt,
-			&i.DataThrough,
 			&i.FactCount,
 		); err != nil {
 			return nil, err
@@ -1064,6 +1056,40 @@ func (q *Queries) ReleaseHeldFactsForActivity(ctx context.Context, arg ReleaseHe
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const sourceFreshness = `-- name: SourceFreshness :many
+SELECT i.source_id, max(i.created_at)::timestamptz AS last_loaded_at, max(i.data_through)::date AS data_through
+FROM performance_imports i
+WHERE i.status = 'completed' AND i.data_through IS NOT NULL
+GROUP BY i.source_id
+`
+
+type SourceFreshnessRow struct {
+	SourceID     string
+	LastLoadedAt time.Time
+	DataThrough  time.Time
+}
+
+// Freshness is derived, and a source that has never loaded simply has no row here, so nothing is NULL.
+func (q *Queries) SourceFreshness(ctx context.Context) ([]SourceFreshnessRow, error) {
+	rows, err := q.db.Query(ctx, sourceFreshness)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []SourceFreshnessRow{}
+	for rows.Next() {
+		var i SourceFreshnessRow
+		if err := rows.Scan(&i.SourceID, &i.LastLoadedAt, &i.DataThrough); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const takeNextMediaCode = `-- name: TakeNextMediaCode :one

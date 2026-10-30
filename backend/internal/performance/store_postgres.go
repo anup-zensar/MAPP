@@ -52,15 +52,25 @@ func metaOf(version int, row metaRow) record.Meta {
 	}
 }
 
+// ListSources reads freshness separately: a source that has never loaded has no freshness row at all, so
+// nothing comes back NULL and its dates stay zero.
 func (s *PostgresStore) ListSources(ctx context.Context, id string) ([]SourceView, error) {
 	rows, err := s.db.Queries(ctx).ListPerformanceSources(ctx, optional(id))
 	if err != nil {
 		return nil, fmt.Errorf("select performance sources: %w", err)
 	}
+	fresh, err := s.db.Queries(ctx).SourceFreshness(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("select performance source freshness: %w", err)
+	}
+	loaded := make(map[string]sqlcdb.SourceFreshnessRow, len(fresh))
+	for _, f := range fresh {
+		loaded[f.SourceID] = f
+	}
 	sources := make([]SourceView, 0, len(rows))
 	for _, r := range rows {
 		p := r.PerformanceSource
-		sources = append(sources, SourceView{
+		view := SourceView{
 			Source: Source{
 				ID: p.ID, Name: p.Name, Description: p.Description, OwnerID: p.OwnerID,
 				Category: Category(p.Category), Status: Status(p.Status),
@@ -69,8 +79,12 @@ func (s *PostgresStore) ListSources(ctx context.Context, id string) ([]SourceVie
 				Meta: metaOf(p.Version, metaRow{p.CreatedAt, p.CreatedByID, p.CreatedByName,
 					p.UpdatedAt, p.UpdatedByID, p.UpdatedByName}),
 			},
-			LastLoadedAt: r.LastLoadedAt, DataThrough: r.DataThrough, FactCount: r.FactCount,
-		})
+			FactCount: r.FactCount,
+		}
+		if f, ok := loaded[p.ID]; ok {
+			view.LastLoadedAt, view.DataThrough = f.LastLoadedAt, f.DataThrough
+		}
+		sources = append(sources, view)
 	}
 	return sources, nil
 }

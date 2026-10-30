@@ -1,13 +1,16 @@
 -- name: ListPerformanceSources :many
 SELECT sqlc.embed(performance_sources),
-    (SELECT max(i.created_at) FROM performance_imports i
-        WHERE i.source_id = performance_sources.id AND i.status = 'completed')::timestamptz AS last_loaded_at,
-    (SELECT max(i.data_through) FROM performance_imports i
-        WHERE i.source_id = performance_sources.id AND i.status = 'completed')::date AS data_through,
     (SELECT count(*) FROM performance_facts f WHERE f.source_id = performance_sources.id)::integer AS fact_count
 FROM performance_sources
-WHERE sqlc.narg(id)::text IS NULL OR id = sqlc.narg(id)
-ORDER BY lower(name COLLATE "C"), id COLLATE "C";
+WHERE sqlc.narg(id)::text IS NULL OR performance_sources.id = sqlc.narg(id)
+ORDER BY lower(performance_sources.name COLLATE "C"), performance_sources.id COLLATE "C";
+
+-- Freshness is derived, and a source that has never loaded simply has no row here, so nothing is NULL.
+-- name: SourceFreshness :many
+SELECT i.source_id, max(i.created_at)::timestamptz AS last_loaded_at, max(i.data_through)::date AS data_through
+FROM performance_imports i
+WHERE i.status = 'completed' AND i.data_through IS NOT NULL
+GROUP BY i.source_id;
 
 -- name: PutPerformanceSource :exec
 INSERT INTO performance_sources (
