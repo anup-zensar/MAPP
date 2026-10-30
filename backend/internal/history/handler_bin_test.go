@@ -21,7 +21,7 @@ func TestUndoAndRestore_UnknownEntry_FR025(t *testing.T) {
 	}
 }
 
-// Priya may restore the entries but not delete them permanently: her Planner role does not include it (014 FR-011).
+// Priya may restore the entries but not delete them permanently: her Planner role does not include it.
 const (
 	plannerBinAccess = `"access":{"restore":{"available":true,"reason":""},"deletePermanently":{"available":false,` +
 		`"reason":"Deleting permanently isn't part of your role (Planner). Ask an administrator if you need it."}}`
@@ -81,7 +81,7 @@ func TestRestorePreview_Contract_038_FR049_L23(t *testing.T) {
 	assertAnswer(t, response, http.StatusOK, `{"entry":`+noteBinItem+`,`+
 		`"destination":[{"type":"sampleFolder","id":"SF-1001","name":"Ideas (restored)"}],`+
 		`"parentEntries":[`+folderBinItem+`],`+
-		`"changes":[],`+ // 038 FR-049 (L-23): the note states the rename
+		`"changes":[],`+ // the note states the rename
 		`"notes":["Renamed to 'Ideas (restored)' because the name was taken."]}`)
 	assertAnswer(t, unknown, http.StatusNotFound, unknownEntryBody)
 	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil), http.StatusOK,

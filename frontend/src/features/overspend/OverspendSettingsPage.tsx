@@ -32,7 +32,7 @@ import {
 import styles from './OverspendSettingsPage.module.css';
 
 /**
- * Settings › Overspend control (037 FR-006, FR-007; 038 FR-018, FR-057): the setting new budgets start
+ * Settings › Overspend control: the setting new budgets start
  * with, and whether approving while an activity's line items exceed its planned cost is warned or
  * refused.
  */

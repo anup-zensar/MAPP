@@ -9,7 +9,7 @@ interface Step {
   title: string;
   to: string;
   text: string;
-  /** The permission the step needs (038 FR-051). */
+  /** The permission the step needs. */
   needs: Permission;
 }
 
@@ -52,7 +52,7 @@ export interface GettingStartedCardProps {
 
 const COUNT_WORDS = ['', 'one step', 'two steps', 'three steps', 'four steps', 'five steps'];
 
-/** Only for new people (009 FR-020, D-170), with the steps their roles allow (038 FR-051). */
+/** Only for new people (D-170), with the steps their roles allow. */
 export function GettingStartedCard({ reason }: GettingStartedCardProps) {
   const access = useAccess();
   const steps = STEPS.filter((step) => access.has(step.needs));

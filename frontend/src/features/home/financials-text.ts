@@ -21,7 +21,7 @@ export function financialsTitle(year: number): string {
   return `Financials · ${year}`;
 }
 
-/** "Sep 2026" (or "09/2026", 038 FR-058) for "2026-09" or a date in it; the text otherwise. */
+/** "Sep 2026" (or "09/2026") for "2026-09" or a date in it; the text otherwise. */
 export function monthText(month: string, format?: DateFormat): string {
   const match = /^(\d{4})-(0[1-9]|1[0-2])/.exec(month);
   return match ? formatMonth(match[0], format) : month;

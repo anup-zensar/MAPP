@@ -61,7 +61,7 @@ func TestLinkScopeParity_038_FR007_H5(t *testing.T) {
 }
 
 // Without "Link financial transactions", a transaction outside the person's scope answers exactly as a missing
-// one and one inside it is refused for permission; with it, one outside still answers as missing (038 FR-007, H-5).
+// one and one inside it is refused for permission; with it, one outside still answers as missing.
 func TestLinkWithoutPermission_ScopeBeforePermission_038_FR007_H5(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)

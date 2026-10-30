@@ -13,8 +13,6 @@ import (
 	"mapp/internal/settings"
 )
 
-// A new global budget gets the first ID, version 1 and a "created" entry; its page has no allocation yet,
-// the year lock, and every action for the global planner (FR-029, FR-037).
 func TestCreate_GlobalBudget_FR029(t *testing.T) { //nolint:gocyclo // 11: one create, then its fields, figures, locks, actions and log entry
 	t.Parallel()
 	f := newFixture(t)
@@ -107,8 +105,6 @@ func TestCreate_EveryProblemAtOnce_FR029(t *testing.T) { //nolint:tparallel // t
 	}
 }
 
-// Creating, changing and deleting a global budget needs "Create global budgets and allocate them to plans"
-// for All markets (FR-029): a local planner is refused with the access rules' message and nothing changes.
 func TestCreateUpdateDelete_NeedManageForAllMarkets_FR029(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

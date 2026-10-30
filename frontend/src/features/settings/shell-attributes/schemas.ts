@@ -38,7 +38,7 @@ export interface AttributeRules {
   parent?: FormAttribute;
   /** An edited attribute that starts depending on another: its options, each needing a link. */
   optionsToLink: FormOption[] | null;
-  /** Every attribute, for the API's "already has a Shell attribute called" check (038 FR-030). */
+  /** Every attribute, for the API's "already has a Shell attribute called" check. */
   others?: { id: string; label: string; level: AttributeLevel }[];
   ownId?: string;
 }

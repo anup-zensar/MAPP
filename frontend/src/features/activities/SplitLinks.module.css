@@ -1,4 +1,4 @@
-/* 016 FR-031. On the grey header, links take the ink colour to reach 4.5:1 (038 FR-038). */
+/* On the grey header, links take the ink colour to reach 4.5:1. */
 .links {
   --ink-2: var(--ink);
   --link: var(--ink);

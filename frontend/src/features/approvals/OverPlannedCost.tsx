@@ -8,7 +8,7 @@ import styles from './ApprovalSection.module.css';
 
 type ActivityOverage = components['schemas']['ActivityOverage'];
 
-/** With Warn (038 FR-019): each activity whose line items exceed its planned cost, before approving. */
+/** With Warn: each activity whose line items exceed its planned cost, before approving. */
 export function OverPlannedCostAlert({ overages }: { overages: readonly ActivityOverage[] }) {
   if (overages.length === 0) {
     return null;
@@ -28,7 +28,7 @@ export interface RefusedApproveProps {
   reasonId?: string;
 }
 
-/** Approve shown disabled with its reason (038 FR-020), described by it for screen readers. */
+/** Approve shown disabled with its reason, described by it for screen readers. */
 export function RefusedApprove({ reason, reasonId }: RefusedApproveProps) {
   const ownId = useId();
   return (

@@ -53,7 +53,7 @@
   font-size: var(--text-xs);
 }
 
-/* A field required to save: 2 px after the label; 19 px bold is large text, so red meets 3:1 (D-358). */
+/* A field required to save: 2 px after the label; 19 px bold is large text, so red meets 3:1 (D-364). */
 .asterisk {
   margin-inline-start: calc(2px - var(--space-2));
   color: var(--danger);
@@ -72,7 +72,7 @@
   font-size: var(--text-xs);
 }
 
-/* One line of note, kept free for a note that comes and goes (038 FR-046). */
+/* One line of note, kept free for a note that comes and goes. */
 .reserved {
   min-height: 1lh;
 }

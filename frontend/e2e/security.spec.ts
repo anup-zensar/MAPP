@@ -2,7 +2,7 @@ import { DEMO_PASSWORD, expectNoAxeViolations, signInAs } from './fixtures';
 import { expect, test } from './support/no-csp-violations';
 
 // Feature 038 User Story 6: sign-in brute force is refused and every answer carries the security
-// headers (FR-014, FR-015, SC-005). Every test also fails on a content security policy violation.
+// headers. Every test also fails on a content security policy violation.
 
 const ALEX = 'alex.morgan@shell.com';
 // Locked for 15 minutes by the last test; only specs that run before this file sign Lea in.

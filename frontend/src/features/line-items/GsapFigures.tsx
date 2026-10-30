@@ -25,13 +25,6 @@ export interface GsapFiguresProps {
   accrualMonth: string | null;
 }
 
-/**
- * The five GSAP figures of a record (015 FR-011, FR-013, FR-014): Committed with its meter "38% of
- * planned cost committed", Invoiced, Paid, Accrued (of the latest accrual month) and Not yet
- * committed, each with its ⓘ; "Committed above planned cost by X" in red words, and for an
- * activity "Committed above planned cost on n line items" linking to the first. Amounts are in the
- * reader's display currency, as the API answers them.
- */
 export function GsapFigures({ figures, accrualMonth }: GsapFiguresProps) {
   const { month: monthOf } = useFormatters();
   const month = accrualMonth ? monthOf(accrualMonth) : null;

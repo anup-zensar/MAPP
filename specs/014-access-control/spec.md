@@ -523,8 +523,8 @@ starts the refusal message ("<Noun> isn't part of your role …").
 | Every administration permission | ✓ | | | | |
 | **Default scope** | All markets (fixed) | All markets | My teams | My teams | My teams |
 
-*Amended by [038 FR-006](../038-qa-findings/spec.md) (D-353): "Link financial transactions" is granted only with
-"Import GSAP extracts" — Global planner and Planner no longer hold it. 038 FR-056 (D-357): a person holding neither
+*Amended by [038 FR-006](../038-qa-findings/spec.md) (D-359): "Link financial transactions" is granted only with
+"Import GSAP extracts" — Global planner and Planner no longer hold it. 038 FR-056 (D-363): a person holding neither
 approvals permission is refused for permission before being told that a round has moved on.*
 
 ### Key Entities *(include if feature involves data)*

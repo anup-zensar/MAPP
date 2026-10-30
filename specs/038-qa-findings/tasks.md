@@ -42,7 +42,7 @@ with `frontend/`.
 - [x] T003 Frontend — `api/errors.ts`: export `CONFLICT_NEXT_STEP = "Your changes are still here. Save again to
   replace their changes, or Cancel to see theirs."` next to `conflictMessage` (used by T150; the ten files that copy
   the string switch to it when next touched)
-- [x] T004 Docs — Decision log D-353 – D-357, feature map row 038 "Specified", amendment notes in 003, 009, 011,
+- [x] T004 Docs — Decision log D-359 – D-363, feature map row 038 "Specified", amendment notes in 003, 009, 011,
   013, 014, 015, 032, 036, 037 (done with the spec) — FR-062
 
 **Checkpoint**: contract, generated types and error codes in place — all lanes start in parallel.
@@ -501,7 +501,7 @@ None beyond Phase 1: every story below depends only on T001 – T003.
   FR-021); design system: approve warning pattern, `acknowledgeOnly` dialog, rounding note; glossary "Approval over
   planned cost"
 - [x] T201 Docs (D) — `docs/sdd/feature-map.md` row 038 → "Built" when every task is done; release note in
-  quickstart (built-in planners lose "Link financial transactions", D-353)
+  quickstart (built-in planners lose "Link financial transactions", D-359)
 - [x] T202 Gates — backend `golangci-lint fmt ./...`, `golangci-lint run ./...`, `sqlc generate && sqlc vet` (no diff),
   `go vet ./...`, `go test -race ./...` with `TEST_DATABASE_URL`, `govulncheck ./...`; frontend `pnpm run check`,
   `pnpm run build`, full `pnpm run test:e2e`; comment budget (≤ 5 %) and file length (≤ 300 non-blank lines) of every

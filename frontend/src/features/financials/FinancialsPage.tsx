@@ -48,7 +48,7 @@ export function FinancialsPage() {
   // 014 FR-011, 030 FR-013: importing and the simulated GSAP only for a person who may import.
   const canImport = useAccess().has('finance.import');
   const data = transactions.data;
-  // 038 FR-004: the Not linked tab only for people the server gives its count to.
+  // The Not linked tab only for people the server gives its count to.
   const shownTabs = TABS.filter(
     (tab) => tab !== 'notLinked' || (data ? data.counts.notLinked !== undefined : canImport),
   );

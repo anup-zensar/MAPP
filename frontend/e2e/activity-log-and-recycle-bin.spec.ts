@@ -10,16 +10,8 @@ import {
 import { changeActivityPlannedCost } from './planning-changes';
 import { createInitiative, createPlanningRecords } from './planning';
 
-// End-to-end journeys across feature 011's Recycle bin, Activity log and History sections, and 009's
-// Recent changes card that reads the same log (011 T045, T046, T049; 009 T013, T017). They follow one
-// record through its whole life on screen: created, changed, deleted from its page, found in the bin,
-// restored, its History and the log narrowed to it; then a permanent delete; then Home.
-//
-// Every text and label comes from the "User-visible messages" tables of specs/011 and specs/009 plan.md.
-// Tests create their own records (names from uniqueName) as Mei Lin and never assert global counts, so
-// they run in any order with the other files; none of them empties the bin or restores the demo's
-// "Trade shows" (recycle-bin.spec.ts relies on both). Deleting permanently is Alex Morgan's, whose
-// Administrator role holds it (014).
+// Tests create their own records as Mei Lin and never assert global counts, so they run in any order;
+// none empties the bin or restores the demo's "Trade shows" (recycle-bin.spec.ts relies on both).
 
 const MEI = 'mei.lin@shell.com';
 const ALEX = 'alex.morgan@shell.com';
@@ -29,22 +21,16 @@ function entry(scope: Page | Locator, sentence: string): Locator {
   return scope.getByRole('listitem').filter({ hasText: sentence }).first();
 }
 
-/** The chip of a filter in use (its button removes it). */
 function chip(page: Page, label: string): Locator {
   return page.getByRole('button', { name: `Remove filter: ${label}`, exact: true });
 }
 
-/** The bin's row of the record called `name` (each row is a list item named by an h2). */
 function binRow(page: Page, name: string): Locator {
   return page
     .getByRole('listitem')
     .filter({ has: page.getByRole('heading', { level: 2, name, exact: true }) });
 }
 
-/**
- * Expects the entries of `list` (log entries, newest first) to be exactly `sentences`, in that order,
- * each by its actor with its action chip and its time — the full date and time in the time's label.
- */
 async function expectEntries(
   list: Locator,
   sentences: { text: string; chip: string }[],
@@ -68,7 +54,6 @@ test('An activity deleted from its page is found in the recycle bin and restored
 }) => {
   test.slow();
   await signInAs(page, MEI);
-  // Created and changed once (through the API, to set the stage).
   const records = await createPlanningRecords(page, 'Life', {
     withWorkflow: false,
     leaveEmpty: [],
@@ -76,9 +61,7 @@ test('An activity deleted from its page is found in the recycle bin and restored
   await changeActivityPlannedCost(page, records.activityId, '21000.00');
   const name = records.activityName;
   const place = `${records.planName} › ${records.campaignName} › ${records.initiativeName}`;
-  // Mei's recycle bin lists only entries of plans she can see (014 FR-007) — the demo's "Trade shows" is
-  // in Lubricants Europe — so an initiative of her own waits there too, and the bin is not empty once the
-  // activity is restored.
+  // Mei sees no demo entry in the bin, so an initiative of her own keeps it non-empty after the restore.
   const binned = await createInitiative(
     page,
     records.campaignId,
@@ -88,7 +71,6 @@ test('An activity deleted from its page is found in the recycle bin and restored
   );
   await callApi(page, 'DELETE', `/api/v1/initiatives/${binned.id}`);
 
-  // Delete it from its page.
   await page.goto(records.activityPath);
   await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
   await page.getByRole('button', { name: `Actions for ${name}` }).click();
@@ -99,7 +81,6 @@ test('An activity deleted from its page is found in the recycle bin and restored
     .click();
   await expectToast(page, `Activity '${name}' deleted`);
 
-  // Find it in the recycle bin from the main navigation, by its ID.
   await page
     .getByRole('navigation', { name: 'Main' })
     .getByRole('link', { name: 'Recycle bin' })
@@ -115,7 +96,6 @@ test('An activity deleted from its page is found in the recycle bin and restored
   await expect(row.getByRole('button', { name: /^(just now|\d+ minutes? ago), / })).toBeVisible();
   await expectNoAxeViolations(page);
 
-  // Restore it: the dialog says where it returns; View opens it again.
   await row.getByRole('button', { name: `Restore activity '${name}'` }).click();
   const dialog = page.getByRole('alertdialog', { name: `Restore activity '${name}'?` });
   await expect(dialog.getByText(`It returns to ${place}.`)).toBeVisible();
@@ -127,7 +107,6 @@ test('An activity deleted from its page is found in the recycle bin and restored
   await expect(page).toHaveURL(new RegExp(`/activities/${records.activityId}$`));
   await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
 
-  // Its History, from the page's More menu: restored, deleted, changed and created, newest first.
   await page.getByRole('button', { name: `Actions for ${name}` }).click();
   await page.getByRole('menuitem', { name: 'View history' }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'History', exact: true })).toBeFocused();
@@ -141,7 +120,6 @@ test('An activity deleted from its page is found in the recycle bin and restored
   await expectEntries(history.locator('ol[role="list"]'), lifeOf);
   await expect(history.getByRole('heading', { name: /^Today · \d+ entr(y|ies)$/ })).toBeVisible();
 
-  // The activity log, narrowed by a search for its name: the same four entries (FR-003, FR-005).
   await page
     .getByRole('navigation', { name: 'Main' })
     .getByRole('link', { name: 'Activity log' })
@@ -157,7 +135,6 @@ test('An activity deleted from its page is found in the recycle bin and restored
   await expectEntries(log.locator('ol[role="list"]'), lifeOf);
   await expectNoAxeViolations(page);
 
-  // An action filter narrows it further, to the restore.
   await page.getByRole('button', { name: 'Action: Any action' }).click();
   await page.getByRole('menuitemcheckbox', { name: 'Restored', exact: true }).click();
   await page.keyboard.press('Escape');
@@ -166,17 +143,14 @@ test('An activity deleted from its page is found in the recycle bin and restored
   const restored = itemAt(lifeOf, 0);
   await expectEntries(log.locator('ol[role="list"]'), [restored]);
 
-  // Its record link opens the activity, which exists again (FR-008).
   await entry(page, restored.text).getByRole('link', { name, exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${escapeRegExp(records.activityPath)}$`));
   await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
 
-  // Back on the log, Clear filters shows every entry again.
   await page.goBack();
   await expect(chip(page, 'Action: Restored')).toBeVisible();
   await page.getByRole('button', { name: 'Clear filters' }).click();
   await expect(page).toHaveURL(/\/activity-log$/);
-  // No filter in use: the count reads "<n> of <n> entries" (design system §11, rule 14).
   await expect(page.getByText(/^([\d,]+) of \1 entries$/)).toBeVisible();
 });
 
@@ -190,7 +164,6 @@ test('Delete permanently: the activity leaves the bin for good and the log keeps
     leaveEmpty: [],
   });
   const name = records.activityName;
-  // Deleted from its page as in the journey above; here through the API.
   await callApi(page, 'DELETE', `/api/v1/activities/${records.activityId}`);
 
   // Deleting permanently needs "Delete permanently and empty the recycle bin": Alex's (014).
@@ -209,7 +182,6 @@ test('Delete permanently: the activity leaves the bin for good and the log keeps
   await expectToast(page, `Activity '${name}' deleted permanently`);
   await expect(page.getByText('Nothing matches these filters')).toBeVisible();
 
-  // Its page is gone too.
   await page.goto(records.activityPath);
   await expect(
     page.getByText('This activity no longer exists — someone may have deleted it.'),
@@ -256,7 +228,6 @@ test('Home: Recent changes shows the latest changes in Mei’s plans, newest fir
   await expect(card.getByText("Latest changes in your teams' plans")).toBeVisible();
   const items = card.getByRole('listitem');
 
-  // Newest first: the planned-cost change, then the deleted initiative (in the recycle bin, no link).
   await expect(items.first()).toContainText(
     `Mei Lin changed planned cost of activity '${records.activityName}' (${records.activityId})`,
   );
@@ -272,7 +243,6 @@ test('Home: Recent changes shows the latest changes in Mei’s plans, newest fir
   );
   await expectNoAxeViolations(page);
 
-  // The record link opens the activity; View activity log opens the log.
   await items.first().getByRole('link', { name: records.activityName, exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${escapeRegExp(records.activityPath)}$`));
   await expect(page.getByRole('heading', { level: 1, name: records.activityName })).toBeVisible();

@@ -109,7 +109,7 @@ func SessionExpired() *Error {
 	return newError(http.StatusUnauthorized, CodeSessionExpired, "Please sign in again")
 }
 
-// IncorrectCredentials never says whether the e-mail or the password was wrong (FR-004).
+// IncorrectCredentials never says whether the e-mail or the password was wrong.
 func IncorrectCredentials() *Error {
 	return newError(http.StatusUnauthorized, CodeIncorrectCredentials, "Incorrect e-mail or password.")
 }

@@ -10,7 +10,7 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// The planned cost by month follows Budget & cost (010 FR-023): line items by their spread, a positive
+// The planned cost by month follows Budget & cost: line items by their spread, a positive
 // unassigned balance spread evenly over its activity's months, a negative one never.
 
 const msgPlanGone = "This plan no longer exists — someone may have deleted it."

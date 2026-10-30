@@ -4,7 +4,7 @@
 
 ## Context
 
-Feature 038 FR-015 (D-355, research R7) puts every web page under a content security policy that admits only
+Feature 038 FR-015 (D-361, research R7) puts every web page under a content security policy that admits only
 the app's own scripts, styles, fonts, images and connections, and the inline theme script of `index.html` only
 by its sha256. Constitution F7 forbids inline scripts and evaluated code; it does not forbid inline styles.
 

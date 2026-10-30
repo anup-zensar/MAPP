@@ -10,7 +10,7 @@ export interface DecisionButtonsProps {
   approval: ActivityApproval;
   primary?: boolean;
   onDecided?: (approval: ActivityApproval) => void;
-  /** The element showing why Approve is refused, when the caller shows it (038 FR-020). */
+  /** The element showing why Approve is refused, when the caller shows it. */
   refusalId?: string;
 }
 

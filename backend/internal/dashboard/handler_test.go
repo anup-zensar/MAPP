@@ -162,7 +162,7 @@ func TestMonths_NegativeBalanceCount_038_FR024_L2(t *testing.T) {
 	same(t, "negative balance count", texts(1), texts(v.Months.NegativeBalanceCount))
 }
 
-// Own market by default, a plan's campaigns, a market row's equal, scope kept (US3, FR-020 – FR-022).
+// Own market by default, a plan's campaigns, a market row's equal, scope kept.
 func TestRegional_FR020_FR022(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)

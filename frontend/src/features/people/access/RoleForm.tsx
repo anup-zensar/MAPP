@@ -205,7 +205,7 @@ function PermissionGroups({ catalogue, value, onChange, error }: PermissionGroup
     );
   }
 
-  // The summary's link focuses the list, which reads out its problem first (038 FR-006).
+  // The summary's link focuses the list, which reads out its problem first.
   return (
     <div
       className={styles.groups}

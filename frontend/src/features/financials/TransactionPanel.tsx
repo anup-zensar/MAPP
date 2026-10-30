@@ -37,7 +37,7 @@ import styles from './TransactionPanel.module.css';
  * display amounts, the linked path with a link per level, how it was matched or why it is not
  * linked, the import it came from, and when it was added and last updated. A not-linked
  * transaction offers Link to a line item and a manual link Unlink, when the server says the person
- * may (038 FR-005); a link made by GSAP data says where to correct it.
+ * may; a link made by GSAP data says where to correct it.
  */
 export function TransactionPanel() {
   const { transactionId = '' } = useParams();

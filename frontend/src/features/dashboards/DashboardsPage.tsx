@@ -55,7 +55,7 @@ export function DashboardsPage({ kind }: DashboardsPageProps) {
       : null;
   const correctedSearch = corrected ? writeFilters(corrected).toString() : null;
 
-  // 038 FR-012: the address shows the filters the dashboard was made with.
+  // The address shows the filters the dashboard was made with.
   useEffect(() => {
     if (correctedSearch !== null) {
       setParams(correctedSearch, { replace: true });

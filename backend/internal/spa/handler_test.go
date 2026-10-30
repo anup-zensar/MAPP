@@ -68,8 +68,7 @@ func TestGetSpaView_FR005_ACampaignsView(t *testing.T) {
 	}
 }
 
-// Grand opening Shanghai's line items exceed its planned cost: the answer has the row, as the contract says
-// (038 FR-023, M-2).
+// Grand opening Shanghai's line items exceed its planned cost: the answer has the row, as the contract says.
 func TestGetSpaView_LinesAbovePlannedCost_038_FR023_M2(t *testing.T) {
 	t.Parallel()
 	s := apitest.New(t)

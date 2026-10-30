@@ -69,7 +69,7 @@ describe('dates and times of a timestamp', () => {
   });
 });
 
-describe("the person's date format in headings and month labels (038 FR-058, D-356)", () => {
+describe("the person's date format in headings and month labels (038 FR-058, D-362)", () => {
   it.each([
     ['DD MMM YYYY', 'Tuesday 27 Oct 2026', 'Sep 2026'],
     ['DD/MM/YYYY', 'Tuesday 27/10/2026', '09/2026'],

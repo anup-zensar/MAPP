@@ -7,9 +7,6 @@ import (
 	"testing"
 )
 
-// Without a choice of columns the grid shows the default columns, in order: ID, Status, Owner, Start date,
-// End date, Plan budget, Planned cost, Line items, Unassigned planned cost, then 015's Committed and
-// Invoiced; Name is always shown and is not a column (FR-019, 015 FR-023).
 func TestColumns_DefaultColumns_FR019(t *testing.T) {
 	t.Parallel()
 	r := view(seedYear(), Query{})
@@ -156,10 +153,6 @@ func TestCells_InactiveValuesLabelled_EdgeCase(t *testing.T) {
 	}
 }
 
-// Every row shows its own values in the Standard columns (FR-011, FR-017): the status chip of its level —
-// plan status, Approval progress with its detail, activity display status, a line item's completeness —
-// owner, dates (plans: the whole year; "Ongoing"), money in the display currency, and a blank cell on
-// levels a column does not cover.
 func TestCells_StandardColumnsPerLevel_FR011_FR017(t *testing.T) {
 	t.Parallel()
 	r := view(seedYear(), Query{Columns: allColumns()})

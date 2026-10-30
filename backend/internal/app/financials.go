@@ -110,7 +110,7 @@ func (financialAccess) Import(ctx context.Context, _ actor.Actor) error {
 	return authz.Require(ctx, authz.FinanceImport)
 }
 
-// Link with planID "" asks about any plan; a plan the person may not see answers not_found (038 FR-007).
+// Link with planID "" asks about any plan; a plan the person may not see answers not_found.
 func (f financialAccess) Link(ctx context.Context, _ actor.Actor, planID string) error {
 	if _, restricted := authz.From(ctx); !restricted || planID == "" {
 		return authz.Require(ctx, authz.FinanceLink)

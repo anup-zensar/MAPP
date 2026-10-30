@@ -49,7 +49,7 @@ function Fields() {
   );
 }
 
-describe('FieldShell marking (038 FR-063, D-358)', () => {
+describe('FieldShell marking (038 FR-063, D-364)', () => {
   it('038 FR-063: a field required to save shows a red asterisk after its label instead of the word "Required"', () => {
     render(<Fields />);
 

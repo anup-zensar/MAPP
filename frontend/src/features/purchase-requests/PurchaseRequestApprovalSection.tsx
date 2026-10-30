@@ -93,7 +93,7 @@ function SectionView({ approval, section, purchaseRequest, titled }: SectionView
   const { actions } = section;
   const canSubmit = actions.submit.available || actions.resubmit.available;
   const refusal = approveRefusal(actions);
-  // Where the View only note already says why, only the Approve refusal keeps its reason (038 FR-025).
+  // Where the View only note already says why, only the Approve refusal keeps its reason.
   const viewOnly = useHidesUnavailable();
   const reasons = [
     actions.submit,

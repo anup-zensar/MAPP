@@ -74,7 +74,7 @@ func (s *Service) checkYear(year *int, problems *errs.Problems) int {
 	return *year
 }
 
-// checkName checks a trimmed name: required, at most 120 characters, single-line (038 FR-055), unique ignoring case.
+// checkName checks a trimmed name: required, at most 120 characters, single-line, unique ignoring case.
 func (s *Service) checkName(ctx context.Context, name, exceptID string, problems *errs.Problems) error {
 	switch {
 	case name == "":

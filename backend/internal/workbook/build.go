@@ -51,7 +51,7 @@ func recordRow(plan Plan, columns []column, r Stored, byID map[string]Stored) []
 		case c.field == fieldEnd && r.Values.EndDate != nil:
 			cells[i] = sheet.Date(*r.Values.EndDate)
 		case moneyIn(c, r.Values) != nil:
-			cells[i] = sheet.Money(*moneyIn(c, r.Values)) // a number people can add up (038 FR-059)
+			cells[i] = sheet.Money(*moneyIn(c, r.Values)) // a number people can add up
 		default:
 			cells[i] = sheet.Text(format(c, r.Values, plan.Choices))
 		}

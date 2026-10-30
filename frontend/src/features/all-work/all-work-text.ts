@@ -127,7 +127,7 @@ export function negativeBalanceText(count: number): string {
     : `${count} activities have line items above their planned cost`;
 }
 
-/** Why the months add up to more than planned cost (038 FR-024). */
+/** Why the months add up to more than planned cost. */
 export function monthsAboveText(count: number): string {
   return count === 1
     ? '1 activity has line items above its planned cost, so its months add up to more than its planned cost.'

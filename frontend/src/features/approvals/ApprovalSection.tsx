@@ -23,13 +23,6 @@ export interface ApprovalSectionProps {
   onShowProblems: ShowSubmitProblems;
 }
 
-/**
- * The Approval section of feature 006's activity page (008 plan, "Activity page parts"; FR-016,
- * FR-021, FR-024, FR-025): the status and workflow, the approval chain (or "Not submitted yet" with
- * the levels to come), the actions and the approval history. The latest decline and its reason
- * show in the notice under the page header (design system §2.4 B, UI audit AC-02), so they are not
- * repeated here. 006's page places it inside the element with id "approval".
- */
 export function ApprovalSection({ activity, onShowProblems }: ApprovalSectionProps) {
   const approval = useActivityApproval(activity.id);
   const round = approval.data?.rounds[0];

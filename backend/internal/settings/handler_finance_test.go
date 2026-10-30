@@ -29,7 +29,7 @@ func TestFinanceAPI_ListYear_FR015(t *testing.T) {
 	gone := alex.Do(t, http.MethodGet, "/api/v1/finance-budget-items/FBI-9999", nil)
 
 	assertBudgets2026(t, current)
-	if next.Year != 2027 || next.Total != 1 || len(next.Items) != 1 || next.Items[0].Name != "2027 Lubricants Budget" { // 038 L-30 seed
+	if next.Year != 2027 || next.Total != 1 || len(next.Items) != 1 || next.Items[0].Name != "2027 Lubricants Budget" {
 		t.Errorf("2027 = %+v", next)
 	}
 	if item.BudgetName != "2026 Lubricants Budget" || item.Year != 2026 || len(item.Locks) != 1 || item.Locks[0].Field != "year" {
@@ -41,7 +41,6 @@ func TestFinanceAPI_ListYear_FR015(t *testing.T) {
 	assertAnswer(t, gone, http.StatusNotFound, itemGoneBody)
 }
 
-// budgetPage is the part of a finance budget list these tests read.
 type budgetPage struct {
 	Items []struct {
 		Name            string
@@ -63,7 +62,6 @@ func assertBudgets2026(t *testing.T, current budgetPage) {
 	}
 }
 
-// Bodies of the finance tests.
 const (
 	itemGoneBody   = `{"error":{"code":"not_found","message":"This finance budget item no longer exists — someone may have deleted it.","fields":[]}}`
 	budgetGoneBody = `{"error":{"code":"not_found","message":"This finance budget no longer exists — someone may have deleted it.","fields":[]}}`
@@ -80,8 +78,6 @@ func retailAnswer(budgetID, budgetName, code string, version int) string {
 		`","active":true,"usage":` + unusedBody + `,"locks":` + yearLockBody + `,"version":` + itoa(version) + `,` + alexAtStart + `}`
 }
 
-// A new item answers 201 in the budget of its year and name and is read back; a new budget name moves it to
-// a new budget of the same year; every problem comes at once (FR-014, US5-3, US5-4).
 func TestFinanceAPI_CreateGetUpdate_FR014(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -105,8 +101,6 @@ func TestFinanceAPI_CreateGetUpdate_FR014(t *testing.T) {
 	assertAnswer(t, gone, http.StatusNotFound, itemGoneBody)
 }
 
-// Rename budget answers the budget with all its items under the new name; the name must be free in its
-// year; an out-of-date version is refused (FR-015, US5-4).
 func TestFinanceAPI_Rename_FR015(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -138,8 +132,6 @@ func TestFinanceAPI_Rename_FR015(t *testing.T) {
 	assertAnswer(t, gone, http.StatusNotFound, budgetGoneBody)
 }
 
-// Set inactive and Reactivate answer the item with its new status; an out-of-date version is refused
-// (FR-004).
 func TestFinanceAPI_Status_FR004(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)

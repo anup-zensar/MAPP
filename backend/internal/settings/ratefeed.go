@@ -10,7 +10,7 @@ import (
 	"unicode/utf8"
 )
 
-// RateFeed is the seam for GSAP rates (016 FR-008): GSAPRateFile reads uploads; MAPP calls no external system.
+// RateFeed is the seam for GSAP rates: GSAPRateFile reads uploads; MAPP calls no external system.
 type RateFeed interface {
 	Name() string
 	Read(fileName string, content []byte) ([]FeedRow, error)
@@ -63,7 +63,7 @@ func (GSAPRateFile) Read(_ string, content []byte) ([]FeedRow, error) {
 	}
 	reader := csv.NewReader(bytes.NewReader(content))
 	reader.TrimLeadingSpace = true
-	reader.LazyQuotes = true // a stray quote makes a row's cell wrong, not the file unreadable (038 FR-034)
+	reader.LazyQuotes = true // a stray quote makes a row's cell wrong, not the file unreadable
 	header, err := reader.Read()
 	if err != nil {
 		return nil, contentProblem(rateFileUnreadableMessage)
@@ -105,7 +105,7 @@ func (GSAPRateFile) Read(_ string, content []byte) ([]FeedRow, error) {
 	return rows, nil
 }
 
-// headerIndex names every missing column in one message, since a field shows one message (038 FR-034).
+// headerIndex names every missing column in one message, since a field shows one message.
 func headerIndex(header []string) (map[string]int, error) {
 	index := map[string]int{}
 	for i, cell := range header {
@@ -146,7 +146,7 @@ func (s *Service) rateFeed() RateFeed {
 	return s.feed
 }
 
-// UseRateFeed sets the feed rate files are read with (FR-008).
+// UseRateFeed sets the feed rate files are read with.
 func (s *Service) UseRateFeed(feed RateFeed) {
 	s.feed = feed
 }

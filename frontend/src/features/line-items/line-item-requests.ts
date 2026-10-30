@@ -48,7 +48,7 @@ export function toUpdateBody(
   return { ...toCreateBody(state, attributes), version };
 }
 
-/** "spread.months[1].amount" goes to that month's input, its message naming the month (038 FR-040). */
+/** "spread.months[1].amount" goes to that month's input, its message naming the month. */
 export function formProblems(
   error: ApiError,
   body: LineItemCreate,

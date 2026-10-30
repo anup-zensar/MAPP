@@ -4,7 +4,7 @@ import { expectNoAxeViolations, signInAs } from './fixtures';
 import { createPlan, createPlanningRecords } from './planning';
 import { xlsx } from './xlsx';
 
-// 038 US13 (FR-036 – FR-038; M-14 – M-17): long names wrap, pages fit 390, 768 and 1440 px without
+// Long names wrap, pages fit 390, 768 and 1440 px without
 // sideways scroll, sideways-scrolling tables are reachable by keyboard and text on grey reaches 4.5:1.
 
 const MEI = 'mei.lin@shell.com';

@@ -184,7 +184,7 @@ func TestCSVFeed_Semicolons_038_FR035_L13(t *testing.T) {
 	}
 }
 
-// Any content, comma- or semicolon-separated, is read or refused without a panic (B9, 038 FR-035).
+// Any content, comma- or semicolon-separated, is read or refused without a panic (B9).
 func FuzzCSVFeed(f *testing.F) {
 	f.Add([]byte(header + "\n" + validRow + "\n"))
 	f.Add([]byte(strings.ReplaceAll(header+"\n"+validRow+"\n", ",", ";")))

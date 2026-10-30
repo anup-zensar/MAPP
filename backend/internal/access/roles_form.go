@@ -16,8 +16,6 @@ const (
 	maxDescriptionLength = 300
 )
 
-// checkRoleName returns name trimmed and adds its problem: required, at most 60 characters, and no other role
-// than exceptID has it, ignoring letter case (message 14).
 func checkRoleName(problems *errs.Problems, w world, name, exceptID string) string {
 	name = strings.TrimSpace(name)
 	switch {
@@ -31,7 +29,6 @@ func checkRoleName(problems *errs.Problems, w world, name, exceptID string) stri
 	return name
 }
 
-// checkDescription returns the description trimmed and adds its problem: at most 300 characters.
 func checkDescription(problems *errs.Problems, description string) string {
 	description = strings.TrimSpace(description)
 	if utf8.RuneCountInString(description) > maxDescriptionLength {
@@ -41,7 +38,7 @@ func checkDescription(problems *errs.Problems, description string) string {
 }
 
 // checkPermissions returns the permissions without repeats in Table A order and adds their problems: at
-// least one (message 15), each a key of Table A, and finance.link only with finance.import (038 FR-006).
+// least one (message 15), each a key of Table A, and finance.link only with finance.import.
 func checkPermissions(problems *errs.Problems, keys []authz.Permission) []authz.Permission {
 	for _, key := range keys {
 		if _, known := authz.Lookup(string(key)); !known {
@@ -58,7 +55,6 @@ func checkPermissions(problems *errs.Problems, keys []authz.Permission) []authz.
 	return ordered
 }
 
-// checkDefaultScope adds the problem of a default scope that is neither All markets nor My teams.
 func checkDefaultScope(problems *errs.Problems, scope authz.ScopeType) authz.ScopeType {
 	if scope != authz.ScopeAll && scope != authz.ScopeMyTeams {
 		problems.Add("defaultScope", msgChooseDefaultScope)

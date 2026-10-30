@@ -110,7 +110,7 @@ interface ExtraRowProps {
   onTrace: (request: TraceRequest) => void;
 }
 
-/** Not yet scheduled, or line items above planned cost (038 FR-023): shown only when not zero. */
+/** Not yet scheduled, or line items above planned cost: shown only when not zero. */
 function ExtraRow({ label, tip, value, trace, onTrace }: ExtraRowProps) {
   if (!value) {
     return null;

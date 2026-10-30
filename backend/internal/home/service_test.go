@@ -72,7 +72,7 @@ func TestSummary_Counts_FR005(t *testing.T) {
 	published.Status = "published"
 	f.plans = []Plan{published, newPlan("P-1002", "FY2026 Mobility China", 2026, mobilityChina),
 		newPlan("P-1003", "FY2027 Global Brand", 2027, globalMarketingOps)}
-	plan := errs.RecordRef{Type: "plan", ID: "P-1001"} // 038 FR-032: the card counts by plan year
+	plan := errs.RecordRef{Type: "plan", ID: "P-1001"} // the card counts by plan year
 	f.activities[priya.ID] = []Activity{
 		{ID: "A-1001", Plan: plan, Status: "created"}, {ID: "A-1004", Plan: plan, Status: "submitted"},
 		{ID: "A-1005", Plan: plan, Status: "declined"}, {ID: "A-1002", Plan: plan, Status: "approved", DisplayStatus: "inProgress"},

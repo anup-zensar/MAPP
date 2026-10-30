@@ -63,7 +63,7 @@ type UsedFilters = components['schemas']['DashboardFilters'];
 
 /**
  * The address's filters corrected to those the answer used, as an unknown currency, market or plan
- * falls back to the default (038 FR-012); null when every filter in the address was used.
+ * falls back to the default; null when every filter in the address was used.
  */
 export function correctedFilters(
   asked: DashboardFilters,

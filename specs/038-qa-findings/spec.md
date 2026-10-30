@@ -13,8 +13,8 @@ the same-origin check, which is L-14). Each finding was traced to the code befor
 ([research.md](research.md) gives file and line). The product owner decided four points on 2026-10-29: who sees
 GSAP transactions that are not linked (H-4), approving while line items exceed an activity's planned cost (M-18),
 security hardening (sign-in limit, headers, referring page) and the date format everywhere (L-18) — recorded as
-D-353 – D-356. Smaller calls made while specifying are D-357, confirmed by the product owner on 2026-10-29. The
-red asterisk on mandatory fields (User Story 18) is a product owner request of the same day (D-358).
+D-359 – D-362. Smaller calls made while specifying are D-363, confirmed by the product owner on 2026-10-29. The
+red asterisk on mandatory fields (User Story 18) is a product owner request of the same day (D-364).
 
 **Amends**: [003](../003-people-and-teams/spec.md) FR-024 (clarified) · [009](../009-home-dashboard/spec.md) FR-001
 (wording) · [011](../011-activity-log-and-recycle-bin/spec.md) FR-004 · [013](../013-bcpir-and-spa/spec.md) FR-017 ·
@@ -41,23 +41,23 @@ Requisitioner.
   extracts (Administrators by default) — the product owner confirmed the behaviour already built. Everyone else
   sees no Not linked tab, count or Home link. Because only those people can see what there is to link, "Link
   financial transactions" is granted only together with "Import GSAP extracts": the built-in Global planner and
-  Planner roles lose it, and a role holding it alone is refused on save (D-353).
+  Planner roles lose it, and a role holding it alone is refused on save (D-359).
 - Q: What may a person do with links they can see (H-5)? → A: Linking a not-linked transaction needs both
   permissions and a target line item the person can see; unlinking a manual link needs "Link financial
   transactions" in the plan of the linked line item. A transaction or line item the person cannot see answers
-  exactly as a missing one, before any permission, version or state check (D-353).
+  exactly as a missing one, before any permission, version or state check (D-359).
 - Q: Should approving be refused while an activity's line items exceed its planned cost (M-18)? → A: Both
   behaviours are offered: Settings › Overspend control decides between **Warn the approver** (default — today's
-  behaviour, now with a prominent warning) and **Refuse approval** (D-354).
+  behaviour, now with a prominent warning) and **Refuse approval** (D-360).
 - Q: Which sign-in limit (security)? → A: 5 failed attempts for one e-mail within 15 minutes, or 20 from one
-  client within 15 minutes, refuse further attempts for 15 minutes; success clears the count (D-355).
+  client within 15 minutes, refuse further attempts for 15 minutes; success clears the count (D-361).
 - Q: Does the date format apply to day headings and month labels (L-18)? → A: Yes, everywhere; 003 FR-024 wins
-  over 011 FR-004's example (D-356).
+  over 011 FR-004's example (D-362).
 - Q: What does a negative "Not yet scheduled" become (M-2)? → A: It is never negative; the excess of line items
-  over planned cost gets its own row, so the equation of 013 FR-017 still holds (D-357).
+  over planned cost gets its own row, so the equation of 013 FR-017 still holds (D-363).
 - Q: What happens to typed values when the session ends (M-4)? → A: Drafts are not kept in the browser
   (constitution F7 allows only interface preferences there); the person is told on the sign-in page that the
-  changes were not saved and returned to the same address after signing in (D-357).
+  changes were not saved and returned to the same address after signing in (D-363).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -446,7 +446,7 @@ month and dashboards.
 
 A person filling in any form sees at a glance which fields must be filled to save: a red asterisk after the
 label, the convention people know from other business applications. Product owner request of 2026-10-29
-(D-358, constitution 4.7.0).
+(D-364, constitution 4.7.0).
 
 **Acceptance Scenarios**:
 
@@ -569,16 +569,16 @@ Each requirement names the QA finding(s) it closes and the earlier requirement i
   sign-in attempts. Try again in 15 minutes." with the remaining wait, also for the right password; attempts
   refused during the lock do not extend it; a successful sign-in clears the failures of that e-mail and that
   client; choosing a demo person counts as signing in with its e-mail; unknown e-mails count like known ones.
-  [Security check "Sign-in brute force"; D-355]
+  [Security check "Sign-in brute force"; D-361]
 - **FR-015**: Every web page and every server answer MUST forbid being framed by any site, send no referring
   address beyond the own origin, and forbid content sniffing; every web page MUST run under a content security
   policy that admits only the application's own scripts, styles, fonts, images and connections, admits the
   inline theme script only by its fingerprint, and forbids other inline scripts and evaluated code — enforced by
   the production preview and the packaged web server, reported only by the development server. [Security check
-  "Security headers"; R constitution F7; D-355]
+  "Security headers"; R constitution F7; D-361]
 - **FR-016**: A request that changes something and carries no origin information MUST be refused like a request
   from another site when its referring page belongs to another site; one with neither is handled as today.
-  [L-14; D-355]
+  [L-14; D-361]
 - **FR-017**: A text value containing NUL, another control character (tab, line feed and carriage return
   allowed in multi-line texts only) or an unpaired surrogate MUST be refused with "Remove the control characters
   from this text." on that field before anything is saved or numbered; a record ID containing one MUST answer
@@ -588,15 +588,15 @@ Each requirement names the QA finding(s) it closes and the earlier requirement i
 
 - **FR-018**: Settings › Overspend control MUST offer "When an activity's line items exceed its planned cost,
   approving it or its purchase requests": **Warn the approver** (default) or **Refuse approval**, changed only by
-  people who may change Settings, versioned, and logged with the old and new value. [M-18; A 037 FR-006; D-354]
+  people who may change Settings, versioned, and logged with the old and new value. [M-18; A 037 FR-006; D-360]
 - **FR-019**: With Warn, the approval section of an activity and of a purchase request, and the Approve dialog,
   MUST show for each activity of the round whose line items exceed its planned cost "Line items of activity
   '<name>' are <overage> above its planned cost" before approving, and the approval's activity-log entry MUST
-  record the overage. [M-18; D-354]
+  record the overage. [M-18; D-360]
 - **FR-020**: With Refuse, approving any level of an activity round, a purchase-request round or a change round
   MUST be refused while one of its activities' line items exceed its planned cost, naming each activity and its
   overage; nothing changes; Approve is shown disabled with that reason; Decline and Recall stay allowed.
-  [M-18; A 037 FR-019; D-354]
+  [M-18; A 037 FR-019; D-360]
 - **FR-021**: The overage MUST be the activity's negative unassigned planned cost (domain model §4.3) in the plan
   currency, worked out when approving. [M-18; R 037 FR-017]
 
@@ -608,7 +608,7 @@ Each requirement names the QA finding(s) it closes and the earlier requirement i
 - **FR-023**: In the SP&A view, "Not yet scheduled" MUST be the sum, per activity, of planned cost not yet placed
   in a month, never below zero for any activity; activities whose line items exceed their planned cost MUST be
   shown as a row "Line items above planned cost" with the total excess, so that periods + Not yet scheduled −
-  excess = planned cost. [M-2; A 013 FR-017; D-357]
+  excess = planned cost. [M-2; A 013 FR-017; D-363]
 - **FR-024**: All work Budget & cost, the dashboards' monthly chart and Budget by month of a plan, campaign or
   initiative MUST say "<n> activities have line items above their planned cost, so their months add up to more
   than their planned cost." whenever that is why the monthly total exceeds planned cost. [L-2; R 010 FR-023, 036
@@ -635,12 +635,12 @@ Each requirement names the QA finding(s) it closes and the earlier requirement i
   Save. [M-12; R design system "all problems at once"]
 - **FR-031**: When the session ends while a form has unsaved changes, the sign-in page MUST say "Your session
   ended, so your changes in '<form title>' weren't saved."; after signing in the person MUST return to the same
-  address including its fragment. [M-4, L-28; R 001 FR-006; D-357]
+  address including its fragment. [M-4, L-28; R 001 FR-006; D-363]
 
 **Home, All work (M-5, M-11)**
 
 - **FR-032**: Home's "Activities I own" MUST open All work on the plan years of those activities (at most 5,
-  from the earliest), name those years on the card ("in 2026–2027"), and its figure MUST equal what that list shows. [M-5; R 009 FR-007, FR-017; D-357]
+  from the earliest), name those years on the card ("in 2026–2027"), and its figure MUST equal what that list shows. [M-5; R 009 FR-007, FR-017; D-363]
 - **FR-033**: All work exports MUST use the status words of the screen ("Partly approved"). [M-11; R 010 FR-032,
   FR-033]
 
@@ -698,7 +698,7 @@ Each requirement names the QA finding(s) it closes and the earlier requirement i
   purchase requests, Settings lists, teams) MUST refuse tabs, line breaks and direction-control characters with
   "Names can't contain tabs, line breaks or text-direction characters.". [L-11]
 - **FR-056**: A person who holds neither "Approve or decline" permission MUST be refused for permission before
-  being told that the round has moved on. [L-15; A 014 approve check order; D-357]
+  being told that the round has moved on. [L-15; A 014 approve check order; D-363]
 - **FR-057**: A Settings page whose setting was never changed MUST say "Not changed since SP&A One was set up"
   instead of a last-changed line (Overspend control, Purchase requests). [L-16]
 
@@ -706,7 +706,7 @@ Each requirement names the QA finding(s) it closes and the earlier requirement i
 
 - **FR-058**: The person's date format (003 FR-024) MUST be used for day headings of the Activity log and History
   and for every month label with a year, as follows; "Today" and "Yesterday" stay words. [L-18; A 011 FR-004;
-  D-356]
+  D-362]
 
   | Format | Day heading | Month label |
   |---|---|---|
@@ -725,10 +725,10 @@ Each requirement names the QA finding(s) it closes and the earlier requirement i
 
 **Records**
 
-- **FR-062**: The decision log (D-353 – D-357), the feature map and the amended specs (index below) MUST state
+- **FR-062**: The decision log (D-359 – D-363), the feature map and the amended specs (index below) MUST state
   these rules. [all]
 
-**Mandatory-field marking** (product owner request, D-358)
+**Mandatory-field marking** (product owner request, D-364)
 
 - **FR-063**: Every field required to save (`FieldShell` marking "Required") MUST show a `*` after its label in
   Secondary Red, bold and at least 19 px (WCAG large text, so the 3:1 bar holds in the dark theme with Shell's
@@ -812,12 +812,12 @@ Each requirement names the QA finding(s) it closes and the earlier requirement i
 | H-1 | High | FR-012 | 036's data model and contract said such a link is refused; corrected |
 | H-2 | High | FR-008 – FR-011 | FR-011: packaged web server limit found while tracing |
 | H-3 | High | FR-013 | |
-| H-4 | High | FR-004 – FR-006 | Product decision D-353 |
+| H-4 | High | FR-004 – FR-006 | Product decision D-359 |
 | H-5 | High | FR-005, FR-007 | |
 | M-1 | Medium | FR-022 | |
-| M-2 | Medium | FR-023 | Was pinned by a test; rule amended (D-357) |
+| M-2 | Medium | FR-023 | Was pinned by a test; rule amended (D-363) |
 | M-3 | Medium | FR-017 | Story 6 (P1: unauthenticated sign-in) |
-| M-4 | Medium | FR-031 | Drafts not stored (F7); notice instead (D-357) |
+| M-4 | Medium | FR-031 | Drafts not stored (F7); notice instead (D-363) |
 | M-5 | Medium | FR-032 | |
 | M-6 | Medium | FR-029 | |
 | M-7 | Medium | FR-025 | |
@@ -831,7 +831,7 @@ Each requirement names the QA finding(s) it closes and the earlier requirement i
 | M-15 | Medium | FR-036 | |
 | M-16 | Medium | FR-037 | |
 | M-17 | Medium | FR-038 | |
-| M-18 | Medium | FR-018 – FR-021 | Product decision D-354 |
+| M-18 | Medium | FR-018 – FR-021 | Product decision D-360 |
 | L-1 | Low | FR-039 | |
 | L-2 | Low | FR-024 | Rule intended (010 FR-023); explanation added |
 | L-3 | Low | FR-013 | Same family as H-3 |
@@ -845,11 +845,11 @@ Each requirement names the QA finding(s) it closes and the earlier requirement i
 | L-11 | Low | FR-055, FR-017 | Surrogates through FR-017 |
 | L-12 | Low | FR-044 | |
 | L-13 | Low | FR-035 | 015's plan said comma only; amended |
-| L-14 | Low | FR-016 | Security decision D-355 |
-| L-15 | Low | FR-056 | Documented check order changed (D-357) |
+| L-14 | Low | FR-016 | Security decision D-361 |
+| L-15 | Low | FR-056 | Documented check order changed (D-363) |
 | L-16 | Low | FR-057 | |
 | L-17 | Low | FR-045 | |
-| L-18 | Low | FR-058 | Product decision D-356 |
+| L-18 | Low | FR-058 | Product decision D-362 |
 | L-19 | Low | FR-046 | |
 | L-20 | Low | FR-047 | |
 | L-21 | Low | FR-034 | |
@@ -862,9 +862,9 @@ Each requirement names the QA finding(s) it closes and the earlier requirement i
 | L-28 | Low | FR-031 | |
 | L-29 | Low | FR-053 | |
 | L-30 | Low | FR-061 | |
-| Security: sign-in brute force | Gap | FR-014 | D-355 |
-| Security: headers | Gap | FR-015 | D-355 |
-| Product owner request: red asterisk on mandatory fields | Request | FR-063, FR-064 | D-358, constitution 4.7.0 |
+| Security: sign-in brute force | Gap | FR-014 | D-361 |
+| Security: headers | Gap | FR-015 | D-361 |
+| Product owner request: red asterisk on mandatory fields | Request | FR-063, FR-064 | D-364, constitution 4.7.0 |
 
 54 findings: 53 change behaviour (L-2 only gains an explanation; part (b) of L-5 is not a bug); L-26 needs only a
 correction of 009's text.

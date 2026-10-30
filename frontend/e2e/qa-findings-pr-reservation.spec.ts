@@ -17,7 +17,7 @@ import {
 } from './purchase-request-flow';
 
 // 038 US1 on the real API: lowering an approved purchase request keeps the approved amount reserved
-// until the change is approved (FR-001 – FR-003, C-1).
+// until the change is approved.
 
 const nextYear = new Date().getUTCFullYear() + 1;
 
@@ -46,7 +46,6 @@ test('038 FR-001 (C-1): a change in review keeps the approved amount reserved', 
   const prName = `PR for ${lineItem.name}`;
   await sendToSimulatedGsap(page, lineItem);
 
-  // An approved purchase request for all 15,800.00 USD of the line item.
   await signInAs(page, PRIYA);
   await page.goto(`/purchase-requests/new?lineItemId=${lineItem.id}`);
   await expect(amountField(page)).toHaveValue('15,800.00');
@@ -54,7 +53,6 @@ test('038 FR-001 (C-1): a change in review keeps the approved amount reserved', 
   await submitOnScreen(page, prName);
   await approveFromInbox(page, prName);
 
-  // Priya lowers it to 12,000.00 USD and submits the change (FR-028 confirmation first).
   await signInAs(page, PRIYA);
   await page.goto(`/purchase-requests/${prId}/edit`);
   await amountField(page).fill('12000.00');
@@ -72,7 +70,6 @@ test('038 FR-001 (C-1): a change in review keeps the approved amount reserved', 
   expect(defaults.status()).toBe(400);
   expect(await defaults.text()).toContain('Nothing left to request');
 
-  // Daniel declines the change: the approved 15,800.00 USD stay reserved, nothing is available.
   await signInAs(page, DANIEL);
   await openPurchaseRequest(page, prId, prName);
   const approval = page.getByRole('region', { name: 'Approval' });

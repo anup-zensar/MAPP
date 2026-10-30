@@ -33,7 +33,7 @@ import styles from './PurchaseRequestPage.module.css';
  * A purchase request's page (032 FR-008, FR-009, FR-052; 033 FR-001): header with its status,
  * completeness and actions, the server's notice, details, GSAP data, lines, the approved version
  * while a change waits, approval, routing history and history. A person who may change nothing on it
- * sees one View only note instead of disabled actions (038 FR-025).
+ * sees one View only note instead of disabled actions.
  */
 export function PurchaseRequestPage() {
   const { purchaseRequestId = '' } = useParams();

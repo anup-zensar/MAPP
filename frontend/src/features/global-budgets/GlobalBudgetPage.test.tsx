@@ -118,7 +118,7 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
       name: "Can't delete 'FY2026 Global marketing budget'",
     });
     expect(dialog).toHaveTextContent(reason);
-    // 038 FR-044 (L-12): a dialog that only informs has one Close.
+    // A dialog that only informs has one Close.
     expect(
       within(dialog)
         .getAllByRole('button')

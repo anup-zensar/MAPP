@@ -56,7 +56,7 @@ function lostSessionApi() {
   ]);
 }
 
-describe('A session lost with unsaved changes (038 FR-031, D-357)', () => {
+describe('A session lost with unsaved changes (038 FR-031, D-363)', () => {
   it('038 FR-031: names the form whose changes were not saved and keeps the #fragment of the way back', async () => {
     lostSessionApi();
     const { user, router } = renderRoutes(routesWith(<Form title="New team" />), {

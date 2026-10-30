@@ -34,7 +34,7 @@
 - [x] Every one of the 54 QA findings appears in the traceability table with its FR(s) or a reason it needs none
 - [x] Every FR names the finding(s) it closes and the earlier requirement it restores or amends
 - [x] Every amended requirement of an earlier spec is in the amendment index and carries a note in that spec
-- [x] The four product decisions are recorded (D-353 – D-356) and the smaller calls flagged for confirmation (D-357)
+- [x] The four product decisions are recorded (D-359 – D-362) and the smaller calls flagged for confirmation (D-363)
 
 ## Notes
 

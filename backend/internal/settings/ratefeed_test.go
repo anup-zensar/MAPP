@@ -161,7 +161,7 @@ func TestGSAPRateFile_StrayQuotesAreARow_038_FR034_M13(t *testing.T) {
 	assertRow(t, check.Rows[2], OutcomeAdd, "")
 }
 
-// An empty file says so, and every missing column is named at once — 038 FR-034 (L-21).
+// An empty file says so, and every missing column is named at once.
 func TestGSAPRateFile_EmptyAndMissingColumns_038_FR034_L21(t *testing.T) {
 	t.Parallel()
 	for _, content := range []string{"", "\xEF\xBB\xBF", " \n\n"} {

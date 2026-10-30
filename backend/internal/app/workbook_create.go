@@ -18,8 +18,8 @@ import (
 )
 
 // Create creates a record under parentID with the rules of its single create, empty fields taking the
-// on-screen defaults (FR-032): the owner and dates of the parent, the type's planned cost, the line item's
-// form defaults. Activities and line items are kept until Flush (038 FR-008).
+// on-screen defaults: the owner and dates of the parent, the type's planned cost, the line item's
+// form defaults. Activities and line items are kept until Flush.
 func (w *workbookWriter) Create(ctx context.Context, a actor.Actor, r workbook.NewRecord) (string, error) {
 	parentID, v := r.ParentID, r.Values
 	switch r.Level {
@@ -71,7 +71,7 @@ func (p workbookPlanning) createInitiative(ctx context.Context, a actor.Actor, c
 }
 
 // createActivity fills in the new form's defaults (not its overspend limits: an import is never refused for
-// overspend, 037 FR-012).
+// overspend).
 func (w *workbookWriter) createActivity(ctx context.Context, initiativeID string, v workbook.Values) (string, error) {
 	if err := w.permit(ctx, initiativeID, authz.ActivitiesEdit); err != nil {
 		return "", err

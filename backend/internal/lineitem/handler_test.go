@@ -138,7 +138,7 @@ func TestGetLineItemFormOptions_Contract(t *testing.T) {
 		d.SpreadMethod != "evenly" || d.FinanceBudgetYear != 2026 || d.FinanceBudgetItemID != nil || !d.RequestSwbs {
 		t.Errorf("defaults = %+v", d)
 	}
-	if len(options.Currencies) != 5 || options.Currencies[0].Code != "USD" || len(options.FinanceBudgetItems) != 8 || // 038 FR-061: and 2027's two
+	if len(options.Currencies) != 5 || options.Currencies[0].Code != "USD" || len(options.FinanceBudgetItems) != 8 || // and 2027's two
 		options.FinanceBudgetItems[0].BudgetName != "2026 Lubricants Budget" {
 		t.Errorf("choices = %+v / %+v", options.Currencies, options.FinanceBudgetItems)
 	}

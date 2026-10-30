@@ -9,10 +9,8 @@ import inputs from '../FieldShell/inputs.module.css';
 import { InfoTip } from '../InfoTip/InfoTip';
 import styles from './Combobox.module.css';
 
-/** One choice of the list. */
 export interface ComboboxOption {
   id: string;
-  /** What it is called: in chips, in "Remove <label>" and, without `content`, in the list. */
   label: string;
   /** What a search looks in, ignoring case ("name e-mail job title"); the label when left out. */
   searchText?: string;
@@ -20,49 +18,33 @@ export interface ComboboxOption {
   content?: ReactNode;
 }
 
-/** How a chosen value looks as a chip. */
 export interface ComboboxChip {
-  /** Names the chip's Remove button: "Remove <label>". */
   label: string;
-  /** What the chip shows; the label when left out. */
   content?: ReactNode;
-  /** A short explanation in an ⓘ on the chip, for example why an inactive value is kept. */
   tip?: string;
 }
 
 export interface ComboboxProps extends FieldFrameProps {
-  /** The field's name and the input's id, so FormErrorSummary can link to it. */
   name: string;
   /** What can be chosen, in the order to list them. Chosen values need not be among them. */
   options: ComboboxOption[];
-  /** The chosen ids, in the order chosen. */
   value: string[];
   onChange: (ids: string[]) => void;
   /** Several values (chosen ones stay listed, ticked); otherwise one, which a new choice replaces. */
   multiple?: boolean;
-  /** How a chosen id looks as a chip; by default the option's label (or the id). */
   renderChip?: (id: string) => ComboboxChip;
   placeholder?: string;
-  /** The count of matching options, shown above the list and told to screen readers: "300 people". */
   countText: (count: number) => string;
-  /** Said when nothing matches: "No one matches 'xyz'." */
   noMatchText: (query: string) => string;
   /** Lists at most this many matches (for very long lists, such as 5,000 options). */
   limit?: number;
-  /** Said under a list cut at `limit`: "Showing 50 of 1,217 — keep typing to narrow down." */
   limitText?: (shown: number, total: number) => string;
-  /** Locks the field and says why under it; chosen values stay visible. */
   disabledReason?: string;
-  /** A neutral note under the field. */
   note?: ReactNode;
 }
 
-/**
- * The one searchable choice of MAPP (feature 003 plan, ARIA 1.2 combobox): an input that
- * filters the options by any part of their search text, a list below it, and the chosen values as
- * chips with a Remove button. ↓ ↑ move through the list, Enter chooses, Escape closes it and
- * Backspace in an empty input removes the last chip. The focus always stays in the input.
- */
+// An ARIA 1.2 combobox: ↓ ↑ move through the list, Enter chooses, Escape closes it and Backspace
+// in an empty input removes the last chip. The focus always stays in the input.
 export function Combobox({
   name,
   options,

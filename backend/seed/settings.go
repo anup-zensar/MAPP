@@ -57,7 +57,7 @@ var demoBudgets = []struct {
 		[][2]string{{itemEuropeDigital, "LUB-EU-DIG"}, {itemEuropeEvents, "LUB-EU-EVT"}, {itemEuropeBrand, "LUB-EU-BRD"}}},
 	{demoBudgetYear, mobilityBudget,
 		[][2]string{{itemChinaRetail, "MOB-CN-RET"}, {itemChinaFleet, "MOB-CN-FLT"}, {"Delhi", "MOB-IN-DEL"}}},
-	{ukBudgetYear, ukBudget, [][2]string{{itemUKEvents, "LUB-UKI-EVT"}, {itemUKAgency, "LUB-UKI-AGY"}}}, // 038 FR-061
+	{ukBudgetYear, ukBudget, [][2]string{{itemUKEvents, "LUB-UKI-EVT"}, {itemUKAgency, "LUB-UKI-AGY"}}},
 }
 
 // demoAttribute's parent is the label of an earlier attribute of its level; condition lists Business unit labels.

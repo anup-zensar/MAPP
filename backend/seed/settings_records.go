@@ -73,7 +73,6 @@ func (d *demo) addRateHistory(ctx context.Context, repo stores.SettingsStore) er
 	})
 }
 
-// addActivityTypes creates the six activity types, AT-1001 … AT-1006.
 func (d *demo) addActivityTypes(ctx context.Context, repo stores.SettingsStore) error {
 	for _, t := range demoActivityTypes {
 		id, err := d.next(ctx, ids.PrefixActivityType)
@@ -96,8 +95,6 @@ func (d *demo) addActivityTypes(ctx context.Context, repo stores.SettingsStore) 
 	return nil
 }
 
-// addModels creates the two models, MOD-1001 and MOD-1002, with their allowed activity types in the order
-// of the activity-type list (by name).
 func (d *demo) addModels(ctx context.Context, repo stores.SettingsStore) error {
 	for _, m := range demoModels {
 		var r resolver
@@ -130,7 +127,7 @@ func (d *demo) addModels(ctx context.Context, repo stores.SettingsStore) error {
 }
 
 // addFinanceBudgets creates the 2026 finance budgets FB-1001 and FB-1002 with three items each, FBI-1001 … FBI-1006,
-// and the 2027 one FB-1003 with FBI-1007 and FBI-1008 for the FY2027 line items (038 FR-061).
+// and the 2027 one FB-1003 with FBI-1007 and FBI-1008 for the FY2027 line items.
 func (d *demo) addFinanceBudgets(ctx context.Context, repo stores.SettingsStore) error {
 	for _, b := range demoBudgets {
 		budgetID, err := d.next(ctx, ids.PrefixFinanceBudget)

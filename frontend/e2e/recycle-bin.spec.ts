@@ -10,16 +10,8 @@ import {
 import { approveThroughApi } from './planning-changes';
 import { createPlanningRecords } from './planning';
 
-// End-to-end journeys of feature 011's Recycle bin (US1 find and restore, US4 restore with its parent,
-// US5 delete permanently and empty), against the real API with the demo data (011 plan "Tests", T045).
-//
-// Every text and label comes from the "User-visible messages" table of specs/011 plan.md.
-//
-// The demo data read (seed/history.go): Priya Raman deleted the initiative "Trade shows" of Rimula fleet
-// (FY2026 Lubricants Europe) two days before the seed time, with its activity "Fleet expo stand" and that
-// activity's line item "Stand build". Other tests set the stage through the API as Mei Lin (records
-// deleted there land in the bin as they would from their pages). The last test empties the bin, so it
-// stays last; it deletes permanently as Alex Morgan, whose Administrator role holds that (014).
+// The demo bin (seed/history.go) holds Priya's deleted initiative "Trade shows" with its activity
+// "Fleet expo stand" and line item "Stand build". The last test empties the bin, so it stays last.
 
 const PRIYA = 'priya.raman@shell.com';
 const MEI = 'mei.lin@shell.com';
@@ -37,12 +29,10 @@ interface BinItem {
   records: BinRecord[];
 }
 
-/** The recycle bin's entries as the API lists them. */
 async function binItems(page: Page): Promise<BinItem[]> {
   return (await callApi<{ items: BinItem[] }>(page, 'GET', '/api/v1/recycle-bin')).items;
 }
 
-/** The bin's row of the record called `name` (each row is a list item named by an h2). */
 function binRow(page: Page, name: string): Locator {
   return page
     .getByRole('listitem')
@@ -59,7 +49,6 @@ function gone(page: Page): Locator {
     .or(page.getByText(/^Nothing in the recycle bin — /));
 }
 
-/** Opens the recycle bin and searches it for `text`. */
 async function searchBin(page: Page, text: string): Promise<void> {
   await page.goto('/recycle-bin');
   await expect(page.getByRole('heading', { level: 1, name: 'Recycle bin' })).toBeVisible();
@@ -78,7 +67,6 @@ test('US1: the seeded initiative is found by its activity’s ID and restored in
 
   await page.goto('/recycle-bin');
   await expect(page).toHaveTitle('Recycle bin · SP&A One');
-  // With no filter the count reads "3 of 3 items" (design system §11, rule 14).
   await expect(page.getByText(/^(\d+) of \1 items?$/)).toBeVisible();
   const row = binRow(page, 'Trade shows');
   await expect(row.getByText('Was in FY2026 Lubricants Europe › Rimula fleet')).toBeVisible();
@@ -88,12 +76,10 @@ test('US1: the seeded initiative is found by its activity’s ID and restored in
   await expect(row.getByText(`Activity 'Fleet expo stand' (${stand.recordId})`)).toBeVisible();
   await expectNoAxeViolations(page);
 
-  // The search also looks inside each entry (FR-016).
   await page.getByRole('searchbox', { name: 'Search name or ID' }).fill(stand.recordId);
   await expect(page.getByText(/^1 of \d+ items?$/)).toBeVisible();
   await expect(row.getByText(`Contains ${stand.recordId} 'Fleet expo stand'`)).toBeVisible();
 
-  // Step 1: Restore — the dialog says where it returns and with what (FR-018).
   await row.getByRole('button', { name: "Restore initiative 'Trade shows'" }).click();
   const dialog = page.getByRole('alertdialog', { name: "Restore initiative 'Trade shows'?" });
   await expect(
@@ -103,7 +89,6 @@ test('US1: the seeded initiative is found by its activity’s ID and restored in
   ).toBeVisible();
   await expectNoAxeViolations(page);
 
-  // Step 2: confirm. Step 3: View opens it in its plan.
   await dialog.getByRole('button', { name: 'Restore initiative' }).click();
   await expectToast(page, "Initiative 'Trade shows' restored");
   await page.getByRole('button', { name: 'View', exact: true }).click();
@@ -112,7 +97,6 @@ test('US1: the seeded initiative is found by its activity’s ID and restored in
   );
   await expect(page.getByRole('dialog', { name: 'Trade shows' })).toBeVisible();
 
-  // Its activity is back, Created (FR-019, FR-021: same ID).
   await page.goto(`/activities/${stand.recordId}`);
   await expect(page.getByRole('heading', { level: 1, name: 'Fleet expo stand' })).toBeVisible();
   await expect(page.getByText('Created', { exact: true }).first()).toBeVisible();
@@ -129,7 +113,6 @@ test('US1: an approved activity restored from the bin comes back as Created (FR-
   });
   await approveThroughApi(page, records);
   await signInAs(page, MEI);
-  // Deleted from its page, after the Undo message closed: it is in the bin.
   await callApi(page, 'DELETE', `/api/v1/activities/${records.activityId}`);
 
   await searchBin(page, records.activityName);
@@ -187,7 +170,6 @@ test('US4: an activity whose initiative is also in the bin comes back with it �
   await dialog.getByRole('button', { name: 'Restore both' }).click();
   await expectToast(page, `Activity '${records.activityName}' restored`);
 
-  // Both left the bin, and the activity's page is back under its initiative.
   await expect(gone(page)).toBeVisible();
   await page.goto(records.activityPath);
   await expect(page.getByRole('heading', { level: 1, name: records.activityName })).toBeVisible();
@@ -222,7 +204,6 @@ test('US5: Delete permanently and Empty recycle bin, both in the activity log (F
   await expectToast(page, `Activity '${name}' deleted permanently`);
   await expect(gone(page)).toBeVisible();
 
-  // Empty recycle bin: everything listed goes, in one step (FR-029).
   await callApi(page, 'DELETE', `/api/v1/initiatives/${records.initiativeId}`);
   await page.goto('/recycle-bin');
   // Destructive and rare, so it is in the header's More menu (design system §5.1).
@@ -238,7 +219,6 @@ test('US5: Delete permanently and Empty recycle bin, both in the activity log (F
   await expect(page.getByText('Nothing in the recycle bin', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'More' })).toHaveCount(0);
 
-  // Both are in the activity log, with Alex as the actor (FR-030, SC-007).
   await page.goto('/activity-log');
   await expect(
     page.getByText(/^Alex Morgan emptied the recycle bin \(\d+ items?\)/).first(),

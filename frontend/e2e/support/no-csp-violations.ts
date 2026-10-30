@@ -1,6 +1,6 @@
 import { expect, test as base } from '@playwright/test';
 
-/** Fails on any `securitypolicyviolation` (038 FR-015); specs import `test` and `expect` from here. */
+/** Fails on any `securitypolicyviolation`; specs import `test` and `expect` from here. */
 export const test = base.extend<{ cspViolations: string[] }>({
   cspViolations: [
     async ({ page }, use) => {

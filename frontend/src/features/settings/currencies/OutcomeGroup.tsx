@@ -24,7 +24,7 @@ export function OutcomeGroup({ outcome, rows }: OutcomeGroupProps) {
   return (
     <details className={styles.group} open={OPEN_AT_FIRST.includes(outcome)}>
       <summary>
-        {/* The open/closed marker the flex summary loses (038 FR-048); it turns when open. */}
+        {/* The open/closed marker the flex summary loses; it turns when open. */}
         <ChevronRight aria-hidden="true" className={styles.marker} />
         {`${OUTCOME_WORDS[outcome]} (${formatWhole(rows.length)})`}
       </summary>

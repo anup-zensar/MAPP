@@ -127,7 +127,7 @@ func (w *rowWork) problem(column, value, reason string) {
 	w.problems = append(w.problems, Problem{Sheet: w.s.name, Row: w.row.Number, Column: column, Value: shortened(value), Reason: reason})
 }
 
-// shortened is a value found as a problem shows it: at most maxProblemValue characters, then "…" (038 FR-010).
+// shortened is a value found as a problem shows it: at most maxProblemValue characters, then "…".
 func shortened(value string) string {
 	if utf8.RuneCountInString(value) <= maxProblemValue {
 		return value
@@ -174,7 +174,7 @@ func (ap *applier) readCells(w *rowWork) {
 }
 
 // unchanged reports whether a cell still holds the record's value: the same text, or the same amount written
-// as a number (038 FR-059).
+// as a number.
 func (ap *applier) unchanged(c column, text string, stored Values) bool {
 	if text == format(c, stored, ap.plan.Choices) {
 		return true
@@ -184,7 +184,7 @@ func (ap *applier) unchanged(c column, text string, stored Values) bool {
 	return isAmount && *was != nil && parseAmount(text, &read) == "" && read != nil && *read == **was
 }
 
-// checkCell reads a cell into values; a name must be a single line (038 FR-055).
+// checkCell reads a cell into values; a name must be a single line.
 func checkCell(c column, text string, values *Values, ch Choices) string {
 	if c.field == fieldName {
 		if problem := record.CheckSingleLine(text); problem != "" {

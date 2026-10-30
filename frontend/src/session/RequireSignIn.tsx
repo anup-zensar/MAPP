@@ -5,7 +5,7 @@ import { requestedPageTitle } from './page-handle';
 import { SessionCheckPage } from './SessionCheckPage';
 import { signInAddress, useSession } from './useSession';
 
-/** Checks the session on every navigation; sends a signed-out visitor to sign in and back (FR-005). */
+/** Checks the session on every navigation; sends a signed-out visitor to sign in and back. */
 export function RequireSignIn({ children }: { children: ReactNode }) {
   const { status, refetch } = useSession();
   const location = useLocation();

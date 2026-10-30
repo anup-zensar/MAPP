@@ -11,7 +11,7 @@ export function CheckResult({ check }: { check: ImportCheck }) {
     <div aria-live="polite">
       <p className={styles.summary}>{checkSummary(check)}</p>
       <p className={styles.text}>{changeSummary(check)}</p>
-      {/* A scrolling region the keyboard can reach (038 FR-037). */}
+      {/* A scrolling region the keyboard can reach. */}
       <div
         className={styles.tableScroll}
         role="region"

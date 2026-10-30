@@ -3,7 +3,7 @@ import { expect, test } from './support/no-csp-violations';
 import { callApi, expectNoAxeViolations, signInAs, uniqueName } from './fixtures';
 import { idOf } from './planning';
 
-// 038 US2 (H-4, H-5): not-linked transactions only for importers, Link and Unlink only where the
+// Not-linked transactions only for importers, Link and Unlink only where the
 // server allows, and a hidden record answers like a missing one.
 
 const ALEX = 'alex.morgan@shell.com';

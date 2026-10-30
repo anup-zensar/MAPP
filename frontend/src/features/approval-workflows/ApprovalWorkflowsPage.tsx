@@ -136,7 +136,7 @@ export function ApprovalWorkflowsPage() {
           {cantDeleteText(dialog.workflow)}
         </ConfirmDialog>
       )}
-      {/* Already inactive: the dialog only informs, with one Close (038 FR-044). */}
+      {/* Already inactive: the dialog only informs, with one Close. */}
       {dialog?.kind === 'cantDelete' && !dialog.workflow.active && (
         <ConfirmDialog
           open

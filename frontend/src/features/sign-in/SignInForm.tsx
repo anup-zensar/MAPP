@@ -36,7 +36,7 @@ export function SignInForm({ signingIn, onSignIn }: SignInFormProps) {
     if (error?.kind === 'validation') {
       showServerProblems(error.fields);
     } else if (error?.kind === 'incorrectCredentials' || error?.kind === 'tooManyAttempts') {
-      // The e-mail stays, so only the password is typed again (US1 scenario 4, 038 FR-014).
+      // The e-mail stays, so only the password is typed again.
       form.setValue('password', '');
     }
   }, onInvalid);

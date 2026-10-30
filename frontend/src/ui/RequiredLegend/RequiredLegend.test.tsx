@@ -34,14 +34,14 @@ function Panel({ marking }: { marking?: FieldMarking }) {
   );
 }
 
-describe('RequiredLegend (038 FR-064, D-358)', () => {
+describe('RequiredLegend (038 FR-064, D-364)', () => {
   it('038 FR-064: a side panel with a required field shows "* Required" once, before its first field', async () => {
     renderWithProviders(<Panel marking="Required" />);
 
     await waitFor(() => expect(legends()).toHaveLength(1));
     const [legend] = legends();
     expect(legend).toHaveTextContent('* Required');
-    // Screen readers hear "required" with each field instead (038 FR-063).
+    // Screen readers hear "required" with each field instead.
     expect(legend).toHaveAttribute('aria-hidden', 'true');
     const name = screen.getByRole('textbox', { name: 'Name' });
     expect(legend?.compareDocumentPosition(name)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);

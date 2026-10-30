@@ -52,7 +52,7 @@ export function newActivityHref(planId: string, initiativeId: string): string {
   return `/plans/${encodeURIComponent(planId)}/initiatives/${encodeURIComponent(initiativeId)}/activities/new`;
 }
 
-/** "MQL = INQ × 2.00 % · … — each rounded to a whole number (model 'Lubricants 1.0')" (FR-018). */
+/** "MQL = INQ × 2.00 % · … — each rounded to a whole number (model 'Lubricants 1.0')". */
 export function goalsFormula(model: ModelFacts): string {
   return (
     `MQL = INQ × ${formatPercent(model.inqToMqlRate)} · deals = MQL × ${formatPercent(model.mqlToDealRate)} · ` +

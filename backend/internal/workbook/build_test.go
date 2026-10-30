@@ -10,7 +10,7 @@ import (
 )
 
 // The export writes budget and planned cost as numbers, and the unchanged export checks as nothing to
-// change — 038 FR-059 (L-10).
+// change.
 func TestExport_MoneyAsNumbers_ReimportNothingToChange_038_FR059_L10(t *testing.T) {
 	t.Parallel()
 	plan := testPlan()

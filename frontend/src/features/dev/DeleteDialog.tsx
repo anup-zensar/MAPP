@@ -14,7 +14,6 @@ const UNDO_OPTIONS = {
 };
 
 interface DeleteDialogProps {
-  /** The question: "Delete sample folder 'Ideas'?" */
   title: string;
   /** What goes to the recycle bin with it. */
   text: string;
@@ -24,10 +23,6 @@ interface DeleteDialogProps {
   onClose: () => void;
 }
 
-/**
- * Asks before a delete (design system §6.5); afterwards the message offers Undo (FR-026), or says
- * why the delete did not work.
- */
 export function DeleteDialog({ title, text, confirmLabel, remove, onClose }: DeleteDialogProps) {
   const [busy, setBusy] = useState(false);
   const afterDelete = useUndoableDelete(UNDO_OPTIONS);

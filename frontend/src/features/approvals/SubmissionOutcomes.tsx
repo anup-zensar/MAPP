@@ -5,7 +5,7 @@ import styles from './approval-dialogs.module.css';
 
 type SubmissionLevel = components['schemas']['ApprovalSubmissionLevel'];
 
-/** Each level's outcome, with approvers resolved, also those from a record field (038 FR-027). */
+/** Each level's outcome, with approvers resolved, also those from a record field. */
 export function SubmissionOutcomes({ outcomes }: { outcomes: readonly SubmissionLevel[] }) {
   return (
     <ol role="list" className={styles.levels}>

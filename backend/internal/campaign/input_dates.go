@@ -28,7 +28,7 @@ func (in *InitiativeUpdate) UnmarshalJSON(data []byte) error {
 }
 
 // decodeWithTextDates reads the dates as text, so an impossible date is a field problem rather than an
-// unreadable request (FR-054): it becomes the zero Date, which checkForm reports.
+// unreadable request: it becomes the zero Date, which checkForm reports.
 func decodeWithTextDates(data []byte, body any, start, end **date.Date) error {
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(data, &fields); err != nil {
