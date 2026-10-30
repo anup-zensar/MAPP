@@ -8,10 +8,6 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// User story 6 — Home's card (FR-025).
-
-// The overview of the current year: Priya's team plan, everything, and the activities above planned cost
-// (FR-025, data model §6.1).
 func TestOverview_MyTeamsAndEverything_FR025(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -36,10 +32,7 @@ func TestOverview_MyTeamsAndEverything_FR025(t *testing.T) {
 	assertCode(t, err, http.StatusBadRequest, errs.CodeValidationFailed)
 }
 
-// User story 7 — link a transaction by hand (FR-026, FR-027).
-
-// A manual link is logged with the line item before and after; unlinking matches again and is logged too
-// (FR-026, FR-027).
+// Unlinking matches the transaction again and is logged too.
 func TestLinkAndUnlink_Logged_FR027(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -73,8 +66,6 @@ func TestLinkAndUnlink_Logged_FR027(t *testing.T) {
 	}
 }
 
-// Linking refuses a line item in the recycle bin, an unknown one and a wrong ID form, with the field's
-// message (FR-026).
 func TestLink_RefusesLineItemsNotLive_FR026(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -96,9 +87,6 @@ func TestLink_RefusesLineItemsNotLive_FR026(t *testing.T) {
 	}
 }
 
-// Polish — the access seam (FR-028, D-252, D-301).
-
-// Without finance.view every read is forbidden (FR-028).
 func TestAccess_NoViewRefusesEveryRead_FR028(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -116,9 +104,7 @@ func TestAccess_NoViewRefusesEveryRead_FR028(t *testing.T) {
 	assertCode(t, err, http.StatusForbidden, errs.CodeForbidden)
 }
 
-// Without finance.import a person cannot check, import or get the sample file, and does not see the
-// transactions that are not linked: not in the lists, counts, totals or the overview, and opening one
-// answers as a missing transaction (FR-028, D-301, 038 FR-004).
+// Without finance.import, not-linked transactions are in no list, count or total, and open as missing ones.
 func TestAccess_NoImportHidesNotLinked_FR028_038_FR004(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -145,7 +131,6 @@ func TestAccess_NoImportHidesNotLinked_FR028_038_FR004(t *testing.T) {
 	}
 }
 
-// Without finance.link a person can neither link nor unlink, and the panel offers neither (FR-028).
 func TestAccess_NoLinkRefusesLinking_FR028(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -160,9 +145,7 @@ func TestAccess_NoLinkRefusesLinking_FR028(t *testing.T) {
 	}
 }
 
-// A person who sees only some plans gets only their transactions; a record or transaction of another plan
-// answers like a missing one, and a link into one answers like a missing line item (FR-028, 014 FR-007,
-// 022 FR-005, 038 FR-007).
+// A record or transaction of a plan out of sight answers like a missing one, a link into one like a missing line item.
 func TestAccess_VisiblePlansScopeEverything_FR028_022_FR005_038_FR007(t *testing.T) { //nolint:gocyclo // 12: one scenario per access rule, kept together so the rules read as one table.
 	f := newFixture(t)
 	f.access.plans = []string{"P-1002"}
@@ -193,7 +176,6 @@ func TestAccess_VisiblePlansScopeEverything_FR028_022_FR005_038_FR007(t *testing
 	_ = assertCode(t, err, http.StatusBadRequest, errs.CodeValidationFailed)
 }
 
-// FactsByLineItem gives All work the same figures as the cards (FR-023, SC-002).
 func TestFactsByLineItem_SameAsTheCards_SC002(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

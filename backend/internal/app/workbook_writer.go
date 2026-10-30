@@ -14,22 +14,20 @@ import (
 	"mapp/internal/workbook"
 )
 
-// workbookWriter is the workbook.Writer of one import (038 FR-008): campaigns, initiatives and updates go
-// through their single operations; activities and line items are checked by their areas' importers, which
-// read each parent once and store a sheet's records together. Each parent's permission is checked once.
+// workbookWriter imports activities and line items through their areas' importers, which read each parent once
+// and store a sheet together; each parent's permission is checked once.
 type workbookWriter struct {
 	p          workbookPlanning
 	plan       authz.PlanFacts
 	activities *activity.Importer
 	lineItems  *lineitem.Importer
 	permitted  map[string]error
-	newOwners  map[string]string // the owner of each activity this import creates, by id
-	readable   map[string]string // the readable id of each provisional one stored since the last Flush
+	newOwners  map[string]string
+	readable   map[string]string
 }
 
 var _ workbook.Writer = (*workbookWriter)(nil)
 
-// Prepare starts the writer of an import into the plan wp, which Plan has read for a.
 func (p workbookPlanning) Prepare(ctx context.Context, a actor.Actor, wp workbook.Plan) (workbook.Writer, error) {
 	stored, found, err := p.plans.Get(ctx, wp.ID)
 	if err != nil || !found {
@@ -41,8 +39,7 @@ func (p workbookPlanning) Prepare(ctx context.Context, a actor.Actor, wp workboo
 	}, nil
 }
 
-// Update stores what is kept first, so that the single edit checks against it, and has the importers read
-// their parents again after it.
+// Update stores what is kept first, so the single edit checks against it; the importers then re-read parents.
 func (w *workbookWriter) Update(ctx context.Context, a actor.Actor, c workbook.Change) error {
 	if err := w.store(ctx); err != nil {
 		return err
@@ -54,8 +51,7 @@ func (w *workbookWriter) Update(ctx context.Context, a actor.Actor, c workbook.C
 	return err
 }
 
-// Flush stores the activities and line items kept so far and returns the readable ids given since the last
-// Flush.
+// Flush stores the activities and line items kept so far and returns the readable ids given since the last one.
 func (w *workbookWriter) Flush(ctx context.Context) (map[string]string, error) {
 	if err := w.store(ctx); err != nil {
 		return nil, err
@@ -74,7 +70,7 @@ func (w *workbookWriter) store(ctx context.Context) error {
 		w.newOwners[id] = w.newOwners[provisional]
 		delete(w.newOwners, provisional)
 	}
-	if len(created) > 0 { // one read: the new activities have no line items yet
+	if len(created) > 0 {
 		if _, err = w.p.lineItemsRepo.ListByActivities(ctx, slices.Collect(maps.Values(created))); err != nil {
 			return err
 		}
@@ -85,8 +81,7 @@ func (w *workbookWriter) store(ctx context.Context) error {
 	return err
 }
 
-// permit is the parent's permit, checked once; an activity this import creates is seen through its plan and
-// owner, having no approvers yet.
+// permit is checked once per parent; an activity this import creates has no approvers yet.
 func (w *workbookWriter) permit(ctx context.Context, parentID string, p authz.Permission) error {
 	key := parentID + " " + string(p)
 	if err, done := w.permitted[key]; done {
@@ -101,6 +96,6 @@ func (w *workbookWriter) permit(ctx context.Context, parentID string, p authz.Pe
 	} else {
 		err = w.p.permit(ctx, parentID, p)
 	}
-	w.permitted[key] = err // any other error than a refusal stops the import anyway
+	w.permitted[key] = err
 	return err
 }

@@ -79,8 +79,7 @@ func (t tree) activitiesUnder(campaigns []*Record) []*activity {
 	return list
 }
 
-// placePlanned spreads the activity's planned cost over the months of year: each line item by its spread, a
-// positive balance evenly over its months; the rest is not scheduled, the months above planned cost apart (038 FR-023).
+// placePlanned leaves not scheduled what fits no month, and keeps the months above planned cost apart (038 FR-023).
 func (a *activity) placePlanned(year int) {
 	typed := amountOf(a.rec.PlannedCost)
 	var onLineItems money.Amount
@@ -117,8 +116,6 @@ func (a *activity) place(year int, month string, amount money.Amount) bool {
 	return true
 }
 
-// placeSpend adds the transactions of the activity's line items posted in year, and returns those posted in
-// other years.
 func (a *activity) placeSpend(year int, byLineItem map[string]map[string]Spend) Spend {
 	var outside Spend
 	for _, li := range a.lineItems {
@@ -135,7 +132,6 @@ func (a *activity) placeSpend(year int, byLineItem map[string]map[string]Spend) 
 	return outside
 }
 
-// monthIndex is 0–11 for a month "2026-03" of year, and false for any other month.
 func monthIndex(year int, month string) (int, bool) {
 	y, m, found := strings.Cut(month, "-")
 	number, err := strconv.Atoi(m)

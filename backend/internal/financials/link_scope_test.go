@@ -14,7 +14,6 @@ import (
 // mei is a planner of Mobility China (P-1002) who does not import GSAP extracts.
 var mei = actor.Actor{ID: "U-1004", Name: "Mei Lin"}
 
-// sameAnswer checks that got is exactly the answer want, the answer for a missing record.
 func sameAnswer(t *testing.T, got, want error) {
 	t.Helper()
 	var g, w *errs.Error
@@ -26,8 +25,6 @@ func sameAnswer(t *testing.T, got, want error) {
 	}
 }
 
-// Mei, who does not import, links FT-1004, a transaction she cannot see: the answer of a missing one
-// (038 FR-007, H-5).
 func TestLink_InvisibleTransactionIsMissing_038_FR007_H5(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -44,8 +41,7 @@ func TestLink_InvisibleTransactionIsMissing_038_FR007_H5(t *testing.T) {
 	}
 }
 
-// Unlinking a transaction of a plan outside the person's scope, with an out-of-date version, answers as a
-// missing transaction and names nobody (038 FR-007, H-5).
+// The scope is checked before the version: a stale unlink outside it answers as a missing transaction.
 func TestUnlink_OutOfScopeIsMissingBeforeVersion_038_FR007_H5(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -64,7 +60,6 @@ func TestUnlink_OutOfScopeIsMissingBeforeVersion_038_FR007_H5(t *testing.T) {
 	}
 }
 
-// A target line item of a plan outside the person's scope answers as a missing line item (038 FR-007, H-5).
 func TestLink_HiddenTargetEqualsMissing_038_FR007_H5(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -78,8 +73,7 @@ func TestLink_HiddenTargetEqualsMissing_038_FR007_H5(t *testing.T) {
 	}
 }
 
-// Linking needs import and link: without link it is refused for permission before the version and the
-// state; without import the transaction is not there (038 FR-005, H-4).
+// Without link, linking is refused for permission before version and state; without import, the transaction is not there.
 func TestLink_NeedsImportAndLink_038_FR005_H4(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -100,8 +94,7 @@ func TestLink_NeedsImportAndLink_038_FR005_H4(t *testing.T) {
 	}
 }
 
-// Unlinking needs link in the plan of the line item the transaction is linked to, checked before the
-// version (038 FR-005).
+// Unlinking needs link in the plan the transaction is linked to, checked before the version.
 func TestUnlink_NeedsLinkInLinkedPlan_038_FR005(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

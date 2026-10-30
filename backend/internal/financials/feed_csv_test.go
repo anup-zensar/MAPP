@@ -9,9 +9,6 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// The simulated GSAP extract (FR-004, FR-005, plan "Simulated GSAP extract").
-
-// readCSV reads the lines as a file named name with the CSV feed.
 func readCSV(t *testing.T, name string, lines ...string) ([]Incoming, []RowProblem, []string, error) {
 	t.Helper()
 	return CSVFeed{}.Read(t.Context(), Delivery{FileName: name, Content: []byte(strings.Join(lines, "\n") + "\n")})
@@ -20,7 +17,6 @@ func readCSV(t *testing.T, name string, lines ...string) ([]Incoming, []RowProbl
 // validRow is a valid PO row, in the header's column order.
 const validRow = "PO,4500001001,10,,,2026-01-12,,15800.00,GBP,V-100101,Northlight Events GmbH,Venue hire,DE03-M26-0003,HX1003,"
 
-// withCell returns validRow with the cell of column changed to value.
 func withCell(column, value string) string {
 	cells := strings.Split(validRow, ",")
 	for i, name := range csvColumns {
@@ -31,8 +27,6 @@ func withCell(column, value string) string {
 	return strings.Join(cells, ",")
 }
 
-// A valid row is read with every field; a PO refers to itself; letter case of the type, HX key and line item
-// ID does not matter (FR-004).
 func TestCSVFeed_ReadsAValidRow_FR004(t *testing.T) {
 	t.Parallel()
 	rows, problems, unused, err := readCSV(t, "gsap.csv", header, validRow,
@@ -60,7 +54,6 @@ func TestCSVFeed_ReadsAValidRow_FR004(t *testing.T) {
 	}
 }
 
-// Every column rule refuses its row with its message on its column (FR-005).
 func TestCSVFeed_ColumnRules_FR005(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
@@ -104,8 +97,7 @@ func TestCSVFeed_ColumnRules_FR005(t *testing.T) {
 	}
 }
 
-// Rules that depend on the type: PO number and PO line are read only on other types; the accrual month is
-// needed only on accruals and ignored on the others (FR-005).
+// The accrual month is needed only on accruals; PO number and line are read only on other types.
 func TestCSVFeed_TypeDependentColumns_FR005(t *testing.T) {
 	t.Parallel()
 	invoice := "INVOICE,5100,,45 00,10,2026-02-20,,10.00,USD,,,,,,"
@@ -155,8 +147,6 @@ func TestCSVFeed_EveryProblemWithItsRow_FR005(t *testing.T) {
 	}
 }
 
-// The header is matched ignoring case, order and surrounding spaces; unknown columns are named; a byte-order
-// mark and quoted cells are read (FR-004).
 func TestCSVFeed_HeaderBOMAndQuoting_FR004(t *testing.T) {
 	t.Parallel()
 	content := "\xEF\xBB\xBF Amount ,CURRENCY,Type,document_number,posting_date,cost_centre\n" +
@@ -178,8 +168,6 @@ func TestCSVFeed_HeaderBOMAndQuoting_FR004(t *testing.T) {
 	}
 }
 
-// A file separated by semicolons is read as a comma-separated one; a comma inside a cell is then text
-// (038 FR-035, L-13).
 func TestCSVFeed_Semicolons_038_FR035_L13(t *testing.T) {
 	t.Parallel()
 	semicolons := func(line string) string { return strings.ReplaceAll(line, ",", ";") }
@@ -207,7 +195,6 @@ func FuzzCSVFeed(f *testing.F) {
 	})
 }
 
-// A file the feed cannot use is refused as a whole with one message (plan, whole-file refusals).
 func TestCSVFeed_WholeFileRefusals_FR004(t *testing.T) {
 	t.Parallel()
 	big := header + "\n" + strings.Repeat(validRow+"\n", 700*1024/len(validRow)+1)

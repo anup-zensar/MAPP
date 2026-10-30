@@ -12,9 +12,7 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// addCreated keeps one "created" entry per seeded planning record, by its owner, spread evenly between 14
-// and 10 days before the seed time in tree order, so parents come before their children; each record's created
-// line says the same (step 1, 038 FR-060).
+// addCreated spreads the "created" entries evenly from 14 to 10 days before, in tree order, so parents come first.
 func (h *demoHistory) addCreated(ctx context.Context) error {
 	first, last := h.at.Add(-createdFrom), h.at.Add(-createdUntil)
 	step := time.Duration(0)
@@ -31,8 +29,7 @@ func (h *demoHistory) addCreated(ctx context.Context) error {
 	return nil
 }
 
-// wholeMinuteFrom returns t, or the next whole minute when t has seconds: a time on the minute that is never
-// earlier than t, so the first entry stays within the 14 days whatever the seed time's seconds are.
+// wholeMinuteFrom keeps the first entry within the 14 days whatever the seed time's seconds are.
 func wholeMinuteFrom(t time.Time) time.Time {
 	if minute := t.Truncate(time.Minute); minute.Before(t) {
 		return minute.Add(time.Minute)
@@ -56,8 +53,6 @@ func (h *demoHistory) addPublished(context.Context) error {
 	return nil
 }
 
-// statusChange is the change of a record's "status" field from one stored status to another, with the
-// words people read.
 func statusChange[S ~string](from, to S, words map[S]string) (history.Change, error) {
 	oldValue, err := json.Marshal(from)
 	if err != nil {
@@ -70,8 +65,7 @@ func statusChange[S ~string](from, to S, words map[S]string) (history.Change, er
 	return history.Change{Field: "status", Label: "Status", Old: oldValue, New: newValue, OldText: words[from], NewText: words[to]}, nil
 }
 
-// addCostChange keeps one "changed" entry by Priya Raman 5 days before: the planned cost of her first
-// FY2026 Lubricants Europe activity with a planned cost went up by 5,000.00 USD to what is stored (step 4).
+// addCostChange: Priya's first FY2026 Lubricants Europe activity went up by 5,000.00 USD, 5 days before (step 4).
 func (h *demoHistory) addCostChange(context.Context) error {
 	var r resolver
 	priyaID := r.id(h.demo.people, "person", "Priya Raman")

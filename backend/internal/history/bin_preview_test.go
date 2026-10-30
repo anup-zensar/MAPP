@@ -6,8 +6,6 @@ import (
 	"testing"
 )
 
-// The preview names where the record returns: its parent's place now, not the place it had when it was
-// deleted (spec edge case: the parent moved meanwhile).
 func TestPreviewRestore_DestinationIsCurrentPlace_EdgeCase(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -27,9 +25,7 @@ func TestPreviewRestore_DestinationIsCurrentPlace_EdgeCase(t *testing.T) {
 	}
 }
 
-// The preview states every status change of the records that come back, as their kinds' restore rules
-// make them, once: by the rules' notes, not again as a change (011 FR-018, FR-019; 038 FR-049, L-23): here an
-// approved child and grandchild come back as created.
+// An approved child and grandchild come back as created, stated once by the notes and not again as a change.
 func TestPreviewRestore_StatusChangesOnce_038_FR049_L23(t *testing.T) {
 	t.Parallel()
 	f := newStatusFixture(t)
@@ -50,13 +46,11 @@ func TestPreviewRestore_StatusChangesOnce_038_FR049_L23(t *testing.T) {
 	}
 }
 
-// When the name is taken meanwhile, the preview says once that the record comes back under a new name
-// (011 FR-022; 038 FR-049, L-23).
 func TestPreviewRestore_NameClashOnce_038_FR049_L23(t *testing.T) {
 	t.Parallel()
 	f := newStatusFixture(t)
 	deleted := f.moveToBin(t, "child", "C-1")
-	f.put(t, childrenTable, newRecord("C-9", "Child one", "P-1")) // takes the name
+	f.put(t, childrenTable, newRecord("C-9", "Child one", "P-1"))
 
 	preview := f.preview(t, deleted.ID)
 
@@ -68,8 +62,7 @@ func TestPreviewRestore_NameClashOnce_038_FR049_L23(t *testing.T) {
 	}
 }
 
-// A restore that changes a stored record, as a hook that sends the parent back to created, shows that
-// change too, marked as not restored (011 FR-020): the preview reads what the hook logs.
+// A hook that changes a stored record shows too, marked as not restored: the preview reads what the hook logs.
 func TestPreviewRestore_OutsideRecordChange_FR020(t *testing.T) {
 	t.Parallel()
 	f := newStatusFixture(t)
@@ -87,8 +80,7 @@ func TestPreviewRestore_OutsideRecordChange_FR020(t *testing.T) {
 	}
 }
 
-// The preview changes nothing (011 FR-018): the records, the bin, the log and the ID counters stay as
-// they were, so the real restore that follows gets the next numbers.
+// Nothing changes, not even the ID counters, so the real restore that follows gets the next numbers.
 func TestPreviewRestore_ChangesNothing_FR018(t *testing.T) {
 	t.Parallel()
 	f := newStatusFixture(t)

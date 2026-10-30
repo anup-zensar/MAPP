@@ -15,27 +15,21 @@ import (
 	"mapp/internal/platform/record"
 )
 
-// Dated exchange rates (feature 016, FR-001 – FR-005, data-model §2.1, §3.2; D-258). A currency other than
-// USD keeps a rate history: one rate per day at most, each with its source. Its current rate is the one with
-// the latest date on or before today (the API's calendar date in UTC, D-091), so a future-dated rate becomes
-// current on its date without anyone saving anything. Every conversion in MAPP reads the current rates
-// through Rates (or RatesOn for another day) and never stores a converted amount (D-041).
+// A currency other than USD keeps a dated rate history; its current rate is the latest on or before today (UTC,
+// D-091), so a future rate becomes current on its date. Conversions read Rates and never store a result (D-041).
 
-// The history kinds of feature 016 (data-model §7).
 const (
 	exchangeRateKind = "exchangeRate" // under its currency; deleted rates go to the recycle bin
 	rateImportKind   = "rateImport"   // logged only, never deleted
 	fieldHelpKind    = "fieldHelp"    // logged only, never in the recycle bin
 )
 
-// The nouns of the new records, mid-sentence.
 const (
 	exchangeRateNoun = "exchange rate"
 	rateImportNoun   = "rate import"
 	fieldHelpNoun    = "field help"
 )
 
-// Messages of 016's "User-visible messages" about rates.
 const (
 	rateGoneMessage         = "This exchange rate no longer exists — someone may have deleted it."
 	usdAlwaysOneMessage     = "USD is always 1."
@@ -48,18 +42,14 @@ const (
 	plansRecalculatedDetail = "%s planned in %s: %s → %s USD."
 )
 
-// firstRateDate is the earliest date a rate may have, typed or imported (038 FR-034).
 var firstRateDate = date.New(2000, 1, 1) //nolint:gochecknoglobals // a fixed date
 
-// has reports whether code has a rate on day.
 func (b rateBook) has(code string, day date.Date) bool {
 	_, found := b.onDate(code, day)
 	return found
 }
 
-// checkRateInput checks a new dated rate of the currency c against book (FR-001, FR-003): USD has no rates;
-// a date "YYYY-MM-DD" that the currency has no rate on yet; a rate above 0 with at most six decimals, at
-// most 1,000,000. Every problem is added to problems; the date and rate are returned when they are fine.
+// checkRateInput adds every problem to problems; the date and rate are returned when they are fine.
 func checkRateInput(c Currency, in RateInput, book rateBook, problems *errs.Problems) (date.Date, money.Rate) {
 	if c.Code == money.BaseCurrency {
 		problems.Add("code", usdAlwaysOneMessage)
@@ -78,7 +68,6 @@ func checkRateInput(c Currency, in RateInput, book rateBook, problems *errs.Prob
 	return day, rate
 }
 
-// checkRate reads a rate text: above 0 with at most six decimals, at most 1,000,000 (problems on "rate").
 func checkRate(text string, problems *errs.Problems) money.Rate {
 	rate, err := money.ParseRate(strings.TrimSpace(text))
 	switch {
@@ -90,9 +79,7 @@ func checkRate(text string, problems *errs.Problems) money.Rate {
 	return rate
 }
 
-// AddRate adds a dated rate to the currency code, entered by hand (FR-003): the date defaults to today in the
-// form and may be in the past or the future; one rate per day. The change is logged on the rate, with what
-// it recalculates when it becomes the current rate.
+// AddRate logs the change on the rate with what it recalculates when it becomes the current rate.
 func (s *Service) AddRate(ctx context.Context, a actor.Actor, code string, in RateInput) (ExchangeRateView, error) {
 	var view ExchangeRateView
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -131,7 +118,6 @@ func (s *Service) AddRate(ctx context.Context, a actor.Actor, code string, in Ra
 	return view, err
 }
 
-// putNewRate stores a new dated rate inside the caller's Write.
 func (s *Service) putNewRate(ctx context.Context, a actor.Actor, code string, day date.Date, rate money.Rate, source RateSource, importID string) (ExchangeRate, error) {
 	id, err := s.ids.Next(ctx, ids.PrefixExchangeRate)
 	if err != nil {
@@ -141,8 +127,7 @@ func (s *Service) putNewRate(ctx context.Context, a actor.Actor, code string, da
 	return r, s.repo.PutRate(ctx, r)
 }
 
-// UpdateRate changes the value of the rate id from the version the person started at (FR-003): its date
-// never changes, and an edited imported rate becomes "Entered by hand".
+// UpdateRate never changes the date; an edited imported rate becomes "Entered by hand".
 func (s *Service) UpdateRate(ctx context.Context, a actor.Actor, id string, update RateUpdate) (ExchangeRateView, error) {
 	var view ExchangeRateView
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -195,7 +180,6 @@ func (s *Service) UpdateRate(ctx context.Context, a actor.Actor, id string, upda
 	return view, err
 }
 
-// currentRateOf returns the current rate of c, read inside the caller's transaction.
 func (s *Service) currentRateOf(ctx context.Context, c Currency) (money.Rate, error) {
 	book, err := s.rateBook(ctx)
 	if err != nil {
@@ -204,7 +188,6 @@ func (s *Service) currentRateOf(ctx context.Context, c Currency) (money.Rate, er
 	return withRate(c, book, s.today()).Rate, nil
 }
 
-// logRateChanged writes the "changed" entry of a rate: the rate and the source, old → new.
 func (s *Service) logRateChanged(ctx context.Context, a actor.Actor, before, after ExchangeRate, details string) error {
 	changes := []history.Change{}
 	if before.Rate != after.Rate {
@@ -220,8 +203,7 @@ func (s *Service) logRateChanged(ctx context.Context, a actor.Actor, before, aft
 	return err
 }
 
-// DeleteRate moves the rate id to the recycle bin (FR-003, D-272), so that it can be undone. The currency's
-// last rate dated today or earlier is refused: "EUR needs a rate dated today or earlier."
+// DeleteRate refuses the currency's last rate dated today or earlier.
 func (s *Service) DeleteRate(ctx context.Context, a actor.Actor, id string) (history.BinEntry, error) {
 	var entry history.BinEntry
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -251,8 +233,7 @@ func (s *Service) DeleteRate(ctx context.Context, a actor.Actor, id string) (his
 	return entry, err
 }
 
-// setTodaysRate gives the currency c the rate rate from today (FR-004): it adds today's rate, or replaces it,
-// entered by hand, and logs the rate's change with what it recalculated. before is the current rate before.
+// setTodaysRate adds or replaces today's rate by hand (FR-004); before is the rate in use before it.
 func (s *Service) setTodaysRate(ctx context.Context, a actor.Actor, c Currency, rate, before money.Rate) error {
 	book, err := s.rateBook(ctx)
 	if err != nil {

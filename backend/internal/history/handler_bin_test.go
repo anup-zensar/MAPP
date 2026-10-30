@@ -9,7 +9,6 @@ import (
 	"mapp/internal/platform/apitest"
 )
 
-// Undo and Restore of an entry the recycle bin never had answer not found (FR-025).
 func TestUndoAndRestore_UnknownEntry_FR025(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t, apitest.WithoutDemoHistory())
@@ -22,10 +21,7 @@ func TestUndoAndRestore_UnknownEntry_FR025(t *testing.T) {
 	}
 }
 
-// The bin's two entries of binWithParent, as GET /api/v1/recycle-bin answers them to Priya: the folder, which the
-// note's entry waits for, and the note, whose folder is in the bin (011 FR-015 – FR-017, FR-028), each with what
-// she may do with it — restore it, but not delete it permanently, which her Planner role does not include
-// (014 FR-011).
+// Priya may restore the entries but not delete them permanently: her Planner role does not include it (014 FR-011).
 const (
 	plannerBinAccess = `"access":{"restore":{"available":true,"reason":""},"deletePermanently":{"available":false,` +
 		`"reason":"Deleting permanently isn't part of your role (Planner). Ask an administrator if you need it."}}`
@@ -48,21 +44,18 @@ const (
 		plannerBinAccess + `}`
 )
 
-// binWithParent fills the recycle bin as Priya: the note "First idea" (BIN-1001), then its folder "Ideas"
-// with the note "Second idea" (BIN-1002); then a new folder takes the name "Ideas" (SF-1002).
+// binWithParent: SF-1001 "Ideas" with SN-1001 and SN-1002; BIN-1001 holds SN-1001, BIN-1002 the folder with
+// SN-1002; then SF-1002 takes the name "Ideas".
 func binWithParent(t *testing.T, priya *apitest.Client) {
 	t.Helper()
-	createFolder(t, priya, "Ideas")   // SF-1001
-	addNote(t, priya, "First idea")   // SN-1001
-	addNote(t, priya, "Second idea")  // SN-1002
-	deleteNote(t, priya, "SN-1001")   // BIN-1001
-	deleteFolder(t, priya, "SF-1001") // BIN-1002
-	createFolder(t, priya, "Ideas")   // SF-1002
+	createFolder(t, priya, "Ideas")
+	addNote(t, priya, "First idea")
+	addNote(t, priya, "Second idea")
+	deleteNote(t, priya, "SN-1001")
+	deleteFolder(t, priya, "SF-1001")
+	createFolder(t, priya, "Ideas")
 }
 
-// The recycle bin lists its entries newest first with their restore state, the entries to restore first,
-// the entries inside them and the records they hold, as the contract describes (011 FR-014 – FR-017,
-// FR-028).
 func TestListRecycleBin_Items_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t, apitest.WithoutDemoHistory())
@@ -74,9 +67,7 @@ func TestListRecycleBin_Items_Contract(t *testing.T) {
 	assertAnswer(t, response, http.StatusOK, `{"items":[`+folderBinItem+`,`+noteBinItem+`],"total":2}`)
 }
 
-// The restore preview of the note whose folder is in the bin: the folder comes back first, under a new
-// name because "Ideas" is taken, and the note returns into it (011 FR-018, FR-022, FR-023). Nothing is
-// saved: the bin and the log are unchanged. An entry the bin never had answers not found.
+// Nothing is saved: the bin and the log are unchanged.
 func TestRestorePreview_Contract_038_FR049_L23(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t, apitest.WithoutDemoHistory())
@@ -100,8 +91,6 @@ func TestRestorePreview_Contract_038_FR049_L23(t *testing.T) {
 	}
 }
 
-// Restore with withParents=true brings back the folder's entry first, then the note's, in one step (011
-// FR-023); withParents must be true or false.
 func TestRestore_WithParents_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t, apitest.WithoutDemoHistory())
@@ -122,9 +111,6 @@ func TestRestore_WithParents_Contract(t *testing.T) {
 	}
 }
 
-// Restore refuses with restore_parent_first while the parent is in the bin, and with
-// parent_deleted_permanently once it was deleted permanently, also with withParents=true; both name the
-// parent (011 FR-023, FR-024).
 func TestRestore_ParentCodes_409(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t, apitest.WithoutDemoHistory())
@@ -144,13 +130,11 @@ func TestRestore_ParentCodes_409(t *testing.T) {
 		`because its sample folder 'Ideas' was permanently deleted.","fields":[],`+parent+`}}`)
 }
 
-// Delete permanently answers the record that was deleted for good, writes one "permanently deleted" entry
-// with the record's place and contents at the time of the delete, and leaves the entry waiting for it in
-// the bin, no longer restorable (011 FR-028, FR-030).
+// The entry waiting for the deleted one stays in the bin, no longer restorable.
 func TestPurge_Contract(t *testing.T) { //nolint:gocyclo // 11: one purge, then the bin and the new entry checked field by field
 	t.Parallel()
 	server := apitest.New(t, apitest.WithoutDemoHistory())
-	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: deleting permanently is an administrator's
+	server.GrantRole(t, priyasEmail, "administrator", "all")
 	priya := server.SignIn(t, priyasEmail)
 	binWithParent(t, priya)
 
@@ -174,15 +158,13 @@ func TestPurge_Contract(t *testing.T) { //nolint:gocyclo // 11: one purge, then 
 	}
 }
 
-// Delete permanently of an entry the bin never had answers not found; of an entry that already left the
-// bin, the conflict already_resolved with how, by whom and when (011 FR-032).
 func TestPurge_404_409(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t, apitest.WithoutDemoHistory())
-	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: deleting permanently is an administrator's
+	server.GrantRole(t, priyasEmail, "administrator", "all")
 	priya := server.SignIn(t, priyasEmail)
-	createFolder(t, priya, "Ideas")   // SF-1001
-	deleteFolder(t, priya, "SF-1001") // BIN-1001
+	createFolder(t, priya, "Ideas")
+	deleteFolder(t, priya, "SF-1001")
 	if response := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-1001/restore", nil); response.Status != http.StatusOK {
 		t.Fatalf("restoring BIN-1001: %d %s", response.Status, response.Body)
 	}
@@ -193,13 +175,11 @@ func TestPurge_404_409(t *testing.T) {
 			`"resolution":{"how":"restored","by":{"id":"U-1002","name":"Priya Raman"},"at":"2026-03-12T09:00:00Z"}}}`)
 }
 
-// Empty recycle bin deletes permanently the listed entries that are still in the bin, answers how many,
-// and writes one "emptied the recycle bin" entry that lists them; when nothing listed is left it answers 0
-// and writes nothing (011 FR-029, FR-030, FR-032).
+// When nothing listed is left in the bin, emptying answers 0 and writes nothing.
 func TestEmptyRecycleBin_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t, apitest.WithoutDemoHistory())
-	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: deleting permanently is an administrator's
+	server.GrantRole(t, priyasEmail, "administrator", "all")
 	priya := server.SignIn(t, priyasEmail)
 	binWithParent(t, priya)
 	body := map[string][]string{"entryIds": {"BIN-1002", "BIN-1001"}}
