@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 const (
@@ -23,8 +24,8 @@ type controlScan struct {
 	stack []scanFrame
 }
 
-// controlField returns the dotted path of the first string value holding a control character or an
-// unpaired surrogate escape. The decoder turns such an escape into U+FFFD, so only the raw bytes show it.
+// controlField returns the dotted path of the first string value holding a control character, an unpaired
+// surrogate escape or invalid UTF-8. The decoder turns the last two into U+FFFD, so only the raw bytes show them.
 func controlField(body []byte) (string, bool) {
 	decoder := json.NewDecoder(bytes.NewReader(body))
 	var scan controlScan
@@ -56,7 +57,7 @@ func (s *controlScan) refuses(token json.Token, raw []byte) bool {
 		top.key, top.expectKey = text, false
 		return false
 	}
-	if isString && (hasControl(text) || hasUnpairedSurrogate(raw)) {
+	if isString && (hasControl(text) || unreadableText(raw)) {
 		return true
 	}
 	s.advance()
@@ -99,6 +100,10 @@ func hasControl(text string) bool {
 		}
 	}
 	return false
+}
+
+func unreadableText(raw []byte) bool {
+	return !utf8.Valid(raw) || hasUnpairedSurrogate(raw)
 }
 
 func hasUnpairedSurrogate(raw []byte) bool {

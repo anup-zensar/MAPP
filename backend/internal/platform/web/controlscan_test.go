@@ -80,3 +80,22 @@ func decodedStrings(value any) (control, replaced bool) {
 	}
 	return control, replaced
 }
+
+func TestControlField_InvalidUTF8_038_FR055_L11(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		body, field string
+		found       bool
+	}{
+		{"{\"name\":\"QA \xed\xa0\x80 team\"}", "name", true},
+		{"{\"name\":\"QA \xe2\x82 team\"}", "name", true},
+		{"{\"a\":[{\"name\":\"\x80\"}]}", "a.0.name", true},
+		{"{\"name\":\"caf\xc3\xa9 \xf0\x9f\x98\x80\"}", "", false},
+	}
+	for _, tt := range tests {
+		field, found := controlField([]byte(tt.body))
+		if field != tt.field || found != tt.found {
+			t.Errorf("%q: controlField = %q %v, want %q %v", tt.body, field, found, tt.field, tt.found)
+		}
+	}
+}
