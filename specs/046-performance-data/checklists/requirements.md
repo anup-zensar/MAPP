@@ -4,6 +4,8 @@
 
 **Created**: 2026-10-30
 
+**Clarified**: 2026-10-30 (046-C11 – 046-C13)
+
 **Feature**: [spec.md](../spec.md)
 
 ## Content Quality
@@ -15,7 +17,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain — **3 remain, deliberately** (see Notes)
+- [X] No [NEEDS CLARIFICATION] markers remain
 - [X] Requirements are testable and unambiguous
 - [X] Success criteria are measurable
 - [X] Success criteria are technology-agnostic (no implementation details)
@@ -33,21 +35,31 @@
 
 ## Notes
 
-### The three open questions
+Checklist complete — the spec is ready for `/speckit-plan`.
 
-They are carried deliberately into `/speckit-clarify`, which records answers as `046-C11` onward. Each is a
-real gap in the source material rather than an unmade decision:
+### Clarifications
 
-1. **Web metric vocabulary** (FR-006, FR-029) — client 020 FR-026 requires "web metrics by month" and never
-   names them. Both the mapping vocabulary and the fact model depend on the list.
-2. **Media-code configuration ownership** (FR-039) — client 020 FR-037 defers the attribute catalogue to
-   "configuration", but issue #39's *Owns* list names no Settings screen for activity types. This is a scope
-   question: does 046 build it or consume it?
-3. **Simulated-pull trigger** (FR-010) — client 020 FR-008 says an automated feed passes through the same
-   rules, but never says who starts one or when.
+Thirteen points are recorded in the spec's own *Clarifications* section as **046-C1 – 046-C13**, never in
+`docs/sdd/decision-log.md`. No product owner was in the loop, so each is resolved from the sources (client
+specs > functional analysis > decision log > domain model) and carries its reasoning for the product owner to
+confirm. The integrator moves them into the decision log at the end of wave B.
 
-Ten further points that *were* resolvable from the sources are already recorded in the spec's own
-*Clarifications* section as **046-C1 – 046-C10**, not left as markers.
+The last three were the open questions carried out of `/speckit-specify`:
+
+- **046-C11** — web metrics are **sessions, visits and engagement touches**, from the functional analysis's
+  web-analytics connector category (§E7.2).
+- **046-C12** — the media-code configuration lives in **Settings › Performance data**, 046's own area, not as
+  a field on the activity type. See the ownership note below.
+- **046-C13** — a simulated pull is started by an **explicit action on the source** behind
+  `performance.import`, following the simulated GSAP precedent in feature 033. Never scheduled.
+
+### Ownership note (046-C12)
+
+Putting "requires media codes" on the activity type record would mean editing feature 002's `settings`, which
+046 does not own: the build guide §4.1 grants this feature exactly one file outside its own folders — the
+Performance slot in `ActivityPage.tsx`. The configuration therefore stays inside Settings › Performance data,
+which also matches the functional analysis's "Media Code Management" as a separate area (§E7.3). Moving the
+flag onto the activity type later is a change for 002's lane, not this one.
 
 ### Scope corrections applied while specifying
 

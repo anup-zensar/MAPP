@@ -96,6 +96,29 @@ these into the decision log at the end of wave B.
   external name, aliases, integration IDs, media codes or facts (client 020 FR-036); its external name reads
   "Generated on approval" like any new activity. Otherwise a copy would steal its source's incoming facts.
 
+- **046-C11** — Q: Which web metrics does a source supply? Client 020 FR-026 requires "web metrics by month"
+  but never names them. → A: **Sessions, visits and engagement touches** — the three the functional analysis
+  attributes to the web-analytics connector category (§E7.2), which it says drive "early-stage waterfall
+  volumes; attribution touchpoints". They are counts by month, never money, and they are reported on the
+  activity rather than against a funnel stage, because no stage is defined for them.
+
+- **046-C12** — Q: Where does the media-code configuration live — which activity types require codes, and
+  which attributes those codes carry? → A: In **Settings › Performance data**, this feature's own area, as a
+  list of the activity types that require codes plus the attribute catalogue. It does **not** become a field
+  on the activity type record: activity types belong to feature 002's `settings`, and the build guide (§4.1)
+  grants 046 exclusive ownership of only one file outside its own folders — the Performance slot in
+  `ActivityPage.tsx`. Keeping the configuration in 046's area respects that boundary and matches the
+  functional analysis, which describes media codes as their own management area (§E7.3, "Media Code
+  Management"). If Shell later wants the flag on the activity type itself, that is a change for 002's lane.
+
+- **046-C13** — Q: Who starts a simulated pull, and when? Client 020 FR-008 is silent. → A: An **explicit
+  action on the data source**, by someone holding `performance.import` — never a schedule and never
+  automatically. This follows the simulated GSAP precedent exactly (feature 033: the requisitioner opens the
+  record and chooses "Create GSAP PR and PO (simulated)", a single operation behind a permission), which
+  ADR-0016 set and ADR-0019 restates for this feed. A scheduler would be a live connector in all but name,
+  which constitution non-negotiable 13 puts out of scope.
+
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Set up a data source and its column mappings (Priority: P1)
@@ -341,9 +364,7 @@ is offered.
 
 - **FR-006**: Users MUST be able to create, find, view, edit and delete mappings, each saying that one file
   column is a matching key, a source reference, a fact date, a stage, revenue with its currency, a web metric
-  or a journey element. [NEEDS CLARIFICATION: which web metrics does Shell actually send? Client 020
-  FR-026 requires "web metrics by month" but never names them; both the mapping vocabulary and the fact
-  model depend on the list]
+  (**sessions**, **visits** or **engagement touches**, 046-C11) or a journey element.
 - **FR-007**: A mapping change MUST affect future uploads only and MUST never restate a completed upload.
 - **FR-008**: A blank file template MUST be downloadable from a source's mappings, carrying exactly the
   columns those mappings define.
@@ -353,10 +374,9 @@ is offered.
 - **FR-009**: Users with `performance.import` MUST be able to upload a CSV or spreadsheet file for a chosen
   source.
 - **FR-010**: A simulated pull MUST produce rows for a source whose delivery route says so, and those rows
-  MUST pass through the same validation, matching and review path as an uploaded file (046-C5). No live
-  connector, scheduler or external credential is part of this feature. [NEEDS CLARIFICATION: who triggers a
-  simulated pull, and from where — an administrator action on the source, or automatically with the seed?
-  Client 020 FR-008 is silent on the trigger]
+  MUST pass through the same validation, matching and review path as an uploaded file (046-C5). A pull MUST be started only by an explicit
+  action on the data source by someone holding `performance.import` (046-C13). No live connector, scheduler
+  or external credential is part of this feature.
 - **FR-011**: Every row MUST be validated with **all** of its problems reported together: empty required
   column, invalid or future date, negative or fractional count, invalid amount or unconfigured currency,
   unknown stage, missing or repeated reference.
@@ -434,9 +454,8 @@ is offered.
 **Media codes** *(client 020 FR-037 – FR-040)*
 
 - **FR-039**: Whether an activity type requires media codes, and which code attributes exist and are required,
-  MUST come from configuration. [NEEDS CLARIFICATION: does 046 build that configuration screen, or does it
-  already exist in feature 006? The issue's Owns list covers `features/performance/` but names no settings
-  screen for activity types]
+  MUST come from configuration held in Settings › Performance data — this feature's own area — as a list of
+  the activity types that require codes and the attribute catalogue those codes carry (046-C12).
 - **FR-040**: The Media codes area MUST appear only on activities whose type requires them, and a code MUST
   never attach to a line item or any level other than an activity.
 - **FR-041**: A code MUST be generatable at any activity status with all required attributes, reporting every
