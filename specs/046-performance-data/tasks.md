@@ -164,9 +164,9 @@ previous name still matches as an alias.
 
 ### Tests (write first, confirm they fail)
 
-- [ ] T067 [P] [US4] Write `backend/internal/performance/externalname_test.go`: "Generated on approval" before first approval; generated on first reaching Approved from the model's rule; `"{Activity name}_{Activity ID}"` without a rule (FR-033)
-- [ ] T068 [P] [US4] Write `backend/internal/performance/regenerate_test.go`: "Regenerate on edit" on regenerates and keeps the previous name as an alias; off keeps the name (FR-034); a hand-set name is not regenerated until the user switches back (FR-035)
-- [ ] T069 [P] [US4] Write `backend/internal/performance/uniqueness_test.go`: a generated clash appends the activity ID and an overlong generated name is shortened; a hand-set clash or overlong name is **refused with the reason** (FR-036)
+- [ ] T067 [P] [US4] Write `backend/internal/performance/externalname_test.go`: a row carrying an activity's **current** external name matches it and records `externalName` as the key used (FR-033)
+- [ ] T068 [P] [US4] Write `backend/internal/performance/alias_test.go`: a rename keeps the superseded name as an alias, and a row carrying that **old** name still matches the activity (FR-034)
+- [ ] T069 [P] [US4] Write `backend/internal/performance/alias_uniqueness_test.go`: an alias repeating another activity's external name or alias is **refused with the reason**, so a key never resolves to two activities (FR-035); and this feature never writes `activities.external_name`, which feature 006 owns (FR-036, 046-C14)
 - [ ] T070 [P] [US4] Write `backend/internal/performance/integrationid_test.go`: at most one per source, unique within the source, removal confirmed with its effect on matching, every change audited (FR-037)
 - [ ] T071 [P] [US4] Write `backend/internal/performance/copy_test.go`: a copied activity carries **no** external name, alias, integration ID, media code or fact (FR-038)
 - [ ] T072 [P] [US4] Write `backend/internal/performance/handler_keys_test.go` as a contract test for the five external-name and integration-ID operations, including both **409** cases
@@ -174,11 +174,11 @@ previous name still matches as an alias.
 
 ### Implementation
 
-- [ ] T074 [US4] Implement generation and the alias chain in `backend/internal/performance/externalname.go`
-- [ ] T075 [US4] Implement the uniqueness and length rules, appending the activity ID on a generated clash
+- [ ] T074 [US4] Implement alias capture and resolution in `backend/internal/performance/externalname.go`, reading `activities.external_name` and never writing it (046-C14)
+- [ ] T075 [US4] Implement the alias uniqueness check across current external names and existing aliases
 - [ ] T076 [US4] Implement integration IDs in `backend/internal/performance/integrationid.go`
 - [ ] T077 [US4] Extend the matcher to resolve integration ID and external name **including aliases**, keeping the strict order of T044
-- [ ] T078 [US4] Implement the handlers; add their route rules and report them; report the activity-copy change the activity area must make (FR-038), which is outside this feature's folders
+- [ ] T078 [US4] Implement the handlers; add their route rules and report them. Report **two** changes outside this feature's folders: the activity-copy exclusion (FR-038), and the request to feature 006's lane for generation on approval (FR-036, 046-C14)
 - [ ] T079 [US4] Remove this story's operations from `notYetServed`
 - [ ] T080 [P] [US4] Build the Data sources area in `frontend/src/features/performance/activity/`
 - [ ] T081 [US4] Run the quality-gate checks on everything changed

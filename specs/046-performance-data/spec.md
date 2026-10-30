@@ -119,6 +119,21 @@ these into the decision log at the end of wave B.
   which constitution non-negotiable 13 puts out of scope.
 
 
+- **046-C14** — Q: Who owns the activity's external name? → A: **Feature 006 already does.**
+  `activities.external_name` exists today as a free-text field a person edits, with its own permission
+  ("Edit External Name"), a 120-character limit and a default of the activity name (field catalogue row 2).
+  Client 020 FR-030 – FR-036 would make it generated on approval from the model's rule, behind
+  `performance.link` and with the rule's own length — a change to feature 006's field, its permission and its
+  package, none of which this feature owns (build guide §4.1 grants 046 exactly one file outside its folders,
+  the Performance slot in `ActivityPage.tsx`).
+
+  So 046 **reads** `activities.external_name` as a matching key and never writes it, and owns only the
+  **aliases**: a superseded name is kept so rows already in flight still match. Generation, regeneration,
+  "Generated on approval" and hand-set suppression are requested of feature 006's lane in this feature's
+  pull request. Until that lands, the field keeps today's behaviour, and matching works on the current name
+  plus any aliases.
+
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Set up a data source and its column mappings (Priority: P1)
@@ -234,36 +249,34 @@ figures; approve it and confirm its held facts appear with goal, actual and conv
 
 ### User Story 4 - External names and integration IDs (Priority: P1)
 
-When an activity first reaches Approved, MAPP generates its external name from the model's rule, so outside
-systems have a stable handle to send data against. Before approval the field reads "Generated on approval".
-Someone may set the name by hand instead, and previous names stay as aliases so rows already in flight still
-match. Separately, one integration ID per source can be recorded against an activity. Both are matching keys.
+An activity already carries an external name, so outside systems have a stable handle to send data against.
+When someone changes it, MAPP keeps the previous name as an alias, so rows already in flight still find the
+activity. Separately, one integration ID per data source can be recorded against an activity. Both the name
+and the integration ID are matching keys.
 
-**Why this priority**: two of the four matching keys are created here. Without it, matching falls back to
-activity ID alone and most real feeds cannot be attributed.
+**Why this priority**: two of the four matching keys resolve here. Without the alias, every rename silently
+breaks attribution for data already on its way; without integration IDs, a source that knows the activity by
+its own identifier cannot match at all.
 
-**Independent Test**: approve an activity and confirm its external name is generated from the model's rule;
-rename it by hand; confirm the previous name still matches an incoming row as an alias.
+**Independent Test**: record an integration ID for a source and confirm a row carrying it matches; rename an
+activity's external name and confirm a row carrying the **old** name still matches through the alias.
 
 **Acceptance Scenarios**:
 
-1. **Given** an activity has never been approved, **When** its external name is viewed, **Then** it reads
-   "Generated on approval" and no name exists yet.
-2. **Given** a model has no external-name rule, **When** its activity is first approved, **Then** the name is
-   generated as "{Activity name}_{Activity ID}".
-3. **Given** a model's rule has "Regenerate on edit" on, **When** a field the rule uses is changed, **Then**
-   the name is regenerated and the previous name is kept as a matching alias; **Given** it is off, **Then**
-   the name stays as it is.
-4. **Given** a name is set by hand, **When** a field the rule uses is later changed, **Then** the name is not
-   regenerated until the user switches back to the generated name.
-5. **Given** a generated name would clash with an existing name or alias, **When** it is generated, **Then**
-   the activity ID is appended to make it unique; **Given** a hand-set name clashes or exceeds the rule's
-   length, **Then** it is refused with the reason.
-6. **Given** an activity already has an integration ID for a source, **When** a second is added for the same
-   source, **Then** it is refused; **When** one is removed, **Then** the confirmation states the effect on
-   matching and the change is audited.
-7. **Given** an activity with an external name, aliases, integration IDs, media codes and facts, **When** it
-   is copied, **Then** the copy carries none of them.
+1. **Given** an activity with an external name, **When** a row carrying that name is loaded, **Then** it
+   matches that activity and records that it matched on the external name.
+2. **Given** an activity's external name is changed, **When** a row carrying the **previous** name is
+   loaded, **Then** it still matches that activity through the alias.
+3. **Given** an alias that would repeat another activity's name or alias, **When** it would be kept,
+   **Then** it is refused with the reason, so a key never resolves to two activities.
+4. **Given** an activity already has an integration ID for a source, **When** a second is added for the same
+   source, **Then** it is refused.
+5. **Given** an integration ID is removed, **When** the confirmation is shown, **Then** it states the effect
+   on matching, and the change is recorded in the activity log.
+6. **Given** an activity with aliases, integration IDs, media codes and facts, **When** it is copied,
+   **Then** the copy carries none of them.
+7. **Given** feature 006 still owns how the external name is set, **When** this feature is used, **Then** it
+   never writes that field — generation on approval is requested of 006's lane (046-C14).
 
 ---
 
@@ -437,15 +450,16 @@ is offered.
 
 **External names and integration IDs** *(client 020 FR-030 – FR-036)*
 
-- **FR-033**: The external name MUST be generated from the model's rule when the activity first reaches
-  Approved; before that the field MUST read "Generated on approval". Without a rule the name MUST be
-  "{Activity name}_{Activity ID}".
-- **FR-034**: With "Regenerate on edit" on, a change to a field the rule uses MUST regenerate the name and
-  MUST keep the previous name as a matching alias; with it off the name MUST stay.
-- **FR-035**: A name set by hand MUST NOT be regenerated until the user switches back to the generated name.
-- **FR-036**: Names and aliases MUST be unique and within the rule's length: a generated clash MUST get the
-  activity ID appended and an overlong generated name MUST be shortened, while a hand-set clash or overlong
-  name MUST be refused with the reason.
+- **FR-033**: Matching MUST use the activity's existing external name together with its aliases. This
+  feature reads that field and never writes it (046-C14).
+- **FR-034**: When an activity's external name changes, the superseded name MUST be kept as a matching
+  alias, so rows already in flight still match.
+- **FR-035**: An alias MUST be unique across external names and aliases, so a key never resolves to two
+  activities; a clash MUST be refused with the reason.
+- **FR-036**: Generating the name from the model's rule, "Generated on approval", "Regenerate on edit",
+  hand-set suppression and the rule's length — client 020 FR-030 – FR-036 — MUST be requested of feature
+  006's lane, because `activities.external_name` and its package are not this feature's to change (046-C14).
+  Until that change lands the field keeps feature 006's behaviour.
 - **FR-037**: An activity MUST carry at most one integration ID per source, unique within that source,
   removable after a confirmation stating the effect on matching, with every change audited.
 - **FR-038**: Copying an activity MUST copy no external name, alias, integration ID, media code or fact

@@ -119,7 +119,7 @@ Performance slot in `ActivityPage.tsx`.
 | R9 | One active source per stage per model | FR-003 | unit; contract test for the refusal naming the source |
 | R10 | Delete refused while a source holds facts; Deactivate offered | FR-002 | unit + e2e US1#4 |
 | R11 | Undo restores replaced versions and leaves later facts alone | FR-017 | integration over two uploads then an undo |
-| R12 | External name generated on first approval; previous names persist as aliases | FR-033, FR-034 | unit on the rule; integration on re-approval |
+| R12 | Matching uses the activity's current external name **and** its aliases; a rename keeps the old name so rows in flight still match. This feature never writes `activities.external_name`, which feature 006 owns (046-C14) | FR-033, FR-034 | unit on alias resolution; integration on a rename |
 | R13 | A copied activity carries no external name, alias, integration ID, media code or fact | FR-038 | integration on copy |
 | R14 | Media codes unique and never reused, from a configurable start | FR-042 | unit on the generator |
 | R15 | Every empty performance view states its reason | FR-032 | one view test per state (six states) |

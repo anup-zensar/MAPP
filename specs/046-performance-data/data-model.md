@@ -103,14 +103,16 @@ identity from research R3.
 The generator's next number lives in the Settings › Performance data configuration, alongside the list of
 activity types that require codes and the attribute catalogue (046-C12).
 
-### `activity_external_names`
+### `activity_external_name_aliases`
+
+The activity's **current** external name stays `activities.external_name`, which feature 006 owns and a
+person edits. This feature stores only the superseded names, so rows already in flight still match after a
+rename (046-C14). It never writes the activity's own column.
 
 | Column | Type | Notes |
 |---|---|---|
 | `activity_id` | text → `activities` | |
-| `name` | text | unique across names **and** aliases (FR-036) |
-| `is_current` | boolean | exactly one current per activity; superseded rows stay as matching aliases |
-| `set_by_hand` | boolean | suppresses regeneration until the user switches back (FR-035) |
+| `name` | text | unique across aliases, and checked against current external names before it is kept (FR-035) |
 
 ### `activity_integration_ids`
 
@@ -126,7 +128,7 @@ activity types that require codes and the attribute catalogue (046-C12).
 | 1 | Activity ID | `activities.id` |
 | 2 | Media code | `media_codes.code` |
 | 3 | Integration ID | `activity_integration_ids.value`, scoped to the source |
-| 4 | External name | `activity_external_names.name`, current **or** alias |
+| 4 | External name | `activities.external_name` (feature 006, read only) **or** `activity_external_name_aliases.name` |
 
 All four are resolved set-wise per batch (research R2). A key resolving to more than one activity is
 *ambiguous*; two keys resolving to different activities *disagree*; neither is ever guessed (FR-019).

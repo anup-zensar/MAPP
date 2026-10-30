@@ -66,8 +66,8 @@ stored (FR-012).
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| `PUT` | `/activities/{activityId}/external-name` | `performance.link` | sets by hand; **409** on a clash or overlong name, with the reason (FR-036) |
-| `POST` | `/activities/{activityId}/external-name/regenerate` | `performance.link` | switches back to the generated name |
+| `GET` | `/activities/{activityId}/external-name-aliases` | activity read | the superseded names kept for matching (FR-034) |
+| `DELETE` | `/activities/{activityId}/external-name-aliases/{aliasId}` | `performance.link` | confirmation states the effect on matching |
 | `GET` | `/activities/{activityId}/integration-ids` | activity read | |
 | `PUT` | `/activities/{activityId}/integration-ids/{sourceId}` | `performance.link` | **409** when one already exists for that source (FR-037) |
 | `DELETE` | `/activities/{activityId}/integration-ids/{sourceId}` | `performance.link` | confirmation states the effect on matching |
@@ -96,5 +96,10 @@ stored (FR-012).
 2. **The approvals area must call this feature's release port** when an activity reaches an approved status,
    so held facts are released in the same transaction (research R4). That change is outside this feature's
    folders.
-3. **The activity copy path must not carry** external name, aliases, integration IDs, media codes or facts
-   (FR-038) — a change in the activity area, reported here rather than made.
+3. **The activity copy path must not carry** aliases, integration IDs, media codes or facts (FR-038) — a
+   change in the activity area, reported here rather than made.
+4. **Generation of the external name on approval** (client 020 FR-030 – FR-036) belongs to feature 006's
+   lane: `activities.external_name` is its field, edited today by a person under its own "Edit External
+   Name" permission, with a 120-character limit. Making it generated from the model's rule, behind
+   `performance.link` and with the rule's length, changes 006's field, permission and package, none of which
+   this feature owns (046-C14). Until that lands, 046 reads the field and keeps aliases only.

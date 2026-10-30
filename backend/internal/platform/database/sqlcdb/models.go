@@ -52,12 +52,10 @@ type Activity struct {
 	UpdatedByName        string
 }
 
-type ActivityExternalName struct {
+type ActivityExternalNameAlias struct {
 	ID            string
 	ActivityID    string
 	Name          string
-	IsCurrent     bool
-	SetByHand     bool
 	Version       int
 	CreatedAt     time.Time
 	CreatedByID   string
