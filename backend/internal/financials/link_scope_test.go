@@ -34,7 +34,7 @@ func TestLink_InvisibleTransactionIsMissing_038_FR007_H5(t *testing.T) {
 	_, hidden := f.service.Link(t.Context(), mei, "FT-1004", request)
 	_, missing := f.service.Link(t.Context(), mei, "FT-9999", request)
 
-	assertCode(t, hidden, http.StatusNotFound, errs.CodeNotFound)
+	_ = assertCode(t, hidden, http.StatusNotFound, errs.CodeNotFound)
 	sameAnswer(t, hidden, missing)
 	if got := f.stored(t, "FT-1004"); got.Version != 1 || got.LineItemID != "" {
 		t.Errorf("FT-1004 changed: %+v", got)
@@ -79,13 +79,13 @@ func TestLink_NeedsImportAndLink_038_FR005_H4(t *testing.T) {
 	f := newFixture(t)
 	f.access.noLink = true
 	_, stale := f.service.Link(t.Context(), mei, "FT-1004", LinkRequest{LineItemID: "L-1007", Version: version(7)})
-	assertCode(t, stale, http.StatusForbidden, errs.CodeForbidden)
+	_ = assertCode(t, stale, http.StatusForbidden, errs.CodeForbidden)
 	_, ruleLinked := f.service.Link(t.Context(), mei, "FT-1001", LinkRequest{LineItemID: "L-1007", Version: version(1)})
-	assertCode(t, ruleLinked, http.StatusForbidden, errs.CodeForbidden)
+	_ = assertCode(t, ruleLinked, http.StatusForbidden, errs.CodeForbidden)
 
 	f.access.noLink, f.access.noImport = false, true
 	_, noImport := f.service.Link(t.Context(), mei, "FT-1004", LinkRequest{LineItemID: "L-1007", Version: version(1)})
-	assertCode(t, noImport, http.StatusNotFound, errs.CodeNotFound)
+	_ = assertCode(t, noImport, http.StatusNotFound, errs.CodeNotFound)
 
 	f.access.noImport = false
 	view, err := f.service.Transaction(t.Context(), mei, "FT-1004")
@@ -105,7 +105,7 @@ func TestUnlink_NeedsLinkInLinkedPlan_038_FR005(t *testing.T) {
 
 	_, stale := f.service.Unlink(t.Context(), mei, "FT-1004", UnlinkRequest{Version: version(1)})
 
-	assertCode(t, stale, http.StatusForbidden, errs.CodeForbidden)
+	_ = assertCode(t, stale, http.StatusForbidden, errs.CodeForbidden)
 	f.access.noLink = false
 	if _, err := f.service.Unlink(t.Context(), mei, "FT-1004", UnlinkRequest{Version: version(2)}); err != nil {
 		t.Errorf("Unlink with link in P-1002: %v", err)

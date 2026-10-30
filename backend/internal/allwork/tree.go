@@ -14,7 +14,7 @@ type filter struct {
 	test   func(t *tnode) bool
 }
 
-var progressValues = []string{"noActivities", "inProgress", "allApproved"}
+var progressValues = []string{"noActivities", statusInProgress, "allApproved"}
 
 func filtersOf(q Query) []filter {
 	plans := []Level{LevelPlan}

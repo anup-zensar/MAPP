@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -135,7 +134,12 @@ func writeFixture(t *testing.T) {
 	if dir == "" {
 		return
 	}
-	if err := os.WriteFile(filepath.Join(dir, "workbook-5000.xlsx"), generated(t, 5000), 0o600); err != nil {
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer root.Close()
+	if err := root.WriteFile("workbook-5000.xlsx", generated(t, 5000), 0o600); err != nil {
 		t.Fatal(err)
 	}
 }

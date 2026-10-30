@@ -37,16 +37,15 @@ test('038 FR-004, FR-007: Mei, a Planner, sees no Not linked tab and FT-1004 ans
   await page.goto('/financials/transactions/FT-1004');
   await expect(page.getByRole('dialog').getByText(GONE)).toBeVisible();
 
-  // Mei no longer holds finance.link (D-353): a hidden and a missing transaction get the same refusal.
   const hidden = await post(page, link('FT-1004'), { lineItemId: 'L-1007', version: 1 });
   const missing = await post(page, link('FT-9999'), { lineItemId: 'L-1007', version: 1 });
-  expect(hidden.status).toBe(403);
+  expect(hidden.status).toBe(404);
   expect(hidden).toEqual(missing);
 
   // So does unlinking a transaction of a plan outside her teams (FT-1003, Lubricants Europe).
   const outside = await post(page, unlink('FT-1003'), { version: 1 });
   const absent = await post(page, unlink('FT-9999'), { version: 1 });
-  expect(outside.status).toBe(403);
+  expect(outside.status).toBe(404);
   expect(outside).toEqual(absent);
 });
 

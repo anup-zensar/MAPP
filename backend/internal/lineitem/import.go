@@ -10,11 +10,9 @@ import (
 	"mapp/internal/platform/record"
 )
 
-// provisionalPrefix starts the id an imported line item has until Flush gives it its readable one.
 const provisionalPrefix = "new-line-item-"
 
-// Importer creates the line items of one plan workbook import with the checks of Create, reading each
-// activity's facts and line items once, and stores them together on Flush (038 FR-008).
+// Importer creates the line items of one workbook import with the checks of Create and stores them on Flush.
 type Importer struct {
 	s       *Service
 	a       actor.Actor
@@ -31,9 +29,7 @@ func (s *Service) NewImporter(a actor.Actor) *Importer {
 	return &Importer{s: s, a: a, places: map[string]*importPlace{}}
 }
 
-// Defaults returns what a new line item of activityID starts with, as the form fills it in: the activity's
-// owner when active, the plan's default spread and year, Request SWBS code on and the preselected finance
-// budget item.
+// Defaults returns what a new line item of activityID starts with, as the form fills it in.
 func (im *Importer) Defaults(ctx context.Context, activityID string) (Defaults, error) {
 	p, err := im.place(ctx, activityID)
 	if err != nil {
@@ -71,8 +67,7 @@ func (im *Importer) Create(ctx context.Context, activityID string, in Input) (st
 	return li.ID, nil
 }
 
-// Flush stores the kept line items with their readable ids, logs each as created and returns the readable
-// id of each provisional one.
+// Flush stores the kept line items under readable ids, logs each and maps every provisional id to its own.
 func (im *Importer) Flush(ctx context.Context) (map[string]string, error) {
 	if len(im.pending) == 0 {
 		return map[string]string{}, nil
