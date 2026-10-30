@@ -110,6 +110,7 @@ Performance slot in `ActivityPage.tsx`.
 | R1 | Keys resolve in strict order: activity ID → media code → integration ID → external name | FR-018 | unit, table-driven over all four keys and their precedence |
 | R2 | Keys that resolve to different activities never guess — unmatched, both candidates named | FR-019 | unit; e2e scenario US2#3 |
 | R3 | A fact on an activity not counting as approved is held, counts nowhere, releases on approval | FR-020, FR-028 | unit for the status set; integration for the release |
+| R3a | **Implementation note**: *In progress* and *Complete* are **derived from the activity's dates**, not stored — `activities.status` holds only `created`, `submitted`, `declined`, `approved` (domain model §2.3). "Counts as approved" is therefore the single test `status = 'approved'`, which covers all three displayed statuses | FR-028 | the same unit test as R3 |
 | R4 | The five outcomes add up to rows read | FR-022 | property test with `fast-check`-style generated files |
 | R5 | Loading is idempotent on (source, source reference); a repeat replaces and audits | FR-013 | unit + contract: same file twice changes nothing |
 | R6 | A personal-data file is refused whole, before any row is stored | FR-012 | unit: no row persisted after refusal |
