@@ -9,9 +9,7 @@ import styles from './ConfirmDialog.module.css';
 interface DialogBase {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** The question: "Delete sample folder 'Ideas'?" */
   title: string;
-  /** What will happen: "It goes to the recycle bin. You can restore it." */
   children: ReactNode;
   /** Names the safe choice, which has the focus: "Cancel", or "Keep editing" for unsaved changes. */
   cancelLabel?: string;
@@ -19,17 +17,13 @@ interface DialogBase {
 
 interface Asking extends DialogBase {
   acknowledgeOnly?: false;
-  /** Names the action, never "OK": "Delete sample folder". */
   confirmLabel: string;
   /** Runs the action. The dialog stays open until you close it, so it can show `busy` meanwhile. */
   onConfirm: () => void;
-  /** danger: the confirm button is Shell red, for actions that remove something; otherwise yellow. */
   tone?: 'danger';
-  /** The action is running: a second click on the confirm button is ignored. */
   busy?: boolean;
 }
 
-/** Only informs ("Can't delete 'Q4'"): one Close button, nothing to confirm (038 FR-044). */
 interface Informing extends DialogBase {
   acknowledgeOnly: true;
   confirmLabel?: never;
@@ -40,15 +34,11 @@ interface Informing extends DialogBase {
 
 export type ConfirmDialogProps = Asking | Informing;
 
-/**
- * Asks before an action that cannot simply be taken back (design system §6.5). The safe choice,
- * Cancel, has the focus, so pressing Enter never deletes anything by accident.
- */
+/** The safe choice, Cancel, has the focus, so Enter never deletes anything by accident. */
 export function ConfirmDialog(props: ConfirmDialogProps) {
   const { open, onOpenChange, title, children, acknowledgeOnly = false } = props;
   const cancelLabel = props.cancelLabel ?? (acknowledgeOnly ? 'Close' : 'Cancel');
-  // Radix gives the focus back only to its own trigger button. This dialog is opened by other
-  // code (a menu item, a page button), so it remembers where the focus was and returns it there.
+  // Radix returns the focus only to its own trigger; this dialog is opened by other code.
   const focusBeforeOpen = useRef<HTMLElement | null>(null);
 
   return (

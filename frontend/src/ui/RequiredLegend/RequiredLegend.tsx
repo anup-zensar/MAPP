@@ -1,12 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import styles from './RequiredLegend.module.css';
 
-/**
- * "* Required" (038 FR-064, D-358): shown when its form, or its dialog without a form, has a field
- * required to save, and only by the first legend in it, so a form shows it once. FormErrorSummary,
- * FormDialog and ConfirmDialog place it before their fields. Screen readers skip it: they hear
- * "required" with each such field.
- */
+/** "* Required", shown once per form by its first legend; screen readers skip it. */
 export function RequiredLegend() {
   const legend = useRef<HTMLParagraphElement>(null);
   const [shown, setShown] = useState(false);

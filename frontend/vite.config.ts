@@ -4,9 +4,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { developmentHeaders, securityHeaders } from './security-headers.ts';
 
-// Where the development and preview servers forward /api requests. The end-to-end tests point it at
-// their own API with MAPP_API_URL. 127.0.0.1 rather than "localhost": Node may resolve localhost
-// to the IPv6 address, where the API does not listen.
+// 127.0.0.1, not localhost: Node may resolve localhost to IPv6, where the API does not listen.
 const apiTarget = process.env.MAPP_API_URL ?? 'http://127.0.0.1:8080';
 
 // Unit tests format dates and times, so they always run in the same time zone, whatever the laptop's.
@@ -22,12 +20,10 @@ export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
-  // Servers listen on this computer only (no firewall prompt) and never move to another port silently.
   server: { host: '127.0.0.1', port: 5173, strictPort: true, proxy, headers: developmentHeaders },
   preview: { host: '127.0.0.1', port: 4173, strictPort: true, proxy, headers: securityHeaders },
   build: {
     rolldownOptions: {
-      // Each feature's code is one file named after the feature (app/pages.tsx loads them).
       output: { chunkFileNames: (chunk) => `assets/${featureOf(chunk.facadeModuleId)}-[hash].js` },
     },
   },
@@ -35,7 +31,6 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['src/**/*.test.{ts,tsx}', 'security-headers.test.ts'],
     setupFiles: ['src/testing/setup.ts'],
-    // Generous, because a busy laptop can run a single test for several seconds.
     testTimeout: 15000,
     coverage: {
       provider: 'v8',
@@ -47,7 +42,6 @@ export default defineConfig({
   },
 });
 
-/** The feature a chunk starts from (`src/features/<name>/index.ts`), or Rolldown's own name. */
 function featureOf(facadeModuleId: string | null): string {
   return /\/src\/features\/([^/]+)\/index\.ts$/.exec(facadeModuleId ?? '')?.[1] ?? '[name]';
 }

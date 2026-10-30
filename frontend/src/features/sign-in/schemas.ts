@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import type { SessionEnd } from '@/session/useSession';
 
-/** E-mail and password: both are needed before the API is asked anything (FR-004). */
 export const signInSchema = z.object({
   email: z.string().refine((email) => email.trim() !== '', 'Enter your e-mail'),
   password: z.string().min(1, 'Enter the password'),

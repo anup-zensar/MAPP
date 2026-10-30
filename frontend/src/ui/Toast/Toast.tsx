@@ -5,7 +5,6 @@ import { ToastContext } from './useToast';
 import type { Toaster, ToastOptions } from './useToast';
 import styles from './Toast.module.css';
 
-/** A message on screen; the id tells messages apart. */
 interface ShownToast extends ToastOptions {
   id: number;
 }
@@ -14,11 +13,7 @@ const DEFAULT_DURATION_MS = 4_000;
 /** Long enough to choose Undo (FR-026). */
 const WITH_ACTION_DURATION_MS = 10_000;
 
-/**
- * Shows the messages of useToast() at the bottom centre of the screen (design system §5), with
- * Radix Toast: a message is announced to screen readers at once, waits while the pointer rests on
- * it or the keyboard focus is in it, and F8 moves the focus to it.
- */
+/** Radix Toast: announced at once, waits under the pointer or focus, and F8 moves focus to it. */
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ShownToast[]>([]);
   const nextId = useRef(1);
@@ -46,7 +41,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <Toast.Root
             key={toast.id}
             className={styles.toast}
-            // Foreground: screen readers announce the message at once.
             type="foreground"
             duration={
               toast.durationMs ?? (toast.action ? WITH_ACTION_DURATION_MS : DEFAULT_DURATION_MS)
@@ -58,9 +52,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             }}
           >
             <Toast.Description className={styles.message}>
-              {/* Radix announces the message and the action's alt text back to back; the trailing
-                  space keeps them apart ("…recycle bin Restore it…", not "…binRestore it…"). The
-                  dash only shows: "<message> — View" (038 FR-049). */}
+              {/* The space keeps the message apart from the action's alt text when read out. */}
               {`${toast.message} `}
               {toast.action && <span aria-hidden="true">— </span>}
             </Toast.Description>

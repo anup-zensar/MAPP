@@ -12,27 +12,17 @@ import type { SaveFailure } from './problem-of';
 export interface FormPanelProps {
   title: string;
   description?: string;
-  /** Something was typed that is not saved yet. */
   isDirty: boolean;
-  /** A save is on its way; another Save is ignored meanwhile. */
   saving: boolean;
-  /** The field problems of the last save, all at once. */
   problems: FieldProblem[];
   failure: SaveFailure | null;
   onSave: () => void;
   onClose: () => void;
-  /** The primary button's label ("Save" when left out). */
   saveLabel?: string;
-  /** The form's fields. */
   children: ReactNode;
 }
 
-/**
- * A side-panel form (design system §6.2, moved here from feature 001's developer page for 002, 003,
- * 005 and 008): Save and Cancel at the bottom, a failure and the error summary above the fields,
- * and the "Discard changes?" question before typed changes are lost — on Cancel, Close, Escape, a
- * click beside the panel, or when leaving the page. Save is never disabled.
- */
+/** A side-panel form: Save is never disabled; "Discard changes?" before typed changes are lost. */
 export function FormPanel({
   title,
   description,

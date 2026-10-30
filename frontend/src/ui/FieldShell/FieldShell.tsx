@@ -4,51 +4,29 @@ import { cx } from '../cx';
 import { InfoTip } from '../InfoTip/InfoTip';
 import styles from './FieldShell.module.css';
 
-/**
- * A field's marking (design system §6.2): "Required" (to save) is a red asterisk after the label,
- * the others are words next to it (038 FR-063, D-358).
- */
+/** "Required" (to save) is a red asterisk after the label; the others are words next to it. */
 export type FieldMarking = 'Required' | 'Needed to publish' | 'Needed to submit';
 
-/** The parts of the frame every MAPP field has around its control. */
 export interface FieldFrameProps {
   label: string;
-  /** A red asterisk for "Required", otherwise a word next to the label. */
   marking?: FieldMarking;
-  /** A short help text under the label. */
   hint?: string;
-  /** A plain explanation shown in an ⓘ tip next to the label (Shell attributes' help text). */
   tip?: string;
-  /** What is wrong with the value, shown under the field. */
   error?: string;
-  /** Keeps the label for screen readers only, for a field in a table cell. */
   labelHidden?: boolean;
 }
 
 interface FieldShellProps extends FieldFrameProps {
-  /** The control's id: the label points to it and FormErrorSummary links to it. */
   id: string;
-  /**
-   * 'label' (default) for one control; 'fieldset' for a group of controls (check boxes, a date
-   * range), named by a legend.
-   */
   as?: 'label' | 'fieldset';
-  /** A neutral note under the control: "Rounded to 1,234.57", "12 characters left", a lock reason. */
   note?: ReactNode;
   /** Keeps the note's row when there is no note, so a note that comes and goes moves nothing. */
   reserveNote?: boolean;
-  /**
-   * The control; it receives the ids of the texts that describe it, for aria-describedby, and
-   * `required` for aria-required (a field required to save).
-   */
+  /** The control, given the ids for aria-describedby and `required` for aria-required. */
   children: (describedBy: string | undefined, required: true | undefined) => ReactNode;
 }
 
-/**
- * The frame of a form field (design system §7): label above with the marking and an optional ⓘ,
- * a hint, the control, a note and the problem under it. Screen readers hear the marking, hint, note
- * and problem with the control. Internal to @/components.
- */
+/** A form field's frame (design system §7): label, marking, ⓘ, hint, control, note and problem. */
 export function FieldShell({
   id,
   label,
@@ -135,10 +113,7 @@ export function FieldShell({
   );
 }
 
-/**
- * What follows a label: for a field required to save a red asterisk, hidden from screen readers,
- * which hear "required" from the description `id` instead (038 FR-063); otherwise the word tag.
- */
+/** The asterisk is hidden from screen readers, which hear "required" from the description. */
 export function Marking({ id, marking }: { id: string; marking: FieldMarking | undefined }) {
   if (marking === 'Required') {
     return (

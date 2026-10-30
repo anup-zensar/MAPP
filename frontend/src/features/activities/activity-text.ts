@@ -1,29 +1,18 @@
-/**
- * How activities read on screen (006 plan, "User-visible messages"), and their addresses.
- */
 import type { components } from '@/api/generated/schema';
 import { formatMoneyText, formatPercent } from '@/format/decimal';
 import { fieldHref, recordHref } from '@/ui/record-links';
 import { plural } from '@/format/text';
 import type { Formatters } from '@/format/useFormatters';
 
-/** The plan model's facts the goals are calculated with. */
 export type ModelFacts = components['schemas']['ActivityModelFacts'];
 
-/** Shown for an empty value (design system §6.3). */
 export const EMPTY = '—';
 
-/** The Move menu item, as on campaigns and initiatives (038 FR-041). */
 export const MOVE_TO = 'Move to…';
 
-/** The date writers of useFormatters() that dates and date ranges need. */
 export type DateWriters = Pick<Formatters, 'date' | 'dateRange'>;
 
-/**
- * An activity's dates as every date range on screen reads them (D-216): "01 Mar – 31 May 2026"
- * (useFormatters().dateRange, in the person's date format), "Ongoing from 01 Mar 2026", or "—"
- * while they are not both set.
- */
+/** "01 Mar – 31 May 2026", "Ongoing from 01 Mar 2026", or "—" until both are set (D-216). */
 export function datesText(
   start: string | null | undefined,
   end: string | null | undefined,
@@ -39,40 +28,31 @@ export function datesText(
   return EMPTY;
 }
 
-/** "1 thing", "5 things": what submitting still needs. */
 export function thingsText(count: number): string {
   return plural(count, 'thing');
 }
 
-/** "1 line item", "3 line items". */
 export function lineItemsText(count: number): string {
   return plural(count, 'line item');
 }
 
-/** The completeness chip's second text: "1 line item needs attention", "3 line items need attention". */
 export function lineItemsAttentionText(count: number): string {
   return count === 1 ? '1 line item needs attention' : `${lineItemsText(count)} need attention`;
 }
 
-/** The activity page: /plans/:planId/activities/:id. */
 export function activityHref(planId: string, id: string): string {
   return recordHref('activity', id, planId);
 }
 
-/** The edit form, with one field focused when given: …/edit?field=ownerId. */
 export function activityEditHref(planId: string, id: string, field?: string): string {
   return field ? fieldHref('activity', id, field, planId) : `${activityHref(planId, id)}/edit`;
 }
 
-/** The new-activity form of an initiative. */
 export function newActivityHref(planId: string, initiativeId: string): string {
   return `/plans/${encodeURIComponent(planId)}/initiatives/${encodeURIComponent(initiativeId)}/activities/new`;
 }
 
-/**
- * How MQL and revenue are calculated (FR-018): "MQL = INQ × 2.00 % · deals = MQL × 5.00 % ·
- * revenue = deals × 10,000.00 USD — each rounded to a whole number (model 'Lubricants 1.0')."
- */
+/** "MQL = INQ × 2.00 % · … — each rounded to a whole number (model 'Lubricants 1.0')" (FR-018). */
 export function goalsFormula(model: ModelFacts): string {
   return (
     `MQL = INQ × ${formatPercent(model.inqToMqlRate)} · deals = MQL × ${formatPercent(model.mqlToDealRate)} · ` +
@@ -81,7 +61,6 @@ export function goalsFormula(model: ModelFacts): string {
   );
 }
 
-// Move and copy (US5, FR-029, FR-030; plan "Actions")
 export function moveTitle(name: string): string {
   return `Move activity '${name}'`;
 }

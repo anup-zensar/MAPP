@@ -3,9 +3,8 @@ import { expect, test } from './support/no-csp-violations';
 import { callApi, expectNoAxeViolations, signInAs, uniqueName } from './fixtures';
 import { idOf } from './planning';
 
-// 038 US2 (H-4, H-5) against the real API and the demo GSAP data: not-linked transactions only for people
-// who import, Link and Unlink only where the server allows, and a hidden record answers like a missing one
-// (FR-004, FR-005, FR-007).
+// 038 US2 (H-4, H-5): not-linked transactions only for importers, Link and Unlink only where the
+// server allows, and a hidden record answers like a missing one.
 
 const ALEX = 'alex.morgan@shell.com';
 const MEI = 'mei.lin@shell.com';
@@ -93,7 +92,6 @@ test('038 FR-007: an importer of Lubricants Europe gets the same answer for an o
     lineItemId: 'L-9999',
     version: transaction.version,
   });
-  // The same answer, but for the ID typed.
   expect(outOfScope.status).toBe(400);
   expect(missing.status).toBe(400);
   expect(JSON.stringify(outOfScope.body).replaceAll('L-1007', 'ID')).toBe(

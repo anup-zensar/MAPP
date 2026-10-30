@@ -1,10 +1,6 @@
 import { expect, test as base } from '@playwright/test';
 
-/**
- * A `test` that fails when the page breaks its content security policy (038 FR-015, SC-005): every
- * `securitypolicyviolation` the browser raises during the test is collected and must be none.
- * Specs import `test` and `expect` from here instead of from '@playwright/test'.
- */
+/** Fails on any `securitypolicyviolation` (038 FR-015); specs import `test` and `expect` from here. */
 export const test = base.extend<{ cspViolations: string[] }>({
   cspViolations: [
     async ({ page }, use) => {

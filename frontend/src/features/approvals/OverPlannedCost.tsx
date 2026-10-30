@@ -8,10 +8,7 @@ import styles from './ApprovalSection.module.css';
 
 type ActivityOverage = components['schemas']['ActivityOverage'];
 
-/**
- * With Warn (038 FR-019, D-354): each activity of the round whose line items exceed its planned cost,
- * with the overage in the plan currency, before approving. Nothing when there is none.
- */
+/** With Warn (038 FR-019): each activity whose line items exceed its planned cost, before approving. */
 export function OverPlannedCostAlert({ overages }: { overages: readonly ActivityOverage[] }) {
   if (overages.length === 0) {
     return null;

@@ -11,9 +11,6 @@ import (
 	"mapp/internal/settings"
 )
 
-// The Settings seed: 5 currencies with rates, 6 activity types with default planned costs, 2 models with rates and
-// allowed types (in type-list order), 2026's 2 finance budgets of 3 items each and 2027's of 2 (038 FR-061, L-30),
-// 35 Shell attributes with 162 options.
 func TestLoad_Settings_FR032_038_FR061_L30(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
@@ -99,8 +96,6 @@ func TestLoad_Settings_FR032_038_FR061_L30(t *testing.T) {
 	}
 }
 
-// Business unit (SA-1001) is the plan's business-unit attribute; markings fit their level; splits only at activity and
-// line-item level; each level's positions run 1…n; sections and conditions are those of the seed table.
 func TestLoad_ShellAttributes_FR017_FR023(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
@@ -171,8 +166,7 @@ func TestLoad_ShellAttributes_FR017_FR023(t *testing.T) {
 	}
 }
 
-// Every Region is linked to a Cluster (Retail – India has none, D-034). GL code depends on nothing: no source gives
-// Shell's spend type → GL code mapping (D-325).
+// Retail – India has no Cluster (D-034); no source maps spend type to GL code (D-325).
 func TestLoad_DependentOptions_FR022(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)
@@ -228,9 +222,8 @@ func TestLoad_DependentOptions_FR022(t *testing.T) {
 	}
 }
 
-// The simulated GSAP rate history of 016 data-model §8: one import RI-1001 by MAPP and, for each currency
-// but USD, a GSAP-imported rate for each of the 30 days before the seed day, swinging −0.6 % … +0.6 % around the
-// seeded rate, and the seeded rate on the seed day — so the current rates stay the seeded ones (D-274).
+// For each currency but USD, a GSAP rate for each of the 30 days before the seed day, ±0.6 % around the seeded
+// rate, and the seeded rate on the seed day, so the current rates stay the seeded ones (D-274).
 func TestLoad_RateHistory_016_D274(t *testing.T) {
 	t.Parallel()
 	d := loadDemo(t)

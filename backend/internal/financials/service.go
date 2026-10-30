@@ -45,7 +45,6 @@ func NewService(tools history.Tools, repo Store, deps Deps) *Service {
 	}
 }
 
-// UseFeed replaces the simulated GSAP extract, later with a real GSAP feed; nothing else changes.
 func (s *Service) UseFeed(f Feed) {
 	s.feed = f
 }
@@ -54,8 +53,7 @@ func (s *Service) today() date.Date {
 	return date.Today(s.now())
 }
 
-// FactsByLineItem gives All work the cards' USD figures by line item: current rates, the latest accrual
-// month, currencies no longer in Settings left out. It checks no access: the caller does.
+// FactsByLineItem gives All work the cards' USD figures by line item. It checks no access: the caller does.
 func (s *Service) FactsByLineItem(ctx context.Context) (map[string]Facts, error) {
 	facts := map[string]Facts{}
 	err := s.eachLinked(ctx, func(t *Transaction, usd *money.Amount, month string) {
@@ -66,8 +64,7 @@ func (s *Service) FactsByLineItem(ctx context.Context) (map[string]Facts, error)
 	return facts, err
 }
 
-// FactsByLineItemMonth is FactsByLineItem split by the month of each transaction's posting date, "2026-03",
-// for the SP&A view (feature 013). It checks no access: the caller does.
+// FactsByLineItemMonth splits FactsByLineItem by posting month, "2026-03". It checks no access: the caller does.
 func (s *Service) FactsByLineItemMonth(ctx context.Context) (map[string]map[string]Facts, error) {
 	facts := map[string]map[string]Facts{}
 	err := s.eachLinked(ctx, func(t *Transaction, usd *money.Amount, month string) {
@@ -84,7 +81,6 @@ func (s *Service) FactsByLineItemMonth(ctx context.Context) (map[string]map[stri
 	return facts, err
 }
 
-// eachLinked calls add for every linked transaction with its USD amount and the latest accrual month.
 func (s *Service) eachLinked(ctx context.Context, add func(t *Transaction, usd *money.Amount, month string)) error {
 	return s.tx.Read(ctx, func(ctx context.Context) error {
 		stored, err := s.repo.ListTransactions(ctx)

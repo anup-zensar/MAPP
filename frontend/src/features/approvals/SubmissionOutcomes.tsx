@@ -5,10 +5,7 @@ import styles from './approval-dialogs.module.css';
 
 type SubmissionLevel = components['schemas']['ApprovalSubmissionLevel'];
 
-/**
- * What submitting would do at each level, with the approvers resolved — also those taken from a
- * field of the record (038 FR-027): the activity's and the purchase request's submit dialogs.
- */
+/** Each level's outcome, with approvers resolved, also those from a record field (038 FR-027). */
 export function SubmissionOutcomes({ outcomes }: { outcomes: readonly SubmissionLevel[] }) {
   return (
     <ol role="list" className={styles.levels}>

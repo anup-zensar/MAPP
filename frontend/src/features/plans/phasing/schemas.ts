@@ -4,14 +4,11 @@ import { monthLabel, readAmount } from './phasing-math';
 
 const PHASING_METHODS: readonly PhasingMethod[] = ['none', 'evenly', 'custom'];
 
-/** The problem of one month whose text is not an amount of 0.00 or more. */
 export const MONTH_PROBLEM = 'Type an amount of 0.00 or more.';
 
-/** The Budget by month editor (016 FR-020 – FR-023): Custom months must all be amounts. */
 export const phasingSchema = z
   .object({
     method: z.enum(PHASING_METHODS),
-    /** The text typed for each month of the year. */
     months: z.array(z.string()),
     /** The quarters as typed while typing by quarter; null while they follow the months. */
     quarters: z.array(z.string()).nullable(),
@@ -24,7 +21,6 @@ export const phasingSchema = z
 
 export type PhasingValues = z.infer<typeof phasingSchema>;
 
-/** "Mar 2027: Type an amount of 0.00 or more." for each month that is not an amount (038 FR-040). */
 export function monthProblems(months: string[], keys: string[]): string {
   return keys
     .flatMap((key, index) =>

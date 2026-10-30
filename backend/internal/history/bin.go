@@ -10,7 +10,6 @@ import (
 	"mapp/internal/platform/errs"
 )
 
-// The verbs of the two actions of feature 011 (FR-006).
 const (
 	verbDeletedPermanently = "permanently deleted"
 	verbEmptiedRecycleBin  = "emptied the recycle bin"
@@ -19,11 +18,8 @@ const (
 // errDryRun ends the Write of a restore preview: the store keeps nothing of what the dry run did (D-177).
 var errDryRun = errors.New("history: dry run of a restore")
 
-// ListBinItems returns what is in the recycle bin as the recycle bin page lists it (FR-014 – FR-017,
-// FR-028): the unresolved entries, newest first, each with its restore state, the entries Restore both /
-// all N brings back first, the entries that depend on it and the records it holds. Entries holding a kind
-// this API does not know are left out (D-186), and so are the entries the person acting may not see; each
-// item says what they may do with it (014 FR-007, FR-011, D-238).
+// ListBinItems returns the unresolved entries, newest first, each with its restore state, dependants and what
+// the person may do; entries of unknown kinds (D-186) or out of their sight are left out (014 FR-007).
 func (s *Service) ListBinItems(ctx context.Context, a actor.Actor) ([]BinListItem, error) {
 	var items []BinListItem
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -40,8 +36,6 @@ func (s *Service) ListBinItems(ctx context.Context, a actor.Actor) ([]BinListIte
 	return items, nil
 }
 
-// binItems lists the unresolved entries of index whose kinds are all registered and that the person acting
-// may see, newest first, as ListBinItems describes them. The list is never nil.
 func (s *Service) binItems(ctx context.Context, index binIndex) ([]BinListItem, error) {
 	items := []BinListItem{}
 	var parents []recordKey
@@ -67,8 +61,7 @@ func (s *Service) binItems(ctx context.Context, index binIndex) ([]BinListItem, 
 		}
 		items = append(items, item)
 	}
-	// An entry waiting for this one to come back first can no longer be restored once this one is
-	// deleted permanently (FR-028).
+	// An entry waiting for this one can no longer be restored once this one is deleted permanently (FR-028).
 	for i := range items {
 		for _, other := range items {
 			if other.RestoreState == ParentInRecycleBin && slices.Contains(other.ParentEntryIDs, items[i].ID) {
@@ -79,10 +72,7 @@ func (s *Service) binItems(ctx context.Context, index binIndex) ([]BinListItem, 
 	return items, nil
 }
 
-// unresolvedEntry reads the recycle-bin entry entryID for an action on it and refuses what the action
-// cannot work on (FR-032): an entry the bin never had or the person cannot see, one holding a kind this API
-// does not know, and one that already left the bin, with how, by whom and when. Call it inside a
-// transaction.
+// unresolvedEntry refuses an entry unknown, out of sight, of an unknown kind or already left the bin (FR-032).
 func (s *Service) unresolvedEntry(ctx context.Context, entryID string) (BinEntry, error) {
 	entry, found, err := s.repo.GetBinEntry(ctx, entryID)
 	if err != nil {
@@ -100,13 +90,8 @@ func (s *Service) unresolvedEntry(ctx context.Context, entryID string) (BinEntry
 	return entry, nil
 }
 
-// PreviewRestore says what restoring the recycle-bin entry entryID would do, without doing it (FR-018 –
-// FR-020, FR-022, FR-023, D-177): it restores the entries holding its missing parents and then the entry,
-// exactly as RestoreWithParents does, in one Write that it throws away. The preview names where the record
-// returns (its parent's place after the parents came back), the entries that come back first, every field
-// the kinds' restore rules change in the records that come back and in stored records (what their hooks
-// log), and the rules' notes. Nothing is saved, and the log, the bin and the ID counters stay as they were.
-// For an entry whose parent was deleted permanently there is nothing to try: the lists are empty (FR-024).
+// PreviewRestore runs RestoreWithParents in one Write that it throws away (D-177): nothing is saved, and the
+// log, the bin and the ID counters stay as they were. With a parent deleted permanently the lists are empty.
 func (s *Service) PreviewRestore(ctx context.Context, a actor.Actor, entryID string) (RestorePreview, error) {
 	var preview RestorePreview
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -126,7 +111,7 @@ func (s *Service) PreviewRestore(ctx context.Context, a actor.Actor, entryID str
 		if err != nil {
 			return err
 		}
-		if err := s.canRestoreAll(ctx, append(state.chain, entry)); err != nil { // the person's roles (014 D-238)
+		if err := s.canRestoreAll(ctx, append(state.chain, entry)); err != nil {
 			return err
 		}
 		preview = RestorePreview{
@@ -137,7 +122,7 @@ func (s *Service) PreviewRestore(ctx context.Context, a actor.Actor, entryID str
 			Notes:         []string{},
 		}
 		if state.state == ParentDeletedPermanently {
-			return errDryRun // the restore is not possible: the dialog explains why
+			return errDryRun
 		}
 		for _, parentEntry := range state.chain {
 			preview.ParentEntries = append(preview.ParentEntries, itemOf(items, parentEntry.ID))
@@ -155,7 +140,6 @@ func (s *Service) PreviewRestore(ctx context.Context, a actor.Actor, entryID str
 		if err != nil {
 			return err
 		}
-		// Where it returns: the parent's place now, after the parents in the bin came back.
 		if entry.Parent != nil {
 			preview.Destination, err = s.ancestors(dryRun, k.Parent, entry.Parent.ID)
 			if err != nil {
@@ -170,9 +154,7 @@ func (s *Service) PreviewRestore(ctx context.Context, a actor.Actor, entryID str
 	return preview, nil
 }
 
-// describePreview adds to preview what the dry run did: every changed field of every record that came back
-// (Restored) that its notes do not state, then every field the restore changed in a stored record, as the entries that its hooks
-// logged say (FR-020), and the notes of the kinds' restore rules, in order.
+// describePreview adds every change the dry run made that the notes do not state, as the hooks' entries say.
 func (s *Service) describePreview(ctx context.Context, preview *RestorePreview, done []restored, logged []Entry) error {
 	came := map[recordKey]bool{}
 	for _, r := range done {
@@ -211,8 +193,7 @@ func (s *Service) describePreview(ctx context.Context, preview *RestorePreview, 
 	return nil
 }
 
-// unstated drops from a restored record's changes the rename and status reset that the notes of its restore
-// state: the kinds' restore rules note every one they make, so the preview states it once (038 FR-049).
+// unstated drops the rename and status reset that the restore notes already state (038 FR-049).
 func unstated(changes []Change, notes []string) []Change {
 	if len(notes) == 0 {
 		return changes
@@ -220,9 +201,6 @@ func unstated(changes []Change, notes []string) []Change {
 	return slices.DeleteFunc(changes, func(c Change) bool { return c.Field == "name" || c.Field == "status" })
 }
 
-// restoreChain restores the entries in order, the entries holding the missing parents first, by a at now,
-// each with its own "restored" log entry, and returns what each brought back. Call it inside a Write after
-// checking the entries.
 func (s *Service) restoreChain(ctx context.Context, a actor.Actor, chain []BinEntry, now time.Time) ([]restored, error) {
 	done := make([]restored, 0, len(chain))
 	for _, entry := range chain {
@@ -235,10 +213,8 @@ func (s *Service) restoreChain(ctx context.Context, a actor.Actor, chain []BinEn
 	return done, nil
 }
 
-// RestoreWithParents restores the recycle-bin entry entryID together with the entries holding its missing
-// parents, parents first, in one step (FR-023): Restore both, or Restore all N. Each entry gets its own
-// "restored" log entry with the actor. With no parent in the bin it is Restore. A parent, or a record above
-// it, deleted permanently refuses it, and nothing changes (FR-024). It joins the caller's Write.
+// RestoreWithParents is Restore both / Restore all N: parents first, each with its own log entry, in the
+// caller's Write. A parent, or a record above it, deleted permanently refuses it (FR-024).
 func (s *Service) RestoreWithParents(ctx context.Context, a actor.Actor, entryID string) (RestoreResult, error) {
 	var result RestoreResult
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -262,14 +238,14 @@ func (s *Service) RestoreWithParents(ctx context.Context, a actor.Actor, entryID
 				return errs.NotFound(kindUnknownMessage)
 			}
 		}
-		if err := s.canRestoreAll(ctx, append(state.chain, entry)); err != nil { // the person's roles (014 D-238)
+		if err := s.canRestoreAll(ctx, append(state.chain, entry)); err != nil {
 			return err
 		}
 		done, err := s.restoreChain(ctx, a, append(state.chain, entry), s.now())
 		if err != nil {
 			return err
 		}
-		result = done[len(done)-1].result // the chosen entry comes back last
+		result = done[len(done)-1].result
 		return nil
 	})
 	if err != nil {

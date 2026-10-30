@@ -8,7 +8,6 @@ import (
 	"mapp/internal/platform/authz"
 )
 
-// The demo teams: Lubricants Europe, Mobility China, Global Marketing Ops.
 const (
 	lubricants = "T-1001"
 	mobility   = "T-1002"
@@ -42,7 +41,6 @@ var (
 	viewer        = role("RL-1005", "Viewer", authz.BuiltInViewer, authz.ScopeMyTeams)
 )
 
-// grants builds the Grants of a person holding roles, who belongs to myTeams.
 func grants(personID string, myTeams []string, roles ...authz.GrantedRole) authz.Grants {
 	g := authz.NewGrants(personID, roles, myTeams, tableB, []actor.Actor{{ID: "U-1001", Name: "Alex Morgan"}},
 		authz.Rules{NoSelfApproval: true})
@@ -54,8 +52,6 @@ func plan(teams ...string) authz.PlanFacts {
 	return authz.PlanFacts{ID: "P-1001", TeamIDs: teams, OwnerID: "U-1002", CreatedByID: "system"}
 }
 
-// A person may do what any of their roles allows: the union (FR-002). Daniel is Planner and Approver for his
-// teams, so he edits plans (Planner) and approves (Approver).
 func TestGrants_UnionOfRoles_FR002(t *testing.T) {
 	t.Parallel()
 	daniel := grants("U-1003", []string{lubricants}, planner, approver)
@@ -70,8 +66,7 @@ func TestGrants_UnionOfRoles_FR002(t *testing.T) {
 	}
 }
 
-// My teams is the person's membership now; Chosen teams is the list of the assignment; All markets is
-// everywhere. Scoped permissions apply only to plans in scope; the others apply everywhere (FR-004, FR-005).
+// My teams is the membership now, Chosen teams the assignment's list; unscoped permissions apply everywhere.
 func TestGrants_Scopes_FR004(t *testing.T) {
 	t.Parallel()
 	priya := grants("U-1002", []string{lubricants}, planner)
@@ -109,8 +104,7 @@ func TestGrants_Scopes_FR004(t *testing.T) {
 	}
 }
 
-// Permissions that are not scoped apply everywhere, whatever the role's scope (FR-004): Daniel's Approver
-// role is My teams, yet "Approve or decline when named" is his everywhere.
+// Daniel's Approver role is My teams, yet "Approve or decline when named" is his everywhere.
 func TestGrants_UnscopedPermissionsApplyEverywhere_FR004(t *testing.T) {
 	t.Parallel()
 	daniel := grants("U-1003", []string{lubricants}, approver)
@@ -123,8 +117,6 @@ func TestGrants_UnscopedPermissionsApplyEverywhere_FR004(t *testing.T) {
 	}
 }
 
-// A plan without a team is in scope for the person who created it, as their roles allow, and for All
-// markets; not for others (FR-005, Edge cases).
 func TestGrants_TeamlessPlanForItsCreator_FR005(t *testing.T) {
 	t.Parallel()
 	priya := grants("U-1002", []string{lubricants}, planner)
@@ -142,8 +134,7 @@ func TestGrants_TeamlessPlanForItsCreator_FR005(t *testing.T) {
 	}
 }
 
-// A person sees a plan through "View plans" in its scope or as its owner; an activity also as its owner or
-// a named approver (FR-006).
+// An activity is also seen by its owner and its named approvers.
 func TestGrants_CanView_FR006(t *testing.T) {
 	t.Parallel()
 	mei := grants("U-1004", []string{mobility}, planner)
@@ -167,8 +158,6 @@ func TestGrants_CanView_FR006(t *testing.T) {
 	}
 }
 
-// The Administrator role holds every permission everywhere, also one MAPP adds later (data model
-// §1.1).
 func TestGrants_AdministratorHoldsEverything_FR003(t *testing.T) {
 	t.Parallel()
 	alex := grants("U-1001", nil, administrator)
@@ -183,8 +172,7 @@ func TestGrants_AdministratorHoldsEverything_FR003(t *testing.T) {
 	}
 }
 
-// "Link financial transactions" without "Import GSAP extracts" is not held: a custom role saved before 038
-// grants nothing with it; with import from any role it applies in the link role's scope (038 FR-006, H-4).
+// A custom role saved before 038 grants nothing with link alone; with import from any role, link applies in its scope.
 func TestGrants_LinkNeedsImport_038_FR006_H4(t *testing.T) {
 	t.Parallel()
 	perms := map[string][]authz.Permission{"RL-1010": {authz.FinanceView, authz.FinanceLink}, "RL-1011": {authz.FinanceImport}}
@@ -201,7 +189,6 @@ func TestGrants_LinkNeedsImport_038_FR006_H4(t *testing.T) {
 	}
 }
 
-// A person without a role holds nothing and sees no plan they do not own.
 func TestGrants_NoRole_HoldsNothing_FR001(t *testing.T) {
 	t.Parallel()
 	nobody := grants("U-1007", []string{lubricants})
@@ -216,8 +203,7 @@ func TestGrants_NoRole_HoldsNothing_FR001(t *testing.T) {
 	}
 }
 
-// A role whose chosen teams were all deleted, or My teams for a person without a team, grants nothing in
-// any plan (data model §1.2) while the permission is still "held" for the message.
+// An empty scope grants nothing in any plan, while the permission is still "held" for the message.
 func TestGrants_EmptyScopeGrantsNothing_FR004(t *testing.T) {
 	t.Parallel()
 	newcomer := grants("U-1007", nil, planner)
@@ -230,7 +216,6 @@ func TestGrants_EmptyScopeGrantsNothing_FR004(t *testing.T) {
 	}
 }
 
-// The merged permissions are listed in Table A order with where they apply (MyAccess.permissions).
 func TestGrants_Permissions_InTableAOrder_FR024(t *testing.T) {
 	t.Parallel()
 	sara := grants("U-1006", []string{lubricants, mobility}, viewer)

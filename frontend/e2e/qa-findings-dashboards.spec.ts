@@ -2,8 +2,7 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './support/no-csp-violations';
 import { expectNoAxeViolations, signInAs } from './fixtures';
 
-// 038 US4 (H-1): an address with a currency or market the person cannot use shows the dashboard with the
-// default, and the address and the filter bar say which was used (FR-012).
+// 038 US4 (H-1): an unusable currency or market in the address falls back to the default and says so.
 
 const CARLOS = 'carlos.mendes@shell.com';
 

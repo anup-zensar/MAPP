@@ -13,19 +13,15 @@ import (
 	"mapp/internal/platform/apitest"
 )
 
-// User story 1 — See my work at a glance.
-
-// Priya's cards with the seed: her team's one plan, Published; the seven activities she owns, one Declined
-// and one Submitted; nothing waits for her; FY2026 Lubricants Europe's planned cost of its 1,200,000.00 USD
-// budget. Daniel has Trade magazine ads waiting for him since its resubmission two days ago (FR-005, FR-006,
-// US1 scenario 2).
+// Priya's team has one Published plan; she owns one Declined and one Submitted activity; nothing waits for her.
+// Daniel has Trade magazine ads waiting since its resubmission two days ago.
 func TestHomeSummary_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 	daniel := server.SignIn(t, danielsEmail)
-	server.GrantRole(t, danielsEmail, "globalPlanner", "all") // 014: every market's plans
+	server.GrantRole(t, danielsEmail, "globalPlanner", "all")
 
 	got := get[home.SummaryView](t, priya, "/api/v1/home/summary?scope=myTeams")
 	everything := get[home.SummaryView](t, priya, "/api/v1/home/summary?scope=everything")
@@ -58,9 +54,6 @@ func TestHomeSummary_Contract(t *testing.T) {
 	}
 }
 
-// For every seeded person and both scopes, Home's figures equal those of the Plans list and the Approvals
-// page: the plans by status, the planned cost and plan budget of the plans in scope, and what waits for the
-// person (SC-002, FR-017).
 func TestHome_EqualsPlanAndApprovalPages_SC002_FR017(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -109,15 +102,12 @@ func TestHome_EqualsPlanAndApprovalPages_SC002_FR017(t *testing.T) {
 	}
 }
 
-// User story 2 — See how my teams' plans are doing.
-
-// Sara Novak (two teams) sees both FY2026 plans once each, with her teams marked and the figures of their
-// plan pages; Everything adds FY2027 Global Brand, newest year first (FR-008 – FR-010, US2 scenarios 1, 4).
+// Sara (two teams) sees both FY2026 plans once each; Everything adds FY2027 Global Brand, newest year first.
 func TestHomePlans_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
 	sara := server.SignIn(t, sarasEmail)
-	server.GrantRole(t, sarasEmail, "viewer", "all") // 014: every market's plans
+	server.GrantRole(t, sarasEmail, "viewer", "all")
 
 	mine := get[home.PlanPage](t, sara, "/api/v1/home/plans?scope=myTeams")
 	all := get[home.PlanPage](t, sara, "/api/v1/home/plans?scope=everything")
@@ -152,11 +142,7 @@ func TestHomePlans_Contract(t *testing.T) {
 	}
 }
 
-// User story 3 — Know what needs me.
-
-// Priya's Declined activity comes first, with who declined it, when and why; her Launch film lists the
-// fields it still needs. Alex sees his FY2027 campaign whose initiatives' budgets exceed its own (FR-011,
-// FR-012, US3 scenarios 1 and 3).
+// Alex sees his FY2027 campaign whose initiatives' budgets exceed its own.
 func TestHomeAttention_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -208,9 +194,7 @@ func TestHomeAttention_Contract(t *testing.T) {
 	}
 }
 
-// Daniel's Waiting for my approval lists Trade magazine ads at Level 1 of 1, waiting since its
-// resubmission; Alex's lists Fleet card launch at level 2 of 2; nothing waits for Priya (FR-013, US3
-// scenarios 5 and 6).
+// Daniel waits on Trade magazine ads at Level 1 of 1, Alex on Fleet card launch at level 2 of 2; Priya on nothing.
 func TestHomeWaiting_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -239,10 +223,6 @@ func TestHomeWaiting_Contract(t *testing.T) {
 	}
 }
 
-// User story 4 — Follow my activities.
-
-// Priya's seeded activities each appear under the status their page shows, in the order Declined,
-// Created, Submitted, Approved, In progress, Complete (FR-014, US4 scenario 1).
 func TestHomeMyActivities_Contract(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)

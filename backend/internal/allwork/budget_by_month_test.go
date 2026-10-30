@@ -7,21 +7,17 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// The Budget by month tests (016 FR-024, data-model §3.4) build one GBP plan of 2027 by hand: P-1 with a
-// 120,000.00 GBP budget phased evenly (10,000.00 a month), campaign C-1 (60,000.00 GBP, custom: 30,000.00 in
-// March and in June) with initiatives I-1 (phased evenly over its 12,000.00 GBP) and I-2 (not phased).
+// One GBP plan of 2027: P-1 120,000.00 phased evenly; C-1 60,000.00 custom (30,000.00 in March and June)
+// with I-1 (12,000.00 phased evenly) and I-2 (not phased).
 
-// gbp is an amount in GBP of the tests.
 func gbp(text string) *money.Money {
 	return &money.Money{Amount: amountOf(text), Currency: "GBP"}
 }
 
-// phasedEvenly returns the 12 evenly phased months of budget.
 func phasedEvenly(budget string) []money.Amount {
 	return amountOf(budget).SplitEvenly(12)
 }
 
-// phasingNodes are the plan, its campaign and initiatives, and the activities of each test.
 func phasingNodes(activities ...Node) []Node {
 	custom := make([]money.Amount, 12)
 	custom[2], custom[5] = amountOf("30000.00"), amountOf("30000.00")
@@ -38,7 +34,6 @@ func phasingNodes(activities ...Node) []Node {
 	return append(nodes, activities...)
 }
 
-// activityNode is an activity of I-1 with a planned cost in GBP over months.
 func activityNode(id, planned string, months ...string) Node {
 	n := Node{Level: LevelActivity, ID: id, ParentID: "I-1", PlanID: "P-1", Name: id, PlanCurrency: "GBP", Months: months}
 	if planned != "" {
@@ -47,7 +42,6 @@ func activityNode(id, planned string, months ...string) Node {
 	return n
 }
 
-// lineItemNode is a line item of an activity with its months in the plan currency.
 func lineItemNode(id, activityID, total string, unspread string, months ...string) Node {
 	n := Node{Level: LevelLineItem, ID: id, ParentID: activityID, PlanID: "P-1", Name: id, PlannedCostPlan: gbp(total)}
 	for i := 0; i+1 < len(months); i += 2 {
@@ -59,7 +53,6 @@ func lineItemNode(id, activityID, total string, unspread string, months ...strin
 	return n
 }
 
-// phasedRowOf returns the Budget by month row of the record id.
 func phasedRowOf(t *testing.T, b BudgetByMonth, id string) BudgetByMonthRow {
 	t.Helper()
 	for _, r := range b.Rows {
@@ -71,7 +64,6 @@ func phasedRowOf(t *testing.T, b BudgetByMonth, id string) BudgetByMonthRow {
 	return BudgetByMonthRow{}
 }
 
-// texts writes amounts as "1,000.00", "—" for none.
 func texts(amounts []*money.Money) []string {
 	list := []string{}
 	for _, a := range amounts {
@@ -84,7 +76,6 @@ func texts(amounts []*money.Money) []string {
 	return list
 }
 
-// plainTexts writes amounts as "1,000.00".
 func plainTexts(amounts []money.Money) []string {
 	list := []string{}
 	for _, a := range amounts {
@@ -93,10 +84,7 @@ func plainTexts(amounts []money.Money) []string {
 	return list
 }
 
-// The planned cost by month is in the plan currency: line items by their months (already converted with
-// ConvertParts by the source), a positive unassigned balance spread evenly over its activity's months, a
-// negative one never; an activity without dates and amounts that cannot be spread go to No dates, months of
-// other years to Other years (FR-024, data-model §3.4).
+// Line items count by month; a positive unassigned balance is spread over its activity's months, a negative one never.
 func TestPlannedByMonth_PlanCurrency_FR024(t *testing.T) {
 	t.Parallel()
 	nodes := phasingNodes(
@@ -126,8 +114,6 @@ func TestPlannedByMonth_PlanCurrency_FR024(t *testing.T) {
 	}
 }
 
-// Each row counts the activities below it whose line items exceed their planned cost, so the card can say
-// why its months add up to more than the planned cost (038 FR-024, L-2).
 func TestBudgetByMonth_NegativeBalanceCount_038_FR024_L2(t *testing.T) {
 	t.Parallel()
 	nodes := phasingNodes(
@@ -148,13 +134,11 @@ func TestBudgetByMonth_NegativeBalanceCount_038_FR024_L2(t *testing.T) {
 	}
 }
 
-// The rows: Budget (phased, "—" when not phased), Planned cost, Difference (only when phased), Allocated to the
-// children (plans and campaigns; null for initiatives) and the over flags; "2 campaigns are not phased" is
-// the count of children without phasing (FR-024).
+// Budget is "—" when not phased, Difference only when phased, Allocated null for initiatives.
 func TestBudgetByMonth_Rows_FR024(t *testing.T) {
 	t.Parallel()
 	nodes := phasingNodes(
-		activityNode("A-1", "15000.00", "2027-03"), // 15,000.00 in March in I-1
+		activityNode("A-1", "15000.00", "2027-03"),
 	)
 
 	result := budgetByMonth(buildTree(nodes), 2027)
@@ -171,7 +155,6 @@ func TestBudgetByMonth_Rows_FR024(t *testing.T) {
 		!plan.Months.Over[2] || plan.Months.Over[0] {
 		t.Errorf("plan = %+v", plan.Months)
 	}
-	// The campaign's phased budget allocates 30,000.00 in March and June, above the plan's 10,000.00.
 	if plan.Months.Allocated == nil || texts(*plan.Months.Allocated)[2] != "30,000.00" || !plan.Months.Over[5] || plan.ChildrenNotPhased != 0 {
 		t.Errorf("plan allocated = %v, over %v", plan.Months.Allocated, plan.Months.Over)
 	}
@@ -193,7 +176,6 @@ func TestBudgetByMonth_Rows_FR024(t *testing.T) {
 	}
 }
 
-// The planned cost by month, with Other years and No dates, adds up to the plan's planned cost (SC-004).
 func TestBudgetByMonth_EqualsBudgetAndCost_SC004(t *testing.T) {
 	t.Parallel()
 	nodes := phasingNodes(

@@ -10,8 +10,6 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// The person's own activities count in every plan, also outside their teams and whatever the scope (edge
-// case, FR-003 hint).
 func TestSummary_OwnedActivitiesCoverAllPlans_EdgeCase(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()
@@ -30,7 +28,6 @@ func TestSummary_OwnedActivitiesCoverAllPlans_EdgeCase(t *testing.T) {
 	}
 }
 
-// countsText writes the Activities I own card as "9 (1 declined, 1 submitted) in 2026–2027".
 func countsText(c ActivityCounts) string {
 	years := "no years"
 	if c.YearFrom != nil && c.YearTo != nil {
@@ -39,8 +36,7 @@ func countsText(c ActivityCounts) string {
 	return fmt.Sprintf("%d (%d declined, %d submitted) in %s", c.Count, c.Declined, c.Submitted, years)
 }
 
-// The card covers the plan years of the person's activities, at most five from the earliest, and counts only
-// the activities of those years, as All work on those years lists them (038 FR-032, M-5; D-357).
+// The card covers at most five plan years from the earliest, as All work on those years lists them (D-357).
 func TestSummary_OwnedActivitiesYears_038_FR032_M5(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()
@@ -62,8 +58,7 @@ func TestSummary_OwnedActivitiesYears_038_FR032_M5(t *testing.T) {
 	}
 }
 
-// Budget used is the total planned cost of the plans in scope over their total plan budget, half up to a
-// whole percent; over budget is compared exactly, so 100.4 % shows 100 and is over (FR-006, D-176).
+// Budget used rounds half up to a whole percent, but over budget compares exactly: 100.4 % shows 100 and is over.
 func TestSummary_BudgetUsed_FR006(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()
@@ -96,7 +91,6 @@ func TestSummary_BudgetUsed_FR006(t *testing.T) {
 	}
 }
 
-// Plans without a budget add their planned cost but no budget, and are counted (FR-006, edge case).
 func TestSummary_PlansWithoutBudget_FR006(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()
@@ -117,8 +111,6 @@ func TestSummary_PlansWithoutBudget_FR006(t *testing.T) {
 	}
 }
 
-// Without any plan budget the card shows "—" and "No plan budgets set"; without plans, nothing at all
-// (FR-006).
 func TestSummary_NoBudgetAtAll_FR006(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()
@@ -140,8 +132,7 @@ func TestSummary_NoBudgetAtAll_FR006(t *testing.T) {
 	}
 }
 
-// Totals are added in US dollars and converted once: 1,000.05 + 1,000.05 USD at 0.92 is 1,840.09 EUR, not
-// the 1,840.10 of two converted amounts (FR-017, D-010).
+// 1,000.05 + 1,000.05 USD at 0.92 is 1,840.09 EUR, not the 1,840.10 of two converted amounts.
 func TestSummary_TotalsConvertedOnce_FR017(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()
@@ -162,10 +153,6 @@ func TestSummary_TotalsConvertedOnce_FR017(t *testing.T) {
 	}
 }
 
-// User story 5 — Get started as a new user.
-
-// Getting started shows for a person in no team (notInTeam) and for one whose teams have no plan
-// (noTeamPlans), in both scopes; once one of their teams has a plan it is gone (FR-020, D-170, US5).
 func TestSummary_GettingStarted_FR020(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()
@@ -200,8 +187,6 @@ func TestSummary_GettingStarted_FR020(t *testing.T) {
 	}
 }
 
-// A display currency set inactive in Settings stays in use with its rate, as on every other page (D-201,
-// D-063, D-217).
 func TestSummary_InactiveDisplayCurrencyStaysInUse(t *testing.T) {
 	t.Parallel()
 	f := newFakeSources()

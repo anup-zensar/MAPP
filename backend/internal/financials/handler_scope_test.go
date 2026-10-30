@@ -10,8 +10,7 @@ import (
 
 const meisEmail = "mei.lin@shell.com"
 
-// sameBody checks that a probe of a record outside the person's scope answers byte for byte what the probe of
-// a missing record answers.
+// sameBody checks that probing a record outside the scope answers byte for byte as probing a missing one.
 func sameBody(t *testing.T, probe string, hidden, missing *apitest.Response) {
 	t.Helper()
 	if hidden.Status != missing.Status || !bytes.Equal(hidden.Body, missing.Body) {
@@ -19,10 +18,7 @@ func sameBody(t *testing.T, probe string, hidden, missing *apitest.Response) {
 	}
 }
 
-// Mei, a planner of Mobility China who does not import, gets for a not-linked transaction and for one of
-// another market exactly the answers of a missing transaction, and no Not linked count; with a role that
-// imports and links in her teams, a line item of another market answers as a missing one
-// (038 FR-004, FR-007, H-5).
+// Mei does not import: a not-linked transaction, or a record of another market, answers as a missing one.
 func TestLinkScopeParity_038_FR007_H5(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)

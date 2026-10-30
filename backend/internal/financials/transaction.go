@@ -11,10 +11,8 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// Transaction returns one transaction with every field of the details panel (FR-022). A linked
-// transaction needs access to its plan's financial data, forbidden otherwise; a not-linked one needs the
-// right to import (D-301, D-353). A plan outside a's access, or a not-linked one without import, answers
-// not_found.
+// Transaction needs access to a linked transaction's plan (forbidden otherwise) and the right to import for a
+// not-linked one; a plan outside a's access, or a not-linked one without import, answers not_found (D-301, D-353).
 func (s *Service) Transaction(ctx context.Context, a actor.Actor, id string) (TransactionView, error) {
 	var view TransactionView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -41,7 +39,6 @@ func (s *Service) Transaction(ctx context.Context, a actor.Actor, id string) (Tr
 	return view, nil
 }
 
-// mayOpen checks that a may open t (D-301, D-353).
 func (s *Service) mayOpen(ctx context.Context, a actor.Actor, b *book, t *Transaction) error {
 	li := b.lineItemOf(t)
 	if li == nil {
@@ -61,15 +58,13 @@ func (s *Service) mayOpen(ctx context.Context, a actor.Actor, b *book, t *Transa
 	}
 }
 
-// isHidden reports whether an access check answered not_found: the record is outside the person's access,
-// which must look exactly like a missing record (constitution VII).
+// isHidden reports an access check's not_found, which must look exactly like a missing record (constitution VII).
 func isHidden(err error) bool {
 	var apiErr *errs.Error
 	return errors.As(err, &apiErr) && apiErr.Code == errs.CodeNotFound
 }
 
-// orGone answers gone, the answer for a missing record, when an access check found the record outside the
-// person's access, and err otherwise.
+// orGone answers gone when an access check found the record outside the access, and err otherwise.
 func orGone(err, gone error) error {
 	if isHidden(err) {
 		return gone
@@ -77,7 +72,6 @@ func orGone(err, gone error) error {
 	return err
 }
 
-// find returns the transaction id, nil when there is none.
 func (b *book) find(id string) *Transaction {
 	i := slices.IndexFunc(b.all, func(t *Transaction) bool { return t.ID == id })
 	if i < 0 {
@@ -86,7 +80,6 @@ func (b *book) find(id string) *Transaction {
 	return b.all[i]
 }
 
-// transactionView returns t with every field of the details panel, and what a may do with it.
 func (s *Service) transactionView(ctx context.Context, a actor.Actor, b *book, t *Transaction) TransactionView {
 	r := b.row(t)
 	v := TransactionView{

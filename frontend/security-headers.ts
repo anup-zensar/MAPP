@@ -2,12 +2,6 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-/**
- * The security headers of every web page (038 FR-015, D-355, research R7): one source for the Vite
- * preview (enforced), the Vite dev server (report only) and nginx.conf, which a test keeps equal.
- */
-
-/** The sha256 of index.html's one inline script, the theme script, exactly as the browser hashes it. */
 function themeScriptHash(): string {
   const html = readFileSync(join(import.meta.dirname, 'index.html'), 'utf8');
   const script = /<script>([\s\S]*?)<\/script>/.exec(html)?.[1];
