@@ -47,7 +47,7 @@ rows; 6 user stories, 45 functional requirements
 |---|---|
 | **I. Spec-First** | Every item below traces to an FR in [spec.md](./spec.md); test names carry the FR they prove |
 | **II. Plain Language** | Shell vocabulary only: Activity, not Tactic; *data source*, *performance fact*, *row to review*, *media code*. No Hive9 interface terms |
-| **III. Documented Design** | ADR-0020 records the simulated-feed decision; `contracts/api.md` feeds the wave B contract; `data-model.md` covers the four new tables |
+| **III. Documented Design** | ADR-0020 records the simulated-feed decision; `contracts/api.md` feeds the wave B contract; `data-model.md` covers the eight tables |
 | **IV. Two Parts, Server Authoritative** | Matching, validation and every count happen in the service layer; the web app renders what the API returns and recomputes no figure |
 | **V. Simplicity** | One package `internal/performance` with the standard `model · store · store_postgres · service · handler` split, each file within 300 non-blank lines; no new framework |
 | **VI. Meaningful Tests** | A unit test per rule, a contract test per operation, a scope-isolation test per scoped store read, one test per rendered state, an e2e per P1 story. Fixed clock and seed |
@@ -69,7 +69,7 @@ specs/046-performance-data/
 ├── spec.md
 ├── plan.md              # this file
 ├── research.md          # the four real choices
-├── data-model.md        # the four new tables
+├── data-model.md        # eight tables across migrations 00030-00032
 ├── contracts/api.md     # operations for the wave B contract
 ├── checklists/requirements.md
 └── tasks.md             # /speckit-tasks output, not created here
