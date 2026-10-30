@@ -17,12 +17,7 @@ export interface DeletePurchaseRequestDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-/**
- * Delete purchase request (032 FR-042, FR-055; 038 FR-013): names the lines and the line items whose
- * money is released, then moves it to the recycle bin with Undo and opens Purchase requests (its
- * first line item when the person may not see that page). The deleted record is never asked for
- * again: its queries are dropped and the lists refreshed only once the page has gone.
- */
+/** Delete purchase request with Undo (032 FR-042, FR-055; 038 FR-013): never asks for it again. */
 export function DeletePurchaseRequestDialog({
   purchaseRequest,
   open,
@@ -46,9 +41,11 @@ export function DeletePurchaseRequestDialog({
   async function confirm() {
     try {
       const result = await remove.mutateAsync();
-      queryClient.removeQueries({ predicate: (query) => isOf(query.queryKey, purchaseRequest.id) });
       onOpenChange(false);
       await navigate(landing());
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey.includes(purchaseRequest.id),
+      });
       afterDelete(result);
     } catch {
       // The refusal is shown in the dialog (remove.error).
@@ -74,9 +71,4 @@ export function DeletePurchaseRequestDialog({
       )}
     </ConfirmDialog>
   );
-}
-
-/** Whether a query is one of the purchase request's own: its page, approval, submission and so on. */
-function isOf(queryKey: readonly unknown[], id: string): boolean {
-  return queryKey[0] === purchaseRequestKeys.all[0] && queryKey.includes(id);
 }

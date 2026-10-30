@@ -83,6 +83,19 @@ describe('038 FR-013 (H-3): delete a purchase request from its page', () => {
     expect(askedAgain(api.requests)).toEqual([]);
   });
 
+  it("038 FR-013 (L-3): never asks for the deleted record's history after the delete", async () => {
+    const { api, user, router } = renderPage(testUser());
+    await screen.findByRole('heading', { level: 1, name: 'PR for Stand build' });
+
+    await deleteFromPage(user);
+
+    await findMessages();
+    await vi.waitFor(() => expect(router.state.location.pathname).toBe('/purchase-requests'));
+    const at = api.requests.findIndex((r) => r.method === 'DELETE');
+    const after = api.requests.slice(at + 1).map((r) => `${r.method} ${r.path}${r.search}`);
+    expect(after.filter((request) => request.includes('PR-1002'))).toEqual([]);
+  });
+
   it('lands on the line item when the person may not see the Purchase requests page', async () => {
     const { user, router } = renderPage(VIEWER);
 
