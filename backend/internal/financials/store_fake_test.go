@@ -2,6 +2,7 @@ package financials
 
 import (
 	"context"
+	"slices"
 
 	"mapp/internal/platform/fake"
 )
@@ -21,6 +22,12 @@ func newFakeStore(db *fake.DB) fakeStore {
 
 func (s fakeStore) ListTransactions(context.Context) ([]Transaction, error) {
 	return s.transactions.List()
+}
+
+func (s fakeStore) SpendOnLineItems(_ context.Context, lineItemIDs []string) ([]Transaction, error) {
+	return s.transactions.Where(func(t Transaction) bool {
+		return t.spend() && slices.Contains(lineItemIDs, t.LineItemID)
+	})
 }
 
 func (s fakeStore) GetTransaction(_ context.Context, id string) (Transaction, bool, error) {

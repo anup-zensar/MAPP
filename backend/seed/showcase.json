@@ -53,6 +53,19 @@
       },
       "split": {"Country / OU": ["Germany", "100.00"], "Brands": ["Tellus", "70.00", "Spirax", "30.00"]},
       "choice": {"Company code": "DE03", "Cost centre": "DE03000150", "PIR": "Yes", "FIT4 initiative": "Not FIT4", "Product launch": "Yes – relaunch"}
+    },
+    "motorsport": {
+      "choices": {
+        "Channel / audience": ["External", "Partners"],
+        "Global campaign": ["Helix Ultra global platform"],
+        "Growth ambition": ["LUBRICANTS – Premium growth"],
+        "Global key accounts": ["Account A – Automotive OEM"],
+        "Sector": ["Automotive"],
+        "Sub-sector": ["Passenger cars"],
+        "Zero-based cost hierarchy": ["LUBES - Strategic Priorities"]
+      },
+      "split": {"Country / OU": ["United Kingdom", "60.00", "Germany", "40.00"], "Brands": ["Helix", "100.00"]},
+      "choice": {"Company code": "GB01", "Cost centre": "GB01000105", "PIR": "Yes", "FIT4 initiative": "Not FIT4", "Product launch": "Yes – relaunch"}
     }
   },
   "plans": [
@@ -675,6 +688,422 @@
                     "text": {"FIT4 ID": "FIT4-0306"},
                     "split": {"Country / OU": ["United Kingdom", "100.00"]},
                     "choice": {"Company code": "GB01", "Cost centre": "GB01000105"}
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "FY2026 Shell Motorsport – Ferrari, Ducati & Race-to-Road",
+      "year": 2026,
+      "model": "Lubricants 1.0",
+      "team": "Global Marketing Ops",
+      "owner": "Alex Morgan",
+      "budget": "1400000.00",
+      "status": "published",
+      "businessUnits": ["Lubricants", "Mobility"],
+      "smp": true,
+      "goalStage": "inq",
+      "goalAmount": "500000",
+      "financeBudget": "2026 Lubricants Budget",
+      "overspend": "warn",
+      "description": "Shell's motorsport platform for 2026: Scuderia Ferrari HP in Formula 1, Ducati Lenovo in MotoGP with Shell Advance, and V-Power Nitro+ taking the race to the road. Overspend set to Warn: the plan is planned 120,000.00 above its budget on purpose.",
+      "campaigns": [
+        {
+          "name": "Scuderia Ferrari HP – F1 2026 season",
+          "owner": "Alex Morgan",
+          "start": "2026-02-01",
+          "end": "2026-12-15",
+          "budget": "800000.00",
+          "attributes": {
+            "choices": {"Cluster": ["Lubricants – Europe"], "Region": ["LUBES – UK & IRELAND"]},
+            "yesNo": {"Insight session completed": true, "Workshop completed": true, "Global GM sign-off completed": true}
+          },
+          "initiatives": [
+            {
+              "name": "Race-weekend fan activations",
+              "owner": "Alex Morgan",
+              "start": "2026-03-01",
+              "end": "2026-11-30",
+              "budget": "450000.00",
+              "attributes": {
+                "choices": {"Growth ambition": ["LUBRICANTS – Premium growth"]},
+                "choice": {"Function": "Marketing", "Focus area": "Brand"},
+                "yesNo": {"FIT4 initiative": false}
+              },
+              "activities": [
+                {
+                  "name": "British GP Silverstone fan zone",
+                  "type": "Event",
+                  "status": "approved",
+                  "owner": "Alex Morgan",
+                  "start": "2026-07-01",
+                  "end": "2026-07-06",
+                  "plannedCost": "260000.00",
+                  "workflow": "Lubricants EU approval",
+                  "preset": "motorsport",
+                  "inq": 25000,
+                  "lineItems": [
+                    {
+                      "name": "Fan-zone build & staffing",
+                      "currency": "GBP",
+                      "plannedCost": "126400.00",
+                      "spread": "firstMonth",
+                      "spendType": "BTL - Event",
+                      "glCode": "7250150 - Sponsorship programmes",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Events"
+                    },
+                    {
+                      "name": "Helix Ultra sampling & merchandise",
+                      "currency": "USD",
+                      "plannedCost": "70000.00",
+                      "spread": "firstMonth",
+                      "spendType": "BTL - Merchandise",
+                      "glCode": "7250310 - Promotions & POP - Agency/Print/Logistics",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Events"
+                    }
+                  ],
+                  "attributes": {"text": {"FIT4 ID": "FIT4-0401"}},
+                  "approval": {"submittedBy": "Alex Morgan", "daysAgo": 28, "approvers": ["Daniel Okoro"]}
+                },
+                {
+                  "name": "Singapore GP night-race hospitality",
+                  "type": "Sponsorship",
+                  "status": "created",
+                  "owner": "Alex Morgan",
+                  "start": "2026-10-01",
+                  "end": "2026-10-05",
+                  "plannedCost": "240000.00",
+                  "workflow": "Lubricants EU approval",
+                  "preset": "motorsport",
+                  "inq": 8000,
+                  "lineItems": [
+                    {
+                      "name": "Paddock Club hospitality",
+                      "currency": "USD",
+                      "plannedCost": "150000.00",
+                      "spread": "firstMonth",
+                      "spendType": "ATL - Sponsorships",
+                      "glCode": "7250150 - Sponsorship programmes",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Brand"
+                    },
+                    {
+                      "name": "Trade partner travel",
+                      "currency": "USD",
+                      "plannedCost": "60000.00",
+                      "spread": "firstMonth",
+                      "spendType": "BTL - Customer Meetings/Conference",
+                      "glCode": "7250150 - Sponsorship programmes",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Events"
+                    }
+                  ],
+                  "attributes": {
+                    "text": {"FIT4 ID": "FIT4-0402"},
+                    "split": {"Country / OU": ["Singapore", "100.00"]},
+                    "choice": {"Company code": "SG06", "Cost centre": "SG06000077"}
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Ferrari co-branded content",
+              "owner": "Alex Morgan",
+              "start": "2026-02-01",
+              "end": "2026-12-15",
+              "budget": "300000.00",
+              "attributes": {
+                "choices": {"Growth ambition": ["LUBRICANTS – Premium growth"]},
+                "choice": {"Function": "Digital", "Focus area": "Brand"},
+                "yesNo": {"FIT4 initiative": false}
+              },
+              "activities": [
+                {
+                  "name": "Helix Ultra × Ferrari 'Engineered for speed' film",
+                  "type": "Content production",
+                  "status": "approved",
+                  "owner": "Alex Morgan",
+                  "start": "2026-02-01",
+                  "end": "2026-05-31",
+                  "plannedCost": "180000.00",
+                  "workflow": "Lubricants EU approval",
+                  "preset": "motorsport",
+                  "inq": 60000,
+                  "lineItems": [
+                    {
+                      "name": "Film production",
+                      "currency": "USD",
+                      "plannedCost": "120000.00",
+                      "spread": "evenly",
+                      "spendType": "ATL - Agency Fees - Creative",
+                      "glCode": "7250060 - Advertising - Corp/Agency/Production",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Brand"
+                    },
+                    {
+                      "name": "Paid social amplification",
+                      "currency": "USD",
+                      "plannedCost": "55000.00",
+                      "spread": "evenly",
+                      "spendType": "ATL - Digital",
+                      "glCode": "7250080 - Advertising - Digital",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Digital"
+                    }
+                  ],
+                  "attributes": {"text": {"FIT4 ID": "FIT4-0403"}},
+                  "approval": {"submittedBy": "Alex Morgan", "daysAgo": 40, "approvers": ["Daniel Okoro"]}
+                },
+                {
+                  "name": "Driver-content always-on",
+                  "type": "Digital media",
+                  "status": "created",
+                  "owner": "Alex Morgan",
+                  "start": "2026-03-01",
+                  "end": "2026-12-15",
+                  "plannedCost": "140000.00",
+                  "workflow": "Lubricants EU approval",
+                  "preset": "motorsport",
+                  "inq": 90000,
+                  "lineItems": [
+                    {
+                      "name": "Creator & driver content",
+                      "currency": "USD",
+                      "plannedCost": "80000.00",
+                      "spread": "evenly",
+                      "spendType": "ATL - Digital",
+                      "glCode": "7250080 - Advertising - Digital",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Digital"
+                    },
+                    {
+                      "name": "Media buying",
+                      "currency": "EUR",
+                      "plannedCost": "46000.00",
+                      "spread": "evenly",
+                      "spendType": "ATL - Paid Media Campaign Activation",
+                      "glCode": "7250070 - Advertising - Media Buying",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Digital"
+                    }
+                  ],
+                  "attributes": {"text": {"FIT4 ID": "FIT4-0404"}}
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Ducati Lenovo – MotoGP with Shell Advance",
+          "owner": "Alex Morgan",
+          "start": "2026-03-01",
+          "end": "2026-11-30",
+          "budget": "400000.00",
+          "attributes": {
+            "choices": {"Cluster": ["Lubricants – Asia Pacific"], "Region": ["LUBES – SOUTH EAST ASIA"]},
+            "yesNo": {"Insight session completed": true, "Workshop completed": true, "Global GM sign-off completed": true}
+          },
+          "initiatives": [
+            {
+              "name": "Two-wheeler markets activation",
+              "owner": "Alex Morgan",
+              "start": "2026-03-01",
+              "end": "2026-11-30",
+              "budget": "380000.00",
+              "attributes": {
+                "choices": {"Growth ambition": ["LUBRICANTS – B2B expansion"]},
+                "choice": {"Function": "Sales", "Focus area": "Customer acquisition"},
+                "yesNo": {"FIT4 initiative": false}
+              },
+              "activities": [
+                {
+                  "name": "Mandalika & Sepang race activations",
+                  "type": "Event",
+                  "status": "approved",
+                  "owner": "Alex Morgan",
+                  "start": "2026-09-15",
+                  "end": "2026-10-10",
+                  "plannedCost": "210000.00",
+                  "workflow": "Lubricants EU approval",
+                  "preset": "motorsport",
+                  "inq": 40000,
+                  "lineItems": [
+                    {
+                      "name": "Circuit activations",
+                      "currency": "USD",
+                      "plannedCost": "140000.00",
+                      "spread": "firstMonth",
+                      "spendType": "BTL - Event",
+                      "glCode": "7250150 - Sponsorship programmes",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Events"
+                    },
+                    {
+                      "name": "Dealer & workshop incentives",
+                      "currency": "USD",
+                      "plannedCost": "50000.00",
+                      "spread": "evenly",
+                      "spendType": "BTL - Incentive Scheme",
+                      "glCode": "7250300 - Promotions & POP - Incentives/Reimbursement",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Events"
+                    }
+                  ],
+                  "attributes": {
+                    "text": {"FIT4 ID": "FIT4-0405"},
+                    "split": {"Country / OU": ["Singapore", "100.00"]},
+                    "choice": {"Company code": "SG06", "Cost centre": "SG06000077"}
+                  },
+                  "approval": {"submittedBy": "Alex Morgan", "daysAgo": 15, "approvers": ["Daniel Okoro"]}
+                },
+                {
+                  "name": "Rider safety & oil-change campaign",
+                  "type": "Digital media",
+                  "status": "created",
+                  "owner": "Alex Morgan",
+                  "start": "2026-04-01",
+                  "end": "2026-09-30",
+                  "plannedCost": "190000.00",
+                  "workflow": "Lubricants EU approval",
+                  "preset": "motorsport",
+                  "inq": 120000,
+                  "lineItems": [
+                    {
+                      "name": "Digital media buy",
+                      "currency": "USD",
+                      "plannedCost": "110000.00",
+                      "spread": "evenly",
+                      "spendType": "ATL - Digital",
+                      "glCode": "7250080 - Advertising - Digital",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Digital"
+                    },
+                    {
+                      "name": "Workshop POS kits",
+                      "currency": "USD",
+                      "plannedCost": "60000.00",
+                      "spread": "evenly",
+                      "spendType": "BTL - Promotions",
+                      "glCode": "7250310 - Promotions & POP - Agency/Print/Logistics",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Digital"
+                    }
+                  ],
+                  "attributes": {
+                    "text": {"FIT4 ID": "FIT4-0406"},
+                    "split": {"Country / OU": ["Singapore", "100.00"]},
+                    "choice": {"Company code": "SG06", "Cost centre": "SG06000077"}
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "V-Power Nitro+ race-to-road",
+          "owner": "Alex Morgan",
+          "start": "2026-04-01",
+          "end": "2026-12-31",
+          "budget": "300000.00",
+          "attributes": {
+            "choices": {"Cluster": ["Lubricants – Europe"], "Region": ["LUBES – DACH"]},
+            "yesNo": {"Insight session completed": true, "Workshop completed": true, "Global GM sign-off completed": true}
+          },
+          "initiatives": [
+            {
+              "name": "Forecourt race-to-road",
+              "owner": "Alex Morgan",
+              "start": "2026-04-01",
+              "end": "2026-12-31",
+              "budget": "300000.00",
+              "attributes": {
+                "choices": {"Growth ambition": ["MOBILITY – Convenience retail"]},
+                "choice": {"Function": "Marketing", "Focus area": "Product launch"},
+                "yesNo": {"FIT4 initiative": false}
+              },
+              "activities": [
+                {
+                  "name": "Ferrari show cars on forecourts",
+                  "type": "Event",
+                  "status": "created",
+                  "owner": "Alex Morgan",
+                  "start": "2026-05-01",
+                  "end": "2026-08-31",
+                  "plannedCost": "180000.00",
+                  "workflow": "Lubricants EU approval",
+                  "preset": "motorsport",
+                  "inq": 30000,
+                  "lineItems": [
+                    {
+                      "name": "Show-car logistics & insurance",
+                      "currency": "EUR",
+                      "plannedCost": "92000.00",
+                      "spread": "evenly",
+                      "spendType": "BTL - Event",
+                      "glCode": "7250150 - Sponsorship programmes",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Events"
+                    },
+                    {
+                      "name": "Forecourt POS & digital screens",
+                      "currency": "USD",
+                      "plannedCost": "60000.00",
+                      "spread": "evenly",
+                      "spendType": "BTL - Branded Shop",
+                      "glCode": "7250310 - Promotions & POP - Agency/Print/Logistics",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Brand"
+                    }
+                  ],
+                  "attributes": {
+                    "text": {"FIT4 ID": "FIT4-0407"},
+                    "split": {"Country / OU": ["Germany", "100.00"]},
+                    "choice": {"Company code": "DE03", "Cost centre": "DE03000150"}
+                  }
+                },
+                {
+                  "name": "Race-to-road loyalty sweepstake",
+                  "type": "Digital media",
+                  "status": "created",
+                  "owner": "Alex Morgan",
+                  "start": "2026-06-01",
+                  "end": "2026-09-30",
+                  "plannedCost": "120000.00",
+                  "workflow": "Lubricants EU approval",
+                  "preset": "motorsport",
+                  "inq": 70000,
+                  "lineItems": [
+                    {
+                      "name": "Prize fund – Ferrari experiences",
+                      "currency": "USD",
+                      "plannedCost": "80000.00",
+                      "spread": "lastMonth",
+                      "spendType": "BTL - Promotions",
+                      "glCode": "7250300 - Promotions & POP - Incentives/Reimbursement",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Brand"
+                    },
+                    {
+                      "name": "CRM & app integration",
+                      "currency": "USD",
+                      "plannedCost": "30000.00",
+                      "spread": "evenly",
+                      "spendType": "CRM - Agency Fee",
+                      "glCode": "7250060 - Advertising - Corp/Agency/Production",
+                      "budget": "2026 Lubricants Budget",
+                      "item": "Europe – Digital"
+                    }
+                  ],
+                  "attributes": {
+                    "text": {"FIT4 ID": "FIT4-0408"},
+                    "split": {"Country / OU": ["Germany", "100.00"]},
+                    "choice": {"Company code": "DE03", "Cost centre": "DE03000150"}
                   }
                 }
               ]

@@ -14,13 +14,9 @@ import (
 	"mapp/internal/platform/record"
 )
 
-// standardFlow is the fixture's copy of the seeded "Standard marketing approval" (017 data-model §13).
+// standardFlow is the fixture's copy of the seeded "Standard marketing approval".
 const standardFlow = "WF-1003"
 
-// addStandardFlow stores "Standard marketing approval": level 1 the owner's line manager, approved
-// automatically below $10,000.00 (backup Alex Morgan); level 2 Alex Morgan, only from $100,000.00 (backup
-// Carlos Mendes); level 3 Daniel Okoro and Alex Morgan, all must approve, only for Mobility (backup Carlos
-// Mendes); remind after 3 days, escalate after 5.
 func (f *fixture) addStandardFlow(t *testing.T) {
 	t.Helper()
 	f.putWorkflow(t, standardFlow, "Standard marketing approval", days(3), days(5),
@@ -33,7 +29,6 @@ func (f *fixture) addStandardFlow(t *testing.T) {
 	)
 }
 
-// setFacts changes the planned cost (a USD text) and business unit of the stored activity id.
 func (f *fixture) setFacts(t *testing.T, id, cost, unit string) {
 	t.Helper()
 	facts := f.activities.facts[id]
@@ -44,7 +39,6 @@ func (f *fixture) setFacts(t *testing.T, id, cost, unit string) {
 	f.activities.facts[id] = facts
 }
 
-// delegate stores a delegation of person to delegate from the first to the last day (UTC dates).
 func (f *fixture) delegate(t *testing.T, id string, person, delegate actor.Actor, from, to date.Date) {
 	t.Helper()
 	f.write(t, func(ctx context.Context) error {
@@ -53,15 +47,12 @@ func (f *fixture) delegate(t *testing.T, id string, person, delegate actor.Actor
 	})
 }
 
-// today is the fixture clock's date.
 func (f *fixture) today() date.Date {
 	return date.Today(f.clock.Now())
 }
 
-// Submitting evaluates the rules once and keeps the outcome in the round with the values used and the
-// workflow's timings (017 FR-010); levels not needed get a history entry by MAPP with the rule; the
-// round waits at the first level that needs a decision, whose approvers and their current delegates are
-// told (FR-014, FR-032); after it, the round moves to the next level that needs a decision.
+// Submitting evaluates the rules once and keeps the outcome, values and timings in the round; the round waits at
+// the first level that needs a decision, whose approvers and delegates are told, then moves to the next such.
 func TestSubmit_PartlyAutomatic_FR010_FR014(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -113,10 +104,8 @@ func TestSubmit_PartlyAutomatic_FR010_FR014(t *testing.T) {
 	assertNotified(t, f, mei, "levelApproved: Level 1 approved — Carlos Mendes approved level 1 of 3 of 'Fleet card launch' (A-1009)")
 }
 
-// When no level needs a decision the activity is Approved at submission (017 FR-014, 017-P4): the round ends
-// approved and approved automatically, the history has MAPP's entries per level, the log has the
-// submitter's "submitted" and MAPP's "approved automatically", and the owner is told only when someone
-// else submitted.
+// When no level needs a decision the activity is approved automatically at submission, and the owner is told
+// only when someone else submitted.
 func TestSubmit_ApprovedAtSubmission_FR014_017P4(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -167,10 +156,8 @@ func TestSubmit_ApprovedAtSubmission_FR014_017P4(t *testing.T) {
 	}
 }
 
-// An "all must approve" level completes when every approver has approved (017 FR-015): a partial approval
-// keeps the activity Submitted, tells nobody and is logged with the progress; a second approval of the same
-// approver is refused; a delegate's approval counts for the person they act for; an approval on behalf
-// completes the level; any decline declines the activity.
+// An "all must approve" level completes when every approver (or their delegate) has approved, or on an approval
+// on behalf; a partial approval tells nobody, and any decline declines the activity.
 func TestDecide_AllMustApprove_FR015(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -219,9 +206,6 @@ func TestDecide_AllMustApprove_FR015(t *testing.T) {
 	}
 }
 
-// The chain shows the new level states (017 FR-033): Not needed and Approved automatically with their
-// reasons, the approver source, the people left out, "<a> of <b> approved", the backup approver, reminder
-// and escalation times, and "No approver" with its advice.
 func TestApproval_ChainRuleStates_FR033(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -270,7 +254,6 @@ func TestApproval_ChainRuleStates_FR033(t *testing.T) {
 	}
 }
 
-// mustRun runs reminders and escalations as Alex Morgan and stops the test when that fails.
 func (f *fixture) mustRun(t *testing.T) EscalationRun {
 	t.Helper()
 	run, err := f.service.RunEscalations(t.Context(), alex)

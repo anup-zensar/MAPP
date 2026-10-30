@@ -18,12 +18,12 @@ func NewService(tx Transactor, deps Deps, now func() time.Time) *Service {
 	return &Service{tx: tx, deps: deps, now: now}
 }
 
-// Executive is the dashboard of every market the person may see (FR-001 – FR-019).
+// Executive is the dashboard of every market the person may see.
 func (s *Service) Executive(ctx context.Context, a actor.Actor, q Query) (View, error) {
 	return s.view(ctx, a, request{kind: KindExecutive, query: q})
 }
 
-// Regional is the dashboard of one market, with the campaigns of the plan q.PlanID (FR-020 – FR-022).
+// Regional is the dashboard of one market, with the campaigns of the plan q.PlanID.
 func (s *Service) Regional(ctx context.Context, a actor.Actor, q Query) (View, error) {
 	return s.view(ctx, a, request{kind: KindRegional, query: q})
 }
@@ -48,7 +48,7 @@ func (in *input) view() View {
 		Finance:     Finance{Visible: b.financeCount() > 0, PlanCount: b.financeCount()},
 		FinanceAsOf: in.data.FinanceAsOf, Totals: b.total().figures(d), Markets: []MarketRow{},
 		Plans: b.planRows(in.teams, d), PlanCampaigns: b.planCampaigns(in.query.PlanID, d),
-		Months:           b.months(allwork.PlannedByActivity(in.data.Nodes, in.query.Year), in.paid, in.query.Year, d),
+		Months:           b.months(allwork.PlannedByActivity(in.data.Nodes, in.query.Year), in.query.Year, d),
 		Approvals:        b.approvals(in.rounds, in.purchases.Items),
 		PurchaseRequests: b.purchaseRequests(in.purchases, d), Completeness: b.completeness(),
 		GlobalBudgets: in.global, CanExport: in.canExport,

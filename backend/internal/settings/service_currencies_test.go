@@ -12,15 +12,13 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// usdLocked is the reason of every USD lock (FR-028).
 const usdLocked = "USD is SP&A One's base currency; its rate is always 1."
 
-// jpy is the new currency of US4-1.
 func jpy() CurrencyInput {
 	return CurrencyInput{Code: " jpy ", Name: "Japanese yen", Symbol: "¥", Rate: "150"}
 }
 
-// euroLineItems are the line items of US4-3: 14 in EUR in 6 activities, 48,000.00 EUR in all (13 × 874.00 and
+// euroLineItems are 14 line items in EUR in 6 activities, 48,000.00 EUR in all (13 × 874.00 and
 // 36,638.00), so 52,173.91 USD at 0.92 and 50,526.32 USD at 0.95; and, not counted, one EUR line item in
 // the recycle bin and one in GBP.
 func euroLineItems() []Reference {
@@ -35,7 +33,6 @@ func euroLineItems() []Reference {
 	)
 }
 
-// A new currency is listed after USD, active, with its rate both ways and who set the rate (US4-1, FR-028).
 func TestCreateCurrency_JPY_FR028(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -64,7 +61,6 @@ func TestCreateCurrency_JPY_FR028(t *testing.T) {
 	}
 }
 
-// Every problem of a new currency is shown at once (US4-5, FR-028).
 func TestCreateCurrency_AllProblemsAtOnce_FR028(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -84,7 +80,6 @@ func TestCreateCurrency_AllProblemsAtOnce_FR028(t *testing.T) {
 	}
 }
 
-// The code of a saved currency is locked: views say so, and an update has no code to change (FR-028).
 func TestCurrency_CodeLocked_FR028(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -103,7 +98,7 @@ func TestCurrency_CodeLocked_FR028(t *testing.T) {
 	assertError(t, gone, errs.NotFound("This currency no longer exists — someone may have deleted it."))
 }
 
-// USD's rate, status and delete are locked; its name and symbol may change (US4-4, FR-028).
+// USD's rate, status and delete are locked; its name and symbol may change.
 func TestUSD_RateStatusDeleteLocked_FR028(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -122,8 +117,6 @@ func TestUSD_RateStatusDeleteLocked_FR028(t *testing.T) {
 	}
 }
 
-// Before a new rate is saved, the warning says how many live line items in how many activities use the
-// currency and their USD total before and after; nothing is saved (US4-3, FR-030).
 func TestCurrencyImpact_RateChange_FR030(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -149,8 +142,7 @@ func TestCurrencyImpact_RateChange_FR030(t *testing.T) {
 	}
 }
 
-// A new rate is logged with the old and new rate and how many line items were recalculated, and marks who
-// changed the rate and when; a name change does not (FR-006, FR-030).
+// A new rate is logged with how many line items were recalculated and marks who changed it; a name change does not.
 func TestUpdateCurrency_RateChangeLoggedWithDetails_FR006_FR030(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -181,7 +173,7 @@ func TestUpdateCurrency_RateChangeLoggedWithDetails_FR006_FR030(t *testing.T) {
 	assertError(t, stale, errs.VersionConflict("currency", "Alex Morgan", start.Add(2*time.Hour)))
 }
 
-// The rates are every currency's current rate, active or not; a change applies at once (FR-029).
+// The rates are every currency's current rate, active or not; a change applies at once.
 func TestRates_CurrentRateOfEveryCurrency_FR029(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -202,8 +194,7 @@ func TestRates_CurrentRateOfEveryCurrency_FR029(t *testing.T) {
 	}
 }
 
-// A currency counts the line items in it and the people showing amounts in it, those in the recycle bin
-// too (US4-2, FR-003).
+// A currency's usage counts its line items and people, those in the recycle bin too.
 func TestCurrencyUsage_LineItemsAndPeople_FR003(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -217,8 +208,6 @@ func TestCurrencyUsage_LineItemsAndPeople_FR003(t *testing.T) {
 	}
 }
 
-// A currency in use cannot be deleted: the answer says where it is used and to set it inactive instead
-// (FR-004).
 func TestDeleteCurrency_InUseRefused_FR004(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -235,8 +224,7 @@ func TestDeleteCurrency_InUseRefused_FR004(t *testing.T) {
 	assertError(t, gone, errs.NotFound("This currency no longer exists — someone may have deleted it."))
 }
 
-// An unused currency moves to the recycle bin and Undo brings it back exactly; Set inactive and Reactivate
-// are logged (FR-004).
+// Undo brings a deleted currency back exactly; Set inactive and Reactivate are logged.
 func TestDeleteCurrency_Unused_Undo_FR004(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)
@@ -265,8 +253,7 @@ func TestDeleteCurrency_Unused_Undo_FR004(t *testing.T) {
 	}
 }
 
-// A currency whose code another currency took meanwhile cannot come back: a code takes no suffix (FR-028,
-// D-054).
+// A currency whose code another currency took meanwhile cannot come back: a code takes no suffix.
 func TestRestoreCurrency_CodeTaken_FR028(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)

@@ -14,6 +14,7 @@ export const FINANCIALS_CARD = {
   noPlannedCost: 'No planned cost yet',
   empty: 'No purchase orders or invoices for your plans yet.',
   noData: 'No GSAP data loaded yet.',
+  noAccess: "You don't have access to financial data — ask an administrator.",
   meterLabel: 'Committed of planned cost',
 } as const;
 
@@ -42,7 +43,6 @@ export function ofPlannedText(planned: string): string {
   return `of ${planned} planned`;
 }
 
-/** "Committed above planned cost by $2,000.00" (015 FR-013: words, not colour alone). */
 export function aboveByText(amount: string): string {
   return `Committed above planned cost by ${amount}`;
 }

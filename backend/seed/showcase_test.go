@@ -28,7 +28,7 @@ func TestLoad_ShowcaseActivitiesAreCompleteAndDemoIDsStay(t *testing.T) {
 			t.Errorf("plan %s = %q, want %q", id, plan.Name, want)
 		}
 	}
-	for n := 1014; n <= 1025; n++ {
+	for n := 1014; n <= 1033; n++ {
 		id := fmt.Sprintf("A-%d", n)
 		var view struct {
 			Name         string

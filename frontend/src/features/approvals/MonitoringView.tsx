@@ -12,11 +12,12 @@ import { useApprovalMonitoring } from './api';
 import type { ApprovalMonitoring } from './api';
 import { ApprovalsTable } from './ApprovalsTable';
 import { RunEscalationsButton } from './RunEscalationsButton';
+import type { PreviewSubject } from './schemas';
 import { useIsPhone } from './useIsPhone';
 import styles from './MonitoringView.module.css';
 
 export interface MonitoringViewProps {
-  onOpen: (activityId: string) => void;
+  onOpen: (subject: PreviewSubject) => void;
 }
 
 export function MonitoringView({ onOpen }: MonitoringViewProps) {

@@ -65,7 +65,9 @@ describe('MonitoringView (feature 017, US6)', () => {
     const overdue = screen.getByRole('region', { name: 'Overdue' });
     expect(within(overdue).getByRole('row', { name: /Launch film/ })).toHaveTextContent('Overdue');
     await user.click(within(overdue).getByRole('button', { name: 'Launch film' }));
-    expect(onOpen).toHaveBeenCalledWith('A-1042');
+    expect(onOpen).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'A-1042', kind: 'activity' }),
+    );
     // Only someone who may change approval workflows runs reminders and escalations.
     expect(
       screen.queryByRole('button', { name: 'Run reminders and escalations' }),

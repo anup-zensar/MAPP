@@ -5,7 +5,6 @@ import { useNavigate, useParams } from 'react-router';
 import { ApiError, asApiError } from '@/api/errors';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
-import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { useToast } from '@/ui/Toast/useToast';
@@ -21,12 +20,13 @@ import type { ImportCheck, ImportUpload } from './api';
 import { CheckResult } from './CheckResult';
 import { base64Of, MAX_FILE_BYTES } from './files';
 import { ImportsList } from './ImportsList';
+import { LoadFailed } from './LoadFailed';
 import styles from './workbook.module.css';
 import { CHOOSE_FILE, FILE_TOO_LARGE } from './workbook-text';
 
 const STEPS = ['1 Get the template', '2 Upload', '3 Check and import'];
 
-/** Import from Excel (012 US2, US3): template or export, upload, check every row, then import the ready rows. */
+/** Import from Excel: template or export, upload, check every row, then import the ready rows. */
 export function ImportPage() {
   usePageTitle('Import from Excel');
   const planId = useParams().planId ?? '';
@@ -83,7 +83,7 @@ export function ImportPage() {
   }
 
   if (plan.isPending) return <Skeleton lines={6} />;
-  if (plan.isError) return <ErrorState error={plan.error} onRetry={() => void plan.refetch()} />;
+  if (plan.isError) return <LoadFailed error={plan.error} onRetry={() => void plan.refetch()} />;
   const step = result ? 2 : upload ? 1 : 0;
 
   return (

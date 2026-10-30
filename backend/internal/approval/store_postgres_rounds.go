@@ -30,6 +30,14 @@ func (s *PostgresStore) RoundsOf(ctx context.Context, subjectID string) ([]Round
 	return s.rounds(ctx, sqlcdb.ListRoundsParams{SubjectID: &subjectID})
 }
 
+func (s *PostgresStore) RoundsOfSubjects(ctx context.Context, subjectIDs []string) ([]Round, error) {
+	rows, err := s.db.Queries(ctx).ListRoundsOfSubjects(ctx, subjectIDs)
+	if err != nil {
+		return nil, fmt.Errorf("select approval rounds of records: %w", err)
+	}
+	return roundsFromRows(rows)
+}
+
 // OpenRounds reads the open rounds once per transaction (memo): a restore asks for those of every activity
 // it puts back.
 func (s *PostgresStore) OpenRounds(ctx context.Context) ([]Round, error) {
@@ -106,6 +114,11 @@ func (s *PostgresStore) ListActions(ctx context.Context) ([]Action, error) {
 
 func (s *PostgresStore) ActionsOf(ctx context.Context, subjectID string) ([]Action, error) {
 	rows, err := s.db.Queries(ctx).ListActions(ctx, &subjectID)
+	return actionsFromRows(rows, err)
+}
+
+func (s *PostgresStore) ActionsOfSubjects(ctx context.Context, subjectIDs []string) ([]Action, error) {
+	rows, err := s.db.Queries(ctx).ListActionsOfSubjects(ctx, subjectIDs)
 	return actionsFromRows(rows, err)
 }
 

@@ -8,7 +8,12 @@ export { LineItemsSection } from './LineItemsSection';
 export { MoneyPair, RateTip } from './MoneyPair';
 export { Notice } from './Notice';
 export { SpreadEffectNote } from './SpreadEffectNote';
-export { linkedTransactionsText, useFinancialRecord } from './gsap-financials';
+export {
+  linkedTransactionsText,
+  LINKED_TRANSACTIONS_UNKNOWN,
+  useFinancialRecord,
+  useLinkedTransactionsNotice,
+} from './gsap-financials';
 export { amountText, centsInput, moneyText } from './line-item-math';
 export type { Money } from './api';
 export { useSpreadEffectText } from './useSpreadEffectText';

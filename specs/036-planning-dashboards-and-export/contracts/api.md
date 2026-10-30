@@ -31,17 +31,17 @@ type Planning interface { // allwork.Source's reads (010)
 type Plans interface { // 004, scoped
 	YearOf(ctx context.Context, planID string) (int, bool, error)
 }
-type Finance interface { // 015
-	PaidByMonth(ctx context.Context) (map[string][]financials.MonthPaid, error)
+type Spending interface { // 015: only the line items asked for (D-356, D-358)
+	SpendByMonth(ctx context.Context, lineItemIDs []string) (map[string]map[string]financials.Facts, error)
 }
-type Approvals interface { // 017
-	RoundSummaries(ctx context.Context) ([]approval.RoundSummary, error)
+type Rounds interface { // 017: only the records asked for (D-356)
+	RoundSummaries(ctx context.Context, subjectIDs []string) ([]approval.RoundSummary, error)
 }
-type PurchaseRequests interface { // 032, scoped
+type Purchases interface { // 032, scoped
 	Summaries(ctx context.Context, lineItemIDs []string) (purchaserequest.Summaries, error)
 }
-type GlobalBudgets interface { // 014
-	List(ctx context.Context, a actor.Actor, year *int) (budget.Page, error)
+type GlobalBudgets interface { // 014, needs globalBudgets.view (D-343, D-356)
+	YearFigures(ctx context.Context, year int) ([]budget.Summary, error)
 }
 type Directory interface { // 002, 003
 	Currencies(ctx context.Context, personID string) (Currencies, error)
@@ -53,7 +53,11 @@ New exported functions in other areas:
 
 - `allwork.PlannedByActivity(nodes []allwork.Node, year int) map[string]allwork.Months` — each activity's
   planned cost by month of `year`, with `NoDates` and `OtherYears`, in USD (010 FR-023).
-- `financials.(*Service).PaidByMonth(ctx)` — payments of linked line items, USD by posting month.
-- `approval.(*Service).RoundSummaries(ctx)` and `approval.AverageDecisionDays(decided, seconds int64) *string`.
+- `financials.(*Service).SpendByMonth(ctx, lineItemIDs)` — the Committed and Paid of those line items, USD by
+  posting month (store read `SpendOnLineItems`).
+- `approval.(*Service).RoundSummaries(ctx, subjectIDs)` (store reads `RoundsOfSubjects`, `ActionsOfSubjects`)
+  and `approval.AverageDecisionDays(decided, seconds int64) *string`.
 - `purchaserequest.(*Service).Summaries(ctx, lineItemIDs)` — scoped purchase requests with status, USD
   amount, waiting for GSAP, and whether Purchase Support is on.
+- `budget.(*Service).YearFigures(ctx, year)` — the year's global budgets with the Global budgets page's figures,
+  in three statements (store read `AllocationsOfBudgets`).

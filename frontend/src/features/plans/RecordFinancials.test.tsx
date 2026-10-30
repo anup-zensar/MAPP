@@ -5,7 +5,7 @@ import { mockApi } from '@/testing/mock-api';
 import type { Answer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { reply } from '@/testing/replies';
+import { apiError, reply } from '@/testing/replies';
 import { RecordFinancials } from './RecordFinancials';
 
 type FinancialRecordView = components['schemas']['FinancialRecordView'];
@@ -60,7 +60,10 @@ function renderSection(
   variant: 'page' | 'panel' = 'page',
   user = testUser(),
 ) {
-  mockApi([reply('GET /api/v1/financials/records/{recordId}', answer, { recordId: 'P-1001' })]);
+  mockApi([
+    reply('GET /api/v1/financials/records/{recordId}', answer, { recordId: 'P-1001' }),
+    reply('GET /api/v1/me', { body: testUser() }),
+  ]);
   return renderWithProviders(
     <RecordFinancials recordId="P-1001" planId="P-1001" variant={variant} />,
     { user, route: '/plans/P-1001', path: '/plans/:planId' },
@@ -165,6 +168,22 @@ describe('RecordFinancials (015 FR-018, FR-019)', () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: 'Financials' })).toBeInTheDocument();
+  });
+
+  it('says in place of the figures when the person may not see financial data (FR-028)', async () => {
+    renderSection(
+      {
+        status: 403,
+        body: apiError('forbidden', "Seeing financial data isn't part of your role (Viewer)."),
+      },
+      'panel',
+    );
+
+    expect(
+      await screen.findByText('You don’t have access to financial data — ask an administrator.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'Financials' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
   });
 
   it('shows nothing while the API does not serve 015 yet', async () => {

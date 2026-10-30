@@ -20,10 +20,11 @@ import {
   SEND_ALL_TEXT,
   sendAllTitle,
 } from './simulated-gsap-text';
+import { GsapProgress } from './GsapProgress';
 import { CodeList, SwbsRunList } from './SwbsRunList';
 import styles from './SimulatedGsapPanel.module.css';
 
-/** The Financials page's Simulated GSAP panel (030 FR-013): what is ready, the send action, the runs. */
+/** The Financials page's Simulated GSAP panel: what is ready, the send action, the runs. */
 export function SimulatedGsapPanel() {
   const runs = useSwbsRuns();
   const forbidden = runs.error instanceof ApiError && runs.error.kind === 'forbidden';
@@ -50,10 +51,9 @@ function Loaded({ page }: { page: SwbsRunPage }) {
   const nothingReady = page.readyToSend === 0;
 
   function handleConfirm() {
-    send.mutate(undefined, {
-      onSuccess: (run) => setResult(run),
-      onSettled: () => setConfirming(false),
-    });
+    setConfirming(false);
+    setResult(null);
+    send.mutate(undefined, { onSuccess: (run) => setResult(run) });
   }
 
   return (
@@ -62,7 +62,7 @@ function Loaded({ page }: { page: SwbsRunPage }) {
         {!nothingReady && <p className={styles.ready}>{readyText(page.readyToSend)}</p>}
         <Button
           icon={<Send />}
-          disabled={nothingReady}
+          disabled={nothingReady || send.isPending}
           aria-describedby={nothingReady ? reasonId : undefined}
           onClick={() => setConfirming(true)}
         >
@@ -74,6 +74,7 @@ function Loaded({ page }: { page: SwbsRunPage }) {
           </p>
         )}
       </div>
+      {send.isPending && <GsapProgress />}
       {result && (
         <div role="status" className={styles.result}>
           <p className={styles.name}>{returnedText(result.sent)}</p>

@@ -102,6 +102,8 @@ func TestAccess_NoViewRefusesEveryRead_FR028(t *testing.T) {
 	assertCode(t, err, http.StatusForbidden, errs.CodeForbidden)
 	_, err = f.service.Imports(ctx, priya)
 	assertCode(t, err, http.StatusForbidden, errs.CodeForbidden)
+	_, err = f.service.SpendByMonth(ctx, priya, []string{"L-1003"})
+	_ = assertCode(t, err, http.StatusForbidden, errs.CodeForbidden)
 }
 
 // Without finance.import, not-linked transactions are in no list, count or total, and open as missing ones.

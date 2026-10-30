@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
@@ -6,6 +6,7 @@ import { expectNoAxeViolations } from '@/testing/axe';
 import { testUser } from '@/testing/fixtures/users';
 import { ALEX_RUN } from '@/testing/fixtures/swbs-runs';
 import { apiError, reply } from '@/testing/replies';
+import { gsapPace } from './pace';
 import { SendNowButton } from './SendNowButton';
 
 const SEND = 'POST /api/v1/simulated-gsap/swbs-runs';
@@ -49,5 +50,25 @@ describe('030 FR-015: send one line item to the simulated GSAP now', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Send to simulated GSAP now' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(message);
+  });
+});
+
+describe('030 FR-022: the simulated GSAP processes the request before the code comes back', () => {
+  it('shows the processing status after confirming, then clears it when the run answers', async () => {
+    gsapPace.ms = 300;
+    try {
+      const { user } = renderButton({ status: 201, body: { ...ALEX_RUN, sent: 1 } });
+      await user.click(screen.getByRole('button', { name: 'Send to simulated GSAP now' }));
+      const dialog = await screen.findByRole('alertdialog');
+      await user.click(within(dialog).getByRole('button', { name: 'Send to simulated GSAP now' }));
+
+      const processing = await screen.findByText('Simulated GSAP is processing the request…');
+      expect(processing.closest('[role="status"]')).not.toBeNull();
+      expect(screen.getByRole('button', { name: 'Send to simulated GSAP now' })).toBeDisabled();
+      await expectNoAxeViolations();
+      await waitFor(() => expect(processing).not.toBeInTheDocument());
+    } finally {
+      gsapPace.ms = 0;
+    }
   });
 });

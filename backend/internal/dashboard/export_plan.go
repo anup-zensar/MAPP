@@ -10,7 +10,7 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// planDeck is a plan's file: its title page, its summary by month, its campaigns and its activities (FR-023).
+// planDeck is a plan's file: its title page, its summary by month, its campaigns and its activities.
 func (in *input) planDeck() deck.Deck {
 	b, d := in.board, in.display
 	p := b.plans[0]
@@ -95,9 +95,8 @@ func (b *board) activityFinance() map[string]sums {
 		}
 	}
 	for _, li := range b.byLevel[allwork.LevelLineItem] {
-		if s, counted := out[li.ParentID]; counted && li.Finance != nil {
-			paid := li.Finance.Paid
-			out[li.ParentID] = s.plus(sums{committed: &li.Finance.Committed, actual: &paid})
+		if s, counted := out[li.ParentID]; counted {
+			out[li.ParentID] = s.plus(b.spent[li.ID])
 		}
 	}
 	return out

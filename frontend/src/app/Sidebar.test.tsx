@@ -4,6 +4,7 @@ import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import type { Permission } from '@/session/access';
 import type { CurrentUser } from '@/session/useSession';
+import { configuration } from '@/testing/fixtures/purchase-requests';
 import { testUser } from '@/testing/fixtures/users';
 import { reply } from '@/testing/replies';
 import { Sidebar } from './Sidebar';
@@ -157,5 +158,21 @@ describe('032 FR-044/FR-049: Purchase requests in the sidebar only with purchase
     });
 
     expect(screen.queryByRole('link', { name: 'Purchase requests' })).not.toBeInTheDocument();
+  });
+
+  it('032 FR-004: leaves it out while Purchase Support is off', async () => {
+    mockApi([
+      reply('GET /api/v1/purchase-request-configuration', {
+        body: configuration({ purchaseSupport: false }),
+      }),
+    ]);
+    renderWithProviders(<Sidebar />, { user: withPermissions(['purchaseRequests.list']) });
+
+    await waitFor(
+      () =>
+        expect(screen.queryByRole('link', { name: 'Purchase requests' })).not.toBeInTheDocument(),
+      { timeout: 10_000 },
+    );
+    expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument();
   });
 });

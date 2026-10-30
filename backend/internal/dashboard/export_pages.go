@@ -78,8 +78,11 @@ func monthNotes(m Months) []string {
 	if m.OtherYears != nil {
 		notes = append(notes, "Spread into other years: "+m.OtherYears.Format())
 	}
+	if m.CommittedOutsideYear != nil {
+		notes = append(notes, "Committed outside the year (not counted): "+m.CommittedOutsideYear.Format())
+	}
 	if m.PaidOutsideYear != nil {
-		notes = append(notes, "Paid outside the year: "+m.PaidOutsideYear.Format())
+		notes = append(notes, "Paid outside the year (not counted): "+m.PaidOutsideYear.Format())
 	}
 	return notes
 }

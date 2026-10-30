@@ -23039,11 +23039,12 @@ components:
             - $ref: "#/components/schemas/Money"
             - type: "null"
         committed:
+          description: Purchase orders (015) posted in the plan's year, as 013's Committed (D-358).
           oneOf:
             - $ref: "#/components/schemas/Money"
             - type: "null"
         actual:
-          description: Paid, Shell's actuals (015).
+          description: Paid, Shell's actuals (015), posted in the plan's year as 013's Actual spend (D-357).
           oneOf:
             - $ref: "#/components/schemas/Money"
             - type: "null"
@@ -23142,7 +23143,7 @@ components:
     DashboardMonths:
       type: object
       additionalProperties: false
-      required: [items, noDates, otherYears, paidOutsideYear, negativeBalanceCount]
+      required: [items, noDates, otherYears, committedOutsideYear, paidOutsideYear, negativeBalanceCount]
       properties:
         items:
           type: array
@@ -23158,8 +23159,13 @@ components:
           oneOf:
             - $ref: "#/components/schemas/Money"
             - type: "null"
+        committedOutsideYear:
+          description: Purchase orders posted outside the year, not counted in Committed (D-358); null when none or when financial data is hidden.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
         paidOutsideYear:
-          description: Payments posted outside the year; null when none or when financial data is hidden.
+          description: Payments posted outside the year, not counted in Actual (D-357); null when none or when financial data is hidden.
           oneOf:
             - $ref: "#/components/schemas/Money"
             - type: "null"

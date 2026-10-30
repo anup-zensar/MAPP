@@ -2,7 +2,7 @@
 
 The operations are in `backend/api/openapi.yaml` (tags *Bulk actions* and *Imports*); the fragment of 2026-10-19
 was merged there (D-192) and is not kept here. 012 re-shapes the import schemas (never served before, so no
-client breaks) and adds `GET /api/v1/plans/{planId}/export`.
+client breaks) and adds `GET /api/v1/plans/{planId}/workbook`.
 
 ## API operation → access rule
 
@@ -17,7 +17,7 @@ client breaks) and adds `GET /api/v1/plans/{planId}/export`.
 | `POST /api/v1/plans/{planId}/imports/check` | inPlan `activities.edit` | the plan in scope; each row through its single operation's checks |
 | `POST /api/v1/plans/{planId}/imports` | inPlan `activities.edit` | idem |
 | `GET /api/v1/plans/{planId}/import-template` | inPlan `activities.edit` | the plan in scope |
-| `GET /api/v1/plans/{planId}/export` (new) | inPlan `data.export` | the plan in the `data.export` scope (404 when unseen, 403 when seen without it) |
+| `GET /api/v1/plans/{planId}/workbook` (new) | inPlan `data.export` | the plan in the `data.export` scope (404 when unseen, 403 when seen without it) |
 | `GET /api/v1/imports/{importId}` | view | the import's plan in the view scope (404) |
 | `POST /api/v1/imports/{importId}/undo` | inPlan `activities.delete` | the import's plan in scope; each delete through its service |
 

@@ -22,7 +22,8 @@ The sidebar item **Dashboards** (`LayoutDashboard` icon, permission `plans.view`
 | `DashboardsPage.tsx` | page header (title, tabs, Export menu), filters, states (loading, error, forbidden, empty), panels |
 | `DashboardFilters.tsx` | Year, Market (Regional), Plan type, Currency selects |
 | `FigureCards.tsx` | the summary figures |
-| `MarketsTable.tsx`, `PlansTable.tsx`, `CampaignTable.tsx` | tables; plan rows choose the plan (Regional) and link to the plan |
+| `DashboardTables.tsx` (`MarketsTable`, `PlansTable`, `PlanCampaignsTable`), `FigureTable.tsx` | tables; plan rows choose the plan (Regional) and link to the plan |
+| `CampaignLists.tsx` | Most over budget, Most left to plan |
 | `MonthlyChart.tsx` | SVG grouped bars with a Chart / Table switch |
 | `ApprovalsPanel.tsx`, `PurchaseRequestsPanel.tsx`, `CompletenessPanel.tsx`, `GlobalBudgetsPanel.tsx` | panels |
 | `ExportMenu.tsx` | Export › PowerPoint / PDF, busy state, error toast |

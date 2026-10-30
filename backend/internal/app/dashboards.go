@@ -3,10 +3,12 @@ package app
 import (
 	"context"
 
+	"mapp/internal/allwork"
 	"mapp/internal/dashboard"
 	"mapp/internal/people"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
+	"mapp/internal/platform/date"
 	"mapp/internal/settings"
 	"mapp/internal/stores"
 )
@@ -14,11 +16,29 @@ import (
 // dashboards wires feature 036 over All work's source and the services that work its figures out (D-342).
 func (w *wiring) dashboards() {
 	service := dashboard.NewService(w.set.Tx, dashboard.Deps{
-		Planning: w.allWork, Plans: dashboardPlans{repo: w.set.Plans}, Payments: w.financials, Rounds: w.approvals,
+		Planning: dashboardPlanning{allWorkSource: w.allWork}, Plans: dashboardPlans{repo: w.set.Plans}, Spending: w.financials, Rounds: w.approvals,
 		Purchases: w.prs, GlobalBudgets: w.budgets,
 		Directory: dashboardDirectory{people: w.people, settings: w.settings},
 	}, w.now)
 	mount(w.signedIn, dashboard.NewHandler(service))
+}
+
+// dashboardPlanning reads a year without All work's GSAP figures: the board reads them for its line items only.
+type dashboardPlanning struct {
+	allWorkSource
+}
+
+func (p dashboardPlanning) Year(ctx context.Context, year int, _ date.Date, columns []string) (allwork.YearData, error) {
+	yearPlans, err := plansOfYear(ctx, p.plansRepo, year)
+	if err != nil {
+		return allwork.YearData{}, err
+	}
+	data, err := p.nodesOf(ctx, yearPlans, year, columns)
+	if err != nil || len(data.Nodes) == 0 || p.financials == nil {
+		return data, err
+	}
+	data.FinanceAsOf, err = p.financials.DataAsOf(ctx)
+	return data, err
 }
 
 type dashboardPlans struct {

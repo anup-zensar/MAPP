@@ -22,7 +22,7 @@ POST /api/v1/bulk-actions {"action":"delete","recordIds":["A-1001"]} → 201 {"r
 POST /api/v1/bulk-actions/BLK-1002/undo → 200 {"restored":[…]}
 
 GET  /api/v1/plans/P-1001/import-template → .xlsx (sheets Campaigns … Instructions)
-GET  /api/v1/plans/P-1001/export          → the same layout with the plan's rows
+GET  /api/v1/plans/P-1001/workbook         → the same layout with the plan's rows
 POST /api/v1/plans/P-1001/imports/check {"fileName":"plan.xlsx","content":"<base64>"} → 200 ImportCheck
 POST /api/v1/plans/P-1001/imports       (same body) → 201 ImportDetail {"import":{"id":"IMP-1001",…}}
 POST /api/v1/imports/IMP-1001/undo → 200 ImportDetail (status undone)

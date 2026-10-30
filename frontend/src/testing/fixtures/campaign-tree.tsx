@@ -7,6 +7,7 @@ import { mockApi } from '../mock-api';
 import { renderRoutes } from '../render';
 import { reply } from '../replies';
 import { CampaignTreeStandIn } from './CampaignTreeStandIn';
+import { activityRecord } from './line-item-financials';
 import { testUser } from './users';
 
 /** The campaign rows of P-1001 in a stand-in plan page, at `route`, with New campaign below it. */
@@ -19,6 +20,7 @@ export function renderTree(answers: HttpHandler[], route: InitialEntry = '/plans
       { planId: 'P-1001' },
     ),
     ...answers,
+    reply('GET /api/v1/financials/records/{recordId}', { body: activityRecord() }),
   ]);
   const rendered = renderRoutes(
     [

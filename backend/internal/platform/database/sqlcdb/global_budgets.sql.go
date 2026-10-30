@@ -165,6 +165,47 @@ func (q *Queries) ListAllocationsInScope(ctx context.Context, arg ListAllocation
 	return items, nil
 }
 
+const listAllocationsOfBudgets = `-- name: ListAllocationsOfBudgets :many
+SELECT id, global_budget_id, plan_id, amount_minor, amount_currency, version, created_at, created_by_id,
+    created_by_name, updated_at, updated_by_id, updated_by_name
+FROM budget_allocations
+WHERE global_budget_id = ANY($1::text[])
+ORDER BY length(id), id COLLATE "C"
+`
+
+func (q *Queries) ListAllocationsOfBudgets(ctx context.Context, globalBudgetIds []string) ([]BudgetAllocation, error) {
+	rows, err := q.db.Query(ctx, listAllocationsOfBudgets, globalBudgetIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []BudgetAllocation{}
+	for rows.Next() {
+		var i BudgetAllocation
+		if err := rows.Scan(
+			&i.ID,
+			&i.GlobalBudgetID,
+			&i.PlanID,
+			&i.AmountMinor,
+			&i.AmountCurrency,
+			&i.Version,
+			&i.CreatedAt,
+			&i.CreatedByID,
+			&i.CreatedByName,
+			&i.UpdatedAt,
+			&i.UpdatedByID,
+			&i.UpdatedByName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listGlobalBudgets = `-- name: ListGlobalBudgets :many
 SELECT id, name, year, amount_minor, owner_id, description, version, created_at, created_by_id, created_by_name,
     updated_at, updated_by_id, updated_by_name, overspend

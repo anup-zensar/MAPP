@@ -36,24 +36,29 @@
 **Storage**: PostgreSQL; migration `00025_overspend.sql` (four columns, one table); sqlc queries for the
 columns, the snapshot reads and the configuration
 
-**Testing**: Go unit tests of the rule (`overspend` on fakes), service tests per write path, handler and
-contract tests through `apitest` (fakes), one scope-isolation test is not needed (the snapshot read is not a
-scoped read: it serves a rule, never a person, and answers nothing to the client but names in a refusal of a
-save the person may make — see Threat model); Vitest + Testing Library + MSW for each form state; Playwright
-`frontend/e2e/overspend-control.spec.ts` for the two P1 stories (US1, US5)
+**Testing**: all in `backend/internal/overspend`: unit tests of the rule, the guard and the access check on
+fakes (`rules_test.go`, `guard_test.go`, `access_test.go`), and contract-validated API tests through `apitest`
+(fakes) of every write path and setting (`enforcement_test.go`, `paths_test.go`, `budgets_test.go`,
+`limits_test.go`, `handler_test.go`); the purchase-request gate in `backend/internal/purchaserequest`
+(`overspent_gate_test.go`, `handler_overspent_test.go`). No scope-isolation test: the guard's budget read is
+unscoped by design, a recorded deviation (Complexity Tracking, D-355, ADR-0019). Vitest + Testing Library +
+MSW for each form state; Playwright `frontend/e2e/overspend-control.spec.ts` for the two P1 stories (US1, US5)
 
 **Target Platform**: developers' machines (127.0.0.1); GitHub Actions
 
 **Project Type**: Web application (Go API + React web app)
 
 **Performance Goals**: each planning write adds four aggregate reads (R3); measured with `apibench`
+(`BenchmarkOverspend`, T029: an activity create under a campaign set to Refuse, allowed and refused). On
+2026-10-29, demo data, a loaded developer machine: allowed 51 statements, 335 ms; refused 43 statements (rolled
+back before the answer), 250 ms
 
 **Constraints**: every touched file within 300 non-blank lines and its 5 % comment budget; functions within
 the metrics; shared files touched minimally (openapi.yaml, schema.d.ts regenerated, app wiring, seed,
 decision log, feature map, domain model)
 
 **Scale/Scope**: 1 new Go package; 5 changed Go packages (`plan`, `campaign`, `activity`, `budget`,
-`purchaserequest`) + `app`, `access`, `errs`, `stores`; 4 web feature folders (`plans`, `plans/campaigns`,
+`purchaserequest`) + `app`, `access`, `stores` (`errs` unchanged: the code is `overspend.CodeOverBudget`); 4 web feature folders (`plans`, `plans/campaigns`,
 `global-budgets`, `activities`) + a Settings page
 
 ## Constitution Check
@@ -65,12 +70,12 @@ decision log, feature map, domain model)
 | III Documented design | plan, research R1–R8, data model, contract fragment and route table, quickstart | Pass |
 | IV Server source of truth | The rule runs in `overspend.Guard` inside the write transaction; the web app repeats it only for feedback, from figures the API gives | Pass |
 | V Simplicity | One guard instead of twenty call sites (R3); one new package following the handler → service → store layout | Pass |
-| VI Meaningful tests | Unit tests of each rule and edge case; one service test per write path that changes planned cost; contract tests of every changed operation; e2e for US1 and US5; scope isolation: no new scoped read (see Threat model) | Pass |
-| VII Security, scope isolation | New routes in `access/routes_overspend.go`; the mode change needs owner or budget manager (403); a refusal names only budgets the save reaches | Pass |
+| VI Meaningful tests | Unit tests of each rule and edge case; a contract-validated API test per write path that changes planned cost or a budget; e2e for US1 and US5; no scope-isolation test for the unscoped guard read (Complexity Tracking) | Pass |
+| VII Security, scope isolation | New routes in `access/routes_overspend.go`; the mode change needs owner or budget manager (403); a refusal names only budgets the save reaches; the guard's budget read is not filtered by the actor's scope | Pass with 1 recorded deviation (Complexity Tracking, D-355, ADR-0019) |
 | VIII Clean construction | Files within budgets; requirement IDs in test names | Pass |
 | IX Experience | Consequences shown before saving (activity form, budget forms, allocation dialog, Settings note); refusal shown in place; read-only choice says why | Pass |
 | X Palette | Error red only for the refusal; the "Refuses overspending" tag uses the neutral status style | Pass |
-| B5 Data | Check constraints on the new columns; singleton key check | Pass |
+| B5 Data | Check constraints on the new columns; singleton key check; `ListOverspendBudgets` and `ListOverspendGlobalBudgets` read plan-owned data without the scope filter | Pass with the same recorded deviation (Complexity Tracking) |
 | B6 Contract | Additive: optional inputs, new view properties, new error code and property | Pass |
 
 ### Threat model (STRIDE)
@@ -112,3 +117,9 @@ decision log, feature map, domain model)
 | `frontend/src/features/global-budgets` | form and allocation dialog | FR-004, FR-015 |
 | `frontend/src/features/activities` | planned-cost check against `overspendLimits` | FR-014 |
 | Docs | domain model §4.1, decision log, feature map, 032 FR-021 note | FR-020 |
+
+## Complexity Tracking
+
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+|-----------|------------|-------------------------------------|
+| The guard's budget read (`overspend.Budgets`: `ListOverspendBudgets`, `ListOverspendGlobalBudgets`) is not filtered by the actor's scope — constitution VII (scope isolation) and B5 ("every query on plan-owned data MUST filter by the actor's scope"). Recorded as D-355, ADR-0019 (proposed). | The rule is about money, not about what a person may see: a global budget's planned cost is the sum of every plan it allocates to, in every market (FR-008), so a planner whose scope holds one market must still be refused when their save takes the global budget over. The guard wraps the transaction of about twenty write paths (R3) and cannot know which records a save will reach before it runs, so it compares every budget before and after. Limits: the read takes only each budget's kind, ID, name, mode, amount and planned cost; nothing of it is returned except, in a refusal, the budgets the actor's own save took over (FR-010, Threat model); it is never a list, a view or a filter. | **Filter by the actor's scope**: undercounts a global budget's planned cost and misses overages, so Refuse would leak (SC-001). **Read only the ancestors of the records being saved**: needs every write path (create, update, move, copy, copy-many, split, restore, Undo, plan copy, allocations) to declare beforehand the records it will reach, including those a copy or restore has not created yet — the twenty call sites R3 replaces, each a place to forget the check; and a global budget still sums plans outside the scope. |

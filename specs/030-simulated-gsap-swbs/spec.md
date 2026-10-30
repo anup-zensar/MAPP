@@ -294,6 +294,11 @@ already uses it (feature 015), but nothing breaks without it today.
   transactions: the SWBS request card shows the line item's own code (D-321 supersedes D-255).
 - **FR-020**: Everything the simulated GSAP produced MUST be labelled "Simulated GSAP" on screen and in the
   activity log.
+- **FR-022**: Sending to the simulated GSAP (Send to simulated GSAP now on the line item, Send SWBS requests
+  on the Financials panel) MUST first show a short progress animation — "Simulated GSAP is processing the
+  request…" — for at least 1.5 s, and only then the SWBS code, so the request reads as a call to an outside
+  system. The animation is a status for screen readers and stands still when the person prefers reduced
+  motion (D-365).
 
 #### Demo data
 

@@ -75,3 +75,6 @@ non-blank lines) and the 300-line limit.
 - [x] T030 [P] Docs: `docs/product/field-catalogue.md` §5 (#13, #16, HX key), `domain-model.md` §2.4 and §4.6, `glossary.md` (SWBS code, HX key, Simulated GSAP).
 - [x] T031 Gates: `gofmt`, `golangci-lint run --new ./...`, `sqlc generate && sqlc vet`, `go vet ./...`, `go test -race ./...` with `TEST_DATABASE_URL`, `govulncheck ./...`; `pnpm run api:check`, `typecheck`, `lint`, `format:check`, `test`, `build`; comment budget and file length of every touched file.
 - [x] T032 Run the app on 18130/14130 with `mapp_f030`, exercise both operations with curl and record what was seen (quickstart).
+- [x] T033 [FR-022] `features/simulated-gsap/GsapProgress.tsx` and `pace.ts`: the send closes its dialog, shows
+  the progress animation for at least 1.5 s, then the code (SendNowButton and SimulatedGsapPanel; tests with a
+  short pace, reduced motion in CSS)

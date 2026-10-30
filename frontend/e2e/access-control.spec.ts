@@ -185,23 +185,29 @@ test('US5: Daniel may not approve an activity he owns; Alex, the backup approver
   }
   const current = await callApi<ActivityAnswer>(page, 'GET', `/api/v1/activities/${prepared.id}`);
   const saved = await ownedByDaniel(page, current, daniel, workflow.id);
-  await callApi(page, 'POST', `/api/v1/activities/${prepared.id}/approval/submit`, {
-    version: saved.version,
-    comment: '',
-  });
+  // Daniel owns no other activity in the demo (home.spec.ts), so his goes to the recycle bin at the end.
+  try {
+    await callApi(page, 'POST', `/api/v1/activities/${prepared.id}/approval/submit`, {
+      version: saved.version,
+      comment: '',
+    });
 
-  await signInAs(page, DANIEL);
-  await page.goto(prepared.path);
-  await expect(page.getByRole('heading', { name: prepared.name, level: 1 })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Approve', exact: true })).toHaveCount(0);
-  await expectNoAxeViolations(page);
+    await signInAs(page, DANIEL);
+    await page.goto(prepared.path);
+    await expect(page.getByRole('heading', { name: prepared.name, level: 1 })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Approve', exact: true })).toHaveCount(0);
+    await expectNoAxeViolations(page);
 
-  await signInAs(page, ALEX);
-  await page.goto(prepared.path);
-  await page.getByRole('button', { name: 'Approve', exact: true }).first().click();
-  const dialog = page.getByRole('alertdialog', { name: `Approve '${prepared.name}'?` });
-  await dialog.getByRole('button', { name: 'Approve', exact: true }).click();
-  await expect(page.getByText('Approved').first()).toBeVisible();
+    await signInAs(page, ALEX);
+    await page.goto(prepared.path);
+    await page.getByRole('button', { name: 'Approve', exact: true }).first().click();
+    const dialog = page.getByRole('alertdialog', { name: `Approve '${prepared.name}'?` });
+    await dialog.getByRole('button', { name: 'Approve', exact: true }).click();
+    await expect(page.getByText('Approved').first()).toBeVisible();
+  } finally {
+    await signInAs(page, DANIEL);
+    await callApi(page, 'DELETE', `/api/v1/activities/${prepared.id}`);
+  }
 });
 
 interface ActivityAnswer {

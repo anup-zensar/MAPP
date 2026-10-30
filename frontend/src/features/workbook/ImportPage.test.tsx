@@ -7,7 +7,7 @@ import { testUser } from '@/testing/fixtures/users';
 import { importCheck, importDetail, importSummary } from '@/testing/fixtures/workbook';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
-import { reply } from '@/testing/replies';
+import { apiError, pending, reply } from '@/testing/replies';
 import { ImportPage } from './ImportPage';
 
 function renderPage(answers: HttpHandler[]) {
@@ -134,6 +134,25 @@ describe('012 FR-025 – FR-034: Import from Excel', () => {
       screen.getByText('The file holds what the plan holds — nothing to import.'),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^Import/ })).not.toBeInTheDocument();
+  });
+
+  it('shows the skeleton while the plan loads', async () => {
+    renderPage([reply('GET /api/v1/plans/{planId}', () => pending())]);
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Loading…');
+    expect(screen.queryByRole('button', { name: 'Check file' })).not.toBeInTheDocument();
+  });
+
+  it('shows the no-access page when the API refuses the plan (FR-024)', async () => {
+    const message = "You don't have access to this plan. Ask an administrator if you need it.";
+    renderPage([
+      reply('GET /api/v1/plans/{planId}', { status: 403, body: apiError('forbidden', message) }),
+      reply('GET /api/v1/me', { body: testUser() }),
+    ]);
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'No access' })).toBeInTheDocument();
+    expect(screen.getByText(message)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
   });
 
   it('shows the error state when the plan cannot be read', async () => {

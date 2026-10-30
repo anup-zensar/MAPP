@@ -7,6 +7,7 @@ import { useFormatters } from '@/format/useFormatters';
 import type { Formatters } from '@/format/useFormatters';
 import type { ApprovalRow, ApprovalTab } from './api';
 import { progressText } from './chain-messages';
+import type { PreviewSubject } from './schemas';
 import { levelOf, names } from './messages';
 import { useIsPhone } from './useIsPhone';
 import styles from './ApprovalsTable.module.css';
@@ -14,7 +15,7 @@ import styles from './ApprovalsTable.module.css';
 export interface ApprovalsTableProps {
   rows: ApprovalRow[];
   tab: ApprovalTab;
-  onOpen: (activityId: string) => void;
+  onOpen: (subject: PreviewSubject) => void;
 }
 
 export function ApprovalsTable({ rows, tab, onOpen }: ApprovalsTableProps) {
@@ -79,7 +80,7 @@ export function ApprovalsTable({ rows, tab, onOpen }: ApprovalsTableProps) {
 interface RowProps {
   row: ApprovalRow;
   decided: boolean;
-  onOpen: (activityId: string) => void;
+  onOpen: (subject: PreviewSubject) => void;
 }
 
 function Row({ row, decided, onOpen }: RowProps) {
@@ -172,11 +173,17 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** Every record opens in its preview panel: an activity's, or a purchase request's (032 FR-029). */
-function OpenButton({ row, onOpen }: { row: ApprovalRow; onOpen: (id: string) => void }) {
+/** Every record opens in its preview panel: an activity's, or a purchase request's. */
+function OpenButton({
+  row,
+  onOpen,
+}: {
+  row: ApprovalRow;
+  onOpen: (subject: PreviewSubject) => void;
+}) {
   const { subject } = row;
   return (
-    <button type="button" className={styles.open} onClick={() => onOpen(subject.id)}>
+    <button type="button" className={styles.open} onClick={() => onOpen(subject)}>
       {subject.name}
     </button>
   );

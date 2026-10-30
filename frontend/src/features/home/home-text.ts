@@ -59,7 +59,7 @@ export function percentUsedText(percent: number): string {
   return `${percentText(percent)} used`;
 }
 
-/** Whether an amount is zero ("0.00"): nothing is planned, which Home shows as "—" (§4.4). */
+/** Whether an amount is zero ("0.00"): nothing is planned, which Home shows as "—". */
 export function isZero(money: Money | null | undefined): boolean {
   return !money || /^-?0*(\.0*)?$/.test(money.amount);
 }

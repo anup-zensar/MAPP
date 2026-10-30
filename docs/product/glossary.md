@@ -38,8 +38,11 @@ application use these definitions. Hive9 names are given in brackets where users
 | **Allocation** | The part of a global budget given to one plan; it becomes that plan's budget, which the plan's owner cannot change. |
 | **Finance budget** | Finance's budget for a year (e.g. "2026 Lubricants Budget"), made up of finance budget items. Only the list of items exists in this phase. |
 | **Actuals** | What was really spent: the payments GSAP has released (feature 015's **Paid**). The SP&A view calls it **Actual spend** (feature 013). |
-| **Committed** | The value of the GSAP purchase orders on a record's line items (feature 015). |
-| **Actual (paid)** | What GSAP reports as paid on a record's line items — Shell's actuals (features 015, 036). |
+| **Committed** | The value of the GSAP purchase orders on a record's line items (feature 015). **Not yet committed** is planned cost minus committed; "Committed above planned cost" is said in red words. The SP&A view and the dashboards count only the purchase orders posted in the plan's year (D-335, D-358). |
+| **Invoiced** | The supplier invoices GSAP has received against a record's line items, less credit notes (feature 015). |
+| **Paid** | The payments GSAP has released on a record's line items — Shell's **actuals** (feature 015). |
+| **Accrued** | Money owed for work received but not yet invoiced, as GSAP accrued it for the latest accrual month in the data, e.g. "Accrued (Sep 2026)" (feature 015). |
+| **Actual (paid)** | What GSAP reports as paid on a record's line items — Shell's actuals (features 015, 036). The dashboards, like the SP&A view's Actual spend, count only the payments posted in the plan's year (D-357). |
 | **Unspent budget** | Budget minus actual: how much of a budget is not yet paid out (feature 036). |
 | **Budget spent** | Actual as a percentage of the budget (feature 036; Hive9's burn rate). |
 | **Dashboard** | A read-only page that adds up the plans you may see — Executive for every market, Regional for one (feature 036). |
@@ -94,6 +97,12 @@ application use these definitions. Hive9 names are given in brackets where users
 | **Requisitioner** | The person who keys an approved purchase request into GSAP. The demo role *Requisitioner* opens the Purchase requests page and runs the simulated GSAP. |
 | **Routing / Requisitioner queue** | Sending an approved purchase request — Original, Modification, Resend or Close — to the recipients of its Email group and PR recipients, or to the Requisitioner queue when it names none. **Waiting for GSAP** lists the routed purchase requests GSAP has not answered. |
 | **PR form** | The spreadsheet or CSV file a routing produces: one row per PR line with what GSAP needs. Its file name holds the purchase request's ID. |
+| **Purchase order (PO)** | GSAP's order to a vendor; each PO line is a transaction that counts as Committed on the line item it links to (feature 015). |
+| **Invoice** | A supplier's bill GSAP has received, usually against a PO line; a credit note is a negative invoice. |
+| **Accrual** | GSAP's month-end entry for work received but not yet invoiced; MAPP shows accruals and does not calculate them. |
+| **GSAP transaction** | One PO line, invoice, payment or accrual as GSAP sent it, read-only in MAPP; listed on the Financials page (feature 015). |
+| **GSAP extract** | The CSV file of GSAP transactions imported on the Financials page, checked before anything is saved; simulated until live integration, with a sample file to download (feature 015). |
+| **Not linked** | A GSAP transaction no rule could match to one line item (by line-item ID, HX key, PO number or SWBS code), shown with the reason; a planner may link it by hand. |
 | **GSAP PR number / PO line** | GSAP's number for a purchase request and the purchase-order line each PR line became. Until live integration the simulated GSAP gives `SIM-0010…` and `SIM-4500…` numbers with PO lines 10, 20, … (feature 033). |
 | **PIR** | Post-investment review — whether the activity's results will be reviewed. |
 | **FIT4** | A Shell programme flag and ID attached to initiatives and activities. |

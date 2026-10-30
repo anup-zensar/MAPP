@@ -10,11 +10,10 @@ import (
 	"mapp/internal/platform/apitest"
 )
 
-// The handler tests of 016's All work (FR-034 – FR-043) on the demo data: 2026 holds P-1001 and P-1002 (USD),
-// 2027 holds P-1003 (USD, Strategic) and P-1004 "FY2027 Lubricants UK & Ireland" (Cross-market, planned in GBP
-// at 0.79 per USD, budget 600,000.00 GBP phased evenly, 65,000.00 GBP planned = 82,278.48 USD).
+// In the demo data 2026 holds P-1001 and P-1002 (USD), 2027 P-1003 (USD, Strategic) and P-1004 "FY2027 Lubricants
+// UK & Ireland" (Cross-market, in GBP at 0.79 per USD, budget 600,000.00 GBP phased evenly, 65,000.00 GBP planned
+// = 82,278.48 USD).
 
-// allWorkOf reads GET path and stops the test unless it answers 200.
 func allWorkOf(t *testing.T, client *apitest.Client, path string) allwork.Result {
 	t.Helper()
 	response := client.Do(t, http.MethodGet, path, nil)
@@ -26,9 +25,6 @@ func allWorkOf(t *testing.T, client *apitest.Client, path string) allwork.Result
 	return r
 }
 
-// A range of years reads the plans of every year, each plan row with its year and type; Yearly gives one
-// period per year, Quarterly of one year its quarters; Compare with phased budget gives the plans their phased
-// budget per period (FR-022, FR-034, FR-035, FR-037, FR-038).
 func TestGetAllWork_RangeYearlyCompare_Contract_FR034(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -48,7 +44,7 @@ func TestGetAllWork_RangeYearlyCompare_Contract_FR034(t *testing.T) {
 			uk = row
 		}
 	}
-	if r.YearFrom != 2026 || r.YearTo != 2027 || r.Year != 2026 || years["P-1001"] != 2026 || years["P-1004"] != 2027 || len(years) != 2 { // Priya sees her team's plans only (014)
+	if r.YearFrom != 2026 || r.YearTo != 2027 || r.Year != 2026 || years["P-1001"] != 2026 || years["P-1004"] != 2027 || len(years) != 2 { // Priya sees her team's plans only
 		t.Errorf("range %d–%d (year %d), plan years %v", r.YearFrom, r.YearTo, r.Year, years)
 	}
 	keys := []string{}
@@ -75,8 +71,6 @@ func TestGetAllWork_RangeYearlyCompare_Contract_FR034(t *testing.T) {
 		`"fields":[{"field":"yearTo","message":"Choose at most 5 years."}]}}`)
 }
 
-// The Breakdown of a filter set: its groups, its totals equal to the Planned cost card, the plan's own currency
-// for one plan, and the refusal without a grouping (FR-040 – FR-042, SC-007).
 func TestGetBreakdown_Contract_FR040(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -115,8 +109,6 @@ func TestGetBreakdown_Contract_FR040(t *testing.T) {
 		`"fields":[{"field":"amountsIn","message":"Choose one plan to show amounts in its currency."}]}}`)
 }
 
-// The export of the Breakdown view holds its group table, and "About this export" states the range and the
-// rates used (FR-009, FR-043).
 func TestExport_Breakdown_FR043(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -138,10 +130,6 @@ func TestExport_Breakdown_FR043(t *testing.T) {
 	}
 }
 
-// The filter bar's choices over a range of years (FR-034, FR-037, FR-039): the range, the plans of every year
-// with their year, type and currency, the plan types, the plan currencies of the range's plans, and the
-// filterable Shell attributes level by level — a yes/no attribute offers Yes and No. A range above 5 years is
-// refused.
 func TestGetOptions_RangeTypesCurrenciesAttributes_Contract_FR037_FR039(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)

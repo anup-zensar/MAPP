@@ -37,7 +37,12 @@ func (s *PostgresStore) GetTransaction(ctx context.Context, id string) (Transact
 	return list[0], true, nil
 }
 
-// TransactionsInScope keeps what the person may see (FR-028, D-301): every linked transaction with
+func (s *PostgresStore) SpendOnLineItems(ctx context.Context, lineItemIDs []string) ([]Transaction, error) {
+	rows, err := s.db.Queries(ctx).ListSpendOnLineItems(ctx, lineItemIDs)
+	return transactionsFromRows(rows, err)
+}
+
+// TransactionsInScope keeps what the person may see (D-301): every linked transaction with
 // finance.view in All markets, else one whose stored line item's plan they see and hold finance.view in; a
 // not-linked one only when they may import.
 func (s *PostgresStore) TransactionsInScope(ctx context.Context, plans, finance authz.Scope, canImport bool) ([]Transaction, error) {

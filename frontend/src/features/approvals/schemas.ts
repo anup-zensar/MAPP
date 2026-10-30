@@ -1,24 +1,56 @@
 import { z } from 'zod';
+import type { components } from '@/api/generated/schema';
 import type { ApprovalDelegation, DelegationCreate, DelegationUpdate } from './delegations-api';
 
+type SubjectKind = components['schemas']['ApprovalSubjectKind'];
+
 const pageTabSchema = z.enum(['waiting', 'open', 'decided', 'monitoring']);
+const subjectKindSchema = z.enum([
+  'activity',
+  'purchaseRequest',
+  'modifiedPurchaseRequest',
+] satisfies SubjectKind[]);
 
 export type PageTab = z.infer<typeof pageTabSchema>;
 
-/** What the approvals page's address says: ?tab=, ?activity= and ?panel=delegations. */
+export interface PreviewSubject {
+  id: string;
+  kind: SubjectKind;
+}
+
+/** What the approvals page's address says: ?tab=, ?activity= with ?kind= and ?panel=delegations. */
 export interface ApprovalsAddress {
   /** The tab the address names; null when it names none, or one that does not exist. */
   tab: PageTab | null;
   previewId: string | null;
+  previewKind: SubjectKind;
   delegationsOpen: boolean;
 }
 
 export function approvalsAddressOf(params: URLSearchParams): ApprovalsAddress {
   const tab = pageTabSchema.safeParse(params.get('tab'));
+  const previewId = params.get('activity');
   return {
     tab: tab.success ? tab.data : null,
-    previewId: params.get('activity'),
+    previewId,
+    previewKind: previewKindOf(params.get('kind'), previewId),
     delegationsOpen: params.get('panel') === 'delegations',
+  };
+}
+
+// Links made before ?kind= existed name a purchase request by its PR- number alone.
+function previewKindOf(raw: string | null, previewId: string | null): SubjectKind {
+  const kind = subjectKindSchema.safeParse(raw);
+  if (kind.success) {
+    return kind.data;
+  }
+  return raw === null && previewId?.startsWith('PR-') ? 'purchaseRequest' : 'activity';
+}
+
+export function previewParams(subject: PreviewSubject | null): Record<string, string | null> {
+  return {
+    activity: subject?.id ?? null,
+    kind: subject && subject.kind !== 'activity' ? subject.kind : null,
   };
 }
 

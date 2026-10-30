@@ -311,9 +311,10 @@ delete a selection and Undo; verify names, statuses, IDs, the recycle bin and to
   Start date, End date, Ongoing, Planned cost, Approval workflow, Description; *Line items* — ID, Campaign,
   Initiative, Activity, Line item name, Owner, Currency, Planned cost, Description. Budgets and activity costs
   are in the plan currency.
-- **FR-027**: **Download template** (plan page) MUST give the workbook without data rows; **Export to Excel**
-  MUST give it with one row per record of the plan the person sees, written exactly as the import reads it, so
-  that the exported file uploaded unchanged changes nothing.
+- **FR-027**: **Download template** (step 1 of the plan's Import from Excel page) MUST give the workbook without
+  data rows; **Export to Excel** (the same step, and the plan page's ⋯ menu) MUST give it with one row per record
+  of the plan the person sees, written exactly as the import reads it, so that the exported file uploaded
+  unchanged changes nothing.
 
 **Plan workbook: upload, check and import**
 

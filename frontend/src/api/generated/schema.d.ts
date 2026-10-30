@@ -10146,8 +10146,9 @@ export interface components {
         DashboardFigures: {
             budget: components["schemas"]["Money"] | null;
             plannedCost: components["schemas"]["Money"] | null;
+            /** @description Purchase orders (015) posted in the plan's year, as 013's Committed (D-358). */
             committed: components["schemas"]["Money"] | null;
-            /** @description Paid, Shell's actuals (015). */
+            /** @description Paid, Shell's actuals (015), posted in the plan's year as 013's Actual spend (D-357). */
             actual: components["schemas"]["Money"] | null;
             /** @description Planned cost ÷ budget, a whole percent. */
             budgetUsedPercent: number | null;
@@ -10196,7 +10197,9 @@ export interface components {
             noDates: components["schemas"]["Money"] | null;
             /** @description Planned cost spread into months of other years; null when none. */
             otherYears: components["schemas"]["Money"] | null;
-            /** @description Payments posted outside the year; null when none or when financial data is hidden. */
+            /** @description Purchase orders posted outside the year, not counted in Committed (D-358); null when none or when financial data is hidden. */
+            committedOutsideYear: components["schemas"]["Money"] | null;
+            /** @description Payments posted outside the year, not counted in Actual (D-357); null when none or when financial data is hidden. */
             paidOutsideYear: components["schemas"]["Money"] | null;
             /** @description How many activities in scope have line items above their planned cost, so their months add up to more than it (038 FR-024). */
             negativeBalanceCount: number;

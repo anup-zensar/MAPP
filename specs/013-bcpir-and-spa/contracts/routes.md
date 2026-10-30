@@ -6,7 +6,8 @@
 |---|---|---|---|
 | `GET /api/v1/plans/{planId}/spa` | view | `backend/internal/access/routes_spa.go` | the plan is read in the actor's scope (404 otherwise); a campaign not in the plan is 404; financial figures need `finance.view` in the plan; purchase requests follow 032's view scope |
 | `GET /api/v1/plans` (`bcpir` added) | signedIn (unchanged) | `routes_planning.go` | unchanged |
-| `GET /api/v1/all-work`, `/export`, `/breakdown` (`bcpir` added) | unchanged | `routes_views.go` | unchanged |
+| `GET /api/v1/all-work`, `/export` (`bcpir` added) | unchanged | `routes_views.go` | unchanged |
+| `GET /api/v1/all-work/breakdown` (`bcpir` added) | signedIn (unchanged) | `routes_settings.go` | unchanged |
 
 ## Web routes
 

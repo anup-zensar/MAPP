@@ -45,6 +45,13 @@ WHERE (sqlc.narg(id)::text IS NULL OR id = sqlc.narg(id))
     AND (sqlc.narg(plan_id)::text IS NULL OR plan_id = sqlc.narg(plan_id))
 ORDER BY length(id), id COLLATE "C";
 
+-- name: ListAllocationsOfBudgets :many
+SELECT id, global_budget_id, plan_id, amount_minor, amount_currency, version, created_at, created_by_id,
+    created_by_name, updated_at, updated_by_id, updated_by_name
+FROM budget_allocations
+WHERE global_budget_id = ANY(sqlc.arg(global_budget_ids)::text[])
+ORDER BY length(id), id COLLATE "C";
+
 -- name: ListAllocationsInScope :many
 SELECT id, global_budget_id, plan_id, amount_minor, amount_currency, version, created_at, created_by_id,
     created_by_name, updated_at, updated_by_id, updated_by_name

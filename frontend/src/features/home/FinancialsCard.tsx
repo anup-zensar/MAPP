@@ -1,6 +1,7 @@
-import { ChevronRight, ReceiptText, TriangleAlert, Unlink } from 'lucide-react';
+import { ChevronRight, Lock, ReceiptText, TriangleAlert, Unlink } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
+import { ApiError } from '@/api/errors';
 import { LinkButton } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { EmptyState } from '@/ui/EmptyState/EmptyState';
@@ -45,6 +46,14 @@ export function FinancialsCard({ scope }: { scope: HomeScope }) {
       </Card>
     );
   }
+  if (overview.error instanceof ApiError && overview.error.kind === 'forbidden') {
+    // No Open Financials here: the page would only refuse too.
+    return (
+      <Card title="Financials">
+        <EmptyState icon={<Lock />} title={FINANCIALS_CARD.noAccess} />
+      </Card>
+    );
+  }
   if (overview.isError) {
     return (
       <Card title="Financials" actions={open}>
@@ -62,7 +71,6 @@ function Overview({ overview, open }: { overview: FinancialOverview; open: React
   const notLinked = useAccess().has('finance.import') ? overview.notLinked : 0;
   const empty = figures.transactionCount === 0;
 
-  // Without any GSAP data the empty state says so; the source line would only repeat it.
   const subtitle = source.dataAsOf ? sourceText(source, dateTime) : undefined;
 
   return (
@@ -129,7 +137,6 @@ interface FigureProps {
   label: string;
   tip: string;
   value: string;
-  /** Committed above planned cost: the value in red (with words beside it, not colour alone). */
   problem?: boolean;
   children?: ReactNode;
 }
