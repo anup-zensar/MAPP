@@ -13,7 +13,6 @@ const subjectKindSchema = z.enum([
 
 export type PageTab = z.infer<typeof pageTabSchema>;
 
-/** The record a preview shows: an approval row's subject. */
 export interface PreviewSubject {
   id: string;
   kind: SubjectKind;
@@ -30,13 +29,22 @@ export interface ApprovalsAddress {
 
 export function approvalsAddressOf(params: URLSearchParams): ApprovalsAddress {
   const tab = pageTabSchema.safeParse(params.get('tab'));
-  const kind = subjectKindSchema.safeParse(params.get('kind'));
+  const previewId = params.get('activity');
   return {
     tab: tab.success ? tab.data : null,
-    previewId: params.get('activity'),
-    previewKind: kind.success ? kind.data : 'activity',
+    previewId,
+    previewKind: previewKindOf(params.get('kind'), previewId),
     delegationsOpen: params.get('panel') === 'delegations',
   };
+}
+
+// Links made before ?kind= existed name a purchase request by its PR- number alone.
+function previewKindOf(raw: string | null, previewId: string | null): SubjectKind {
+  const kind = subjectKindSchema.safeParse(raw);
+  if (kind.success) {
+    return kind.data;
+  }
+  return raw === null && previewId?.startsWith('PR-') ? 'purchaseRequest' : 'activity';
 }
 
 export function previewParams(subject: PreviewSubject | null): Record<string, string | null> {

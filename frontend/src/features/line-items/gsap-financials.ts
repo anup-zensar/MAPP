@@ -1,5 +1,5 @@
 /**
- * The GSAP money of an activity or a line item (015 US1) and its words; the record view is one query
+ * The GSAP money of an activity or a line item and its words; the record view is one query
  * per record and display currency, shared by the card and the columns, so the page asks once.
  */
 import { useQuery } from '@tanstack/react-query';
@@ -125,4 +125,16 @@ export function linkedTransactionsText(count: number): string | null {
   return count === 1
     ? '1 GSAP transaction is linked to it. It stays in SP&A One and leaves the figures until it is restored.'
     : `${plural(count, 'GSAP transaction')} are linked to it. They stay in SP&A One and leave the figures until it is restored.`;
+}
+
+export const LINKED_TRANSACTIONS_UNKNOWN =
+  'Any GSAP transactions linked to it stay in SP&A One and leave the figures until it is restored.';
+
+// A delete must not happen before the linked transactions are known, or the warning would be skipped.
+export function useLinkedTransactionsNotice(recordId: string, enabled: boolean) {
+  const financials = useFinancialRecord(recordId, enabled);
+  const text = financials.isError
+    ? LINKED_TRANSACTIONS_UNKNOWN
+    : linkedTransactionsText(financials.data?.figures.transactionCount ?? 0);
+  return { text, checking: enabled && financials.isPending };
 }

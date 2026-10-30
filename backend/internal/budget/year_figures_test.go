@@ -17,7 +17,7 @@ func TestYearFigures_AsTheGlobalBudgetsPage_036_FR004(t *testing.T) {
 	f.create(t, GlobalBudgetInput{Name: "Asia reserve", Year: ptr(2026), Amount: &money.Input{Amount: "100.00", Currency: "USD"}, OwnerID: carlos.ID})
 	f.create(t, GlobalBudgetInput{Name: "FY2027 Global", Year: ptr(2027), Amount: &money.Input{Amount: "1.00", Currency: "USD"}, OwnerID: carlos.ID})
 
-	got, err := f.service.YearFigures(t.Context(), 2026)
+	got, err := f.service.YearFigures(t.Context(), priya, 2026)
 	page, errPage := f.service.List(t.Context(), carlos, ptr(2026))
 
 	if err != nil || errPage != nil {

@@ -30,7 +30,7 @@ func TestSpendByMonth_036_FR011_FR014(t *testing.T) {
 		})
 	})
 
-	got, err := f.service.SpendByMonth(t.Context(), []string{"L-1003", "L-1004"})
+	got, err := f.service.SpendByMonth(t.Context(), priya, []string{"L-1003", "L-1004"})
 
 	if err != nil {
 		t.Fatalf("SpendByMonth: %v", err)

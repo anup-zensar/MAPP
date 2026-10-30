@@ -8,6 +8,7 @@ import (
 	"mapp/internal/budget"
 	"mapp/internal/financials"
 	"mapp/internal/people"
+	"mapp/internal/platform/actor"
 	"mapp/internal/platform/date"
 	"mapp/internal/purchaserequest"
 )
@@ -29,11 +30,11 @@ type Plans interface {
 
 // Spending, Rounds and Purchases read only the records asked for, which come from the plans in scope (B5, D-356).
 type Spending interface {
-	SpendByMonth(ctx context.Context, lineItemIDs []string) (map[string]map[string]financials.Facts, error)
+	SpendByMonth(ctx context.Context, a actor.Actor, lineItemIDs []string) (map[string]map[string]financials.Facts, error)
 }
 
 type Rounds interface {
-	RoundSummaries(ctx context.Context, subjectIDs []string) ([]approval.RoundSummary, error)
+	RoundSummaries(ctx context.Context, a actor.Actor, subjectIDs []string) ([]approval.RoundSummary, error)
 }
 
 type Purchases interface {
@@ -41,7 +42,7 @@ type Purchases interface {
 }
 
 type GlobalBudgets interface {
-	YearFigures(ctx context.Context, year int) ([]budget.Summary, error)
+	YearFigures(ctx context.Context, a actor.Actor, year int) ([]budget.Summary, error)
 }
 
 type Directory interface {

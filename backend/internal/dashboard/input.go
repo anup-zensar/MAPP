@@ -29,6 +29,7 @@ type request struct {
 // input is everything a dashboard is worked out from, read in one transaction.
 type input struct {
 	request
+	actor     actor.Actor
 	now       time.Time
 	today     date.Date
 	display   money.Display
@@ -46,7 +47,7 @@ type input struct {
 
 func (s *Service) read(ctx context.Context, a actor.Actor, r request) (*input, error) {
 	now := s.now()
-	in := &input{request: r, now: now, today: date.Today(now)}
+	in := &input{request: r, actor: a, now: now, today: date.Today(now)}
 	if in.query.Year == 0 {
 		in.query.Year = in.today.Year()
 	}
@@ -95,7 +96,7 @@ func (s *Service) readChoices(ctx context.Context, a actor.Actor, in *input, wor
 func (s *Service) readPanels(ctx context.Context, in *input) error {
 	var err error
 	if ids := in.board.financeLineItemIDs(); len(ids) > 0 {
-		if in.spend, err = s.deps.Spending.SpendByMonth(ctx, ids); err != nil {
+		if in.spend, err = s.deps.Spending.SpendByMonth(ctx, in.actor, ids); err != nil {
 			return err
 		}
 	}
@@ -103,7 +104,7 @@ func (s *Service) readPanels(ctx context.Context, in *input) error {
 	if in.purchases, err = s.deps.Purchases.Summaries(ctx, in.board.lineItemIDs()); err != nil {
 		return err
 	}
-	if in.rounds, err = s.deps.Rounds.RoundSummaries(ctx, in.board.subjectIDs(in.purchases.Items)); err != nil {
+	if in.rounds, err = s.deps.Rounds.RoundSummaries(ctx, in.actor, in.board.subjectIDs(in.purchases.Items)); err != nil {
 		return err
 	}
 	grants, signedIn := authz.From(ctx)
@@ -111,7 +112,7 @@ func (s *Service) readPanels(ctx context.Context, in *input) error {
 	if signedIn && !grants.Has(authz.GlobalBudgetsView) {
 		return nil
 	}
-	year, err := s.deps.GlobalBudgets.YearFigures(ctx, in.query.Year)
+	year, err := s.deps.GlobalBudgets.YearFigures(ctx, in.actor, in.query.Year)
 	in.global = globalBudgets(year, in.display)
 	return err
 }

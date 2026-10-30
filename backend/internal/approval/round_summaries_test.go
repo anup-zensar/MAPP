@@ -21,7 +21,7 @@ func TestRoundSummaries_036_FR016(t *testing.T) {
 	f.clock.Advance(36 * time.Hour)
 	f.approve(t, daniel, "A-2", "")
 
-	list, err := f.service.RoundSummaries(t.Context(), []string{"A-1", "A-2"})
+	list, err := f.service.RoundSummaries(t.Context(), alex, []string{"A-1", "A-2"})
 	if err != nil {
 		t.Fatalf("RoundSummaries: %v", err)
 	}

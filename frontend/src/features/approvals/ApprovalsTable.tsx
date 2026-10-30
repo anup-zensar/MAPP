@@ -173,7 +173,7 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** Every record opens in its preview panel: an activity's, or a purchase request's (032 FR-029). */
+/** Every record opens in its preview panel: an activity's, or a purchase request's. */
 function OpenButton({
   row,
   onOpen,

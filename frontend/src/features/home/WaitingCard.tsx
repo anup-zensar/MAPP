@@ -19,8 +19,8 @@ import { SectionError } from './SectionError';
 import styles from './WaitingCard.module.css';
 
 /**
- * Waiting for my approval (FR-013): the activities of 008's Waiting for me tab, oldest first, at most 5,
- * each with Review opening its preview on the Approvals page (SC-003), and "View all (n)" that tab.
+ * Waiting for my approval: the activities of 008's Waiting for me tab, oldest first, at most 5,
+ * each with Review opening its preview on the Approvals page, and "View all (n)" that tab.
  */
 export function WaitingCard() {
   const waiting = useHomeWaiting();

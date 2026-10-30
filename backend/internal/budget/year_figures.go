@@ -2,12 +2,15 @@ package budget
 
 import (
 	"context"
+	"fmt"
 	"slices"
+
+	"mapp/internal/platform/actor"
 )
 
 // YearFigures gives feature 036's dashboards year's global budgets, by name, with List's figures, in three
 // statements whatever their number (B5). It checks no access: the caller holds globalBudgets.view (D-343, D-356).
-func (s *Service) YearFigures(ctx context.Context, year int) ([]Summary, error) {
+func (s *Service) YearFigures(ctx context.Context, a actor.Actor, year int) ([]Summary, error) {
 	list := []Summary{}
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		all, err := s.repo.ListBudgets(ctx)
@@ -34,7 +37,10 @@ func (s *Service) YearFigures(ctx context.Context, year int) ([]Summary, error) 
 		}
 		return nil
 	})
-	return list, err
+	if err != nil {
+		return nil, fmt.Errorf("global budgets of %d for %s: %w", year, a.ID, err)
+	}
+	return list, nil
 }
 
 // amounts are the allocations in USD with their plans' planned cost, by global budget.

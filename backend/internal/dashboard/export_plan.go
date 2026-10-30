@@ -10,7 +10,7 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// planDeck is a plan's file: its title page, its summary by month, its campaigns and its activities (FR-023).
+// planDeck is a plan's file: its title page, its summary by month, its campaigns and its activities.
 func (in *input) planDeck() deck.Deck {
 	b, d := in.board, in.display
 	p := b.plans[0]

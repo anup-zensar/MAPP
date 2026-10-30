@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"mapp/internal/platform/actor"
 )
 
 const secondsPerDay = 86400
@@ -20,7 +22,7 @@ type RoundSummary struct {
 }
 
 // RoundSummaries returns the rounds of the records subjectIDs only, which the caller may see (D-356).
-func (s *Service) RoundSummaries(ctx context.Context, subjectIDs []string) ([]RoundSummary, error) {
+func (s *Service) RoundSummaries(ctx context.Context, a actor.Actor, subjectIDs []string) ([]RoundSummary, error) {
 	var list []RoundSummary
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		rounds, err := s.repo.RoundsOfSubjects(ctx, subjectIDs)
@@ -41,7 +43,10 @@ func (s *Service) RoundSummaries(ctx context.Context, subjectIDs []string) ([]Ro
 		}
 		return nil
 	})
-	return list, err
+	if err != nil {
+		return nil, fmt.Errorf("approval rounds for %s: %w", a.ID, err)
+	}
+	return list, nil
 }
 
 func summaryOf(r Round, entries []Action) RoundSummary {

@@ -1,5 +1,5 @@
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
-import { linkedTransactionsText, useFinancialRecord } from '@/features/line-items';
+import { useLinkedTransactionsNotice } from '@/features/line-items';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { usePlan } from '../api';
 import { contentsText } from '../plan-text';
@@ -27,8 +27,7 @@ export function DeletePlanDialog({
   const data = plan.data;
   const approved = data?.contents.approvedActivities ?? 0;
   const holds = data ? contentsText(data.contents) : '';
-  const financials = useFinancialRecord(planId, open);
-  const linked = linkedTransactionsText(financials.data?.figures.transactionCount ?? 0);
+  const linked = useLinkedTransactionsNotice(planId, open);
 
   return (
     <ConfirmDialog
@@ -38,7 +37,7 @@ export function DeletePlanDialog({
       confirmLabel="Delete plan"
       tone="danger"
       onConfirm={onDelete}
-      busy={busy}
+      busy={busy || linked.checking}
     >
       <div className={styles.stack}>
         {data ? (
@@ -57,7 +56,7 @@ export function DeletePlanDialog({
         ) : plan.isError ? null : (
           <Skeleton lines={2} />
         )}
-        {linked && <p>{linked}</p>}
+        {linked.text && <p>{linked.text}</p>}
         <p>It moves to the recycle bin; you can restore it.</p>
       </div>
     </ConfirmDialog>

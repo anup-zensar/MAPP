@@ -8,7 +8,7 @@ import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { activityRecord, figures } from '@/testing/fixtures/line-item-financials';
 import { testUser } from '@/testing/fixtures/users';
-import { reply } from '@/testing/replies';
+import { apiError, pending, reply } from '@/testing/replies';
 import type { RecordTarget } from './record-target';
 import { DeleteRecordDialog } from './DeleteRecordDialog';
 
@@ -65,8 +65,8 @@ function Harness({
 function renderDialog(target: RecordTarget, answers: HttpHandler[] = [], onDeleted = vi.fn()) {
   const onClose = vi.fn();
   const api = mockApi([
-    ...answers,
     reply('GET /api/v1/financials/records/{recordId}', { body: activityRecord() }),
+    ...answers,
   ]);
   const rendered = renderWithProviders(
     <Harness target={target} onClose={onClose} onDeleted={onDeleted} />,
@@ -78,6 +78,12 @@ function renderDialog(target: RecordTarget, answers: HttpHandler[] = [], onDelet
 afterEach(() => {
   vi.useRealTimers();
 });
+
+async function readyToDelete(label: string) {
+  const button = screen.getByRole('button', { name: label });
+  await waitFor(() => expect(button).not.toHaveAttribute('aria-busy'));
+  return button;
+}
 
 describe('DeleteRecordDialog (feature 005, US5)', () => {
   it('names what goes with the campaign, the approved activities and the recycle bin (US5#1, FR-028)', () => {
@@ -132,6 +138,36 @@ describe('DeleteRecordDialog (feature 005, US5)', () => {
     expect(within(dialog).getByRole('button', { name: 'Delete campaign' })).toBeEnabled();
   });
 
+  it('does not delete before the linked GSAP transactions are known, so the warning is never skipped (015 FR-029)', async () => {
+    const { user, api } = renderDialog(HELIX, [
+      reply('GET /api/v1/financials/records/{recordId}', () => pending(), { recordId: 'C-1001' }),
+    ]);
+
+    const button = screen.getByRole('button', { name: 'Delete campaign' });
+    expect(button).toHaveAttribute('aria-busy', 'true');
+    await user.click(button);
+
+    expect(api.requests.filter((r) => r.method === 'DELETE')).toHaveLength(0);
+  });
+
+  it('still warns about linked GSAP transactions when they cannot be read (015 FR-029)', async () => {
+    renderDialog(HELIX, [
+      reply(
+        'GET /api/v1/financials/records/{recordId}',
+        { status: 500, body: apiError('internal_error', 'Something went wrong.') },
+        { recordId: 'C-1001' },
+      ),
+    ]);
+
+    const dialog = screen.getByRole('alertdialog', { name: "Delete campaign 'Helix launch'?" });
+    expect(
+      await within(dialog).findByText(
+        'Any GSAP transactions linked to it stay in SP&A One and leave the figures until it is restored.',
+      ),
+    ).toBeInTheDocument();
+    expect(await readyToDelete('Delete campaign')).toBeEnabled();
+  });
+
   it('says nothing about contents or approvals when nothing is below', () => {
     renderDialog({
       ...HELIX,
@@ -168,7 +204,7 @@ describe('DeleteRecordDialog (feature 005, US5)', () => {
       ),
     ]);
 
-    await user.click(screen.getByRole('button', { name: 'Delete campaign' }));
+    await user.click(await readyToDelete('Delete campaign'));
 
     await waitFor(() => expect(onDeleted).toHaveBeenCalled());
     expect(onClose).toHaveBeenCalled();
@@ -203,7 +239,7 @@ describe('DeleteRecordDialog (feature 005, US5)', () => {
       ),
     ]);
 
-    await user.click(screen.getByRole('button', { name: 'Delete campaign' }));
+    await user.click(await readyToDelete('Delete campaign'));
 
     expect(await findMessages()).toHaveTextContent(
       'This campaign no longer exists — someone may have deleted it.',

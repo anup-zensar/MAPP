@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ApiError } from '@/api/errors';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
-import { linkedTransactionsText, useFinancialRecord } from '@/features/line-items';
+import { useLinkedTransactionsNotice } from '@/features/line-items';
 import { useToast } from '@/ui/Toast/useToast';
 import { useUndoableDelete } from '@/ui/useUndoableDelete';
 import { PLANNING_KEYS, refreshPlanning, useDeleteRecord } from './api';
@@ -32,8 +32,7 @@ export function DeleteRecordDialog({ target, onClose, onDeleted }: DeleteRecordD
   const remove = useDeleteRecord();
   const afterDelete = useUndoableDelete({ invalidate: PLANNING_KEYS });
   const [busy, setBusy] = useState(false);
-  const financials = useFinancialRecord(target?.id ?? '', target !== null);
-  const linked = linkedTransactionsText(financials.data?.figures.transactionCount ?? 0);
+  const linked = useLinkedTransactionsNotice(target?.id ?? '', target !== null);
 
   if (!target) {
     return null;
@@ -64,14 +63,14 @@ export function DeleteRecordDialog({ target, onClose, onDeleted }: DeleteRecordD
       title={deleteTitle(level, name)}
       confirmLabel={deleteLabel(level)}
       tone="danger"
-      busy={busy}
+      busy={busy || linked.checking}
       onConfirm={() => void confirm()}
     >
       <div className={styles.text}>
         {contents && <p>{withItGo(contents)}</p>}
         <p>{PLAN_TOTALS_WILL_UPDATE}</p>
         {counts.approvedActivities > 0 && <p>{approvedSentence(counts.approvedActivities)}</p>}
-        {linked && <p>{linked}</p>}
+        {linked.text && <p>{linked.text}</p>}
         <p>{MOVES_TO_RECYCLE_BIN}</p>
       </div>
     </ConfirmDialog>

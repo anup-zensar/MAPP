@@ -13,12 +13,12 @@ import (
 
 // board is the records of the plans on one dashboard, indexed, with the sums of every plan and campaign.
 type board struct {
-	plans      []*allwork.Node // by name
+	plans      []*allwork.Node
 	byLevel    map[allwork.Level][]*allwork.Node
 	campaignOf map[string]string // initiative and activity id → campaign id
 	finance    map[string]bool   // plans whose financial figures count
-	own        map[string]sums   // plan and campaign id → its sums
-	spent      map[string]sums   // line item id → its GSAP figures of the plan's year
+	own        map[string]sums
+	spent      map[string]sums // line item id → its GSAP figures of the plan's year
 	paidBy     map[string]money.Amount
 	outside    sums // GSAP figures posted in other years, counted nowhere (D-357)
 }
