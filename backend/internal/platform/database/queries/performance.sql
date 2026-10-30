@@ -1,9 +1,9 @@
 -- name: ListPerformanceSources :many
 SELECT sqlc.embed(performance_sources),
     (SELECT max(i.created_at) FROM performance_imports i
-        WHERE i.source_id = performance_sources.id AND i.status = 'completed') AS last_loaded_at,
+        WHERE i.source_id = performance_sources.id AND i.status = 'completed')::timestamptz AS last_loaded_at,
     (SELECT max(i.data_through) FROM performance_imports i
-        WHERE i.source_id = performance_sources.id AND i.status = 'completed') AS data_through,
+        WHERE i.source_id = performance_sources.id AND i.status = 'completed')::date AS data_through,
     (SELECT count(*) FROM performance_facts f WHERE f.source_id = performance_sources.id)::integer AS fact_count
 FROM performance_sources
 WHERE sqlc.narg(id)::text IS NULL OR id = sqlc.narg(id)
@@ -147,7 +147,7 @@ UPDATE performance_configuration
 SET media_code_next = media_code_next + 1, version = version + 1, updated_at = sqlc.arg(updated_at),
     updated_by_id = sqlc.arg(updated_by_id), updated_by_name = sqlc.arg(updated_by_name)
 WHERE id = 'performance'
-RETURNING media_code_next - 1 AS code;
+RETURNING (media_code_next - 1)::bigint AS code;
 
 -- name: PutPerformanceFact :exec
 INSERT INTO performance_facts (

@@ -425,9 +425,9 @@ func (q *Queries) ListPerformanceReviewRows(ctx context.Context, arg ListPerform
 const listPerformanceSources = `-- name: ListPerformanceSources :many
 SELECT performance_sources.id, performance_sources.name, performance_sources.description, performance_sources.owner_id, performance_sources.category, performance_sources.status, performance_sources.delivery_route, performance_sources.cadence, performance_sources.integration_id, performance_sources.version, performance_sources.created_at, performance_sources.created_by_id, performance_sources.created_by_name, performance_sources.updated_at, performance_sources.updated_by_id, performance_sources.updated_by_name,
     (SELECT max(i.created_at) FROM performance_imports i
-        WHERE i.source_id = performance_sources.id AND i.status = 'completed') AS last_loaded_at,
+        WHERE i.source_id = performance_sources.id AND i.status = 'completed')::timestamptz AS last_loaded_at,
     (SELECT max(i.data_through) FROM performance_imports i
-        WHERE i.source_id = performance_sources.id AND i.status = 'completed') AS data_through,
+        WHERE i.source_id = performance_sources.id AND i.status = 'completed')::date AS data_through,
     (SELECT count(*) FROM performance_facts f WHERE f.source_id = performance_sources.id)::integer AS fact_count
 FROM performance_sources
 WHERE $1::text IS NULL OR id = $1
@@ -436,8 +436,8 @@ ORDER BY lower(name COLLATE "C"), id COLLATE "C"
 
 type ListPerformanceSourcesRow struct {
 	PerformanceSource PerformanceSource
-	LastLoadedAt      interface{}
-	DataThrough       interface{}
+	LastLoadedAt      time.Time
+	DataThrough       time.Time
 	FactCount         int
 }
 
@@ -984,7 +984,7 @@ UPDATE performance_configuration
 SET media_code_next = media_code_next + 1, version = version + 1, updated_at = $1,
     updated_by_id = $2, updated_by_name = $3
 WHERE id = 'performance'
-RETURNING media_code_next - 1 AS code
+RETURNING (media_code_next - 1)::bigint AS code
 `
 
 type TakeNextMediaCodeParams struct {
@@ -993,9 +993,9 @@ type TakeNextMediaCodeParams struct {
 	UpdatedByName string
 }
 
-func (q *Queries) TakeNextMediaCode(ctx context.Context, arg TakeNextMediaCodeParams) (int32, error) {
+func (q *Queries) TakeNextMediaCode(ctx context.Context, arg TakeNextMediaCodeParams) (int64, error) {
 	row := q.db.QueryRow(ctx, takeNextMediaCode, arg.UpdatedAt, arg.UpdatedByID, arg.UpdatedByName)
-	var code int32
+	var code int64
 	err := row.Scan(&code)
 	return code, err
 }

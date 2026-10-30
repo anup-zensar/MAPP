@@ -15,8 +15,8 @@ type Transactor interface {
 
 type SourceView struct {
 	Source
-	LastLoadedAt *time.Time
-	DataThrough  *time.Time
+	LastLoadedAt time.Time
+	DataThrough  time.Time
 	FactCount    int
 }
 
