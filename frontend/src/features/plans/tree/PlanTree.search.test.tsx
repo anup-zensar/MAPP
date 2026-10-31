@@ -5,7 +5,7 @@ import type { TreeNode } from '@/ui/TreeTable/TreeTable';
 import { expectNoAxeViolations } from '@/testing/axe';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
-import { apiError, reply } from '@/testing/replies';
+import { apiError, pending, reply } from '@/testing/replies';
 import { testUser } from '@/testing/fixtures/users';
 import { plan } from '@/testing/fixtures/plans';
 import { PlanTree } from './PlanTree';
@@ -116,6 +116,15 @@ describe('039 US1: the plan tree search finds line items', () => {
     await user.type(searchBox(), 'zzz');
 
     expect(await screen.findByText("Nothing in this plan matches 'zzz'")).toBeVisible();
+  });
+
+  it('says it is still searching, not that nothing matches, until the line items are known', async () => {
+    const { user } = renderSearch(() => pending());
+
+    await user.type(searchBox(), 'zzz');
+
+    expect(await screen.findByText('Searching this plan…')).toBeVisible();
+    expect(screen.queryByText("Nothing in this plan matches 'zzz'")).not.toBeInTheDocument();
   });
 
   it('keeps filtering the other rows and says so when the line items cannot be searched', async () => {
