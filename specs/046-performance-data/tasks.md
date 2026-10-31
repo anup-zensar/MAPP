@@ -62,18 +62,18 @@ while it holds no facts. No upload needed.
 ### Tests (write first, confirm they fail)
 
 - [ ] T017 [P] [US1] Write `backend/internal/performance/source_test.go`: create, find, view, edit (FR-001); one active source per (model, stage) refused naming the conflicting source (FR-003); delete refused while facts exist and Deactivate offered (FR-002); deactivate keeps facts, refuses uploads and updates *Is integrated* at once (FR-004); reactivate · proves SC-005
-- [ ] T018 [P] [US1] Write `backend/internal/performance/freshness_test.go`: *Current · Stale · Failed · Inactive* derived from the last import, data-through date and cadence (FR-005), on a fixed clock
-- [ ] T019 [P] [US1] Write `backend/internal/performance/mapping_test.go`: each `meaning` value accepted; `web_metric` restricted to **sessions, visits, engagement touches** (046-C11); a mapping change affects future loads only (FR-007) (FR-006)
+- [X] T018 [P] [US1] Write `backend/internal/performance/freshness_test.go`: *Current · Stale · Failed · Inactive* derived from the last import, data-through date and cadence (FR-005), on a fixed clock
+- [X] T019 [P] [US1] Write `backend/internal/performance/mapping_test.go`: each `meaning` value accepted; `web_metric` restricted to **sessions, visits, engagement touches** (046-C11); a mapping change affects future loads only (FR-007) (FR-006)
 - [ ] T020 [P] [US1] Write `backend/internal/performance/handler_source_test.go` as a contract test (external `package performance_test`, through `internal/platform/apitest`) for every source and mapping operation in [contracts/api.md](./contracts/api.md), including the **409** on delete-with-facts and on the duplicate stage supplier
 - [ ] T021 [P] [US1] Write `frontend/src/features/performance/sources/SourceList.test.tsx` and `SourceForm.test.tsx`: the states data, empty, no access, and all validation errors shown at once
 
 ### Implementation
 
 - [ ] T022 [US1] Implement the data-source rules in `backend/internal/performance/source.go`: create, edit with version check (`version_conflict` on a stale update), delete-vs-deactivate, reactivate
-- [ ] T023 [US1] Implement derived freshness in `backend/internal/performance/freshness.go` — computed, never stored (data-model.md)
-- [ ] T024 [US1] Implement mapping rules in `backend/internal/performance/mapping.go`, including the one-active-source-per-stage refusal naming the conflicting source (FR-006, FR-003)
+- [X] T023 [US1] Implement derived freshness in `backend/internal/performance/freshness.go` — computed, never stored (data-model.md)
+- [X] T024 [US1] Implement mapping rules in `backend/internal/performance/mapping.go`, including the one-active-source-per-stage refusal naming the conflicting source (FR-006, FR-003)
 - [ ] T025 [US1] Implement the blank file template in `backend/internal/performance/template.go`, carrying exactly the columns the mappings define (FR-008)
-- [ ] T026 [US1] Implement the source and mapping handlers in `backend/internal/performance/handler.go`; add each operation's rule to the access route table and report it in the pull request (the shared `routes_measure.go` is not this lane's to edit)
+- [ ] T026 [US1] Implement the source and mapping handlers in `backend/internal/performance/handler.go`; add each operation's rule to the access route table. **Blocked on the contract**: `TestEveryOperationHasAnAccessRule_SC001` asserts in both directions, so a rule for an operation `openapi.yaml` does not carry fails CI. `access/routes_performance.go` was written and reverted; it lands the moment the integrator applies the wave B contract (contracts item 1)
 - [ ] T027 [US1] Remove this story's operations from `notYetServed` in `backend/internal/app/app_test.go` (this feature's group only)
 - [ ] T028 [P] [US1] Build `frontend/src/features/performance/sources/` — list, form and the Settings › Performance data route — with React Hook Form + Zod and MSW-typed answers; run `pnpm run api:types` first
 - [ ] T029 [US1] Run the checks of [quality-gates.md](../../docs/sdd/quality-gates.md) on everything changed

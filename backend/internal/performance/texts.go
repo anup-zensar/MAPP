@@ -35,3 +35,18 @@ const (
 func codeText(code int64) string {
 	return strconv.FormatInt(code, 10)
 }
+
+const (
+	fieldColumnName = "columnName"
+	fieldMeaning    = "meaning"
+	fieldStage      = "stage"
+	fieldWebMetric  = "webMetric"
+	fieldModelID    = "modelId"
+
+	msgColumnLength   = "Give the column a name of 1 to 120 characters."
+	msgMeaningUnknown = "Choose what this column means."
+	msgStageNeeded    = "A stage column names its stage, and only a stage column does."
+	msgMetricNeeded   = "A web-metric column names its metric, and only a web-metric column does."
+	msgMetricUnknown  = "A web metric is sessions, visits or engagement touches."
+	msgModelNeeded    = "Only a stage or revenue column is supplied by a model, and it must name one."
+)
