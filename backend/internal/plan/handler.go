@@ -16,12 +16,10 @@ type Handler struct {
 	service *Service
 }
 
-// NewHandler returns the handler of the plan routes.
 func NewHandler(s *Service) *Handler {
 	return &Handler{service: s}
 }
 
-// RegisterRoutes registers the plan routes on r.
 func (h *Handler) RegisterRoutes(r gin.IRoutes) {
 	r.GET("/plan-defaults", h.defaults)
 	r.GET("/plans", h.list)
@@ -33,11 +31,11 @@ func (h *Handler) RegisterRoutes(r gin.IRoutes) {
 	r.POST("/plans/:planId/publish", h.publish)
 	r.POST("/plans/:planId/unpublish", h.unpublish)
 	r.GET("/plans/:planId/copy-options", h.copyOptions)
+	r.GET("/plans/:planId/search", h.search)
 	r.POST("/plans/:planId/copy", h.copy)
-	r.PUT("/plans/:planId/budget-phasing", h.setBudgetPhasing) // 016 FR-020
+	r.PUT("/plans/:planId/budget-phasing", h.setBudgetPhasing)
 }
 
-// setBudgetPhasing answers PUT /api/v1/plans/{planId}/budget-phasing with the plan after the save (016 FR-020).
 func (h *Handler) setBudgetPhasing(c *gin.Context) {
 	var input rollup.PhasingInput
 	if err := web.BindJSON(c, &input); err != nil {
@@ -53,9 +51,8 @@ func (h *Handler) setBudgetPhasing(c *gin.Context) {
 	web.Respond(c, http.StatusOK, plan)
 }
 
-// defaults answers GET /api/v1/plan-defaults: what a new plan starts with for the signed-in person.
 func (h *Handler) defaults(c *gin.Context) {
-	a, _ := actor.From(c.Request.Context()) // put there by the sign-in middleware
+	a, _ := actor.From(c.Request.Context())
 	defaults, err := h.service.Defaults(c.Request.Context(), a)
 	if err != nil {
 		web.RespondError(c, err)
@@ -64,7 +61,6 @@ func (h *Handler) defaults(c *gin.Context) {
 	web.Respond(c, http.StatusOK, defaults)
 }
 
-// create answers POST /api/v1/plans with 201 and the new plan.
 func (h *Handler) create(c *gin.Context) {
 	var input PlanInput
 	if err := web.BindJSON(c, &input); err != nil {
@@ -80,7 +76,6 @@ func (h *Handler) create(c *gin.Context) {
 	web.Respond(c, http.StatusCreated, plan)
 }
 
-// get answers GET /api/v1/plans/{planId} with the plan and its calculated values.
 func (h *Handler) get(c *gin.Context) {
 	a, _ := actor.From(c.Request.Context())
 	plan, err := h.service.Get(c.Request.Context(), a, c.Param("planId"))
@@ -91,9 +86,18 @@ func (h *Handler) get(c *gin.Context) {
 	web.Respond(c, http.StatusOK, plan)
 }
 
-// list answers GET /api/v1/plans: the plans matching the query's scope, status, years (year, or yearFrom and
-// yearTo, 016 FR-033), plan types and search, with the summary cards (FR-001 – FR-004). Every wrong
-// parameter is reported at once.
+func (h *Handler) search(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context())
+	found, err := h.service.Search(c.Request.Context(), a, c.Param("planId"), c.Query("q"))
+	if err != nil {
+		web.RespondError(c, err)
+		return
+	}
+	web.Respond(c, http.StatusOK, found)
+}
+
+// list answers GET /api/v1/plans: the plans matching the query's scope, status, years, plan types and search,
+// with the summary cards; every wrong parameter is reported at once.
 func (h *Handler) list(c *gin.Context) {
 	filter, err := parseListFilter(c.Request.URL.Query())
 	if err != nil {
@@ -109,7 +113,6 @@ func (h *Handler) list(c *gin.Context) {
 	web.Respond(c, http.StatusOK, list)
 }
 
-// update answers PATCH /api/v1/plans/{planId} with the plan after the save.
 func (h *Handler) update(c *gin.Context) {
 	var update PlanUpdate
 	if err := web.BindJSON(c, &update); err != nil {
@@ -166,7 +169,6 @@ func (h *Handler) publish(c *gin.Context) {
 	web.Respond(c, http.StatusOK, plan)
 }
 
-// unpublish answers POST /api/v1/plans/{planId}/unpublish with the plan back in Draft.
 func (h *Handler) unpublish(c *gin.Context) {
 	var request UnpublishRequest
 	if err := web.BindJSON(c, &request); err != nil {
@@ -182,7 +184,6 @@ func (h *Handler) unpublish(c *gin.Context) {
 	web.Respond(c, http.StatusOK, plan)
 }
 
-// copyOptions answers GET /api/v1/plans/{planId}/copy-options: what the copy dialog offers.
 func (h *Handler) copyOptions(c *gin.Context) {
 	a, _ := actor.From(c.Request.Context())
 	options, err := h.service.CopyOptions(c.Request.Context(), a, c.Param("planId"))

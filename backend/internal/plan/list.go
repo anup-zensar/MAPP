@@ -156,28 +156,57 @@ func (r listReads) summaryOf(plans []Plan) ListSummary {
 }
 
 func (s *Service) itemsOf(ctx context.Context, plans []Plan, filter ListFilter, r listReads) ([]PlanSummary, error) {
+	kept, found, err := s.searched(ctx, plans, filter)
+	if err != nil {
+		return nil, err
+	}
 	items := []PlanSummary{}
-	query := strings.ToLower(strings.TrimSpace(filter.Q))
-	for _, p := range plans {
-		if !filter.matches(p, query) {
-			continue
-		}
+	for _, p := range kept {
 		item, err := s.itemOf(ctx, p, r)
 		if err != nil {
 			return nil, err
 		}
+		item.FoundIn = found[p.ID]
 		items = append(items, item)
 	}
 	return items, nil
 }
 
-func (filter ListFilter) matches(p Plan, query string) bool {
+// searched keeps, in order, the plans that pass the filters and hold the search in their own name or ID or in a
+// record below them; found says where for the second kind.
+func (s *Service) searched(ctx context.Context, plans []Plan, filter ListFilter) ([]Plan, map[string]*FoundIn, error) {
+	text := strings.TrimSpace(filter.Q)
+	query := strings.ToLower(text)
+	var others []string
+	for _, p := range plans {
+		if filter.passes(p) && !ownMatch(p, query) {
+			others = append(others, p.ID)
+		}
+	}
+	found, err := s.foundIn(ctx, others, text)
+	if err != nil {
+		return nil, nil, err
+	}
+	kept := slices.DeleteFunc(slices.Clone(plans), func(p Plan) bool {
+		return !filter.passes(p) || (!ownMatch(p, query) && found[p.ID] == nil)
+	})
+	return kept, found, nil
+}
+
+func (filter ListFilter) passes(p Plan) bool {
 	if filter.Status != "" && string(p.Status) != filter.Status {
 		return false
 	}
-	if (filter.BCPIR == bcpirOnly && !p.BCPIR) || (filter.BCPIR == bcpirExclude && p.BCPIR) {
-		return false
+	switch filter.BCPIR {
+	case bcpirOnly:
+		return p.BCPIR
+	case bcpirExclude:
+		return !p.BCPIR
 	}
+	return true
+}
+
+func ownMatch(p Plan, query string) bool {
 	return strings.Contains(strings.ToLower(p.Name), query) || strings.Contains(strings.ToLower(p.ID), query)
 }
 

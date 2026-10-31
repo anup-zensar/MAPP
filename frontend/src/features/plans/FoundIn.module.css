@@ -1,0 +1,6 @@
+.foundIn {
+  margin: var(--space-1) 0 0;
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}

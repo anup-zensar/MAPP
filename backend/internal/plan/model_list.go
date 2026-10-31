@@ -23,6 +23,7 @@ type PlanSummary struct {
 	Currency        string            `json:"currency"`
 	PlanBudget      *money.Money      `json:"planBudget"`
 	PlanPlannedCost *money.Money      `json:"planPlannedCost"`
+	FoundIn         *FoundIn          `json:"foundIn,omitempty"`
 }
 
 type ListSummary struct {

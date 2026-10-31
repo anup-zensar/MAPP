@@ -28,6 +28,7 @@ type Service struct {
 
 	allocations       Allocations // nil: no plan is allocated
 	overspendDefaults OverspendDefaults
+	searcher          Searcher
 }
 
 func NewService(tools history.Tools, repo Store, settings Settings, directory Directory) *Service {

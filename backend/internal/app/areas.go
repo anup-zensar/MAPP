@@ -64,6 +64,7 @@ func (w *wiring) rates() error {
 func (w *wiring) plansArea() error {
 	tools := history.Tools{Tx: w.guard, IDs: w.generator, Log: w.history, Now: w.now}
 	w.plans = plan.NewService(tools, w.set.Plans, w.settings, w.people)
+	w.plans.UseSearcher(planSearcher{campaigns: w.set.Campaigns, activities: w.set.Activities, lineItems: w.set.LineItems})
 	if err := w.register(overspend.Described(w.plans.Kinds())); err != nil {
 		return err
 	}

@@ -8,6 +8,7 @@ func planRoutes() map[string]Rule {
 		"GET /api/v1/plans":                          signedIn(), // filtered to the plans the person can see
 		"POST /api/v1/plans":                         inPlan(authz.PlansCreate),
 		"GET /api/v1/plans/{planId}":                 view(),
+		"GET /api/v1/plans/{planId}/search":          view(),
 		"PATCH /api/v1/plans/{planId}":               inPlan(authz.PlansEdit),
 		"DELETE /api/v1/plans/{planId}":              inPlan(authz.PlansDelete),
 		"POST /api/v1/plans/{planId}/publish":        inPlan(authz.PlansPublish),
