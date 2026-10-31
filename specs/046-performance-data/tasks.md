@@ -205,7 +205,7 @@ other with a comment and reopen it.
 
 ### Implementation
 
-- [ ] T088 [US5] Implement the review queue reads and filters in `backend/internal/performance/review.go`
+- [ ] T088 [US5] Implement the review queue reads and filters in `backend/internal/performance/review.go`, gated by `performance.import` and **filtering each row's `candidates` to the activities in the reader's scope** (046-C15): a row whose candidates all lie outside it still appears with its reason and names none of them
 - [ ] T089 [US5] Implement correct, dismiss (comment required) and reopen, each writing its history entry
 - [ ] T090 [US5] Implement on-demand and automatic re-check in `backend/internal/performance/recheck.go`, reusing the set-based matcher of T044 rather than looping rows
 - [ ] T091 [US5] Implement source-wins precedence over a correction
