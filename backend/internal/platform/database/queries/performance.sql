@@ -265,3 +265,21 @@ UNION
 SELECT n.activity_id
 FROM activity_external_name_aliases n
 WHERE lower(n.name COLLATE "C") = lower(sqlc.arg(name)::text COLLATE "C");
+
+-- name: PutPerformanceImportBreakdown :exec
+INSERT INTO performance_import_breakdown (
+    import_id, stage, web_metric, rows_read, rows_matched, rows_held,
+    rows_unattributed, rows_rejected, rows_unmatched
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+ON CONFLICT (import_id, stage, web_metric) DO UPDATE SET
+    rows_read = excluded.rows_read, rows_matched = excluded.rows_matched,
+    rows_held = excluded.rows_held, rows_unattributed = excluded.rows_unattributed,
+    rows_rejected = excluded.rows_rejected, rows_unmatched = excluded.rows_unmatched;
+
+-- name: DeletePerformanceImportBreakdown :exec
+DELETE FROM performance_import_breakdown WHERE import_id = sqlc.arg(import_id);
+
+-- name: ListPerformanceImportBreakdown :many
+SELECT * FROM performance_import_breakdown
+WHERE import_id = ANY(sqlc.arg(import_ids)::text[])
+ORDER BY import_id COLLATE "C", stage COLLATE "C", web_metric COLLATE "C";

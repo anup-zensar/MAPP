@@ -87,7 +87,7 @@ func pgPerformanceDB(t *testing.T) (*performance.PostgresStore, *database.DB) {
 	return store, db
 }
 
-func countOf(n int) *int { return &n }
+func countOf(n int64) *int64 { return &n }
 
 func atoiOf(n string) int {
 	if n == "2" {

@@ -597,7 +597,7 @@ type PerformanceFact struct {
 	FactDate        time.Time
 	Stage           string
 	WebMetric       string
-	CountValue      *int
+	CountValue      *int64
 	AmountMinor     *int64
 	Currency        *string
 	Held            bool
@@ -631,6 +631,18 @@ type PerformanceImport struct {
 	UpdatedAt        time.Time
 	UpdatedByID      string
 	UpdatedByName    string
+}
+
+type PerformanceImportBreakdown struct {
+	ImportID         string
+	Stage            string
+	WebMetric        string
+	RowsRead         int
+	RowsMatched      int
+	RowsHeld         int
+	RowsUnattributed int
+	RowsRejected     int
+	RowsUnmatched    int
 }
 
 type PerformanceReviewRow struct {

@@ -8,21 +8,23 @@ import (
 )
 
 var (
-	today      = time.Date(2026, 3, 12, 0, 0, 0, 0, time.UTC)
-	knownStage = map[string]bool{"inq": true, "mql": true}
-	knownCcy   = map[string]bool{"USD": true, "EUR": true}
+	today    = time.Date(2026, 3, 12, 0, 0, 0, 0, time.UTC)
+	knownCcy = map[string]bool{"USD": true, "EUR": true}
 )
 
-type cells struct{ ref, date, stage, count, amount, ccy string }
+type cells struct{ ref, date, inq, revenue, ccy string }
 
-func row(c cells) performance.RowInput {
-	return performance.RowInput{
-		Reference: c.ref,
+// loadRow builds a row of a source mapping one INQ column and one revenue column, the wide shape FR-006
+// allows: the mapping names each measure and the cell carries only its figure.
+func loadRow(c cells) performance.Row {
+	return performance.Row{
+		Reference: performance.Cell{Column: "reference", Value: c.ref},
 		Date:      performance.Cell{Column: "date", Value: c.date},
-		Stage:     performance.Cell{Column: "stage", Value: c.stage},
-		Count:     performance.Cell{Column: "count", Value: c.count},
-		Amount:    performance.Cell{Column: "amount", Value: c.amount},
 		Currency:  performance.Cell{Column: "currency", Value: c.ccy},
+		Readings: []performance.Reading{
+			{Measure: performance.Measure{Stage: "inq"}, Cell: performance.Cell{Column: "inq", Value: c.inq}},
+			{Measure: performance.Measure{Stage: "revenue"}, Cell: performance.Cell{Column: "revenue", Value: c.revenue}},
+		},
 	}
 }
 
@@ -37,7 +39,7 @@ func codesOf(faults []performance.Fault) map[string]bool {
 func TestValidate_AGoodRowHasNoFaults_FR011(t *testing.T) {
 	t.Parallel()
 
-	if got := performance.Validate(row(cells{ref: "r1", date: "2026-02-01", stage: "inq", count: "5", amount: "", ccy: ""}), today, knownStage, knownCcy); len(got) != 0 {
+	if got := performance.Validate(loadRow(cells{ref: "r1", date: "2026-02-01", inq: "5"}), today, knownCcy); len(got) != 0 {
 		t.Errorf("a good row reported %+v, want none", got)
 	}
 }
@@ -45,12 +47,11 @@ func TestValidate_AGoodRowHasNoFaults_FR011(t *testing.T) {
 func TestValidate_EveryFaultAtOnce_FR011(t *testing.T) {
 	t.Parallel()
 
-	// No reference, an unreadable date, a count that is both negative and fractional, an unreadable amount
-	// with no currency, and a stage the model does not define.
-	got := codesOf(performance.Validate(row(cells{ref: "", date: "not-a-date", stage: "deals", count: "-1.5", amount: "abc", ccy: ""}), today, knownStage, knownCcy))
+	got := codesOf(performance.Validate(
+		loadRow(cells{ref: "", date: "not-a-date", inq: "-1.5", revenue: "abc", ccy: ""}), today, knownCcy))
 
 	for _, want := range []string{"missingReference", "invalidDate", "negativeCount", "fractionalCount",
-		"invalidAmount", "unconfiguredCurrency", "unknownStage"} {
+		"invalidAmount", "unconfiguredCurrency"} {
 		if !got[want] {
 			t.Errorf("%s is not among the faults reported: %v", want, got)
 		}
@@ -60,17 +61,57 @@ func TestValidate_EveryFaultAtOnce_FR011(t *testing.T) {
 func TestValidate_NegativeAndFractionalAreBothReported_FR011(t *testing.T) {
 	t.Parallel()
 
-	got := codesOf(performance.Validate(row(cells{ref: "r1", date: "2026-02-01", stage: "inq", count: "-1.5", amount: "", ccy: ""}), today, knownStage, knownCcy))
+	got := codesOf(performance.Validate(loadRow(cells{ref: "r1", date: "2026-02-01", inq: "-1.5"}), today, knownCcy))
 
 	if !got["negativeCount"] || !got["fractionalCount"] {
 		t.Errorf("-1.5 reported %v, want both negativeCount and fractionalCount", got)
 	}
 }
 
+func TestValidate_CountsThatAreNotWholeNumbers_FR011(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]string{
+		"a count beyond what the column holds": "9223372036854775808",
+		"a count in exponent form":             "1e5",
+		"a count that is not a number at all":  "NaN",
+		"a hexadecimal count":                  "0x10",
+		"a count with a stray suffix":          "12abc",
+	}
+
+	for name, raw := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			if got := codesOf(performance.Validate(loadRow(cells{ref: "r1", date: "2026-02-01", inq: raw}), today, knownCcy)); !got["invalidCount"] {
+				t.Errorf("Validate(%q) reported %v, want invalidCount", raw, got)
+			}
+		})
+	}
+}
+
+func TestValidate_ATrailingZeroIsStillAWholeCount_FR011(t *testing.T) {
+	t.Parallel()
+
+	if got := performance.Validate(loadRow(cells{ref: "r1", date: "2026-02-01", inq: "7.00"}), today, knownCcy); len(got) != 0 {
+		t.Errorf("7.00 reported %+v, want no fault: it is a whole number", got)
+	}
+}
+
+func TestValidate_MoneyIsReadExactlyNotAsAFloat_FR014(t *testing.T) {
+	t.Parallel()
+
+	got := codesOf(performance.Validate(
+		loadRow(cells{ref: "r1", date: "2026-02-01", revenue: "1234.567", ccy: "USD"}), today, knownCcy))
+
+	if !got["invalidAmount"] {
+		t.Errorf("an amount with three decimals reported %v, want invalidAmount", got)
+	}
+}
+
 func TestValidate_FutureDateRefused_FR011(t *testing.T) {
 	t.Parallel()
 
-	got := codesOf(performance.Validate(row(cells{ref: "r1", date: "2026-06-01", stage: "inq", count: "1", amount: "", ccy: ""}), today, knownStage, knownCcy))
+	got := codesOf(performance.Validate(loadRow(cells{ref: "r1", date: "2026-06-01", inq: "1"}), today, knownCcy))
 
 	if !got["futureDate"] {
 		t.Errorf("a date after today reported %v, want futureDate", got)
@@ -80,10 +121,35 @@ func TestValidate_FutureDateRefused_FR011(t *testing.T) {
 func TestValidate_AmountWithoutAConfiguredCurrency_FR011(t *testing.T) {
 	t.Parallel()
 
-	got := codesOf(performance.Validate(row(cells{ref: "r1", date: "2026-02-01", stage: "inq", count: "", amount: "1234.50", ccy: "GBP"}), today, knownStage, knownCcy))
+	got := codesOf(performance.Validate(
+		loadRow(cells{ref: "r1", date: "2026-02-01", revenue: "1234.50", ccy: "GBP"}), today, knownCcy))
 
 	if !got["unconfiguredCurrency"] {
 		t.Errorf("an amount in an unconfigured currency reported %v, want unconfiguredCurrency", got)
+	}
+}
+
+func TestValidate_ARowFillingNoMeasureColumnIsRefused_FR011(t *testing.T) {
+	t.Parallel()
+
+	got := codesOf(performance.Validate(loadRow(cells{ref: "r1", date: "2026-02-01"}), today, knownCcy))
+
+	if !got["noMeasure"] {
+		t.Errorf("a row filling no measure column reported %v, want noMeasure", got)
+	}
+}
+
+func TestValidate_AReferenceTooLongForItsColumn_FR011(t *testing.T) {
+	t.Parallel()
+
+	long := make([]byte, 201)
+	for i := range long {
+		long[i] = 'r'
+	}
+	got := codesOf(performance.Validate(loadRow(cells{ref: string(long), date: "2026-02-01", inq: "1"}), today, knownCcy))
+
+	if !got["referenceTooLong"] {
+		t.Errorf("a 201-character reference reported %v, want referenceTooLong", got)
 	}
 }
 

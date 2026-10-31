@@ -160,6 +160,15 @@ func (q *Queries) DeletePerformanceFacts(ctx context.Context, ids []string) erro
 	return err
 }
 
+const deletePerformanceImportBreakdown = `-- name: DeletePerformanceImportBreakdown :exec
+DELETE FROM performance_import_breakdown WHERE import_id = $1
+`
+
+func (q *Queries) DeletePerformanceImportBreakdown(ctx context.Context, importID string) error {
+	_, err := q.db.Exec(ctx, deletePerformanceImportBreakdown, importID)
+	return err
+}
+
 const deletePerformanceMapping = `-- name: DeletePerformanceMapping :exec
 DELETE FROM performance_source_mappings WHERE id = $1
 `
@@ -510,6 +519,42 @@ func (q *Queries) ListMediaCodesForActivity(ctx context.Context, arg ListMediaCo
 			&i.MediaCode.UpdatedAt,
 			&i.MediaCode.UpdatedByID,
 			&i.MediaCode.UpdatedByName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPerformanceImportBreakdown = `-- name: ListPerformanceImportBreakdown :many
+SELECT import_id, stage, web_metric, rows_read, rows_matched, rows_held, rows_unattributed, rows_rejected, rows_unmatched FROM performance_import_breakdown
+WHERE import_id = ANY($1::text[])
+ORDER BY import_id COLLATE "C", stage COLLATE "C", web_metric COLLATE "C"
+`
+
+func (q *Queries) ListPerformanceImportBreakdown(ctx context.Context, importIds []string) ([]PerformanceImportBreakdown, error) {
+	rows, err := q.db.Query(ctx, listPerformanceImportBreakdown, importIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PerformanceImportBreakdown{}
+	for rows.Next() {
+		var i PerformanceImportBreakdown
+		if err := rows.Scan(
+			&i.ImportID,
+			&i.Stage,
+			&i.WebMetric,
+			&i.RowsRead,
+			&i.RowsMatched,
+			&i.RowsHeld,
+			&i.RowsUnattributed,
+			&i.RowsRejected,
+			&i.RowsUnmatched,
 		); err != nil {
 			return nil, err
 		}
@@ -1105,7 +1150,7 @@ type PutPerformanceFactParams struct {
 	FactDate        time.Time
 	Stage           string
 	WebMetric       string
-	CountValue      *int
+	CountValue      *int64
 	AmountMinor     *int64
 	Currency        *string
 	Held            bool
@@ -1200,6 +1245,44 @@ func (q *Queries) PutPerformanceImport(ctx context.Context, arg PutPerformanceIm
 		arg.UpdatedAt,
 		arg.UpdatedByID,
 		arg.UpdatedByName,
+	)
+	return err
+}
+
+const putPerformanceImportBreakdown = `-- name: PutPerformanceImportBreakdown :exec
+INSERT INTO performance_import_breakdown (
+    import_id, stage, web_metric, rows_read, rows_matched, rows_held,
+    rows_unattributed, rows_rejected, rows_unmatched
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+ON CONFLICT (import_id, stage, web_metric) DO UPDATE SET
+    rows_read = excluded.rows_read, rows_matched = excluded.rows_matched,
+    rows_held = excluded.rows_held, rows_unattributed = excluded.rows_unattributed,
+    rows_rejected = excluded.rows_rejected, rows_unmatched = excluded.rows_unmatched
+`
+
+type PutPerformanceImportBreakdownParams struct {
+	ImportID         string
+	Stage            string
+	WebMetric        string
+	RowsRead         int
+	RowsMatched      int
+	RowsHeld         int
+	RowsUnattributed int
+	RowsRejected     int
+	RowsUnmatched    int
+}
+
+func (q *Queries) PutPerformanceImportBreakdown(ctx context.Context, arg PutPerformanceImportBreakdownParams) error {
+	_, err := q.db.Exec(ctx, putPerformanceImportBreakdown,
+		arg.ImportID,
+		arg.Stage,
+		arg.WebMetric,
+		arg.RowsRead,
+		arg.RowsMatched,
+		arg.RowsHeld,
+		arg.RowsUnattributed,
+		arg.RowsRejected,
+		arg.RowsUnmatched,
 	)
 	return err
 }

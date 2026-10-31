@@ -183,6 +183,28 @@ these into the decision log at the end of wave B.
   is a row somebody should look at, and silently attributing it to the media code's activity would be the
   guess FR-019 forbids.
 
+- **046-C21** — Q: What does a file row look like — does a stage column hold the stage's *name* or its
+  *figure*? → A: **The mapping names the measure; the cell carries only the figure.** FR-006 and the mapping
+  rule already require it: a stage column names its stage and a web-metric column names its metric, which is
+  why `Meaning` has no "count" value — the count *is* the stage or metric column's value. A source may
+  therefore map an INQ column and an MQL column side by side, and **one file row then produces one fact per
+  measure column it fills**, all under the same source reference.
+
+  Three things follow. A fact's identity is (data source, source reference, **measure**), not (data source,
+  source reference) — otherwise the second measure of a row could never be stored (FR-013, 046-C4). Revenue
+  is carried as the stage `revenue`, so every fact names exactly one measure. And a row's stage is never
+  validated against the model's stages at load time, because it never appears in a cell: that check belongs
+  to the mapping, where a closed vocabulary already applies.
+
+  The five outcomes stay **per row**, since FR-022 counts rows read. A row counts once in the totals and once
+  under each measure it fills, so the 046-C18 breakdown deliberately does not add up to the totals.
+
+- **046-C22** — Q: A wide file carries a column per measure and a row rarely fills them all. Is an empty
+  measure cell a zero, a fault, or an absent fact? → A: **An absent fact.** A blank INQ cell on a row
+  reporting revenue means the source said nothing about INQs, not that there were none, and storing a zero
+  would make a figure the source never sent. A row that fills **no** measure column at all is rejected with a
+  stated reason, because a line saying nothing is a mistake rather than a set of zeroes.
+
 
 ## User Scenarios & Testing *(mandatory)*
 

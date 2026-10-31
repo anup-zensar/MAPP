@@ -83,7 +83,7 @@ type Fact struct {
 	FactDate        time.Time    `json:"factDate"`
 	Stage           string       `json:"stage"`
 	WebMetric       WebMetric    `json:"webMetric"`
-	Count           *int         `json:"count,omitempty"`
+	Count           *int64       `json:"count,omitempty"`
 	Amount          *money.Money `json:"amount,omitempty"`
 	Held            bool         `json:"held"`
 	ReplacedByID    string       `json:"replacedById"`

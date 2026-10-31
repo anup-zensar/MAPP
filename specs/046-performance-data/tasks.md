@@ -75,7 +75,7 @@ while it holds no facts. No upload needed.
 - [ ] T025 [US1] Implement the blank file template in `backend/internal/performance/template.go`, carrying exactly the columns the mappings define (FR-008)
 - [ ] T026 [US1] Implement the source and mapping handlers in `backend/internal/performance/handler.go`; add each operation's rule to the access route table. **Blocked on the contract**: `TestEveryOperationHasAnAccessRule_SC001` asserts in both directions, so a rule for an operation `openapi.yaml` does not carry fails CI. `access/routes_performance.go` was written and reverted; it lands the moment the integrator applies the wave B contract (contracts item 1)
 - [ ] T027 [US1] Remove this story's operations from `notYetServed` in `backend/internal/app/app_test.go` (this feature's group only)
-- [X] T028 [P] [US1] Build `frontend/src/features/performance/sources/` — list, form and the Settings › Performance data route — with React Hook Form + Zod and MSW-typed answers; run `pnpm run api:types` first
+- [ ] T028 [P] [US1] Build `frontend/src/features/performance/sources/` — list, form and the Settings › Performance data route — with React Hook Form + Zod and MSW-typed answers; run `pnpm run api:types` first
 - [X] T029 [US1] Run the checks of [quality-gates.md](../../docs/sdd/quality-gates.md) on everything changed
 
 **Checkpoint**: sources and mappings are configurable end to end.
@@ -95,10 +95,10 @@ unchanged; undo it.
 
 - [X] T030 [P] [US2] Write `backend/internal/performance/validate_test.go`: all faults in one row reported together — empty required column, invalid or future date, negative or fractional count, invalid amount or unconfigured currency, unknown stage, missing or repeated reference (FR-011)
 - [X] T031 [P] [US2] Write `backend/internal/performance/personaldata_test.go`: a file with a personal-data column is refused **in full** and **no row is stored** (FR-012) · proves SC-007
-- [ ] T032 [P] [US2] Write `backend/internal/performance/matcher_test.go` table-driven over the four keys in their strict order — activity ID → media code → integration ID → external name (FR-018) — plus ambiguous, unknown, and **keys disagree** naming both candidates and never guessing (FR-019) · proves SC-006
+- [X] T032 [P] [US2] Write `backend/internal/performance/matcher_test.go` table-driven over the four keys in their strict order — activity ID → media code → integration ID → external name (FR-018) — plus ambiguous, unknown, and **keys disagree** naming both candidates and never guessing (FR-019) · proves SC-006
 - [ ] T033 [P] [US2] Write `backend/internal/performance/held_test.go`: a fact on an activity that is Created, Submitted or Declined is held and counts nowhere; Approved, In progress and Complete do not hold (FR-020, FR-028) · proves SC-002
 - [ ] T034 [P] [US2] Write `backend/internal/performance/binned_test.go`: a fact matched to a **binned** activity is held until restore **and** approval; a fact matched to a **permanently deleted** activity goes to the review queue (FR-021)
-- [ ] T035 [P] [US2] Write `backend/internal/performance/summary_test.go` as a property test: for any generated file, matched + held + unattributed + rejected + unmatched **equals** rows read (FR-022) · proves SC-001
+- [X] T035 [P] [US2] Write `backend/internal/performance/summary_test.go` as a property test: for any generated file, matched + held + unattributed + rejected + unmatched **equals** rows read (FR-022) · proves SC-001
 - [ ] T036 [P] [US2] Write `backend/internal/performance/idempotent_test.go`: an identical file changes nothing; a repeated (source, source reference) replaces and audits both versions (FR-013) · proves SC-004
 - [ ] T037 [P] [US2] Write `backend/internal/performance/undo_test.go`: undo restores replaced versions, leaves a later upload's facts alone, and leaves the import listed as *Undone* (FR-017)
 - [ ] T038 [P] [US2] Write `backend/internal/performance/money_test.go`: revenue stored exactly in its currency; without a rate it is marked and excluded with its count (FR-014); a fact counts in the fiscal year of its own date across a multi-year activity (FR-015) · proves SC-010
@@ -108,12 +108,12 @@ unchanged; undo it.
 
 ### Implementation
 
-- [ ] T042 [US2] Implement row validation in `backend/internal/performance/validate.go`, collecting **every** fault per row rather than returning on the first
-- [ ] T043 [US2] Implement the whole-file personal-data gate in `backend/internal/performance/personaldata.go`, run before any row is read
-- [ ] T044 [US2] Implement **set-based** matching in `backend/internal/performance/matcher.go`: collect distinct keys by type, resolve each type in one query, build the key → activity map, then decide rows as pure functions over it. A per-row lookup is the failure this rule exists to prevent (research R2, plan R16)
+- [X] T042 [US2] Implement row validation in `backend/internal/performance/validate.go`, collecting **every** fault per row rather than returning on the first
+- [X] T043 [US2] Implement the whole-file personal-data gate in `backend/internal/performance/personaldata.go`, run before any row is read
+- [X] T044 [US2] Implement **set-based** matching in `backend/internal/performance/matcher.go`: collect distinct keys by type, resolve each type in one query, build the key → activity map, then decide rows as pure functions over it. A per-row lookup is the failure this rule exists to prevent (research R2, plan R16)
 - [ ] T045 [US2] Implement holding and release in `backend/internal/performance/held.go`, with the release port the approvals area calls (research R4) declared in `ports.go`
 - [ ] T046 [US2] Implement the binned and permanently-deleted paths in `backend/internal/performance/held.go`, reusing the holding rule rather than branching it (FR-021)
-- [ ] T047 [US2] Implement the import run and its five-count summary in `backend/internal/performance/importer.go`, computing the counts in SQL (FR-009)
+- [X] T047 [US2] Implement the import run and its five-count summary in `backend/internal/performance/importer.go` and `summary.go`. **Deviation**: the counts are accumulated in Go while rows are driven through `Decide`, not computed in SQL. Rejected and unmatched rows never become facts, so SQL has nothing to count them from; accumulating in Go makes the five-sum-to-rows-read invariant hold by construction and provable in a pure property test with no database (T035)
 - [ ] T048 [US2] Implement undo in `backend/internal/performance/undo.go`, walking `replaced_by_id` back
 - [ ] T049 [US2] Implement the `simulatedfeed` adapter behind its port, labelling everything it produces as simulated (ADR-0020)
 - [ ] T050 [US2] Implement the import handlers; add each operation's route rule and report it in the pull request
