@@ -115,6 +115,11 @@ tags:
     description: "Delegation of approval authority for a date range (feature 017)"
   - name: Dashboards
     description: "Executive and regional planning dashboards and the export of plans and dashboards to PowerPoint and PDF (feature 036)"
+  - name: Performance data
+    description: >-
+      Settings › Performance data: the data sources behind every performance figure and the column
+      mappings that say what each column of their files means (feature 046)
+
 paths:
   /healthz:
     get:
@@ -7747,6 +7752,215 @@ paths:
           $ref: "#/components/responses/NotFound"
         default:
           $ref: "#/components/responses/Error"
+  /api/v1/performance/sources:
+    get:
+      tags: [Performance data]
+      operationId: listPerformanceSources
+      summary: Settings › Performance data — the data sources, with their derived freshness (046 FR-001, FR-005)
+      responses:
+        "200":
+          description: Every data source, by name.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PerformanceSourceList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        default: { $ref: "#/components/responses/Error" }
+    post:
+      tags: [Performance data]
+      operationId: createPerformanceSource
+      summary: Add a data source (needs performance.import) (046 FR-001)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PerformanceSourceInput" }
+      responses:
+        "201":
+          description: The source as created, active and never loaded.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PerformanceSource" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        default: { $ref: "#/components/responses/Error" }
+  /api/v1/performance/sources/{sourceId}:
+    parameters:
+      - $ref: "#/components/parameters/SourceId"
+    get:
+      tags: [Performance data]
+      operationId: getPerformanceSource
+      summary: One data source with its freshness (046 FR-005)
+      responses:
+        "200":
+          description: The source.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PerformanceSource" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        default: { $ref: "#/components/responses/Error" }
+    patch:
+      tags: [Performance data]
+      operationId: updatePerformanceSource
+      summary: Change a data source (needs performance.import) (046 FR-001, FR-045)
+      description: Version-checked — a save against a version someone has moved past is refused.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PerformanceSourceInput" }
+      responses:
+        "200":
+          description: The source as saved.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PerformanceSource" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        default: { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [Performance data]
+      operationId: deletePerformanceSource
+      summary: Delete a data source, only while it holds no performance data (needs performance.import) (046 FR-002)
+      description: >-
+        A source that holds facts is refused with 409 in_use and Deactivate offered instead, because deleting
+        it would silently restate every figure its data fed.
+      responses:
+        "204": { description: "Deleted, to the recycle bin." }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        default: { $ref: "#/components/responses/Error" }
+  /api/v1/performance/sources/{sourceId}/deactivate:
+    parameters:
+      - $ref: "#/components/parameters/SourceId"
+    post:
+      tags: [Performance data]
+      operationId: deactivatePerformanceSource
+      summary: Stop a data source accepting data, keeping everything it has loaded (046 FR-004)
+      responses:
+        "200":
+          description: The source, now inactive; every activity that depended only on it stops counting as integrated.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PerformanceSource" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        default: { $ref: "#/components/responses/Error" }
+  /api/v1/performance/sources/{sourceId}/reactivate:
+    parameters:
+      - $ref: "#/components/parameters/SourceId"
+    post:
+      tags: [Performance data]
+      operationId: reactivatePerformanceSource
+      summary: Let a deactivated data source accept data again (046 FR-004)
+      responses:
+        "200":
+          description: The source, active again.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PerformanceSource" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        default: { $ref: "#/components/responses/Error" }
+  /api/v1/performance/sources/{sourceId}/mappings:
+    parameters:
+      - $ref: "#/components/parameters/SourceId"
+    get:
+      tags: [Performance data]
+      operationId: listColumnMappings
+      summary: The column mappings of a data source (046 FR-006)
+      responses:
+        "200":
+          description: Its mappings, by column name.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ColumnMappingList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        default: { $ref: "#/components/responses/Error" }
+    post:
+      tags: [Performance data]
+      operationId: createColumnMapping
+      summary: Say what one column of this source's file means (needs performance.import) (046 FR-003, FR-006)
+      description: >-
+        Within a model, each stage and revenue is supplied by at most one active source; a second is refused
+        with 409, naming the source that already supplies it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ColumnMappingInput" }
+      responses:
+        "201":
+          description: The mapping as created; it affects future loads only.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ColumnMapping" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        default: { $ref: "#/components/responses/Error" }
+  /api/v1/performance/sources/{sourceId}/template:
+    parameters:
+      - $ref: "#/components/parameters/SourceId"
+    get:
+      tags: [Performance data]
+      operationId: downloadPerformanceTemplate
+      summary: A blank file carrying exactly the columns this source's mappings define (046 FR-008)
+      responses:
+        "200":
+          description: The template.
+          content:
+            text/csv:
+              schema: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        default: { $ref: "#/components/responses/Error" }
+  /api/v1/performance/mappings/{mappingId}:
+    parameters:
+      - $ref: "#/components/parameters/MappingId"
+    patch:
+      tags: [Performance data]
+      operationId: updateColumnMapping
+      summary: Change a column mapping (needs performance.import) (046 FR-006, FR-007)
+      description: A change affects future loads only and never restates a completed load.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ColumnMappingInput" }
+      responses:
+        "200":
+          description: The mapping as saved.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ColumnMapping" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        default: { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [Performance data]
+      operationId: deleteColumnMapping
+      summary: Remove a column mapping (needs performance.import) (046 FR-006)
+      responses:
+        "204": { description: "Removed; loads already completed are unchanged." }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        default: { $ref: "#/components/responses/Error" }
 components:
   securitySchemes:
     sessionCookie:
@@ -7755,6 +7969,19 @@ components:
       name: mapp_session
       description: HttpOnly session cookie set by sign-in.
   parameters:
+    # Feature 046 Performance data
+    SourceId:
+      name: sourceId
+      in: path
+      required: true
+      description: A data source's readable ID, such as PS-1001.
+      schema: { type: string, pattern: "^PS-[0-9]+$" }
+    MappingId:
+      name: mappingId
+      in: path
+      required: true
+      description: A column mapping's readable ID, such as PSM-1001.
+      schema: { type: string, pattern: "^PSM-[0-9]+$" }
     # Feature 032 Purchase requests
     PurchaseRequestId:
       name: purchaseRequestId
@@ -8632,6 +8859,119 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
   schemas:
+    # Feature 046 Performance data
+    PerformanceCategory:
+      type: string
+      description: The kind of system a data source is, which decides what it can supply (FA §E7.2).
+      enum: [webAnalytics, marketingAutomation, crm, leadProgression]
+    PerformanceDeliveryRoute:
+      type: string
+      description: How rows arrive — a file someone uploads, or a pull from the simulated feed (ADR-0020).
+      enum: [upload, simulated]
+    PerformanceCadence:
+      type: string
+      description: How often the source is expected to deliver; it decides when freshness reads Stale.
+      enum: [daily, weekly, monthly, onDemand]
+    PerformanceFreshness:
+      type: string
+      description: >-
+        Derived from the last load and the cadence, never stored. Inactive when the source is deactivated,
+        Stale when nothing has loaded within one extra cadence period, Failed when the last load failed.
+      enum: [current, stale, failed, inactive]
+    ColumnMeaning:
+      type: string
+      description: What one column of a source's file means (client 020 FR-006).
+      enum: [key, reference, factDate, stage, revenue, currency, webMetric, journey]
+    WebMetric:
+      type: string
+      description: The web-analytics vocabulary — counts by month, never money (clarification 046-C11).
+      enum: [sessions, visits, engagementTouches]
+    PerformanceSource:
+      type: object
+      description: Where performance data comes from (Settings › Performance data).
+      required: [id, name, description, ownerId, category, status, deliveryRoute, cadence, integrationId,
+                 freshness, factCount, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        ownerId: { type: string }
+        category: { $ref: "#/components/schemas/PerformanceCategory" }
+        status: { type: string, enum: [active, inactive] }
+        deliveryRoute: { $ref: "#/components/schemas/PerformanceDeliveryRoute" }
+        cadence: { $ref: "#/components/schemas/PerformanceCadence" }
+        integrationId: { type: string, description: "The source's own identifier, empty when it has none." }
+        freshness: { $ref: "#/components/schemas/PerformanceFreshness" }
+        lastLoadedAt:
+          type: [string, "null"]
+          format: date-time
+          description: Null when nothing has ever loaded, which is every newly created source.
+        dataThrough:
+          type: [string, "null"]
+          format: date
+          description: The date the source's data runs through; null until something loads.
+        factCount: { type: integer, description: "How many facts this source holds; it may not be deleted while above zero." }
+        version: { type: integer }
+        createdAt: { type: string, format: date-time }
+        createdBy: { $ref: "#/components/schemas/ActorRef" }
+        updatedAt: { type: string, format: date-time }
+        updatedBy: { $ref: "#/components/schemas/ActorRef" }
+    PerformanceSourceInput:
+      type: object
+      required: [name, ownerId, category, deliveryRoute, cadence]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: string, maxLength: 2000 }
+        ownerId: { type: string }
+        category: { $ref: "#/components/schemas/PerformanceCategory" }
+        deliveryRoute: { $ref: "#/components/schemas/PerformanceDeliveryRoute" }
+        cadence: { $ref: "#/components/schemas/PerformanceCadence" }
+        integrationId: { type: string, maxLength: 200 }
+        version:
+          type: integer
+          description: The version the editor read; a save against an older one is refused (409 version_conflict).
+    PerformanceSourceList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/PerformanceSource" }
+    ColumnMapping:
+      type: object
+      description: What one column of a source's file means. A change affects future loads only.
+      required: [id, sourceId, columnName, meaning, stage, webMetric, modelId, version,
+                 createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id: { type: string }
+        sourceId: { type: string }
+        columnName: { type: string }
+        meaning: { $ref: "#/components/schemas/ColumnMeaning" }
+        stage: { type: string, description: "Set only on a stage column." }
+        webMetric: { type: string, description: "Set only on a web-metric column." }
+        modelId: { type: string, description: "Set only on a stage or revenue column, which a model supplies." }
+        version: { type: integer }
+        createdAt: { type: string, format: date-time }
+        createdBy: { $ref: "#/components/schemas/ActorRef" }
+        updatedAt: { type: string, format: date-time }
+        updatedBy: { $ref: "#/components/schemas/ActorRef" }
+    ColumnMappingInput:
+      type: object
+      required: [columnName, meaning]
+      properties:
+        columnName: { type: string, minLength: 1, maxLength: 120 }
+        meaning: { $ref: "#/components/schemas/ColumnMeaning" }
+        stage: { type: string }
+        webMetric: { $ref: "#/components/schemas/WebMetric" }
+        modelId: { type: string }
+        version: { type: integer }
+    ColumnMappingList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ColumnMapping" }
     # Feature 037 Overspend control
     OverspendMode:
       type: string

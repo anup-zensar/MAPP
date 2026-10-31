@@ -45,6 +45,7 @@ var routeRules = joinRules( //nolint:gochecknoglobals // the route table: built 
 	activityRoutes(),
 	lineItemRoutes(),
 	approvalRoutes(),
+	performanceRoutes(),
 	homeRoutes(),
 	allWorkRoutes(),
 	historyRoutes(),

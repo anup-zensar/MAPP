@@ -65,7 +65,22 @@ func TestEveryProtectedOperationRequiresSignIn_FR005(t *testing.T) {
 
 // notYetServed: the contract's operations designed but not built yet (D-192, D-298). Each feature removes
 // its own in the change that serves them; the list must be empty when the Plan module is done.
-var notYetServed = []string{}
+var notYetServed = []string{
+	// Feature 046 Performance data, US1. Each line goes when its handler is served; the group is this
+	// lane's alone, so the deletions never touch another lane's lines (measure-module-build.md 4.3).
+	"GET /api/v1/performance/sources",
+	"POST /api/v1/performance/sources",
+	"GET /api/v1/performance/sources/{sourceId}",
+	"PATCH /api/v1/performance/sources/{sourceId}",
+	"DELETE /api/v1/performance/sources/{sourceId}",
+	"POST /api/v1/performance/sources/{sourceId}/deactivate",
+	"POST /api/v1/performance/sources/{sourceId}/reactivate",
+	"GET /api/v1/performance/sources/{sourceId}/mappings",
+	"POST /api/v1/performance/sources/{sourceId}/mappings",
+	"GET /api/v1/performance/sources/{sourceId}/template",
+	"PATCH /api/v1/performance/mappings/{mappingId}",
+	"DELETE /api/v1/performance/mappings/{mappingId}",
+}
 
 func TestNotYetServedIsAccurate(t *testing.T) {
 	t.Parallel()

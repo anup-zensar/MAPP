@@ -4245,10 +4245,273 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/performance/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Settings › Performance data — the data sources, with their derived freshness (046 FR-001, FR-005) */
+        get: operations["listPerformanceSources"];
+        put?: never;
+        /** Add a data source (needs performance.import) (046 FR-001) */
+        post: operations["createPerformanceSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/performance/sources/{sourceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A data source's readable ID, such as PS-1001. */
+                sourceId: components["parameters"]["SourceId"];
+            };
+            cookie?: never;
+        };
+        /** One data source with its freshness (046 FR-005) */
+        get: operations["getPerformanceSource"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a data source, only while it holds no performance data (needs performance.import) (046 FR-002)
+         * @description A source that holds facts is refused with 409 in_use and Deactivate offered instead, because deleting it would silently restate every figure its data fed.
+         */
+        delete: operations["deletePerformanceSource"];
+        options?: never;
+        head?: never;
+        /**
+         * Change a data source (needs performance.import) (046 FR-001, FR-045)
+         * @description Version-checked — a save against a version someone has moved past is refused.
+         */
+        patch: operations["updatePerformanceSource"];
+        trace?: never;
+    };
+    "/api/v1/performance/sources/{sourceId}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A data source's readable ID, such as PS-1001. */
+                sourceId: components["parameters"]["SourceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop a data source accepting data, keeping everything it has loaded (046 FR-004) */
+        post: operations["deactivatePerformanceSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/performance/sources/{sourceId}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A data source's readable ID, such as PS-1001. */
+                sourceId: components["parameters"]["SourceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Let a deactivated data source accept data again (046 FR-004) */
+        post: operations["reactivatePerformanceSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/performance/sources/{sourceId}/mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A data source's readable ID, such as PS-1001. */
+                sourceId: components["parameters"]["SourceId"];
+            };
+            cookie?: never;
+        };
+        /** The column mappings of a data source (046 FR-006) */
+        get: operations["listColumnMappings"];
+        put?: never;
+        /**
+         * Say what one column of this source's file means (needs performance.import) (046 FR-003, FR-006)
+         * @description Within a model, each stage and revenue is supplied by at most one active source; a second is refused with 409, naming the source that already supplies it.
+         */
+        post: operations["createColumnMapping"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/performance/sources/{sourceId}/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A data source's readable ID, such as PS-1001. */
+                sourceId: components["parameters"]["SourceId"];
+            };
+            cookie?: never;
+        };
+        /** A blank file carrying exactly the columns this source's mappings define (046 FR-008) */
+        get: operations["downloadPerformanceTemplate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/performance/mappings/{mappingId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A column mapping's readable ID, such as PSM-1001. */
+                mappingId: components["parameters"]["MappingId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a column mapping (needs performance.import) (046 FR-006) */
+        delete: operations["deleteColumnMapping"];
+        options?: never;
+        head?: never;
+        /**
+         * Change a column mapping (needs performance.import) (046 FR-006, FR-007)
+         * @description A change affects future loads only and never restates a completed load.
+         */
+        patch: operations["updateColumnMapping"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * @description The kind of system a data source is, which decides what it can supply (FA §E7.2).
+         * @enum {string}
+         */
+        PerformanceCategory: "webAnalytics" | "marketingAutomation" | "crm" | "leadProgression";
+        /**
+         * @description How rows arrive — a file someone uploads, or a pull from the simulated feed (ADR-0020).
+         * @enum {string}
+         */
+        PerformanceDeliveryRoute: "upload" | "simulated";
+        /**
+         * @description How often the source is expected to deliver; it decides when freshness reads Stale.
+         * @enum {string}
+         */
+        PerformanceCadence: "daily" | "weekly" | "monthly" | "onDemand";
+        /**
+         * @description Derived from the last load and the cadence, never stored. Inactive when the source is deactivated, Stale when nothing has loaded within one extra cadence period, Failed when the last load failed.
+         * @enum {string}
+         */
+        PerformanceFreshness: "current" | "stale" | "failed" | "inactive";
+        /**
+         * @description What one column of a source's file means (client 020 FR-006).
+         * @enum {string}
+         */
+        ColumnMeaning: "key" | "reference" | "factDate" | "stage" | "revenue" | "currency" | "webMetric" | "journey";
+        /**
+         * @description The web-analytics vocabulary — counts by month, never money (clarification 046-C11).
+         * @enum {string}
+         */
+        WebMetric: "sessions" | "visits" | "engagementTouches";
+        /** @description Where performance data comes from (Settings › Performance data). */
+        PerformanceSource: {
+            id: string;
+            name: string;
+            description: string;
+            ownerId: string;
+            category: components["schemas"]["PerformanceCategory"];
+            /** @enum {string} */
+            status: "active" | "inactive";
+            deliveryRoute: components["schemas"]["PerformanceDeliveryRoute"];
+            cadence: components["schemas"]["PerformanceCadence"];
+            /** @description The source's own identifier, empty when it has none. */
+            integrationId: string;
+            freshness: components["schemas"]["PerformanceFreshness"];
+            /**
+             * Format: date-time
+             * @description Null when nothing has ever loaded, which is every newly created source.
+             */
+            lastLoadedAt?: string | null;
+            /**
+             * Format: date
+             * @description The date the source's data runs through; null until something loads.
+             */
+            dataThrough?: string | null;
+            /** @description How many facts this source holds; it may not be deleted while above zero. */
+            factCount: number;
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        PerformanceSourceInput: {
+            name: string;
+            description?: string;
+            ownerId: string;
+            category: components["schemas"]["PerformanceCategory"];
+            deliveryRoute: components["schemas"]["PerformanceDeliveryRoute"];
+            cadence: components["schemas"]["PerformanceCadence"];
+            integrationId?: string;
+            /** @description The version the editor read; a save against an older one is refused (409 version_conflict). */
+            version?: number;
+        };
+        PerformanceSourceList: {
+            items: components["schemas"]["PerformanceSource"][];
+        };
+        /** @description What one column of a source's file means. A change affects future loads only. */
+        ColumnMapping: {
+            id: string;
+            sourceId: string;
+            columnName: string;
+            meaning: components["schemas"]["ColumnMeaning"];
+            /** @description Set only on a stage column. */
+            stage: string;
+            /** @description Set only on a web-metric column. */
+            webMetric: string;
+            /** @description Set only on a stage or revenue column, which a model supplies. */
+            modelId: string;
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        ColumnMappingInput: {
+            columnName: string;
+            meaning: components["schemas"]["ColumnMeaning"];
+            stage?: string;
+            webMetric?: components["schemas"]["WebMetric"];
+            modelId?: string;
+            version?: number;
+        };
+        ColumnMappingList: {
+            items: components["schemas"]["ColumnMapping"][];
+        };
         /**
          * @description What happens when planned cost goes over a budget — warn (save and show it) or refuse the save.
          * @enum {string}
@@ -10345,6 +10608,10 @@ export interface components {
         };
     };
     parameters: {
+        /** @description A data source's readable ID, such as PS-1001. */
+        SourceId: string;
+        /** @description A column mapping's readable ID, such as PSM-1001. */
+        MappingId: string;
         /** @example PR-1001 */
         PurchaseRequestId: string;
         /** @example PRR-1001 */
@@ -18496,6 +18763,338 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listPerformanceSources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every data source, by name. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerformanceSourceList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createPerformanceSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PerformanceSourceInput"];
+            };
+        };
+        responses: {
+            /** @description The source as created, active and never loaded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerformanceSource"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getPerformanceSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A data source's readable ID, such as PS-1001. */
+                sourceId: components["parameters"]["SourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The source. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerformanceSource"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deletePerformanceSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A data source's readable ID, such as PS-1001. */
+                sourceId: components["parameters"]["SourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted, to the recycle bin. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updatePerformanceSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A data source's readable ID, such as PS-1001. */
+                sourceId: components["parameters"]["SourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PerformanceSourceInput"];
+            };
+        };
+        responses: {
+            /** @description The source as saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerformanceSource"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deactivatePerformanceSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A data source's readable ID, such as PS-1001. */
+                sourceId: components["parameters"]["SourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The source, now inactive; every activity that depended only on it stops counting as integrated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerformanceSource"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    reactivatePerformanceSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A data source's readable ID, such as PS-1001. */
+                sourceId: components["parameters"]["SourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The source, active again. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerformanceSource"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listColumnMappings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A data source's readable ID, such as PS-1001. */
+                sourceId: components["parameters"]["SourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its mappings, by column name. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ColumnMappingList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createColumnMapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A data source's readable ID, such as PS-1001. */
+                sourceId: components["parameters"]["SourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ColumnMappingInput"];
+            };
+        };
+        responses: {
+            /** @description The mapping as created; it affects future loads only. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ColumnMapping"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    downloadPerformanceTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A data source's readable ID, such as PS-1001. */
+                sourceId: components["parameters"]["SourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The template. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteColumnMapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A column mapping's readable ID, such as PSM-1001. */
+                mappingId: components["parameters"]["MappingId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed; loads already completed are unchanged. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateColumnMapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A column mapping's readable ID, such as PSM-1001. */
+                mappingId: components["parameters"]["MappingId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ColumnMappingInput"];
+            };
+        };
+        responses: {
+            /** @description The mapping as saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ColumnMapping"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
         };
     };
