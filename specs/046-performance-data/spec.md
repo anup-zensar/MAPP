@@ -148,6 +148,29 @@ these into the decision log at the end of wave B.
   of records the reader may not know about.
 
 
+- **046-C16** — Q: Who may undo a load? → A: **An administrator, not everyone who may load.** Client 020
+  FR-017 says "Administrators can undo a whole upload"; this feature's own FR-017 copied that word but the
+  permissions table then assigned undo to `performance.import`, the same permission as uploading. That is an
+  internal contradiction, and the looser half would let anyone who can load a file silently unwind someone
+  else's. Undo therefore needs `performance.import` **and** `settings.manage`.
+
+- **046-C17** — Q: What states can a load end in? → A: **Completed, failed or undone.** The schema and the
+  domain type carried only completed and undone, but client 020 FR-062 requires audit records for "uploads
+  (completed, failed, undone)" and FR-063 lists "an upload failed" as a notification event. A load that falls
+  over partway must be recorded as failed rather than vanishing or masquerading as completed.
+
+- **046-C18** — Q: The counts must be reported "by stage or metric" (client 020 FR-014) — does the summary
+  need that breakdown? → A: **Yes, and it was dropped.** FR-022 as first written kept only the five totals.
+  A loader who sees "120 unmatched" and cannot see that all 120 are MQL rows has no way to find the cause.
+  The five totals still reconcile against rows read; the breakdown sits under them.
+
+- **046-C19** — Q: Does "unattributed" mean the same as "unmatched", as client 020 FR-057 suggests? → A:
+  **No — FR-057 is a different context.** It governs attribution reporting in feature 050 ("Unmatched touches
+  report as Unattributed"). For a load, the client's own US2 and FR-014 list them as two of five separate
+  outcomes, so the distinction this spec draws in 046-C3 is the client's own. Recorded because the two words
+  look interchangeable and a reader of FR-057 alone would merge them.
+
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Set up a data source and its column mappings (Priority: P1)
@@ -415,7 +438,8 @@ is offered.
   excluded from converted totals with the excluded count shown, and included once a rate exists (046-C7).
 - **FR-015**: A fact MUST count in the fiscal year of its own fact date, including for an activity spanning
   more than one year (046-C8).
-- **FR-016**: Uploads MUST be findable by file, source, uploader, status and date and viewable with their
+- **FR-016**: A load MUST end in one of three recorded states — **completed, failed or undone** (client 020
+  FR-062, 046-C17). Uploads MUST be findable by file, source, uploader, status and date and viewable with their
   summary; an upload MUST NOT be editable, and the reason MUST be stated where an edit would be expected.
 - **FR-017**: An administrator MUST be able to undo a whole upload after a confirmation stating the counts and
   what will be recalculated; replaced versions MUST be restored and the upload MUST remain listed as *Undone*.
@@ -432,7 +456,8 @@ is offered.
 - **FR-021**: A fact matched to a binned activity MUST be held until restore and approval; a fact matched to a
   permanently deleted activity MUST go to the review queue.
 - **FR-022**: Every load MUST yield a summary of rows read and rows matched, held, unattributed, rejected and
-  unmatched, and those five counts MUST add up to rows read (046-C3).
+  unmatched, **and those five broken down by stage or web metric** (client 020 FR-014), and the five totals
+  MUST add up to rows read (046-C3).
 
 **Rows to review** *(client 020 FR-020 – FR-022)*
 
@@ -495,7 +520,9 @@ is offered.
 **Permissions and scope** *(D-367, constitution non-negotiable 7)*
 
 - **FR-043**: Loading data MUST require `performance.import`; setting external names, aliases, integration IDs
-  and media codes MUST require `performance.link`. Every operation MUST have a route rule and fail closed.
+  and media codes MUST require `performance.link`. **Undoing a load is narrower than loading it**: client 020
+  FR-017 gives it to administrators alone, so it MUST additionally require `settings.manage` (046-C16).
+  Every operation MUST have a route rule and fail closed.
 - **FR-044**: Every read of performance data MUST be filtered by the signed-in actor's scope: a fact, source,
   upload, review row or media code outside it MUST answer as a missing one, never as a refusal.
 

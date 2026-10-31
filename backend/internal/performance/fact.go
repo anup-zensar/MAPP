@@ -18,6 +18,7 @@ type ImportStatus string
 
 const (
 	ImportCompleted ImportStatus = "completed"
+	ImportFailed    ImportStatus = "failed"
 	ImportUndone    ImportStatus = "undone"
 )
 

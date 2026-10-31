@@ -6,7 +6,7 @@ CREATE TABLE performance_imports (
     source_id       text        NOT NULL REFERENCES performance_sources (id) DEFERRABLE INITIALLY DEFERRED,
     file_name       text        NOT NULL CHECK (char_length(file_name) <= 260),
     origin          text        NOT NULL CHECK (origin IN ('upload', 'simulated')),
-    status          text        NOT NULL CHECK (status IN ('completed', 'undone')),
+    status          text        NOT NULL CHECK (status IN ('completed', 'failed', 'undone')),
     data_through    date,
     rows_read       integer     NOT NULL CHECK (rows_read >= 0),
     rows_matched    integer     NOT NULL CHECK (rows_matched >= 0),
