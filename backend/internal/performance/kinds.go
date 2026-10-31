@@ -9,10 +9,10 @@ import (
 
 // Only the data source reaches the recycle bin: a fact is replaced or undone with its import (FR-042).
 func (s *Service) Kinds() []history.Kind {
-	return []history.Kind{{
+	return append([]history.Kind{{
 		Name: sourceKind, Singular: sourceKindSingular, Plural: sourceKindPlural,
 		Snapshot: s.snapshotSource, Remove: s.removeSource, Put: s.restoreSource,
-	}}
+	}}, s.childKinds()...)
 }
 
 func (s *Service) snapshotSource(ctx context.Context, id string) (history.Snapshot, bool, error) {

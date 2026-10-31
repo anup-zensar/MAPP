@@ -1,6 +1,7 @@
 package performance_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -33,6 +34,18 @@ func newFixture(t *testing.T) *fixture {
 	f.history = history.NewService(db, historytest.NewStore(db), generator, now)
 	f.service = performance.NewService(
 		history.Tools{Tx: db, IDs: generator, Log: f.history, Now: now}, f.store)
+	// history refuses a child before its parent, so the activity kind is registered first exactly as the
+	// app must wire the activity area before the performance area.
+	if err := f.history.Register(history.Kind{
+		Name: "activity", Singular: "activity", Plural: "activities",
+		Snapshot: func(context.Context, string) (history.Snapshot, bool, error) {
+			return history.Snapshot{}, false, nil
+		},
+		Remove: func(context.Context, string) error { return nil },
+		Put:    func(context.Context, history.Snapshot) error { return nil },
+	}); err != nil {
+		t.Fatalf("Register(activity): %v", err)
+	}
 	for _, k := range f.service.Kinds() {
 		if err := f.history.Register(k); err != nil {
 			t.Fatalf("Register: %v", err)
@@ -60,4 +73,15 @@ func (f *fixture) log(t *testing.T) []history.Entry {
 		t.Fatalf("ListLog: %v", err)
 	}
 	return entries
+}
+
+func kindNamed(t *testing.T, kinds []history.Kind, name string) history.Kind {
+	t.Helper()
+	for _, k := range kinds {
+		if k.Name == name {
+			return k
+		}
+	}
+	t.Fatalf("no kind named %s is registered", name)
+	return history.Kind{}
 }

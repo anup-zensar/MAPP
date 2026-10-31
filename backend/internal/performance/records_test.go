@@ -69,12 +69,12 @@ func TestKinds_RegistersTheDataSource_FR045(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 
-	kinds := f.service.Kinds()
+	source := kindNamed(t, f.service.Kinds(), "performanceSource")
 
-	if len(kinds) != 1 || kinds[0].Name != "performanceSource" {
-		t.Fatalf("Kinds() = %+v, want one kind named performanceSource", kinds)
+	if source.Parent != "" {
+		t.Errorf("the data source's parent is %q, want none: it is a top-level record", source.Parent)
 	}
-	if kinds[0].Snapshot == nil || kinds[0].Remove == nil || kinds[0].Put == nil {
+	if source.Snapshot == nil || source.Remove == nil || source.Put == nil {
 		t.Error("the kind must carry Snapshot, Remove and Put so the recycle bin can hold a data source")
 	}
 }

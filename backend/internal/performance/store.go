@@ -83,7 +83,25 @@ type Codes interface {
 	TakeNextCode(ctx context.Context, by actor.Actor, at time.Time) (int64, error)
 }
 
+// Children serves the recycle bin, which collects an activity's records before deleting it (FR-021).
+type Children interface {
+	FactIDsOf(ctx context.Context, activityIDs []string) ([]string, error)
+	MediaCodeIDsOf(ctx context.Context, activityIDs []string) ([]string, error)
+	AliasIDsOf(ctx context.Context, activityIDs []string) ([]string, error)
+	IntegrationIDsOf(ctx context.Context, activityIDs []string) ([]string, error)
+	GetFact(ctx context.Context, id string) (Fact, bool, error)
+	GetMediaCode(ctx context.Context, id string) (MediaCode, bool, error)
+	GetAlias(ctx context.Context, id string) (Alias, bool, error)
+	GetIntegrationID(ctx context.Context, id string) (IntegrationID, bool, error)
+	DeleteFacts(ctx context.Context, ids []string) error
+	DeleteMediaCodes(ctx context.Context, ids []string) error
+	DeleteAliases(ctx context.Context, ids []string) error
+	DeleteIntegrationIDs(ctx context.Context, ids []string) error
+	PutAlias(ctx context.Context, a Alias) error
+}
+
 type Store interface {
+	Children
 	Sources
 	Matching
 	Facts

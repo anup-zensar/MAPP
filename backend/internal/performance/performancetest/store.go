@@ -26,19 +26,23 @@ type Store struct {
 	// Keys stands in for the matching tables: a key, lower-cased, to the activities it reaches.
 	Keys map[performance.MatchedOn]map[string][]string
 	// NextCode is the media-code counter the configuration holds in PostgreSQL.
-	NextCode int64
+	NextCode     int64
+	aliases      map[string]performance.Alias
+	integrations map[string]performance.IntegrationID
 }
 
 func NewStore(db *fake.DB) *Store {
 	return &Store{
-		sources:  fake.TableOf(db, "performance_sources", func(s performance.Source) string { return s.ID }),
-		mappings: fake.TableOf(db, "performance_source_mappings", func(m performance.Mapping) string { return m.ID }),
-		facts:    fake.TableOf(db, "performance_facts", func(f performance.Fact) string { return f.ID }),
-		imports:  fake.TableOf(db, "performance_imports", func(i performance.Import) string { return i.ID }),
-		reviews:  fake.TableOf(db, "performance_review_rows", func(r performance.ReviewRow) string { return r.ID }),
-		codes:    fake.TableOf(db, "media_codes", func(c performance.MediaCode) string { return c.ID }),
-		Keys:     map[performance.MatchedOn]map[string][]string{},
-		NextCode: 9000001,
+		sources:      fake.TableOf(db, "performance_sources", func(s performance.Source) string { return s.ID }),
+		mappings:     fake.TableOf(db, "performance_source_mappings", func(m performance.Mapping) string { return m.ID }),
+		facts:        fake.TableOf(db, "performance_facts", func(f performance.Fact) string { return f.ID }),
+		imports:      fake.TableOf(db, "performance_imports", func(i performance.Import) string { return i.ID }),
+		reviews:      fake.TableOf(db, "performance_review_rows", func(r performance.ReviewRow) string { return r.ID }),
+		codes:        fake.TableOf(db, "media_codes", func(c performance.MediaCode) string { return c.ID }),
+		Keys:         map[performance.MatchedOn]map[string][]string{},
+		NextCode:     9000001,
+		aliases:      map[string]performance.Alias{},
+		integrations: map[string]performance.IntegrationID{},
 	}
 }
 
@@ -289,11 +293,117 @@ func (s *Store) PutMediaCode(ctx context.Context, c performance.MediaCode) error
 }
 
 func (s *Store) PutIntegrationID(_ context.Context, k performance.IntegrationID) error {
+	s.integrations[k.ID] = k
 	key := strings.ToLower(strings.TrimSpace(k.Value))
 	if s.Keys[performance.MatchedIntegrationID] == nil {
 		s.Keys[performance.MatchedIntegrationID] = map[string][]string{}
 	}
 	s.Keys[performance.MatchedIntegrationID][key] = append(
 		s.Keys[performance.MatchedIntegrationID][key], k.ActivityID)
+	return nil
+}
+
+func (s *Store) idsOf(all []string) ([]string, error) { return all, nil }
+
+func (s *Store) FactIDsOf(_ context.Context, activityIDs []string) ([]string, error) {
+	all, err := s.facts.List()
+	if err != nil {
+		return nil, err
+	}
+	var ids []string
+	for _, f := range all {
+		if slices.Contains(activityIDs, f.ActivityID) {
+			ids = append(ids, f.ID)
+		}
+	}
+	return s.idsOf(ids)
+}
+
+func (s *Store) MediaCodeIDsOf(_ context.Context, activityIDs []string) ([]string, error) {
+	all, err := s.codes.List()
+	if err != nil {
+		return nil, err
+	}
+	var ids []string
+	for _, c := range all {
+		if slices.Contains(activityIDs, c.ActivityID) {
+			ids = append(ids, c.ID)
+		}
+	}
+	return s.idsOf(ids)
+}
+
+func (s *Store) AliasIDsOf(_ context.Context, activityIDs []string) ([]string, error) {
+	var ids []string
+	for _, a := range s.aliases {
+		if slices.Contains(activityIDs, a.ActivityID) {
+			ids = append(ids, a.ID)
+		}
+	}
+	return s.idsOf(ids)
+}
+
+func (s *Store) IntegrationIDsOf(_ context.Context, activityIDs []string) ([]string, error) {
+	var ids []string
+	for _, k := range s.integrations {
+		if slices.Contains(activityIDs, k.ActivityID) {
+			ids = append(ids, k.ID)
+		}
+	}
+	return s.idsOf(ids)
+}
+
+func (s *Store) GetFact(_ context.Context, id string) (performance.Fact, bool, error) {
+	return s.facts.Get(id)
+}
+
+func (s *Store) GetMediaCode(_ context.Context, id string) (performance.MediaCode, bool, error) {
+	return s.codes.Get(id)
+}
+
+func (s *Store) GetAlias(_ context.Context, id string) (performance.Alias, bool, error) {
+	a, ok := s.aliases[id]
+	return a, ok, nil
+}
+
+func (s *Store) GetIntegrationID(_ context.Context, id string) (performance.IntegrationID, bool, error) {
+	k, ok := s.integrations[id]
+	return k, ok, nil
+}
+
+func (s *Store) DeleteFacts(ctx context.Context, ids []string) error {
+	for _, id := range ids {
+		if err := s.facts.Delete(ctx, id); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Store) DeleteMediaCodes(ctx context.Context, ids []string) error {
+	for _, id := range ids {
+		if err := s.codes.Delete(ctx, id); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Store) DeleteAliases(_ context.Context, ids []string) error {
+	for _, id := range ids {
+		delete(s.aliases, id)
+	}
+	return nil
+}
+
+func (s *Store) DeleteIntegrationIDs(_ context.Context, ids []string) error {
+	for _, id := range ids {
+		delete(s.integrations, id)
+	}
+	return nil
+}
+
+func (s *Store) PutAlias(_ context.Context, a performance.Alias) error {
+	s.aliases[a.ID] = a
 	return nil
 }

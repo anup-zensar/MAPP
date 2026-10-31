@@ -1,6 +1,14 @@
 package performance
 
+import "strconv"
+
 const (
+	activityKind    = "activity"
+	factKind        = "performanceFact"
+	mediaCodeKind   = "mediaCode"
+	aliasKind       = "externalNameAlias"
+	integrationKind = "integrationId"
+
 	sourceKind         = "performanceSource"
 	sourceKindSingular = "data source"
 	sourceKindPlural   = "data sources"
@@ -22,3 +30,7 @@ const (
 	deactivatedVerb = "deactivated"
 	reactivatedVerb = "reactivated"
 )
+
+func codeText(code int64) string {
+	return strconv.FormatInt(code, 10)
+}
