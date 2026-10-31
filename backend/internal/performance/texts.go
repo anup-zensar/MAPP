@@ -57,3 +57,27 @@ const (
 	reasonAmbiguous = "unmatched:ambiguous"
 	reasonDisagree  = "unmatched:disagree"
 )
+
+const (
+	faultEmptyColumn      = "emptyColumn"
+	faultInvalidDate      = "invalidDate"
+	faultFutureDate       = "futureDate"
+	faultNegativeCount    = "negativeCount"
+	faultFractionalCount  = "fractionalCount"
+	faultInvalidCount     = "invalidCount"
+	faultInvalidAmount    = "invalidAmount"
+	faultUnknownCurrency  = "unconfiguredCurrency"
+	faultUnknownStage     = "unknownStage"
+	faultMissingReference = "missingReference"
+
+	msgReferenceNeeded = "Every row needs the source's own reference, so a later load can replace it."
+	msgDateNeeded      = "Every row needs the date its data is for."
+	msgDateInvalid     = "Write the date as YYYY-MM-DD."
+	msgDateFuture      = "A row cannot be dated in the future."
+	msgCountInvalid    = "A count is a whole number."
+	msgCountNegative   = "A count cannot be below zero."
+	msgCountFractional = "A count is a whole number."
+	msgAmountInvalid   = "Write the amount as a number, such as 1234.50."
+	msgCurrencyUnknown = "Name a currency this organisation has configured."
+	msgStageUnknown    = "This stage is not one the model defines."
+)

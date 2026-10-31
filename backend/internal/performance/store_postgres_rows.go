@@ -78,6 +78,7 @@ func (s *PostgresStore) ListReviewRows(ctx context.Context, status, sourceID str
 		row := ReviewRow{
 			ID: p.ID, ImportID: p.ImportID, SourceID: p.SourceID, Raw: p.Raw, Reason: p.Reason,
 			Status: ReviewStatus(p.Status), Comment: p.Comment,
+			Faults: faultsOf(p.Faults),
 			Meta: metaOf(p.Version, metaRow{p.CreatedAt, p.CreatedByID, p.CreatedByName,
 				p.UpdatedAt, p.UpdatedByID, p.UpdatedByName}),
 		}
@@ -100,9 +101,13 @@ func (s *PostgresStore) PutReviewRow(ctx context.Context, r ReviewRow) error {
 		}
 		candidates = encoded
 	}
-	err := s.db.Queries(ctx).PutPerformanceReviewRow(ctx, sqlcdb.PutPerformanceReviewRowParams{
+	faults, err := json.Marshal(nonNil(r.Faults))
+	if err != nil {
+		return fmt.Errorf("write the faults of review row %s: %w", r.ID, err)
+	}
+	err = s.db.Queries(ctx).PutPerformanceReviewRow(ctx, sqlcdb.PutPerformanceReviewRowParams{
 		ID: r.ID, ImportID: r.ImportID, SourceID: r.SourceID, Raw: r.Raw, Reason: r.Reason,
-		Candidates: candidates, Status: string(r.Status), Comment: r.Comment,
+		Faults: faults, Candidates: candidates, Status: string(r.Status), Comment: r.Comment,
 		Version: r.Version, CreatedAt: r.CreatedAt, CreatedByID: r.CreatedBy.ID,
 		CreatedByName: r.CreatedBy.Name, UpdatedAt: r.UpdatedAt, UpdatedByID: r.UpdatedBy.ID,
 		UpdatedByName: r.UpdatedBy.Name,
@@ -182,4 +187,19 @@ func (s *PostgresStore) PutIntegrationID(ctx context.Context, k IntegrationID) e
 		return fmt.Errorf("save integration id %s: %w", k.ID, err)
 	}
 	return nil
+}
+
+func faultsOf(raw []byte) []Fault {
+	var faults []Fault
+	if len(raw) > 0 {
+		_ = json.Unmarshal(raw, &faults)
+	}
+	return faults
+}
+
+func nonNil(faults []Fault) []Fault {
+	if faults == nil {
+		return []Fault{}
+	}
+	return faults
 }

@@ -110,6 +110,7 @@ type ReviewRow struct {
 	SourceID   string       `json:"sourceId"`
 	Raw        []byte       `json:"raw"`
 	Reason     string       `json:"reason"`
+	Faults     []Fault      `json:"faults"`
 	Candidates []string     `json:"candidates,omitempty"`
 	Status     ReviewStatus `json:"status"`
 	Comment    string       `json:"comment"`

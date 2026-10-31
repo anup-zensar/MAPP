@@ -75,6 +75,7 @@ CREATE TABLE performance_review_rows (
     source_id       text        NOT NULL REFERENCES performance_sources (id) DEFERRABLE INITIALLY DEFERRED,
     raw             json        NOT NULL CHECK (json_typeof(raw) = 'object'),
     reason          text        NOT NULL CHECK (char_length(reason) BETWEEN 1 AND 200),
+    faults          json        NOT NULL CHECK (json_typeof(faults) = 'array'),
     candidates      json        CHECK (candidates IS NULL OR json_typeof(candidates) = 'array'),
     status          text        NOT NULL CHECK (status IN ('open', 'resolved', 'dismissed')),
     comment         text        NOT NULL,

@@ -627,7 +627,7 @@ func (q *Queries) ListPerformanceMappings(ctx context.Context, sourceIds []strin
 }
 
 const listPerformanceReviewRows = `-- name: ListPerformanceReviewRows :many
-SELECT performance_review_rows.id, performance_review_rows.import_id, performance_review_rows.source_id, performance_review_rows.raw, performance_review_rows.reason, performance_review_rows.candidates, performance_review_rows.status, performance_review_rows.comment, performance_review_rows.version, performance_review_rows.created_at, performance_review_rows.created_by_id, performance_review_rows.created_by_name, performance_review_rows.updated_at, performance_review_rows.updated_by_id, performance_review_rows.updated_by_name, s.name AS source_name
+SELECT performance_review_rows.id, performance_review_rows.import_id, performance_review_rows.source_id, performance_review_rows.raw, performance_review_rows.reason, performance_review_rows.faults, performance_review_rows.candidates, performance_review_rows.status, performance_review_rows.comment, performance_review_rows.version, performance_review_rows.created_at, performance_review_rows.created_by_id, performance_review_rows.created_by_name, performance_review_rows.updated_at, performance_review_rows.updated_by_id, performance_review_rows.updated_by_name, s.name AS source_name
 FROM performance_review_rows
 JOIN performance_sources s ON s.id = performance_review_rows.source_id
 WHERE ($1::text IS NULL OR performance_review_rows.status = $1)
@@ -662,6 +662,7 @@ func (q *Queries) ListPerformanceReviewRows(ctx context.Context, arg ListPerform
 			&i.PerformanceReviewRow.SourceID,
 			&i.PerformanceReviewRow.Raw,
 			&i.PerformanceReviewRow.Reason,
+			&i.PerformanceReviewRow.Faults,
 			&i.PerformanceReviewRow.Candidates,
 			&i.PerformanceReviewRow.Status,
 			&i.PerformanceReviewRow.Comment,
@@ -1254,9 +1255,9 @@ func (q *Queries) PutPerformanceMapping(ctx context.Context, arg PutPerformanceM
 
 const putPerformanceReviewRow = `-- name: PutPerformanceReviewRow :exec
 INSERT INTO performance_review_rows (
-    id, import_id, source_id, raw, reason, candidates, status, comment,
+    id, import_id, source_id, raw, reason, faults, candidates, status, comment,
     version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 ON CONFLICT (id) DO UPDATE SET
     status = excluded.status, comment = excluded.comment, version = excluded.version,
     updated_at = excluded.updated_at, updated_by_id = excluded.updated_by_id,
@@ -1269,6 +1270,7 @@ type PutPerformanceReviewRowParams struct {
 	SourceID      string
 	Raw           []byte
 	Reason        string
+	Faults        []byte
 	Candidates    []byte
 	Status        string
 	Comment       string
@@ -1288,6 +1290,7 @@ func (q *Queries) PutPerformanceReviewRow(ctx context.Context, arg PutPerformanc
 		arg.SourceID,
 		arg.Raw,
 		arg.Reason,
+		arg.Faults,
 		arg.Candidates,
 		arg.Status,
 		arg.Comment,

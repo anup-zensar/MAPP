@@ -639,6 +639,7 @@ type PerformanceReviewRow struct {
 	SourceID      string
 	Raw           []byte
 	Reason        string
+	Faults        []byte
 	Candidates    []byte
 	Status        string
 	Comment       string

@@ -75,8 +75,8 @@ while it holds no facts. No upload needed.
 - [ ] T025 [US1] Implement the blank file template in `backend/internal/performance/template.go`, carrying exactly the columns the mappings define (FR-008)
 - [ ] T026 [US1] Implement the source and mapping handlers in `backend/internal/performance/handler.go`; add each operation's rule to the access route table. **Blocked on the contract**: `TestEveryOperationHasAnAccessRule_SC001` asserts in both directions, so a rule for an operation `openapi.yaml` does not carry fails CI. `access/routes_performance.go` was written and reverted; it lands the moment the integrator applies the wave B contract (contracts item 1)
 - [ ] T027 [US1] Remove this story's operations from `notYetServed` in `backend/internal/app/app_test.go` (this feature's group only)
-- [ ] T028 [P] [US1] Build `frontend/src/features/performance/sources/` — list, form and the Settings › Performance data route — with React Hook Form + Zod and MSW-typed answers; run `pnpm run api:types` first
-- [ ] T029 [US1] Run the checks of [quality-gates.md](../../docs/sdd/quality-gates.md) on everything changed
+- [X] T028 [P] [US1] Build `frontend/src/features/performance/sources/` — list, form and the Settings › Performance data route — with React Hook Form + Zod and MSW-typed answers; run `pnpm run api:types` first
+- [X] T029 [US1] Run the checks of [quality-gates.md](../../docs/sdd/quality-gates.md) on everything changed
 
 **Checkpoint**: sources and mappings are configurable end to end.
 
@@ -102,8 +102,8 @@ unchanged; undo it.
 - [ ] T036 [P] [US2] Write `backend/internal/performance/idempotent_test.go`: an identical file changes nothing; a repeated (source, source reference) replaces and audits both versions (FR-013) · proves SC-004
 - [ ] T037 [P] [US2] Write `backend/internal/performance/undo_test.go`: undo restores replaced versions, leaves a later upload's facts alone, and leaves the import listed as *Undone* (FR-017)
 - [ ] T038 [P] [US2] Write `backend/internal/performance/money_test.go`: revenue stored exactly in its currency; without a rate it is marked and excluded with its count (FR-014); a fact counts in the fiscal year of its own date across a multi-year activity (FR-015) · proves SC-010
-- [ ] T039 [P] [US2] Write `backend/internal/performance/handler_import_test.go` as a contract test for the upload, simulated-pull, list, view and undo operations, including the **422** whole-file refusal and FR-016's "an import MUST NOT be editable, and the reason MUST be stated"
-- [ ] T040 [P] [US2] Write `backend/internal/performance/simulatedfeed/feed_test.go`: rows from the adapter take the identical validation and matching path as an uploaded file (046-C13, ADR-0020), on a fixed seed (FR-010)
+- [X] T039 [P] [US2] Write `backend/internal/performance/handler_import_test.go` as a contract test for the upload, simulated-pull, list, view and undo operations, including the **422** whole-file refusal and FR-016's "an import MUST NOT be editable, and the reason MUST be stated"
+- [X] T040 [P] [US2] Write `backend/internal/performance/simulatedfeed/feed_test.go`: rows from the adapter take the identical validation and matching path as an uploaded file (046-C13, ADR-0020), on a fixed seed (FR-010)
 - [ ] T041 [P] [US2] Write `frontend/src/features/performance/imports/ImportPage.test.tsx`: the states data, empty, no access, upload in progress, refused file, and the summary showing all five counts
 
 ### Implementation

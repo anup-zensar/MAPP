@@ -174,9 +174,9 @@ ON CONFLICT (id) DO UPDATE SET
 
 -- name: PutPerformanceReviewRow :exec
 INSERT INTO performance_review_rows (
-    id, import_id, source_id, raw, reason, candidates, status, comment,
+    id, import_id, source_id, raw, reason, faults, candidates, status, comment,
     version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 ON CONFLICT (id) DO UPDATE SET
     status = excluded.status, comment = excluded.comment, version = excluded.version,
     updated_at = excluded.updated_at, updated_by_id = excluded.updated_by_id,
