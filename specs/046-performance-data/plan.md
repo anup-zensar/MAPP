@@ -134,8 +134,8 @@ answers as missing, never as a refusal (constitution non-negotiable 7, FR-044).
 | `ListSources`, `GetSource` | organisation-wide (configuration, not plan-owned) | freshness computed from the latest import |
 | `ListFactsForActivity` | activity → plan → actor scope | the Performance panel; one query, not one per stage |
 | `MatchRows` | candidate activities restricted to the actor's scope | **set-based**: one query per key type per batch, never one per row (R16 below) |
-| `ListReviewRows` | row → source → the facts' plans in scope | filterable by key, source, reason, upload, date, status |
-| `SummariseImport` | import → actor scope | the five counts, computed in SQL |
+| `ListReviewRows` | **none** — gated by `performance.import` (046-C15) | an unmatched row belongs to no activity, so no scope can be derived; the **candidates** it names are filtered to the reader's scope |
+| `SummariseImport` | **none** — gated by `performance.import` (046-C15) | an import records a file, its uploader and its counts; no plan-owned data |
 | `ListMediaCodes` | activity → plan → actor scope | |
 
 **R16 (efficiency, constitution B9 and feature 028)**: matching a file of N rows MUST use a constant number of

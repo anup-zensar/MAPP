@@ -134,6 +134,20 @@ these into the decision log at the end of wave B.
   plus any aliases.
 
 
+- **046-C15** — Q: Must the imports list and the review queue filter by the actor's scope, as plan.md's
+  Queries table says? → A: **No, and the table was wrong.** Neither is plan-owned data. An import records a
+  file, its uploader and its counts; a **rejected or unmatched row belongs to no activity at all** — that is
+  what makes it unmatched — so there is no plan to derive a scope from, and a scope filter would hide every
+  unmatched row from everyone. Both are administrator work, gated by `performance.import` (FR-043).
+
+  **But one field of a review row is plan-owned**: `candidates`, the activities named when keys disagree
+  (FR-019). Naming an activity the reader cannot see would disclose its existence, which constitution
+  non-negotiable 7 forbids. So the queue is permission-gated, and the candidate list each reader sees is
+  filtered to the activities within their scope; a row whose candidates are all outside it still appears,
+  with its reason, and names none of them. That satisfies FR-019 without turning the queue into a directory
+  of records the reader may not know about.
+
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Set up a data source and its column mappings (Priority: P1)
