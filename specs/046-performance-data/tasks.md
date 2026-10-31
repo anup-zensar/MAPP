@@ -93,8 +93,8 @@ unchanged; undo it.
 
 ### Tests (write first, confirm they fail)
 
-- [ ] T030 [P] [US2] Write `backend/internal/performance/validate_test.go`: all faults in one row reported together — empty required column, invalid or future date, negative or fractional count, invalid amount or unconfigured currency, unknown stage, missing or repeated reference (FR-011)
-- [ ] T031 [P] [US2] Write `backend/internal/performance/personaldata_test.go`: a file with a personal-data column is refused **in full** and **no row is stored** (FR-012) · proves SC-007
+- [X] T030 [P] [US2] Write `backend/internal/performance/validate_test.go`: all faults in one row reported together — empty required column, invalid or future date, negative or fractional count, invalid amount or unconfigured currency, unknown stage, missing or repeated reference (FR-011)
+- [X] T031 [P] [US2] Write `backend/internal/performance/personaldata_test.go`: a file with a personal-data column is refused **in full** and **no row is stored** (FR-012) · proves SC-007
 - [ ] T032 [P] [US2] Write `backend/internal/performance/matcher_test.go` table-driven over the four keys in their strict order — activity ID → media code → integration ID → external name (FR-018) — plus ambiguous, unknown, and **keys disagree** naming both candidates and never guessing (FR-019) · proves SC-006
 - [ ] T033 [P] [US2] Write `backend/internal/performance/held_test.go`: a fact on an activity that is Created, Submitted or Declined is held and counts nowhere; Approved, In progress and Complete do not hold (FR-020, FR-028) · proves SC-002
 - [ ] T034 [P] [US2] Write `backend/internal/performance/binned_test.go`: a fact matched to a **binned** activity is held until restore **and** approval; a fact matched to a **permanently deleted** activity goes to the review queue (FR-021)

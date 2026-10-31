@@ -171,6 +171,19 @@ these into the decision log at the end of wave B.
   look interchangeable and a reader of FR-057 alone would merge them.
 
 
+- **046-C20** — Q: If a row's activity ID is present but resolves to nothing, does matching fall through to
+  its media code? → A: **No.** Client 020 FR-011 reads "through activity ID, media code, integration ID or
+  external name, **in that order**; disagreeing, ambiguous or **unknown keys leave it unmatched** with a
+  stated reason." An unknown key is listed beside disagreeing and ambiguous as a cause of *unmatched*, not as
+  a reason to try the next key.
+
+  So "in that order" governs which keys are **tried** — a row that simply has no activity-ID column starts at
+  its media code — and which key is **recorded** as `matched_on` when several are present and agree. It does
+  not license falling through a key that is present and wrong. A typo'd activity ID beside a valid media code
+  is a row somebody should look at, and silently attributing it to the media code's activity would be the
+  guess FR-019 forbids.
+
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Set up a data source and its column mappings (Priority: P1)

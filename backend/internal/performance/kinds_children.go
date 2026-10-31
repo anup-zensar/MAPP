@@ -17,8 +17,7 @@ type childSpec[T any] struct {
 	remove                 func(ctx context.Context, ids []string) error
 	put                    func(ctx context.Context, record T) error
 	parts                  func(record T) (id, parentID, label string)
-	// restore adjusts a record on its way back from the recycle bin; nil when nothing needs adjusting.
-	restore func(record T) T
+	restore                func(record T) T
 }
 
 func (c childSpec[T]) kind() history.Kind {
@@ -55,8 +54,7 @@ func (c childSpec[T]) kind() history.Kind {
 	}
 }
 
-// prepareRestore runs on the way back from the recycle bin but not on an Undo, because an Undo puts the
-// record back exactly as it was while a restore returns its activity to Created (activity/kinds.go R14).
+// Skipped on an Undo: an Undo keeps the activity's status, a restore returns it to Created (R14).
 func (c childSpec[T]) prepareRestore(_ context.Context, rc history.RestoreContext, s *history.Snapshot) ([]string, error) {
 	if c.restore == nil || rc.Undo {
 		return nil, nil
@@ -79,8 +77,7 @@ func (s *Service) childKinds() []history.Kind {
 			name: factKind, singular: "performance fact", plural: "performance facts",
 			ids: s.repo.FactIDsOf, get: s.repo.GetFact, remove: s.repo.DeleteFacts, put: s.repo.PutFact,
 			parts: func(f Fact) (string, string, string) { return f.ID, f.ActivityID, f.SourceReference },
-			// A restore returns the activity to Created, so its facts must come back held or they would
-			// count under an activity nobody has approved (FR-020, FR-021).
+			// A restore returns the activity to Created, so facts must come back held (FR-020, FR-021).
 			restore: func(f Fact) Fact { f.Held = true; return f },
 		}.kind(),
 		childSpec[MediaCode]{

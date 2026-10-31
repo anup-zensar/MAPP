@@ -50,3 +50,10 @@ const (
 	msgMetricUnknown  = "A web metric is sessions, visits or engagement touches."
 	msgModelNeeded    = "Only a stage or revenue column is supplied by a model, and it must name one."
 )
+
+const (
+	reasonNoKey     = "unattributed:noKey"
+	reasonUnknown   = "unmatched:unknown"
+	reasonAmbiguous = "unmatched:ambiguous"
+	reasonDisagree  = "unmatched:disagree"
+)
