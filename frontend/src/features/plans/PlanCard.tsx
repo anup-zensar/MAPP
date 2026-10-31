@@ -14,6 +14,7 @@ import { changesNothingIn } from './plan-access';
 import { activitiesApprovedText } from './plan-text';
 import { PlanTypeTag } from './PlanTypeTag';
 import { BcpirTag } from './BcpirTag';
+import { FoundIn } from './FoundIn';
 
 export interface PlanCardProps {
   plan: PlanSummary;
@@ -40,6 +41,7 @@ export function PlanCard({ plan, actions, pinned, onPinToggle }: PlanCardProps) 
             <PlanTypeTag plan={plan} />
             <BcpirTag plan={plan} />
           </p>
+          <FoundIn foundIn={plan.foundIn} />
         </div>
         <div className={styles.topActions}>
           <PinButton planName={plan.name} pinned={pinned} onToggle={onPinToggle} />

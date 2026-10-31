@@ -14,6 +14,7 @@ import { changesNothingIn } from './plan-access';
 import styles from './PlanTable.module.css';
 import { PlanTypeTag } from './PlanTypeTag';
 import { BcpirTag } from './BcpirTag';
+import { FoundIn } from './FoundIn';
 
 export interface PlanTableProps {
   plans: PlanSummary[];
@@ -80,6 +81,7 @@ export function PlanTable({ plans, actionsFor, isPinned, onPinToggle }: PlanTabl
                     <PlanTypeTag plan={plan} />
                     <BcpirTag plan={plan} />
                   </span>
+                  <FoundIn foundIn={plan.foundIn} />
                 </th>
                 <td>
                   <span className={styles.chips}>

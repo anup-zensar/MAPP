@@ -1264,6 +1264,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/plans/{planId}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The campaigns, initiatives, activities and line items of the plan whose name or ID holds the text
+         * @description 039 FR-005. Top-down (campaign, initiative, activity, line item), then by name and ID. A plan outside the person's scope answers 404, like a missing one.
+         */
+        get: operations["searchPlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/plans/{planId}/copy-options": {
         parameters: {
             query?: never;
@@ -5948,6 +5968,28 @@ export interface components {
             planBudget?: components["schemas"]["Money"] | null;
             /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
             planPlannedCost?: components["schemas"]["Money"] | null;
+            foundIn?: components["schemas"]["PlanFoundIn"];
+        };
+        /** @description 039 FR-007. Only on a plan listed because a record below it holds the search, not its own name or ID: the first match top-down and how many more. */
+        PlanFoundIn: {
+            match: components["schemas"]["PlanSearchMatch"];
+            more: number;
+        };
+        PlanSearch: {
+            items: components["schemas"]["PlanSearchMatch"][];
+        };
+        PlanSearchMatch: {
+            /** @enum {string} */
+            level: "campaign" | "initiative" | "activity" | "lineItem";
+            /** @example L-1006 */
+            id: string;
+            /** @example Stand build */
+            name: string;
+            /**
+             * @description The plan's ID for a campaign, the campaign's for an initiative, the initiative's for an activity, the activity's for a line item.
+             * @example A-1004
+             */
+            parentId: string;
         };
         /** @description The summary cards of the Plans page, over the team scope and the chosen year. */
         PlanListSummary: {
@@ -12954,7 +12996,7 @@ export interface operations {
                  * @example 2026
                  */
                 year?: number;
-                /** @description Part of the name or of the ID, ignoring letter case and surrounding spaces. */
+                /** @description Part of the name or of the ID, ignoring letter case and surrounding spaces; a plan is also listed when a campaign, initiative, activity or line item below it holds the text (039 FR-006). */
                 q?: string;
                 /** @description BCPIR plans (013 FR-003). */
                 bcpir?: components["parameters"]["AllWorkBcpir"];
@@ -13152,6 +13194,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Plan"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    searchPlan: {
+        parameters: {
+            query: {
+                /**
+                 * @description Part of a name or ID, ignoring letter case and surrounding spaces; 1–200 characters.
+                 * @example venue
+                 */
+                q: string;
+            };
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The matching records below the plan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanSearch"];
                 };
             };
             400: components["responses"]["BadRequest"];

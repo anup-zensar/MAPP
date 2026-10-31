@@ -16,15 +16,7 @@ import type { Plan } from '../api';
 import { NO_CAMPAIGNS, yearDates } from '../plan-text';
 import styles from './PlanTree.module.css';
 
-/**
- * The tree's columns (FR-013, design system §5.4): the name keeps TreeTable's own minimum (280 px,
- * functional review X-01) and takes whatever the other columns leave, wrapping between words;
- * people never squeeze below 160 px and never wrap (PL-01); the dates (164 px) and the two chips
- * stay on one line; money is right-aligned under its header. The budget used is the second line
- * of the planned cost and the Total row says "Allocated", so the whole tree fits a 1,440 px
- * screen with the sidebar open and its last column is never cut off; narrower screens scroll the
- * tree sideways inside its card, never the page.
- */
+// The name takes what the other columns leave; people and dates never squeeze, so the tree fits 1,440 px.
 const COLUMNS: TreeTableColumn[] = [
   { key: 'name', header: 'Name' },
   { key: 'owner', header: 'Owner', minWidth: '160px' },
@@ -41,10 +33,7 @@ function allIds(nodes: TreeNode[]): string[] {
   );
 }
 
-/**
- * The rows open before anyone expands or collapses them: the plan and campaign rows (005 FR-020)
- * and every row on the path to a highlighted one, the record just created, moved or copied.
- */
+/** The plan and campaign rows, and the path to the record just created, moved or copied. */
 function openAtFirst(nodes: TreeNode[], path: string[] = []): string[] {
   return nodes.flatMap((node) => {
     const below = openAtFirst(node.children, [...path, node.id]);
@@ -56,29 +45,31 @@ function openAtFirst(nodes: TreeNode[], path: string[] = []): string[] {
 
 export interface PlanTreeProps {
   plan: Plan;
-  /** The rows under the plan row: campaigns with their initiatives (feature 005). */
   childNodes?: TreeNode[];
-  /** Buttons after Expand all / Collapse all, such as Add campaign (feature 005). */
   toolbarActions?: ReactNode;
-  /** The totals row (feature 005). */
   footer?: TreeTableFooter;
-  /** The plan row's ⋯ menu (feature 005: Add campaign). */
   planRowActions?: ActionsMenuItem[];
-  /** Under the "No campaigns yet" sentence (feature 005: Add campaign). */
   emptyAction?: ReactNode;
-  /** The rows below the plan are still loading (feature 005). */
   isLoading?: boolean;
-  /** Reading the rows below the plan failed (feature 005); shown with Try again. */
   error?: unknown;
-  /** Reads the rows below the plan again. */
   onRetry?: () => void;
+  /** The line items that match the search, by activity ID: shown under their activity while searching. */
+  searchRows?: ReadonlyMap<string, TreeNode[]>;
+  onSearch?: (text: string) => void;
+  searchNote?: string | null;
+  searchPending?: boolean;
 }
 
-/**
- * The plan tree (FR-013, FR-014): the plan row with its owner, dates, status, budget, planned cost
- * and budget used, and everything below it from later features; search on name or ID that keeps
- * the path to each match open, and Expand all / Collapse all.
- */
+const SEARCHING = 'Searching this plan…';
+const NO_ROWS: ReadonlyMap<string, TreeNode[]> = new Map();
+
+function withRowsBelow(nodes: TreeNode[], rows: ReadonlyMap<string, TreeNode[]>): TreeNode[] {
+  return nodes.map((node) => ({
+    ...node,
+    children: [...withRowsBelow(node.children, rows), ...(rows.get(node.id) ?? [])],
+  }));
+}
+
 export function PlanTree({
   plan,
   childNodes = [],
@@ -89,17 +80,17 @@ export function PlanTree({
   isLoading = false,
   error,
   onRetry,
+  searchRows = NO_ROWS,
+  onSearch,
+  searchNote,
+  searchPending = false,
 }: PlanTreeProps) {
   const { dateRange } = useFormatters();
   const [query, setQuery] = useState('');
-  // What someone opened or closed, by row id; the other rows follow openAtFirst, so rows that load
-  // later (campaigns) start the way 005 FR-020 says.
+  // What someone opened or closed, by row id; the other rows follow openAtFirst, also rows loaded later.
   const [toggled, setToggled] = useState<ReadonlyMap<string, boolean>>(() => new Map());
-  // After Expand all or Collapse all, every row not toggled since follows that choice, also rows whose
-  // children load afterwards (activities arrive in a query of their own, after the campaigns).
   const [everyRow, setEveryRow] = useState<boolean | null>(null);
   const { figures } = plan;
-  // The plan currency's figures (016 FR-013); the display currency's until 016's API sends them.
   const planFigures = plan.planFigures ?? figures;
 
   const planNode: TreeNode = {
@@ -107,10 +98,9 @@ export function PlanTree({
     level: 'plan',
     name: plan.name,
     actions: planRowActions,
-    children: childNodes,
+    children: query.trim() ? withRowsBelow(childNodes, searchRows) : childNodes,
     cells: {
       name: <span className={styles.id}>{plan.id}</span>,
-      // Like every other row: avatar and name (UI audit PL-04).
       owner: plan.owner ? (
         <span className={styles.nowrap}>
           <PersonLabel person={plan.owner} />
@@ -147,11 +137,13 @@ export function PlanTree({
 
   const filtered = filterTree([planNode], query);
   const openFirst = new Set(openAtFirst([planNode]));
+  const searchOpen = query.trim() ? filtered.openIds : new Set<string>();
   const expandedIds = new Set(
-    allIds([planNode]).filter((id) => toggled.get(id) ?? everyRow ?? openFirst.has(id)),
+    allIds([planNode]).filter(
+      (id) => toggled.get(id) ?? (searchOpen.has(id) || (everyRow ?? openFirst.has(id))),
+    ),
   );
 
-  /** Sets every row in ids open or closed. */
   function setOpen(ids: Iterable<string>, open: boolean) {
     setToggled((current) => {
       const next = new Map(current);
@@ -162,23 +154,22 @@ export function PlanTree({
     });
   }
 
-  /** Opens or closes every row, now and when more rows load (Expand all, Collapse all). */
   function setAllOpen(open: boolean) {
     setToggled(new Map());
     setEveryRow(open);
   }
 
-  /** Filters the rows and opens the path to every match. */
   function search(text: string) {
     setQuery(text);
-    const { openIds } = filterTree([planNode], text);
-    if (openIds.size > 0) {
-      setOpen(openIds, true);
+    onSearch?.(text);
+    // Paths a search opened stay open, also those to line items found by the API after the last key.
+    const opened = new Set([...filterTree([planNode], text).openIds, ...searchOpen]);
+    if (opened.size > 0) {
+      setOpen(opened, true);
     }
   }
 
   return (
-    // A table card (design system §5.3): the toolbar and the table reach the card's edges.
     <section className={styles.card} aria-label="Plan tree">
       <div className={styles.toolbar}>
         <div className={styles.search}>
@@ -195,6 +186,11 @@ export function PlanTree({
           {toolbarActions}
         </div>
       </div>
+      {searchNote && query.trim() && (
+        <div className={styles.empty} role="status">
+          <p>{searchNote}</p>
+        </div>
+      )}
       <div className={styles.tree}>
         <TreeTable
           label="Plan tree"
@@ -202,7 +198,7 @@ export function PlanTree({
           nodes={filtered.nodes}
           expandedIds={expandedIds}
           onToggle={(id) => setOpen([id], !expandedIds.has(id))}
-          emptyText={`Nothing in this plan matches '${query.trim()}'`}
+          emptyText={searchPending ? SEARCHING : `Nothing in this plan matches '${query.trim()}'`}
           footer={footer}
         />
         {error ? (

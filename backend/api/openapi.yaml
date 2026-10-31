@@ -2460,7 +2460,9 @@ paths:
           example: 2026
         - name: q
           in: query
-          description: Part of the name or of the ID, ignoring letter case and surrounding spaces.
+          description: >-
+            Part of the name or of the ID, ignoring letter case and surrounding spaces; a plan is also listed when
+            a campaign, initiative, activity or line item below it holds the text (039 FR-006).
           schema:
             type: string
         - $ref: "#/components/parameters/AllWorkBcpir"
@@ -2640,6 +2642,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Plan"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/v1/plans/{planId}/search:
+    get:
+      tags:
+        - Plans
+      operationId: searchPlan
+      summary: The campaigns, initiatives, activities and line items of the plan whose name or ID holds the text
+      description: >-
+        039 FR-005. Top-down (campaign, initiative, activity, line item), then by name and ID. A plan outside the
+        person's scope answers 404, like a missing one.
+      parameters:
+        - $ref: "#/components/parameters/PlanId"
+        - name: q
+          in: query
+          required: true
+          description: Part of a name or ID, ignoring letter case and surrounding spaces; 1–200 characters.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 200
+          example: venue
+      responses:
+        "200":
+          description: The matching records below the plan.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanSearch"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -12636,6 +12675,45 @@ components:
           oneOf:
             - $ref: "#/components/schemas/Money"
             - type: "null"
+        foundIn:
+          $ref: "#/components/schemas/PlanFoundIn"
+    PlanFoundIn:
+      type: object
+      description: >-
+        039 FR-007. Only on a plan listed because a record below it holds the search, not its own name or ID: the
+        first match top-down and how many more.
+      required: [match, more]
+      properties:
+        match:
+          $ref: "#/components/schemas/PlanSearchMatch"
+        more:
+          type: integer
+          minimum: 0
+    PlanSearch:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanSearchMatch"
+    PlanSearchMatch:
+      type: object
+      required: [level, id, name, parentId]
+      properties:
+        level:
+          type: string
+          enum: [campaign, initiative, activity, lineItem]
+        id:
+          type: string
+          example: L-1006
+        name:
+          type: string
+          example: Stand build
+        parentId:
+          type: string
+          description: The plan's ID for a campaign, the campaign's for an initiative, the initiative's for an activity, the activity's for a line item.
+          example: A-1004
     PlanListSummary:
       type: object
       additionalProperties: false

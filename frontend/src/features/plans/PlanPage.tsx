@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useOutlet, useParams, useSearchParams } from 'react-router';
 import { ApiError } from '@/api/errors';
 import { Button } from '@/ui/Button/Button';
@@ -30,6 +30,7 @@ import { RecordFinancials } from './RecordFinancials';
 import { planTabOf } from './schemas';
 import type { PlanTab } from './schemas';
 import { PlanTree } from './tree/PlanTree';
+import { usePlanSearchRows } from './tree/usePlanSearchRows';
 import { usePlanActions } from './usePlanActions';
 import { usePlanExport } from './usePlanExport';
 
@@ -46,6 +47,8 @@ export function PlanPage() {
   const navigate = useNavigate();
   const plan = usePlan(planId);
   const campaigns = useCampaignTreeContent(planId, plan.data?.access?.content.addCampaign);
+  const [treeSearch, setTreeSearch] = useState('');
+  const found = usePlanSearchRows(planId, treeSearch);
   const panel = useOutlet();
   const [search, setSearch] = useSearchParams();
   const tab = planTabOf(search);
@@ -118,6 +121,10 @@ export function PlanPage() {
             isLoading={campaigns.isLoading}
             error={campaigns.error}
             onRetry={campaigns.refetch}
+            searchRows={found.rows}
+            onSearch={setTreeSearch}
+            searchNote={found.note}
+            searchPending={found.pending}
           />
         );
     }

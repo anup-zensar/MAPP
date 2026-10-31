@@ -6,6 +6,8 @@ import type { PlanListFilters } from './list-preferences';
 
 export type Plan = components['schemas']['Plan'];
 export type PlanSummary = components['schemas']['PlanSummary'];
+export type PlanSearchMatch = components['schemas']['PlanSearchMatch'];
+export type PlanFoundIn = components['schemas']['PlanFoundIn'];
 export type PlanList = components['schemas']['PlanList'];
 export type PlanDefaults = components['schemas']['PlanDefaults'];
 export type PlanCreate = components['schemas']['PlanCreate'];
@@ -23,6 +25,7 @@ export const PLAN_KEYS = {
   plan: (planId: string) => ['plan', planId] as const,
   defaults: ['plan-defaults'] as const,
   copyOptions: (planId: string) => ['plan-copy-options', planId] as const,
+  search: (planId: string, q: string) => ['plan', planId, 'search', q] as const,
 };
 
 function yearParams({ yearFrom, yearTo }: Pick<PlanQuery, 'yearFrom' | 'yearTo'>) {
@@ -48,6 +51,18 @@ export function usePlans(query: PlanQuery) {
           },
         }),
       ),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function usePlanSearch(planId: string, q: string) {
+  return useQuery({
+    queryKey: PLAN_KEYS.search(planId, q),
+    queryFn: () =>
+      call(
+        api.GET('/api/v1/plans/{planId}/search', { params: { path: { planId }, query: { q } } }),
+      ),
+    enabled: q !== '',
     placeholderData: keepPreviousData,
   });
 }
