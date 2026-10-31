@@ -196,7 +196,9 @@ check the dialog's counts, choose Undo and confirm everything is back with the s
   progress and Complete count as approved).
 - **FR-003**: The list MUST offer pill filters All · Draft · Published, a year filter (All years and each
   year with a plan), search on name or ID ignoring letter case, removable filter chips and a result count;
-  it is sorted by year (newest first), then name; filters and layout are remembered per user.
+  it is sorted by year (newest first), then name; filters and layout are remembered per user. *Amended by
+  [039 FR-006 – FR-009](../039-search-whole-hierarchy/spec.md) (D-366): the search also lists a plan when a
+  campaign, initiative, activity or line item in it matches, and says where.*
 - **FR-004**: **My teams** MUST show plans with one of the user's teams; it never stops anyone opening a
   plan (Q-006), and **All plans** is the default.
   *Since feature 014 this rule follows roles: every action needs its permission of 014 Table A in the plan's scope (014 FR-041).*
@@ -244,7 +246,8 @@ check the dialog's counts, choose Undo and confirm everything is back with the s
 - **FR-014**: Tree rows MUST expand and collapse by mouse and keyboard; search MUST match name or ID
   ignoring letter case, keep ancestors of matches visible and open the path, or say "Nothing in this plan
   matches '<text>'"; a plan without campaigns says "No campaigns yet — a campaign is a theme that runs for
-  most of the year."
+  most of the year." *Amended by [039 FR-001 – FR-004](../039-search-whole-hierarchy/spec.md) (D-366): the
+  search also matches line items, shown as rows under their activity while a search is typed.*
 - **FR-015**: Details MUST show every field of field catalogue §1 read-only, "—" when empty, calculated
   values labelled "Calculated", business-unit attributes only while shown, and inactive values
   "(inactive)". All amounts in this feature appear in the user's display currency (feature 003), labelled.
