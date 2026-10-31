@@ -103,3 +103,37 @@ func TestCheckSupplier_AnInactiveSourceDoesNotConflict_FR004(t *testing.T) {
 			"mappings but it no longer supplies the stage", err)
 	}
 }
+
+func TestCheckAliasFree_RefusesANameAnotherActivityHolds_FR035(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	if err := f.store.PutAlias(t.Context(), performance.Alias{
+		ID: "XN-1", ActivityID: "A-1002", Name: "spring-launch",
+	}); err != nil {
+		t.Fatalf("PutAlias: %v", err)
+	}
+
+	err := f.service.CheckAliasFree(t.Context(), "A-1001", "Spring-Launch")
+
+	var refusal *errs.Error
+	if !errors.As(err, &refusal) || refusal.Code != errs.CodeNameTaken {
+		t.Fatalf("CheckAliasFree() = %v, want %s: names and aliases share one namespace", err, errs.CodeNameTaken)
+	}
+	if !strings.Contains(refusal.Message, "A-1002") {
+		t.Errorf("the refusal does not name who holds it: %q", refusal.Message)
+	}
+}
+
+func TestCheckAliasFree_AllowsTheActivitysOwnName_FR035(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	if err := f.store.PutAlias(t.Context(), performance.Alias{
+		ID: "XN-1", ActivityID: "A-1001", Name: "spring-launch",
+	}); err != nil {
+		t.Fatalf("PutAlias: %v", err)
+	}
+
+	if err := f.service.CheckAliasFree(t.Context(), "A-1001", "spring-launch"); err != nil {
+		t.Errorf("CheckAliasFree() for the activity's own alias = %v, want nil", err)
+	}
+}

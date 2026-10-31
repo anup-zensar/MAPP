@@ -407,3 +407,15 @@ func (s *Store) PutAlias(_ context.Context, a performance.Alias) error {
 	s.aliases[a.ID] = a
 	return nil
 }
+
+func (s *Store) ExternalNameHolders(_ context.Context, name string) ([]string, error) {
+	key := strings.ToLower(strings.TrimSpace(name))
+	var holders []string
+	for _, a := range s.aliases {
+		if strings.ToLower(strings.TrimSpace(a.Name)) == key {
+			holders = append(holders, a.ActivityID)
+		}
+	}
+	holders = append(holders, s.Keys[performance.MatchedExternalName][key]...)
+	return holders, nil
+}

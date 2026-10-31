@@ -1,10 +1,12 @@
 package performance_test
 
 import (
+	"errors"
 	"testing"
 
 	"mapp/internal/history"
 	"mapp/internal/performance"
+	"mapp/internal/platform/errs"
 )
 
 func TestCreateSource_WritesOneActivityLogEntry_FR045(t *testing.T) {
@@ -94,5 +96,49 @@ func TestDeleteSource_LogsAndGoesToTheRecycleBin_FR045(t *testing.T) {
 	}
 	if entries[0].Action != history.ActionDeleted || entries[0].RecordID != src.ID {
 		t.Errorf("newest entry = %s/%s, want %s/deleted", entries[0].RecordID, entries[0].Action, src.ID)
+	}
+}
+
+func TestUpdateSource_StaleVersionRefused_FR045(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	src := f.createSource(t, "Marketing automation")
+	edit := performance.SourceInput{Name: "Renamed", OwnerID: alex.ID,
+		Category: performance.CategoryCRM, DeliveryRoute: performance.RouteUpload,
+		Cadence: performance.CadenceMonthly, Version: src.Version}
+
+	if _, err := f.service.UpdateSource(t.Context(), alex, src.ID, edit); err != nil {
+		t.Fatalf("UpdateSource with the current version: %v", err)
+	}
+
+	_, err := f.service.UpdateSource(t.Context(), alex, src.ID, edit)
+
+	var conflict *errs.Error
+	if !errors.As(err, &conflict) || conflict.Code != errs.CodeVersionConflict {
+		t.Fatalf("a second save against the old version answered %v, want %s", err, errs.CodeVersionConflict)
+	}
+	if conflict.Conflict == nil || conflict.Conflict.ChangedBy != alex.Name {
+		t.Errorf("the refusal does not name who changed it: %+v", conflict.Conflict)
+	}
+}
+
+func TestUpdateSource_KeepsTheValuesAndRaisesTheVersion_FR045(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	src := f.createSource(t, "Marketing automation")
+
+	saved, err := f.service.UpdateSource(t.Context(), alex, src.ID, performance.SourceInput{
+		Name: "Renamed", OwnerID: alex.ID, Category: performance.CategoryCRM,
+		DeliveryRoute: performance.RouteUpload, Cadence: performance.CadenceWeekly, Version: src.Version,
+	})
+	if err != nil {
+		t.Fatalf("UpdateSource: %v", err)
+	}
+
+	if saved.Name != "Renamed" || saved.Cadence != performance.CadenceWeekly {
+		t.Errorf("saved = %s/%s, want Renamed/weekly", saved.Name, saved.Cadence)
+	}
+	if saved.Version != src.Version+1 {
+		t.Errorf("version is %d after one change, want %d", saved.Version, src.Version+1)
 	}
 }

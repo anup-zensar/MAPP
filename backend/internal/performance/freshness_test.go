@@ -5,10 +5,9 @@ import (
 	"testing"
 
 	"mapp/internal/performance"
+	"mapp/internal/platform/actor"
 )
 
-// A source that has never loaded is the normal case for every source US1 creates: its freshness is NULL
-// in SQL, and reading it must not fail (FR-005).
 func TestListSources_SourceThatHasNeverLoaded_FR005(t *testing.T) {
 	store, db := pgPerformanceDB(t)
 	if err := db.Write(t.Context(), func(ctx context.Context) error {
@@ -28,5 +27,29 @@ func TestListSources_SourceThatHasNeverLoaded_FR005(t *testing.T) {
 	if !got[0].LastLoadedAt.IsZero() || !got[0].DataThrough.IsZero() {
 		t.Errorf("a source that never loaded has LastLoadedAt=%v DataThrough=%v, want both zero",
 			got[0].LastLoadedAt, got[0].DataThrough)
+	}
+}
+
+// seed/seed.go is not this lane's to change, so taking a code must create the row (FR-042).
+func TestTakeNextCode_OnAFreshDatabase_FR042(t *testing.T) {
+	store, db := pgPerformanceDB(t)
+
+	var first, second int64
+	if err := db.Write(t.Context(), func(ctx context.Context) error {
+		var err error
+		if first, err = store.TakeNextCode(ctx, actor.System, pgMeta.CreatedAt); err != nil {
+			return err
+		}
+		second, err = store.TakeNextCode(ctx, actor.System, pgMeta.CreatedAt)
+		return err
+	}); err != nil {
+		t.Fatalf("TakeNextCode on a fresh database: %v", err)
+	}
+
+	if first != 9000001 {
+		t.Errorf("the first code is %d, want 9000001 so it cannot collide with Hive9's", first)
+	}
+	if second != first+1 {
+		t.Errorf("the second code is %d, want %d: a number must never be reused", second, first+1)
 	}
 }

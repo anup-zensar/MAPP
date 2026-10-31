@@ -145,12 +145,21 @@ WHERE activity_id = sqlc.arg(activity_id)
         sqlc.arg(views_plans)::boolean, sqlc.arg(viewer_team_ids)::text[])
 ORDER BY code;
 
+-- Creates the configuration row on first use, so a fresh database does not need a seeded singleton, and
+-- raises the counter in the same statement, so two codes can never take the same number (FR-042).
 -- name: TakeNextMediaCode :one
-UPDATE performance_configuration
-SET media_code_next = media_code_next + 1, version = version + 1, updated_at = sqlc.arg(updated_at),
-    updated_by_id = sqlc.arg(updated_by_id), updated_by_name = sqlc.arg(updated_by_name)
-WHERE id = 'performance'
-RETURNING (media_code_next - 1)::bigint AS code;
+INSERT INTO performance_configuration (
+    id, media_code_next, code_attributes,
+    version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+) VALUES ('performance', sqlc.arg(start_at)::bigint + 1, '[]',
+    1, sqlc.arg(updated_at), sqlc.arg(updated_by_id), sqlc.arg(updated_by_name),
+    sqlc.arg(updated_at), sqlc.arg(updated_by_id), sqlc.arg(updated_by_name))
+ON CONFLICT (id) DO UPDATE SET
+    media_code_next = performance_configuration.media_code_next + 1,
+    version = performance_configuration.version + 1,
+    updated_at = excluded.updated_at, updated_by_id = excluded.updated_by_id,
+    updated_by_name = excluded.updated_by_name
+RETURNING (performance_configuration.media_code_next - 1)::bigint AS code;
 
 -- name: PutPerformanceFact :exec
 INSERT INTO performance_facts (
@@ -246,3 +255,13 @@ INSERT INTO activity_external_name_aliases (
 ON CONFLICT (id) DO UPDATE SET
     name = excluded.name, version = excluded.version, updated_at = excluded.updated_at,
     updated_by_id = excluded.updated_by_id, updated_by_name = excluded.updated_by_name;
+
+-- FR-035: external names and aliases share one namespace, so a key never resolves to two activities.
+-- name: ExternalNameHolders :many
+SELECT a.id AS activity_id
+FROM activities a
+WHERE a.external_name <> '' AND lower(a.external_name COLLATE "C") = lower(sqlc.arg(name)::text COLLATE "C")
+UNION
+SELECT n.activity_id
+FROM activity_external_name_aliases n
+WHERE lower(n.name COLLATE "C") = lower(sqlc.arg(name)::text COLLATE "C");

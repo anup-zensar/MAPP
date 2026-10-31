@@ -183,6 +183,37 @@ func (q *Queries) DeletePerformanceSource(ctx context.Context, sourceID string) 
 	return result.RowsAffected(), nil
 }
 
+const externalNameHolders = `-- name: ExternalNameHolders :many
+SELECT a.id AS activity_id
+FROM activities a
+WHERE a.external_name <> '' AND lower(a.external_name COLLATE "C") = lower($1::text COLLATE "C")
+UNION
+SELECT n.activity_id
+FROM activity_external_name_aliases n
+WHERE lower(n.name COLLATE "C") = lower($1::text COLLATE "C")
+`
+
+// FR-035: external names and aliases share one namespace, so a key never resolves to two activities.
+func (q *Queries) ExternalNameHolders(ctx context.Context, name string) ([]string, error) {
+	rows, err := q.db.Query(ctx, externalNameHolders, name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var activity_id string
+		if err := rows.Scan(&activity_id); err != nil {
+			return nil, err
+		}
+		items = append(items, activity_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const factIDsOfActivities = `-- name: FactIDsOfActivities :many
 SELECT id FROM performance_facts WHERE activity_id = ANY ($1::text[]) ORDER BY id
 `
@@ -1387,21 +1418,36 @@ func (q *Queries) SourceFreshness(ctx context.Context) ([]SourceFreshnessRow, er
 }
 
 const takeNextMediaCode = `-- name: TakeNextMediaCode :one
-UPDATE performance_configuration
-SET media_code_next = media_code_next + 1, version = version + 1, updated_at = $1,
-    updated_by_id = $2, updated_by_name = $3
-WHERE id = 'performance'
-RETURNING (media_code_next - 1)::bigint AS code
+INSERT INTO performance_configuration (
+    id, media_code_next, code_attributes,
+    version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+) VALUES ('performance', $1::bigint + 1, '[]',
+    1, $2, $3, $4,
+    $2, $3, $4)
+ON CONFLICT (id) DO UPDATE SET
+    media_code_next = performance_configuration.media_code_next + 1,
+    version = performance_configuration.version + 1,
+    updated_at = excluded.updated_at, updated_by_id = excluded.updated_by_id,
+    updated_by_name = excluded.updated_by_name
+RETURNING (performance_configuration.media_code_next - 1)::bigint AS code
 `
 
 type TakeNextMediaCodeParams struct {
+	StartAt       int64
 	UpdatedAt     time.Time
 	UpdatedByID   string
 	UpdatedByName string
 }
 
+// Creates the configuration row on first use, so a fresh database does not need a seeded singleton, and
+// raises the counter in the same statement, so two codes can never take the same number (FR-042).
 func (q *Queries) TakeNextMediaCode(ctx context.Context, arg TakeNextMediaCodeParams) (int64, error) {
-	row := q.db.QueryRow(ctx, takeNextMediaCode, arg.UpdatedAt, arg.UpdatedByID, arg.UpdatedByName)
+	row := q.db.QueryRow(ctx, takeNextMediaCode,
+		arg.StartAt,
+		arg.UpdatedAt,
+		arg.UpdatedByID,
+		arg.UpdatedByName,
+	)
 	var code int64
 	err := row.Scan(&code)
 	return code, err

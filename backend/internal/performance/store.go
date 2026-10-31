@@ -98,6 +98,7 @@ type Children interface {
 	DeleteAliases(ctx context.Context, ids []string) error
 	DeleteIntegrationIDs(ctx context.Context, ids []string) error
 	PutAlias(ctx context.Context, a Alias) error
+	ExternalNameHolders(ctx context.Context, name string) ([]string, error)
 }
 
 type Store interface {

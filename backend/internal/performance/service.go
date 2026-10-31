@@ -36,6 +36,8 @@ type SourceInput struct {
 	DeliveryRoute DeliveryRoute `json:"deliveryRoute"`
 	Cadence       Cadence       `json:"cadence"`
 	IntegrationID string        `json:"integrationId"`
+	// Version is the version the editor read; a save against an older one is refused (FR-045).
+	Version int `json:"version"`
 }
 
 func (s *Service) Sources(ctx context.Context, _ actor.Actor) ([]SourceView, error) {
@@ -108,6 +110,46 @@ func (s *Service) DeleteSource(ctx context.Context, a actor.Actor, id string) er
 	})
 }
 
+// UpdateSource refuses a save made against a version someone else has already moved past, naming who
+// changed it and when, so no edit is silently overwritten (CLAUDE.md "Every new record type").
+func (s *Service) UpdateSource(ctx context.Context, a actor.Actor, id string, in SourceInput) (Source, error) {
+	if err := authz.Require(ctx, PermissionImport); err != nil {
+		return Source{}, err
+	}
+	if err := checkSource(in); err != nil {
+		return Source{}, err
+	}
+	var saved Source
+	err := s.tx.Write(ctx, func(ctx context.Context) error {
+		found, readErr := s.repo.ListSources(ctx, id)
+		if readErr != nil {
+			return readErr
+		}
+		if len(found) == 0 {
+			return errs.NotFound(msgSourceNotFound)
+		}
+		stored := found[0].Source
+		if stored.Version != in.Version {
+			return errs.VersionConflict(sourceKindSingular, stored.UpdatedBy.Name, stored.UpdatedAt)
+		}
+		saved = stored
+		saved.Name, saved.Description = strings.TrimSpace(in.Name), strings.TrimSpace(in.Description)
+		saved.OwnerID, saved.Category = in.OwnerID, in.Category
+		saved.DeliveryRoute, saved.Cadence = in.DeliveryRoute, in.Cadence
+		saved.IntegrationID = strings.TrimSpace(in.IntegrationID)
+		saved.Version++
+		saved.UpdatedAt, saved.UpdatedBy = s.now(), a
+		if putErr := s.repo.PutSource(ctx, saved); putErr != nil {
+			return putErr
+		}
+		return s.log(ctx, a, saved, logEntry{action: history.ActionChanged})
+	})
+	if err != nil {
+		return Source{}, fmt.Errorf("update performance source %s: %w", id, err)
+	}
+	return saved, nil
+}
+
 func (s *Service) SetSourceStatus(ctx context.Context, a actor.Actor, id string, status Status) error {
 	if err := authz.Require(ctx, PermissionImport); err != nil {
 		return err
@@ -151,6 +193,21 @@ func (s *Service) CheckSupplier(ctx context.Context, modelID string, meaning Mea
 		}
 		if supplier.Stage == stage {
 			return errs.NotAllowed(fmt.Sprintf(msgStageSupplied, supplier.SourceName, stage))
+		}
+	}
+	return nil
+}
+
+// CheckAliasFree refuses a name already held by an activity's external name or by another alias: they
+// share one namespace, so a duplicate would make the key resolve to two activities (FR-035).
+func (s *Service) CheckAliasFree(ctx context.Context, activityID, name string) error {
+	holders, err := s.repo.ExternalNameHolders(ctx, strings.TrimSpace(name))
+	if err != nil {
+		return err
+	}
+	for _, holder := range holders {
+		if holder != activityID {
+			return errs.NameTaken(fmt.Sprintf(msgNameHeld, strings.TrimSpace(name), holder))
 		}
 	}
 	return nil

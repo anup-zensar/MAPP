@@ -147,3 +147,11 @@ func (s *PostgresStore) PutAlias(ctx context.Context, a Alias) error {
 	}
 	return nil
 }
+
+func (s *PostgresStore) ExternalNameHolders(ctx context.Context, name string) ([]string, error) {
+	ids, err := s.db.Queries(ctx).ExternalNameHolders(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("select who holds the external name %q: %w", name, err)
+	}
+	return ids, nil
+}

@@ -145,7 +145,7 @@ func (s *PostgresStore) ListMediaCodes(ctx context.Context, scope authz.Scope, a
 // codes can never take the same number (FR-042).
 func (s *PostgresStore) TakeNextCode(ctx context.Context, by actor.Actor, at time.Time) (int64, error) {
 	code, err := s.db.Queries(ctx).TakeNextMediaCode(ctx, sqlcdb.TakeNextMediaCodeParams{
-		UpdatedAt: at, UpdatedByID: by.ID, UpdatedByName: by.Name,
+		StartAt: firstMediaCode, UpdatedAt: at, UpdatedByID: by.ID, UpdatedByName: by.Name,
 	})
 	if err != nil {
 		return 0, fmt.Errorf("take the next media code: %w", err)

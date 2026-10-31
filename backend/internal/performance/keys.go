@@ -28,6 +28,9 @@ type MediaCode struct {
 	record.Meta
 }
 
+// firstMediaCode starts above Hive9's numbers so a new code cannot collide (FR-042).
+const firstMediaCode = 9000001
+
 type CodeAttribute struct {
 	Name     string `json:"name"`
 	Required bool   `json:"required"`
@@ -50,7 +53,6 @@ func (c Configuration) RequiresCodes(activityTypeID string) bool {
 	return false
 }
 
-// MissingAttributes returns them all, so a code's faults are reported together (FR-041).
 func (c Configuration) MissingAttributes(given map[string]string) []string {
 	var missing []string
 	for _, a := range c.CodeAttributes {

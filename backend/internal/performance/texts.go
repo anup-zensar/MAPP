@@ -24,6 +24,7 @@ const (
 const (
 	msgNameLength  = "Give the data source a name of 1 to 120 characters."
 	msgOwnerNeeded = "Choose an owner for this data source."
+	msgNameHeld    = "Not saved — %s is already the external name or alias of activity %s. A name can belong to only one activity."
 )
 
 const (
